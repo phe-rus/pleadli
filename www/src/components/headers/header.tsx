@@ -28,8 +28,8 @@ export default function Header() {
                 <Link
                   key={index}
                   to={items.to}
-                  className='text-base'
-                  activeProps={{ className: 'text-primary' }}
+                  className='text-base font-normal'
+                  activeProps={{ className: 'text-primary font-bold' }}
                 >
                   {items.label}
                 </Link>

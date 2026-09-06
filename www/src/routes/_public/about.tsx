@@ -71,7 +71,7 @@ function RouteComponent() {
             structure, and staff.
           </p>
         </div>
-        <Button size="lg" render={<Link to="/login" />}>
+        <Button size="lg" nativeButton={false} render={<Link to="/login" />}>
           Sign in
         </Button>
       </section>
