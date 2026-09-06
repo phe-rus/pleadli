@@ -51,7 +51,7 @@ function RouteComponent() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-8 py-20 sm:grid-cols-2">
+      <section className="grid grid-cols-2 gap-5 py-20 md:grid-cols-3">
         {homeStats.map((stat) => (
           <div key={stat.value} className="flex flex-col items-start gap-3">
             <span className="text-6xl font-semibold tracking-tight md:text-7xl!">{stat.value}</span>
@@ -68,7 +68,7 @@ function RouteComponent() {
             almost nothing connecting them.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           {homeProblems.map((problem) => (
             <Card key={problem.title}>
               <CardHeader>
@@ -103,11 +103,11 @@ function RouteComponent() {
             <span className="font-mono text-xs text-muted-foreground">PL-2026-00001180</span>
             <Badge variant="secondary">DPP review</Badge>
           </div>
-          <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-start">
+          <div className="flex flex-wrap items-start gap-y-6 p-6">
             {caseTimeline.map((step, index) => (
               <div
                 key={step.label}
-                className="flex flex-1 items-center justify-center gap-3 border-b pb-4 last:border-none last:pb-0 sm:justify-start sm:border-none sm:pb-0"
+                className="flex basis-1/2 items-center justify-center gap-3 sm:basis-0 sm:flex-1 sm:justify-start"
               >
                 <div className="flex flex-col items-center gap-2 text-center">
                   <div
@@ -242,7 +242,7 @@ function RouteComponent() {
             attempting every institution at once.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {institutions.map((institution) => (
             <Card
               key={institution.name}
