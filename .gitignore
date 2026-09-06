@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 _archive
+
+# TanStack Router auto-generated files anywhere in the repo
+**/routeTree.gen.ts
+
+# Wrangler/Cloudflare generated types anywhere in the repo
+**/worker-configuration.d.ts
+
+# Claude state folders
+**/.claude/
