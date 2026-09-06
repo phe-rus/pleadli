@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
-import { Form, TextField, Label, Input, FieldError, Button } from 'react-aria-components'
 import { useState } from 'react'
 import * as z from 'zod'
-import { authClient } from '../../auth/client'
+import { authClient } from '@/auth/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Field, FieldGroup, FieldLabel, FieldError } from '@/components/ui/field'
 
 const loginSchema = z.object({
   email: z.email('Enter a valid email address.'),
@@ -36,64 +38,67 @@ function RouteComponent() {
   })
 
   return (
-    <article>
-      <Form
+    <article className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
+      <h1 className="mb-1 text-2xl font-semibold">Sign in</h1>
+      <p className="mb-6 text-sm text-muted-foreground">Pleadli Cloud administration.</p>
+
+      <form
         onSubmit={(event) => {
           event.preventDefault()
           event.stopPropagation()
           form.handleSubmit()
         }}
-        className="demo-panel w-full max-w-sm"
       >
-        <h1 className="demo-title mb-1 text-2xl">Sign in</h1>
-        <p className="demo-muted mb-6">Pleadli Cloud administration.</p>
+        <FieldGroup>
+          <form.Field name="email">
+            {(field) => (
+              <Field data-invalid={field.state.meta.errors.length > 0}>
+                <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                <Input
+                  id={field.name}
+                  type="email"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                  aria-invalid={field.state.meta.errors.length > 0}
+                />
+                <FieldError errors={field.state.meta.errors} />
+              </Field>
+            )}
+          </form.Field>
 
-        <form.Field name="email">
-          {(field) => (
-            <TextField
-              className="mb-3 block"
-              isInvalid={field.state.meta.errors.length > 0}
-              value={field.state.value}
-              onChange={field.handleChange}
-              onBlur={field.handleBlur}
-            >
-              <Label className="demo-section-title mb-1 block">Email</Label>
-              <Input className="demo-input" type="email" />
-              <FieldError className="demo-alert demo-alert-danger mt-1 block text-sm">
-                {field.state.meta.errors.map((error) => error?.message).join(', ')}
-              </FieldError>
-            </TextField>
+          <form.Field name="password">
+            {(field) => (
+              <Field data-invalid={field.state.meta.errors.length > 0}>
+                <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                <Input
+                  id={field.name}
+                  type="password"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                  aria-invalid={field.state.meta.errors.length > 0}
+                />
+                <FieldError errors={field.state.meta.errors} />
+              </Field>
+            )}
+          </form.Field>
+
+          {formError && (
+            <p role="alert" className="text-sm text-destructive">
+              {formError}
+            </p>
           )}
-        </form.Field>
 
-        <form.Field name="password">
-          {(field) => (
-            <TextField
-              className="mb-4 block"
-              isInvalid={field.state.meta.errors.length > 0}
-              value={field.state.value}
-              onChange={field.handleChange}
-              onBlur={field.handleBlur}
-            >
-              <Label className="demo-section-title mb-1 block">Password</Label>
-              <Input className="demo-input" type="password" />
-              <FieldError className="demo-alert demo-alert-danger mt-1 block text-sm">
-                {field.state.meta.errors.map((error) => error?.message).join(', ')}
-              </FieldError>
-            </TextField>
-          )}
-        </form.Field>
-
-        {formError && <p className="demo-alert demo-alert-danger mb-4">{formError}</p>}
-
-        <form.Subscribe selector={(state) => state.isSubmitting}>
-          {(isSubmitting) => (
-            <Button type="submit" isDisabled={isSubmitting} className="demo-button w-full">
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
-            </Button>
-          )}
-        </form.Subscribe>
-      </Form>
+          <form.Subscribe selector={(state) => state.isSubmitting}>
+            {(isSubmitting) => (
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? 'Signing in...' : 'Sign in'}
+              </Button>
+            )}
+          </form.Subscribe>
+        </FieldGroup>
+      </form>
     </article>
   )
 }

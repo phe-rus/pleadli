@@ -32,3 +32,9 @@ _archive
 
 # Claude state folders
 **/.claude/
+
+# Monorepo ignores
+**/bun.lock
+**/routeTree.gen.ts
+**/worker-configuration.d.ts
+**/.claude/

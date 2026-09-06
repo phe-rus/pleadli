@@ -9,7 +9,8 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "theme-color", content: "var(--bg-background)" },
+      { name: "theme-color", content: "oklch(0.9904 0.0148 94.1935)", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "oklch(0.2094 0.0042 84.5894)", media: "(prefers-color-scheme: dark)" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: 'Pleadli' },
     ],
