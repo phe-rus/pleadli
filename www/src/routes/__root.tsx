@@ -1,9 +1,9 @@
+import { ThemeProvider } from '@/components/theme-provider'
+import { cn } from '@/lib/utils'
+import appCss from '@/styles/globals.css?url'
+import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-import appCss from '@/styles/globals.css?url'
-import { cn } from '@/lib/utils'
-import { ThemeProvider } from '@/components/theme-provider'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -37,7 +37,7 @@ function RootDocument() {
       </head>
       <body className={cn(
         "relative isolate bg-background transition-colors",
-        "wrap-anywhere selection:bg-primary/15"
+        "wrap-anywhere selection:bg-primary/15 typeset"
       )}>
         <ThemeProvider
           attribute="class"

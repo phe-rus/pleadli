@@ -39,7 +39,6 @@
 		"@better-auth/cli": "^1.4.21",
 		"@cloudflare/vite-plugin": "^1.26.0",
 		"@inlang/paraglide-js": "^2.25.0",
-		"@tailwindcss/typography": "^0.5.16",
 		"@tanstack/devtools-vite": "latest",
 		"@tanstack/router-cli": "^1.132.0",
 		"@types/node": "^26.4.1",
