@@ -44,3 +44,13 @@ export const updateTemplate = createServerFn({ method: 'POST' })
     const headers = getRequest().headers
     return auth.api.upsertTemplate({ headers, body: data })
   })
+
+const deleteTemplateSchema = z.object({ institutionType: z.enum(['police', 'dpp', 'courts', 'prisons', 'lawyers']) })
+
+export const deleteTemplate = createServerFn({ method: 'POST' })
+  .middleware([AdminMiddleware])
+  .validator(deleteTemplateSchema)
+  .handler(async ({ data }) => {
+    const headers = getRequest().headers
+    return auth.api.deleteTemplate({ headers, body: { institutionType: data.institutionType } })
+  })

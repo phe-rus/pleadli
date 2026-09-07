@@ -1,13 +1,14 @@
 import { ThemeProvider } from '@/components/theme-provider'
-import { cn } from '@pleadli/ui/lib/utils'
 import type { RouterAppContext } from '@/router'
 import appCss from '@pleadli/ui/globals.css?url'
-import toastCss from 'gooey-toast/styles.css?url'
+import { cn } from '@pleadli/ui/lib/utils'
+import { TooltipProvider } from '@pleadli/ui/tooltip'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { useEffect } from 'react'
 import { mountToaster } from 'gooey-toast'
+import toastCss from 'gooey-toast/styles.css?url'
+import { useEffect } from 'react'
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
@@ -59,7 +60,9 @@ function RootDocument() {
           storageKey="pleadli:themer"
           disableTransitionOnChange
         >
-          <Outlet />
+          <TooltipProvider>
+            <Outlet />
+          </TooltipProvider>
         </ThemeProvider>
         <TanStackDevtools
           config={{

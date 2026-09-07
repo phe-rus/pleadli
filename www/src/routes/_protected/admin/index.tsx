@@ -1,6 +1,7 @@
 import { getAdminOverview } from '@/functions/admin.func'
-import { Building02Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
+import { Building02Icon, LayoutTemplateIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { Badge } from '@pleadli/ui/badge'
 import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
@@ -11,12 +12,15 @@ export const Route = createFileRoute('/_protected/admin/')({
 })
 
 function RouteComponent() {
-  const { organizations, totalUsers, users } = Route.useLoaderData()
+  const { organizations, totalUsers, users, templateCount, orgsByType } = Route.useLoaderData()
 
   const stats = [
     { icon: Building02Icon, label: 'Organizations', value: organizations.length },
+    { icon: LayoutTemplateIcon, label: 'Templates', value: templateCount },
     { icon: UserGroupIcon, label: 'Users', value: totalUsers },
   ]
+
+  const typeBreakdown = Object.entries(orgsByType)
 
   return (
     <article className="container flex flex-col gap-5 py-10 md:max-w-5xl">
@@ -78,6 +82,24 @@ function RouteComponent() {
           ))}
           {users.length === 0 && <p className="p-3 text-sm text-muted-foreground">No users yet.</p>}
         </div>
+      </section>
+
+      <section className="flex flex-col gap-5">
+        <div>
+          <h1>Organizations by type</h1>
+          <p className="text-muted-foreground md:max-w-md">How the ecosystem is distributed across institution types.</p>
+        </div>
+        {typeBreakdown.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No organizations yet.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {typeBreakdown.map(([type, count]) => (
+              <Badge key={type} variant="outline" className="px-3 py-1 capitalize">
+                {type} <span className="text-muted-foreground">{count}</span>
+              </Badge>
+            ))}
+          </div>
+        )}
       </section>
     </article>
   )

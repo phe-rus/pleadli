@@ -1,12 +1,13 @@
 import { listUsersAdmin } from '@/functions/admin.func'
-import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
+import { UserManagementDrawer } from '@/components/admin/user-management-drawer'
+import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Avatar, AvatarFallback, AvatarImage } from '@pleadli/ui/avatar'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_protected/admin/users')({
   loader: () => listUsersAdmin(),
@@ -15,9 +16,9 @@ export const Route = createFileRoute('/_protected/admin/users')({
 
 function RouteComponent() {
   const data = Route.useLoaderData()
+  const [manageUser, setManageUser] = useState<(typeof data)[number] | null>(null)
 
-  const columns: DataTableColumnDef<typeof data[number]>[] = useMemo(() => [
-    selectColumn(),
+  const columns: DataTableColumnDef<(typeof data)[number]>[] = useMemo(() => [
     {
       accessorKey: "id",
       header: "ID",
@@ -79,23 +80,24 @@ function RouteComponent() {
       header: 'Created At',
       accessorFn: (row) => row.createdAt.toISOString(),
       cell: ({ row }) => (
-        <>
-          <time dateTime={row.original.createdAt.toISOString()}>
-            {format(row.original.createdAt, 'PPPp')}
-          </time>
-        </>
+        <time dateTime={row.original.createdAt.toISOString()}>
+          {format(row.original.createdAt, 'PPPp')}
+        </time>
       )
     },
     {
-      header: 'Updated At',
-      accessorFn: (row) => row.updatedAt.toISOString(),
+      header: 'Actions',
+      id: 'actions',
       cell: ({ row }) => (
-        <>
-          <time dateTime={row.original.updatedAt.toISOString()}>
-            {format(row.original.updatedAt, 'PPPp')}
-          </time>
-        </>
-      )
+        <Button
+          type="button"
+          size="xs"
+          variant="outline"
+          onClick={() => setManageUser(row.original)}
+        >
+          Manage
+        </Button>
+      ),
     },
   ], [])
 
@@ -128,6 +130,13 @@ function RouteComponent() {
         )}
         onSelectedRowsChange={({ }) => { }}
       />
+
+      {manageUser && (
+        <UserManagementDrawer
+          user={manageUser}
+          onClose={() => setManageUser(null)}
+        />
+      )}
     </article>
   )
 }

@@ -120,7 +120,7 @@ export const institutions = () => {
           })
           if (!organization) throw new APIError('NOT_FOUND', { message: 'Organization not found' })
 
-          const [units, entitlements, memberships] = await Promise.all([
+          const [units, entitlements] = await Promise.all([
             ctx.context.adapter.findMany<OrganizationUnit>({
               model: 'organizationUnit',
               where: [{ field: 'organizationId', value: organization.id }],
@@ -129,8 +129,16 @@ export const institutions = () => {
               model: 'entitlement',
               where: [{ field: 'organizationId', value: organization.id }],
             }),
-            ctx.context.adapter.findMany<Membership>({ model: 'membership' }),
           ])
+
+          const unitIds = units.map((unit) => unit.id)
+          const memberships =
+            unitIds.length > 0
+              ? await ctx.context.adapter.findMany<Membership>({
+                  model: 'membership',
+                  where: [{ field: 'organizationUnitId', value: unitIds, operator: 'in' }],
+                })
+              : []
 
           return ctx.json({ organization, units, entitlements, memberships })
         },

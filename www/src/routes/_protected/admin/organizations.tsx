@@ -1,25 +1,27 @@
 import { listOrganizationsAdmin } from '@/functions/admin.func'
 import { createOrganization } from '@/functions/org.func'
+import { OrganizationDetailDrawer } from '@/components/admin/organization-detail-drawer'
 import { AddCircleIcon, Building02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
+import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
+import type { SelectOption } from '@pleadli/forms-tables/forms'
+import { useAppForm } from '@pleadli/forms-tables/forms'
+import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@pleadli/ui/dialog'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@pleadli/ui/drawer'
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '@pleadli/ui/empty'
-import { Field, FieldError, FieldGroup, FieldLabel } from '@pleadli/ui/field'
-import { Input } from '@pleadli/ui/input'
-import { ToggleGroup, ToggleGroupItem } from '@pleadli/ui/toggle-group'
-import { useForm } from '@tanstack/react-form'
+import { FieldGroup } from '@pleadli/ui/field'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { toast } from 'gooey-toast'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import * as z from 'zod'
 
 export const Route = createFileRoute('/_protected/admin/organizations')({
@@ -30,25 +32,40 @@ export const Route = createFileRoute('/_protected/admin/organizations')({
 function RouteComponent() {
   const data = Route.useLoaderData()
   const router = useRouter()
-  const [open, setOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [detailOrg, setDetailOrg] = useState<(typeof data)[number] | null>(null)
 
-  const institutionTypes = ['police', 'dpp', 'courts', 'prisons', 'lawyers'] as const
+  const institutionTypeOptions: SelectOption[] = [
+    { label: 'Police', value: 'police' },
+    { label: 'DPP', value: 'dpp' },
+    { label: 'Courts', value: 'courts' },
+    { label: 'Prisons', value: 'prisons' },
+    { label: 'Lawyers', value: 'lawyers' },
+  ]
 
-  const createOrganizationSchema = z.object({
+  const createOrgSchema = z.object({
     name: z.string().min(1, 'Name is required.'),
     slug: z.string().min(1, 'Slug is required.'),
-    institutionType: z.enum(institutionTypes),
+    institutionType: z.enum(['police', 'dpp', 'courts', 'prisons', 'lawyers']),
   })
 
-  const form = useForm({
-    defaultValues: { name: '', slug: '', institutionType: 'police' as (typeof institutionTypes)[number] },
-    validators: { onChange: createOrganizationSchema },
+  type CreateOrgValues = z.infer<typeof createOrgSchema>
+
+  const createOrgDefaults: CreateOrgValues = {
+    name: '',
+    slug: '',
+    institutionType: 'police',
+  }
+
+  const createForm = useAppForm({
+    defaultValues: createOrgDefaults,
+    validators: { onChange: createOrgSchema },
     onSubmit: async ({ value, formApi }) => {
       try {
         await createOrganization({ data: value })
         toast.success({ title: 'Organization created', description: value.name })
         formApi.reset()
-        setOpen(false)
+        setCreateOpen(false)
         router.invalidate()
       } catch {
         toast.error({ title: 'Could not create organization', description: 'Please try again.' })
@@ -56,8 +73,7 @@ function RouteComponent() {
     },
   })
 
-  const columns: DataTableColumnDef<typeof data[number]>[] = useMemo(() => [
-    selectColumn(),
+  const columns: DataTableColumnDef<(typeof data)[number]>[] = [
     {
       accessorKey: 'name',
       header: 'Name',
@@ -69,8 +85,27 @@ function RouteComponent() {
     {
       accessorKey: 'institutionType',
       header: 'Institution Type',
+      cell: ({ row }) => (
+        <Badge variant="outline" className="capitalize">
+          {row.original.institutionType}
+        </Badge>
+      ),
     },
-  ], [])
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <Button
+          type="button"
+          size="xs"
+          variant="outline"
+          onClick={() => setDetailOrg(row.original)}
+        >
+          Details
+        </Button>
+      ),
+    },
+  ]
 
   return (
     <article className="container flex flex-col gap-5 py-10 md:max-w-5xl">
@@ -80,90 +115,52 @@ function RouteComponent() {
           <p className="text-sm text-muted-foreground">Every institution on the Pleadli platform.</p>
         </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button />}>
+        <Drawer open={createOpen} onOpenChange={setCreateOpen} swipeDirection="right">
+          <DrawerTrigger render={<Button />}>
             <HugeiconsIcon icon={AddCircleIcon} data-icon="inline-start" />
             New organization
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create organization</DialogTitle>
-            </DialogHeader>
+          </DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Create organization</DrawerTitle>
+              <DrawerDescription>Add a new institution to the platform.</DrawerDescription>
+            </DrawerHeader>
             <form
+              className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
               onSubmit={(event) => {
                 event.preventDefault()
                 event.stopPropagation()
-                form.handleSubmit()
+                createForm.handleSubmit()
               }}
             >
               <FieldGroup>
-                <form.Field name="name">
-                  {(field) => (
-                    <Field data-invalid={field.state.meta.errors.length > 0}>
-                      <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                      <Input
-                        id={field.name}
-                        value={field.state.value}
-                        onChange={(event) => field.handleChange(event.target.value)}
-                        onBlur={field.handleBlur}
-                        aria-invalid={field.state.meta.errors.length > 0}
-                      />
-                      <FieldError errors={field.state.meta.errors} />
-                    </Field>
+                <createForm.AppField
+                  name="name"
+                  children={(field) => <field.input label="Name" placeholder="e.g. Uganda Police Force" />}
+                />
+                <createForm.AppField
+                  name="slug"
+                  children={(field) => <field.input label="Slug" placeholder="e.g. uganda-police-force" />}
+                />
+                <createForm.AppField
+                  name="institutionType"
+                  children={(field) => (
+                    <field.select label="Institution type" options={institutionTypeOptions} />
                   )}
-                </form.Field>
-
-                <form.Field name="slug">
-                  {(field) => (
-                    <Field data-invalid={field.state.meta.errors.length > 0}>
-                      <FieldLabel htmlFor={field.name}>Slug</FieldLabel>
-                      <Input
-                        id={field.name}
-                        value={field.state.value}
-                        onChange={(event) => field.handleChange(event.target.value)}
-                        onBlur={field.handleBlur}
-                        aria-invalid={field.state.meta.errors.length > 0}
-                      />
-                      <FieldError errors={field.state.meta.errors} />
-                    </Field>
-                  )}
-                </form.Field>
-
-                <form.Field name="institutionType">
-                  {(field) => (
-                    <Field>
-                      <FieldLabel>Institution type</FieldLabel>
-                      <ToggleGroup
-                        value={[field.state.value]}
-                        onValueChange={(value) => {
-                          const next = value[0] as (typeof institutionTypes)[number] | undefined
-                          if (next) field.handleChange(next)
-                        }}
-                        variant="outline"
-                      >
-                        {institutionTypes.map((type) => (
-                          <ToggleGroupItem key={type} value={type} aria-label={type}>
-                            {type}
-                          </ToggleGroupItem>
-                        ))}
-                      </ToggleGroup>
-                    </Field>
-                  )}
-                </form.Field>
-
-                <DialogFooter>
-                  <form.Subscribe selector={(state) => state.isSubmitting}>
-                    {(isSubmitting) => (
-                      <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Creating...' : 'Create organization'}
-                      </Button>
-                    )}
-                  </form.Subscribe>
-                </DialogFooter>
+                />
               </FieldGroup>
+              <DrawerFooter>
+                <createForm.AppForm>
+                  <createForm.Subscribe selector={(state) => state.isSubmitting}>
+                    {(isSubmitting) => (
+                      <createForm.submit label={isSubmitting ? 'Creating…' : 'Create organization'} />
+                    )}
+                  </createForm.Subscribe>
+                </createForm.AppForm>
+              </DrawerFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+          </DrawerContent>
+        </Drawer>
       </section>
 
       {data.length === 0 ? (
@@ -176,26 +173,19 @@ function RouteComponent() {
         </Empty>
       ) : (
         <DataTable
-          aria-label='organizations'
+          aria-label="organizations"
           columns={columns}
           data={data}
           getRowId={(row) => row.id}
           emptyMessage="No members yet."
-          searchPlaceholder="Search by name or email…"
-          bulkActions={(selectedRows, clearSelection) => (
-            <Button
-              type="button"
-              variant="destructive"
-              size="xs"
-              onClick={() => {
-                console.log(selectedRows)
-                clearSelection()
-              }}
-            >
-              Remove selected
-            </Button>
-          )}
-          onSelectedRowsChange={({ }) => { }}
+          searchPlaceholder="Search by name or slug…"
+        />
+      )}
+
+      {detailOrg && (
+        <OrganizationDetailDrawer
+          organizationId={detailOrg.id}
+          onClose={() => setDetailOrg(null)}
         />
       )}
     </article>

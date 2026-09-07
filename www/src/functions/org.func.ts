@@ -99,3 +99,27 @@ export const setEntitlement = createServerFn({ method: 'POST' })
     const headers = getRequest().headers
     return auth.api.setEntitlement({ headers, body: data })
   })
+
+const createMembershipSchema = z.object({
+  userId: z.string().min(1),
+  organizationUnitId: z.string().min(1),
+  title: z.string().min(1),
+})
+
+export const createMembership = createServerFn({ method: 'POST' })
+  .middleware([AdminMiddleware])
+  .validator(createMembershipSchema)
+  .handler(async ({ data }) => {
+    const headers = getRequest().headers
+    return auth.api.createMembership({ headers, body: data })
+  })
+
+const deleteMembershipSchema = z.object({ id: z.string().min(1) })
+
+export const deleteMembership = createServerFn({ method: 'POST' })
+  .middleware([AdminMiddleware])
+  .validator(deleteMembershipSchema)
+  .handler(async ({ data }) => {
+    const headers = getRequest().headers
+    return auth.api.deleteMembership({ headers, body: { id: data.id } })
+  })
