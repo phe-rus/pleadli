@@ -1,35 +1,42 @@
-import { PoliceBadgeIcon } from '@hugeicons/core-free-icons'
+import { LoaderCircleIcon, PoliceBadgeIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { useEffect, useState } from 'react'
-import { cn } from '@pleadli/ui/lib/utils'
+import { useRouterState } from '@tanstack/react-router'
+import { FC, PropsWithChildren, useLayoutEffect, useState } from 'react'
 
-export function SplashScreen({ onDone }: { onDone: () => void }) {
-  const [leaving, setLeaving] = useState(false)
+const MIN_SPLASH_MS = 500
+type splashScreenProps = PropsWithChildren<{}>
+export const SplashScreen: FC<splashScreenProps> = ({
+  children
+}) => {
+  const [minElapsed, setMinElapsed] = useState(false)
+  const isLoading = useRouterState({
+    select: (s) => s.status === 'pending',
+  })
 
-  useEffect(() => {
-    const t = setTimeout(() => setLeaving(true), 1800)
-    const done = setTimeout(onDone, 2400)
-    return () => {
-      clearTimeout(t)
-      clearTimeout(done)
-    }
-  }, [onDone])
+  useLayoutEffect(() => {
+    const timeout = setTimeout(() => setMinElapsed(true), MIN_SPLASH_MS)
+    return () => clearTimeout(timeout)
+  }, [])
 
-  return (
-    <div
-      className={cn(
-        'fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background',
-        'transition-opacity duration-500',
-        leaving && 'opacity-0',
-      )}
-    >
-      <div className="p-4">
-        <HugeiconsIcon icon={PoliceBadgeIcon} className="text-primary" size={56} strokeWidth={1.5} />
-      </div>
-      <div className="flex flex-col items-center gap-1">
-        <p className="text-lg font-semibold">Pleadli Police</p>
-        <p className="text-sm text-muted-foreground">Loading your station…</p>
-      </div>
-    </div>
-  )
+  if (isLoading || !minElapsed) {
+    return (
+      <article className='flex h-svh w-full flex-col items-center justify-center gap-4 bg-background'>
+        <div>
+          <HugeiconsIcon
+            icon={PoliceBadgeIcon}
+            className="size-18"
+          />
+        </div>
+        <section className="flex flex-col items-center gap-1">
+          <h1 className="text-2xl">Pleadli Police</h1>
+          <p className="text-sm text-muted-foreground">Loading your station…</p>
+        </section>
+        <HugeiconsIcon
+          icon={LoaderCircleIcon}
+          className='size-5 animate-spin'
+        />
+      </article>
+    )
+  }
+  return <>{children}</>
 }

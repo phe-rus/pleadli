@@ -11,6 +11,9 @@ export const Route = createFileRoute('/_public')({
 function RouteComponent() {
   return (
     <Dashboard
+      addOns={{
+        enableNavigation: false,
+      }}
       brand={{
         to: '/',
         label: 'Pleadli Police',
@@ -18,7 +21,7 @@ function RouteComponent() {
       }}
       nav={stationNav}
     >
-      <div className="relative flex min-h-dvh flex-col">
+      <div className="relative flex min-h-dvh flex-col scroll-smooth! aria-hidden">
         <Headers />
         <div className="flex flex-1 flex-col">
           <Outlet />

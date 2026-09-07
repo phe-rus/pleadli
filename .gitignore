@@ -39,3 +39,4 @@ _archive
 **/worker-configuration.d.ts
 **/.claude/
 **/.turbo/
+apps/police/src-tauri/Cargo.lock

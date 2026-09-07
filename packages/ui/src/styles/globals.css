@@ -7,6 +7,8 @@
 @custom-variant dark (&: is(.dark *));
 @source '../**/**/*.{tsx,ts}';
 @source '**/**/**/*.{tsx,ts}';
+@source '../components/**/*.{tsx,ts}';
+@source '../../../../apps/**/*.{tsx,ts}';
 
 @utility container {
   margin-inline: auto;
@@ -34,7 +36,7 @@
 @utility dualTone {
   cursor: pointer;
   color: currentcolor;
-  stroke-width: 2;
+  stroke-width: 3;
 
   & path {
     transition: opacity 200ms ease;
@@ -48,13 +50,13 @@
     opacity: 40%;
   }
 
-  .group:hover & path:first-child {
+  .group\/icon:hover & path:first-child {
     opacity: 100%;
     transform: rotate(-3deg);
     --transform-origin: 0% 100%;
   }
 
-  .group:hover & path:not(:first-child) {
+  .group\/icon:hover & path:not(:first-child) {
     opacity: 100%;
     transform: rotate(3deg);
     --transform-origin: 100% 100%;
@@ -366,7 +368,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground [&_svg]:dualTone;
     transition:
       background-color 0.3s ease,
       color 0.3s ease;

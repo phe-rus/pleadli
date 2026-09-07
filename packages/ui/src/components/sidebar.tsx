@@ -17,14 +17,14 @@ import { useIsMobile } from '../hooks/use-media-query'
 import { cn } from '../lib/utils'
 import { Button } from './button'
 
-export interface SidebarNavItem {
+export type SidebarNavItem = {
   to: string
   label: string
   icon: IconSvgElement
   exact?: boolean
 }
 
-export interface SidebarBrand {
+export type SidebarBrand = {
   to: string
   label: string
   icon: IconSvgElement
@@ -36,14 +36,26 @@ type SidebarContextValue = {
 }
 const SidebarContext = createContext<SidebarContextValue | null>(null)
 
-export interface DashboardProps extends PropsWithChildren {
+export type DashboardProps = PropsWithChildren<{
   brand: SidebarBrand
   nav: readonly SidebarNavItem[]
-  footer?: ReactNode
-  banner?: ReactNode
-}
+  addOns?: {
+    enableNavigation?: boolean
+    footer?: ReactNode
+    banner?: ReactNode
+  }
+  className?: string
+}>
 
-export const Dashboard: FC<DashboardProps> = ({ brand, nav, footer, banner, children }) => {
+export const Dashboard: FC<DashboardProps> = ({
+  addOns = {
+    enableNavigation: true
+  },
+  brand,
+  nav,
+  className,
+  children
+}) => {
   const [open, setOpen] = useState<boolean>(true)
   const [isPeeking, setIsPeeking] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -84,7 +96,7 @@ export const Dashboard: FC<DashboardProps> = ({ brand, nav, footer, banner, chil
             }}
             onMouseLeave={() => setIsPeeking(false)}
             className={cn(
-              'fixed h-full shrink-0 border-r bg-muted/15 shadow-md',
+              'fixed h-full shrink-0 border-r bg-background shadow-md',
               'border-border/15 inset-y-0 z-55 backdrop-blur-3xl',
               'transition-all duration-300 ease-in-out ease-initial',
               'will-change-transform will-change-backdrop-filter',
@@ -94,40 +106,51 @@ export const Dashboard: FC<DashboardProps> = ({ brand, nav, footer, banner, chil
                 : isPeeking
                   ? 'w-72 translate-x-0 z-55 md:absolute shadow-2xl'
                   : 'w-72 -translate-x-full z-10 md:absolute',
+              className,
             )}
+            data-tauri-drag-region
           >
-            <Button
-              size={open ? 'icon-xs' : 'icon-sm'}
-              variant="secondary"
-              aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-              className={cn(
-                'absolute top-5 z-56 -translate-y-1/2 cursor-pointer',
-                'rounded-full transition-all duration-300 select-none',
-                !isExpanded && 'flex',
-                isExpanded ? 'left-full -translate-x-1/2' : 'left-[calc(100%+8px)] translate-x-0.5',
-              )}
-              onClick={() => toggleSidebar()}
-            >
-              {!isExpanded ? (
-                <HugeiconsIcon icon={ChevronRightIcon} />
-              ) : (
-                <HugeiconsIcon icon={ChevronLeftIcon} />
-              )}
-            </Button>
+            {addOns.enableNavigation &&
+              <Button
+                size={open ? 'icon-xs' : 'icon-sm'}
+                variant="secondary"
+                aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+                className={cn(
+                  'absolute top-5 z-56 -translate-y-1/2 cursor-pointer',
+                  'rounded-full transition-all duration-300 select-none',
+                  !isExpanded && 'flex',
+                  isExpanded ? 'left-full -translate-x-1/2' : 'left-[calc(100%+8px)] translate-x-0.5',
+                )}
+                onClick={() => toggleSidebar()}
+              >
+                {!isExpanded ? (
+                  <HugeiconsIcon icon={ChevronRightIcon} />
+                ) : (
+                  <HugeiconsIcon icon={ChevronLeftIcon} />
+                )}
+              </Button>
+            }
             <section
-              className={cn('min-h-svh flex-col gap-5 px-5 py-2', !isExpanded ? 'hidden' : 'flex')}
+              data-tauri-drag-region
+              className={cn(
+                'min-h-svh flex-col gap-5 p-2',
+                !isExpanded ? 'hidden' : 'flex'
+              )}
             >
-              <section className="flex flex-col gap-2">
+              <section
+                data-tauri-drag-region
+                className="flex flex-col gap-2"
+              >
                 <nav className="flex items-center gap-1">
                   <Link
                     to={brand.to}
                     className={cn(
                       'flex gap-1.5 items-center text-primary',
                       'hover:text-primary/65 tracking-wider font-bold',
-                      'px-1',
+                      'px-1 text-base',
                     )}
                   >
-                    <HugeiconsIcon icon={brand.icon} className="size-4.5" />
+                    <HugeiconsIcon icon={brand.icon} className="size-5" />
                     {brand.label}
                   </Link>
                 </nav>
@@ -137,9 +160,9 @@ export const Dashboard: FC<DashboardProps> = ({ brand, nav, footer, banner, chil
                       key={item.to}
                       to={item.to}
                       className={cn(
-                        'group relative flex items-center gap-2 text-base',
+                        'group/icon relative flex items-center gap-2 text-base',
                         'transition-colors duration-150 ease-out',
-                        'text-sm py-1.5 px-1 rounded-md hover:bg-secondary',
+                        'text-sm py-1 px-1 rounded-md hover:bg-secondary',
                       )}
                       activeProps={{ className: 'text-primary font-bold bg-secondary' }}
                       activeOptions={{ exact: item.exact }}
@@ -150,14 +173,25 @@ export const Dashboard: FC<DashboardProps> = ({ brand, nav, footer, banner, chil
                   ))}
                 </nav>
               </section>
-              <span className="flex-1" />
-              {footer && (
-                <nav className={cn('sticky bottom-0 mb-auto', 'flex flex-col gap-3')}>{footer}</nav>
+              <span
+                data-tauri-drag-region
+                className="flex-1"
+              />
+              {addOns.footer && (
+                <nav
+                  data-tauri-drag-region
+                  className={cn(
+                    'sticky bottom-0 mb-auto',
+                    'flex flex-col gap-3'
+                  )}
+                >
+                  {addOns.footer}
+                </nav>
               )}
             </section>
           </aside>
           <div className="relative no-scrollbar flex flex-1 flex-col overflow-y-auto">
-            {banner}
+            {addOns.banner}
             {children}
           </div>
         </main>
