@@ -199,7 +199,7 @@ export function DataTable<TData extends RowData>({
   const columnCount = table.getVisibleLeafColumns().length
 
   return (
-    <div className="flex flex-col gap-3 [&_div]:no-scrollbar [&_tr]:border-none!">
+    <div className="flex flex-col gap-3 [&_div]:no-scrollbar! [&_tr]:border-none!">
       <div className="relative flex items-center">
         <InputGroup className="max-w-full">
           <InputGroupInput
@@ -362,7 +362,11 @@ export function DataTable<TData extends RowData>({
         </div>
       )}
 
-      <Table aria-label={ariaLabel} data-not-typeset={true} className="divide-none!">
+      <Table
+        aria-label={ariaLabel}
+        data-not-typeset={true}
+        className="divide-none!"
+      >
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -370,34 +374,37 @@ export function DataTable<TData extends RowData>({
                 <TableHead key={header.id}>
                   {header.isPlaceholder ? null : header.column.getCanSort() ? (
                     <div
-                      className="flex w-fit cursor-pointer items-center gap-1 text-muted-foreground hover:text-foreground"
+                      className={cn(
+                        "flex w-fit cursor-pointer items-center gap-1"
+                      )}
                       onClick={header.column.getToggleSortingHandler()}
                     >
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext()
                       )}
-                      <div className="flex flex-col">
+                      <div className='flex items-center'>
                         <HugeiconsIcon
                           icon={ChevronUpIcon}
                           className={cn(
-                            "size-3! opacity-20",
-                            header.column.getIsSorted() === "asc" &&
-                            "opacity-100"
+                            "size-3.5!", header.column.getIsSorted() === "asc" &&
+                          "text-primary"
                           )}
                         />
                         <HugeiconsIcon
                           icon={ChevronDownIcon}
                           className={cn(
-                            "-mt-1.5 size-3! opacity-20",
-                            header.column.getIsSorted() === "desc" &&
-                            "opacity-100"
+                            "size-3.5!", header.column.getIsSorted() === "desc" &&
+                          "text-primary"
                           )}
                         />
                       </div>
                     </div>
                   ) : (
-                    flexRender(header.column.columnDef.header, header.getContext())
+                    flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )
                   )}
                 </TableHead>
               ))}

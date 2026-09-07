@@ -78,13 +78,13 @@ function RouteComponent() {
             ),
           },
           {
-            accessorFn: (row) => row.createdAt.toISOString(),
             header: 'Created At',
+            accessorFn: (row) => row.createdAt.toISOString(),
             cell: ({ getValue }) => new Date(getValue()).toLocaleString(),
           },
           {
-            accessorFn: (row) => row.updatedAt.toISOString(),
             header: 'Updated At',
+            accessorFn: (row) => row.updatedAt.toISOString(),
             cell: ({ getValue }) => new Date(getValue()).toLocaleString(),
           },
         ]}
@@ -105,6 +105,7 @@ function RouteComponent() {
             Remove selected
           </Button>
         )}
+        onSelectedRowsChange={({ }) => { }}
       />
     </article>
   )
