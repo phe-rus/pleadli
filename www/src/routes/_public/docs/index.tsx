@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@pleadli/ui/badge'
+import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
 import { ArrowRight02Icon, BookOpen01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -27,18 +27,21 @@ function RouteComponent() {
       <div className="flex flex-col gap-2">
         <h2 className="text-xl!">What Pleadli is</h2>
         <p>
-          Pleadli Cloud is the central platform. Institutions connect to it as separate
-          applications, Police and DPP first, each with their own login, workflows, and records,
-          while a case keeps one identity across all of them.
+          Pleadli is a family of purpose-built applications, Pleadli Police, Pleadli DPP, Pleadli
+          Courts, Pleadli Lawyers, and Pleadli Prisons, each with its own login, workflows, and
+          records. Pleadli Cloud is the platform underneath all of them: identity, organizations,
+          access, and the shared case identity that connects legitimate relationships across
+          applications.
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
         <h2 className="text-xl!">Current scope</h2>
         <p>
-          Pleadli Cloud, the platform administration layer, is being built first. Police and DPP
-          are the first two institutional applications. Courts, Lawyers, Prisons, and a
-          civilian-facing surface are not built yet.
+          Pleadli Cloud and the first two applications, Pleadli Police and Pleadli DPP, are being
+          built now. Pleadli Courts, Pleadli Lawyers, and Pleadli Prisons are designed but not yet
+          built, not queued behind Police and DPP so much as awaiting their own product
+          requirements.
         </p>
       </div>
 

@@ -1,27 +1,14 @@
 import { createAuthEndpoint, createAuthMiddleware, sessionMiddleware, APIError } from 'better-auth/api'
 import * as z from 'zod'
-import type { BetterAuthPlugin } from '@better-auth/core'
+import type { BetterAuthPlugin } from 'better-auth'
 import { db } from '../../db'
 import { organization, organizationUnit, membership } from '../../db/auth-schema'
 import { eq } from 'drizzle-orm'
 
-// Pleadli's own organization model, as a real Better Auth plugin rather than
-// the stock `organization` plugin. The stock plugin is flat (one org, a flat
-// member list, optional flat teams) with no parent-child hierarchy — fine for
-// the top-level institution list (Police, DPP, Courts, ...), but institutions
-// themselves need real depth (HQ -> Region -> Division -> Station), which the
-// stock plugin has no primitive for. This plugin owns that whole shape itself.
-//
-// Authorization: every endpoint below requires platform_admin (see the `role`
-// additionalField on `user` in ../index.ts). This is coarse on purpose — a
-// single platform-wide capability, not per-institution authority — because
-// institution-scoped admin (a Police tenant-admin managing only Police's own
-// units) doesn't have a second real consumer to design against yet. Narrowing
-// this to real capabilities/institution-scoped roles is the next increment.
 const requirePlatformAdmin = createAuthMiddleware(async (ctx) => {
   const role = (ctx.context.session?.user as { role?: string } | undefined)?.role
-  if (role !== 'platform_admin') {
-    throw new APIError('FORBIDDEN', { message: 'Requires platform_admin' })
+  if (role !== 'admin') {
+    throw new APIError('FORBIDDEN', { message: 'Requires admin' })
   }
 })
 

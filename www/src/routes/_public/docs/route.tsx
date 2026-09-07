@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@pleadli/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@pleadli/ui/popover'
 import { docsNav } from '@/data/docs'
 import { ArrowDown01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -22,7 +22,6 @@ function RouteComponent() {
       'md:max-w-5xl md:flex-row md:items-start',
       'relative'
     )}>
-      {/* Mobile: a popover listing the docs pages */}
       <div className="md:hidden">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
@@ -53,7 +52,6 @@ function RouteComponent() {
         </Popover>
       </div>
 
-      {/* Desktop: sticky sidebar */}
       <nav className="hidden md:sticky md:top-16 md:flex md:w-48 md:shrink-0 md:flex-col">
         {docsNav.map((item) => (
           <Link

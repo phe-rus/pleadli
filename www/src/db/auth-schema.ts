@@ -16,7 +16,10 @@ export const user = sqliteTable("user", {
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-  role: text("role").default("user"),
+  role: text("role"),
+  banned: integer("banned", { mode: "boolean" }).default(false),
+  banReason: text("ban_reason"),
+  banExpires: integer("ban_expires", { mode: "timestamp_ms" }),
 });
 
 export const session = sqliteTable(
@@ -36,6 +39,7 @@ export const session = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    impersonatedBy: text("impersonated_by"),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
 );
@@ -136,8 +140,3 @@ export const entitlement = sqliteTable("entitlement", {
     .notNull(),
 });
 
-// Note: drizzle-orm@1.0.0-rc's relations() API is a breaking rewrite (Relations V2)
-// incompatible with what `better-auth generate` emits, and we don't use the
-// relational query builder yet (only plain select/insert against these tables) —
-// so the generated *Relations exports are deliberately dropped here. Redo this
-// strip after every `better-auth generate` run until the CLI catches up.

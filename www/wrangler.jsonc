@@ -1,7 +1,3 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "www",
@@ -18,48 +14,9 @@
 		{
 			"binding": "DB",
 			"database_name": "pleadli-www",
-			// Placeholder — replace with a real D1 database_id (via `wrangler d1 create`)
-			// before the first real deploy. Local dev works fine with this placeholder
-			// since it never touches a remote database (no `remote: true` set here).
 			"database_id": "local-dev-placeholder",
-			// drizzle-kit@1.0.0-rc emits per-migration folders (migrations/<id>/migration.sql)
-			// instead of flat migrations/*.sql — opt Wrangler into that layout.
 			"migrations_dir": "migrations",
 			"migrations_pattern": "migrations/*/migration.sql"
 		}
-	],
-	// Real values are secrets — see `wrangler secret put` before deploying.
-	// Local dev values live in `.dev.vars` (gitignored), not here.
-	"vars": {
-		"BETTER_AUTH_URL": "http://localhost:3000",
-		"BETTER_AUTH_SECRET": ""
-	}
-	/**
-	 * Smart Placement
-	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": {  "mode": "smart" }
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": {  "directory": "./public/",  "binding": "ASSETS" }
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ]
+	]
 }

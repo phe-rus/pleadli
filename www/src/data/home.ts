@@ -8,6 +8,7 @@ import {
   GavelIcon,
   PrisonIcon,
   UserGroupIcon,
+  UserAccountIcon,
   FileEditIcon,
   Search01Icon,
   Building02Icon,
@@ -56,28 +57,110 @@ export const homeStats = [
   },
 ] as const
 
-export const caseTimeline = [
-  { icon: PoliceBadgeIcon, label: 'Reported', institution: 'Police' },
-  { icon: Briefcase01Icon, label: 'DPP review', institution: 'DPP' },
-  { icon: CourtHouseIcon, label: 'Court', institution: 'Courts' },
-  { icon: PrisonIcon, label: 'Custody', institution: 'Prisons' },
+export const homeProblems = [
+  {
+    icon: DocumentAttachmentIcon,
+    title: 'Repeated data entry',
+    description:
+      'The same facts get typed into a new system at every institutional boundary, for every case.',
+  },
+  {
+    icon: AlarmClockIcon,
+    title: 'Slow handoffs',
+    description:
+      'A matter that moves from police to prosecution to court often waits on paperwork to physically catch up.',
+  },
+  {
+    icon: Database02Icon,
+    title: 'No shared reference',
+    description:
+      'Nobody outside one institution can confirm where a case actually stands, even with a legitimate reason to know.',
+  },
 ] as const
 
-export const institutionFeatures = [
+export const applications = [
+  {
+    icon: PoliceBadgeIcon,
+    name: 'Pleadli Police',
+    focus: 'Police work',
+    points: ['Case intake', 'Investigation', 'Statements & evidence', 'Referrals'],
+    status: 'Building now',
+  },
+  {
+    icon: Briefcase01Icon,
+    name: 'Pleadli DPP',
+    focus: 'Prosecution work',
+    points: ['File perusal', 'Legal assessment', 'Sanctioning decisions', 'Further investigation'],
+    status: 'Building now',
+  },
+  {
+    icon: CourtHouseIcon,
+    name: 'Pleadli Courts',
+    focus: 'Court work',
+    points: ['Case progression', 'Hearings', 'Judgments', 'Sentencing'],
+    status: 'Designed, not yet built',
+  },
+  {
+    icon: GavelIcon,
+    name: 'Pleadli Lawyers',
+    focus: "A lawyer's own practice",
+    points: ['Matter management', 'Drafting & pleadings', 'Case preparation', 'Representation'],
+    status: 'Designed, not yet built',
+  },
+  {
+    icon: PrisonIcon,
+    name: 'Pleadli Prisons',
+    focus: 'Custody work',
+    points: ['Admission on warrant', 'Movement', 'Custody records', 'Release'],
+    status: 'Designed, not yet built',
+  },
+] as const
+
+export const caseRecords = {
+  caseId: 'PL-2026-00001180',
+  records: [
+    {
+      icon: PoliceBadgeIcon,
+      application: 'Pleadli Police',
+      reference: 'CRB reference',
+      activity: 'Investigation',
+    },
+    {
+      icon: Briefcase01Icon,
+      application: 'Pleadli DPP',
+      reference: 'DPP file',
+      activity: 'Perusal, decision',
+    },
+    {
+      icon: GavelIcon,
+      application: 'Pleadli Lawyers',
+      reference: 'Matter',
+      activity: 'Representation',
+    },
+    {
+      icon: CourtHouseIcon,
+      application: 'Pleadli Courts',
+      reference: 'Cause number',
+      activity: 'Proceedings',
+    },
+  ],
+} as const
+
+export const applicationSpotlight = [
   {
     icon: Search01Icon,
-    name: 'For Police',
+    name: 'Pleadli Police',
     description:
       "Case intake and investigation stay in the Uganda Police Force's own hands, start to finish.",
     points: [
-      'A case gets its shared identity the moment it is opened, before any other institution is involved.',
+      'A case gets its shared identity the moment it is opened, before any other application is involved.',
       'Investigation records, statements, and evidence stay owned by the station and unit that handled them.',
       'Referral to the DPP carries the case identity forward, not a fresh set of paperwork.',
     ],
   },
   {
     icon: FileEditIcon,
-    name: 'For DPP',
+    name: 'Pleadli DPP',
     description: 'Perusal, sanctioning, and prosecution decisions stay owned by the DPP.',
     points: [
       'A referred case arrives with its investigation history intact, without duplicating the file.',
@@ -87,62 +170,21 @@ export const institutionFeatures = [
   },
 ] as const
 
-export const homeProblems = [
+export const scalingChains = [
   {
-    icon: DocumentAttachmentIcon,
-    title: 'Repeated data entry',
-    description:
-      'The same facts get typed into a new system at every stage, by every institution, for every case.',
+    title: 'Pleadli Police, for example',
+    steps: [
+      { icon: UserAccountIcon, label: 'Police officer' },
+      { icon: UserGroupIcon, label: 'Police station' },
+      { icon: Building02Icon, label: 'Division or organization' },
+      { icon: PoliceBadgeIcon, label: 'Uganda Police Force' },
+    ],
   },
   {
-    icon: AlarmClockIcon,
-    title: 'Slow handoffs',
-    description:
-      'A case that moves from police to prosecution to court often waits on paperwork to physically catch up.',
-  },
-  {
-    icon: Database02Icon,
-    title: 'No shared visibility',
-    description:
-      'Nobody outside one institution can see where a case actually stands, even when they have a legitimate reason to know.',
-  },
-] as const
-
-export const institutions = [
-  {
-    icon: PoliceBadgeIcon,
-    name: 'Police',
-    status: 'Building now',
-    description: 'Investigation, from case intake through referral to the DPP.',
-  },
-  {
-    icon: Briefcase01Icon,
-    name: 'DPP',
-    status: 'Building now',
-    description: 'File perusal, sanctioning, and prosecution decisions.',
-  },
-  {
-    icon: CourtHouseIcon,
-    name: 'Courts',
-    status: 'Planned',
-    description: 'Committal through trial, judgment, and sentencing.',
-  },
-  {
-    icon: GavelIcon,
-    name: 'Lawyers',
-    status: 'Planned',
-    description: 'Representation tied to a case, not a standing login.',
-  },
-  {
-    icon: PrisonIcon,
-    name: 'Prisons',
-    status: 'Planned',
-    description: 'Custody on a warrant of commitment, through to release.',
-  },
-  {
-    icon: UserGroupIcon,
-    name: 'Civilian',
-    status: 'Planned',
-    description: 'A future, separate way for the public to check case status.',
+    title: 'Pleadli Lawyers, for example',
+    steps: [
+      { icon: UserAccountIcon, label: 'Individual lawyer' },
+      { icon: Building02Icon, label: 'Law firm' },
+    ],
   },
 ] as const

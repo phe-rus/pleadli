@@ -1,44 +1,41 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useForm } from '@tanstack/react-form'
-import { useState } from 'react'
-import * as z from 'zod'
 import { authClient } from '@/auth/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Field, FieldGroup, FieldLabel, FieldError } from '@/components/ui/field'
-
-const loginSchema = z.object({
-  email: z.email('Enter a valid email address.'),
-  password: z.string().min(1, 'Password is required.'),
-})
+import { Button } from '@pleadli/ui/button'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@pleadli/ui/field'
+import { Input } from '@pleadli/ui/input'
+import { useForm } from '@tanstack/react-form'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { toast } from 'gooey-toast'
+import * as z from 'zod'
 
 export const Route = createFileRoute('/_authentication/login')({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
+    typeof search.redirect === 'string' ? { redirect: search.redirect } : {},
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const search = Route.useSearch()
-  const [formError, setFormError] = useState<string | null>(null)
+
+  const loginSchema = z.object({
+    email: z.email('Enter a valid email address.'),
+    password: z.string().min(1, 'Password is required.'),
+  })
 
   const form = useForm({
     defaultValues: { email: '', password: '' },
     validators: { onChange: loginSchema },
     onSubmit: async ({ value }) => {
-      setFormError(null)
-      const { error } = await authClient.signIn.email(value)
+      const { data, error } = await authClient.signIn.email(value)
       if (error) {
-        setFormError(error.message ?? 'Sign in failed.')
+        toast.error({ title: 'Sign in failed', description: error.message ?? undefined })
         return
       }
-      window.location.href = search.redirect ?? '/admin'
+      window.location.href = search.redirect ?? (data.user.role === 'admin' ? '/admin' : '/')
     },
   })
 
   return (
-    <article className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
+    <article className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-4">
       <h1 className="mb-1 text-2xl font-semibold">Sign in</h1>
       <p className="mb-6 text-sm text-muted-foreground">Pleadli Cloud administration.</p>
 
@@ -84,12 +81,6 @@ function RouteComponent() {
             )}
           </form.Field>
 
-          {formError && (
-            <p role="alert" className="text-sm text-destructive">
-              {formError}
-            </p>
-          )}
-
           <form.Subscribe selector={(state) => state.isSubmitting}>
             {(isSubmitting) => (
               <Button type="submit" disabled={isSubmitting} className="w-full">
@@ -99,6 +90,13 @@ function RouteComponent() {
           </form.Subscribe>
         </FieldGroup>
       </form>
+
+      <p className="mt-6 text-sm text-muted-foreground">
+        Don't have an account?{' '}
+        <Link to="/create-account" className="font-medium text-foreground">
+          Create one
+        </Link>
+      </p>
     </article>
   )
 }

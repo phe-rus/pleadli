@@ -1,16 +1,17 @@
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@pleadli/ui/badge'
+import { Button } from '@pleadli/ui/button'
+import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
 import {
   adminNavItems,
-  caseTimeline,
+  applications,
+  applicationSpotlight,
+  caseRecords,
   homeProblems,
   homeStats,
-  institutionFeatures,
-  institutions,
+  scalingChains,
   trustPoints,
 } from '@/data/home'
-import { cn } from '@/lib/utils'
+import { cn } from '@pleadli/ui/lib/utils'
 import { AddCircleIcon, ArrowRight02Icon, JusticeScale01Icon, LockKeyIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -29,14 +30,14 @@ function RouteComponent() {
         </Badge>
 
         <div>
-          <h1 className="text-2xl md:max-w-2xl md:text-6xl!">
-            One case.
+          <h1 className="text-2xl md:max-w-2xl md:text-5xl!">
+            Justice requires institutions to work together,
             <br className="hidden sm:block" />
-            Every institution keeps its own record.
+            without becoming the same institution.
           </h1>
           <p className="md:max-w-md md:text-base!">
-            As a case moves from the Uganda Police Force to the DPP to court, its identity stays
-            intact, while each institution keeps full ownership of the records only it should see.
+            Pleadli gives police, prosecutors, courts, lawyers, and prisons software built around
+            their own work, while keeping the matters they legitimately share connected.
           </p>
         </div>
 
@@ -83,13 +84,11 @@ function RouteComponent() {
 
       <section className="flex flex-col gap-5 py-20">
         <div className="flex flex-col md:max-w-md">
-          <h2 className="text-2xl!">A shared case identity. Institution-owned records.</h2>
+          <h2 className="text-2xl!">One case, many records</h2>
           <p>
-            Today the same matter can carry a station CRB number, a different DPP file number, and
-            a separate court cause number, three institutions, no shared thread between them. A
-            case can be referenced by every institution that legitimately touches it, without any
-            institution gaining access to another's internal records. Referenceability is not the
-            same as visibility.
+            A case can be referenced by every application that legitimately touches it, without
+            any application gaining access to another's internal records. One case does not mean
+            one shared file. Connection does not mean universal visibility.
           </p>
         </div>
 
@@ -100,34 +99,20 @@ function RouteComponent() {
               <span className="size-2 rounded-full bg-muted-foreground/25" />
               <span className="size-2 rounded-full bg-muted-foreground/25" />
             </div>
-            <span className="font-mono text-xs text-muted-foreground">PL-2026-00001180</span>
-            <Badge variant="secondary">DPP review</Badge>
+            <span className="font-mono text-xs text-muted-foreground">{caseRecords.caseId}</span>
+            <Badge variant="secondary">Pleadli case</Badge>
           </div>
-          <div className="flex flex-wrap items-start gap-y-6 p-6">
-            {caseTimeline.map((step, index) => (
-              <div
-                key={step.label}
-                className="flex basis-1/2 items-center justify-center gap-3 sm:basis-0 sm:flex-1 sm:justify-start"
-              >
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <div
-                    className={cn(
-                      'flex size-10 items-center justify-center rounded-full border',
-                      index <= 1
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    <HugeiconsIcon icon={step.icon} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium">{step.label}</span>
-                    <span className="text-xs text-muted-foreground">{step.institution}</span>
-                  </div>
+          <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+            {caseRecords.records.map((record) => (
+              <div key={record.application} className="flex flex-col gap-2 bg-card p-4">
+                <div className="flex items-center gap-2">
+                  <HugeiconsIcon icon={record.icon} className="size-4! shrink-0 text-muted-foreground" />
+                  <span className="text-sm font-medium">{record.application}</span>
                 </div>
-                {index < caseTimeline.length - 1 && (
-                  <div className="hidden h-px flex-1 bg-border sm:block" />
-                )}
+                <div className="flex flex-col">
+                  <span className="font-mono text-xs text-muted-foreground">{record.reference}</span>
+                  <span className="text-xs text-muted-foreground">{record.activity}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -136,11 +121,53 @@ function RouteComponent() {
 
       <section className="flex flex-col gap-10 py-20">
         <div className="flex flex-col md:max-w-md">
-          <h2 className="text-2xl!">Built for how each institution actually works</h2>
-          <p>Police and DPP first, each with their own side of Pleadli, not a shared filter.</p>
+          <h2 className="text-2xl!">Software for the people who keep justice moving</h2>
+          <p>
+            Each Pleadli application is designed around real work, not a generic dashboard reused
+            across institutions.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {applications.map((application) => (
+            <Card
+              key={application.name}
+              className={cn(application.status === 'Building now' && 'border-primary/30')}
+            >
+              <CardHeader className="gap-3">
+                <HugeiconsIcon icon={application.icon} className="text-muted-foreground" />
+                <div>
+                  <CardTitle>{application.name}</CardTitle>
+                  <CardDescription className="text-base!">{application.focus}</CardDescription>
+                </div>
+                <ul className="flex flex-col gap-1.5">
+                  {application.points.map((point) => (
+                    <li key={point} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground" />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+                <Badge variant={application.status === 'Building now' ? 'default' : 'secondary'} className="w-fit">
+                  {application.status}
+                </Badge>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+        <p className="text-sm text-muted-foreground md:max-w-lg">
+          Pleadli Police and Pleadli DPP come first because investigation, referral, perusal, and
+          prosecution form a useful early end-to-end connection, not because the other
+          applications are later stages of one product.
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-10 py-20">
+        <div className="flex flex-col md:max-w-md">
+          <h2 className="text-2xl!">Purpose-built, not shared</h2>
+          <p>Pleadli Police and Pleadli DPP each have their own side of Pleadli, not a shared filter.</p>
         </div>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {institutionFeatures.map((feature) => (
+          {applicationSpotlight.map((feature) => (
             <Card key={feature.name}>
               <CardHeader className="gap-3">
                 <HugeiconsIcon icon={feature.icon} className="text-muted-foreground" />
@@ -162,15 +189,15 @@ function RouteComponent() {
 
       <section className="flex flex-col gap-5 py-20">
         <div className="flex flex-col md:max-w-md">
-          <h2 className="text-2xl!">Pleadli Cloud, for institutional administration</h2>
+          <h2 className="text-2xl!">One platform underneath</h2>
           <p>
-            Each institution manages its own structure, from headquarters down to individual
-            units, without touching another institution's setup.
+            Identity, organizations, access, and provisioning for every Pleadli application live
+            in one place, so each institution manages its own structure without touching another
+            institution's setup.
           </p>
         </div>
 
         <Card className="w-full gap-0 overflow-hidden p-0 shadow-lg">
-          {/* Browser chrome */}
           <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
             <div className="flex items-center gap-1 sm:gap-1.5">
               <span className="size-2 rounded-full bg-muted-foreground/25 sm:size-2.5" />
@@ -185,9 +212,8 @@ function RouteComponent() {
             </div>
           </div>
 
-          {/* Dashboard */}
           <div className="aspect-4/3 sm:aspect-video">
-            <div className="grid h-full grid-cols-[76px_1fr] sm:grid-cols-[180px_1fr]">
+            <div className="grid h-full grid-cols-[76px_1fr] sm:grid-cols-[200px_1fr]">
               <div className="flex flex-col gap-1 overflow-y-auto border-r p-2 sm:p-3">
                 <div className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold sm:px-2">
                   <HugeiconsIcon icon={JusticeScale01Icon} className="size-3.5! shrink-0" />
@@ -201,7 +227,7 @@ function RouteComponent() {
                       index === 0 ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground',
                     )}
                   >
-                    <HugeiconsIcon icon={item.icon} className="shrink-0" />
+                    <HugeiconsIcon icon={item.icon} className="shrink-0 size-3.5" />
                     <span className="hidden truncate sm:inline">{item.label}</span>
                   </div>
                 ))}
@@ -215,16 +241,16 @@ function RouteComponent() {
                   </Button>
                 </div>
                 <div className="flex flex-col gap-2 p-2 sm:gap-3 sm:p-4">
-                  {institutions.slice(0, 2).map((institution) => (
+                  {applications.slice(0, 2).map((application) => (
                     <div
-                      key={institution.name}
+                      key={application.name}
                       className="flex items-center gap-2 rounded-md border p-2 sm:gap-3 sm:p-3"
                     >
-                      <HugeiconsIcon icon={institution.icon} className="shrink-0 text-muted-foreground" />
+                      <HugeiconsIcon icon={application.icon} className="shrink-0 text-muted-foreground" />
                       <span className="min-w-0 flex-1 truncate text-xs font-medium sm:text-sm">
-                        {institution.name === 'Police' ? 'Uganda Police Force' : 'Office of the DPP'}
+                        {application.name}
                       </span>
-                      <Badge className="shrink-0">{institution.status}</Badge>
+                      <Badge className="shrink-0">{application.status}</Badge>
                     </div>
                   ))}
                 </div>
@@ -236,42 +262,31 @@ function RouteComponent() {
 
       <section className="flex flex-col gap-10 py-20">
         <div className="flex flex-col md:max-w-md">
-          <h2 className="text-2xl!">Built institution by institution</h2>
+          <h2 className="text-2xl!">One user, one team, one institution</h2>
           <p>
-            Pleadli is built one institution at a time, starting with Police and DPP, rather than
-            attempting every institution at once.
+            The same Pleadli application can serve an individual, a team, or a larger
+            organization. The hierarchy differs by institution, Pleadli doesn't force one shape
+            onto all of them.
           </p>
         </div>
-        <div className="grid gap-5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {institutions.map((institution) => (
-            <Card
-              key={institution.name}
-              className={cn(institution.status === 'Building now' && 'border-primary/30')}
-            >
-              <CardHeader className="gap-4">
-                <div className="flex items-center justify-between">
-                  <div
-                    className={cn(
-                      'flex size-10 items-center justify-center rounded-lg',
-                      institution.status === 'Building now'
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-muted text-muted-foreground',
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          {scalingChains.map((chain) => (
+            <div key={chain.title} className="flex flex-col gap-3">
+              <span className="text-sm font-medium text-muted-foreground">{chain.title}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {chain.steps.map((step, index) => (
+                  <div key={step.label} className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5">
+                      <HugeiconsIcon icon={step.icon} className="size-3.5! shrink-0 text-muted-foreground" />
+                      <span className="text-xs font-medium">{step.label}</span>
+                    </div>
+                    {index < chain.steps.length - 1 && (
+                      <HugeiconsIcon icon={ArrowRight02Icon} className="size-3.5! shrink-0 text-muted-foreground" />
                     )}
-                  >
-                    <HugeiconsIcon icon={institution.icon} />
                   </div>
-                  <Badge variant={institution.status === 'Building now' ? 'default' : 'secondary'}>
-                    {institution.status}
-                  </Badge>
-                </div>
-                <div>
-                  <CardTitle>{institution.name}</CardTitle>
-                  <CardDescription className="mt-1 text-base!">
-                    {institution.description}
-                  </CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </section>
@@ -296,10 +311,10 @@ function RouteComponent() {
 
       <section className="flex flex-col items-start gap-4 py-20">
         <div className="flex flex-col md:max-w-md">
-          <h2 className="text-2xl!">Pleadli Cloud administration</h2>
+          <h2 className="text-2xl!">Sign in to Pleadli</h2>
           <p>
-            Institutional users sign in through Pleadli Cloud to manage their organization,
-            structure, and staff.
+            Institutional users sign in to manage their organization, structure, and staff across
+            the applications they use.
           </p>
         </div>
         <Button size="lg" nativeButton={false} render={<Link to="/login" />}>

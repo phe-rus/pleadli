@@ -38,3 +38,4 @@ _archive
 **/routeTree.gen.ts
 **/worker-configuration.d.ts
 **/.claude/
+**/.turbo/

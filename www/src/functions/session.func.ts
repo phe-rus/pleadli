@@ -1,14 +1,14 @@
 import { createServerFn } from '@tanstack/react-start'
-import { getRequest } from '@tanstack/react-start/server'
-import { auth } from '@/auth'
+import { queryOptions } from '@tanstack/react-query'
+import { SessionMiddleware } from '@/middlewares/session'
 
 export const getCurrentSession = createServerFn({ method: 'GET' })
-  .handler(
-    async () => {
-      const request = getRequest()
-      const session = await auth.api.getSession({
-        headers: request.headers
-      })
-      return session
-    },
-  )
+  .middleware([SessionMiddleware])
+  .handler(async ({ context }) => context.session)
+
+export const meOptions = () =>
+  queryOptions({
+    queryKey: ['me'],
+    queryFn: () => getCurrentSession(),
+    staleTime: 'static',
+  })

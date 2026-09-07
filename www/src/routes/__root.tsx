@@ -1,11 +1,15 @@
 import { ThemeProvider } from '@/components/theme-provider'
-import { cn } from '@/lib/utils'
-import appCss from '@/styles/globals.css?url'
+import { cn } from '@pleadli/ui/lib/utils'
+import type { RouterAppContext } from '@/router'
+import appCss from '@pleadli/ui/globals.css?url'
+import toastCss from 'gooey-toast/styles.css?url'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { useEffect } from 'react'
+import { mountToaster } from 'gooey-toast'
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -17,6 +21,10 @@ export const Route = createRootRoute({
       {
         rel: 'stylesheet',
         href: appCss,
+      },
+      {
+        rel: 'stylesheet',
+        href: toastCss,
       },
     ],
   }),
@@ -30,6 +38,10 @@ export const Route = createRootRoute({
 })
 
 function RootDocument() {
+  useEffect(() => {
+    mountToaster({ position: 'top-right' })
+  }, [])
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

@@ -1,41 +1,12 @@
-import { Badge } from '@/components/ui/badge'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Briefcase01Icon,
-  FlowConnectionIcon,
-  PoliceBadgeIcon,
-  UserGroupIcon,
-} from '@hugeicons/core-free-icons'
+import { Badge } from '@pleadli/ui/badge'
+import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
+import { orgModel } from '@/data/docs'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/docs/how-it-works')({
   component: RouteComponent,
 })
-
-const orgModel = [
-  {
-    icon: FlowConnectionIcon,
-    title: 'Organization',
-    description: 'One row per institution. Flat: Police, DPP, and future institutions sit side by side.',
-  },
-  {
-    icon: PoliceBadgeIcon,
-    title: 'Organization unit',
-    description:
-      'Self-referencing hierarchy within one institution, headquarters down to a station or office.',
-  },
-  {
-    icon: UserGroupIcon,
-    title: 'Membership',
-    description: 'Which user belongs to which unit, and their title there.',
-  },
-  {
-    icon: Briefcase01Icon,
-    title: 'Entitlement',
-    description: 'Whether an institution is allowed to use a given Pleadli application at all.',
-  },
-]
 
 function RouteComponent() {
   return (
@@ -83,6 +54,17 @@ function RouteComponent() {
             </CardHeader>
           </Card>
         ))}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xl!">One model, any size</h2>
+        <p>
+          The same organizational model is what lets a Pleadli application serve an individual
+          user, a team, or a larger organization, an individual lawyer and a law firm both use
+          Pleadli Lawyers through the same model, structured differently. The hierarchy shape is
+          up to each organization, Pleadli doesn't assume every institution looks like a police
+          force.
+        </p>
       </div>
 
       <div className="flex flex-col gap-2">

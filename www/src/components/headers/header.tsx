@@ -3,7 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { cn } from 'cn'
 import { useMemo } from 'react'
-import { buttonVariants } from '../ui/button'
+import { buttonVariants } from '@pleadli/ui/button'
 
 export default function Header() {
   const itemsList = useMemo(() => {

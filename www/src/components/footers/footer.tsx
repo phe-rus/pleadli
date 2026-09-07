@@ -35,7 +35,7 @@ export default function Footer() {
         </div>
 
         <p className="max-w-sm text-sm text-muted-foreground">
-          One case. Every institution keeps its own record.
+          Justice requires institutions to work together, without becoming the same institution.
         </p>
 
         <p className="border-t border-border/55 pt-6 text-sm text-muted-foreground">
