@@ -1,7 +1,9 @@
 import { authClient } from '@/auth/client'
-import { Badge } from '@pleadli/ui/badge'
+import { listOrganizationsAdmin } from '@/functions/admin.func'
+import { AddCircleIcon, Building02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Button } from '@pleadli/ui/button'
-import { Checkbox } from '@pleadli/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -13,16 +15,11 @@ import {
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '@pleadli/ui/empty'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@pleadli/ui/field'
 import { Input } from '@pleadli/ui/input'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@pleadli/ui/input-group'
 import { ToggleGroup, ToggleGroupItem } from '@pleadli/ui/toggle-group'
-import { listOrganizationsAdmin } from '@/functions/admin.func'
-import { AddCircleIcon, Building02Icon, Search01Icon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { DataTable } from '@pleadli/forms-tables'
 import { toast } from 'gooey-toast'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import * as z from 'zod'
 
 export const Route = createFileRoute('/_protected/admin/organizations')({
@@ -34,7 +31,6 @@ function RouteComponent() {
   const data = Route.useLoaderData()
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
 
   const institutionTypes = ['police', 'dpp', 'courts', 'prisons', 'lawyers'] as const
 
@@ -62,6 +58,22 @@ function RouteComponent() {
       router.invalidate()
     },
   })
+
+  const columns: DataTableColumnDef<typeof data[number]>[] = useMemo(() => [
+    selectColumn(),
+    {
+      accessorKey: 'name',
+      header: 'Name',
+    },
+    {
+      accessorKey: 'slug',
+      header: 'Slug',
+    },
+    {
+      accessorKey: 'institutionType',
+      header: 'Institution Type',
+    },
+  ], [])
 
   return (
     <article className="container flex flex-col gap-5 py-10 md:max-w-5xl">
@@ -167,50 +179,26 @@ function RouteComponent() {
         </Empty>
       ) : (
         <DataTable
-          columns={[
-            {
-              id: 'select',
-              cell: ({ row }) => (
-                <Checkbox
-                  checked={row.getIsSelected()}
-                  onCheckedChange={(value) => row.toggleSelected(!!value)}
-                  aria-label="Select row"
-                />
-              ),
-              enableSorting: false,
-              enableHiding: false,
-              header: 'Select',
-            },
-            {
-              accessorKey: 'name',
-              header: 'Name',
-            },
-            {
-              accessorKey: 'slug',
-              header: 'Slug',
-            },
-            {
-              accessorKey: 'institutionType',
-              header: 'Type',
-              cell: ({ getValue }) => <Badge variant="outline">{getValue<string>()}</Badge>,
-            },
-          ]}
+          aria-label='organizations'
+          columns={columns}
           data={data}
-          globalFilter={search}
-          onGlobalFilterChange={setSearch}
-          className="overflow-hidden rounded-lg border"
-          toolbar={
-            <InputGroup className="max-w-xs">
-              <InputGroupAddon>
-                <HugeiconsIcon icon={Search01Icon} />
-              </InputGroupAddon>
-              <InputGroupInput
-                placeholder="Search organizations..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </InputGroup>
-          }
+          getRowId={(row) => row.id}
+          emptyMessage="No members yet."
+          searchPlaceholder="Search by name or email…"
+          bulkActions={(selectedRows, clearSelection) => (
+            <Button
+              type="button"
+              variant="destructive"
+              size="xs"
+              onClick={() => {
+                console.log(selectedRows)
+                clearSelection()
+              }}
+            >
+              Remove selected
+            </Button>
+          )}
+          onSelectedRowsChange={({ }) => { }}
         />
       )}
     </article>
