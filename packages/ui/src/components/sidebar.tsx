@@ -1,5 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@hugeicons/core-free-icons'
-import type { IconSvgElement } from '@hugeicons/react'
+import type { HugeiconsProps } from '@hugeicons/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import {
@@ -20,22 +20,28 @@ import { Button } from './button'
 export type SidebarNavItem = {
   to: string
   label: string
-  icon: IconSvgElement
+  icon: HugeiconsProps['icon']
   exact?: boolean
 }
 
 export type SidebarBrand = {
   to: string
   label: string
-  icon: IconSvgElement
+  icon: HugeiconsProps['icon']
 }
 
 type SidebarContextValue = {
   open: boolean
   setOpen: (open: boolean) => void
 }
-const SidebarContext = createContext<SidebarContextValue | null>(null)
-
+export const SidebarContext = createContext<SidebarContextValue | null>(null)
+export function useSidebar() {
+  const context = useContext(SidebarContext)
+  if (!context) {
+    throw new Error('useSidebar must be used within Dashboard')
+  }
+  return context
+}
 export type DashboardProps = PropsWithChildren<{
   brand: SidebarBrand
   nav: readonly SidebarNavItem[]
@@ -108,7 +114,6 @@ export const Dashboard: FC<DashboardProps> = ({
                   : 'w-72 -translate-x-full z-10 md:absolute',
               className,
             )}
-            data-tauri-drag-region
           >
             {addOns.enableNavigation &&
               <Button
@@ -138,10 +143,9 @@ export const Dashboard: FC<DashboardProps> = ({
               )}
             >
               <section
-                data-tauri-drag-region
                 className="flex flex-col gap-2"
               >
-                <nav className="flex items-center gap-1">
+                <nav data-tauri-drag-region className="flex items-center gap-1">
                   <Link
                     to={brand.to}
                     className={cn(
@@ -150,10 +154,11 @@ export const Dashboard: FC<DashboardProps> = ({
                       'px-1 text-base',
                     )}
                   >
-                    <HugeiconsIcon icon={brand.icon} className="size-5" />
+                    {brand.icon && <HugeiconsIcon icon={brand.icon} className="size-5" />}
                     {brand.label}
                   </Link>
                 </nav>
+
                 <nav className="flex flex-col gap-px">
                   {nav.map((item) => (
                     <Link
@@ -161,13 +166,13 @@ export const Dashboard: FC<DashboardProps> = ({
                       to={item.to}
                       className={cn(
                         'group/icon relative flex items-center gap-2 text-base',
-                        'transition-colors duration-150 ease-out',
-                        'text-sm py-1 px-1 rounded-md hover:bg-secondary',
+                        'transition-colors duration-150 ease-out py-0.5 px-1',
+                        'rounded-md hover:bg-secondary',
                       )}
-                      activeProps={{ className: 'text-primary font-bold bg-secondary' }}
+                      activeProps={{ className: 'text-primary font-medium bg-secondary' }}
                       activeOptions={{ exact: item.exact }}
                     >
-                      <HugeiconsIcon icon={item.icon} className="size-4.5" />
+                      {item.icon && <HugeiconsIcon icon={item.icon} className="size-4" />}
                       {item.label}
                     </Link>
                   ))}
@@ -179,7 +184,6 @@ export const Dashboard: FC<DashboardProps> = ({
               />
               {addOns.footer && (
                 <nav
-                  data-tauri-drag-region
                   className={cn(
                     'sticky bottom-0 mb-auto',
                     'flex flex-col gap-3'
@@ -198,12 +202,4 @@ export const Dashboard: FC<DashboardProps> = ({
       </div>
     </SidebarContext.Provider>
   )
-}
-
-export function useSidebar() {
-  const context = useContext(SidebarContext)
-  if (!context) {
-    throw new Error('useSidebar must be used within Dashboard')
-  }
-  return context
 }

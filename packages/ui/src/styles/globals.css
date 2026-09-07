@@ -36,7 +36,7 @@
 @utility dualTone {
   cursor: pointer;
   color: currentcolor;
-  stroke-width: 3;
+  stroke-width: 2;
 
   & path {
     transition: opacity 200ms ease;

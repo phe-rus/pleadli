@@ -35,8 +35,8 @@ function RootComponent() {
     <>
       <HeadContent />
       <main className={cn(
-        'relative isolate bg-background transition-colors',
-        'wrap-anywhere selection:bg-primary/15 typeset'
+        "flex flex-col bg-background h-svh transition-colors wrap-anywhere",
+        'rounded-sm shadow-lg! border border-border/25 typeset'
       )}>
         <WindowResizeHandles />
         <ThemeProvider
@@ -47,12 +47,17 @@ function RootComponent() {
           storageKey="pleadli:themer"
           disableTransitionOnChange
         >
-          <TooltipProvider>
-            <SplashScreen>
-              <Outlet />
-            </SplashScreen>
-          </TooltipProvider>
-          <GooeyToaster richColors />
+          <div className={cn(
+            'relative isolate transition-colors wrap-anywhere',
+            'selection:bg-primary/15'
+          )}>
+            <TooltipProvider>
+              <SplashScreen>
+                <Outlet />
+              </SplashScreen>
+            </TooltipProvider>
+            <GooeyToaster richColors />
+          </div>
         </ThemeProvider>
       </main>
       <Scripts />

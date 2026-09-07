@@ -27,8 +27,9 @@ export function WindowResizeHandles() {
                 <div
                     key={direction}
                     className={cn('fixed z-50', className)}
-                    onPointerDown={(event) => {
-                        event.preventDefault()
+                    onPointerDown={(e) => {
+                        if (e.button !== 0) return
+                        e.preventDefault()
                         frame.startResizeDragging(direction)
                     }}
                 />
