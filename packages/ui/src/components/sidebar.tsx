@@ -139,7 +139,7 @@ export const Dashboard: FC<DashboardProps> = ({ brand, nav, footer, banner, chil
                       className={cn(
                         'group relative flex items-center gap-2 text-base',
                         'transition-colors duration-150 ease-out',
-                        'px-1 rounded-md hover:bg-secondary',
+                        'text-sm py-1.5 px-1 rounded-md hover:bg-secondary',
                       )}
                       activeProps={{ className: 'text-primary font-bold bg-secondary' }}
                       activeOptions={{ exact: item.exact }}

@@ -2,6 +2,7 @@ import { Cancel01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@pleadli/ui/button"
 import { Checkbox } from "@pleadli/ui/checkbox"
+import { Input } from "@pleadli/ui/input"
 import type { Column, RowData } from "@tanstack/react-table"
 import { useMemo } from "react"
 import type { DataTableFeatures } from "./data-table"
@@ -157,11 +158,11 @@ export function FilterRow<TData extends RowData>({
 
     return (
         <div className="flex items-center gap-3">
-            <span className="w-20 shrink-0 text-[11px] font-medium text-muted-foreground capitalize">
+            <span className="w-fit text-xs shrink-0">
                 {label}
             </span>
             <div className="relative max-w-xs flex-1">
-                <input
+                <Input
                     type="text"
                     placeholder={`Filter ${label.toLowerCase()}…`}
                     value={activeValue ?? ""}
@@ -174,7 +175,6 @@ export function FilterRow<TData extends RowData>({
                                 : undefined
                         )
                     }
-                    className="h-7 w-full rounded-none border border-dashed border-input/40 bg-background px-2.5 text-xs outline-none placeholder:text-muted-foreground/40"
                 />
                 {activeValue && (
                     <Button
