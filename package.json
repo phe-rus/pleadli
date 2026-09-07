@@ -4,6 +4,7 @@
 	"workspaces": [
 		"www",
 		"apps/*",
+		"toolings/*",
 		"packages/*"
 	],
 	"scripts": {

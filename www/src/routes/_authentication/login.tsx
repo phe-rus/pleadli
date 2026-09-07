@@ -30,7 +30,8 @@ function RouteComponent() {
         toast.error({ title: 'Sign in failed', description: error.message ?? undefined })
         return
       }
-      window.location.href = search.redirect ?? (data.user.role === 'admin' ? '/admin' : '/')
+      const role = (data.user as { role?: string }).role
+      window.location.href = search.redirect ?? (role === 'admin' ? '/admin' : '/')
     },
   })
 

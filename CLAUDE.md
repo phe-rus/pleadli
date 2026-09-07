@@ -2,29 +2,77 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current state
+## What this is
 
-This repository is an **unmodified `create-tauri-app` scaffold** (Tauri v2 + React 19 + TypeScript + Vite). Every file is template boilerplate: `src/App.tsx` renders the default Tauri/Vite/React "greet" demo, and `src-tauri/src/lib.rs` exposes only the template's `greet` command. There is no git repository initialized yet, and no application-specific code has been written.
+Pleadli is a **monorepo** for Uganda's justice system platform — a family of purpose-built applications for Police, DPP, Courts, Lawyers, and Prisons. The platform has two surfaces:
 
-`tauri.conf.json` sets `productName: "pleadli"` and `identifier: "pleadli.com"`, so this scaffold is intended to become the "pleadli" desktop app, but that work hasn't started.
+- **Pleadli Cloud** (`www/`) — TanStack Start web app on Cloudflare Workers + D1. Multi-tenant admin platform with BetterAuth (email+password), organization management, and institution templates.
+- **Pleadli Police** (`apps/police/`) — Tauri v2 desktop app for individual police officers. Offline-first, local SQLite, no sign-in required. Uses TanStack Router.
+
+Shared component libraries live in `packages/`:
+- `packages/ui` (`@pleadli/ui`) — 20-component design system (Button, Card, Input, Dialog, Sidebar/Dashboard, etc.) with oklch color palette and light/dark themes.
+- `packages/forms-tables` (`@pleadli/forms-tables`) — DataTable with sorting, filtering, pagination, row selection, bulk actions.
+
+## Monorepo structure
+
+```
+pleadli/                          # Root (Turborepo + Bun workspaces)
+├── apps/
+│   └── police/                   # Tauri v2 desktop app ("Pleadli Police")
+├── packages/
+│   ├── ui/                       # @pleadli/ui — shared component library
+│   └── forms-tables/             # @pleadli/forms-tables — shared data table primitives
+├── www/                          # TanStack Start web app (Cloudflare Workers + D1)
+├── screenshots/                  # Design screenshots
+├── turbo.json                    # Turborepo task definitions
+└── package.json                  # Workspace root
+```
 
 ## Commands
 
-- `bun run dev` — start the Vite dev server alone (port 1420, fixed via `strictPort`)
-- `bun run tauri dev` — run the actual desktop app (Tauri shell + Vite dev server together); this is what `tauri.conf.json`'s `beforeDevCommand` invokes
-- `bun run build` — `tsc` typecheck followed by `vite build` (frontend only)
-- `bun run tauri build` — produce the native app bundle (runs the frontend build first, then compiles the Rust/Tauri shell)
-- `bun run preview` — preview the built frontend without Tauri
+**Root level (from monorepo root):**
+- `bun run dev` — start the Turborepo dev pipeline
+- `bun run build` — build all packages
 
-There is no lint or test setup configured yet (no eslint/vitest/etc. in `package.json`).
+**www (Cloud):**
+- `bun run dev` — Vite dev server on port 3000
+- `bun run build` — production build
+- `bun run deploy` — build + wrangler deploy
+- `bun run check` — TypeScript typecheck
+- `bun run db:gen` — generate Drizzle migrations
+- `bun run db:local` — apply migrations to local D1
+- `bun run db:remote` — apply migrations to remote D1
+- `bun run auth:gen` — regenerate auth schema from BetterAuth config
+
+**apps/police (Desktop):**
+- `bun run dev` — Vite dev server (port 1420)
+- `bun run tauri dev` — run desktop app (Tauri + Vite)
+- `bun run build` — TypeScript + Vite build
+- `bun run tauri build` — produce native app bundle
 
 ## Architecture
 
-Two halves, glued by Tauri's IPC bridge:
+### www (Cloud)
 
-- **Frontend** (`src/`): a plain Vite + React 19 + TypeScript SPA. Entry point `src/main.tsx` mounts `src/App.tsx`. Calls into Rust via `@tauri-apps/api/core`'s `invoke()`.
-- **Native shell** (`src-tauri/`): the Rust/Tauri side. `src/lib.rs` defines `#[tauri::command]` functions and the `tauri::Builder` (plugins, invoke handler); `src/main.rs` just calls `pleadli_lib::run()`. New native capabilities are added as `#[tauri::command]` functions in `lib.rs`, registered in `generate_handler![...]`, and called from the frontend via `invoke("command_name", { args })`.
-- `src-tauri/capabilities/default.json` controls which Tauri APIs/plugins the frontend webview is permitted to call — a new plugin or broadened permission needs an entry here, not just a Cargo/npm dependency.
-- `src-tauri/tauri.conf.json` wires the two halves together for both dev (`beforeDevCommand`, `devUrl`) and build (`beforeBuildCommand`, `frontendDist`).
+TanStack Start on Cloudflare Workers + D1. Uses BetterAuth for auth with the built-in `organization` plugin for multi-tenant org management.
 
-Package manager is **bun** (`bun.lock` present); use `bun install`/`bun run`, not npm/yarn.
+- **Auth**: BetterAuth with email+password, admin plugin, organization plugin (teams enabled for org units)
+- **Database**: Drizzle ORM on D1 (SQLite). Schema at `www/src/db/auth-schema.ts`
+- **Routing**: TanStack Router with file-based routes. Route groups: `_public`, `_authentication`, `_protected/admin`
+- **Server functions**: TanStack Start `createServerFn` with middleware (AdminMiddleware, SessionMiddleware)
+
+### apps/police (Desktop)
+
+Tauri v2 + React 19 + TypeScript + Vite. Offline-first, local SQLite via `@tauri-apps/plugin-sql`.
+
+- **Routing**: TanStack Router (file-based, auto code splitting)
+- **Database**: Local SQLite via Tauri plugin-sql
+- **Shared UI**: Consumes `@pleadli/ui` and `@pleadli/forms-tables` from workspace packages
+
+## Key conventions
+
+- Package manager is **bun** — use `bun install`/`bun run`, not npm/yarn
+- The `@pleadli/ui` package provides the design system — import components from `@pleadli/ui/button`, `@pleadli/ui/card`, etc.
+- BetterAuth custom plugin endpoints live at `/pleadli/*` path prefix
+- Institution types: `police`, `dpp`, `courts`, `prisons`, `lawyers`
+- The `institutionType` field on organizations is stored via BetterAuth's `additionalFields` on the organization plugin

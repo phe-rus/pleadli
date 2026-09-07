@@ -92,14 +92,22 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const institutionTemplate = sqliteTable("institution_template", {
+  id: text("id").primaryKey(),
+  institutionType: text("institution_type").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  defaultUnits: text("default_units", { mode: "json" }).notNull(),
+  defaultEntitlements: text("default_entitlements", { mode: "json" }).notNull(),
+  formSchema: text("form_schema", { mode: "json" }).notNull(),
+});
+
 export const organization = sqliteTable("organization", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  logo: text("logo"),
   institutionType: text("institution_type").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .notNull(),
 });
 
 export const organizationUnit = sqliteTable("organization_unit", {
@@ -109,9 +117,6 @@ export const organizationUnit = sqliteTable("organization_unit", {
     .references(() => organization.id, { onDelete: "cascade" }),
   parentId: text("parent_id"),
   name: text("name").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .notNull(),
 });
 
 export const membership = sqliteTable("membership", {
@@ -123,9 +128,6 @@ export const membership = sqliteTable("membership", {
     .notNull()
     .references(() => organizationUnit.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .notNull(),
 });
 
 export const entitlement = sqliteTable("entitlement", {
@@ -135,8 +137,4 @@ export const entitlement = sqliteTable("entitlement", {
     .references(() => organization.id, { onDelete: "cascade" }),
   application: text("application").notNull(),
   enabled: integer("enabled", { mode: "boolean" }).default(true).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .notNull(),
 });
-

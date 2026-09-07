@@ -4,8 +4,9 @@ import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { env } from 'cloudflare:workers'
 import { db } from '../db'
 import * as authSchema from '../db/auth-schema'
-import { pleadliOrganizations } from './plugins/organizations'
 import { password } from './password'
+import { templates } from '@pleadli/templates'
+import { institutions } from '@pleadli/institution'
 
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL ?? 'http://localhost:3000',
@@ -43,6 +44,7 @@ export const auth = betterAuth({
   plugins: [
     bearer(),
     admin(),
-    pleadliOrganizations(),
+    templates(),
+    institutions(),
   ],
 })

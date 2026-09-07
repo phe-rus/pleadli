@@ -27,7 +27,8 @@ function RouteComponent() {
         toast.error({ title: 'Could not create account', description: error.message ?? undefined })
         return
       }
-      window.location.href = data.user.role === 'admin' ? '/admin' : '/'
+      const role = (data.user as { role?: string }).role
+      window.location.href = role === 'admin' ? '/admin' : '/'
     },
   })
 

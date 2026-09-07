@@ -1,5 +1,5 @@
-import { authClient } from '@/auth/client'
 import { listOrganizationsAdmin } from '@/functions/admin.func'
+import { createOrganization } from '@/functions/org.func'
 import { AddCircleIcon, Building02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
@@ -44,18 +44,15 @@ function RouteComponent() {
     defaultValues: { name: '', slug: '', institutionType: 'police' as (typeof institutionTypes)[number] },
     validators: { onChange: createOrganizationSchema },
     onSubmit: async ({ value, formApi }) => {
-      const { error } = await authClient.$fetch('/pleadli/organizations', {
-        method: 'POST',
-        body: value,
-      })
-      if (error) {
-        toast.error({ title: 'Could not create organization', description: error.message ?? undefined })
-        return
+      try {
+        await createOrganization({ data: value })
+        toast.success({ title: 'Organization created', description: value.name })
+        formApi.reset()
+        setOpen(false)
+        router.invalidate()
+      } catch {
+        toast.error({ title: 'Could not create organization', description: 'Please try again.' })
       }
-      toast.success({ title: 'Organization created', description: value.name })
-      formApi.reset()
-      setOpen(false)
-      router.invalidate()
     },
   })
 

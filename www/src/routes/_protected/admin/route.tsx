@@ -1,4 +1,5 @@
 import { authClient } from '@/auth/client'
+import { stopImpersonating } from '@/functions/admin.func'
 import { adminNav } from '@/data/admin'
 import { JusticeScale01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@pleadli/ui/button'
@@ -53,7 +54,7 @@ function RouteComponent() {
               disabled={isStoppingImpersonation}
               onClick={async () => {
                 setIsStoppingImpersonation(true)
-                await authClient.admin.stopImpersonating()
+                await stopImpersonating()
                 window.location.reload()
               }}
             >
