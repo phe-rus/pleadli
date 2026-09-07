@@ -5,7 +5,7 @@
   "identifier": "com.pleadli.police",
   "build": {
     "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:3001",
     "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
   },
@@ -13,8 +13,20 @@
     "windows": [
       {
         "title": "Pleadli Police",
-        "width": 800,
-        "height": 600
+        "label": "police",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true,
+        "decorations": false,
+        "transparent": false,
+        "backgroundColor": "#fffcf1",
+        "shadow": false,
+        "windowEffects": {
+          "effects": [],
+          "radius": 6
+        }
       }
     ],
     "security": {

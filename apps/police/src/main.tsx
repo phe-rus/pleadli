@@ -1,19 +1,52 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { createRouter, RouterProvider } from "@tanstack/react-router";
-import { routeTree } from "./routeTree.gen";
-import "./styles/globals.css";
+import { Queryprovider, queryContext } from '@/lib/query-context'
+import "@pleadli/ui/globals.css"
+import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/react-router'
+import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
+import ReactDOM from 'react-dom/client'
+import { routeTree } from './routeTree.gen'
 
-const router = createRouter({ routeTree });
+export function getRouter() {
+  const queryClient = queryContext()
+  const router = createTanStackRouter({
+    routeTree,
+    context: {
+      queryClient: queryClient,
+    },
+    scrollRestoration: true,
+    defaultPreload: 'intent',
+    defaultPreloadStaleTime: 0,
+    Wrap: ({ children }) => (
+      <Queryprovider query={queryClient}>
+        {children}
+      </Queryprovider>
+    )
+  })
 
-declare module "@tanstack/react-router" {
+  setupRouterSsrQueryIntegration({
+    queryClient: queryClient,
+    router,
+  })
+
+  return router
+}
+
+declare module '@tanstack/react-router' {
   interface Register {
-    router: typeof router;
+    router: ReturnType<typeof getRouter>
   }
 }
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>,
-);
+
+const rootElement = document.getElementById("root")
+
+if (!rootElement) {
+  throw new Error("Root element not found")
+}
+
+if (!rootElement.innerHTML) {
+  const root = ReactDOM.createRoot(rootElement)
+  root.render(
+    <RouterProvider
+      router={getRouter()} />
+  )
+}

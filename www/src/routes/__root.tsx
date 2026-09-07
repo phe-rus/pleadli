@@ -1,14 +1,12 @@
 import { ThemeProvider } from '@/components/theme-provider'
 import type { RouterAppContext } from '@/router'
 import appCss from '@pleadli/ui/globals.css?url'
+import { GooeyToaster } from "@pleadli/ui/goey-toaster"
 import { cn } from '@pleadli/ui/lib/utils'
 import { TooltipProvider } from '@pleadli/ui/tooltip'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { mountToaster } from 'gooey-toast'
-import toastCss from 'gooey-toast/styles.css?url'
-import { useEffect } from 'react'
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
@@ -22,11 +20,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       {
         rel: 'stylesheet',
         href: appCss,
-      },
-      {
-        rel: 'stylesheet',
-        href: toastCss,
-      },
+      }
     ],
   }),
   notFoundComponent: () => (
@@ -39,10 +33,6 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 })
 
 function RootDocument() {
-  useEffect(() => {
-    mountToaster({ position: 'top-right' })
-  }, [])
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -62,6 +52,7 @@ function RootDocument() {
         >
           <TooltipProvider>
             <Outlet />
+            <GooeyToaster />
           </TooltipProvider>
         </ThemeProvider>
         <TanStackDevtools
