@@ -1,3 +1,4 @@
+import { Notfound } from '@/components/notfound'
 import { SplashScreen } from '@/components/splash-screen'
 import { ThemeProvider } from '@/components/theme-provider'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
@@ -14,12 +15,7 @@ type RouterAppContext = {
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
-  notFoundComponent: () => (
-    <main className="container mx-auto p-8 pt-20">
-      <h1 className="mb-3 text-3xl font-bold">Page not found</h1>
-      <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
-    </main>
-  ),
+  notFoundComponent: Notfound,
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -35,7 +31,7 @@ function RootComponent() {
     <>
       <HeadContent />
       <main className={cn(
-        "flex flex-col bg-background h-svh transition-colors wrap-anywhere",
+        "flex flex-col bg-background h-svh transition-colors",
         'rounded-sm shadow-lg! border border-border/25 typeset'
       )}>
         <WindowResizeHandles />

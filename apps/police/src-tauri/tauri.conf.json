@@ -10,7 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": true,
+    "withGlobalTauri": false,
     "windows": [
       {
         "title": "Pleadli Police",
@@ -24,6 +24,10 @@
         "transparent": false,
         "backgroundColor": "#fffcf1",
         "shadow": false,
+        "center": true,
+        "visible": true,
+        "focus": true,
+        "skipTaskbar": false,
         "windowEffects": {
           "effects": [],
           "radius": 6
