@@ -1,4 +1,4 @@
-import { LegalDocument01Icon, PanelLeftDashedIcon, PanelRightDashedIcon, PersonStandingIcon } from "@hugeicons/core-free-icons"
+import { LegalDocument01Icon, PanelLeftDashedIcon, PanelRightDashedIcon, PersonStandingIcon, Search } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button, buttonVariants } from "@pleadli/ui/button"
 import { cn } from "@pleadli/ui/lib/utils"
@@ -36,6 +36,11 @@ export const Headers = () => {
                 </div>
 
                 <nav data-tauri-drag-region className='flex items-center gap-1'>
+                    <Button
+                        size='icon-sm'
+                    >
+                        <HugeiconsIcon icon={Search} />
+                    </Button>
                     <Link to='/' className={cn(buttonVariants({
                         size: 'sm'
                     }))}>
