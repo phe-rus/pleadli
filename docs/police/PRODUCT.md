@@ -4,13 +4,19 @@ This is the **canonical product definition and product knowledge for Pleadli Pol
 
 Any feature, UX, architecture, navigation, or data-model decision for the Police application must be consistent with this document. It is the product context the desktop application, mobile surfaces, local station environment, and Pleadli Cloud relationships are designed against.
 
-## What Pleadli Police is
+This document was rewritten after a reconciliation pass between the original product intent and how the implementation had drifted toward a case-centric model. If a future decision seems to contradict this document, treat this document as authoritative and raise the conflict rather than silently deviating.
 
-**Pleadli Police is a purpose-built police operations and investigation platform.**
+## The fundamental idea
 
-It is software for police officers, units, stations, and police organizations to actually **perform police work**.
+> **Pleadli Police is software for doing police work, not software for entering police data.**
 
-It is NOT:
+That distinction is fundamental and technical, not just a slogan:
+
+- The unit of product design is a **capability an officer performs** (find a person, open custody, take a statement, refer a case), not a **table an officer fills in**.
+- Records are the foundation of the system. They are not the product by themselves. The product is the working environment built around those records.
+- **Case management is one important part of Pleadli Police. It is not the organizing principle for the entire product.** Police work does not begin and end with a formal case — an officer searches, logs station activity, checks custody, processes a bond, manages station equipment, and coordinates, independently of whether a case exists.
+
+## What Pleadli Police is NOT
 
 - a digital version of police registers
 - a collection of forms
@@ -18,323 +24,340 @@ It is NOT:
 - a CRUD application for cases
 - a personal digital notebook
 - an administrative dashboard
+- a case-management application with a few extra menus attached
 
-Some of those things may exist inside it, but they are not the product. The records are the foundation. **The product is the working environment built around those records.**
+Some of these things may exist *inside* it. None of them are the product.
 
-> **Pleadli Police is software for doing police work, not software for entering police data.**
+## The product organized around work, not tables
 
-The central design question is therefore:
+Pleadli Police exists to support these kinds of work. These are product capabilities, not final navigation categories or database tables.
 
-> What does a police officer need to **know, find, investigate, record, communicate, coordinate, and act on** throughout their work?
+- **Find** — locate people, cases, incidents, station activity, exhibits, files, officers, stations, and other authorized information.
+- **Understand** — return context around information, not rows. Who is this person in relation to what I'm looking at? What state is this case in? What's already known?
+- **Record** — capture new information once, where it naturally belongs, without re-entering what already exists elsewhere in the system.
+- **Investigate** — an active workspace: what's known, what's happened, what evidence and statements exist, what remains outstanding, what needs to happen next.
+- **Act** — turn information into a next step from where the information already is (open custody from a person's record, add a statement from within a case) rather than a detached, decontextualized "create" flow.
+- **Account** — maintain accountability where it's legally or operationally required: custody, exhibits, officer actions, station assets.
+- **Coordinate** — eventually, officers/teams/stations coordinating locally, and — where a legitimate relationship exists — coordinating with the wider Pleadli ecosystem.
+- **Handover** — continuity that doesn't depend on one officer remembering or manually explaining what happened and what's unfinished.
+- **Report** — operational reporting and analytics derived from real work, never a second round of data entry.
 
-Not:
+## Records, workflows, workspaces, capabilities, derived views
 
-> What forms do police currently fill in?
+This distinction must be respected throughout the architecture. Not everything that appears in the UI is the same kind of thing.
 
-## The core idea
+- **Record** — information with identity, history, and relationships (Person, Case, Statement, Exhibit, Custody entry).
+- **Workflow** — a process someone performs using records (opening custody, taking a statement, making a referral). Usually a status/state on a record plus an activity log, not a separate "Workflow" entity.
+- **Workspace** — an environment that brings related information and actions together (the Investigation workspace).
+- **Capability** — available across multiple domains (Search).
+- **Derived view** — calculated from underlying records, never separately maintained (48-hour compliance status, attention items, Reports & Analytics).
+- **Generated document** — an output produced from structured information that already exists (a charge sheet rendered from Person + Case + Statement data).
 
-Pleadli Police lets an officer move naturally between:
+Do not blur these. A derived view that becomes a manually-edited field, or a workflow that becomes its own database-of-record separate from the entities it operates on, is a sign the model has drifted.
 
-**People → incidents → cases → investigations → statements → evidence → documents → actions → referrals → operations**
+## Major domains
 
-without repeatedly recreating the same information.
+For each domain: what work it supports, what it owns, what it legitimately relates to, what kind of thing it is (record / workflow / capability / workspace / derived view), and what should NOT be assumed about it.
 
-Information should be:
+### People
+- **Supports**: nearly everything — an officer needs to know who someone is in relation to whatever they're looking at.
+- **Owns**: identity information, identifiers, contact information.
+- **Relates to**: incidents, cases, investigations, statements, custody, bonds, evidence relationships — via relationships, not embedded fields.
+- **Kind**: record, foundational, cross-cutting.
+- **Do not assume**: that a relationship existing means visibility. **Referenceability is not visibility.** There is no universal person dossier — what's shown is always filtered by authorization in the context being worked in, not by "the record exists, so show it all."
 
-- recorded once where practical
-- structured
-- connected
-- searchable
-- reusable
-- traceable
-- permission-aware
-- available in the context where it is needed
+### Search
+- **Supports**: find → understand → act, across every domain below.
+- **Owns**: nothing of its own — it's a lens over other domains' data.
+- **Relates to**: People, Cases, Incidents, Station Diary, Exhibits, Custody, Bonds, Officers, Stations, Assets.
+- **Kind**: capability, cross-cutting.
+- **Do not assume**: that this requires a generic search-engine abstraction built up front. Each domain exposes what it owns to search as that domain is built; a shared search surface composes across them. A result should lead to real context and a contextual action, not just a matched row.
 
-If an officer has already entered a person, they should not recreate that person for another part of the case. If a statement belongs to a person and a case, the system should understand that relationship. If evidence belongs to an investigation, the system should understand that relationship. If multiple records concern the same person or incident, the system should expose those relationships to an authorized officer.
+### Station Diary (SD)
+- **Supports**: logging and continuity of actual station activity — incident reports, lost property, public inquiries, officer movement, shift handover, other occurrences.
+- **Owns**: SD entries, each with its own identity.
+- **Relates to**: may lead to an Incident or other action; most entries remain purely informational.
+- **Kind**: workflow with lightweight first-class records; an independent operational concern.
+- **Do not assume**: that SD exists to feed Incidents, or that there's a defined rule for which entries escalate. That rule is real police procedure that hasn't been established here — do not invent it.
 
-The goal is to eliminate unnecessary duplication and turn police records into useful operational information.
+### Incidents
+- **Supports**: representing something that happened or was reported.
+- **Owns**: incident details — time, place, initial account.
+- **Relates to**: may originate from an SD entry or a direct report; may become a Case.
+- **Kind**: record.
+- **Do not assume**: a specific lifecycle of states (e.g. reported → assessed → escalated) beyond what's actually established by real procedure.
 
-## Pleadli Police is information-aware
+### Cases
+- **Supports**: formal police handling of something that requires it.
+- **Owns**: case identity, status, legal/administrative record.
+- **Relates to**: Incidents (may originate from one), Investigations (wraps one), People (multiple, with roles), Referrals.
+- **Kind**: record. One domain among several — not the organizing structure everything else hangs off.
+- **Do not assume**: that every Incident becomes a Case, or that Case is the parent of Custody/Bonds/Station-Diary — those exist independently of case status.
 
-A major capability is the ability to find and understand people and other important entities.
+### Investigations
+- **Supports**: the active work of investigating a case — the one place the product should feel most different from a CRUD app.
+- **Owns**: little of its own; composes People, Statements, Evidence, actions, referral status, and timeline for a given Case into a working view.
+- **Relates to**: Case (tightly, exact cardinality not yet finalized — see Uncertainties), Statements, Evidence, Referrals.
+- **Kind**: workspace, not a folder.
+- **Do not assume**: it should become a generic project-management tool. Do not invent task-management features just because "outstanding work" or "actions" are mentioned — only build concepts with a genuine, named product purpose.
 
-An authorized officer may need to answer: **Who is this person?**
+### Statements
+- **Supports**: recording what a person said, with procedural weight.
+- **Owns**: the statement content, who gave it, who took it, when, its status.
+- **Relates to**: Person (who gave it), Investigation (the context).
+- **Kind**: record, first-class — not text attached to a case.
+- **Do not assume**: an elaborate document-management system is needed before there's a proven requirement for one.
 
-The system should be capable of searching available authorized information using appropriate identifiers and returning the relevant profile. Potential sources include:
+### Evidence & Exhibits
+- **Supports**: prosecution/investigation traceability — what an exhibit is, who recovered/logged it, where it's stored, who moved it, its current status.
+- **Owns**: exhibit identity and its chain-of-custody history.
+- **Relates to**: Investigation, Person (who logged/moved it), sometimes Custody.
+- **Kind**: record, first-class, legal/accountability workflow.
+- **Do not assume**: this is generic inventory. Do not merge with Armory/Stores/Assets — different purpose, different accountability model, even though both involve physical items.
 
-- Pleadli records
-- existing police records
-- national identification systems
-- authorized government systems
-- biometric / fingerprint systems
-- other approved external sources
+### Custody
+- **Supports**: the operational and legal accountability lifecycle around detention, most importantly Uganda's 48-hour constitutional requirement.
+- **Owns**: custody window (start/end), location, related legal actions.
+- **Relates to**: Person, sometimes Case/Incident.
+- **Kind**: record + legal-accountability workflow.
+- **Do not assume**: the detailed procedural states (arrest → custody → movement → release → bond → court, medical requirements, exceptions) — this is real Ugandan procedure that has not been established here and must not be invented. 48-hour compliance must always be **derived from the underlying custody timestamps**, never a manually maintained status field.
 
-Where an external system provides structured information through an API, JSON interface, database exchange, or another authorized integration, Pleadli should be capable of consuming it. For example, an authorized integration could let an officer search an individual using available identifying information and retrieve identity information; a biometric system could return an authorized match/reference that Pleadli associates with the correct person record; existing police information could be imported or queried rather than recreated manually.
+### Bonds & Sureties
+- **Supports**: the financial/legal commitment process around release.
+- **Owns**: bond/surety terms, related person(s).
+- **Relates to**: Person, Case, sometimes Custody.
+- **Kind**: record + legal/operational workflow.
+- **Do not assume**: the real bond process or surety requirements — needs verification, not invention (see Research Needed).
 
-This makes Pleadli potentially a **working layer over multiple authorized information sources**, not an isolated database.
+### Charge Sheets & Forms
+- **Supports**: producing the documents police work actually requires.
+- **Owns**: nothing of its own beyond templates — generated from Person + Case + Statement + Evidence data that already exists.
+- **Relates to**: whatever domains supply the structured data.
+- **Kind**: generated document / capability.
+- **Do not assume**: every document must be generated immediately. The requirement is architectural: don't make structured information unusable outside the screen where it was entered.
 
-Do not assume every external system exists today. Design the product so these integrations are *possible*, but do not invent APIs or pretend integrations already exist.
+### Referrals
+- **Supports**: connecting Police's work to another institution (DPP, Courts) when a case requires it.
+- **Owns**: the referral event/record — to whom, when, status.
+- **Relates to**: Case, and (via Pleadli Cloud) the receiving institution's own record.
+- **Kind**: record/event.
+- **Do not assume**: a referral transfers ownership of the police record. Police retains its own record; the other institution retains its own. See Ecosystem Boundaries below.
 
-## Person profiles are important
+### Dispatches
+- **Status**: not yet confirmed as distinct from Referrals. If dispatch means operationally sending an officer somewhere, that is plausibly a different workflow (closer to Duty/Roster than to institutional referral) — do not force them into one domain merely because current navigation groups them together. Needs product clarification.
 
-A person is not simply a text field inside a case. Pleadli should have a meaningful concept of a person.
+### Stores / Armory / Impounded Assets
+- **Supports**: station operational responsibilities outside investigation — equipment, weapons, unclaimed/impounded property.
+- **Owns**: item identity, status, holder/location.
+- **Relates to**: officers (who holds what), occasionally a Case (an impounded asset may reference one).
+- **Kind**: record + workflow, station operations.
+- **Do not assume**: this shares a domain with Evidence. Similar shape (an item with status and location), different meaning and accountability — do not merge into a generic "Item" domain merely to be DRY.
 
-Depending on authorization and available information, a person may have:
+### Duty / Roster
+- **Supports**: scheduling, officer status, shift handover.
+- **Owns**: assignments, shift data.
+- **Relates to**: officers, units/stations.
+- **Kind**: record + workflow, station operations.
 
-- identity information
-- identifiers
-- contact information
-- associated incidents
-- associated cases
-- statements
-- evidence relationships
-- previous reports
-- relevant history
-- relationships to other people
-- organizational relationships
-- current matters
-- other authorized information
+### Station Operations
+- **Supports**: running the station as an organization — duty, stores, armory, handover, and (scope not yet finalized) "Station Admin" configuration.
+- **Kind**: capability grouping over the above station-operations domains.
+- **Do not assume**: this is secondary to case-work. It is a peer dimension of the product with its own operational purpose.
 
-An officer should be able to **search for a person and understand the relevant context around that person**, rather than manually search through individual case files.
+### Reports & Analytics
+- **Supports**: periodic review, trends, workload, station/organizational understanding.
+- **Owns**: nothing — pure aggregation.
+- **Kind**: derived view.
+- **Do not assume**: this is the same thing as Overview. Overview answers "what needs my attention now"; Reports & Analytics answers "how is the station/organization doing over time."
 
-This must remain permission-aware. Pleadli must never assume every police user sees everything.
+## Investigation workspace, in more detail
 
-## Investigation is an active workspace, not a folder
+The workspace should eventually let an officer understand and act on: people involved, case context, statements taken, evidence logged, actions performed, developments, outstanding work, required documents, referral status, and relevant timeline/history — in one working view, not a folder tree of unrelated child screens. Only build concepts here that have a genuine, named product purpose; resist inventing generic project-management features.
 
-An investigation is not simply:
+## Ecosystem boundaries
+
+Pleadli Police is one application in a larger ecosystem: **Pleadli, Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers, Pleadli Prisons** — purpose-built applications for different participants, connected through Pleadli Cloud.
+
+- Police owns Police records. DPP owns DPP records. Courts own Court records. Lawyers own their records. Prisons own their records.
+- **One case. Every institution keeps its own record.**
+- **One case does not mean one shared file.**
+- **Referenceability is not visibility.**
+- **Connection does not mean universal visibility.**
+
+Never design a universal cross-institution case record. A legitimate relationship between institutional records is not a merge of ownership.
+
+## Application structure
 
 ```
-Case
- ├── documents
- ├── statements
- └── evidence
+routes  →  domain features  →  local data access / domain logic  →  SQLite
 ```
 
-It is an active workspace. An investigation may involve:
+with genuinely shared UI primitives from `@pleadli/ui` / `@pleadli/forms-tables`.
 
-- people
-- incidents
-- locations
-- vehicles
-- witnesses
-- suspects / persons of interest
-- officers
-- statements
-- exhibits / evidence
-- documents
-- actions
-- tasks
-- investigative developments
-- related cases
-- referrals
-- decisions
-- timelines
-- other relevant relationships
-
-Pleadli should help an officer understand these relationships and reveal what still needs attention, for example:
-
-- incomplete information
-- outstanding actions
-- pending investigative tasks
-- evidence requiring follow-up
-- missing documentation
-- cases waiting for referral
-- matters returned for further investigation
-- workload
-- relevant related records
-
-This is not about replacing police judgment. It is about making the information already available to the officer more useful.
-
-## Police work happens in the field
-
-Pleadli Police is designed from the beginning with both **desktop and Android/mobile use** in mind. The desktop Tauri application is not the entire product.
-
-An officer may be at a station, in an office, interviewing someone, investigating an incident, travelling, responding to an incident, working away from reliable internet, communicating with the station, or requiring assistance.
-
-The mobile experience should eventually allow authorized officers to perform appropriate work from the field:
-
-- person lookup
-- case lookup
-- viewing authorized information
-- recording field information
-- updating cases
-- receiving assignments
-- reporting developments
-- communicating with the station
-- requesting assistance
-- requesting backup
-- sharing location when appropriate
-- receiving operational requests
-- coordinating with other officers
-
-Not all of this needs to be built immediately, but it is the product's actual direction. Do not architect the desktop application as if mobile is merely a future responsive version of the same UI.
-
-## Local station infrastructure
-
-A Pleadli Police desktop environment can potentially act as a **local station environment** for authorized devices — the station as a local operational network:
+Feature organization is peer-based, not case-rooted — People and Search sit alongside Cases, Custody, Station Operations, etc., not beneath them:
 
 ```
-                 PLEADLI POLICE
-                      STATION
+src/features/
+  people/
+  search/
+  station-diary/
+  incidents/
+  cases/
+  investigations/
+  statements/
+  evidence/
+  custody/
+  bonds/
+  referrals/
+  station-ops/
+  reports/
+```
+
+This tree is conceptual, not a mandate to create every directory now. Create a feature directory when the implementation actually needs it.
+
+- Routes stay thin: composition + loader only, nothing else.
+- Each feature owns its own plain data-access functions (direct SQL against local SQLite) — no repository layer, no generic ORM/service architecture, unless a real requirement emerges.
+- Domain logic (derivations like 48h compliance, workflow transitions) lives in plain functions colocated with the feature, not in JSX, not scattered across loaders.
+- Tauri-specific persistence concerns stay at the boundary (the actual driver call). Database access must not spread arbitrarily through UI components.
+- Shared packages (`@pleadli/ui`, `@pleadli/forms-tables`) hold what's proven generic across apps (tables, form fields, sidebar shell). Police-specific domain composition (the Investigation workspace, a Person profile layout) stays local until another app genuinely needs the same shape.
+
+## Desktop, mobile, local station, and Pleadli Cloud
+
+Long-term direction:
+
+```
+                    Pleadli Cloud
                          │
-          ┌──────────────┼──────────────┐
-          │              │              │
-       Officer A      Officer B      Officer C
-        Android        Android        Desktop
+                  connected deployment
+                         │
+                      Station
+                   Pleadli Node
+                  /      |      \
+             desktop   officer   desktop
+                        phone
 ```
 
-Android devices could communicate with the station environment when appropriate, allowing local information access and operational communication even when external internet is unavailable. When connectivity becomes available, appropriate information can synchronize with Pleadli Cloud.
+The current implementation must **not** include: a sync engine, conflict-resolution framework, peer discovery, local distributed networking, a mobile client, live location, or backup-request infrastructure.
 
-This must not become a huge distributed-systems project. The principle is simple:
+What the current code should do: keep local SQLite as the actual source of truth; keep domain logic (validation, derivations) as plain functions not coupled to Tauri APIs beyond the actual driver call, so the *model* could inform a future mobile client or sync layer without a rewrite; avoid boundaries that make a future sync marker per record, or multiple officers on one station install, awkward to add later. Nothing more.
 
-> **Local operation when possible. Cloud connectivity when available. Explicit synchronization when required.**
+**Local when possible. Connected when available. Explicit about synchronization.**
 
-## Live operational capabilities
+## Scale
 
-Pleadli Police can eventually go beyond records and investigation management into operational coordination:
+**Officer → Unit/Team → Station → Division/Sector → Organization.** An individual must be able to use Police meaningfully with zero connection. A station operates as a station. Broader organizational visibility and coordination is something a connected deployment can eventually add — never a requirement for standalone usefulness. Do not assume the entire national police organization is one giant deployment.
 
-- **Live location** — authorized officers/devices share location when operationally appropriate.
-- **Backup requests** — an officer requests assistance from the station or relevant personnel.
-- **Communication** — officers communicate with the station or other authorized officers.
-- **Incident coordination** — operational incidents are assigned, updated, and tracked.
-- **Officer status** — the station understands relevant officer availability/status where appropriate.
-- **Field reporting** — developments reported directly from the field.
-- **Support requests** — an officer requests appropriate assistance without relying on disconnected channels.
+## Mobile
 
-These are potential capabilities, not requirements to implement now. The product should simply be understood as capable of growing in this direction.
+A first-class future surface (person/case lookup, assignments, field reporting, communication, assistance/backup requests, location sharing, coordination), not a responsive version of the desktop UI. This should influence architectural boundaries (don't couple domain logic to desktop-only APIs) without causing the mobile app or a shared abstraction layer to be built now.
 
-## Pleadli should reduce bureaucracy
+## External integrations
 
-Police officers should spend less time re-entering administrative information and more time doing useful work.
+Eventually: national identification systems, fingerprint/biometric systems, other government systems. Do not invent APIs or pretend an integration exists. Establish clean boundaries so an authorized external source can be connected later without a redesign.
 
-Whenever the same information is needed in multiple legitimate contexts: **reuse it.** Whenever information can safely be derived: **derive it.** Whenever a document can be generated from structured information: **generate it.** Whenever an officer needs to find information: **let them search for it.** Whenever information already exists in an authorized external system: **do not make the officer manually recreate it.**
+## UI philosophy
 
-> **Record once. Understand once. Reuse everywhere it is legitimately needed.**
+Serious operational software. Use the existing visual system — no new design system, no redundant typography classes (global typography already exists).
 
-## Pleadli Police should feel like a tool, not a database
+Roughly 90% of the interface is naturally: dense, searchable, sortable, filterable tables; structured forms built around the actual task; record readers that make important information easy to scan; workspaces that help someone act, not just browse; search; contextual actions; operational attention views. Dashboards are used only where they provide real operational value (Overview: "what needs my attention," not vanity stats).
 
-The officer should not feel like they are navigating Tables → Records → Forms → Edit → Save. They should feel like they are using a professional tool that helps them work.
+Do not: use cards merely because cards are common in SaaS apps; add decorative gradients, oversized statistics, unnecessary animation, or empty whitespace that doesn't help someone work.
 
-The interface should answer:
+When representing capabilities intended for a connected/sector deployment in UI mockups while building for an individual station, mark scope with developer-only comments — `{/* Individual station */}` / `{/* Sector / connected deployment */}` — never surfaced to the user.
 
-- What am I working on?
-- What needs my attention?
-- Who or what am I looking for?
-- What do I already know?
-- What is connected to this?
-- What happened?
-- What needs to happen next?
-- Who is responsible?
-- What information can I access?
-- What can I do from here?
-
-## Navigation
-
-The current sidebar is the **starting navigation, not the definition** of the product:
+## Navigation (current baseline)
 
 ```
+Pleadli Police
+
 Overview
+
+Search
+  People
+  Files
+  Stations
+  Cell Lock-up & 48h
+  Bonds & Sureties
+
+Station Diary (SD)
+Incidents
 Case Intake
+
 Investigations
 Statements
-Evidence
-Referrals
-Station
+Evidence & Exhibits
+Charge Sheets & Forms
+
+Stores & Armory
+  Armory Register
+  Impounded Assets
+
+Referrals & Dispatches
+Duty Roster
+Reports & Analytics
+Station Admin
 ```
 
-As the product develops, other areas may naturally emerge — for example:
-
-- **Work** — overview, my work, assignments, tasks, cases
-- **People and information** — people, search, related records, vehicles, locations
-- **Investigation** — cases, incidents, statements, evidence, investigation activity, actions
-- **Operations** — field operations, incidents, officer coordination, assistance, backup, communication
-- **Records** — reports, documents, generated documents, referrals, registers
-- **Station** — station overview, officers, units, workload, local operations
-- **Integrations** — national identification, biometrics, existing police systems, other authorized government systems
-
-Do not create all of these simply because they are listed here. Build based on actual product priorities. The list exists to prevent the product ending at Case Intake → Investigations → Statements → Evidence → Referrals.
-
-## Individual officer to police organization
-
-Pleadli Police should work at multiple levels: individual officer, team/unit, station, division, and a larger police organization. It should not assume every deployment must immediately represent an entire national force.
-
-Conceptually: **Officer → Unit → Station → Division → Organization**, where that hierarchy is appropriate to the organization.
-
-## Uganda first, adaptable beyond
-
-The first real-world design context is Uganda. The product should understand the realities of policing in Uganda — terminology, reporting practices, station structures, investigation workflows, referrals, DPP relationships, courts, prisons, national identification, available government systems, connectivity constraints, and field conditions.
-
-Do not hard-code assumptions that are not confirmed. Uganda is where the product is designed and proven first; the underlying model should remain adaptable to other police organizations.
-
-## Relationship with the wider Pleadli ecosystem
-
-Pleadli Police is one application in the Pleadli family. It does not become the entire justice system.
-
-- Police owns its police work and records.
-- DPP has its own application and records.
-- Courts have their own application and records.
-- Lawyers have their own application and records.
-- Prisons have their own application and records.
-- Pleadli Cloud connects the ecosystem.
-
-A legitimate case relationship can allow appropriate information to move between applications. But **one case does not mean one shared file**, and **connection does not mean universal visibility**. Police records remain police records. The DPP should not automatically receive every internal police record; a lawyer should not automatically gain access to internal police information; a court should not become a universal police database. The system connects legitimate work without flattening institutional boundaries.
-
-## The most important product distinction
-
-Pleadli Police is not trying to make existing police paperwork prettier. It is trying to make **police work itself better**.
-
-Existing police systems often start with "What information must be recorded?" Pleadli should additionally ask "What can we do with that information to help the officer?" That difference should influence every feature decision.
-
-## Product direction
-
-Pleadli Police is the combination of:
-
-**Police records + investigation workspace + information search + operational tools + field mobility + station coordination + authorized integrations + connection to the wider justice ecosystem.**
-
-The long-term product can become the software environment through which police officers **find → understand → investigate → record → coordinate → act → report → refer** their work.
-
-## Final mental model
-
-> **Pleadli Police is software for doing police work, not software for entering police data.**
-
-- The data is what makes the system intelligent and useful.
-- The officer is the user.
-- The investigation is the working context.
-- The station is an operational environment.
-- The mobile device is a field interface.
-- The desktop application is a powerful workstation.
-- Pleadli Cloud is the wider connectivity/control layer.
-- External systems can become authorized information sources.
-- The wider Pleadli ecosystem allows legitimate case relationships between Police, DPP, Courts, Lawyers, and Prisons without turning their records into one giant shared database.
-
-## Key entity model
-
-The product must eventually understand meaningful entities and relationships:
-
-```
-Person
-Incident
-Case
-Investigation
-Statement
-Evidence
-Officer
-Location
-Organization / Unit
-Task / Action
-Document
-Referral
-```
-
-A Person profile has relationships to identifiers, incidents, cases, statements, evidence relationships, history, related people, and other authorized records.
-
-Do not force people to remain embedded inside cases (e.g. `suspectName`, `complainantName`, `witnessName` strings). Do not make the entire architecture `Case → Statements/Evidence/Referral`. Build only the entities the current implementation genuinely needs — do not build a giant universal schema speculatively.
+This represents areas of work and capabilities, not a database schema — not every item requires an isolated CRUD module, and the implementation underneath a given nav item may be a record, a workflow, a workspace, search, a generated document, an operational view, or a derived view. Keep this as the baseline unless a concrete reason to change it has been established and explained first.
 
 ## Implementation discipline
 
-- **Less code, not less architecture.** Prefer direct, understandable implementation.
-- Build real foundations for real requirements.
-- Avoid speculative: synchronization frameworks, plugin systems, generic registries, service factories, repository abstractions without a real need, giant domain frameworks, excessive hooks/providers, generic "manager" classes, premature integration layers, fake APIs, fake intelligence, unnecessary abstractions.
-- Do not invent integrations. Create clean boundaries so authorized information sources can be added later.
-- Do not turn the desktop app into a responsive website and call it mobile support.
-- Do not build the local station networking system now unless there is a concrete requirement; the current architecture should simply avoid preventing it.
+**Less code, not less architecture.**
+
+Avoid: generic CRUD engines; generic Entity/Record abstractions; generic form builders; generic workflow engines; repository/service ceremony; speculative abstractions; giant schemas; arbitrary file splitting; excessive hooks/providers; business logic buried in JSX; duplicated domain logic; premature synchronization; fake external integrations; architecture designed around hypothetical requirements.
+
+Prefer: direct domain modeling; plain functions; clear ownership; local reasoning; contextual actions; thin routes; small meaningful modules; real shared primitives where sharing is proven; domain-specific behavior where domains genuinely differ.
+
+Do not create an abstraction simply because two things currently look similar.
+
+## What to research later, not invent now
+
+None of the following are established product requirements until verified against authoritative Ugandan sources:
+
+- Ugandan police custody procedure
+- The 48-hour custody rule and its exceptions
+- The police bond process
+- Surety requirements
+- Station Diary conventions
+- Police case-file movement procedure
+- CID → DPP/ODPP referral workflow
+- Charge-sheet/form content requirements
+- Police station organizational structures
+- NIRA / national identity integration possibilities
+- Biometric integration possibilities
+
+## Implementation sequence
+
+Ordered by actual product dependency and user value — not by distance from case-work, and not "database → API → UI":
+
+1. **People** — nearly everything else references one.
+2. **Search over People** — the UI groundwork already exists; wire it to real data early since it's a fundamental capability, not a late add-on.
+3. **Station Diary** — the actual front door of station activity, built as its own workflow, not an incident pre-processor.
+4. **Incidents** — depends on Person and, optionally, an SD entry.
+5. **Custody** — pulled forward deliberately: depends only on Person + Incident, and carries real legal urgency (48h) that doesn't benefit from waiting on case machinery.
+6. **Cases** — depends on Incidents (or direct intake).
+7. **Investigation workspace** — depends on Case; the point where sustained casework happens.
+8. **Statements** — inside the investigation workspace.
+9. **Evidence** — inside the investigation workspace.
+10. **Bonds & Sureties** — alongside/after Custody, related to Person/Case.
+11. **Referrals** — once investigations reach a decision point. (Dispatches, if confirmed distinct, follow its own track closer to Duty/Roster.)
+12. **Station Operations** (Duty/Roster, Stores/Armory) — an independent track; can proceed on its own schedule since nothing else blocks on it.
+13. **Charge Sheets & Forms** — once enough structured data exists to generate from.
+14. **Reports & Analytics** — inherently last; purely derived.
+
+## Uncertainties still open (require product clarification, not invention)
+
+- Exact Case ↔ Investigation cardinality and lifecycle mechanics.
+- Whether Referrals and Dispatches are one workflow or two.
+- What "Station Admin" owns relative to Duty Roster and Stores/Armory.
+- Real Ugandan custody/arrest/bond procedure (see Research Needed).
+- When officer identity/auth becomes load-bearing, given Statements/Evidence/Custody all need "who did this" and auth is currently out of scope.
+- Whether a Station maps to Pleadli Cloud's `OrganizationUnit` or `Organization` in the actual institution templates.
+
+## Final test
+
+Before considering any implementation complete, ask:
+
+**Does this feel like software for doing police work, or does it feel like a collection of digital police registers?**
+
+The goal is a practical operational environment where police officers can **find, understand, record, investigate, coordinate, act, account, hand over, and continue their work** with less fragmentation and repetition — not a digitized version of existing paperwork.
