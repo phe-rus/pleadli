@@ -45,7 +45,7 @@ pleadli/                          # Root (Turborepo + Bun workspaces)
 - `bun run auth:gen` — regenerate auth schema from BetterAuth config
 
 **apps/police (Desktop):**
-- `bun run dev` — Vite dev server (port 1420)
+- `bun run dev` — Vite dev server (port 3001)
 - `bun run tauri dev` — run desktop app (Tauri + Vite)
 - `bun run build` — TypeScript + Vite build
 - `bun run tauri build` — produce native app bundle
@@ -65,6 +65,8 @@ TanStack Start on Cloudflare Workers + D1. Uses BetterAuth for auth with the bui
 
 Tauri v2 + React 19 + TypeScript + Vite. Offline-first, local SQLite via `@tauri-apps/plugin-sql`.
 
+- **Product**: Pleadli Police is a police operations and investigation platform — *not* a digital register, case-entry CRUD app, or notebook. Its canonical product definition is `docs/police/PRODUCT.md`.
+- **IMPORTANT**: Every Pleadli Police feature, UX, architecture, navigation, or data-model decision MUST be consistent with `docs/police/PRODUCT.md` before it is implemented. The sidebar is a starting navigation, not the product definition.
 - **Routing**: TanStack Router (file-based, auto code splitting)
 - **Database**: Local SQLite via Tauri plugin-sql
 - **Shared UI**: Consumes `@pleadli/ui` and `@pleadli/forms-tables` from workspace packages
