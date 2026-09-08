@@ -50,7 +50,10 @@ function RouteComponent() {
 
   const form = useAppForm({
     defaultValues: createPersonDefaults,
-    validators: { onChange: createPersonSchema },
+    validators: {
+      onChange: createPersonSchema,
+      onSubmit: createPersonSchema
+    },
     onSubmit: async ({ value, formApi }) => {
       try {
         await createPerson.mutateAsync(value)
