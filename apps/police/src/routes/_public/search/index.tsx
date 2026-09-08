@@ -31,9 +31,14 @@ function RouteComponent() {
 
   return (
     <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-5">
+      <section className="flex flex-col">
+        <h1>Search everything</h1>
         <Combobox value={q} onValueChange={setQ}>
-          <ComboboxInput placeholder="Search everything…" showClear>
+          <ComboboxInput
+            className='md:max-w-md'
+            placeholder="Search everything…"
+            showClear
+          >
             <ComboboxContent>
               <ComboboxList>
                 {[...groups.entries()].map(([group, items]) => (

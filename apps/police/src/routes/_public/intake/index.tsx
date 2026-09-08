@@ -7,9 +7,9 @@ export const Route = createFileRoute('/_public/intake/')({
 function RouteComponent() {
   return (
     <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-2">
-        <h1 className="font-heading text-2xl md:text-5xl">Intake</h1>
-        <p className="text-xs/relaxed text-muted-foreground">Placeholder — nothing here yet.</p>
+      <section className="flex flex-col">
+        <h1>Intake</h1>
+        <p>Placeholder nothing here yet.</p>
       </section>
     </article>
   )
