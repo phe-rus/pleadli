@@ -1,10 +1,9 @@
+import { OrganizationDetailDrawer } from '@/components/admin/organization-detail-drawer'
 import { listOrganizationsAdmin } from '@/functions/admin.func'
 import { createOrganization } from '@/functions/org.func'
-import { OrganizationDetailDrawer } from '@/components/admin/organization-detail-drawer'
 import { AddCircleIcon, Building02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
-import type { SelectOption } from '@pleadli/forms-tables/forms'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
@@ -35,7 +34,7 @@ function RouteComponent() {
   const [createOpen, setCreateOpen] = useState(false)
   const [detailOrg, setDetailOrg] = useState<(typeof data)[number] | null>(null)
 
-  const institutionTypeOptions: SelectOption[] = [
+  const institutionTypeOptions = [
     { label: 'Police', value: 'police' },
     { label: 'DPP', value: 'dpp' },
     { label: 'Courts', value: 'courts' },

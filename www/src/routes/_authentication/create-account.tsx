@@ -4,7 +4,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@pleadli/ui/field'
 import { Input } from '@pleadli/ui/input'
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { toast } from 'gooey-toast'
+import { t } from '@pleadli/ui/goey-toaster'
 import * as z from 'zod'
 
 export const Route = createFileRoute('/_authentication/create-account')({
@@ -24,7 +24,9 @@ function RouteComponent() {
     onSubmit: async ({ value }) => {
       const { data, error } = await authClient.signUp.email(value)
       if (error) {
-        toast.error({ title: 'Could not create account', description: error.message ?? undefined })
+        t.error('Could not create account', {
+          description: error.message ?? undefined
+        })
         return
       }
       const role = (data.user as { role?: string }).role

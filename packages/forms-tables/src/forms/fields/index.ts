@@ -11,10 +11,3 @@ export const fields = {
   select: FieldSelect,
   multiselect: FieldMultiselect,
 }
-
-export * from "./input"
-export * from "./textarea"
-export * from "./checkbox"
-export * from "./select"
-export * from "./multiselect"
-export * from "./wrapper"

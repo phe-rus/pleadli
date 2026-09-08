@@ -22,8 +22,8 @@ import {
 import { Empty, EmptyDescription } from '@pleadli/ui/empty'
 import { FieldGroup } from '@pleadli/ui/field'
 import { Separator } from '@pleadli/ui/separator'
+import { t } from '@pleadli/ui/goey-toaster'
 import { useRouter } from '@tanstack/react-router'
-import { toast } from 'gooey-toast'
 import { useEffect, useState } from 'react'
 import * as z from 'zod'
 
@@ -95,13 +95,17 @@ export function OrganizationDetailDrawer({
     onSubmit: async ({ value, formApi }) => {
       try {
         await createUnit({ data: { organizationId, name: value.name } })
-        toast.success({ title: 'Unit created', description: value.name })
+        t.success('Unit created', {
+          description: value.name
+        })
         formApi.reset()
         setUnitOpen(false)
         await refresh()
         router.invalidate()
       } catch {
-        toast.error({ title: 'Could not create unit', description: 'Please try again.' })
+        t.error('Could not create unit', {
+          description: 'Please try again.'
+        })
       }
     },
   })
@@ -112,13 +116,17 @@ export function OrganizationDetailDrawer({
     onSubmit: async ({ value, formApi }) => {
       try {
         await createMembership({ data: value })
-        toast.success({ title: 'Member added', description: value.title })
+        t.success('Member added', {
+          description: value.title
+        })
         formApi.reset()
         setMemberOpen(false)
         await refresh()
         router.invalidate()
       } catch {
-        toast.error({ title: 'Could not add member', description: 'Please try again.' })
+        t.error('Could not add member', {
+          description: 'Please try again.'
+        })
       }
     },
   })
@@ -134,7 +142,9 @@ export function OrganizationDetailDrawer({
       })
       await refresh()
     } catch {
-      toast.error({ title: 'Could not update entitlement', description: 'Please try again.' })
+      t.error('Could not update entitlement', {
+        description: 'Please try again.'
+      })
     }
   }
 

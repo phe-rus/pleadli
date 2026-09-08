@@ -1,10 +1,10 @@
 import { authClient } from '@/auth/client'
 import { Button } from '@pleadli/ui/button'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@pleadli/ui/field'
+import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { toast } from 'gooey-toast'
 import * as z from 'zod'
 
 export const Route = createFileRoute('/_authentication/login')({
@@ -27,7 +27,9 @@ function RouteComponent() {
     onSubmit: async ({ value }) => {
       const { data, error } = await authClient.signIn.email(value)
       if (error) {
-        toast.error({ title: 'Sign in failed', description: error.message ?? undefined })
+        t.error('Sign in failed', {
+          description: error.message ?? undefined
+        })
         return
       }
       const role = (data.user as { role?: string }).role

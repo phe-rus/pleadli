@@ -2,7 +2,6 @@ import { listTemplates, updateTemplate } from '@/functions/template.func'
 import { AddCircleIcon, LayoutTemplateIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
-import type { SelectOption } from '@pleadli/forms-tables/forms'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
@@ -32,7 +31,7 @@ function RouteComponent() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
-  const typeOptions: SelectOption[] = [
+  const typeOptions = [
     { label: 'Police', value: 'police' },
     { label: 'DPP', value: 'dpp' },
     { label: 'Courts', value: 'courts' },

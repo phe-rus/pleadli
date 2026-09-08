@@ -1,14 +1,17 @@
+import { Field, FieldError, FieldLabel } from "@pleadli/ui/field";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@pleadli/ui/select"
-import { Field, FieldError, FieldLabel } from "@pleadli/ui/field"
-import { useFieldContext } from "../contexts"
+} from "@pleadli/ui/select";
+import { useFieldContext } from "../contexts";
 
-export type SelectOption = { label: string; value: string }
+export type SelectOption = {
+  label: string;
+  value: string
+}
 
 export function FieldSelect({
   label,

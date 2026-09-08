@@ -18,10 +18,10 @@ import {
   DrawerTitle,
 } from '@pleadli/ui/drawer'
 import { FieldGroup } from '@pleadli/ui/field'
+import { t } from '@pleadli/ui/goey-toaster'
 import { Separator } from '@pleadli/ui/separator'
 import { useRouter } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
-import { toast } from 'gooey-toast'
 import * as z from 'zod'
 
 type UserRow = {
@@ -55,10 +55,14 @@ export function UserManagementDrawer({
     onSubmit: async ({ value }) => {
       try {
         await setUserRole({ data: { userId: user.id, role: value.role } })
-        toast.success({ title: 'Role updated', description: `${user.name} is now ${value.role}` })
+        t.success('Role updated', {
+          description: `${user.name} is now ${value.role}`
+        })
         router.invalidate()
       } catch {
-        toast.error({ title: 'Could not update role', description: 'Please try again.' })
+        t.error('Could not update role', {
+          description: 'Please try again.'
+        })
       }
     },
   })
@@ -66,51 +70,71 @@ export function UserManagementDrawer({
   async function handleImpersonate() {
     try {
       await impersonateUser({ data: { userId: user.id } })
-      toast.success({ title: 'Now impersonating', description: user.name })
+      t.success('Now impersonating', {
+        description: user.name
+      })
       router.invalidate()
     } catch {
-      toast.error({ title: 'Could not impersonate user', description: 'Please try again.' })
+      t.error('Could not impersonate user', {
+        description: 'Please try again.'
+      })
     }
   }
 
   async function handleBan() {
     try {
       await banUser({ data: { userId: user.id } })
-      toast.success({ title: 'User banned', description: user.name })
+      t.success('User banned', {
+        description: user.name
+      })
       router.invalidate()
     } catch {
-      toast.error({ title: 'Could not ban user', description: 'Please try again.' })
+      t.error('Could not ban user', {
+        description: 'Please try again.'
+      })
     }
   }
 
   async function handleUnban() {
     try {
       await unbanUser({ data: { userId: user.id } })
-      toast.success({ title: 'User unbanned', description: user.name })
+      t.success('User unbanned', {
+        description: user.name
+      })
       router.invalidate()
     } catch {
-      toast.error({ title: 'Could not unban user', description: 'Please try again.' })
+      t.error('Could not unban user', {
+        description: 'Please try again.'
+      })
     }
   }
 
   async function handleRevokeSessions() {
     try {
       await revokeUserSessions({ data: { userId: user.id } })
-      toast.success({ title: 'Sessions revoked', description: user.name })
+      t.success('Sessions revoked', {
+        description: user.name
+      })
       router.invalidate()
     } catch {
-      toast.error({ title: 'Could not revoke sessions', description: 'Please try again.' })
+      t.error('Could not revoke sessions', {
+        description: 'Please try again.'
+      })
     }
   }
 
   async function handleDelete() {
     try {
       await removeUser({ data: { userId: user.id } })
-      toast.success({ title: 'User removed', description: user.name })
+      t.success('User removed', {
+        description: user.name
+      })
       onClose()
       router.invalidate()
     } catch {
-      toast.error({ title: 'Could not remove user', description: 'Please try again.' })
+      t.error('Could not remove user', {
+        description: 'Please try again.'
+      })
     }
   }
 
