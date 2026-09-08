@@ -1,63 +1,43 @@
-import { getDb } from '@/db'
-import { people } from '@/db/schema'
-import { desc, eq, like, or } from 'drizzle-orm'
+import { invoke, isTauri } from '@tauri-apps/api/core'
+import * as z from 'zod'
+import { createPersonSchema, personSchema, type CreatePersonInput, type Person } from './schema'
 
-export type Person = typeof people.$inferSelect
+export type { CreatePersonInput, Person }
 
-export interface CreatePersonInput {
-  firstName: string
-  lastName: string
-  otherNames?: string
-  phone?: string
-  nationalId?: string
-  address?: string
+// Only reachable in a dev build (see src-tauri/src/server.rs) — lets the
+// plain browser dev server (no Tauri IPC bridge) exercise the same data
+// layer against the real local database during development.
+const DEV_SERVER_URL = 'http://127.0.0.1:47821'
+
+async function devFetch(path: string, init?: RequestInit) {
+  const response = await fetch(`${DEV_SERVER_URL}${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...init?.headers },
+  })
+  if (!response.ok) throw new Error(await response.text())
+  return response.status === 204 ? null : response.json()
 }
 
 export async function createPerson(input: CreatePersonInput) {
-  const db = await getDb()
-  const [person] = await db
-    .insert(people)
-    .values({
-      firstName: input.firstName,
-      lastName: input.lastName,
-      otherNames: input.otherNames || null,
-      phone: input.phone || null,
-      nationalId: input.nationalId || null,
-      address: input.address || null,
-    })
-    .returning()
-  return person
-}
-
-export async function listPeople() {
-  const db = await getDb()
-  return db.select().from(people).orderBy(desc(people.createdAt)).limit(50)
+  const parsed = createPersonSchema.parse(input)
+  const person = isTauri()
+    ? await invoke('create_person', { input: parsed })
+    : await devFetch('/people', { method: 'POST', body: JSON.stringify(parsed) })
+  return personSchema.parse(person)
 }
 
 export async function searchPeople(query: string) {
-  if (!query.trim()) return listPeople()
-  const db = await getDb()
-  const term = `%${query.trim()}%`
-  return db
-    .select()
-    .from(people)
-    .where(
-      or(
-        like(people.firstName, term),
-        like(people.lastName, term),
-        like(people.otherNames, term),
-        like(people.phone, term),
-        like(people.nationalId, term),
-      ),
-    )
-    .orderBy(desc(people.createdAt))
-    .limit(50)
+  const people = isTauri()
+    ? await invoke('search_people', { query })
+    : await devFetch(`/people?query=${encodeURIComponent(query)}`)
+  return z.array(personSchema).parse(people)
 }
 
 export async function getPerson(id: string) {
-  const db = await getDb()
-  const [person] = await db.select().from(people).where(eq(people.id, id)).limit(1)
-  return person ?? null
+  const person = isTauri()
+    ? await invoke('get_person', { id })
+    : await devFetch(`/people/${encodeURIComponent(id)}`)
+  return personSchema.nullable().parse(person)
 }
 
 export function personFullName(person: Pick<Person, 'firstName' | 'lastName' | 'otherNames'>) {

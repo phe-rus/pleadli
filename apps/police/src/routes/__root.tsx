@@ -2,7 +2,7 @@ import { Notfound } from '@/components/notfound'
 import { SplashScreen } from '@/components/splash-screen'
 import { ThemeProvider } from '@/components/theme-provider'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
-import '@pleadli/ui/globals.css?url'
+import tailwindcss from '@pleadli/ui/globals.css?url'
 import { GooeyToaster } from "@pleadli/ui/goey-toaster"
 import { cn } from '@pleadli/ui/lib/utils'
 import { TooltipProvider } from '@pleadli/ui/tooltip'
@@ -22,6 +22,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { name: "theme-color", content: "oklch(0.9904 0.0148 94.1935)" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: 'Pleadli' },
+    ],
+    scripts: [
+      { href: tailwindcss, rel: "stylesheet" }
     ]
   })
 })

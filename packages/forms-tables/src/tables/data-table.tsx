@@ -210,7 +210,7 @@ export function DataTable<TData extends RowData>({
   const columnCount = table.getVisibleLeafColumns().length
 
   return (
-    <div className="flex flex-col gap-3 [&_div]:no-scrollbar! [&_tr]:border-none!">
+    <div className="flex flex-col gap-3 [&_div]:no-scrollbar!">
       <div className="relative flex items-center">
         {customSearchbar ?
           customSearchbar({
@@ -222,7 +222,7 @@ export function DataTable<TData extends RowData>({
               return getRowId?.(row.original) ?? ""
             },
           }) :
-          <InputGroup className="max-w-full">
+          <InputGroup className="max-w-full rounded">
             <InputGroupInput
               placeholder={searchPlaceholder}
               autoComplete="off"
@@ -384,84 +384,89 @@ export function DataTable<TData extends RowData>({
         </div>
       )}
 
-      <Table
-        aria-label={ariaLabel}
-        data-not-typeset={true}
-        className="divide-none! border overflow-hidden border-input/40 shadow"
-      >
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                    <div
-                      className={cn(
-                        "flex w-fit cursor-pointer items-center gap-1"
-                      )}
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      {flexRender(
+      <div className='relative'>
+        <Table
+          aria-label={ariaLabel}
+          data-not-typeset
+          className={cn(
+            "divide-none! border overflow-hidden border-input/40 shadow",
+            'rounded-md!'
+          )}
+        >
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                      <div
+                        className={cn(
+                          "flex w-fit cursor-pointer items-center gap-1"
+                        )}
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        <div className='flex items-center [&>svg]:size-2.5!'>
+                          <HugeiconsIcon
+                            icon={ChevronUpIcon}
+                            className={cn(
+                              header.column.getIsSorted() === "asc" &&
+                              "text-primary"
+                            )}
+                          />
+                          <HugeiconsIcon
+                            icon={ChevronDownIcon}
+                            className={cn(
+                              header.column.getIsSorted() === "desc" &&
+                              "text-primary"
+                            )}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      flexRender(
                         header.column.columnDef.header,
                         header.getContext()
-                      )}
-                      <div className='flex items-center'>
-                        <HugeiconsIcon
-                          icon={ChevronUpIcon}
-                          className={cn(
-                            "size-3.5!", header.column.getIsSorted() === "asc" &&
-                          "text-primary"
-                          )}
-                        />
-                        <HugeiconsIcon
-                          icon={ChevronDownIcon}
-                          className={cn(
-                            "size-3.5!", header.column.getIsSorted() === "desc" &&
-                          "text-primary"
-                          )}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {rows.length ? (
-            rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() ? "selected" : undefined}
-                onClick={() => {
-                  if (!onSelectedRowsChange) return
-                  row.toggleSelected()
-                  onSelectedRowsChange(selectedRows)
-                }}
-              >
-                {row.getAllCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+                      )
+                    )}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columnCount} className="h-24 text-center">
-                {emptyMessage}
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-        {footer && <TableFooter>{footer(columnCount)}</TableFooter>}
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {rows.length ? (
+              rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() ? "selected" : undefined}
+                  onClick={() => {
+                    if (!onSelectedRowsChange) return
+                    row.toggleSelected()
+                    onSelectedRowsChange(selectedRows)
+                  }}
+                >
+                  {row.getAllCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columnCount} className="h-24 text-center">
+                  {emptyMessage}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+          {footer && <TableFooter>{footer(columnCount)}</TableFooter>}
+        </Table>
+      </div>
 
       {pagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
     </div>

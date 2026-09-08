@@ -1,5 +1,6 @@
-import { personFullName, type Person } from '@/features/people/data'
+import { personFullName } from '@/features/people/data'
 import { peopleSearchOptions, useCreatePerson, usePeopleSearch } from '@/features/people/queries'
+import { createPersonSchema, type Person } from '@/features/people/schema'
 import { AddCircleIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
@@ -9,39 +10,19 @@ import {
   Drawer,
   DrawerContent,
   DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
+  DrawerTrigger
 } from '@pleadli/ui/drawer'
 import { FieldGroup } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import * as z from 'zod'
 
 export const Route = createFileRoute('/_public/search/people')({
   loader: ({ context }) => context.queryClient.ensureQueryData(peopleSearchOptions('')),
   component: RouteComponent,
 })
-
-const createPersonSchema = z.object({
-  firstName: z.string().min(1, 'First name is required.'),
-  lastName: z.string().min(1, 'Last name is required.'),
-  otherNames: z.string(),
-  phone: z.string(),
-  nationalId: z.string(),
-  address: z.string(),
-})
-
-const createPersonDefaults = {
-  firstName: '',
-  lastName: '',
-  otherNames: '',
-  phone: '',
-  nationalId: '',
-  address: '',
-}
 
 function RouteComponent() {
   const [addOpen, setAddOpen] = useState(false)
@@ -49,7 +30,14 @@ function RouteComponent() {
   const createPerson = useCreatePerson()
 
   const form = useAppForm({
-    defaultValues: createPersonDefaults,
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      otherNames: '',
+      phone: '',
+      nationalId: '',
+      address: '',
+    },
     validators: {
       onChange: createPersonSchema,
       onSubmit: createPersonSchema
@@ -97,18 +85,20 @@ function RouteComponent() {
   return (
     <Drawer open={addOpen} onOpenChange={setAddOpen} swipeDirection="right">
       <article className="container flex flex-col gap-5 pt-5 pb-20">
-        <section className="flex items-center justify-between gap-4">
+        <section className="flex items-center gap-4">
           <div className="flex flex-col">
-            <h1>People</h1>
-            <p className="text-sm text-muted-foreground">
+            <div className='flex items-center gap-5'>
+              <h1>People</h1>
+
+              <DrawerTrigger render={<Button size="sm" />}>
+                <HugeiconsIcon icon={AddCircleIcon} />
+                Add person
+              </DrawerTrigger>
+            </div>
+            <p className="md:max-w-sm">
               Find a person, or add one if they aren't known to the system yet.
             </p>
           </div>
-
-          <DrawerTrigger render={<Button size="sm" />}>
-            <HugeiconsIcon icon={AddCircleIcon} />
-            Add person
-          </DrawerTrigger>
         </section>
 
         <DataTable
@@ -120,10 +110,10 @@ function RouteComponent() {
           searchPlaceholder="Search people by name, phone, or national ID…"
         />
       </article>
-      <DrawerContent>
-        <DrawerHeader>
+      <DrawerContent className='bg-background!'>
+        <DrawerHeader className='gap-0!'>
           <DrawerTitle>Add person</DrawerTitle>
-          <DrawerDescription>
+          <DrawerDescription className='md:max-w-sm'>
             Record someone who isn't already known to the system.
           </DrawerDescription>
         </DrawerHeader>
@@ -135,66 +125,84 @@ function RouteComponent() {
           }}
         >
           <FieldGroup>
-            <form.AppField
-              name="firstName"
-            >
-              {(f) => {
-                return (
-                  <f.input label="First name" />
-                )
-              }}
-            </form.AppField>
-            <form.AppField
-              name="lastName"
-            >
-              {(f) => {
-                return (
-                  <f.input label="Last name" />
-                )
-              }}
-            </form.AppField>
-            <form.AppField
-              name="otherNames"
-            >
-              {(f) => {
-                return (
-                  <f.input label="Other names" />
-                )
-              }}
-            </form.AppField>
-            <form.AppField
-              name="phone"
-            >
-              {(f) => {
-                return (
-                  <f.input label="Phone number" />
-                )
-              }}
-            </form.AppField>
-            <form.AppField
-              name="nationalId"
-            >
-              {(f) => {
-                return (
-                  <f.input label="NIN / National ID" />
-                )
-              }}
-            </form.AppField>
-            <form.AppField
-              name="address"
-            >
-              {(f) => {
-                return (
-                  <f.input label="Address" />
-                )
-              }}
-            </form.AppField>
-          </FieldGroup>
-          <DrawerFooter>
+            <div className='grid grid-cols-2 gap-3'>
+              <form.AppField
+                name="firstName"
+              >
+                {(f) => (
+                  <f.input
+                    placeholder='First name'
+                    label="First name"
+                  />
+                )}
+              </form.AppField>
+
+              <form.AppField
+                name="lastName"
+              >
+                {(f) => (
+                  <f.input
+                    placeholder='Last name'
+                    label="Last name"
+                  />
+                )}
+              </form.AppField>
+
+              <form.AppField
+                name="otherNames"
+              >
+                {(f) => (
+                  <f.input
+                    placeholder='Other names'
+                    label="Other names"
+                  />
+                )}
+              </form.AppField>
+
+              <div className='col-span-2'>
+                <form.AppField
+                  name="phone"
+                >
+                  {(f) => (
+                    <f.input
+                      placeholder='Phone number'
+                      label="Phone number"
+                    />
+                  )}
+                </form.AppField>
+              </div>
+
+              <div className='col-span-2'>
+                <form.AppField
+                  name="nationalId"
+                >
+                  {(f) => (
+                    <f.input
+                      placeholder='NIN / National ID'
+                      label="NIN / National ID"
+                    />
+                  )}
+                </form.AppField>
+              </div>
+
+              <div className='col-span-2'>
+                <form.AppField
+                  name="address"
+                >
+                  {(f) => (
+                    <f.textarea
+                      placeholder='Address'
+                      label="Address"
+                    />
+                  )}
+                </form.AppField>
+              </div>
+            </div>
+
             <form.AppForm>
               <form.submit label='Submit' />
             </form.AppForm>
-          </DrawerFooter>
+          </FieldGroup>
         </form>
       </DrawerContent>
     </Drawer>
