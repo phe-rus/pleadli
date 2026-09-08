@@ -144,7 +144,7 @@ export const Dashboard: FC<DashboardProps> = ({
               <section
                 className="flex flex-col gap-2"
               >
-                <nav data-tauri-drag-region className="flex items-center gap-1">
+                <nav data-tauri-drag-region className="flex items-center gap-1 h-10">
                   <Link
                     to={brand.to}
                     className={cn(
