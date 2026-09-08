@@ -49,6 +49,7 @@ if (!rootElement.innerHTML) {
     const root = ReactDOM.createRoot(rootElement)
     root.render(
         <RouterProvider
-            router={getRouter()} />
+            router={getRouter()}
+        />
     )
 }
