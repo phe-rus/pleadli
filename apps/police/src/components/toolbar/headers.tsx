@@ -1,9 +1,10 @@
-import { ChevronLeftIcon, ChevronRightIcon, PersonStandingIcon } from "@hugeicons/core-free-icons"
+import { LegalDocument01Icon, PanelLeftDashedIcon, PanelRightDashedIcon, PersonStandingIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button, buttonVariants } from "@pleadli/ui/button"
 import { cn } from "@pleadli/ui/lib/utils"
 import { useSidebar } from "@pleadli/ui/sidebar"
 import { Link } from "@tanstack/react-router"
+import { Controls } from "./controls"
 
 export const Headers = () => {
     const { open, setOpen } = useSidebar()
@@ -19,27 +20,38 @@ export const Headers = () => {
                 <div data-tauri-drag-region className="flex items-center gap-5">
                     <nav className='flex items-center gap-1'>
                         <Button
-                            size='icon-xs'
+                            size='icon-sm'
                             variant='ghost'
                             onClick={() => setOpen(!open)}
-                            className='rounded-full'
+                            className='group/icon cursor-pointer'
                         >
-                            {open ? <HugeiconsIcon icon={ChevronLeftIcon} /> : <HugeiconsIcon icon={ChevronRightIcon} />}
+                            <HugeiconsIcon
+                                icon={open ? PanelLeftDashedIcon : PanelRightDashedIcon}
+                            />
                         </Button>
-                        <Link to="/" className="flex items-center gap-2 font-bold text-base shrink-0">
-                            <img src="/icon.ico" alt="" className="size-5" />
+                        <Link to="/" className='text-sm font-semibold'>
                             Pleadli
                         </Link>
                     </nav>
                 </div>
 
-                <nav data-tauri-drag-region className='flex items-center gap-2'>
-                    <Link to='/' className={cn(buttonVariants({ variant: 'secondary' }))}>
+                <nav data-tauri-drag-region className='flex items-center gap-1'>
+                    <Link to='/' className={cn(buttonVariants({
+                        size: 'sm'
+                    }))}>
+                        <HugeiconsIcon icon={LegalDocument01Icon} />
+                        Create new case
+                    </Link>
+                    <Link to='/' className={cn(buttonVariants({
+                        size: 'sm',
+                        variant: 'secondary',
+                    }))}>
                         <HugeiconsIcon icon={PersonStandingIcon} />
                         Help us improve
                     </Link>
+                    <Controls />
                 </nav>
             </section>
-        </header>
+        </header >
     )
 }

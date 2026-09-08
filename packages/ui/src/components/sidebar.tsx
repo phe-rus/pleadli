@@ -102,11 +102,10 @@ export const Dashboard: FC<DashboardProps> = ({
             }}
             onMouseLeave={() => setIsPeeking(false)}
             className={cn(
-              'fixed h-full shrink-0 border-r bg-background shadow-md',
-              'border-border/15 inset-y-0 z-55 backdrop-blur-3xl',
+              'fixed h-full shrink-0 border-r bg-background shadow-2xs',
+              'border-border/5 inset-y-0 z-10 backdrop-blur-3xl',
               'transition-all duration-300 ease-in-out ease-initial',
               'will-change-transform will-change-backdrop-filter',
-              'shadow shadow-muted',
               open
                 ? 'w-72 translate-x-0 z-55 md:relative'
                 : isPeeking
