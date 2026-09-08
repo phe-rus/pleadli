@@ -40,3 +40,4 @@ _archive
 **/.claude/
 **/.turbo/
 apps/police/src-tauri/Cargo.lock
+apps/police/.tanstack
