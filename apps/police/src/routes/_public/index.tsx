@@ -3,12 +3,18 @@ import { AttentionItem } from '@/components/list-cards/attention-item'
 import { CaseRow } from '@/components/list-cards/case-row'
 import * as mock from '@/data/overview'
 import {
+  Add01Icon,
+  AlarmClockIcon,
   ArrowRight01Icon,
   ArrowUp01Icon,
   Building06Icon,
-  Notification01Icon
+  CellsIcon,
+  File02Icon,
+  Notebook01Icon,
+  UserGroupIcon
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card, CardContent } from '@pleadli/ui/card'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -23,116 +29,207 @@ function RouteComponent() {
   const flowPeak = maxOf(mock.weeklyFlow)
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <Card className='p-0'>
-        <CardContent className='flex items-center justify-between gap-5 py-1 px-3'>
-          <div className='flex items-center gap-1.5'>
-            <HugeiconsIcon
-              icon={Notification01Icon}
-              className='size-4'
-            />
-            <h2 className='font-heading'>No notifications today</h2>
-          </div>
-          <p>Check back tomorrow for your daily briefing</p>
-        </CardContent>
-      </Card>
-      <section className="flex flex-col min-h-[30vh]">
-        <div className='flex flex-col my-auto'>
-          <p className='text-xl md:text-2xl'>
-            <HugeiconsIcon icon={Building06Icon} className='size-12' />
-            Central Police Station · Kampala
-          </p>
-          <h1 className="font-heading text-2xl md:text-5xl"> Good morning, Officer</h1>
-          <p className="text-xs/relaxed">
-            Tuesday, 8 September 2026 · {mock.officersOnDuty.current} of{' '}
-            {mock.officersOnDuty.total} officers on duty · 06:00–18:00
-          </p>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-12 gap-5">
-        <div className="flex flex-col gap-5 col-span-12 md:col-span-8">
-          <div className='flex flex-col'>
-            <h3>Cases opened this month</h3>
-            <div className="flex flex-wrap items-end gap-3">
-              <h1 className="font-heading text-6xl leading-none tabular-nums">
-                {mock.casesThisMonth}
-              </h1>
-              <p className="flex items-center gap-1 text-xs!">
-                <HugeiconsIcon icon={ArrowUp01Icon} className='size-5' />
-                {mock.casesTrend.delta}% {mock.casesTrend.note}
+    <article className="container flex flex-col gap-6 pt-6 pb-20">
+      <Card className="border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10 p-0">
+        <CardContent className={cn(
+          "flex flex-col sm:flex-row items-start",
+          'sm:items-center justify-between gap-3 py-2.5 px-4'
+        )}>
+          <div className="flex md:items-center gap-2.5">
+            <span className="relative flex size-2.5">
+              <span className={cn(
+                "absolute inline-flex h-full w-full animate-ping",
+                'rounded-full bg-amber-400 opacity-75'
+              )}></span>
+              <span className="relative inline-flex size-2.5 rounded-full bg-amber-500"></span>
+            </span>
+            <div className={cn(
+              "flex flex-col sm:flex-row md:items-center",
+              'md:gap-3'
+            )}>
+              <h3>
+                48h Custody Alert
+              </h3>
+              <span className="hidden md:block">•</span>
+              <p>
+                2 suspects in cell lock-up are nearing the 48-hour constitutional limit.
               </p>
             </div>
           </div>
+          <Button size="xs">
+            Review Cell Log
+          </Button>
+        </CardContent>
+      </Card>
 
-          <div className="flex flex-col gap-5 mt-auto">
-            <Sparkline
-              data={mock.weeklyFlow.map((d) => d.value)}
-            />
-            <div className="flex text-xs items-center justify-between">
-              <p>8-week case flow</p>
-              <p>peak week {flowPeak} cases</p>
+      <section className='flex flex-col gap-3 md:flex-row md:justify-between md:items-center'>
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-1">
+            <HugeiconsIcon icon={Building06Icon} className="size-4" />
+            <div className='flex flex-wrap items-center text-xs gap-5'>
+              <span className='truncate'>Central Police Station · Kampala</span>
+              <span>•</span>
+              <span className='truncate'>Day Shift (06:00 – 18:00)</span>
             </div>
           </div>
+          <h1>Station Overview</h1>
         </div>
 
-        <Card className={cn(
-          "col-span-12 md:col-span-4 self-auto h-fit",
-          'ring-border/55!'
-        )}>
-          <CardContent className='grid grid-cols-2 gap-5'>
-            {mock.supportingFigures.map((figure) => (
-              <div key={figure.label} className="flex min-w-0 flex-col gap-1">
-                <h3 className='font-heading'>{figure.label}</h3>
-                <h1 className="text-muted-foreground leading-none tabular-nums">
-                  {figure.value}
-                </h1>
-                {figure.hint ? (
-                  <p className="text-xs/relaxed text-muted-foreground">{figure.hint}</p>
-                ) : null}
-              </div>
-            ))}
+        <div className="flex items-center gap-1 col-span-6">
+          <Button
+            size='sm'
+            variant='secondary'
+          >
+            <HugeiconsIcon icon={UserGroupIcon} />
+            <strong>{mock.officersOnDuty.current}</strong>
+            / {mock.officersOnDuty.total} Officers on Duty
+          </Button>
+          <Button size="sm">
+            <HugeiconsIcon icon={Add01Icon} />
+            New SD Entry
+          </Button>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 md:flex md:flex-wrap gap-3">
+        <Card className="p-0 h-fit md:min-w-3xs! md:max-w-3xs!">
+          <CardContent className='p-3'>
+            <div className="flex items-center justify-between">
+              <h1>Cell Lock-up</h1>
+              <HugeiconsIcon icon={CellsIcon} className="size-5" />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <h1 className="text-5xl tabular-nums">14</h1>
+              <Badge variant="secondary">
+                3 Over 24h
+              </Badge>
+            </div>
+            <p>Capacity: 25 suspects</p>
+          </CardContent>
+        </Card>
+
+        <Card className="p-0 h-fit md:min-w-3xs! md:max-w-3xs!">
+          <CardContent className='p-3'>
+            <div className="flex items-center justify-between">
+              <h1 className='text-primary'>Near 48h Limit</h1>
+              <HugeiconsIcon
+                icon={AlarmClockIcon}
+                className="size-5 text-primary"
+              />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <h1 className="text-5xl tabular-nums">02</h1>
+              <Badge variant="destructive">
+                Action Needed
+              </Badge>
+            </div>
+            <p>Must produce in court today</p>
+          </CardContent>
+        </Card>
+
+        <Card className="p-0 h-fit md:min-w-3xs! md:max-w-3xs!">
+          <CardContent className='p-3'>
+            <div className="flex items-center justify-between">
+              <h1>SD Entries Today</h1>
+              <HugeiconsIcon
+                icon={Notebook01Icon}
+                className="size-5"
+              />
+            </div>
+
+            <div className="flex items-baseline justify-between">
+              <h1 className="text-5xl tabular-nums">{mock.casesThisMonth}</h1>
+              <span className="flex items-center text-emerald-600 font-medium">
+                <HugeiconsIcon icon={ArrowUp01Icon} className="size-3" />
+                +{mock.casesTrend.delta}%
+              </span>
+            </div>
+            <p>Since 06:00 shift start</p>
+          </CardContent>
+        </Card>
+
+        <Card className="p-0 h-fit md:min-w-3xs! md:max-w-3xs!">
+          <CardContent className='p-3'>
+            <div className="flex items-center justify-between">
+              <h1>Active CID Files</h1>
+              <HugeiconsIcon
+                icon={File02Icon}
+                className="size-5"
+              />
+            </div>
+
+            <div className="flex items-baseline justify-between">
+              <h1 className="text-5xl tabular-nums">28</h1>
+              <Badge variant="outline">
+                6 With RSA
+              </Badge>
+            </div>
+            <p>12 Pending Statements</p>
           </CardContent>
         </Card>
       </section>
 
-      <section className="grid grid-cols-12 gap-5">
-        <div className="flex flex-col gap-5 col-span-12 md:col-span-7">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2>History & Tracking</h2>
-            <Button
-              size='sm'
-              data-icon="inline-end"
-            >
-              View all
-              <HugeiconsIcon icon={ArrowRight01Icon} />
-            </Button>
-          </div>
-          <span className='border-t border-border/60' />
-          <div className="flex flex-col gap-1">
-            {mock.attentionItems.map((item) => (
-              <AttentionItem key={item.label} item={item} />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-5 col-span-12 md:col-span-5">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2>My cases</h2>
+      <section className="grid grid-cols-12 gap-6">
+        <div className="flex flex-col gap-4 col-span-12 lg:col-span-7">
+          <div className="flex justify-between">
+            <div className='flex flex-col'>
+              <h2>Station Diary & Live Activity</h2>
+              <p>Recent entries recorded at counter</p>
+            </div>
             <Button
               size="sm"
-              data-icon="inline-end"
+              variant='secondary'
             >
-              View all
+              View SD Ledger
               <HugeiconsIcon icon={ArrowRight01Icon} />
             </Button>
           </div>
-          <span className='border-t border-border/60' />
-          <div className="flex flex-col gap-1">
-            {mock.caseRows.map((row) => (
-              <CaseRow key={row.reference} row={row} />
-            ))}
+
+          <Card className='p-0'>
+            <CardContent className="p-0 divide-y divide-border/60">
+              {mock.attentionItems.map((item) => (
+                <div key={item.label} className="px-3 py-1">
+                  <AttentionItem item={item} />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex flex-col gap-6 col-span-12 lg:col-span-5">
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between">
+              <div className='flex flex-col'>
+                <h2>My Investigation Files</h2>
+                <p>Assigned cases requiring action</p>
+              </div>
+              <Button
+                size="sm"
+                variant='secondary'
+              >
+                View All
+                <HugeiconsIcon icon={ArrowRight01Icon} />
+              </Button>
+            </div>
+
+            <Card className='p-0'>
+              <CardContent className="p-0 divide-y divide-border/60">
+                {mock.caseRows.map((row) => (
+                  <CaseRow key={row.reference} row={row} />
+                ))}
+              </CardContent>
+            </Card>
           </div>
+
+          <Card className="p-0">
+            <CardContent className='p-0'>
+              <div className="flex justify-between p-5">
+                <h1>8-Week Intake Trend</h1>
+                <p className="tabular-nums">Peak: {flowPeak} cases/wk</p>
+              </div>
+              <Sparkline data={mock.weeklyFlow.map((d) => d.value)} />
+            </CardContent>
+          </Card>
         </div>
       </section>
     </article>

@@ -5,5 +5,12 @@ export const Route = createFileRoute('/_public/search/files')({
 })
 
 function RouteComponent() {
-  return <div>Hello "/_public/search/files"!</div>
+  return (
+    <article className="container flex flex-col gap-5 pt-5 pb-20">
+      <section className="flex flex-col">
+        <h1>People</h1>
+        <p>Placeholder nothing here yet.</p>
+      </section>
+    </article>
+  )
 }

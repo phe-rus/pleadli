@@ -1,5 +1,5 @@
 import { Headers } from '@/components/toolbar'
-import { stationNav } from '@/data/nav'
+import { stationNav } from '@/data/navigationItems'
 import { PoliceBadgeIcon } from '@hugeicons/core-free-icons'
 import { Dashboard } from '@pleadli/ui/sidebar'
 import { createFileRoute, Outlet } from '@tanstack/react-router'

@@ -32,8 +32,8 @@ export const stationNav = [
       { icon: FileIcon, label: 'Files', to: '/search/files' },
       { icon: Building06Icon, label: 'Stations', to: '/search/stations' },
       // Custody & Legal Compliance
-      { icon: CellsIcon, label: 'Cell Lock-up & 48h', to: '/custody' },
-      { icon: AlarmClock, label: 'Bonds & Sureties', to: '/bonds' },
+      { icon: CellsIcon, label: 'Cell Lock-up & 48h', to: '/search/custody' },
+      { icon: AlarmClock, label: 'Bonds & Sureties', to: '/search/bonds' },
     ]
   },
   // Counter & Initial Intake
