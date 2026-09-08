@@ -19,7 +19,7 @@ function RouteComponent() {
         label: 'Pleadli Police',
         icon: PoliceBadgeIcon
       }}
-      nav={stationNav}
+      itemLists={stationNav}
     >
       <div className="relative flex min-h-dvh flex-col scroll-smooth! aria-hidden">
         <Headers />

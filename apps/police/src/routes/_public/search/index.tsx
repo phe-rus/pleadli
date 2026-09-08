@@ -1,5 +1,9 @@
 import * as mock from '@/data/search'
 import {
+  DataTable,
+  selectColumn
+} from '@pleadli/forms-tables'
+import {
   Combobox,
   ComboboxContent,
   ComboboxEmpty,
@@ -31,32 +35,44 @@ function RouteComponent() {
 
   return (
     <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col">
-        <h1>Search everything</h1>
-        <Combobox value={q} onValueChange={setQ}>
-          <ComboboxInput
-            className='md:max-w-md'
-            placeholder="Search everything…"
-            showClear
-          >
-            <ComboboxContent>
-              <ComboboxList>
-                {[...groups.entries()].map(([group, items]) => (
-                  <ComboboxGroup key={group}>
-                    <ComboboxLabel>{group}</ComboboxLabel>
-                    {items.map((s) => (
-                      <ComboboxItem key={s.id} value={s.label}>
-                        {s.detail ? `${s.label} — ${s.detail}` : s.label}
-                      </ComboboxItem>
-                    ))}
-                  </ComboboxGroup>
-                ))}
-                <ComboboxEmpty>No matches in the record yet</ComboboxEmpty>
-              </ComboboxList>
-            </ComboboxContent>
-          </ComboboxInput>
-        </Combobox>
-      </section>
+      <DataTable
+        aria-label='Search results'
+        customSearchbar={() => {
+          return (
+            <section className="flex flex-col w-full">
+              <h1>Search everything</h1>
+              <Combobox value={q} onValueChange={setQ}>
+                <ComboboxInput
+                  className='md:max-w-lg rounded!'
+                  placeholder="Search everything…"
+                  showClear
+                >
+                  <ComboboxContent>
+                    <ComboboxList>
+                      {[...groups.entries()].map(([group, items]) => (
+                        <ComboboxGroup key={group}>
+                          <ComboboxLabel>{group}</ComboboxLabel>
+                          {items.map((s) => (
+                            <ComboboxItem key={s.id} value={s.label}>
+                              {s.detail ? `${s.label} — ${s.detail}` : s.label}
+                            </ComboboxItem>
+                          ))}
+                        </ComboboxGroup>
+                      ))}
+                      <ComboboxEmpty>No matches in the record yet</ComboboxEmpty>
+                    </ComboboxList>
+                  </ComboboxContent>
+                </ComboboxInput>
+              </Combobox>
+            </section>
+          )
+        }}
+        data={[mock.searchSuggestions]}
+        columns={[
+          selectColumn(),
+        ]}
+        getRowId={() => ''}
+      />
     </article>
   )
 }

@@ -1,6 +1,6 @@
 import { authClient } from '@/auth/client'
-import { stopImpersonating } from '@/functions/admin.func'
 import { adminNav } from '@/data/admin'
+import { stopImpersonating } from '@/functions/admin.func'
 import { JusticeScale01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@pleadli/ui/button'
 import { Dashboard } from '@pleadli/ui/sidebar'
@@ -36,14 +36,15 @@ function RouteComponent() {
   return (
     <Dashboard
       brand={{ to: '/', label: 'Pleadli', icon: JusticeScale01Icon }}
-      nav={adminNav}
-      footer={
-        <Button size="sm" className="w-fit!" variant="destructive" onClick={signOut} disabled={isPending}>
-          {isPending ? 'Signing out...' : 'Sign out'}
-        </Button>
-      }
-      banner={
-        impersonatedBy && (
+      itemLists={adminNav}
+      addOns={{
+        enableNavigation: true,
+        footer: (
+          <Button size="sm" className="w-fit!" variant="destructive" onClick={signOut} disabled={isPending}>
+            {isPending ? 'Signing out...' : 'Sign out'}
+          </Button>
+        ),
+        banner: impersonatedBy && (
           <div className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b bg-destructive/10 px-5 py-2 text-xs text-destructive">
             <span>
               Impersonating <strong>{session.user.name}</strong> ({session.user.email})
@@ -62,7 +63,7 @@ function RouteComponent() {
             </Button>
           </div>
         )
-      }
+      }}
     >
       <Outlet />
     </Dashboard>

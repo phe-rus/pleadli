@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon } from '@hugeicons/core-free-icons'
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '@hugeicons/core-free-icons'
 import type { HugeiconsProps } from '@hugeicons/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
@@ -18,10 +18,11 @@ import { cn } from '../lib/utils'
 import { Button } from './button'
 
 export type SidebarNavItem = {
-  to: string
+  to?: string
   label: string
   icon: HugeiconsProps['icon']
   exact?: boolean
+  children?: readonly SidebarNavItem[]
 }
 
 export type SidebarBrand = {
@@ -44,7 +45,7 @@ export function useSidebar() {
 }
 export type DashboardProps = PropsWithChildren<{
   brand: SidebarBrand
-  nav: readonly SidebarNavItem[]
+  itemLists: readonly SidebarNavItem[]
   addOns?: {
     enableNavigation?: boolean
     footer?: ReactNode
@@ -58,7 +59,7 @@ export const Dashboard: FC<DashboardProps> = ({
     enableNavigation: true
   },
   brand,
-  nav,
+  itemLists,
   className,
   children
 }) => {
@@ -159,22 +160,68 @@ export const Dashboard: FC<DashboardProps> = ({
                 </nav>
 
                 <nav className="flex flex-col gap-px">
-                  {nav.map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className={cn(
-                        'group/icon relative flex items-center gap-2 text-base',
-                        'transition-colors duration-150 ease-out py-0.5 px-1',
-                        'rounded-md hover:bg-secondary',
-                      )}
-                      activeProps={{ className: 'text-primary font-medium bg-secondary' }}
-                      activeOptions={{ exact: item.exact }}
-                    >
-                      {item.icon && <HugeiconsIcon icon={item.icon} className="size-4" />}
-                      {item.label}
-                    </Link>
-                  ))}
+                  {itemLists.map((item, index) => {
+                    if (item.children) {
+                      return (
+                        <div className='flex flex-col gap-1'>
+                          <Link to={item.to} className={cn(
+                            'group/icon relative flex items-center gap-2 text-base',
+                            'transition-colors duration-150 ease-out py-0.5 px-1',
+                            'rounded-md hover:bg-secondary justify-between',
+                          )}>
+                            <div className='flex items-center gap-2'>
+                              {item.icon && <HugeiconsIcon icon={item.icon} className="size-4" />}
+                              {item.label}
+                            </div>
+
+                            <HugeiconsIcon
+                              icon={ChevronDownIcon}
+                              className='size-4'
+                            />
+                          </Link>
+
+                          <div className='flex gap-2 pl-2.5 w-full'>
+                            <span className='bg-primary w-px' />
+                            <div className='flex flex-col w-full'>
+                              {item.children.map((child, childIndex) => (
+                                <Link
+                                  key={childIndex}
+                                  to={child.to}
+                                  className={cn(
+                                    'group/icon relative flex items-center gap-2 text-sm',
+                                    'transition-colors duration-150 ease-out py-0.5 px-1',
+                                    'rounded-md hover:bg-secondary w-full',
+                                  )}
+                                  activeProps={{ className: 'text-primary font-medium bg-secondary' }}
+                                  activeOptions={{ exact: item.exact }}
+                                >
+                                  {child.icon && <HugeiconsIcon icon={child.icon} className="size-4" />}
+                                  {child.label}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <Link
+                        key={index}
+                        to={item.to}
+                        className={cn(
+                          'group/icon relative flex items-center gap-2 text-base',
+                          'transition-colors duration-150 ease-out py-0.5 px-1',
+                          'rounded-md hover:bg-secondary',
+                        )}
+                        activeProps={{ className: 'text-primary font-medium bg-secondary' }}
+                        activeOptions={{ exact: item.exact }}
+                      >
+                        {item.icon && <HugeiconsIcon icon={item.icon} className="size-4" />}
+                        {item.label}
+                      </Link>
+                    )
+                  })}
                 </nav>
               </section>
               <span

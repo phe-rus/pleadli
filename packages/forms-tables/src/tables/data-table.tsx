@@ -23,6 +23,7 @@ import type {
   ColumnDef,
   ColumnFiltersState,
   ColumnVisibilityState,
+  Row,
   RowData,
   RowSelectionState,
   SortingState,
@@ -100,6 +101,14 @@ export type DataTableColumnDef<TData extends RowData, TValue = unknown> = Column
   TValue
 > & { meta?: DataTableColumnMeta }
 
+type CustomSearchbarProps<TData extends RowData> = {
+  globalFilter: string
+  setGlobalFilter: (value: string) => void
+  rows: Row<DataTableFeatures, TData>[]
+  columnCount: number
+  getRowId: (row: Row<DataTableFeatures, TData>) => string
+}
+
 type DataTableProps<TData extends RowData> = {
   data: TData[]
   // biome-ignore lint/suspicious/noExplicitAny: a column array mixes columns with different value types per accessor, same escape hatch tanstack-table's own ColumnDef[] typings use
@@ -112,7 +121,7 @@ type DataTableProps<TData extends RowData> = {
    * what are now different rows. Required, not defaulted, so this can't
    * silently regress.
    */
-  getRowId: (row: TData) => string
+  getRowId?: (row: TData) => string
   "aria-label": string
   emptyMessage?: ReactNode
   searchPlaceholder?: string
@@ -123,6 +132,7 @@ type DataTableProps<TData extends RowData> = {
   onSelectedRowsChange?: (rows: TData[]) => void
   /** A summary row rendered inside the table's own <tfoot>, below the data rows — e.g. a totals line. Gets the visible column count for its colSpan. */
   footer?: (columnCount: number) => ReactNode
+  customSearchbar?: (props: CustomSearchbarProps<TData>) => React.ReactNode
 }
 
 /**
@@ -141,6 +151,7 @@ export function DataTable<TData extends RowData>({
   pageSizeOptions,
   onSelectedRowsChange,
   footer,
+  customSearchbar,
   "aria-label": ariaLabel,
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState("")
@@ -201,71 +212,82 @@ export function DataTable<TData extends RowData>({
   return (
     <div className="flex flex-col gap-3 [&_div]:no-scrollbar! [&_tr]:border-none!">
       <div className="relative flex items-center">
-        <InputGroup className="max-w-full">
-          <InputGroupInput
-            placeholder={searchPlaceholder}
-            autoComplete="off"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-          />
-          <InputGroupAddon align="inline-start">
-            <HugeiconsIcon icon={Search01Icon} />
-          </InputGroupAddon>
-          <InputGroupAddon align="inline-end">
-            <Button
-              type="button"
-              size="xs"
-              variant={columnsOpen ? "default" : "secondary"}
-              onClick={() => {
-                setColumnsOpen((o) => !o)
-                setFiltersOpen(false)
-              }}
-            >
-              Columns
-              {hiddenCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="ml-0.5 size-4 p-0 text-[9px] tabular-nums"
-                >
-                  {hiddenCount}
-                </Badge>
-              )}
-              <HugeiconsIcon
-                icon={ChevronDownIcon}
-                className={cn(
-                  "transition-transform duration-150",
-                  columnsOpen && "rotate-180"
+        {customSearchbar ?
+          customSearchbar({
+            globalFilter,
+            setGlobalFilter,
+            rows,
+            columnCount,
+            getRowId: (row: Row<DataTableFeatures, TData>) => {
+              return getRowId?.(row.original) ?? ""
+            },
+          }) :
+          <InputGroup className="max-w-full">
+            <InputGroupInput
+              placeholder={searchPlaceholder}
+              autoComplete="off"
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+            />
+            <InputGroupAddon align="inline-start">
+              <HugeiconsIcon icon={Search01Icon} />
+            </InputGroupAddon>
+            <InputGroupAddon align="inline-end">
+              <Button
+                type="button"
+                size="xs"
+                variant={columnsOpen ? "default" : "secondary"}
+                onClick={() => {
+                  setColumnsOpen((o) => !o)
+                  setFiltersOpen(false)
+                }}
+              >
+                Columns
+                {hiddenCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-0.5 size-4 p-0 text-[9px] tabular-nums"
+                  >
+                    {hiddenCount}
+                  </Badge>
                 )}
-              />
-            </Button>
-            <Button
-              type="button"
-              size="xs"
-              variant={activeFilterCount > 0 || filtersOpen ? "default" : "secondary"}
-              onClick={() => {
-                setFiltersOpen((o) => !o)
-                setColumnsOpen(false)
-              }}
-            >
-              Filters
-              {activeFilterCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="ml-0.5 size-4 p-0 text-[9px] tabular-nums"
-                >
-                  {activeFilterCount}
-                </Badge>
-              )}
-              <HugeiconsIcon
-                icon={ChevronDownIcon}
-                className={cn(
-                  "transition-transform duration-150",
-                  filtersOpen && "rotate-180"
+                <HugeiconsIcon
+                  icon={ChevronDownIcon}
+                  className={cn(
+                    "transition-transform duration-150",
+                    columnsOpen && "rotate-180"
+                  )}
+                />
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant={activeFilterCount > 0 || filtersOpen ? "default" : "secondary"}
+                onClick={() => {
+                  setFiltersOpen((o) => !o)
+                  setColumnsOpen(false)
+                }}
+              >
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-0.5 size-4 p-0 text-[9px] tabular-nums"
+                  >
+                    {activeFilterCount}
+                  </Badge>
                 )}
-              />
-            </Button>
-          </InputGroupAddon>
-        </InputGroup>
+                <HugeiconsIcon
+                  icon={ChevronDownIcon}
+                  className={cn(
+                    "transition-transform duration-150",
+                    filtersOpen && "rotate-180"
+                  )}
+                />
+              </Button>
+            </InputGroupAddon>
+          </InputGroup>
+        }
       </div>
 
       {columnsOpen && (
@@ -365,7 +387,7 @@ export function DataTable<TData extends RowData>({
       <Table
         aria-label={ariaLabel}
         data-not-typeset={true}
-        className="divide-none!"
+        className="divide-none! border overflow-hidden border-input/40 shadow"
       >
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
