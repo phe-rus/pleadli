@@ -9,6 +9,7 @@
 @source '**/**/**/*.{tsx,ts}';
 @source '../components/**/*.{tsx,ts}';
 @source '../../../../apps/**/*.{tsx,ts}';
+@source '../../../*/src/**/*.{tsx,ts}';
 
 @utility container {
   margin-inline: auto;
