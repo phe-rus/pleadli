@@ -37,6 +37,10 @@ pub fn run() {
             commands::people::create_person,
             commands::people::search_people,
             commands::people::get_person,
+            commands::people::update_person,
+            commands::station_diary::create_station_diary_entry,
+            commands::station_diary::list_station_diary_entries,
+            commands::station_diary::update_station_diary_entry,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

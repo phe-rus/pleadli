@@ -1,9 +1,10 @@
-import { LegalDocument01Icon, PanelLeftDashedIcon, PanelRightDashedIcon, PersonStandingIcon, Search } from "@hugeicons/core-free-icons"
+import { LegalDocument01Icon, PanelLeftDashedIcon, PanelRightDashedIcon, Search } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button, buttonVariants } from "@pleadli/ui/button"
 import { cn } from "@pleadli/ui/lib/utils"
 import { useSidebar } from "@pleadli/ui/sidebar"
 import { Link } from "@tanstack/react-router"
+import { Toggletheme } from "../toggle-theme"
 import { Controls } from "./controls"
 
 export const Headers = () => {
@@ -47,13 +48,7 @@ export const Headers = () => {
                         <HugeiconsIcon icon={LegalDocument01Icon} />
                         Create new case
                     </Link>
-                    <Link to='/' className={cn(buttonVariants({
-                        size: 'sm',
-                        variant: 'secondary',
-                    }))}>
-                        <HugeiconsIcon icon={PersonStandingIcon} />
-                        Help us improve
-                    </Link>
+                    <Toggletheme />
                     <Controls />
                 </nav>
             </section>

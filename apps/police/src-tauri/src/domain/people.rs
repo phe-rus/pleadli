@@ -46,6 +46,29 @@ pub async fn create_person(pool: &SqlitePool, input: CreatePersonInput) -> Resul
     get_person(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)
 }
 
+pub async fn update_person(
+    pool: &SqlitePool,
+    id: &str,
+    input: CreatePersonInput,
+) -> Result<Person, sqlx::Error> {
+    sqlx::query(
+        "UPDATE people
+         SET first_name = ?, last_name = ?, other_names = ?, phone = ?, national_id = ?, address = ?
+         WHERE id = ?",
+    )
+    .bind(&input.first_name)
+    .bind(&input.last_name)
+    .bind(&input.other_names)
+    .bind(&input.phone)
+    .bind(&input.national_id)
+    .bind(&input.address)
+    .bind(id)
+    .execute(pool)
+    .await?;
+
+    get_person(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
+}
+
 pub async fn search_people(pool: &SqlitePool, query: &str) -> Result<Vec<Person>, sqlx::Error> {
     let trimmed = query.trim();
 

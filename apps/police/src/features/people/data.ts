@@ -2,8 +2,6 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
 import { createPersonSchema, personSchema, type CreatePersonInput, type Person } from './schema'
 
-export type { CreatePersonInput, Person }
-
 // Only reachable in a dev build (see src-tauri/src/server.rs) — lets the
 // plain browser dev server (no Tauri IPC bridge) exercise the same data
 // layer against the real local database during development.
@@ -23,6 +21,17 @@ export async function createPerson(input: CreatePersonInput) {
   const person = isTauri()
     ? await invoke('create_person', { input: parsed })
     : await devFetch('/people', { method: 'POST', body: JSON.stringify(parsed) })
+  return personSchema.parse(person)
+}
+
+export async function updatePerson(id: string, input: CreatePersonInput) {
+  const parsed = createPersonSchema.parse(input)
+  const person = isTauri()
+    ? await invoke('update_person', { id, input: parsed })
+    : await devFetch(`/people/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(parsed),
+      })
   return personSchema.parse(person)
 }
 

@@ -3,6 +3,8 @@ use std::path::PathBuf;
 
 #[cfg(debug_assertions)]
 use crate::domain::people;
+#[cfg(debug_assertions)]
+use crate::domain::station_diary;
 
 pub struct Db {
     pub pool: SqlitePool,
@@ -21,7 +23,10 @@ pub async fn connect(db_path: PathBuf) -> Result<Db, sqlx::Error> {
     sqlx::migrate!("./migrations").run(&pool).await?;
 
     #[cfg(debug_assertions)]
-    people::seed_if_empty(&pool).await?;
+    {
+        people::seed_if_empty(&pool).await?;
+        station_diary::seed_if_empty(&pool).await?;
+    }
 
     Ok(Db { pool })
 }

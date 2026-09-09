@@ -31,6 +31,7 @@ export function FieldSelect({
     <Field data-invalid={isInvalid}>
       <FieldLabel>{label}</FieldLabel>
       <Select
+        items={options}
         value={field.state.value}
         onValueChange={(value) => field.handleChange(value ?? "")}
         disabled={disabled}

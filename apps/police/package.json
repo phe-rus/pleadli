@@ -14,6 +14,7 @@
     "@hugeicons/core-free-icons": "^4.3.0",
     "@hugeicons/react": "^1.1.10",
     "@pleadli/forms-tables": "workspace:*",
+    "@pleadli/rich-text": "workspace:*",
     "@pleadli/ui": "workspace:*",
     "@tanstack/react-form": "^1.33.5",
     "@tanstack/react-query": "^5.102.8",
@@ -21,6 +22,7 @@
     "@tanstack/react-router-ssr-query": "^1.167.2",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "date-fns": "^4.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^4.5.4"

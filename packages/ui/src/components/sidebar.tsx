@@ -165,7 +165,7 @@ export const Dashboard: FC<DashboardProps> = ({
                       return (
                         <div key={index} className='flex flex-col gap-1'>
                           <Link to={item.to} className={cn(
-                            'group/icon relative flex items-center gap-2 text-base',
+                            'group/icon relative flex items-center gap-2 text-sm',
                             'transition-colors duration-150 ease-out py-0.5 px-1',
                             'rounded-md hover:bg-secondary justify-between',
                           )}>
@@ -210,7 +210,7 @@ export const Dashboard: FC<DashboardProps> = ({
                         key={index}
                         to={item.to}
                         className={cn(
-                          'group/icon relative flex items-center gap-2 text-base',
+                          'group/icon relative flex items-center gap-2 text-sm',
                           'transition-colors duration-150 ease-out py-0.5 px-1',
                           'rounded-md hover:bg-secondary',
                         )}
