@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
+use std::path::Path;
 use uuid::Uuid;
+
+use super::{attachments, markdown};
+
+#[cfg(debug_assertions)]
+use super::seed_support::plain_text_to_rich_text_json;
 
 /// The category list is the one already established in
 /// docs/police/PRODUCT.md's Station Diary section — not invented here.
@@ -25,8 +31,18 @@ pub struct CreateStationDiaryEntryInput {
     pub person_id: Option<String>,
 }
 
+async fn write_entry_markdown(pool: &SqlitePool, vault_root: &Path, record: &StationDiaryEntry) {
+    if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "station_diary_entry", &record.id).await {
+        let title = format!("Station Diary: {}", record.category.replace('_', " "));
+        if let Err(e) = markdown::write_record(&dir, &format!("station_diary_entry-{}", record.id), &title, record) {
+            log::warn!("failed to write station diary entry markdown: {e}");
+        }
+    }
+}
+
 pub async fn create_entry(
     pool: &SqlitePool,
+    vault_root: &Path,
     input: CreateStationDiaryEntryInput,
 ) -> Result<StationDiaryEntry, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
@@ -41,11 +57,14 @@ pub async fn create_entry(
     .execute(pool)
     .await?;
 
-    get_entry(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)
+    let record = get_entry(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
+    write_entry_markdown(pool, vault_root, &record).await;
+    Ok(record)
 }
 
 pub async fn update_entry(
     pool: &SqlitePool,
+    vault_root: &Path,
     id: &str,
     input: CreateStationDiaryEntryInput,
 ) -> Result<StationDiaryEntry, sqlx::Error> {
@@ -57,7 +76,9 @@ pub async fn update_entry(
         .execute(pool)
         .await?;
 
-    get_entry(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
+    let record = get_entry(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
+    write_entry_markdown(pool, vault_root, &record).await;
+    Ok(record)
 }
 
 pub async fn list_entries(pool: &SqlitePool, query: &str) -> Result<Vec<StationDiaryEntry>, sqlx::Error> {
@@ -95,6 +116,23 @@ pub async fn list_entries(pool: &SqlitePool, query: &str) -> Result<Vec<StationD
     .await
 }
 
+pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<StationDiaryEntry>, sqlx::Error> {
+    sqlx::query_as::<_, StationDiaryEntry>(
+        "SELECT
+            sd.id, sd.category, sd.content, sd.person_id, sd.created_at,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names
+         FROM station_diary_entries sd
+         LEFT JOIN people p ON p.id = sd.person_id
+         WHERE sd.person_id = ?
+         ORDER BY sd.created_at DESC",
+    )
+    .bind(person_id)
+    .fetch_all(pool)
+    .await
+}
+
 pub async fn get_entry(pool: &SqlitePool, id: &str) -> Result<Option<StationDiaryEntry>, sqlx::Error> {
     sqlx::query_as::<_, StationDiaryEntry>(
         "SELECT
@@ -111,45 +149,10 @@ pub async fn get_entry(pool: &SqlitePool, id: &str) -> Result<Option<StationDiar
     .await
 }
 
-/// Wraps plain text in the minimal Lexical serialized-editor-state shape —
-/// `content` is stored as Lexical JSON (see @pleadli/lexical-text), so seed
-/// data has to actually be in that format, not plain text, or the rich
-/// text preview will just render nothing (isRichTextEmpty catches the
-/// parse failure silently).
-#[cfg(debug_assertions)]
-fn plain_text_to_lexical_json(text: &str) -> String {
-    serde_json::json!({
-        "root": {
-            "children": [{
-                "children": [{
-                    "detail": 0,
-                    "format": 0,
-                    "mode": "normal",
-                    "style": "",
-                    "text": text,
-                    "type": "text",
-                    "version": 1
-                }],
-                "direction": "ltr",
-                "format": "",
-                "indent": 0,
-                "type": "paragraph",
-                "version": 1
-            }],
-            "direction": "ltr",
-            "format": "",
-            "indent": 0,
-            "type": "root",
-            "version": 1
-        }
-    })
-    .to_string()
-}
-
 /// Dev/test convenience only, same as people::seed_if_empty — compiled out
 /// of release builds entirely via #[cfg(debug_assertions)] in db.rs.
 #[cfg(debug_assertions)]
-pub async fn seed_if_empty(pool: &SqlitePool) -> Result<(), sqlx::Error> {
+pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), sqlx::Error> {
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM station_diary_entries")
         .fetch_one(pool)
         .await?;
@@ -194,9 +197,10 @@ pub async fn seed_if_empty(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     for (category, content, person_id) in samples {
         create_entry(
             pool,
+            vault_root,
             CreateStationDiaryEntryInput {
                 category: category.to_string(),
-                content: plain_text_to_lexical_json(content),
+                content: plain_text_to_rich_text_json(content),
                 person_id,
             },
         )

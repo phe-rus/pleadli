@@ -13,10 +13,13 @@ import { RichTextPreview } from '@pleadli/rich-text'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
+import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/sd-log/')({
+  validateSearch: (search: Record<string, unknown>): { open?: string } =>
+    typeof search.open === 'string' ? { open: search.open } : {},
   loader: async ({ context }) => {
     await context.queryClient.query({ ...stationDiaryOptions(''), staleTime: 'static' })
   },
@@ -24,9 +27,13 @@ export const Route = createFileRoute('/_public/sd-log/')({
 })
 
 function RouteComponent() {
+  const { open: openId } = Route.useSearch()
   const [addOpen, setAddOpen] = useState(false)
+  const [addDirty, setAddDirty] = useState(false)
   const [editingEntry, setEditingEntry] = useState<StationDiaryEntry | null>(null)
+  const [editDirty, setEditDirty] = useState(false)
   const { data: entries } = useStationDiaryEntries('')
+  useDeepLinkRecord(entries, openId, setEditingEntry)
 
   const columns: DataTableColumnDef<StationDiaryEntry>[] = useMemo(() => {
     return [
@@ -59,7 +66,7 @@ function RouteComponent() {
         id: 'relatedPerson',
         accessorFn: (row) => stationDiaryRelatedPersonName(row) ?? '',
         header: 'Related person',
-        cell: ({ getValue }) => getValue<string>() || '—',
+        cell: ({ getValue }) => getValue<string>() || '·',
       },
       {
         accessorKey: 'createdAt',
@@ -79,6 +86,7 @@ function RouteComponent() {
             <Createpanel
               open={addOpen}
               onOpenChange={setAddOpen}
+              isDirty={addDirty}
               trigger={
                 <Button size="sm">
                   <HugeiconsIcon icon={AddCircleIcon} />
@@ -90,7 +98,7 @@ function RouteComponent() {
                 description: "Log what happened. This doesn't have to become an incident.",
               }}
             >
-              <StationDiaryEntryForm onSuccess={() => setAddOpen(false)} />
+              <StationDiaryEntryForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
             </Createpanel>
           </div>
           <p className="md:max-w-sm">
@@ -104,6 +112,7 @@ function RouteComponent() {
         onOpenChange={(open) => {
           if (!open) setEditingEntry(null)
         }}
+        isDirty={editDirty}
         headings={{
           title: 'Edit station diary entry',
           description: 'Update what was logged.',
@@ -114,6 +123,7 @@ function RouteComponent() {
             key={editingEntry.id}
             entry={editingEntry}
             onSuccess={() => setEditingEntry(null)}
+            onDirtyChange={setEditDirty}
           />
         )}
       </Createpanel>

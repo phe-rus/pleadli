@@ -1,14 +1,18 @@
-import type { CaseRow as CaseRowData } from '@/data/overview'
-import { Avatar, AvatarFallback } from '@pleadli/ui/avatar'
 import { Badge } from '@pleadli/ui/badge'
 import { cn } from '@pleadli/ui/lib/utils'
 
-const statusVariant = {
-  Open: 'secondary',
-  'In progress': 'default',
-  'Waiting referral': 'outline',
-  Returned: 'destructive',
-} as const
+export type CaseRowData = {
+  reference: string
+  title: string
+  status: string
+  statusLabel: string
+  subtitle: string
+}
+
+const statusVariant: Record<string, 'secondary' | 'default' | 'outline' | 'destructive'> = {
+  open: 'default',
+  closed: 'secondary',
+}
 
 export type CaseRowProps = {
   row: CaseRowData
@@ -25,27 +29,22 @@ export const CaseRow = ({
     <article
       onClick={onClick}
       className={cn(
-        'flex items-center justify-between cursor-pointer',
+        'flex items-center justify-between cursor-pointer gap-3',
         'rounded-md px-1.5 py-1 transition-colors hover:bg-muted/60',
         className,
       )}
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <Avatar size="sm" className="shrink-0">
-          <AvatarFallback className="bg-muted text-[0.625rem]">{row.officer}</AvatarFallback>
-        </Avatar>
-        <div className="min-w-0">
-          <h1 className='text-xs truncate'>{row.title}</h1>
-          <p className="text-xs">
-            {row.reference} · updated {row.updated}
-          </p>
-        </div>
+      <div className="min-w-0">
+        <div className='text-xs truncate'>{row.title}</div>
+        <p className="text-xs">
+          {row.reference} · {row.subtitle}
+        </p>
       </div>
       <Badge
         className="shrink-0 text-[0.625rem]!"
-        variant={statusVariant[row.status]}
+        variant={statusVariant[row.status] ?? 'outline'}
       >
-        {row.status}
+        {row.statusLabel}
       </Badge>
     </article>
   )

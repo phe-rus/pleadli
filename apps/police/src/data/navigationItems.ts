@@ -59,5 +59,13 @@ export const stationNav = [
   { icon: Share08Icon, label: 'Referrals & Dispatches', to: '/referrals' },
   { icon: UserIcon, label: 'Duty Roster', to: '/roster' },
   { icon: BarChartIcon, label: 'Reports & Analytics', to: '/reports' },
-  { icon: Building06Icon, label: 'Station Admin', to: '/station' },
+  {
+    icon: Building06Icon,
+    label: 'Station Admin',
+    to: '/station',
+    children: [
+      { icon: Building06Icon, label: 'Profile', to: '/station/profile' },
+      { icon: UserGroupIcon, label: 'Establishment', to: '/station/establishment' },
+    ]
+  },
 ] as const

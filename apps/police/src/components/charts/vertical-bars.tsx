@@ -19,9 +19,9 @@ export const VerticalBars = ({ rows, max, barClassName, className }: VerticalBar
             key={label}
             className="group/bar flex min-w-0 flex-1 flex-col items-center gap-2"
           >
-            <h1 className="font-heading text-xs text-muted-foreground tabular-nums">
+            <span className="font-heading text-xs text-muted-foreground tabular-nums">
               {value}
-            </h1>
+            </span>
             <div className="flex h-36 w-full items-end rounded-full bg-muted/55">
               <div
                 className={cn(

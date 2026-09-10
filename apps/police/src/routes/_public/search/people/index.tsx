@@ -5,11 +5,11 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
-export const Route = createFileRoute('/_public/search/people')({
+export const Route = createFileRoute('/_public/search/people/')({
   loader: async ({ context }) => {
     await context.queryClient.query({ ...peopleSearchOptions(''), staleTime: 'static' })
   },
@@ -18,7 +18,6 @@ export const Route = createFileRoute('/_public/search/people')({
 
 function RouteComponent() {
   const [addOpen, setAddOpen] = useState(false)
-  const [editingPerson, setEditingPerson] = useState<Person | null>(null)
   const { data: people } = usePeopleSearch('')
 
   const columns: DataTableColumnDef<Person>[] = useMemo(() => {
@@ -28,12 +27,13 @@ function RouteComponent() {
         accessorKey: 'id',
         header: 'ID',
         cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setEditingPerson(row.original)}
+          <Link
+            to="/search/people/$personId"
+            params={{ personId: row.original.id }}
+            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs')}
           >
             {row.original.id}
-          </span>
+          </Link>
         ),
       },
       { accessorKey: 'firstName', header: 'First name' },
@@ -42,17 +42,17 @@ function RouteComponent() {
       {
         accessorKey: 'phone',
         header: 'Phone',
-        cell: ({ row }) => row.original.phone ?? '—',
+        cell: ({ row }) => row.original.phone ?? '·',
       },
       {
         accessorKey: 'nationalId',
         header: 'NIN / National ID',
-        cell: ({ row }) => row.original.nationalId ?? '—',
+        cell: ({ row }) => row.original.nationalId ?? '·',
       },
       {
         accessorKey: 'address',
         header: 'Address',
-        cell: ({ row }) => row.original.address ?? '—',
+        cell: ({ row }) => row.original.address ?? '·',
       },
       {
         accessorKey: 'createdAt',
@@ -91,25 +91,6 @@ function RouteComponent() {
           </p>
         </div>
       </section>
-
-      <Createpanel
-        open={editingPerson !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditingPerson(null)
-        }}
-        headings={{
-          title: 'Edit person',
-          description: 'Update this person\'s recorded details.',
-        }}
-      >
-        {editingPerson && (
-          <PersonForm
-            key={editingPerson.id}
-            person={editingPerson}
-            onSuccess={() => setEditingPerson(null)}
-          />
-        )}
-      </Createpanel>
 
       <DataTable
         aria-label="People"

@@ -1,4 +1,3 @@
-import type { AttentionItem as AttentionItemData } from '@/data/overview'
 import { cn } from '@pleadli/ui/lib/utils'
 
 const severityDot = {
@@ -6,6 +5,13 @@ const severityDot = {
   medium: 'bg-warning',
   low: 'bg-muted-foreground/60',
 } as const
+
+export type AttentionItemData = {
+  label: string
+  detail: string
+  time: string
+  severity: keyof typeof severityDot
+}
 
 export type AttentionItemProps = {
   item: AttentionItemData
@@ -26,7 +32,7 @@ export const AttentionItem = ({
       />
       <div className="flex min-w-0 flex-1 flex-col gap-px">
         <div className="flex items-baseline justify-between gap-3">
-          <h1 className='text-sm truncate'>{item.label}</h1>
+          <div className='text-sm truncate'>{item.label}</div>
           <p className="shrink-0 text-xs text-muted-foreground">{item.time}</p>
         </div>
         <p className="text-xs text-muted-foreground">{item.detail}</p>

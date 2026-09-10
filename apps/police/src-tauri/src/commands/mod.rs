@@ -1,2 +1,16 @@
+pub mod attachments;
+pub mod bonds;
+pub mod cases;
+pub mod charge_sheets;
+pub mod custody;
+pub mod duty;
+pub mod exhibits;
+pub mod incidents;
 pub mod people;
+pub mod referrals;
+pub mod reports;
+pub mod search;
+pub mod statements;
+pub mod station_admin;
+pub mod station_assets;
 pub mod station_diary;

@@ -41,7 +41,7 @@ export const PersonRow = ({ person, className, onClick }: PersonRowProps) => {
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0">
-          <h1 className="truncate text-xs">{person.name}</h1>
+          <div className="truncate text-xs">{person.name}</div>
           <p className="text-xs text-muted-foreground">{detail}</p>
         </div>
       </div>

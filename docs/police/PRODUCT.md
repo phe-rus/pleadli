@@ -96,10 +96,10 @@ For each domain: what work it supports, what it owns, what it legitimately relat
 
 ### Investigations
 - **Supports**: the active work of investigating a case — the one place the product should feel most different from a CRUD app.
-- **Owns**: little of its own; composes People, Statements, Evidence, actions, referral status, and timeline for a given Case into a working view.
-- **Relates to**: Case (tightly, exact cardinality not yet finalized — see Uncertainties), Statements, Evidence, Referrals.
-- **Kind**: workspace, not a folder.
-- **Do not assume**: it should become a generic project-management tool. Do not invent task-management features just because "outstanding work" or "actions" are mentioned — only build concepts with a genuine, named product purpose.
+- **Owns**: nothing of its own — **resolved (2026-09), superseding the earlier "cardinality not yet finalized" note**: Investigation is not a separate database entity. It is a composed workspace view over a Case's own already-linked people, statements, custody, bonds, evidence, and a derived timeline — no `investigations` table, no investigation-specific status distinct from the Case's own status. This is inherently one workspace per Case, because there is no separate record to have a cardinality with Case in the first place.
+- **Relates to**: Case (the view's subject), Statements, Evidence, Custody, Bonds, Referrals (once built) — all read through the Case's own existing relationships, nothing new.
+- **Kind**: workspace (a route/UI composition), not a record, not a folder.
+- **Do not assume**: it should become a generic project-management tool. Do not invent task-management features just because "outstanding work" or "actions" are mentioned — only build concepts with a genuine, named product purpose. If investigation-specific state (an assigned IO, an investigation stage distinct from case status) becomes a real requirement later, that is a new decision, not an extension of this one.
 
 ### Statements
 - **Supports**: recording what a person said, with procedural weight.
@@ -136,15 +136,13 @@ For each domain: what work it supports, what it owns, what it legitimately relat
 - **Kind**: generated document / capability.
 - **Do not assume**: every document must be generated immediately. The requirement is architectural: don't make structured information unusable outside the screen where it was entered.
 
-### Referrals
-- **Supports**: connecting Police's work to another institution (DPP, Courts) when a case requires it.
-- **Owns**: the referral event/record — to whom, when, status.
+### Referrals & Dispatches
+- **Resolved (2026-09)**: one unified workflow, not two — but only after checking what "dispatch" actually refers to in real Uganda Police usage, rather than assuming the nav grouping was already correct. Verified two distinct senses exist: (1) an operational/emergency-response sense — Uganda Police's National Operations Information Room dispatching officers to a scene for quick reaction — and (2) a purely colloquial media use of "dispatch" as a synonym for sending a case file to the DPP, which is just the Referral event itself, worded differently. Sense (1) is a live radio/location-coordination concern, not a records concern, and stays explicitly out of scope (no live location, no radio integration — see "Desktop, mobile, local station, and Pleadli Cloud" below). Sense (2) is exactly what this domain already models. So "Dispatches" contributes no genuinely distinct workflow to build — the unification is real, not forced.
+- **Supports**: connecting Police's work to another institution or unit (DPP, Courts, or another station) when a case requires it.
+- **Owns**: the referral event/record — destination, when, status, who made it. One table, a `destinationType` discriminator (`dpp` / `court` / `other_station` / `other`) rather than separate near-duplicate tables, since the shape (case → somewhere else → an outcome) is genuinely the same regardless of destination.
 - **Relates to**: Case, and (via Pleadli Cloud) the receiving institution's own record.
-- **Kind**: record/event.
-- **Do not assume**: a referral transfers ownership of the police record. Police retains its own record; the other institution retains its own. See Ecosystem Boundaries below.
-
-### Dispatches
-- **Status**: not yet confirmed as distinct from Referrals. If dispatch means operationally sending an officer somewhere, that is plausibly a different workflow (closer to Duty/Roster than to institutional referral) — do not force them into one domain merely because current navigation groups them together. Needs product clarification.
+- **Grounded in research** (docs/police/research, audit §G.4): for the DPP path specifically, what actually moves is the case file itself (charge sheet + evidence) to the Resident State Attorney, who either sanctions it or forms the opinion no offence is disclosed — no named transmittal form or inward register was found, so `destinationName` stays free text and `status` stays the three real outcomes (pending / accepted / rejected), not an invented procedure.
+- **Do not assume**: a referral transfers ownership of the police record. Police retains its own record; the other institution retains its own. See Ecosystem Boundaries below. Also do not assume the `other_station` destination type carries any verified inter-station procedure — it is a plain record of "handed elsewhere," honest about what is and isn't confirmed.
 
 ### Stores / Armory / Impounded Assets
 - **Supports**: station operational responsibilities outside investigation — equipment, weapons, unclaimed/impounded property.
@@ -314,14 +312,14 @@ Do not create an abstraction simply because two things currently look similar.
 
 None of the following are established product requirements until verified against authoritative Ugandan sources:
 
-- Ugandan police custody procedure
-- The 48-hour custody rule and its exceptions
-- The police bond process
-- Surety requirements
-- Station Diary conventions
+- ~~Ugandan police custody procedure~~ — first pass researched, see `docs/police/research/custody-and-bonds.md`. Real gaps remain (UPF Standing Orders were never publicly reachable — likely where the granular procedure actually lives) and every claim there carries its own confidence label; still not a substitute for legal review before anything load-bearing ships.
+- ~~The 48-hour custody rule and its exceptions~~ — same file. Constitution Art. 23(4) and Police Act s.25 verified directly from primary text; the commonly-assumed "distance to nearest court" exception was specifically checked and found unsupported — do not model it.
+- ~~The police bond process~~ — same file. PF18 "Release on Bond" confirmed as the real, named UPF form (with its 2022 anti-corruption redesign); the exact rank authorized to grant an *ordinary* (non-preventive) bond is still only "plausible but unconfirmed."
+- ~~Surety requirements~~ — same file. Residency rule for non-resident suspects verified; whether a surety can be a cash deposit vs. only a person of accountability was not found — do not assume either way.
+- Station Diary conventions — partially researched (same file, section 5): the SD → CRB (Crime Report Book) conversion for "criminal in nature" entries has a real, named answer (a UPF Deputy Director CID quote), but the actual decision rule for what counts as "criminal in nature" was not found — model that as a human decision, never an automated trigger. Standard SD entry categories in actual Uganda practice remain unconfirmed.
 - Police case-file movement procedure
-- CID → DPP/ODPP referral workflow
-- Charge-sheet/form content requirements
+- CID → DPP/ODPP referral workflow — the ODPP's Decision to Charge Guidelines (2023) and its Two-Stage/Threshold Test are now verified (same file), but the referral hand-off mechanics themselves weren't the focus of that pass.
+- Charge-sheet/form content requirements — the real named UPF form series (PF2A/B, PF3, PF16/16A, PF18, PF24/24A, PF53, PF94, etc.) is now catalogued in the same file; PF94 "Detention Order" is confirmed to exist by name but its actual triggering procedure was not found anywhere.
 - Police station organizational structures
 - NIRA / national identity integration possibilities
 - Biometric integration possibilities
@@ -347,8 +345,8 @@ Ordered by actual product dependency and user value — not by distance from cas
 
 ## Uncertainties still open (require product clarification, not invention)
 
-- Exact Case ↔ Investigation cardinality and lifecycle mechanics.
-- Whether Referrals and Dispatches are one workflow or two.
+- ~~Exact Case ↔ Investigation cardinality and lifecycle mechanics.~~ **Resolved (2026-09)**: Investigation is a composed workspace view, not a separate record — see the Investigations section above.
+- ~~Whether Referrals and Dispatches are one workflow or two.~~ **Resolved (2026-09)**: one unified workflow — see the Referrals & Dispatches section above for the verification behind this.
 - What "Station Admin" owns relative to Duty Roster and Stores/Armory.
 - Real Ugandan custody/arrest/bond procedure (see Research Needed).
 - When officer identity/auth becomes load-bearing, given Statements/Evidence/Custody all need "who did this" and auth is currently out of scope.

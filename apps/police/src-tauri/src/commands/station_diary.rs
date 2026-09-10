@@ -8,7 +8,7 @@ pub async fn create_station_diary_entry(
     state: State<'_, Db>,
     input: CreateStationDiaryEntryInput,
 ) -> Result<StationDiaryEntry, String> {
-    station_diary::create_entry(&state.pool, input)
+    station_diary::create_entry(&state.pool, &state.vault_root, input)
         .await
         .map_err(|e| e.to_string())
 }
@@ -19,7 +19,7 @@ pub async fn update_station_diary_entry(
     id: String,
     input: CreateStationDiaryEntryInput,
 ) -> Result<StationDiaryEntry, String> {
-    station_diary::update_entry(&state.pool, &id, input)
+    station_diary::update_entry(&state.pool, &state.vault_root, &id, input)
         .await
         .map_err(|e| e.to_string())
 }

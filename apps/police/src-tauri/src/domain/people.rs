@@ -1,6 +1,18 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
+use std::path::Path;
 use uuid::Uuid;
+
+use super::attachments::Attachment;
+use super::bonds::Bond;
+use super::cases::Case;
+use super::charge_sheets::ChargeSheet;
+use super::custody::CustodyRecord;
+use super::exhibits::Exhibit;
+use super::incidents::Incident;
+use super::statements::Statement;
+use super::station_diary::StationDiaryEntry;
+use super::{attachments, bonds, cases, charge_sheets, custody, exhibits, incidents, markdown, statements, station_diary};
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -26,7 +38,18 @@ pub struct CreatePersonInput {
     pub address: Option<String>,
 }
 
-pub async fn create_person(pool: &SqlitePool, input: CreatePersonInput) -> Result<Person, sqlx::Error> {
+/// Best-effort — a Vault write failure must never fail the record save
+/// that already succeeded in the database.
+async fn write_person_markdown(pool: &SqlitePool, vault_root: &Path, record: &Person) {
+    if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "person", &record.id).await {
+        let title = format!("{} {}", record.first_name, record.last_name);
+        if let Err(e) = markdown::write_record(&dir, &format!("person-{}", record.id), &title, record) {
+            log::warn!("failed to write person markdown: {e}");
+        }
+    }
+}
+
+pub async fn create_person(pool: &SqlitePool, vault_root: &Path, input: CreatePersonInput) -> Result<Person, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
 
     sqlx::query(
@@ -43,11 +66,14 @@ pub async fn create_person(pool: &SqlitePool, input: CreatePersonInput) -> Resul
     .execute(pool)
     .await?;
 
-    get_person(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)
+    let record = get_person(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
+    write_person_markdown(pool, vault_root, &record).await;
+    Ok(record)
 }
 
 pub async fn update_person(
     pool: &SqlitePool,
+    vault_root: &Path,
     id: &str,
     input: CreatePersonInput,
 ) -> Result<Person, sqlx::Error> {
@@ -66,7 +92,9 @@ pub async fn update_person(
     .execute(pool)
     .await?;
 
-    get_person(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
+    let record = get_person(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
+    write_person_markdown(pool, vault_root, &record).await;
+    Ok(record)
 }
 
 pub async fn search_people(pool: &SqlitePool, query: &str) -> Result<Vec<Person>, sqlx::Error> {
@@ -97,11 +125,60 @@ pub async fn get_person(pool: &SqlitePool, id: &str) -> Result<Option<Person>, s
         .await
 }
 
+/// The continuity view: everything the system already knows about a person,
+/// composed from each domain's own `list_for_person` — nothing new is
+/// indexed or duplicated, this just assembles what already exists so an
+/// officer can understand a person once instead of re-searching every
+/// domain by hand.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonProfile {
+    pub person: Person,
+    pub cases: Vec<Case>,
+    pub incidents: Vec<Incident>,
+    pub statements: Vec<Statement>,
+    pub custody_records: Vec<CustodyRecord>,
+    pub bonds: Vec<Bond>,
+    pub station_diary_entries: Vec<StationDiaryEntry>,
+    pub exhibits: Vec<Exhibit>,
+    pub charge_sheets: Vec<ChargeSheet>,
+    pub attachments: Vec<Attachment>,
+}
+
+pub async fn get_person_profile(pool: &SqlitePool, id: &str) -> Result<Option<PersonProfile>, sqlx::Error> {
+    let Some(person) = get_person(pool, id).await? else {
+        return Ok(None);
+    };
+
+    let cases = cases::list_for_person(pool, id).await?;
+    let incidents = incidents::list_for_person(pool, id).await?;
+    let statements = statements::list_for_person(pool, id).await?;
+    let custody_records = custody::list_for_person(pool, id).await?;
+    let bonds = bonds::list_for_person(pool, id).await?;
+    let station_diary_entries = station_diary::list_for_person(pool, id).await?;
+    let exhibits = exhibits::list_for_person(pool, id).await?;
+    let charge_sheets = charge_sheets::list_for_person(pool, id).await?;
+    let attachments = attachments::list_attachments(pool, "person", id).await?;
+
+    Ok(Some(PersonProfile {
+        person,
+        cases,
+        incidents,
+        statements,
+        custody_records,
+        bonds,
+        station_diary_entries,
+        exhibits,
+        charge_sheets,
+        attachments,
+    }))
+}
+
 /// Dev/test convenience only — inserts a handful of sample people the first
 /// time the local database is empty. Compiled out of release builds entirely
 /// via `#[cfg(debug_assertions)]` in db.rs, so it can never ship.
 #[cfg(debug_assertions)]
-pub async fn seed_if_empty(pool: &SqlitePool) -> Result<(), sqlx::Error> {
+pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), sqlx::Error> {
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM people")
         .fetch_one(pool)
         .await?;
@@ -120,6 +197,7 @@ pub async fn seed_if_empty(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     for (first_name, last_name, other_names, phone, national_id, address) in samples {
         create_person(
             pool,
+            vault_root,
             CreatePersonInput {
                 first_name: first_name.to_string(),
                 last_name: last_name.to_string(),

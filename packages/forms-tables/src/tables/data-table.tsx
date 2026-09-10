@@ -291,7 +291,10 @@ export function DataTable<TData extends RowData>({
       </div>
 
       {columnsOpen && (
-        <div className="flex flex-col gap-2 border border-dashed border-input/30 bg-input/15 p-4">
+        <div className={cn(
+          "flex flex-col gap-2 border border-input/30",
+          'bg-input/15 rounded-md p-5'
+        )}>
           <div className="flex items-center justify-between">
             <h3 className="text-xs">Columns</h3>
             {hiddenCount > 0 && (
@@ -329,7 +332,10 @@ export function DataTable<TData extends RowData>({
       )}
 
       {filtersOpen && (
-        <div className="flex flex-col gap-2 border border-dashed border-input/30 bg-input/15 p-4">
+        <div className={cn(
+          "flex flex-col gap-2 border border-input/30",
+          'bg-input/15 rounded-md p-5'
+        )}>
           <div className="flex items-center justify-between">
             <h3 className="text-xs">Filters</h3>
             {activeFilterCount > 0 && (
@@ -384,14 +390,14 @@ export function DataTable<TData extends RowData>({
         </div>
       )}
 
-      <div className='relative'>
+      <div className={cn(
+        'relative border border-muted/35 rounded-sm',
+        'overflow-hidden!'
+      )}>
         <Table
           aria-label={ariaLabel}
           data-not-typeset
-          className={cn(
-            "divide-none! border overflow-hidden border-input/40 shadow",
-            'rounded-md!'
-          )}
+          className="divide-none! border-none! overflow-hidden"
         >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

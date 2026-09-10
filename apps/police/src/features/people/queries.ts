@@ -1,5 +1,5 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createPerson, searchPeople, updatePerson } from './data'
+import { createPerson, getPersonProfile, searchPeople, updatePerson } from './data'
 import type { CreatePersonInput } from './schema'
 
 export const peopleSearchOptions = (query: string) =>
@@ -10,6 +10,16 @@ export const peopleSearchOptions = (query: string) =>
 
 export function usePeopleSearch(query: string) {
   return useSuspenseQuery(peopleSearchOptions(query))
+}
+
+export const personProfileOptions = (id: string) =>
+  queryOptions({
+    queryKey: ['people', 'profile', id] as const,
+    queryFn: () => getPersonProfile(id),
+  })
+
+export function usePersonProfile(id: string) {
+  return useSuspenseQuery(personProfileOptions(id))
 }
 
 export function useCreatePerson() {
@@ -26,8 +36,9 @@ export function useUpdatePerson() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreatePersonInput }) => updatePerson(id, input),
-    onSuccess: () => {
+    onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['people', 'search'] })
+      queryClient.invalidateQueries({ queryKey: ['people', 'profile', id] })
     },
   })
 }

@@ -1,14 +1,32 @@
+import { CommandMenu } from "@/components/command-menu"
+import { Createpanel } from "@/components/create-panel"
+import { CaseForm } from "@/features/cases"
 import { LegalDocument01Icon, PanelLeftDashedIcon, PanelRightDashedIcon, Search } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button, buttonVariants } from "@pleadli/ui/button"
 import { cn } from "@pleadli/ui/lib/utils"
 import { useSidebar } from "@pleadli/ui/sidebar"
-import { Link } from "@tanstack/react-router"
+import { Suspense, useEffect, useState } from "react"
 import { Toggletheme } from "../toggle-theme"
+import { Breadcrumbs } from "./breadcrumbs"
 import { Controls } from "./controls"
 
 export const Headers = () => {
     const { open, setOpen } = useSidebar()
+    const [caseOpen, setCaseOpen] = useState(false)
+    const [caseDirty, setCaseDirty] = useState(false)
+    const [commandOpen, setCommandOpen] = useState(false)
+
+    useEffect(() => {
+        const handler = (event: KeyboardEvent) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault()
+                setCommandOpen((prev) => !prev)
+            }
+        }
+        window.addEventListener('keydown', handler)
+        return () => window.removeEventListener('keydown', handler)
+    }, [])
 
     return (
         <header
@@ -30,24 +48,40 @@ export const Headers = () => {
                                 icon={open ? PanelLeftDashedIcon : PanelRightDashedIcon}
                             />
                         </Button>
-                        <Link to="/" className='text-sm font-semibold'>
-                            Pleadli
-                        </Link>
+                        <Breadcrumbs />
                     </nav>
                 </div>
 
                 <nav data-tauri-drag-region className='flex items-center gap-1'>
-                    <Button
-                        size='icon-sm'
+                    <button
+                        type="button"
+                        onClick={() => setCommandOpen(true)}
+                        className={cn(buttonVariants({ size: 'icon-sm', variant: 'ghost' }))}
+                        aria-label="Search (Ctrl+K)"
+                        title="Search (Ctrl+K)"
                     >
                         <HugeiconsIcon icon={Search} />
-                    </Button>
-                    <Link to='/' className={cn(buttonVariants({
-                        size: 'sm'
-                    }))}>
-                        <HugeiconsIcon icon={LegalDocument01Icon} />
-                        Create new case
-                    </Link>
+                    </button>
+
+                    <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} />
+
+                    <Createpanel
+                        open={caseOpen}
+                        onOpenChange={setCaseOpen}
+                        isDirty={caseDirty}
+                        trigger={
+                            <button className={cn(buttonVariants({ size: 'sm' }))}>
+                                <HugeiconsIcon icon={LegalDocument01Icon} />
+                                Create new case
+                            </button>
+                        }
+                        headings={{ title: 'Open case', description: 'Start a new case file.' }}
+                    >
+                        <Suspense fallback={<div className="p-4 text-xs text-muted-foreground">Loading…</div>}>
+                            <CaseForm onSuccess={() => setCaseOpen(false)} onDirtyChange={setCaseDirty} />
+                        </Suspense>
+                    </Createpanel>
+
                     <Toggletheme />
                     <Controls />
                 </nav>

@@ -2,17 +2,40 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use std::path::PathBuf;
 
 #[cfg(debug_assertions)]
+use crate::domain::bonds;
+#[cfg(debug_assertions)]
+use crate::domain::cases;
+#[cfg(debug_assertions)]
+use crate::domain::charge_sheets;
+#[cfg(debug_assertions)]
+use crate::domain::custody;
+#[cfg(debug_assertions)]
+use crate::domain::duty;
+#[cfg(debug_assertions)]
+use crate::domain::exhibits;
+#[cfg(debug_assertions)]
+use crate::domain::incidents;
+#[cfg(debug_assertions)]
 use crate::domain::people;
+#[cfg(debug_assertions)]
+use crate::domain::referrals;
+#[cfg(debug_assertions)]
+use crate::domain::statements;
+#[cfg(debug_assertions)]
+use crate::domain::station_admin;
+#[cfg(debug_assertions)]
+use crate::domain::station_assets;
 #[cfg(debug_assertions)]
 use crate::domain::station_diary;
 
 pub struct Db {
     pub pool: SqlitePool,
+    pub vault_root: PathBuf,
 }
 
-pub async fn connect(db_path: PathBuf) -> Result<Db, sqlx::Error> {
+pub async fn connect(db_path: PathBuf, vault_root: PathBuf) -> Result<Db, sqlx::Error> {
     let options = SqliteConnectOptions::new()
-        .filename(db_path)
+        .filename(&db_path)
         .create_if_missing(true);
 
     let pool = SqlitePoolOptions::new()
@@ -22,11 +45,24 @@ pub async fn connect(db_path: PathBuf) -> Result<Db, sqlx::Error> {
 
     sqlx::migrate!("./migrations").run(&pool).await?;
 
+    std::fs::create_dir_all(&vault_root).expect("create Police Vault root");
+
     #[cfg(debug_assertions)]
     {
-        people::seed_if_empty(&pool).await?;
-        station_diary::seed_if_empty(&pool).await?;
+        people::seed_if_empty(&pool, &vault_root).await?;
+        station_diary::seed_if_empty(&pool, &vault_root).await?;
+        incidents::seed_if_empty(&pool, &vault_root).await?;
+        duty::seed_if_empty(&pool, &vault_root).await?;
+        station_assets::seed_if_empty(&pool, &vault_root).await?;
+        cases::seed_if_empty(&pool, &vault_root).await?;
+        statements::seed_if_empty(&pool, &vault_root).await?;
+        custody::seed_if_empty(&pool, &vault_root).await?;
+        bonds::seed_if_empty(&pool, &vault_root).await?;
+        exhibits::seed_if_empty(&pool, &vault_root).await?;
+        charge_sheets::seed_if_empty(&pool, &vault_root).await?;
+        referrals::seed_if_empty(&pool, &vault_root).await?;
+        station_admin::seed_if_empty(&pool, &vault_root).await?;
     }
 
-    Ok(Db { pool })
+    Ok(Db { pool, vault_root })
 }

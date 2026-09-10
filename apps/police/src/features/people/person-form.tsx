@@ -1,3 +1,4 @@
+import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
 import { FieldGroup } from '@pleadli/ui/field'
@@ -87,6 +88,8 @@ export function PersonForm({ person, onSuccess }: PersonFormProps) {
             </form.AppField>
           </div>
         </div>
+
+        <AttachmentsField entityType={entityTypes.person} entityId={person?.id} />
 
         <DrawerFooter>
           <form.AppForm>

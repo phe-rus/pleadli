@@ -17,7 +17,7 @@ export const ChartBlock = ({
   return (
     <div className={cn('flex flex-col gap-5', className)}>
       <div className="flex flex-col">
-        <h1>{title}</h1>
+        <h2>{title}</h2>
         {description ? <p className='text-xs'>{description}</p> : null}
       </div>
       <span className='border-t border-border/60' />

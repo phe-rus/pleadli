@@ -1,4 +1,6 @@
 import { PersonPicker } from '@/components/person-picker'
+import { AttachmentsField, entityTypes } from '@/features/attachments'
+import { useReportDirty } from '@/hooks/use-report-dirty'
 import { RichTextInput } from '@pleadli/rich-text'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -11,9 +13,10 @@ export type StationDiaryEntryFormProps = {
   /** When provided, the form edits this entry instead of creating a new one. */
   entry?: StationDiaryEntry
   onSuccess?: (entry: StationDiaryEntry) => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export function StationDiaryEntryForm({ entry, onSuccess }: StationDiaryEntryFormProps) {
+export function StationDiaryEntryForm({ entry, onSuccess, onDirtyChange }: StationDiaryEntryFormProps) {
   const createEntry = useCreateStationDiaryEntry()
   const updateEntry = useUpdateStationDiaryEntry()
 
@@ -41,6 +44,8 @@ export function StationDiaryEntryForm({ entry, onSuccess }: StationDiaryEntryFor
       }
     },
   })
+
+  useReportDirty(form, onDirtyChange)
 
   return (
     <form
@@ -76,6 +81,8 @@ export function StationDiaryEntryForm({ entry, onSuccess }: StationDiaryEntryFor
             </Field>
           )}
         </form.AppField>
+
+        <AttachmentsField entityType={entityTypes.stationDiaryEntry} entityId={entry?.id} />
       </FieldGroup>
 
       <DrawerFooter>

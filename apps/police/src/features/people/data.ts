@@ -1,6 +1,12 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
-import { createPersonSchema, personSchema, type CreatePersonInput, type Person } from './schema'
+import {
+  createPersonSchema,
+  personProfileSchema,
+  personSchema,
+  type CreatePersonInput,
+  type Person,
+} from './schema'
 
 // Only reachable in a dev build (see src-tauri/src/server.rs) — lets the
 // plain browser dev server (no Tauri IPC bridge) exercise the same data
@@ -47,6 +53,13 @@ export async function getPerson(id: string) {
     ? await invoke('get_person', { id })
     : await devFetch(`/people/${encodeURIComponent(id)}`)
   return personSchema.nullable().parse(person)
+}
+
+export async function getPersonProfile(id: string) {
+  const profile = isTauri()
+    ? await invoke('get_person_profile', { id })
+    : await devFetch(`/people/${encodeURIComponent(id)}/profile`)
+  return personProfileSchema.nullable().parse(profile)
 }
 
 export function personFullName(person: Pick<Person, 'firstName' | 'lastName' | 'otherNames'>) {
