@@ -13,6 +13,7 @@ import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/station/establishment')({
@@ -42,10 +43,18 @@ function RouteComponent() {
           </span>
         ),
       },
+      { accessorKey: 'personId', header: 'Person ID' },
       {
         id: 'person',
         accessorFn: (row) => establishmentPersonName(row),
         header: 'Officer / person',
+      },
+      { accessorKey: 'personFirstName', header: 'First name' },
+      { accessorKey: 'personLastName', header: 'Last name' },
+      {
+        accessorKey: 'personOtherNames',
+        header: 'Other names',
+        cell: ({ row }) => row.original.personOtherNames ?? '·',
       },
       {
         accessorKey: 'post',
@@ -65,6 +74,12 @@ function RouteComponent() {
             {row.original.active ? 'Currently posted' : 'Not posted'}
           </Badge>
         ),
+      },
+      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      {
+        accessorKey: 'createdAt',
+        header: 'Added',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

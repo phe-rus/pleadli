@@ -75,7 +75,7 @@ pub struct CreateExhibitMovementInput {
     pub reason: Option<String>,
 }
 
-async fn write_exhibit_markdown(pool: &SqlitePool, vault_root: &Path, record: &Exhibit) {
+pub(crate) async fn write_exhibit_markdown(pool: &SqlitePool, vault_root: &Path, record: &Exhibit) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "exhibit", &record.id).await {
         if let Err(e) = markdown::write_record(&dir, &format!("exhibit-{}", record.id), &record.description, record) {
             log::warn!("failed to write exhibit markdown: {e}");
@@ -184,6 +184,26 @@ pub async fn list_exhibits(pool: &SqlitePool, query: &str) -> Result<Vec<Exhibit
          ORDER BY e.recovered_at DESC LIMIT 50",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every exhibit, unfiltered and unlimited, for the bulk data export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Exhibit>, sqlx::Error> {
+    sqlx::query_as::<_, Exhibit>(
+        "SELECT
+            e.id, e.case_id, e.incident_id, e.person_id, e.description, e.identification_mark,
+            e.recovered_at, e.recovered_from_location, e.handed_over_by, e.witnesses,
+            e.receiving_officer_name, e.storage_location, e.status, e.notes, e.created_at,
+            c.reference AS case_reference,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names
+         FROM exhibits e
+         LEFT JOIN cases c ON c.id = e.case_id
+         LEFT JOIN people p ON p.id = e.person_id
+         ORDER BY e.recovered_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

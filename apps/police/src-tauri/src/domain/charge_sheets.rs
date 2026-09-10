@@ -42,7 +42,7 @@ pub struct CreateChargeSheetInput {
     pub station_name: Option<String>,
 }
 
-async fn write_charge_sheet_markdown(pool: &SqlitePool, vault_root: &Path, record: &ChargeSheet) {
+pub(crate) async fn write_charge_sheet_markdown(pool: &SqlitePool, vault_root: &Path, record: &ChargeSheet) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "charge_sheet", &record.id).await {
         if let Err(e) = markdown::write_record(&dir, &format!("charge_sheet-{}", record.id), &record.offence, record) {
             log::warn!("failed to write charge sheet markdown: {e}");
@@ -144,6 +144,26 @@ pub async fn list_charge_sheets(pool: &SqlitePool, query: &str) -> Result<Vec<Ch
          ORDER BY cs.charged_at DESC LIMIT 50",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every charge sheet, unfiltered and unlimited, for the bulk data export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<ChargeSheet>, sqlx::Error> {
+    sqlx::query_as::<_, ChargeSheet>(
+        "SELECT
+            cs.id, cs.case_id, cs.accused_person_id, cs.offence, cs.statutory_section, cs.particulars,
+            cs.charged_at, cs.officer_name, cs.station_name, cs.created_at,
+            c.reference AS case_reference,
+            c.summary AS case_summary,
+            p.first_name AS accused_first_name,
+            p.last_name AS accused_last_name,
+            p.other_names AS accused_other_names
+         FROM charge_sheets cs
+         JOIN cases c ON c.id = cs.case_id
+         LEFT JOIN people p ON p.id = cs.accused_person_id
+         ORDER BY cs.charged_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

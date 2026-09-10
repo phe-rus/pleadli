@@ -83,7 +83,7 @@ async fn set_case_people(
     Ok(())
 }
 
-async fn write_case_markdown(pool: &SqlitePool, vault_root: &Path, record: &Case) {
+pub(crate) async fn write_case_markdown(pool: &SqlitePool, vault_root: &Path, record: &Case) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "case", &record.id).await {
         if let Err(e) = markdown::write_record(&dir, &format!("case-{}", record.id), &record.reference, record) {
             log::warn!("failed to write case markdown: {e}");
@@ -161,6 +161,21 @@ pub async fn list_cases(pool: &SqlitePool, query: &str) -> Result<Vec<Case>, sql
          ORDER BY c.created_at DESC LIMIT 50",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every case, unfiltered and unlimited, for the bulk data export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Case>, sqlx::Error> {
+    sqlx::query_as::<_, Case>(
+        "SELECT
+            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at,
+            i.summary AS incident_summary,
+            (SELECT COUNT(*) FROM case_people cp WHERE cp.case_id = c.id) AS people_count
+         FROM cases c
+         LEFT JOIN incidents i ON i.id = c.incident_id
+         ORDER BY c.created_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

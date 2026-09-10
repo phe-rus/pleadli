@@ -1,13 +1,15 @@
 import { Createpanel } from '@/components/create-panel'
 import { CopyButton } from '@/components/copy-button'
+import { RecordExportActions } from '@/components/record-export-actions'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import {
   caseRoleLabel,
-  caseStatuses,
+  caseStatusLabel,
   caseWorkspaceOptions,
   casePersonName,
   CaseForm,
   useCaseWorkspace,
+  useExportCaseDocument,
 } from '@/features/cases'
 import { bondPersonName, bondStatusLabel } from '@/features/bonds/schema'
 import { custodyCompliance, custodyPersonName, custodyStatusLabel } from '@/features/custody/schema'
@@ -20,8 +22,9 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
+import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useState } from 'react'
 
@@ -35,10 +38,6 @@ export const Route = createFileRoute('/_public/investigations/$caseId')({
   },
   component: RouteComponent,
 })
-
-function caseStatusLabel(status: string) {
-  return caseStatuses.find((s) => s.value === status)?.label ?? status
-}
 
 function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   return (
@@ -90,12 +89,23 @@ type TimelineEvent = { at: number; label: string }
 
 function RouteComponent() {
   const { caseId } = Route.useParams()
+  const navigate = useNavigate()
   const [editOpen, setEditOpen] = useState(false)
   const [editDirty, setEditDirty] = useState(false)
   const { data: workspace } = useCaseWorkspace(caseId)
+  const exportDocument = useExportCaseDocument(caseId)
 
   if (!workspace) return null
   const { case: kase, people, statements, custodyRecords, bonds, exhibits, chargeSheets, referrals } = workspace
+
+  const handleExport = async (format: 'pdf' | 'docx') => {
+    try {
+      const found = await exportDocument.mutateAsync(format)
+      if (found) t.success(`${format === 'pdf' ? 'PDF' : 'Word'} document exported`)
+    } catch {
+      t.error(`Could not export to ${format === 'pdf' ? 'PDF' : 'Word'}`, { description: 'Please try again.' })
+    }
+  }
 
   const timeline: TimelineEvent[] = [
     { at: kase.createdAt, label: `Case ${kase.reference} opened` },
@@ -127,20 +137,27 @@ function RouteComponent() {
           <p className="max-w-lg text-sm text-muted-foreground">{kase.summary}</p>
         </div>
 
-        <Createpanel
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          isDirty={editDirty}
-          trigger={
-            <Button size="sm" variant="secondary">
-              <HugeiconsIcon icon={Edit02Icon} />
-              Edit case
-            </Button>
-          }
-          headings={{ title: 'Edit case', description: 'Update this case.' }}
-        >
-          <CaseForm case={kase} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
-        </Createpanel>
+        <div className="flex items-center gap-2">
+          <RecordExportActions
+            onPrint={() => navigate({ to: '/print/investigations/$caseId', params: { caseId } })}
+            onExport={handleExport}
+            exportPending={exportDocument.isPending}
+          />
+          <Createpanel
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            isDirty={editDirty}
+            trigger={
+              <Button size="sm" variant="secondary">
+                <HugeiconsIcon icon={Edit02Icon} />
+                Edit case
+              </Button>
+            }
+            headings={{ title: 'Edit case', description: 'Update this case.' }}
+          >
+            <CaseForm case={kase} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
+          </Createpanel>
+        </div>
       </section>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">

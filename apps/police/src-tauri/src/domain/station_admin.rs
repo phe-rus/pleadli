@@ -103,7 +103,7 @@ pub struct CreateStationEstablishmentMemberInput {
     pub notes: Option<String>,
 }
 
-async fn write_establishment_member_markdown(pool: &SqlitePool, vault_root: &Path, record: &StationEstablishmentMember) {
+pub(crate) async fn write_establishment_member_markdown(pool: &SqlitePool, vault_root: &Path, record: &StationEstablishmentMember) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "station_establishment_member", &record.id).await {
         let title = format!("Establishment: {} {}", record.person_first_name, record.person_last_name);
         if let Err(e) = markdown::write_record(&dir, &format!("station_establishment_member-{}", record.id), &title, record) {
@@ -209,6 +209,26 @@ pub async fn list_establishment(pool: &SqlitePool, query: &str) -> Result<Vec<St
          ORDER BY se.created_at DESC LIMIT 100",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every establishment member, unfiltered and unlimited, for the bulk
+/// data export. Named distinctly from `list_establishment` (its
+/// UI-oriented, 100-row-capped counterpart) since this module also has a
+/// singleton `station_profile` that a plain `list_all` name would be
+/// ambiguous against.
+pub async fn list_all_establishment(pool: &SqlitePool) -> Result<Vec<StationEstablishmentMember>, sqlx::Error> {
+    sqlx::query_as::<_, StationEstablishmentMember>(
+        "SELECT
+            se.id, se.person_id, se.post, se.rank, se.active, se.notes, se.created_at,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names
+         FROM station_establishment se
+         JOIN people p ON p.id = se.person_id
+         ORDER BY se.created_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

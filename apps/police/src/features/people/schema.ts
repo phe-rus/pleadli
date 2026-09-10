@@ -21,6 +21,7 @@ export const personSchema = z.object({
   nationalId: z.string().nullable(),
   address: z.string().nullable(),
   createdAt: z.number(),
+  headshotAttachmentId: z.string().nullable(),
 })
 
 export type Person = z.infer<typeof personSchema>

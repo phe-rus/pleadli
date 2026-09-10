@@ -25,6 +25,7 @@ pub struct Person {
     pub national_id: Option<String>,
     pub address: Option<String>,
     pub created_at: i64,
+    pub headshot_attachment_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,7 +41,7 @@ pub struct CreatePersonInput {
 
 /// Best-effort — a Vault write failure must never fail the record save
 /// that already succeeded in the database.
-async fn write_person_markdown(pool: &SqlitePool, vault_root: &Path, record: &Person) {
+pub(crate) async fn write_person_markdown(pool: &SqlitePool, vault_root: &Path, record: &Person) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "person", &record.id).await {
         let title = format!("{} {}", record.first_name, record.last_name);
         if let Err(e) = markdown::write_record(&dir, &format!("person-{}", record.id), &title, record) {
@@ -118,11 +119,118 @@ pub async fn search_people(pool: &SqlitePool, query: &str) -> Result<Vec<Person>
     .await
 }
 
+/// Every person record, unfiltered and unlimited, used by the bulk data
+/// export, which needs the whole table rather than `search_people`'s
+/// UI-oriented 50-row cap.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Person>, sqlx::Error> {
+    sqlx::query_as::<_, Person>("SELECT * FROM people ORDER BY created_at ASC")
+        .fetch_all(pool)
+        .await
+}
+
 pub async fn get_person(pool: &SqlitePool, id: &str) -> Result<Option<Person>, sqlx::Error> {
     sqlx::query_as::<_, Person>("SELECT * FROM people WHERE id = ?")
         .bind(id)
         .fetch_optional(pool)
         .await
+}
+
+/// Only lets a person's headshot point at a file already attached to
+/// that same person, never an arbitrary attachment id.
+pub async fn set_headshot(pool: &SqlitePool, person_id: &str, attachment_id: &str) -> Result<Person, sqlx::Error> {
+    let belongs: Option<String> = sqlx::query_scalar(
+        "SELECT id FROM attachments WHERE id = ? AND entity_type = 'person' AND entity_id = ?",
+    )
+    .bind(attachment_id)
+    .bind(person_id)
+    .fetch_optional(pool)
+    .await?;
+    if belongs.is_none() {
+        return Err(sqlx::Error::RowNotFound);
+    }
+
+    sqlx::query("UPDATE people SET headshot_attachment_id = ? WHERE id = ?")
+        .bind(attachment_id)
+        .bind(person_id)
+        .execute(pool)
+        .await?;
+    get_person(pool, person_id).await?.ok_or(sqlx::Error::RowNotFound)
+}
+
+pub async fn clear_headshot(pool: &SqlitePool, person_id: &str) -> Result<Person, sqlx::Error> {
+    sqlx::query("UPDATE people SET headshot_attachment_id = NULL WHERE id = ?")
+        .bind(person_id)
+        .execute(pool)
+        .await?;
+    get_person(pool, person_id).await?.ok_or(sqlx::Error::RowNotFound)
+}
+
+/// The four identification-photo slots a person record can carry: a
+/// proper mugshot set, not one arbitrary "best" photo.
+pub const PHOTO_ANGLES: [&str; 4] = ["front", "left_profile", "right_profile", "back"];
+
+async fn existing_photo_attachment_id(
+    pool: &SqlitePool,
+    person_id: &str,
+    angle: &str,
+) -> Result<Option<String>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT id FROM attachments WHERE entity_type = 'person' AND entity_id = ? AND photo_angle = ?",
+    )
+    .bind(person_id)
+    .bind(angle)
+    .fetch_optional(pool)
+    .await
+}
+
+/// Fills one of a person's four angle-photo slots, replacing whatever
+/// attachment already occupied it. `angle` is trusted to already be one
+/// of `PHOTO_ANGLES`; callers (the Tauri commands and dev-server routes)
+/// validate it before reaching here. The front slot doubles as the
+/// avatar shown everywhere a person is listed, so setting it also drives
+/// the existing single-headshot pointer other views (list rows, the
+/// remote civilian-lookup endpoint) already read.
+pub async fn set_photo(
+    pool: &SqlitePool,
+    vault_root: &Path,
+    person_id: &str,
+    angle: &str,
+    file_name: &str,
+    bytes: &[u8],
+) -> Result<Attachment, attachments::AttachmentError> {
+    if let Some(existing_id) = existing_photo_attachment_id(pool, person_id, angle).await? {
+        attachments::delete_attachment(pool, &existing_id).await?;
+    }
+
+    let attachment =
+        attachments::add_attachment_bytes(pool, vault_root, "person", person_id, file_name, bytes).await?;
+
+    sqlx::query("UPDATE attachments SET photo_angle = ? WHERE id = ?")
+        .bind(angle)
+        .bind(&attachment.id)
+        .execute(pool)
+        .await?;
+
+    if angle == "front" {
+        set_headshot(pool, person_id, &attachment.id).await?;
+    }
+
+    attachments::get_attachment(pool, &attachment.id)
+        .await?
+        .ok_or(attachments::AttachmentError::Db(sqlx::Error::RowNotFound))
+}
+
+/// Empties one of a person's angle-photo slots. Clearing the front slot
+/// also clears the single-headshot pointer, same as `set_photo` keeps it
+/// in sync when that slot is filled.
+pub async fn clear_photo(pool: &SqlitePool, person_id: &str, angle: &str) -> Result<(), attachments::AttachmentError> {
+    if let Some(existing_id) = existing_photo_attachment_id(pool, person_id, angle).await? {
+        attachments::delete_attachment(pool, &existing_id).await?;
+    }
+    if angle == "front" {
+        clear_headshot(pool, person_id).await?;
+    }
+    Ok(())
 }
 
 /// The continuity view: everything the system already knows about a person,

@@ -1,4 +1,5 @@
 export * from './data'
 export * from './person-form'
+export * from './person-photos-field'
 export * from './queries'
 export * from './schema'

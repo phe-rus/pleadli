@@ -28,9 +28,34 @@ export const attachmentSchema = z.object({
   mimeType: z.string(),
   sizeBytes: z.number(),
   createdAt: z.number(),
+  photoAngle: z.string().nullable(),
 })
 
 export type Attachment = z.infer<typeof attachmentSchema>
+
+// The four identification-photo slots a person record can carry: a
+// proper mugshot set (front, both profiles, back) rather than one
+// arbitrary "best" photo starred out of a generic file list.
+export const personPhotoAngles = [
+  { value: 'front', label: 'Front' },
+  { value: 'left_profile', label: 'Left profile' },
+  { value: 'right_profile', label: 'Right profile' },
+  { value: 'back', label: 'Back' },
+] as const
+
+export type PersonPhotoAngle = (typeof personPhotoAngles)[number]['value']
+
+export const bulkAttachFailureSchema = z.object({
+  source: z.string(),
+  error: z.string(),
+})
+
+export const bulkAttachResultSchema = z.object({
+  attached: z.array(attachmentSchema),
+  failed: z.array(bulkAttachFailureSchema),
+})
+
+export type BulkAttachResult = z.infer<typeof bulkAttachResultSchema>
 
 export function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`

@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createCase, getCaseWorkspace, listCasePeople, listCases, updateCase } from './data'
+import { createCase, exportCaseDocument, getCaseWorkspace, listCasePeople, listCases, updateCase } from './data'
+import type { DocumentFormat } from './data'
 import type { CreateCaseInput } from './schema'
 
 export const casesOptions = (query: string) =>
@@ -51,4 +52,8 @@ export function useUpdateCase() {
       queryClient.invalidateQueries({ queryKey: ['cases'] })
     },
   })
+}
+
+export function useExportCaseDocument(id: string) {
+  return useMutation({ mutationFn: (format: DocumentFormat) => exportCaseDocument(id, format) })
 }

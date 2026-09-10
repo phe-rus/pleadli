@@ -10,7 +10,7 @@ import {
   ViewIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
+import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { Button, buttonVariants } from '@pleadli/ui/button'
 import {
@@ -24,6 +24,7 @@ import {
 import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { Fragment, useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/search/files')({
@@ -65,6 +66,7 @@ function RouteComponent() {
 
   const columns: DataTableColumnDef<VaultEntry>[] = useMemo(() => {
     return [
+      selectColumn(),
       {
         accessorKey: 'name',
         header: 'Name',
@@ -94,6 +96,12 @@ function RouteComponent() {
           )
         },
       },
+      { accessorKey: 'relativePath', header: 'Path' },
+      {
+        accessorKey: 'isDir',
+        header: 'Type',
+        cell: ({ row }) => (row.original.isDir ? 'Folder' : 'File'),
+      },
       {
         accessorKey: 'entityType',
         header: 'Record',
@@ -104,6 +112,13 @@ function RouteComponent() {
             '·'
           ),
       },
+      { accessorKey: 'entityId', header: 'Record ID', cell: ({ row }) => row.original.entityId ?? '·' },
+      {
+        accessorKey: 'attachmentId',
+        header: 'Attachment ID',
+        cell: ({ row }) => row.original.attachmentId ?? '·',
+      },
+      { accessorKey: 'mimeType', header: 'MIME type', cell: ({ row }) => row.original.mimeType ?? '·' },
       {
         accessorKey: 'sizeBytes',
         header: 'Size',
@@ -112,8 +127,9 @@ function RouteComponent() {
       {
         accessorKey: 'modifiedAt',
         header: 'Modified',
-        cell: ({ row }) => (row.original.modifiedAt ? new Date(row.original.modifiedAt).toLocaleString() : '·'),
+        cell: ({ row }) => (row.original.modifiedAt ? format(row.original.modifiedAt, 'PPp') : '·'),
       },
+      { accessorKey: 'absolutePath', header: 'Absolute path' },
       {
         id: 'actions',
         header: '',
@@ -166,7 +182,7 @@ function RouteComponent() {
           </Link>
         )}
 
-        <Breadcrumb>
+        <Breadcrumb data-not-typeset>
           <BreadcrumbList>
             <Fragment>
               <BreadcrumbItem>

@@ -65,3 +65,28 @@ export async function getPersonProfile(id: string) {
 export function personFullName(person: Pick<Person, 'firstName' | 'lastName' | 'otherNames'>) {
   return [person.lastName, person.firstName, person.otherNames].filter(Boolean).join(', ')
 }
+
+export type DocumentFormat = 'pdf' | 'docx'
+
+/**
+ * A formatted PDF/Word copy of this person's whole record (identity,
+ * headshot, and every related case/statement/custody/etc.), for
+ * printing, filing, or sending on, distinct from the interactive profile
+ * page. In Tauri, the officer picks the destination via the native save
+ * dialog; the browser-dev fallback downloads it from the dev server
+ * directly. Returns `false` only if the officer cancels the save dialog.
+ */
+export async function exportPersonDocument(id: string, format: DocumentFormat) {
+  if (isTauri()) {
+    const { save } = await import('@tauri-apps/plugin-dialog')
+    const path = await save({
+      defaultPath: `person-record.${format}`,
+      filters: [{ name: format === 'pdf' ? 'PDF Document' : 'Word Document', extensions: [format] }],
+    })
+    if (typeof path !== 'string') return false
+    await invoke('export_person_document', { id, format, destinationPath: path })
+    return true
+  }
+  window.open(`${DEV_SERVER_URL}/people/${encodeURIComponent(id)}/export/${format}`, '_blank')
+  return true
+}

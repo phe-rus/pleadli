@@ -1,4 +1,5 @@
 export * from './charge-sheet-form'
+export * from './charge-sheet-printable'
 export * from './data'
 export * from './queries'
 export * from './schema'

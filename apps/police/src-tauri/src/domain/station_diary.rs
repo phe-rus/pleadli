@@ -31,7 +31,7 @@ pub struct CreateStationDiaryEntryInput {
     pub person_id: Option<String>,
 }
 
-async fn write_entry_markdown(pool: &SqlitePool, vault_root: &Path, record: &StationDiaryEntry) {
+pub(crate) async fn write_entry_markdown(pool: &SqlitePool, vault_root: &Path, record: &StationDiaryEntry) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "station_diary_entry", &record.id).await {
         let title = format!("Station Diary: {}", record.category.replace('_', " "));
         if let Err(e) = markdown::write_record(&dir, &format!("station_diary_entry-{}", record.id), &title, record) {
@@ -112,6 +112,23 @@ pub async fn list_entries(pool: &SqlitePool, query: &str) -> Result<Vec<StationD
          ORDER BY sd.created_at DESC LIMIT 50",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every station diary entry, unfiltered and unlimited, for the bulk data
+/// export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<StationDiaryEntry>, sqlx::Error> {
+    sqlx::query_as::<_, StationDiaryEntry>(
+        "SELECT
+            sd.id, sd.category, sd.content, sd.person_id, sd.created_at,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names
+         FROM station_diary_entries sd
+         LEFT JOIN people p ON p.id = sd.person_id
+         ORDER BY sd.created_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

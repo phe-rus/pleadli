@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createChargeSheet, listChargeSheets, updateChargeSheet } from './data'
+import { createChargeSheet, exportChargeSheetDocument, listChargeSheets, updateChargeSheet } from './data'
+import type { DocumentFormat } from './data'
 import type { CreateChargeSheetInput } from './schema'
 
 export const chargeSheetsOptions = (query: string) =>
@@ -30,4 +31,8 @@ export function useUpdateChargeSheet() {
       queryClient.invalidateQueries({ queryKey: ['chargeSheets'] })
     },
   })
+}
+
+export function useExportChargeSheetDocument(id: string) {
+  return useMutation({ mutationFn: (format: DocumentFormat) => exportChargeSheetDocument(id, format) })
 }

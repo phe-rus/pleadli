@@ -7,6 +7,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/search/bonds')({
@@ -42,15 +43,41 @@ function RouteComponent() {
           </span>
         ),
       },
+      { accessorKey: 'personId', header: 'Person ID' },
       {
         id: 'person',
         accessorFn: (row) => bondPersonName(row),
         header: 'Person',
       },
+      { accessorKey: 'personFirstName', header: 'First name' },
+      { accessorKey: 'personLastName', header: 'Last name' },
+      {
+        accessorKey: 'personOtherNames',
+        header: 'Other names',
+        cell: ({ row }) => row.original.personOtherNames ?? '·',
+      },
+      { accessorKey: 'custodyId', header: 'Custody ID', cell: ({ row }) => row.original.custodyId ?? '·' },
+      { accessorKey: 'caseId', header: 'Case ID', cell: ({ row }) => row.original.caseId ?? '·' },
+      {
+        accessorKey: 'caseReference',
+        header: 'Case',
+        cell: ({ row }) => row.original.caseReference ?? '·',
+      },
+      {
+        accessorKey: 'lockUpSerialNumber',
+        header: 'Lock-up serial no.',
+        cell: ({ row }) => row.original.lockUpSerialNumber ?? '·',
+      },
       {
         accessorKey: 'withSurety',
         header: 'Surety',
         cell: ({ row }) => (row.original.withSurety ? row.original.suretyName ?? 'Yes' : 'None'),
+      },
+      { accessorKey: 'suretyName', header: 'Surety name', cell: ({ row }) => row.original.suretyName ?? '·' },
+      {
+        accessorKey: 'suretyContact',
+        header: 'Surety contact',
+        cell: ({ row }) => row.original.suretyContact ?? '·',
       },
       {
         accessorKey: 'reportingSchedule',
@@ -58,11 +85,13 @@ function RouteComponent() {
         cell: ({ row }) => row.original.reportingSchedule ?? '·',
       },
       {
-        accessorKey: 'officerName',
+        id: 'grantingOfficer',
+        accessorFn: (row) => [row.officerRank, row.officerName].filter(Boolean).join(' '),
         header: 'Granting officer',
-        cell: ({ row }) =>
-          [row.original.officerRank, row.original.officerName].filter(Boolean).join(' ') || '·',
+        cell: ({ getValue }) => getValue<string>() || '·',
       },
+      { accessorKey: 'officerName', header: 'Officer name', cell: ({ row }) => row.original.officerName ?? '·' },
+      { accessorKey: 'officerRank', header: 'Officer rank', cell: ({ row }) => row.original.officerRank ?? '·' },
       {
         accessorKey: 'status',
         header: 'Status',
@@ -71,12 +100,13 @@ function RouteComponent() {
       {
         accessorKey: 'grantedAt',
         header: 'Granted',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
+      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
       {
-        accessorKey: 'caseReference',
-        header: 'Case',
-        cell: ({ row }) => row.original.caseReference ?? '·',
+        accessorKey: 'createdAt',
+        header: 'Recorded',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

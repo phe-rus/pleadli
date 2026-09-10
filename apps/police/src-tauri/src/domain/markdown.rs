@@ -10,7 +10,7 @@ fn is_timestamp_key(key: &str) -> bool {
     key.to_lowercase().ends_with("at")
 }
 
-fn humanize_key(key: &str) -> String {
+pub(crate) fn humanize_key(key: &str) -> String {
     let mut out = String::new();
     for (i, ch) in key.chars().enumerate() {
         if ch.is_uppercase() && i > 0 {
@@ -25,12 +25,59 @@ fn humanize_key(key: &str) -> String {
     out
 }
 
-fn format_value(key: &str, value: &Value) -> String {
+/// `content`-style fields (statements, station diary entries) are stored
+/// as `@pleadli/rich-text`'s Tiptap/ProseMirror JSON, not plain text; see
+/// `seed_support::plain_text_to_rich_text_json` for the shape. Printed
+/// output should show the words someone actually wrote, not the raw JSON,
+/// so this walks the document tree collecting each block's text runs.
+/// Returns `None` for anything that isn't actually that JSON shape, so
+/// callers fall back to the original string untouched.
+fn rich_text_to_plain(raw: &str) -> Option<String> {
+    let value: Value = serde_json::from_str(raw).ok()?;
+    if value.get("type").and_then(Value::as_str) != Some("doc") {
+        return None;
+    }
+
+    fn collect_text(node: &Value, out: &mut String) {
+        if let Some(text) = node.get("text").and_then(Value::as_str) {
+            out.push_str(text);
+        }
+        if let Some(content) = node.get("content").and_then(Value::as_array) {
+            for child in content {
+                collect_text(child, out);
+            }
+        }
+    }
+
+    let paragraphs: Vec<String> = value
+        .get("content")
+        .and_then(Value::as_array)
+        .map(|blocks| {
+            blocks
+                .iter()
+                .map(|block| {
+                    let mut text = String::new();
+                    collect_text(block, &mut text);
+                    text
+                })
+                .filter(|t| !t.trim().is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Some(paragraphs.join("\n\n"))
+}
+
+pub(crate) fn format_value(key: &str, value: &Value) -> String {
     match value {
         Value::Null => "·".to_string(),
         Value::Bool(b) => b.to_string(),
         Value::String(s) if s.trim().is_empty() => "·".to_string(),
-        Value::String(s) => s.clone(),
+        Value::String(s) => match rich_text_to_plain(s) {
+            Some(text) if text.trim().is_empty() => "·".to_string(),
+            Some(text) => text,
+            None => s.clone(),
+        },
         Value::Number(n) if is_timestamp_key(key) => n
             .as_i64()
             .and_then(chrono::DateTime::<chrono::Utc>::from_timestamp_millis)

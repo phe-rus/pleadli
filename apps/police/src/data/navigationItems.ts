@@ -1,5 +1,6 @@
 import {
   AlarmClock,
+  AlertCircleIcon,
   ArchiveIcon,
   BarChartIcon,
   BinocularsIcon,
@@ -11,10 +12,12 @@ import {
   FingerPrintCheckIcon,
   FolderViewIcon,
   GunIcon,
+  ListViewIcon,
   Mic01Icon,
   Notebook01Icon,
   Search01Icon,
   Share08Icon,
+  ShieldKeyIcon,
   SirenIcon,
   UserGroupIcon,
   UserIcon,
@@ -30,7 +33,6 @@ export const stationNav = [
     children: [
       { icon: UserGroupIcon, label: 'People', to: '/search/people' },
       { icon: FileIcon, label: 'Files', to: '/search/files' },
-      { icon: Building06Icon, label: 'Stations', to: '/search/stations' },
       // Custody & Legal Compliance
       { icon: CellsIcon, label: 'Cell Lock-up & 48h', to: '/search/custody' },
       { icon: AlarmClock, label: 'Bonds & Sureties', to: '/search/bonds' },
@@ -66,6 +68,16 @@ export const stationNav = [
     children: [
       { icon: Building06Icon, label: 'Profile', to: '/station/profile' },
       { icon: UserGroupIcon, label: 'Establishment', to: '/station/establishment' },
+      { icon: ShieldKeyIcon, label: 'Officers', to: '/station/officers' },
+    ]
+  },
+  {
+    icon: ListViewIcon,
+    label: 'Logs',
+    to: '/logs',
+    children: [
+      { icon: AlertCircleIcon, label: 'Backup Requests', to: '/logs/backup-alerts' },
+      { icon: ListViewIcon, label: 'Remote Access Activity', to: '/logs/remote-access' },
     ]
   },
 ] as const

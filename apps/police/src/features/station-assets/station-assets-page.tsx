@@ -7,9 +7,14 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useSearch } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
+import { format } from 'date-fns/format'
 import { StationAssetForm } from './station-asset-form'
 import { useStationAssets } from './queries'
-import { stationAssetPersonName, stationAssetStatusLabel, type StationAsset } from './schema'
+import { stationAssetCategories, stationAssetPersonName, stationAssetStatusLabel, type StationAsset } from './schema'
+
+function stationAssetCategoryLabel(category: string) {
+  return stationAssetCategories.find((c) => c.value === category)?.label ?? category
+}
 
 export type StationAssetsPageProps = {
   category: string
@@ -45,6 +50,11 @@ export function StationAssetsPage({ category, title, description, addLabel }: St
           </span>
         ),
       },
+      {
+        accessorKey: 'category',
+        header: 'Category',
+        cell: ({ getValue }) => stationAssetCategoryLabel(getValue<string>()),
+      },
       { accessorKey: 'description', header: 'Description' },
       {
         accessorKey: 'itemIdentifier',
@@ -61,11 +71,33 @@ export function StationAssetsPage({ category, title, description, addLabel }: St
         header: 'Held by',
         cell: ({ row }) => row.original.holderName ?? '·',
       },
+      { accessorKey: 'personId', header: 'Person ID', cell: ({ row }) => row.original.personId ?? '·' },
       {
         id: 'relatedPerson',
         accessorFn: (row) => stationAssetPersonName(row) ?? '',
         header: 'Related person',
         cell: ({ getValue }) => getValue<string>() || '·',
+      },
+      {
+        accessorKey: 'personFirstName',
+        header: 'Person first name',
+        cell: ({ row }) => row.original.personFirstName ?? '·',
+      },
+      {
+        accessorKey: 'personLastName',
+        header: 'Person last name',
+        cell: ({ row }) => row.original.personLastName ?? '·',
+      },
+      {
+        accessorKey: 'personOtherNames',
+        header: 'Person other names',
+        cell: ({ row }) => row.original.personOtherNames ?? '·',
+      },
+      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      {
+        accessorKey: 'createdAt',
+        header: 'Added',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

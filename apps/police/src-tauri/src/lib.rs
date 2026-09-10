@@ -1,8 +1,10 @@
 mod commands;
 mod db;
 mod domain;
-#[cfg(debug_assertions)]
-mod server;
+mod transport;
+
+pub struct RemoteServer(pub tokio::sync::Mutex<Option<transport::remote_server::RemoteServerHandle>>);
+pub struct CloudflaredSidecar(pub tokio::sync::Mutex<Option<tauri_plugin_shell::process::CommandChild>>);
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
@@ -37,6 +39,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -73,7 +76,42 @@ pub fn run() {
             {
                 let pool = db.pool.clone();
                 let vault_root = db.vault_root.clone();
-                tauri::async_runtime::spawn(server::serve(pool, vault_root));
+                tauri::async_runtime::spawn(transport::dev_server::serve(pool, vault_root));
+            }
+
+            // Remote access, if this station already had it turned on
+            // (the setting persists across restarts). Off by default
+            // otherwise, matching the app's offline-first default.
+            let remote_settings = tauri::async_runtime::block_on(domain::officers::get_remote_access_settings(&db.pool))?;
+            let initial_handle = if remote_settings.enabled {
+                let app_handle = app.handle().clone();
+                match tauri::async_runtime::block_on(transport::remote_server::start(
+                    db.pool.clone(),
+                    transport::remote_server::DEFAULT_PORT,
+                    app_handle,
+                )) {
+                    Ok(handle) => Some(handle),
+                    Err(e) => {
+                        log::warn!("could not start remote-access server on launch: {e}");
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+            app.manage(RemoteServer(tokio::sync::Mutex::new(initial_handle)));
+
+            app.manage(CloudflaredSidecar(tokio::sync::Mutex::new(None)));
+
+            if remote_settings.enabled {
+                let app_handle = app.handle().clone();
+                let pool = db.pool.clone();
+                tauri::async_runtime::spawn(async move {
+                    let sidecar = app_handle.state::<CloudflaredSidecar>();
+                    if let Err(e) = commands::cloudflare::start_sidecar_if_configured(&app_handle, &pool, &sidecar).await {
+                        log::warn!("could not start cloudflared on launch: {e}");
+                    }
+                });
             }
 
             app.manage(db);
@@ -130,6 +168,10 @@ pub fn run() {
             commands::people::get_person,
             commands::people::get_person_profile,
             commands::people::update_person,
+            commands::people::set_person_headshot,
+            commands::people::clear_person_headshot,
+            commands::people::set_person_photo_from_path,
+            commands::people::clear_person_photo,
             commands::station_diary::create_station_diary_entry,
             commands::station_diary::list_station_diary_entries,
             commands::station_diary::update_station_diary_entry,
@@ -173,13 +215,44 @@ pub fn run() {
             commands::exhibits::create_exhibit_movement,
             commands::exhibits::list_exhibit_movements,
             commands::attachments::add_attachment,
+            commands::attachments::bulk_attach_files,
             commands::attachments::list_attachments,
             commands::attachments::delete_attachment,
             commands::attachments::list_all_attachments,
             commands::attachments::get_attachment_route,
             commands::attachments::list_vault_directory,
+            commands::attachments::get_attachment_data_url,
+            commands::officers::create_officer,
+            commands::officers::update_officer,
+            commands::officers::list_officers,
+            commands::officers::list_remote_access_log,
+            commands::officers::get_remote_access_settings,
+            commands::officers::list_backup_alerts,
+            commands::officers::acknowledge_backup_alert,
+            commands::officers::list_active_backup_alerts,
+            commands::officers::respond_to_backup_alert,
+            commands::officers::end_backup_alert,
+            commands::network::get_remote_access_status,
+            commands::network::set_remote_access_enabled,
+            commands::network::get_local_network_info,
+            commands::network::get_local_pairing_qr,
+            commands::cloudflare::save_cloudflare_config,
+            commands::cloudflare::get_cloudflare_config,
+            commands::cloudflare::get_cloudflare_tunnel_state,
             commands::search::search,
             commands::reports::get_reports_summary,
+            commands::documents::export_all_markdown,
+            commands::documents::export_all_xlsx,
+            commands::documents::export_all_pdf,
+            commands::documents::export_all_docx,
+            commands::documents::export_person_document,
+            commands::documents::export_case_document,
+            commands::documents::export_charge_sheet_document,
+            commands::import::import_fields,
+            commands::import::parse_import_file,
+            commands::import::resolve_people,
+            commands::import::resolve_cases,
+            commands::import::bulk_import,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

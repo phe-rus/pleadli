@@ -34,7 +34,7 @@ pub struct CreateReferralInput {
     pub notes: Option<String>,
 }
 
-async fn write_referral_markdown(pool: &SqlitePool, vault_root: &Path, record: &Referral) {
+pub(crate) async fn write_referral_markdown(pool: &SqlitePool, vault_root: &Path, record: &Referral) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "referral", &record.id).await {
         let title = format!("Referral: {}", record.case_reference);
         if let Err(e) = markdown::write_record(&dir, &format!("referral-{}", record.id), &title, record) {
@@ -119,6 +119,21 @@ pub async fn list_referrals(pool: &SqlitePool, query: &str) -> Result<Vec<Referr
          ORDER BY r.referred_at DESC LIMIT 50",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every referral, unfiltered and unlimited, for the bulk data export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Referral>, sqlx::Error> {
+    sqlx::query_as::<_, Referral>(
+        "SELECT
+            r.id, r.case_id, r.destination_type, r.destination_name, r.referred_at, r.status,
+            r.officer_name, r.notes, r.created_at,
+            c.reference AS case_reference
+         FROM referrals r
+         JOIN cases c ON c.id = r.case_id
+         ORDER BY r.referred_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

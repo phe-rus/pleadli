@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::db::Db;
-use crate::domain::attachments::{self, Attachment, VaultEntry};
+use crate::domain::attachments::{self, Attachment, BulkAttachResult, VaultEntry};
 
 #[tauri::command]
 pub async fn add_attachment(
@@ -19,6 +19,21 @@ pub async fn add_attachment(
     )
     .await
     .map_err(|e| e.to_string())
+}
+
+/// Bulk paperwork intake: attaches every path in `source_paths` to the
+/// same record. Always returns `Ok`: a per-file failure is reported in
+/// the result's `failed` list, not as a command error, since one bad file
+/// in a batch of fifty shouldn't block the other forty-nine.
+#[tauri::command]
+pub async fn bulk_attach_files(
+    state: State<'_, Db>,
+    entity_type: String,
+    entity_id: String,
+    source_paths: Vec<String>,
+) -> Result<BulkAttachResult, String> {
+    let paths: Vec<std::path::PathBuf> = source_paths.into_iter().map(std::path::PathBuf::from).collect();
+    Ok(attachments::bulk_attach_from_paths(&state.pool, &state.vault_root, &entity_type, &entity_id, &paths).await)
 }
 
 #[tauri::command]
@@ -56,4 +71,9 @@ pub async fn list_vault_directory(state: State<'_, Db>, relative_path: String) -
     attachments::list_vault_directory(&state.pool, &state.vault_root, &relative_path)
         .await
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_attachment_data_url(state: State<'_, Db>, id: String) -> Result<Option<String>, String> {
+    attachments::get_attachment_data_url(&state.pool, &id).await.map_err(|e| e.to_string())
 }

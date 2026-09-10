@@ -49,3 +49,24 @@ export async function getCaseWorkspace(id: string) {
     : await devFetch(`/cases/${encodeURIComponent(id)}/workspace`)
   return caseWorkspaceSchema.nullable().parse(workspace)
 }
+
+export type DocumentFormat = 'pdf' | 'docx'
+
+/** A formatted PDF/Word case file: people involved, statements, custody,
+ * bonds, evidence, charge sheets, referrals, for filing or handing to
+ * DPP. See `people.exportPersonDocument` for the Tauri/dev-fallback
+ * split; returns `false` only if the officer cancels the save dialog. */
+export async function exportCaseDocument(id: string, format: DocumentFormat) {
+  if (isTauri()) {
+    const { save } = await import('@tauri-apps/plugin-dialog')
+    const path = await save({
+      defaultPath: `case-file.${format}`,
+      filters: [{ name: format === 'pdf' ? 'PDF Document' : 'Word Document', extensions: [format] }],
+    })
+    if (typeof path !== 'string') return false
+    await invoke('export_case_document', { id, format, destinationPath: path })
+    return true
+  }
+  window.open(`${DEV_SERVER_URL}/cases/${encodeURIComponent(id)}/export/${format}`, '_blank')
+  return true
+}

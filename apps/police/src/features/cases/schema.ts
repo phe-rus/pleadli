@@ -31,6 +31,10 @@ export const caseStatuses = [
   { value: 'closed', label: 'Closed' },
 ] as const
 
+export function caseStatusLabel(status: string) {
+  return caseStatuses.find((s) => s.value === status)?.label ?? status
+}
+
 export const caseSchema = z.object({
   id: z.string(),
   reference: z.string(),

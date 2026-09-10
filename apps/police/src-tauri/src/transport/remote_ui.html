@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pleadli Police: Remote Access</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --background: oklch(0.9904 0.0148 94.1935);
+    --foreground: oklch(0.3214 0.0503 84.849);
+    --card: oklch(0.9904 0.0148 94.1935);
+    --primary: oklch(0.7647 0.1365 78.7837);
+    --primary-foreground: oklch(0.3214 0.0503 84.849);
+    --muted: oklch(0.961 0.0205 91.5836);
+    --muted-foreground: oklch(0.5495 0.0296 90.1995);
+    --destructive: oklch(0.6501 0.2008 24.9745);
+    --destructive-foreground: oklch(0.9904 0.0148 94.1935);
+    --border: oklch(0.9402 0.0153 90.2382);
+    --radius: 0.625rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: oklch(0.2094 0.0042 84.5894);
+      --foreground: oklch(0.9605 0.0108 95.1644);
+      --card: oklch(0.2485 0.008 84.5923);
+      --primary: oklch(0.7506 0.1302 80.0245);
+      --primary-foreground: oklch(0.2489 0.0189 88.7852);
+      --muted: oklch(0.3211 0.0107 91.6648);
+      --muted-foreground: oklch(0.6801 0.0107 87.4953);
+      --destructive: oklch(0.6809 0.2075 24.8129);
+      --destructive-foreground: oklch(0.2489 0.0189 88.7852);
+      --border: oklch(0.3211 0.0107 91.6648);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 1.25rem 1rem 3rem;
+  }
+  main { width: 100%; max-width: 26rem; display: flex; flex-direction: column; gap: 1.25rem; }
+  h1 { font-size: 1rem; font-weight: 600; margin: 0; }
+  h2 { font-size: 0.8125rem; font-weight: 600; margin: 0; color: var(--muted-foreground); }
+  p.hint { font-size: 0.75rem; color: var(--muted-foreground); margin: 0.125rem 0 0; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  label { display: block; font-size: 0.75rem; color: var(--muted-foreground); margin-bottom: 0.3rem; }
+  input {
+    width: 100%; padding: 0.55rem 0.65rem; border: 1px solid var(--border); border-radius: calc(var(--radius) - 4px);
+    font-size: 0.9rem; background: var(--background); color: var(--foreground);
+  }
+  input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  button {
+    padding: 0.6rem; border: none; border-radius: calc(var(--radius) - 4px);
+    background: var(--primary); color: var(--primary-foreground); font-size: 0.85rem; font-weight: 600;
+    cursor: pointer;
+  }
+  button.secondary { background: var(--muted); color: var(--foreground); }
+  button.destructive { background: var(--destructive); color: var(--destructive-foreground); }
+  button:disabled { opacity: 0.55; cursor: default; }
+  .error { color: var(--destructive); font-size: 0.8rem; margin: 0; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+  ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  li { border-top: 1px solid var(--border); padding: 0.65rem 0; font-size: 0.85rem; }
+  li:first-child { border-top: none; }
+  li button.link {
+    background: none; border: none; padding: 0; text-align: left; width: 100%;
+    color: var(--foreground); font-weight: 500; font-size: 0.85rem;
+  }
+  .badge {
+    display: inline-block; font-size: 0.6875rem; padding: 0.1rem 0.45rem; border-radius: 999px;
+    background: var(--muted); color: var(--muted-foreground);
+  }
+  .badge.overdue { background: var(--destructive); color: var(--destructive-foreground); }
+  .muted { color: var(--muted-foreground); font-size: 0.8rem; margin: 0; }
+  dl { margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  dl > div { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.8125rem; }
+  dt { color: var(--muted-foreground); }
+  dd { margin: 0; text-align: right; }
+  [hidden] { display: none !important; }
+  .backdrop {
+    position: fixed; inset: 0; background: color-mix(in oklab, black 45%, transparent);
+    display: flex; align-items: flex-end; justify-content: center; padding: 1rem;
+  }
+  .sheet {
+    background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+    width: 100%; max-width: 26rem; max-height: 80vh; overflow-y: auto; padding: 1.25rem;
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Pleadli Police: Remote Access</h1>
+    <p class="hint">Search, custody alerts, and backup requests.</p>
+  </div>
+
+  <section id="login-view" class="card">
+    <p id="login-error" class="error" hidden></p>
+    <div>
+      <label for="badge">Badge number</label>
+      <input id="badge" autocomplete="username" />
+    </div>
+    <div>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" />
+    </div>
+    <button id="login-button">Log in</button>
+  </section>
+
+  <section id="app-view" hidden style="display:flex; flex-direction:column; gap:1.25rem;">
+    <button id="backup-button" class="destructive">Request backup</button>
+
+    <div class="card">
+      <h2>Search</h2>
+      <input id="search-input" placeholder="Name, NIN, phone, case reference…" />
+      <ul id="search-results"></ul>
+      <p id="search-empty" class="muted" hidden>No matches.</p>
+    </div>
+
+    <div class="card">
+      <div class="row"><h2>Custody alerts</h2><button class="secondary" id="refresh-alerts" style="width:auto; padding:0.35rem 0.7rem; font-size:0.75rem;">Refresh</button></div>
+      <ul id="alerts-list"></ul>
+      <p id="alerts-empty" class="muted" hidden>Nothing approaching or past its deadline.</p>
+    </div>
+
+    <button class="secondary" id="logout-button">Log out</button>
+  </section>
+
+  <div id="detail-backdrop" class="backdrop" hidden>
+    <div class="sheet">
+      <div class="row"><h2 id="detail-title">Details</h2><button class="secondary" id="detail-close" style="width:auto; padding:0.3rem 0.6rem;">Close</button></div>
+      <div id="detail-body"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  var TOKEN_KEY = 'pleadli_remote_token';
+  function token() { return localStorage.getItem(TOKEN_KEY); }
+  function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+  function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+  var loginView = document.getElementById('login-view');
+  var appView = document.getElementById('app-view');
+  var loginError = document.getElementById('login-error');
+
+  function showLogin() { loginView.hidden = false; appView.hidden = true; }
+  function showApp() { loginView.hidden = true; appView.hidden = false; loadAlerts(); }
+
+  async function authedFetch(path, options) {
+    options = options || {};
+    options.headers = Object.assign({}, options.headers, { Authorization: 'Bearer ' + token() });
+    var res = await fetch(path, options);
+    if (res.status === 401) { clearToken(); showLogin(); throw new Error('Session expired'); }
+    return res;
+  }
+
+  document.getElementById('login-button').addEventListener('click', async function () {
+    loginError.hidden = true;
+    var badge = document.getElementById('badge').value.trim();
+    var password = document.getElementById('password').value;
+    if (!badge || !password) return;
+    try {
+      var res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ badgeNumber: badge, password: password }),
+      });
+      if (!res.ok) throw new Error('Invalid badge number or password.');
+      var body = await res.json();
+      setToken(body.token);
+      showApp();
+    } catch (err) {
+      loginError.textContent = err.message;
+      loginError.hidden = false;
+    }
+  });
+
+  document.getElementById('logout-button').addEventListener('click', async function () {
+    try { await authedFetch('/logout', { method: 'POST' }); } catch (e) {}
+    clearToken();
+    showLogin();
+  });
+
+  var backupButton = document.getElementById('backup-button');
+  backupButton.addEventListener('click', function () {
+    backupButton.disabled = true;
+    backupButton.textContent = 'Getting your location…';
+
+    function send(latitude, longitude) {
+      authedFetch('/backup-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: latitude, longitude: longitude }),
+      }).then(function () {
+        backupButton.textContent = 'Backup requested';
+        setTimeout(function () {
+          backupButton.disabled = false;
+          backupButton.textContent = 'Request backup';
+        }, 4000);
+      }).catch(function () {
+        backupButton.disabled = false;
+        backupButton.textContent = 'Request backup';
+      });
+    }
+
+    if (!navigator.geolocation) { send(null, null); return; }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { send(pos.coords.latitude, pos.coords.longitude); },
+      function () { send(null, null); },
+      { timeout: 5000 },
+    );
+  });
+
+  var searchInput = document.getElementById('search-input');
+  var searchResults = document.getElementById('search-results');
+  var searchEmpty = document.getElementById('search-empty');
+  var searchTimer = null;
+
+  searchInput.addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(runSearch, 250);
+  });
+
+  async function runSearch() {
+    var q = searchInput.value.trim();
+    searchResults.innerHTML = '';
+    if (!q) { searchEmpty.hidden = true; return; }
+    try {
+      var res = await authedFetch('/search?query=' + encodeURIComponent(q));
+      var results = await res.json();
+      searchEmpty.hidden = results.length > 0;
+      results.forEach(function (r) {
+        var li = document.createElement('li');
+        var btn = document.createElement('button');
+        btn.className = 'link';
+        btn.innerHTML = '<strong>' + escapeHtml(r.title) + '</strong><br>' +
+          '<span class="badge">' + escapeHtml(r.entityType) + '</span>' +
+          (r.subtitle ? ' <span class="muted">' + escapeHtml(r.subtitle) + '</span>' : '');
+        btn.addEventListener('click', function () { openDetail(r.entityType, r.id, r.title); });
+        li.appendChild(btn);
+        searchResults.appendChild(li);
+      });
+    } catch (e) {}
+  }
+
+  var detailBackdrop = document.getElementById('detail-backdrop');
+  var detailTitle = document.getElementById('detail-title');
+  var detailBody = document.getElementById('detail-body');
+  document.getElementById('detail-close').addEventListener('click', function () { detailBackdrop.hidden = true; });
+
+  function field(label, value) {
+    var div = document.createElement('div');
+    var dt = document.createElement('dt'); dt.textContent = label;
+    var dd = document.createElement('dd'); dd.textContent = value == null || value === '' ? '·' : String(value);
+    div.appendChild(dt); div.appendChild(dd);
+    return div;
+  }
+
+  function richTextToPlain(raw) {
+    try {
+      var doc = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (!doc || doc.type !== 'doc' || !Array.isArray(doc.content)) return String(raw);
+      var paragraphs = [];
+      function collect(node, out) {
+        if (node.text) out.text += node.text;
+        if (Array.isArray(node.content)) node.content.forEach(function (c) { collect(c, out); });
+      }
+      doc.content.forEach(function (block) {
+        var out = { text: '' };
+        collect(block, out);
+        if (out.text.trim()) paragraphs.push(out.text);
+      });
+      return paragraphs.length ? paragraphs.join(' ') : '·';
+    } catch (e) {
+      return String(raw);
+    }
+  }
+
+  function listSection(title, items, renderItem) {
+    var wrap = document.createElement('div');
+    var h = document.createElement('h2'); h.textContent = title + ' (' + items.length + ')'; h.style.marginTop = '0.5rem';
+    wrap.appendChild(h);
+    if (items.length === 0) {
+      var p = document.createElement('p'); p.className = 'muted'; p.textContent = 'None recorded.';
+      wrap.appendChild(p);
+    } else {
+      var ul = document.createElement('ul');
+      items.forEach(function (item) {
+        var li = document.createElement('li');
+        li.textContent = renderItem(item);
+        ul.appendChild(li);
+      });
+      wrap.appendChild(ul);
+    }
+    return wrap;
+  }
+
+  async function openDetail(entityType, entityId, title) {
+    detailTitle.textContent = title;
+    detailBody.innerHTML = '<p class="muted">Loading…</p>';
+    detailBackdrop.hidden = false;
+    try {
+      var res = await authedFetch('/detail?entityType=' + encodeURIComponent(entityType) + '&entityId=' + encodeURIComponent(entityId));
+      var data = await res.json();
+      detailBody.innerHTML = '';
+
+      if (data.kind === 'person') {
+        var p = data.person;
+        if (p.headshotAttachmentId) {
+          var img = document.createElement('img');
+          img.alt = 'Headshot';
+          img.style.cssText = 'width:6rem; height:6rem; border-radius:999px; object-fit:cover; margin-bottom:0.5rem;';
+          detailBody.appendChild(img);
+          authedFetch('/photo?entityId=' + encodeURIComponent(p.id))
+            .then(function (res) { return res.blob(); })
+            .then(function (blob) { img.src = URL.createObjectURL(blob); })
+            .catch(function () { img.remove(); });
+        }
+        var dl = document.createElement('dl');
+        dl.appendChild(field('Phone', p.phone));
+        dl.appendChild(field('National ID', p.nationalId));
+        dl.appendChild(field('Address', p.address));
+        detailBody.appendChild(dl);
+        detailBody.appendChild(listSection('Cases', data.cases, function (c) { return c.reference + ': ' + c.summary; }));
+        detailBody.appendChild(listSection('Custody', data.custodyRecords, function (c) { return c.status; }));
+        detailBody.appendChild(listSection('Bonds', data.bonds, function (b) { return b.status; }));
+        detailBody.appendChild(listSection('Charge sheets', data.chargeSheets, function (c) { return c.offence; }));
+      } else if (data.kind === 'case') {
+        var k = data.case;
+        var dl2 = document.createElement('dl');
+        dl2.appendChild(field('Status', k.status));
+        dl2.appendChild(field('Summary', k.summary));
+        detailBody.appendChild(dl2);
+        detailBody.appendChild(listSection('People', data.people, function (person) { return person.firstName + ' ' + person.lastName; }));
+        detailBody.appendChild(listSection('Statements', data.statements, function () { return 'Statement recorded'; }));
+        detailBody.appendChild(listSection('Custody', data.custodyRecords, function (c) { return c.status; }));
+      } else if (data.kind === 'custodyRecord') {
+        var dl3 = document.createElement('dl');
+        dl3.appendChild(field('Person', data.personFirstName + ' ' + data.personLastName));
+        dl3.appendChild(field('Status', data.status));
+        dl3.appendChild(field('Location', data.location));
+        dl3.appendChild(field('Case reference', data.caseReference));
+        detailBody.appendChild(dl3);
+      } else if (data.kind === 'bond') {
+        var dl4 = document.createElement('dl');
+        dl4.appendChild(field('Person', data.personFirstName + ' ' + data.personLastName));
+        dl4.appendChild(field('Status', data.status));
+        dl4.appendChild(field('Surety', data.withSurety ? (data.suretyName || 'With surety') : 'No surety'));
+        dl4.appendChild(field('Case reference', data.caseReference));
+        detailBody.appendChild(dl4);
+      } else if (data.kind === 'statement') {
+        var dl5 = document.createElement('dl');
+        dl5.appendChild(field('Person', data.personFirstName + ' ' + data.personLastName));
+        dl5.appendChild(field('Officer', data.officerName));
+        dl5.appendChild(field('Case reference', data.caseReference));
+        detailBody.appendChild(dl5);
+        var contentWrap = document.createElement('div');
+        var contentH = document.createElement('h2'); contentH.textContent = 'Statement'; contentH.style.marginTop = '0.5rem';
+        var contentP = document.createElement('p'); contentP.textContent = richTextToPlain(data.content);
+        contentWrap.appendChild(contentH); contentWrap.appendChild(contentP);
+        detailBody.appendChild(contentWrap);
+      } else if (data.kind === 'chargeSheet') {
+        var dl6 = document.createElement('dl');
+        dl6.appendChild(field('Offence', data.offence));
+        dl6.appendChild(field('Statutory section', data.statutorySection));
+        dl6.appendChild(field('Case reference', data.caseReference));
+        detailBody.appendChild(dl6);
+        var particularsWrap = document.createElement('div');
+        var particularsH = document.createElement('h2'); particularsH.textContent = 'Particulars'; particularsH.style.marginTop = '0.5rem';
+        var particularsP = document.createElement('p'); particularsP.textContent = data.particulars || '·';
+        particularsWrap.appendChild(particularsH); particularsWrap.appendChild(particularsP);
+        detailBody.appendChild(particularsWrap);
+      } else {
+        detailBody.innerHTML = '<p class="muted">No further detail available for this type yet.</p>';
+      }
+    } catch (e) {
+      detailBody.innerHTML = '<p class="error">Could not load details.</p>';
+    }
+  }
+
+  var alertsList = document.getElementById('alerts-list');
+  var alertsEmpty = document.getElementById('alerts-empty');
+
+  async function loadAlerts() {
+    try {
+      var res = await authedFetch('/custody-alerts');
+      var alerts = await res.json();
+      alertsList.innerHTML = '';
+      alertsEmpty.hidden = alerts.length > 0;
+      alerts.forEach(function (a) {
+        var li = document.createElement('li');
+        var hours = Math.abs(a.hoursRemaining).toFixed(1);
+        li.innerHTML = '<strong>' + escapeHtml(a.personName) + '</strong><br>' +
+          '<span class="badge' + (a.isOverdue ? ' overdue' : '') + '">' + (a.isOverdue ? hours + 'h overdue' : hours + 'h remaining') + '</span>';
+        alertsList.appendChild(li);
+      });
+    } catch (e) {}
+  }
+
+  document.getElementById('refresh-alerts').addEventListener('click', loadAlerts);
+
+  function escapeHtml(s) {
+    var div = document.createElement('div');
+    div.textContent = s == null ? '' : String(s);
+    return div.innerHTML;
+  }
+
+  if (token()) { showApp(); } else { showLogin(); }
+})();
+</script>
+</body>
+</html>

@@ -15,6 +15,12 @@
     "notification:default",
     "os:default",
     "log:default",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        { "name": "binaries/cloudflared", "sidecar": true }
+      ]
+    },
     "core:window:allow-close",
     "core:window:allow-center",
     "core:window:allow-minimize",

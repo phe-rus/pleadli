@@ -15,6 +15,10 @@ pub struct Attachment {
     pub mime_type: String,
     pub size_bytes: i64,
     pub created_at: i64,
+    /// Which of a person's four identification-photo slots (front, left
+    /// profile, right profile, back) this fills. Null for every
+    /// attachment that isn't one of those angle photos.
+    pub photo_angle: Option<String>,
 }
 
 #[derive(Debug)]
@@ -256,9 +260,74 @@ pub async fn add_attachment_from_path(
     add_attachment_bytes(pool, vault_root, entity_type, entity_id, &file_name, &bytes).await
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkAttachFailure {
+    pub source: String,
+    pub error: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkAttachResult {
+    pub attached: Vec<Attachment>,
+    pub failed: Vec<BulkAttachFailure>,
+}
+
+/// Attaches many files to the same record in one call: bulk paperwork
+/// intake (an existing person's file, a case's supporting documents)
+/// instead of one file at a time. Each file goes through the exact same
+/// `add_attachment_bytes` every other attachment already does, so it
+/// lands in the correct Vault folder automatically; "arranging them in
+/// order" is that existing per-record path resolution, just looped. One
+/// bad file (unreadable, say) doesn't lose track of the rest of the
+/// batch: it's recorded in `failed` and the loop continues.
+pub async fn bulk_attach_bytes(
+    pool: &SqlitePool,
+    vault_root: &Path,
+    entity_type: &str,
+    entity_id: &str,
+    files: Vec<(String, Vec<u8>)>,
+) -> BulkAttachResult {
+    let mut attached = Vec::with_capacity(files.len());
+    let mut failed = Vec::new();
+
+    for (file_name, bytes) in files {
+        match add_attachment_bytes(pool, vault_root, entity_type, entity_id, &file_name, &bytes).await {
+            Ok(attachment) => attached.push(attachment),
+            Err(e) => failed.push(BulkAttachFailure { source: file_name, error: e.to_string() }),
+        }
+    }
+
+    BulkAttachResult { attached, failed }
+}
+
+/// Tauri path: source paths already exist on disk (from the native
+/// multi-file picker), so bytes are read directly rather than shipped
+/// over IPC, same reasoning as `add_attachment_from_path`.
+pub async fn bulk_attach_from_paths(
+    pool: &SqlitePool,
+    vault_root: &Path,
+    entity_type: &str,
+    entity_id: &str,
+    source_paths: &[PathBuf],
+) -> BulkAttachResult {
+    let mut attached = Vec::with_capacity(source_paths.len());
+    let mut failed = Vec::new();
+
+    for source_path in source_paths {
+        match add_attachment_from_path(pool, vault_root, entity_type, entity_id, source_path).await {
+            Ok(attachment) => attached.push(attachment),
+            Err(e) => failed.push(BulkAttachFailure { source: source_path.to_string_lossy().to_string(), error: e.to_string() }),
+        }
+    }
+
+    BulkAttachResult { attached, failed }
+}
+
 pub async fn get_attachment(pool: &SqlitePool, id: &str) -> Result<Option<Attachment>, sqlx::Error> {
     sqlx::query_as::<_, Attachment>(
-        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at FROM attachments WHERE id = ?",
+        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle FROM attachments WHERE id = ?",
     )
     .bind(id)
     .fetch_optional(pool)
@@ -271,7 +340,7 @@ pub async fn list_attachments(
     entity_id: &str,
 ) -> Result<Vec<Attachment>, sqlx::Error> {
     sqlx::query_as::<_, Attachment>(
-        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at FROM attachments WHERE entity_type = ? AND entity_id = ? ORDER BY created_at DESC",
+        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle FROM attachments WHERE entity_type = ? AND entity_id = ? ORDER BY created_at DESC",
     )
     .bind(entity_type)
     .bind(entity_id)
@@ -316,7 +385,7 @@ pub async fn list_all(pool: &SqlitePool, query: &str) -> Result<Vec<Attachment>,
 
     if trimmed.is_empty() {
         return sqlx::query_as::<_, Attachment>(
-            "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at
+            "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
              FROM attachments ORDER BY created_at DESC LIMIT 200",
         )
         .fetch_all(pool)
@@ -325,7 +394,7 @@ pub async fn list_all(pool: &SqlitePool, query: &str) -> Result<Vec<Attachment>,
 
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, Attachment>(
-        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at
+        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
          FROM attachments WHERE file_name LIKE ? ORDER BY created_at DESC LIMIT 200",
     )
     .bind(like)
@@ -343,7 +412,7 @@ pub async fn search_attachments(pool: &SqlitePool, query: &str) -> Result<Vec<At
     }
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, Attachment>(
-        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at
+        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
          FROM attachments WHERE file_name LIKE ? ORDER BY created_at DESC LIMIT 50",
     )
     .bind(like)
@@ -454,7 +523,7 @@ pub async fn list_vault_directory(
         let size_bytes = Some(metadata.len() as i64);
 
         let attachment = sqlx::query_as::<_, Attachment>(
-            "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at
+            "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
              FROM attachments WHERE stored_path = ?",
         )
         .bind(&absolute_path)
@@ -493,10 +562,34 @@ pub async fn list_vault_directory(
     Ok(entries)
 }
 
+/// A `data:` URL for an attachment's bytes: the one way to show a file
+/// inline in the React UI (an avatar image, say) that works the same in
+/// a real release build as it does in dev. The dev-only HTTP server that
+/// backs `attachmentFileUrl()` elsewhere doesn't exist once
+/// `debug_assertions` is off, so inline display can't rely on it.
+pub async fn get_attachment_data_url(pool: &SqlitePool, id: &str) -> Result<Option<String>, AttachmentError> {
+    let Some(attachment) = get_attachment(pool, id).await? else {
+        return Ok(None);
+    };
+    let bytes = std::fs::read(&attachment.stored_path)?;
+    use base64::Engine;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
+    Ok(Some(format!("data:{};base64,{}", attachment.mime_type, encoded)))
+}
+
 pub async fn delete_attachment(pool: &SqlitePool, id: &str) -> Result<(), AttachmentError> {
     if let Some(attachment) = get_attachment(pool, id).await? {
         let _ = std::fs::remove_file(&attachment.stored_path);
     }
+    // people.headshot_attachment_id references this table with foreign
+    // keys enforced (sqlx defaults PRAGMA foreign_keys = ON): deleting a
+    // still-referenced row outright would fail the constraint, so any
+    // person currently pointing at this attachment as their headshot is
+    // freed first.
+    sqlx::query("UPDATE people SET headshot_attachment_id = NULL WHERE headshot_attachment_id = ?")
+        .bind(id)
+        .execute(pool)
+        .await?;
     sqlx::query("DELETE FROM attachments WHERE id = ?")
         .bind(id)
         .execute(pool)

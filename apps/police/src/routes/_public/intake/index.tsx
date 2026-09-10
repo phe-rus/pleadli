@@ -7,6 +7,7 @@ import { Button, buttonVariants } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/intake/')({
@@ -53,6 +54,7 @@ function RouteComponent() {
         header: 'Status',
         cell: ({ getValue }) => statusLabel(getValue<string>()),
       },
+      { accessorKey: 'incidentId', header: 'Incident ID', cell: ({ row }) => row.original.incidentId ?? '·' },
       {
         accessorKey: 'incidentSummary',
         header: 'Related incident',
@@ -62,7 +64,7 @@ function RouteComponent() {
       {
         accessorKey: 'createdAt',
         header: 'Opened',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
       {
         id: 'investigate',

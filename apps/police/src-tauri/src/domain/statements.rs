@@ -35,7 +35,7 @@ pub struct CreateStatementInput {
     pub given_at: i64,
 }
 
-async fn write_statement_markdown(pool: &SqlitePool, vault_root: &Path, record: &Statement) {
+pub(crate) async fn write_statement_markdown(pool: &SqlitePool, vault_root: &Path, record: &Statement) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "statement", &record.id).await {
         let title = format!("Statement: {} {}", record.person_first_name, record.person_last_name);
         if let Err(e) = markdown::write_record(&dir, &format!("statement-{}", record.id), &title, record) {
@@ -125,6 +125,24 @@ pub async fn list_statements(pool: &SqlitePool, query: &str) -> Result<Vec<State
          ORDER BY s.given_at DESC LIMIT 50",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every statement, unfiltered and unlimited, for the bulk data export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Statement>, sqlx::Error> {
+    sqlx::query_as::<_, Statement>(
+        "SELECT
+            s.id, s.content, s.person_id, s.case_id, s.officer_name, s.given_at, s.created_at,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names,
+            c.reference AS case_reference
+         FROM statements s
+         JOIN people p ON p.id = s.person_id
+         LEFT JOIN cases c ON c.id = s.case_id
+         ORDER BY s.given_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

@@ -39,7 +39,7 @@ pub struct CreateStationAssetInput {
     pub notes: Option<String>,
 }
 
-async fn write_asset_markdown(pool: &SqlitePool, vault_root: &Path, record: &StationAsset) {
+pub(crate) async fn write_asset_markdown(pool: &SqlitePool, vault_root: &Path, record: &StationAsset) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "station_asset", &record.id).await {
         if let Err(e) = markdown::write_record(&dir, &format!("station_asset-{}", record.id), &record.description, record) {
             log::warn!("failed to write station asset markdown: {e}");
@@ -130,6 +130,24 @@ pub async fn list_assets(pool: &SqlitePool, query: &str) -> Result<Vec<StationAs
          ORDER BY a.created_at DESC LIMIT 50",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every station asset, unfiltered and unlimited, for the bulk data
+/// export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<StationAsset>, sqlx::Error> {
+    sqlx::query_as::<_, StationAsset>(
+        "SELECT
+            a.id, a.category, a.description, a.item_identifier, a.status,
+            a.holder_name, a.person_id, a.notes, a.created_at,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names
+         FROM station_assets a
+         LEFT JOIN people p ON p.id = a.person_id
+         ORDER BY a.created_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

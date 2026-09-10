@@ -1,6 +1,8 @@
 import { Createpanel } from '@/components/create-panel'
 import { CaseRow } from '@/components/list-cards/case-row'
-import { caseStatuses } from '@/features/cases/schema'
+import { PersonAvatar } from '@/components/person-avatar'
+import { RecordExportActions } from '@/components/record-export-actions'
+import { caseStatusLabel } from '@/features/cases/schema'
 import {
   custodyCompliance,
   custodyStatusLabel,
@@ -12,6 +14,8 @@ import {
   personFullName,
   personProfileOptions,
   PersonForm,
+  PersonPhotosField,
+  useExportPersonDocument,
   usePersonProfile,
 } from '@/features/people'
 import { ArrowLeft01Icon, Edit02Icon } from '@hugeicons/core-free-icons'
@@ -19,8 +23,9 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
+import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useState } from 'react'
 
@@ -34,10 +39,6 @@ export const Route = createFileRoute('/_public/search/people/$personId')({
   },
   component: RouteComponent,
 })
-
-function caseStatusLabel(status: string) {
-  return caseStatuses.find((s) => s.value === status)?.label ?? status
-}
 
 function Section({
   title,
@@ -95,11 +96,22 @@ function RelatedRow({
 
 function RouteComponent() {
   const { personId } = Route.useParams()
+  const navigate = useNavigate()
   const [editOpen, setEditOpen] = useState(false)
   const { data: profile } = usePersonProfile(personId)
+  const exportDocument = useExportPersonDocument(personId)
 
   if (!profile) return null
   const { person } = profile
+
+  const handleExport = async (format: 'pdf' | 'docx') => {
+    try {
+      const found = await exportDocument.mutateAsync(format)
+      if (found) t.success(`${format === 'pdf' ? 'PDF' : 'Word'} document exported`)
+    } catch {
+      t.error(`Could not export to ${format === 'pdf' ? 'PDF' : 'Word'}`, { description: 'Please try again.' })
+    }
+  }
 
   return (
     <article className="container flex flex-col gap-6 pt-5 pb-20">
@@ -112,29 +124,39 @@ function RouteComponent() {
       </Link>
 
       <section className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1>{personFullName(person)}</h1>
-          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-            <span>Phone: {person.phone ?? '·'}</span>
-            <span>NIN / National ID: {person.nationalId ?? '·'}</span>
-            <span>Address: {person.address ?? '·'}</span>
-            <span>Recorded: {format(person.createdAt, 'PPP')}</span>
+        <div className="flex items-start gap-3">
+          <PersonAvatar name={personFullName(person)} headshotAttachmentId={person.headshotAttachmentId} size="lg" />
+          <div className="flex flex-col gap-1">
+            <h1>{personFullName(person)}</h1>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+              <span>Phone: {person.phone ?? '·'}</span>
+              <span>NIN / National ID: {person.nationalId ?? '·'}</span>
+              <span>Address: {person.address ?? '·'}</span>
+              <span>Recorded: {format(person.createdAt, 'PPP')}</span>
+            </div>
           </div>
         </div>
 
-        <Createpanel
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          trigger={
-            <Button size="sm" variant="secondary">
-              <HugeiconsIcon icon={Edit02Icon} />
-              Edit
-            </Button>
-          }
-          headings={{ title: 'Edit person', description: "Update this person's recorded details." }}
-        >
-          <PersonForm person={person} onSuccess={() => setEditOpen(false)} />
-        </Createpanel>
+        <div className="flex items-center gap-2">
+          <RecordExportActions
+            onPrint={() => navigate({ to: '/print/people/$personId', params: { personId } })}
+            onExport={handleExport}
+            exportPending={exportDocument.isPending}
+          />
+          <Createpanel
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            trigger={
+              <Button size="sm" variant="secondary">
+                <HugeiconsIcon icon={Edit02Icon} />
+                Edit
+              </Button>
+            }
+            headings={{ title: 'Edit person', description: "Update this person's recorded details." }}
+          >
+            <PersonForm person={person} onSuccess={() => setEditOpen(false)} />
+          </Createpanel>
+        </div>
       </section>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -262,6 +284,10 @@ function RouteComponent() {
           ))}
         </Section>
       </div>
+
+      <section className="md:max-w-md">
+        <PersonPhotosField personId={personId} attachments={profile.attachments} />
+      </section>
 
       <section className="md:max-w-md">
         <AttachmentsField entityType={entityTypes.person} entityId={personId} label="Files" />

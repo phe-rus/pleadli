@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createPerson, getPersonProfile, searchPeople, updatePerson } from './data'
+import { createPerson, exportPersonDocument, getPersonProfile, searchPeople, updatePerson } from './data'
+import type { DocumentFormat } from './data'
 import type { CreatePersonInput } from './schema'
 
 export const peopleSearchOptions = (query: string) =>
@@ -41,4 +42,8 @@ export function useUpdatePerson() {
       queryClient.invalidateQueries({ queryKey: ['people', 'profile', id] })
     },
   })
+}
+
+export function useExportPersonDocument(id: string) {
+  return useMutation({ mutationFn: (format: DocumentFormat) => exportPersonDocument(id, format) })
 }

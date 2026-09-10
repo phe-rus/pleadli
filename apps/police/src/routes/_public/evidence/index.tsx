@@ -7,6 +7,7 @@ import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/evidence/')({
@@ -48,11 +49,55 @@ function RouteComponent() {
         header: 'ID mark',
         cell: ({ row }) => row.original.identificationMark ?? '·',
       },
+      { accessorKey: 'caseId', header: 'Case ID', cell: ({ row }) => row.original.caseId ?? '·' },
+      {
+        accessorKey: 'caseReference',
+        header: 'Case',
+        cell: ({ row }) => row.original.caseReference ?? '·',
+      },
+      { accessorKey: 'incidentId', header: 'Incident ID', cell: ({ row }) => row.original.incidentId ?? '·' },
+      { accessorKey: 'personId', header: 'Person ID', cell: ({ row }) => row.original.personId ?? '·' },
       {
         id: 'person',
         accessorFn: (row) => exhibitPersonName(row) ?? '',
         header: 'Related person',
         cell: ({ getValue }) => getValue<string>() || '·',
+      },
+      {
+        accessorKey: 'personFirstName',
+        header: 'Person first name',
+        cell: ({ row }) => row.original.personFirstName ?? '·',
+      },
+      {
+        accessorKey: 'personLastName',
+        header: 'Person last name',
+        cell: ({ row }) => row.original.personLastName ?? '·',
+      },
+      {
+        accessorKey: 'personOtherNames',
+        header: 'Person other names',
+        cell: ({ row }) => row.original.personOtherNames ?? '·',
+      },
+      {
+        accessorKey: 'recoveredAt',
+        header: 'Recovered',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
+      },
+      {
+        accessorKey: 'recoveredFromLocation',
+        header: 'Recovered from',
+        cell: ({ row }) => row.original.recoveredFromLocation ?? '·',
+      },
+      {
+        accessorKey: 'handedOverBy',
+        header: 'Handed over by',
+        cell: ({ row }) => row.original.handedOverBy ?? '·',
+      },
+      { accessorKey: 'witnesses', header: 'Witnesses', cell: ({ row }) => row.original.witnesses ?? '·' },
+      {
+        accessorKey: 'receivingOfficerName',
+        header: 'Receiving officer',
+        cell: ({ row }) => row.original.receivingOfficerName ?? '·',
       },
       {
         accessorKey: 'storageLocation',
@@ -64,15 +109,11 @@ function RouteComponent() {
         header: 'Status',
         cell: ({ row }) => exhibitStatusLabel(row.original.status),
       },
+      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
       {
-        accessorKey: 'caseReference',
-        header: 'Case',
-        cell: ({ row }) => row.original.caseReference ?? '·',
-      },
-      {
-        accessorKey: 'recoveredAt',
-        header: 'Recovered',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        accessorKey: 'createdAt',
+        header: 'Logged',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

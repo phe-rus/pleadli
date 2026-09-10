@@ -8,6 +8,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/statements/')({
@@ -43,10 +44,18 @@ function RouteComponent() {
           </span>
         ),
       },
+      { accessorKey: 'personId', header: 'Person ID' },
       {
         id: 'person',
         accessorFn: (row) => statementPersonName(row),
         header: 'Given by',
+      },
+      { accessorKey: 'personFirstName', header: 'First name' },
+      { accessorKey: 'personLastName', header: 'Last name' },
+      {
+        accessorKey: 'personOtherNames',
+        header: 'Other names',
+        cell: ({ row }) => row.original.personOtherNames ?? '·',
       },
       {
         accessorKey: 'content',
@@ -55,20 +64,26 @@ function RouteComponent() {
           <RichTextPreview value={getValue<string>()} className="line-clamp-2 max-w-sm" />
         ),
       },
-      {
-        accessorKey: 'officerName',
-        header: 'Taken by',
-        cell: ({ row }) => row.original.officerName ?? '·',
-      },
+      { accessorKey: 'caseId', header: 'Case ID', cell: ({ row }) => row.original.caseId ?? '·' },
       {
         accessorKey: 'caseReference',
         header: 'Case',
         cell: ({ row }) => row.original.caseReference ?? '·',
       },
       {
+        accessorKey: 'officerName',
+        header: 'Taken by',
+        cell: ({ row }) => row.original.officerName ?? '·',
+      },
+      {
         accessorKey: 'givenAt',
         header: 'Given',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
+      },
+      {
+        accessorKey: 'createdAt',
+        header: 'Recorded',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

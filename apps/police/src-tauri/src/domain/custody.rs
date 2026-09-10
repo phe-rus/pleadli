@@ -48,7 +48,7 @@ pub struct CreateCustodyRecordInput {
     pub notes: Option<String>,
 }
 
-async fn write_custody_markdown(pool: &SqlitePool, vault_root: &Path, record: &CustodyRecord) {
+pub(crate) async fn write_custody_markdown(pool: &SqlitePool, vault_root: &Path, record: &CustodyRecord) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "custody_record", &record.id).await {
         let title = format!("Custody record: {} {}", record.person_first_name, record.person_last_name);
         if let Err(e) = markdown::write_record(&dir, &format!("custody_record-{}", record.id), &title, record) {
@@ -161,6 +161,101 @@ pub async fn list_records(pool: &SqlitePool, query: &str) -> Result<Vec<CustodyR
     .bind(like)
     .fetch_all(pool)
     .await
+}
+
+/// Every custody record, unfiltered and unlimited, for the bulk data export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<CustodyRecord>, sqlx::Error> {
+    sqlx::query_as::<_, CustodyRecord>(
+        "SELECT
+            cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
+            cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
+            cr.notes, cr.created_at,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names,
+            c.reference AS case_reference
+         FROM custody_records cr
+         JOIN people p ON p.id = cr.person_id
+         LEFT JOIN cases c ON c.id = cr.case_id
+         ORDER BY cr.arrested_at ASC",
+    )
+    .fetch_all(pool)
+    .await
+}
+
+const HOUR_MS: i64 = 60 * 60 * 1000;
+const APPROACHING_HOURS: f64 = 2.0;
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CustodyAlert {
+    pub id: String,
+    pub person_name: String,
+    pub hours_remaining: f64,
+    pub is_overdue: bool,
+    pub basis: &'static str,
+}
+
+/// The same 48h/7d compliance math as `features/custody/schema.ts`'s
+/// `custodyCompliance`, ported here (not called from there) because the
+/// remote-access surface is served by this Rust process directly, not
+/// the React app, and must never trust the client with more than the
+/// already-reduced alert shape below.
+fn compliance_hours_remaining(record: &CustodyRecord, now_ms: i64) -> (f64, &'static str) {
+    let (deadline, basis) = if !record.cross_jurisdiction_transfer {
+        (record.arrested_at + 48 * HOUR_MS, "arrest+48h")
+    } else if record.transferred_at.is_none() {
+        (record.arrested_at + 7 * 24 * HOUR_MS, "transfer-window+7d")
+    } else {
+        (record.transferred_at.unwrap() + 48 * HOUR_MS, "post-transfer+48h (inferred)")
+    };
+    ((deadline - now_ms) as f64 / HOUR_MS as f64, basis)
+}
+
+/// In-custody records approaching or past their compliance deadline:
+/// the only custody information the restricted remote API exposes.
+/// Deliberately returns just enough to alert on, never the full record
+/// (no case reference, no arrest location, no notes).
+pub async fn list_alerts(pool: &SqlitePool) -> Result<Vec<CustodyAlert>, sqlx::Error> {
+    let records = sqlx::query_as::<_, CustodyRecord>(
+        "SELECT
+            cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
+            cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
+            cr.notes, cr.created_at,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names,
+            c.reference AS case_reference
+         FROM custody_records cr
+         JOIN people p ON p.id = cr.person_id
+         LEFT JOIN cases c ON c.id = cr.case_id
+         WHERE cr.status = 'in_custody'",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let now_ms = chrono::Utc::now().timestamp_millis();
+    Ok(records
+        .into_iter()
+        .filter_map(|record| {
+            let (hours_remaining, basis) = compliance_hours_remaining(&record, now_ms);
+            let is_overdue = hours_remaining < 0.0;
+            if !is_overdue && hours_remaining > APPROACHING_HOURS {
+                return None;
+            }
+            Some(CustodyAlert {
+                id: record.id,
+                person_name: [record.person_last_name, record.person_first_name]
+                    .into_iter()
+                    .filter(|s| !s.is_empty())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                hours_remaining,
+                is_overdue,
+                basis,
+            })
+        })
+        .collect())
 }
 
 pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<CustodyRecord>, sqlx::Error> {

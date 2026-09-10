@@ -12,6 +12,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/roster/')({
@@ -59,12 +60,18 @@ function RouteComponent() {
       {
         accessorKey: 'shiftStart',
         header: 'Shift start',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
       {
         accessorKey: 'shiftEnd',
         header: 'Shift end',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
+      },
+      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      {
+        accessorKey: 'createdAt',
+        header: 'Recorded',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

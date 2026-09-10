@@ -5,6 +5,7 @@ import { CaseRow, type CaseRowData } from '@/components/list-cards/case-row'
 import { caseStatuses, casesOptions, useCases, type Case } from '@/features/cases'
 import { custodyCompliance, custodyRecordsOptions, useCustodyRecords, type CustodyRecord } from '@/features/custody'
 import { dutyAssignmentsOptions, useDutyAssignments } from '@/features/duty'
+import { backupAlertsOptions, useBackupAlerts } from '@/features/officers'
 import {
   StationDiaryEntryForm,
   stationDiaryCategoryLabel,
@@ -18,6 +19,7 @@ import { DAY_MS, weeklyBuckets } from '@/lib/weekly-buckets'
 import {
   Add01Icon,
   AlarmClockIcon,
+  AlertCircleIcon,
   ArrowRight01Icon,
   Building06Icon,
   CellsIcon,
@@ -42,6 +44,7 @@ export const Route = createFileRoute('/_public/')({
       context.queryClient.query({ ...dutyAssignmentsOptions(''), staleTime: 'static' }),
       context.queryClient.query({ ...statementsOptions(''), staleTime: 'static' }),
       context.queryClient.query({ ...stationProfileOptions(), staleTime: 'static' }),
+      context.queryClient.query({ ...backupAlertsOptions(), staleTime: 'static' }),
     ])
   },
   component: RouteComponent,
@@ -101,6 +104,8 @@ function RouteComponent() {
   const { data: dutyAssignments } = useDutyAssignments('')
   const { data: statements } = useStatements('')
   const { data: stationProfile } = useStationProfile()
+  const { data: backupAlerts } = useBackupAlerts()
+  const activeBackupAlerts = backupAlerts.filter((a) => a.endedAt == null)
 
   const now = Date.now()
 
@@ -161,6 +166,39 @@ function RouteComponent() {
 
   return (
     <article className="container flex flex-col gap-6 pt-6 pb-20">
+      {activeBackupAlerts.length > 0 && (
+        <Card className="border-destructive/40 bg-destructive/5 dark:bg-destructive/10 p-0">
+          <CardContent className={cn(
+            "flex flex-col sm:flex-row items-start",
+            'sm:items-center justify-between gap-3 py-2.5 px-4'
+          )}>
+            <div className="flex md:items-center gap-2.5">
+              <span className="relative flex size-2.5">
+                <span className={cn(
+                  "absolute inline-flex h-full w-full animate-ping",
+                  'rounded-full bg-destructive opacity-75'
+                )}></span>
+                <span className="relative inline-flex size-2.5 rounded-full bg-destructive"></span>
+              </span>
+              <div className={cn(
+                "flex flex-col sm:flex-row md:items-center",
+                'md:gap-3'
+              )}>
+                <h3>Backup Requested</h3>
+                <span className="hidden md:block">•</span>
+                <p>
+                  {activeBackupAlerts.length} {activeBackupAlerts.length === 1 ? 'officer needs' : 'officers need'}{' '}
+                  backup right now.
+                </p>
+              </div>
+            </div>
+            <Link to="/logs/backup-alerts" className={buttonVariants({ size: 'xs', variant: 'destructive' })}>
+              Respond
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {nearOrOverLimit.length > 0 && (
         <Card className="border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10 p-0">
           <CardContent className={cn(
@@ -282,6 +320,20 @@ function RouteComponent() {
           value={openCases.length}
           meta={<Badge variant="outline">{closedCasesCount} closed</Badge>}
           caption={`${statements.length} statements recorded`}
+        />
+
+        <StatTile
+          label="Backup Requests"
+          labelClassName={activeBackupAlerts.length > 0 ? 'text-destructive' : undefined}
+          icon={AlertCircleIcon}
+          iconClassName={activeBackupAlerts.length > 0 ? 'text-destructive' : undefined}
+          value={activeBackupAlerts.length}
+          meta={
+            <Badge variant={activeBackupAlerts.length > 0 ? 'destructive' : 'secondary'}>
+              {activeBackupAlerts.length > 0 ? 'Respond' : 'None active'}
+            </Badge>
+          }
+          caption={`${backupAlerts.length} total, over remote access`}
         />
       </section>
 

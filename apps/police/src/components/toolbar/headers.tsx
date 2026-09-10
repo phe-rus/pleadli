@@ -1,6 +1,7 @@
 import { CommandMenu } from "@/components/command-menu"
 import { Createpanel } from "@/components/create-panel"
 import { CaseForm } from "@/features/cases"
+import { BackupDispatchIndicator } from "@/features/officers"
 import { LegalDocument01Icon, PanelLeftDashedIcon, PanelRightDashedIcon, Search } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button, buttonVariants } from "@pleadli/ui/button"
@@ -82,6 +83,7 @@ export const Headers = () => {
                         </Suspense>
                     </Createpanel>
 
+                    <BackupDispatchIndicator />
                     <Toggletheme />
                     <Controls />
                 </nav>

@@ -34,7 +34,7 @@ pub struct CreateDutyAssignmentInput {
     pub notes: Option<String>,
 }
 
-async fn write_assignment_markdown(pool: &SqlitePool, vault_root: &Path, record: &DutyAssignment) {
+pub(crate) async fn write_assignment_markdown(pool: &SqlitePool, vault_root: &Path, record: &DutyAssignment) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "duty_assignment", &record.id).await {
         let title = format!("Duty: {}", record.officer_name);
         if let Err(e) = markdown::write_record(&dir, &format!("duty_assignment-{}", record.id), &title, record) {
@@ -115,6 +115,14 @@ pub async fn list_assignments(pool: &SqlitePool, query: &str) -> Result<Vec<Duty
     .bind(like)
     .fetch_all(pool)
     .await
+}
+
+/// Every duty assignment, unfiltered and unlimited, for the bulk data
+/// export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<DutyAssignment>, sqlx::Error> {
+    sqlx::query_as::<_, DutyAssignment>("SELECT * FROM duty_assignments ORDER BY shift_start ASC")
+        .fetch_all(pool)
+        .await
 }
 
 pub async fn get_assignment(pool: &SqlitePool, id: &str) -> Result<Option<DutyAssignment>, sqlx::Error> {

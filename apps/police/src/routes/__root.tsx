@@ -41,7 +41,13 @@ function RootComponent() {
       <HeadContent />
       <main className={cn(
         "flex flex-col bg-background h-svh transition-colors",
-        'rounded-sm shadow-lg! border border-border/25 typeset'
+        'rounded-sm shadow-lg! border border-border/25 typeset',
+        // The floating-window chrome (fixed height, shadow, border) is
+        // desktop-app styling, not something that belongs on a printed
+        // page. A record's own print route relies on this being reset
+        // so its content can flow across real printed pages instead of
+        // being clipped to the app window's on-screen height.
+        'print:h-auto print:overflow-visible print:rounded-none print:border-none print:shadow-none',
       )}>
         <WindowResizeHandles />
         <ThemeProvider

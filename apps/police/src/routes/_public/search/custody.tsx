@@ -16,6 +16,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/search/custody')({
@@ -62,10 +63,25 @@ function RouteComponent() {
           </span>
         ),
       },
+      { accessorKey: 'personId', header: 'Person ID' },
       {
         id: 'person',
         accessorFn: (row) => custodyPersonName(row),
         header: 'Person',
+      },
+      { accessorKey: 'personFirstName', header: 'First name' },
+      { accessorKey: 'personLastName', header: 'Last name' },
+      {
+        accessorKey: 'personOtherNames',
+        header: 'Other names',
+        cell: ({ row }) => row.original.personOtherNames ?? '·',
+      },
+      { accessorKey: 'incidentId', header: 'Incident ID', cell: ({ row }) => row.original.incidentId ?? '·' },
+      { accessorKey: 'caseId', header: 'Case ID', cell: ({ row }) => row.original.caseId ?? '·' },
+      {
+        accessorKey: 'caseReference',
+        header: 'Case',
+        cell: ({ row }) => row.original.caseReference ?? '·',
       },
       {
         accessorKey: 'location',
@@ -75,7 +91,17 @@ function RouteComponent() {
       {
         accessorKey: 'arrestedAt',
         header: 'Arrested',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
+      },
+      {
+        accessorKey: 'crossJurisdictionTransfer',
+        header: 'Cross-jurisdiction',
+        cell: ({ row }) => (row.original.crossJurisdictionTransfer ? 'Yes' : 'No'),
+      },
+      {
+        accessorKey: 'transferredAt',
+        header: 'Transferred',
+        cell: ({ row }) => (row.original.transferredAt ? format(row.original.transferredAt, 'PPp') : '·'),
       },
       {
         accessorKey: 'status',
@@ -88,9 +114,15 @@ function RouteComponent() {
         cell: ({ row }) => <ComplianceBadge record={row.original} />,
       },
       {
-        accessorKey: 'caseReference',
-        header: 'Case',
-        cell: ({ row }) => row.original.caseReference ?? '·',
+        accessorKey: 'releasedAt',
+        header: 'Released',
+        cell: ({ row }) => (row.original.releasedAt ? format(row.original.releasedAt, 'PPp') : '·'),
+      },
+      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      {
+        accessorKey: 'createdAt',
+        header: 'Recorded',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

@@ -8,9 +8,10 @@ import {
 } from '@/features/station-assets'
 import { ArchiveIcon, GunIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
+import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/stores/')({
@@ -31,6 +32,12 @@ function RouteComponent() {
 
   const columns: DataTableColumnDef<StationAsset>[] = useMemo(() => {
     return [
+      selectColumn(),
+      {
+        accessorKey: 'id',
+        header: 'ID',
+        cell: ({ row }) => <span className="rounded-md bg-primary/15 px-3 py-1 text-xs">{row.original.id}</span>,
+      },
       {
         accessorKey: 'category',
         header: 'Category',
@@ -52,11 +59,33 @@ function RouteComponent() {
         header: 'Held by',
         cell: ({ row }) => row.original.holderName ?? '·',
       },
+      { accessorKey: 'personId', header: 'Person ID', cell: ({ row }) => row.original.personId ?? '·' },
       {
         id: 'relatedPerson',
         accessorFn: (row) => stationAssetPersonName(row) ?? '',
         header: 'Related person',
         cell: ({ getValue }) => getValue<string>() || '·',
+      },
+      {
+        accessorKey: 'personFirstName',
+        header: 'Person first name',
+        cell: ({ row }) => row.original.personFirstName ?? '·',
+      },
+      {
+        accessorKey: 'personLastName',
+        header: 'Person last name',
+        cell: ({ row }) => row.original.personLastName ?? '·',
+      },
+      {
+        accessorKey: 'personOtherNames',
+        header: 'Person other names',
+        cell: ({ row }) => row.original.personOtherNames ?? '·',
+      },
+      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      {
+        accessorKey: 'createdAt',
+        header: 'Added',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

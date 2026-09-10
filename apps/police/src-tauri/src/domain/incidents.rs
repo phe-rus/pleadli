@@ -35,7 +35,7 @@ pub struct CreateIncidentInput {
     pub station_diary_entry_id: Option<String>,
 }
 
-async fn write_incident_markdown(pool: &SqlitePool, vault_root: &Path, record: &Incident) {
+pub(crate) async fn write_incident_markdown(pool: &SqlitePool, vault_root: &Path, record: &Incident) {
     if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "incident", &record.id).await {
         if let Err(e) = markdown::write_record(&dir, &format!("incident-{}", record.id), &record.summary, record) {
             log::warn!("failed to write incident markdown: {e}");
@@ -124,6 +124,23 @@ pub async fn list_incidents(pool: &SqlitePool, query: &str) -> Result<Vec<Incide
          ORDER BY i.occurred_at DESC LIMIT 50",
     )
     .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
+/// Every incident, unfiltered and unlimited, for the bulk data export.
+pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Incident>, sqlx::Error> {
+    sqlx::query_as::<_, Incident>(
+        "SELECT
+            i.id, i.summary, i.description, i.location, i.occurred_at,
+            i.person_id, i.station_diary_entry_id, i.created_at,
+            p.first_name AS person_first_name,
+            p.last_name AS person_last_name,
+            p.other_names AS person_other_names
+         FROM incidents i
+         LEFT JOIN people p ON p.id = i.person_id
+         ORDER BY i.occurred_at ASC",
+    )
     .fetch_all(pool)
     .await
 }

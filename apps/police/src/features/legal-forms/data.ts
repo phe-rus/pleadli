@@ -35,3 +35,23 @@ export async function listChargeSheets(query: string) {
     : await devFetch(`/charge-sheets?query=${encodeURIComponent(query)}`)
   return z.array(chargeSheetSchema).parse(chargeSheets)
 }
+
+export type DocumentFormat = 'pdf' | 'docx'
+
+/** A formatted PDF/Word copy of the PF 53 charge details, for printing
+ * or filing. See `people.exportPersonDocument` for the Tauri/dev-fallback
+ * split; returns `false` only if the officer cancels the save dialog. */
+export async function exportChargeSheetDocument(id: string, format: DocumentFormat) {
+  if (isTauri()) {
+    const { save } = await import('@tauri-apps/plugin-dialog')
+    const path = await save({
+      defaultPath: `charge-sheet.${format}`,
+      filters: [{ name: format === 'pdf' ? 'PDF Document' : 'Word Document', extensions: [format] }],
+    })
+    if (typeof path !== 'string') return false
+    await invoke('export_charge_sheet_document', { id, format, destinationPath: path })
+    return true
+  }
+  window.open(`${DEV_SERVER_URL}/charge-sheets/${encodeURIComponent(id)}/export/${format}`, '_blank')
+  return true
+}

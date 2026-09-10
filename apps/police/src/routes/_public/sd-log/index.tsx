@@ -15,6 +15,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/sd-log/')({
@@ -62,6 +63,7 @@ function RouteComponent() {
           <RichTextPreview value={getValue<string>()} className="line-clamp-2 max-w-sm" />
         ),
       },
+      { accessorKey: 'personId', header: 'Person ID', cell: ({ row }) => row.original.personId ?? '·' },
       {
         id: 'relatedPerson',
         accessorFn: (row) => stationDiaryRelatedPersonName(row) ?? '',
@@ -69,9 +71,24 @@ function RouteComponent() {
         cell: ({ getValue }) => getValue<string>() || '·',
       },
       {
+        accessorKey: 'personFirstName',
+        header: 'Person first name',
+        cell: ({ row }) => row.original.personFirstName ?? '·',
+      },
+      {
+        accessorKey: 'personLastName',
+        header: 'Person last name',
+        cell: ({ row }) => row.original.personLastName ?? '·',
+      },
+      {
+        accessorKey: 'personOtherNames',
+        header: 'Person other names',
+        cell: ({ row }) => row.original.personOtherNames ?? '·',
+      },
+      {
         accessorKey: 'createdAt',
         header: 'Logged',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

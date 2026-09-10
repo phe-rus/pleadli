@@ -13,6 +13,7 @@ import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms
 import { Button, buttonVariants } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/legal-forms/')({
@@ -48,19 +49,49 @@ function RouteComponent() {
           </span>
         ),
       },
+      { accessorKey: 'caseId', header: 'Case ID' },
       { accessorKey: 'caseReference', header: 'Case' },
+      { accessorKey: 'caseSummary', header: 'Case summary' },
+      {
+        accessorKey: 'accusedPersonId',
+        header: 'Accused person ID',
+        cell: ({ row }) => row.original.accusedPersonId ?? '·',
+      },
       {
         id: 'accused',
         accessorFn: (row) => chargeSheetAccusedName(row) ?? '',
         header: 'Accused',
         cell: ({ getValue }) => getValue<string>() || '·',
       },
+      {
+        accessorKey: 'accusedFirstName',
+        header: 'Accused first name',
+        cell: ({ row }) => row.original.accusedFirstName ?? '·',
+      },
+      {
+        accessorKey: 'accusedLastName',
+        header: 'Accused last name',
+        cell: ({ row }) => row.original.accusedLastName ?? '·',
+      },
+      {
+        accessorKey: 'accusedOtherNames',
+        header: 'Accused other names',
+        cell: ({ row }) => row.original.accusedOtherNames ?? '·',
+      },
       { accessorKey: 'offence', header: 'Offence' },
       { accessorKey: 'statutorySection', header: 'Statutory section' },
+      { accessorKey: 'particulars', header: 'Particulars' },
       {
         accessorKey: 'chargedAt',
         header: 'Charged',
-        cell: ({ getValue }) => new Date(getValue<number>()).toLocaleString(),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
+      },
+      { accessorKey: 'officerName', header: 'Officer', cell: ({ row }) => row.original.officerName ?? '·' },
+      { accessorKey: 'stationName', header: 'Station', cell: ({ row }) => row.original.stationName ?? '·' },
+      {
+        accessorKey: 'createdAt',
+        header: 'Drawn up',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
       {
         id: 'view',

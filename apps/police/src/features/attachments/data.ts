@@ -1,6 +1,6 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
-import { attachmentSchema, type Attachment } from './schema'
+import { attachmentSchema, bulkAttachResultSchema, type Attachment, type PersonPhotoAngle } from './schema'
 
 const DEV_SERVER_URL = 'http://127.0.0.1:47821'
 
@@ -59,6 +59,73 @@ export async function deleteAttachment(id: string) {
 
 export function attachmentFileUrl(id: string) {
   return `${DEV_SERVER_URL}/attachments/${encodeURIComponent(id)}/file`
+}
+
+/**
+ * A URL usable directly in `<img src>` that works the same in a real
+ * release build as in dev: the dev-only HTTP server behind
+ * `attachmentFileUrl` doesn't exist once `debug_assertions` is off, so
+ * inline display (an avatar, say) needs the actual bytes as a `data:`
+ * URL from Rust instead, in Tauri. The plain browser-dev fallback can
+ * just use the existing file URL directly.
+ */
+export async function getAttachmentDataUrl(id: string) {
+  if (!isTauri()) return attachmentFileUrl(id)
+  const url = await invoke('get_attachment_data_url', { id })
+  return typeof url === 'string' ? url : null
+}
+
+export async function setPersonPhoto(id: string, angle: PersonPhotoAngle, input: { path: string } | { file: File }) {
+  if (isTauri()) {
+    if (!('path' in input)) throw new Error('Tauri requires a file path')
+    const attachment = await invoke('set_person_photo_from_path', { id, angle, sourcePath: input.path })
+    return attachmentSchema.parse(attachment)
+  }
+  if (!('file' in input)) throw new Error('Browser dev mode requires a File')
+  const formData = new FormData()
+  formData.append('angle', angle)
+  formData.append('file', input.file)
+  const response = await fetch(`${DEV_SERVER_URL}/people/${encodeURIComponent(id)}/photos`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!response.ok) throw new Error(await response.text())
+  return attachmentSchema.parse(await response.json())
+}
+
+export async function clearPersonPhoto(id: string, angle: PersonPhotoAngle) {
+  if (isTauri()) {
+    await invoke('clear_person_photo', { id, angle })
+    return
+  }
+  const response = await fetch(
+    `${DEV_SERVER_URL}/people/${encodeURIComponent(id)}/photos/${encodeURIComponent(angle)}`,
+    { method: 'DELETE' },
+  )
+  if (!response.ok) throw new Error(await response.text())
+}
+
+/**
+ * Bulk paperwork intake: attaches many files to one entity at once, for an
+ * existing person's file or a case's supporting documents, instead of one
+ * file at a time. Each file lands wherever `resolve_vault_dir` already
+ * puts a single attachment for that entity; a per-file failure doesn't
+ * abort the batch, it comes back in `failed`.
+ */
+export async function bulkAttachFiles(entityType: string, entityId: string, input: { paths: string[] } | { files: File[] }) {
+  if (isTauri()) {
+    if (!('paths' in input)) throw new Error('Tauri requires file paths')
+    const result = await invoke('bulk_attach_files', { entityType, entityId, sourcePaths: input.paths })
+    return bulkAttachResultSchema.parse(result)
+  }
+  if (!('files' in input)) throw new Error('Browser dev mode requires Files')
+  const formData = new FormData()
+  formData.append('entityType', entityType)
+  formData.append('entityId', entityId)
+  for (const file of input.files) formData.append('file', file)
+  const response = await fetch(`${DEV_SERVER_URL}/attachments/bulk`, { method: 'POST', body: formData })
+  if (!response.ok) throw new Error(await response.text())
+  return bulkAttachResultSchema.parse(await response.json())
 }
 
 export async function openAttachment(attachment: Attachment) {
