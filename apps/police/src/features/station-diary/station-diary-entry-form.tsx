@@ -30,17 +30,22 @@ export function StationDiaryEntryForm({ entry, onSuccess, onDirtyChange }: Stati
       onSubmit: createStationDiaryEntrySchema,
     },
     onSubmit: async ({ value, formApi }) => {
+      const submission = entry
+        ? updateEntry.mutateAsync({ id: entry.id, input: value })
+        : createEntry.mutateAsync(value)
+
+      t.promise(submission, {
+        loading: entry ? 'Saving changes…' : 'Saving entry…',
+        success: entry ? 'Entry updated' : 'Entry logged',
+        error: entry ? 'Could not update entry' : 'Could not log entry',
+      })
+
       try {
-        const result = entry
-          ? await updateEntry.mutateAsync({ id: entry.id, input: value })
-          : await createEntry.mutateAsync(value)
-        t.success(entry ? 'Entry updated' : 'Entry logged')
+        const result = await submission
         if (!entry) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(entry ? 'Could not update entry' : 'Could not log entry', {
-          description: 'Please try again.',
-        })
+        // The promise toast above already surfaced the error.
       }
     },
   })

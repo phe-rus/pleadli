@@ -1,3 +1,4 @@
+pub mod activity;
 pub mod attachments;
 pub mod bonds;
 pub mod cases;
@@ -15,7 +16,9 @@ pub mod people;
 pub mod referrals;
 pub mod reports;
 pub mod search;
+pub mod shift_log;
 pub mod statements;
 pub mod station_admin;
 pub mod station_assets;
 pub mod station_diary;
+pub mod vehicles;

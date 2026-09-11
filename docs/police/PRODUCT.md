@@ -151,6 +151,13 @@ For each domain: what work it supports, what it owns, what it legitimately relat
 - **Kind**: record + workflow, station operations.
 - **Do not assume**: this shares a domain with Evidence. Similar shape (an item with status and location), different meaning and accountability — do not merge into a generic "Item" domain merely to be DRY.
 
+### Vehicles
+- **Supports**: identifying a person by their vehicle, and identifying a vehicle by its plate — the same lookup People already supports by name/national ID/phone, extended to a plate number. Added 2026-09 alongside a remote-lookup ask to search by plate.
+- **Owns**: plate number, make/model/color, an optional owner link to a Person.
+- **Relates to**: People (owner, optional — a plate can be logged before its owner is known).
+- **Kind**: record, cross-cutting the same way People is, but much thinner — no independent workflow of its own.
+- **Do not assume**: this is a DMV/national vehicle-registry integration. It is a local plate/owner registry the station fills in itself, deliberately with a clean boundary (see External integrations) so an authorized external source (e.g. a national vehicle registry) could be connected later without a redesign — no such integration exists or is faked today.
+
 ### Duty / Roster
 - **Supports**: scheduling, officer status, shift handover.
 - **Owns**: assignments, shift data.
@@ -289,6 +296,8 @@ Charge Sheets & Forms
 Stores & Armory
   Armory Register
   Impounded Assets
+
+Vehicles
 
 Referrals & Dispatches
 Duty Roster

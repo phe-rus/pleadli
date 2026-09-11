@@ -10,6 +10,7 @@ import { incidentSchema } from '@/features/incidents/schema'
 import { chargeSheetSchema } from '@/features/legal-forms/schema'
 import { statementSchema } from '@/features/statements/schema'
 import { stationDiaryEntrySchema } from '@/features/station-diary/schema'
+import { vehicleSchema } from '@/features/vehicles/schema'
 import * as z from 'zod'
 
 export const personSchema = z.object({
@@ -50,6 +51,7 @@ export const personProfileSchema = z.object({
   stationDiaryEntries: z.array(stationDiaryEntrySchema),
   exhibits: z.array(exhibitSchema),
   chargeSheets: z.array(chargeSheetSchema),
+  vehicles: z.array(vehicleSchema),
   attachments: z.array(attachmentSchema),
 })
 

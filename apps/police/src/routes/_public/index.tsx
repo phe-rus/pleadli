@@ -2,13 +2,14 @@ import { Sparkline } from '@/components/charts/sparkline'
 import { Createpanel } from '@/components/create-panel'
 import { AttentionItem, type AttentionItemData } from '@/components/list-cards/attention-item'
 import { CaseRow, type CaseRowData } from '@/components/list-cards/case-row'
+import { parseSearchRoute } from '@/lib/parse-search-route'
+import { activitySeverity, recentActivityOptions, useRecentActivity } from '@/features/activity'
 import { caseStatuses, casesOptions, useCases, type Case } from '@/features/cases'
 import { custodyCompliance, custodyRecordsOptions, useCustodyRecords, type CustodyRecord } from '@/features/custody'
 import { dutyAssignmentsOptions, useDutyAssignments } from '@/features/duty'
 import { backupAlertsOptions, useBackupAlerts } from '@/features/officers'
 import {
   StationDiaryEntryForm,
-  stationDiaryCategoryLabel,
   stationDiaryOptions,
   useStationDiaryEntries,
   type StationDiaryEntry,
@@ -45,6 +46,7 @@ export const Route = createFileRoute('/_public/')({
       context.queryClient.query({ ...statementsOptions(''), staleTime: 'static' }),
       context.queryClient.query({ ...stationProfileOptions(), staleTime: 'static' }),
       context.queryClient.query({ ...backupAlertsOptions(), staleTime: 'static' }),
+      context.queryClient.query({ ...recentActivityOptions(), staleTime: 'static' }),
     ])
   },
   component: RouteComponent,
@@ -106,6 +108,7 @@ function RouteComponent() {
   const { data: stationProfile } = useStationProfile()
   const { data: backupAlerts } = useBackupAlerts()
   const activeBackupAlerts = backupAlerts.filter((a) => a.endedAt == null)
+  const { data: activityItems } = useRecentActivity()
 
   const now = Date.now()
 
@@ -147,18 +150,19 @@ function RouteComponent() {
     [openCases],
   )
 
-  const sdActivity: AttentionItemData[] = useMemo(
+  const activityRows = useMemo(
     () =>
-      [...sdEntries]
-        .sort((a, b) => b.createdAt - a.createdAt)
-        .slice(0, 6)
-        .map((e) => ({
-          label: stationDiaryCategoryLabel(e.category),
-          detail: 'No details recorded',
-          time: relativeTime(e.createdAt),
-          severity: 'low' as const,
-        })),
-    [sdEntries],
+      (activityItems ?? []).slice(0, 8).map((item) => ({
+        item: {
+          label: item.title,
+          detail: item.subtitle || '—',
+          time: relativeTime(item.occurredAt),
+          severity: activitySeverity(item),
+        } satisfies AttentionItemData,
+        route: item.route,
+        id: item.id,
+      })),
+    [activityItems],
   )
 
   const flowBuckets = useMemo(() => weeklyBuckets(cases.map((c) => c.createdAt)), [cases])
@@ -341,22 +345,22 @@ function RouteComponent() {
         <div className="flex flex-col gap-4 col-span-12 lg:col-span-7">
           <div className="flex justify-between">
             <div className='flex flex-col'>
-              <h2>Station Diary & Live Activity</h2>
-              <p>Recent entries recorded at counter</p>
+              <h2>Recent Activity</h2>
+              <p>What's happening across the station</p>
             </div>
-            <Link to="/sd-log" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
-              View SD Ledger
-              <HugeiconsIcon icon={ArrowRight01Icon} />
-            </Link>
           </div>
 
           <Card className='p-0'>
             <CardContent className="p-0 divide-y divide-border/60">
-              {sdActivity.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">No station diary entries yet.</p>}
-              {sdActivity.map((item, index) => (
-                <div key={index} className="px-3 py-1">
-                  <AttentionItem item={item} />
-                </div>
+              {activityRows.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">Nothing recorded yet.</p>}
+              {activityRows.map((row) => (
+                <Link
+                  key={row.id}
+                  {...(parseSearchRoute(row.route) as any)}
+                  className="block px-3 py-1 transition-colors hover:bg-muted/60"
+                >
+                  <AttentionItem item={row.item} />
+                </Link>
               ))}
             </CardContent>
           </Card>

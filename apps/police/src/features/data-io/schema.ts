@@ -17,6 +17,7 @@ export const importableEntityTypes = [
   { value: 'duty_assignment', label: 'Duty assignment' },
   { value: 'station_asset', label: 'Station asset' },
   { value: 'station_establishment_member', label: 'Station establishment' },
+  { value: 'vehicle', label: 'Vehicle' },
 ] as const
 
 export type ImportableEntityType = (typeof importableEntityTypes)[number]['value']

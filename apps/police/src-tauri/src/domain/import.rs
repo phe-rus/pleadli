@@ -15,7 +15,10 @@ use std::fmt;
 use std::path::Path;
 
 use super::people::Person;
-use super::{bonds, cases, charge_sheets, custody, duty, exhibits, people, referrals, station_admin, station_assets, station_diary, statements};
+use super::{
+    bonds, cases, charge_sheets, custody, duty, exhibits, people, referrals, station_admin, station_assets,
+    station_diary, statements, vehicles,
+};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -160,6 +163,16 @@ pub fn import_fields(entity_type: &str) -> Option<Vec<ImportField>> {
             field("post", "Post", false),
             field("rank", "Rank", false),
             field("active", "Active (yes/no)", true),
+            field("notes", "Notes", false),
+        ],
+        "vehicle" => vec![
+            field("plateNumber", "Plate number", true),
+            field("make", "Make", false),
+            field("model", "Model", false),
+            field("color", "Color", false),
+            field("personFirstName", "Owner: first name", false),
+            field("personLastName", "Owner: last name", false),
+            field("personNationalId", "Owner: national ID", false),
             field("notes", "Notes", false),
         ],
         _ => return None,
@@ -616,6 +629,17 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
                 notes: get_owned(row, "notes"),
             };
             station_admin::create_establishment_member(pool, vault_root, input).await.map(|_| ()).map_err(|e| e.to_string())
+        }
+        "vehicle" => {
+            let input = vehicles::CreateVehicleInput {
+                plate_number: require(row, "plateNumber", "Plate number")?,
+                make: get_owned(row, "make"),
+                model: get_owned(row, "model"),
+                color: get_owned(row, "color"),
+                owner_person_id: get_owned(row, "personId"),
+                notes: get_owned(row, "notes"),
+            };
+            vehicles::create_vehicle(pool, vault_root, input).await.map(|_| ()).map_err(|e| e.to_string())
         }
         other => Err(format!("Unsupported record type: {other}")),
     }

@@ -12,7 +12,11 @@ use super::exhibits::Exhibit;
 use super::incidents::Incident;
 use super::statements::Statement;
 use super::station_diary::StationDiaryEntry;
-use super::{attachments, bonds, cases, charge_sheets, custody, exhibits, incidents, markdown, statements, station_diary};
+use super::vehicles::Vehicle;
+use super::{
+    attachments, bonds, cases, charge_sheets, custody, exhibits, incidents, markdown, statements, station_diary,
+    vehicles,
+};
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -250,6 +254,7 @@ pub struct PersonProfile {
     pub station_diary_entries: Vec<StationDiaryEntry>,
     pub exhibits: Vec<Exhibit>,
     pub charge_sheets: Vec<ChargeSheet>,
+    pub vehicles: Vec<Vehicle>,
     pub attachments: Vec<Attachment>,
 }
 
@@ -266,6 +271,7 @@ pub async fn get_person_profile(pool: &SqlitePool, id: &str) -> Result<Option<Pe
     let station_diary_entries = station_diary::list_for_person(pool, id).await?;
     let exhibits = exhibits::list_for_person(pool, id).await?;
     let charge_sheets = charge_sheets::list_for_person(pool, id).await?;
+    let vehicles = vehicles::list_for_person(pool, id).await?;
     let attachments = attachments::list_attachments(pool, "person", id).await?;
 
     Ok(Some(PersonProfile {
@@ -278,6 +284,7 @@ pub async fn get_person_profile(pool: &SqlitePool, id: &str) -> Result<Option<Pe
         station_diary_entries,
         exhibits,
         charge_sheets,
+        vehicles,
         attachments,
     }))
 }

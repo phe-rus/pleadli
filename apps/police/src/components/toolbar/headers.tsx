@@ -1,6 +1,8 @@
 import { CommandMenu } from "@/components/command-menu"
 import { Createpanel } from "@/components/create-panel"
+import { ActivityToasts } from "@/features/activity"
 import { CaseForm } from "@/features/cases"
+import { CustodyAttentionDialog } from "@/features/custody"
 import { BackupDispatchIndicator } from "@/features/officers"
 import { LegalDocument01Icon, PanelLeftDashedIcon, PanelRightDashedIcon, Search } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -84,6 +86,8 @@ export const Headers = () => {
                     </Createpanel>
 
                     <BackupDispatchIndicator />
+                    <CustodyAttentionDialog />
+                    <ActivityToasts />
                     <Toggletheme />
                     <Controls />
                 </nav>

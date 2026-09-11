@@ -5,6 +5,7 @@ import {
   BarChartIcon,
   BinocularsIcon,
   Building06Icon,
+  Car01Icon,
   CellsIcon,
   DashboardBrowsingIcon,
   File02Icon,
@@ -57,6 +58,7 @@ export const stationNav = [
       { icon: ArchiveIcon, label: 'Impounded Assets', to: '/stores/impounded' },
     ]
   },
+  { icon: Car01Icon, label: 'Vehicles', to: '/vehicles' },
   // Operational Support & Station Admin
   { icon: Share08Icon, label: 'Referrals & Dispatches', to: '/referrals' },
   { icon: UserIcon, label: 'Duty Roster', to: '/roster' },

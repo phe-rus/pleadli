@@ -17,6 +17,8 @@ use sqlx::SqlitePool;
 use std::path::PathBuf;
 use tower_http::cors::{Any, CorsLayer};
 
+use crate::domain::activity::{self, ActivityItem};
+use crate::domain::shift_log::{self, CreateShiftHandoverInput, OfficerCheckIn, ShiftHandover};
 use crate::domain::attachments::{self, Attachment, VaultEntry};
 use crate::domain::bonds::{self, Bond, CreateBondInput};
 use crate::domain::cases::{self, Case, CasePerson, CaseWorkspace, CreateCaseInput};
@@ -41,6 +43,7 @@ use crate::domain::search::{self, SearchResult};
 use crate::domain::statements::{self, CreateStatementInput, Statement};
 use crate::domain::station_assets::{self, CreateStationAssetInput, StationAsset};
 use crate::domain::station_diary::{self, CreateStationDiaryEntryInput, StationDiaryEntry};
+use crate::domain::vehicles::{self, CreateVehicleInput, Vehicle};
 
 pub const PORT: u16 = 47821;
 
@@ -319,6 +322,50 @@ async fn search_handler(
         .map_err(internal_error)
 }
 
+async fn list_recent_activity_handler(State(state): State<AppState>) -> Result<Json<Vec<ActivityItem>>, ApiError> {
+    activity::recent(&state.pool).await.map(Json).map_err(internal_error)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CheckInBody {
+    badge_number: String,
+}
+
+async fn check_in_handler(
+    State(state): State<AppState>,
+    Json(body): Json<CheckInBody>,
+) -> Result<Json<OfficerCheckIn>, ApiError> {
+    shift_log::check_in_by_badge(&state.pool, &state.vault_root, &body.badge_number)
+        .await
+        .map(Json)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))
+}
+
+async fn list_check_ins_handler(
+    State(state): State<AppState>,
+    Query(params): Query<SearchParams>,
+) -> Result<Json<Vec<OfficerCheckIn>>, ApiError> {
+    shift_log::list_check_ins(&state.pool, &params.query).await.map(Json).map_err(internal_error)
+}
+
+async fn create_shift_handover_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreateShiftHandoverInput>,
+) -> Result<Json<ShiftHandover>, ApiError> {
+    shift_log::create_handover(&state.pool, &state.vault_root, input)
+        .await
+        .map(Json)
+        .map_err(internal_error)
+}
+
+async fn list_shift_handovers_handler(
+    State(state): State<AppState>,
+    Query(params): Query<SearchParams>,
+) -> Result<Json<Vec<ShiftHandover>>, ApiError> {
+    shift_log::list_handovers(&state.pool, &params.query).await.map(Json).map_err(internal_error)
+}
+
 async fn get_person_profile_handler(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -534,6 +581,37 @@ async fn list_station_assets_handler(
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<StationAsset>>, ApiError> {
     station_assets::list_assets(&state.pool, &params.query)
+        .await
+        .map(Json)
+        .map_err(internal_error)
+}
+
+async fn create_vehicle_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreateVehicleInput>,
+) -> Result<Json<Vehicle>, ApiError> {
+    vehicles::create_vehicle(&state.pool, &state.vault_root, input)
+        .await
+        .map(Json)
+        .map_err(internal_error)
+}
+
+async fn update_vehicle_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<CreateVehicleInput>,
+) -> Result<Json<Vehicle>, ApiError> {
+    vehicles::update_vehicle(&state.pool, &state.vault_root, &id, input)
+        .await
+        .map(Json)
+        .map_err(internal_error)
+}
+
+async fn list_vehicles_handler(
+    State(state): State<AppState>,
+    Query(params): Query<SearchParams>,
+) -> Result<Json<Vec<Vehicle>>, ApiError> {
+    vehicles::list_vehicles(&state.pool, &params.query)
         .await
         .map(Json)
         .map_err(internal_error)
@@ -1153,6 +1231,8 @@ pub async fn serve(pool: SqlitePool, vault_root: PathBuf) {
         .route("/duty/{id}", put(update_duty_assignment_handler))
         .route("/station-assets", post(create_station_asset_handler).get(list_station_assets_handler))
         .route("/station-assets/{id}", put(update_station_asset_handler))
+        .route("/vehicles", post(create_vehicle_handler).get(list_vehicles_handler))
+        .route("/vehicles/{id}", put(update_vehicle_handler))
         .route("/cases", post(create_case_handler).get(list_cases_handler))
         .route("/cases/{id}", put(update_case_handler))
         .route("/cases/{id}/people", get(list_case_people_handler))
@@ -1207,6 +1287,9 @@ pub async fn serve(pool: SqlitePool, vault_root: PathBuf) {
         .route("/cloudflare/tunnel-state", get(get_cloudflare_tunnel_state_handler))
         .route("/local-network", get(get_local_network_info_handler))
         .route("/search", get(search_handler))
+        .route("/activity/recent", get(list_recent_activity_handler))
+        .route("/check-ins", post(check_in_handler).get(list_check_ins_handler))
+        .route("/shift-handovers", post(create_shift_handover_handler).get(list_shift_handovers_handler))
         .route("/reports/summary", get(get_reports_summary_handler))
         .route("/export/markdown", get(export_all_markdown_handler))
         .route("/export/xlsx", get(export_all_xlsx_handler))

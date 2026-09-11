@@ -17,7 +17,7 @@ use std::path::Path;
 
 use super::{
     attachments, bonds, cases, charge_sheets, custody, duty, exhibits, incidents, markdown, people, referrals,
-    station_admin, station_assets, station_diary, statements,
+    shift_log, station_admin, station_assets, station_diary, statements, vehicles,
 };
 
 #[derive(Debug)]
@@ -359,6 +359,63 @@ pub async fn regenerate_all_markdown(pool: &SqlitePool, vault_root: &Path) -> Re
     sections.push(("station-assets", "Station Assets", station_assets_index.len()));
     write_index_file(vault_root, "station-assets", "Station Assets", &station_assets_index)?;
 
+    let mut vehicles_index = Vec::new();
+    for record in vehicles::list_all(pool).await? {
+        vehicles::write_vehicle_markdown(pool, vault_root, &record).await;
+        if let Some(e) = index_entry(
+            pool,
+            vault_root,
+            "vehicle",
+            &record.id,
+            &format!("vehicle-{}", record.id),
+            &record.plate_number,
+        )
+        .await
+        {
+            vehicles_index.push(e);
+        }
+    }
+    sections.push(("vehicles", "Vehicles", vehicles_index.len()));
+    write_index_file(vault_root, "vehicles", "Vehicles", &vehicles_index)?;
+
+    let mut check_ins_index = Vec::new();
+    for record in shift_log::list_all_check_ins(pool).await? {
+        shift_log::write_check_in_markdown(pool, vault_root, &record).await;
+        if let Some(e) = index_entry(
+            pool,
+            vault_root,
+            "officer_check_in",
+            &record.id,
+            &format!("officer_check_in-{}", record.id),
+            &format!("Check-in: {}", record.officer_name),
+        )
+        .await
+        {
+            check_ins_index.push(e);
+        }
+    }
+    sections.push(("check-ins", "Check-ins", check_ins_index.len()));
+    write_index_file(vault_root, "check-ins", "Check-ins", &check_ins_index)?;
+
+    let mut handovers_index = Vec::new();
+    for record in shift_log::list_all_handovers(pool).await? {
+        shift_log::write_handover_markdown(pool, vault_root, &record).await;
+        if let Some(e) = index_entry(
+            pool,
+            vault_root,
+            "shift_handover",
+            &record.id,
+            &format!("shift_handover-{}", record.id),
+            &format!("Handover to {}", record.incoming_officer_name),
+        )
+        .await
+        {
+            handovers_index.push(e);
+        }
+    }
+    sections.push(("shift-handovers", "Shift Handovers", handovers_index.len()));
+    write_index_file(vault_root, "shift-handovers", "Shift Handovers", &handovers_index)?;
+
     let mut establishment_index = Vec::new();
     for record in station_admin::list_all_establishment(pool).await? {
         station_admin::write_establishment_member_markdown(pool, vault_root, &record).await;
@@ -484,6 +541,9 @@ pub async fn export_all_xlsx(pool: &SqlitePool, destination: &Path) -> Result<()
     write_sheet(&mut workbook, "Station Diary", &station_diary::list_all(pool).await?)?;
     write_sheet(&mut workbook, "Duty Roster", &duty::list_all(pool).await?)?;
     write_sheet(&mut workbook, "Station Assets", &station_assets::list_all(pool).await?)?;
+    write_sheet(&mut workbook, "Vehicles", &vehicles::list_all(pool).await?)?;
+    write_sheet(&mut workbook, "Check-ins", &shift_log::list_all_check_ins(pool).await?)?;
+    write_sheet(&mut workbook, "Shift Handovers", &shift_log::list_all_handovers(pool).await?)?;
     write_sheet(&mut workbook, "Establishment", &station_admin::list_all_establishment(pool).await?)?;
 
     workbook.save(destination)?;
@@ -783,6 +843,9 @@ async fn build_bulk_export_document(pool: &SqlitePool) -> Result<Doc, DocumentEr
         doc_table_section("Station Diary", &station_diary::list_all(pool).await?),
         doc_table_section("Duty Roster", &duty::list_all(pool).await?),
         doc_table_section("Station Assets", &station_assets::list_all(pool).await?),
+        doc_table_section("Vehicles", &vehicles::list_all(pool).await?),
+        doc_table_section("Check-ins", &shift_log::list_all_check_ins(pool).await?),
+        doc_table_section("Shift Handovers", &shift_log::list_all_handovers(pool).await?),
         doc_table_section("Establishment", &station_admin::list_all_establishment(pool).await?),
     ];
 
@@ -836,6 +899,7 @@ async fn build_person_document(pool: &SqlitePool, id: &str) -> Result<Option<Doc
         doc_table_section("Station diary entries", &profile.station_diary_entries),
         doc_table_section("Evidence", &profile.exhibits),
         doc_table_section("Charge sheets", &profile.charge_sheets),
+        doc_table_section("Vehicles", &profile.vehicles),
     ];
 
     Ok(Some(Doc {

@@ -123,6 +123,9 @@
   </section>
 
   <section id="app-view" hidden style="display:flex; flex-direction:column; gap:1.25rem;">
+    <button id="checkin-button">Check in</button>
+    <p id="checkin-status" class="muted" hidden></p>
+
     <button id="backup-button" class="destructive">Request backup</button>
 
     <div class="card">
@@ -196,6 +199,20 @@
     try { await authedFetch('/logout', { method: 'POST' }); } catch (e) {}
     clearToken();
     showLogin();
+  });
+
+  var checkinStatus = document.getElementById('checkin-status');
+  var checkinButton = document.getElementById('checkin-button');
+  checkinButton.addEventListener('click', async function () {
+    checkinButton.disabled = true;
+    checkinStatus.hidden = false;
+    try {
+      await authedFetch('/check-in', { method: 'POST' });
+      checkinStatus.textContent = 'Checked in.';
+    } catch (err) {
+      checkinStatus.textContent = 'Could not check in: ' + err.message;
+      checkinButton.disabled = false;
+    }
   });
 
   var backupButton = document.getElementById('backup-button');
@@ -342,6 +359,7 @@
         detailBody.appendChild(listSection('Custody', data.custodyRecords, function (c) { return c.status; }));
         detailBody.appendChild(listSection('Bonds', data.bonds, function (b) { return b.status; }));
         detailBody.appendChild(listSection('Charge sheets', data.chargeSheets, function (c) { return c.offence; }));
+        detailBody.appendChild(listSection('Vehicles', data.vehicles, function (v) { return v.plateNumber; }));
       } else if (data.kind === 'case') {
         var k = data.case;
         var dl2 = document.createElement('dl');
@@ -387,6 +405,14 @@
         var particularsP = document.createElement('p'); particularsP.textContent = data.particulars || '·';
         particularsWrap.appendChild(particularsH); particularsWrap.appendChild(particularsP);
         detailBody.appendChild(particularsWrap);
+      } else if (data.kind === 'vehicle') {
+        var dl7 = document.createElement('dl');
+        dl7.appendChild(field('Plate number', data.plateNumber));
+        dl7.appendChild(field('Make', data.make));
+        dl7.appendChild(field('Model', data.model));
+        dl7.appendChild(field('Color', data.color));
+        dl7.appendChild(field('Owner', data.ownerFirstName ? (data.ownerFirstName + ' ' + data.ownerLastName) : null));
+        detailBody.appendChild(dl7);
       } else {
         detailBody.innerHTML = '<p class="muted">No further detail available for this type yet.</p>';
       }

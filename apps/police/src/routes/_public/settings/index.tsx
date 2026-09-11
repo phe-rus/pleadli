@@ -182,7 +182,9 @@ function NetworkTab() {
     rows.push({
       key: 'local-network',
       label: "This station's local network",
-      description: info.address ? `Reachable at ${info.address}:${info.port} on this network.` : 'No local network address found.',
+      description: info.address
+        ? `Reachable at ${info.address}:${info.port} on this network. Same QR an officer scans to check in.`
+        : 'No local network address found.',
       control: info.address ? (
         <Button type="button" size="sm" variant="secondary" onClick={() => setShowQr((v) => !v)}>
           {showQr ? 'Hide pairing QR' : 'Show pairing QR'}

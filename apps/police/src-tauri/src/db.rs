@@ -26,7 +26,11 @@ use crate::domain::station_admin;
 #[cfg(debug_assertions)]
 use crate::domain::station_assets;
 #[cfg(debug_assertions)]
+use crate::domain::shift_log;
+#[cfg(debug_assertions)]
 use crate::domain::station_diary;
+#[cfg(debug_assertions)]
+use crate::domain::vehicles;
 
 pub struct Db {
     pub pool: SqlitePool,
@@ -54,6 +58,7 @@ pub async fn connect(db_path: PathBuf, vault_root: PathBuf) -> Result<Db, sqlx::
         incidents::seed_if_empty(&pool, &vault_root).await?;
         duty::seed_if_empty(&pool, &vault_root).await?;
         station_assets::seed_if_empty(&pool, &vault_root).await?;
+        vehicles::seed_if_empty(&pool, &vault_root).await?;
         cases::seed_if_empty(&pool, &vault_root).await?;
         statements::seed_if_empty(&pool, &vault_root).await?;
         custody::seed_if_empty(&pool, &vault_root).await?;
@@ -62,6 +67,12 @@ pub async fn connect(db_path: PathBuf, vault_root: PathBuf) -> Result<Db, sqlx::
         charge_sheets::seed_if_empty(&pool, &vault_root).await?;
         referrals::seed_if_empty(&pool, &vault_root).await?;
         station_admin::seed_if_empty(&pool, &vault_root).await?;
+        // Depends on at least one officer already existing — officer
+        // accounts are never auto-seeded (they carry real login
+        // credentials), so this is a no-op until one is created through
+        // the app itself, same as the whole remote-access/backup-alert
+        // system already requires.
+        shift_log::seed_if_empty(&pool, &vault_root).await?;
     }
 
     Ok(Db { pool, vault_root })

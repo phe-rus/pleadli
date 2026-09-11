@@ -15,6 +15,7 @@ export const entityTypes = {
   exhibit: 'exhibit',
   chargeSheet: 'charge_sheet',
   referral: 'referral',
+  vehicle: 'vehicle',
 } as const
 
 export type EntityType = (typeof entityTypes)[keyof typeof entityTypes]

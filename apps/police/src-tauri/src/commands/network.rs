@@ -50,9 +50,14 @@ pub async fn set_remote_access_enabled(
 
     if enabled {
         if remote_guard.is_none() {
-            let handle = remote_server::start(db.pool.clone(), remote_server::DEFAULT_PORT, app.clone())
-                .await
-                .map_err(|e| e.to_string())?;
+            let handle = remote_server::start(
+                db.pool.clone(),
+                db.vault_root.clone(),
+                remote_server::DEFAULT_PORT,
+                app.clone(),
+            )
+            .await
+            .map_err(|e| e.to_string())?;
             *remote_guard = Some(handle);
         }
         if let Err(e) = cloudflare::start_sidecar_if_configured(&app, &db.pool, &sidecar).await {

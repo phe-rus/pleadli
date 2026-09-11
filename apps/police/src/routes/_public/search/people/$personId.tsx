@@ -271,6 +271,19 @@ function RouteComponent() {
           ))}
         </Section>
 
+        <Section title="Vehicles" count={profile.vehicles.length}>
+          {profile.vehicles.map((vehicle) => (
+            <RelatedRow
+              key={vehicle.id}
+              to="/vehicles"
+              search={{ open: vehicle.id }}
+              title={vehicle.plateNumber}
+              subtitle={[vehicle.make, vehicle.model].filter(Boolean).join(' ') || undefined}
+              meta={<span className="text-xs text-muted-foreground">{format(vehicle.createdAt, 'PP')}</span>}
+            />
+          ))}
+        </Section>
+
         <Section title="Station Diary" count={profile.stationDiaryEntries.length}>
           {profile.stationDiaryEntries.map((entry) => (
             <RelatedRow

@@ -21,7 +21,8 @@ function RouteComponent() {
   usePrintOnMount()
 
   if (!profile) return null
-  const { person, cases, incidents, statements, custodyRecords, bonds, stationDiaryEntries, exhibits, chargeSheets } = profile
+  const { person, cases, incidents, statements, custodyRecords, bonds, stationDiaryEntries, exhibits, chargeSheets, vehicles } =
+    profile
 
   return (
     <article className="mx-auto max-w-2xl p-8 text-sm text-foreground">
@@ -86,6 +87,17 @@ function RouteComponent() {
         <PrintableSection title="Charge sheets" count={chargeSheets.length}>
           {chargeSheets.map((cs) => (
             <PrintableRow key={cs.id} title={cs.offence} subtitle={cs.caseReference} at={cs.chargedAt} />
+          ))}
+        </PrintableSection>
+
+        <PrintableSection title="Vehicles" count={vehicles.length}>
+          {vehicles.map((v) => (
+            <PrintableRow
+              key={v.id}
+              title={v.plateNumber}
+              subtitle={[v.make, v.model].filter(Boolean).join(' ') || undefined}
+              at={v.createdAt}
+            />
           ))}
         </PrintableSection>
       </div>

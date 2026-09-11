@@ -87,6 +87,7 @@ pub fn run() {
                 let app_handle = app.handle().clone();
                 match tauri::async_runtime::block_on(transport::remote_server::start(
                     db.pool.clone(),
+                    db.vault_root.clone(),
                     transport::remote_server::DEFAULT_PORT,
                     app_handle,
                 )) {
@@ -184,6 +185,9 @@ pub fn run() {
             commands::station_assets::create_station_asset,
             commands::station_assets::list_station_assets,
             commands::station_assets::update_station_asset,
+            commands::vehicles::create_vehicle,
+            commands::vehicles::list_vehicles,
+            commands::vehicles::update_vehicle,
             commands::cases::create_case,
             commands::cases::list_cases,
             commands::cases::update_case,
@@ -240,6 +244,11 @@ pub fn run() {
             commands::cloudflare::get_cloudflare_config,
             commands::cloudflare::get_cloudflare_tunnel_state,
             commands::search::search,
+            commands::activity::list_recent_activity,
+            commands::shift_log::check_in_officer_by_badge,
+            commands::shift_log::list_check_ins,
+            commands::shift_log::create_shift_handover,
+            commands::shift_log::list_shift_handovers,
             commands::reports::get_reports_summary,
             commands::documents::export_all_markdown,
             commands::documents::export_all_xlsx,

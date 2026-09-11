@@ -137,6 +137,18 @@ pub async fn get_officer(pool: &SqlitePool, id: &str) -> Result<Option<Officer>,
     .await
 }
 
+/// Officer lookup by badge number, not password — used by badge-entry
+/// check-in, where whoever's at the desk is identifying who just arrived,
+/// not authenticating them (that already happened when they were hired).
+pub async fn get_officer_by_badge(pool: &SqlitePool, badge_number: &str) -> Result<Option<Officer>, sqlx::Error> {
+    sqlx::query_as::<_, Officer>(
+        "SELECT id, badge_number, name, role, active, person_id, created_at FROM officers WHERE badge_number = ?",
+    )
+    .bind(badge_number)
+    .fetch_optional(pool)
+    .await
+}
+
 pub async fn list_officers(pool: &SqlitePool) -> Result<Vec<Officer>, sqlx::Error> {
     sqlx::query_as::<_, Officer>(
         "SELECT id, badge_number, name, role, active, person_id, created_at FROM officers ORDER BY name",

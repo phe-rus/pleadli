@@ -29,13 +29,16 @@ use crate::domain::custody::{self, CustodyAlert, CustodyRecord};
 use crate::domain::officers;
 use crate::domain::people::{self, PersonProfile};
 use crate::domain::search::{self, SearchResult};
+use crate::domain::shift_log::{self, OfficerCheckIn};
 use crate::domain::statements::{self, Statement};
+use crate::domain::vehicles::{self, Vehicle};
 
 pub const DEFAULT_PORT: u16 = 47822;
 
 #[derive(Clone)]
 struct RemoteState {
     pool: SqlitePool,
+    vault_root: std::path::PathBuf,
     /// `None` only in tests — every real caller (the desktop app itself)
     /// has one, and it's how a backup alert reaches a native OS
     /// notification on this station's screen.
@@ -111,8 +114,11 @@ struct SearchParams {
 /// browsing internal police operations. Deliberately excludes
 /// `incident`, `station_diary_entry`, `duty_assignment`, `station_asset`,
 /// `exhibit`, `referral`, and `attachment` — all office-side/procedural
-/// records, never a civilian's own identity.
-const CIVILIAN_ENTITY_TYPES: &[&str] = &["person", "case", "custody_record", "bond", "statement", "charge_sheet"];
+/// records, never a civilian's own identity. `vehicle` is included: a
+/// plate number identifies a person's situation the same way a national
+/// ID does.
+const CIVILIAN_ENTITY_TYPES: &[&str] =
+    &["person", "case", "custody_record", "bond", "statement", "charge_sheet", "vehicle"];
 
 async fn search_handler(
     State(state): State<RemoteState>,
@@ -170,6 +176,7 @@ enum DetailResponse {
     Bond(Bond),
     Statement(Statement),
     ChargeSheet(ChargeSheet),
+    Vehicle(Vehicle),
     Unavailable,
 }
 
@@ -210,6 +217,11 @@ async fn detail_handler(
             .await
             .map_err(internal_error)?
             .map(DetailResponse::ChargeSheet)
+            .unwrap_or(DetailResponse::Unavailable),
+        "vehicle" => vehicles::get_vehicle(&state.pool, &params.entity_id)
+            .await
+            .map_err(internal_error)?
+            .map(DetailResponse::Vehicle)
             .unwrap_or(DetailResponse::Unavailable),
         _ => DetailResponse::Unavailable,
     };
@@ -269,6 +281,25 @@ async fn backup_alert_handler(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// The remote-scan check-in's one action: reachable from the same
+/// pairing QR/URL every officer already uses (`remote_ui.html`'s normal
+/// logged-in view, right alongside "Request backup" — no second QR, no
+/// special deep link). The officer is already authenticated (their phone
+/// holds a valid session token from the existing badge+password login),
+/// so this just records that they confirmed arrival. Deliberately no
+/// Tauri event/notification here — unlike a backup alert this isn't an
+/// emergency; `domain::activity`'s existing poll picks it up for the
+/// desktop within its normal interval.
+async fn check_in_handler(State(state): State<RemoteState>, headers: HeaderMap) -> Result<Json<OfficerCheckIn>, ApiError> {
+    let officer = require_officer(&state, &headers).await?;
+
+    let check_in = shift_log::check_in_remote(&state.pool, &state.vault_root, &officer).await.map_err(internal_error)?;
+
+    let _ = officers::log_remote_access(&state.pool, &officer.id, "check_in", None).await;
+
+    Ok(Json(check_in))
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct PhotoParams {
@@ -326,6 +357,7 @@ fn build_router(state: RemoteState) -> Router {
         .route("/photo", get(photo_handler))
         .route("/custody-alerts", get(custody_alerts_handler))
         .route("/backup-alert", post(backup_alert_handler))
+        .route("/check-in", post(check_in_handler))
         .with_state(state)
 }
 
@@ -334,8 +366,13 @@ fn build_router(state: RemoteState) -> Router {
 /// reached either through the Cloudflare Tunnel sidecar or directly by
 /// another device on the same LAN. Only ever running while a station has
 /// explicitly turned remote access on.
-pub async fn start(pool: SqlitePool, port: u16, app_handle: AppHandle) -> std::io::Result<RemoteServerHandle> {
-    start_with_state(RemoteState { pool, app: Some(app_handle) }, port).await
+pub async fn start(
+    pool: SqlitePool,
+    vault_root: std::path::PathBuf,
+    port: u16,
+    app_handle: AppHandle,
+) -> std::io::Result<RemoteServerHandle> {
+    start_with_state(RemoteState { pool, vault_root, app: Some(app_handle) }, port).await
 }
 
 async fn start_with_state(state: RemoteState, port: u16) -> std::io::Result<RemoteServerHandle> {
@@ -424,7 +461,7 @@ mod tests {
         .unwrap();
 
         let port = 47850;
-        let handle = start_with_state(RemoteState { pool, app: None }, port)
+        let handle = start_with_state(RemoteState { pool, vault_root, app: None }, port)
             .await
             .expect("start remote server");
         let client = reqwest::Client::new();

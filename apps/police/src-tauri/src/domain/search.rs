@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 
 use super::{
     attachments, bonds, cases, charge_sheets, custody, duty, exhibits, incidents, people, referrals, statements,
-    station_assets, station_diary,
+    station_assets, station_diary, vehicles,
 };
 
 /// Deterministic ranking, per the product decision: exact match on an
@@ -77,7 +77,7 @@ pub struct SearchResult {
     pub route: String,
 }
 
-fn full_name(first: &str, last: &str, other: Option<&str>) -> String {
+pub(crate) fn full_name(first: &str, last: &str, other: Option<&str>) -> String {
     [Some(last), Some(first), other]
         .into_iter()
         .flatten()
@@ -329,6 +329,40 @@ pub async fn search(pool: &SqlitePool, query: &str) -> Result<Vec<SearchResult>,
         .collect();
     asset_results.truncate(PER_DOMAIN_CAP);
     scored.extend(asset_results);
+
+    // Vehicles — searchable by plate number the same way a person is
+    // searchable by national ID (product ask: look someone up "by number
+    // plate").
+    let mut vehicle_results: Vec<(i32, SearchResult)> = vehicles::list_vehicles(pool, trimmed)
+        .await?
+        .into_iter()
+        .map(|v| {
+            let owner = v
+                .owner_first_name
+                .as_deref()
+                .map(|first| full_name(first, v.owner_last_name.as_deref().unwrap_or(""), v.owner_other_names.as_deref()));
+            let (field, value, score) = best_match(vec![
+                field_match(&query_lower, FieldKind::Identifier, "plateNumber", Some(&v.plate_number)),
+                field_match(&query_lower, FieldKind::Other, "make", v.make.as_deref()),
+                field_match(&query_lower, FieldKind::Other, "model", v.model.as_deref()),
+            ]);
+            (
+                score,
+                SearchResult {
+                    id: v.id.clone(),
+                    entity_type: "vehicle".to_string(),
+                    title: v.plate_number.clone(),
+                    subtitle: owner.unwrap_or_else(|| {
+                        [v.make.as_deref(), v.model.as_deref()].into_iter().flatten().collect::<Vec<_>>().join(" ")
+                    }),
+                    matched_on: MatchedOn { field, value },
+                    route: format!("/vehicles?open={}", v.id),
+                },
+            )
+        })
+        .collect();
+    vehicle_results.truncate(PER_DOMAIN_CAP);
+    scored.extend(vehicle_results);
 
     // Exhibits
     let mut exhibit_results: Vec<(i32, SearchResult)> = exhibits::list_exhibits(pool, trimmed)
