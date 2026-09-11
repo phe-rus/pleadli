@@ -2,9 +2,9 @@
 
 This is the **Phase 1 product model** for Pleadli DPP, produced after the research phase (`docs/dpp/RESEARCH.md`) and before any schema or broad implementation work. It follows the same discipline as `docs/police/PRODUCT.md`: only claims grounded in verified research are treated as real requirements; everything else is marked as an open question, not invented.
 
-**Status**: draft, pending approval. Per the project's staged workflow, this is the approval gate before structure/code begins. Treat every decision below as reversible until explicitly confirmed — especially the core-record naming and cardinality calls, which are the most expensive to change once a schema exists.
+**Status**: approved 2026-09-11, first vertical slice built (`apps/dpp/`: People, Prosecution Files, Referrals, Decisions, Search). **Revised same day** after the user reviewed the running app and flagged two things that sent this back through a research pass rather than being assumed away: the UX was too shallow relative to real document-centric Ugandan file work (see [[feedback_pleadli_document_centric_ux]]), and this document had assigned Plea Bargaining to DPP without checking whether it actually belonged there. A second, wider research pass (`docs/dpp/research/file-structure-and-jurisdiction.md`, `docs/courts/RESEARCH.md`, `docs/lawyers/RESEARCH.md`) resolved that — see the Plea Bargaining and Organizational responsibility sections below, both rewritten from that evidence, not from the original single-app research pass alone.
 
-Every claim below traces to a numbered finding in `docs/dpp/RESEARCH.md`. Where research left something genuinely unresolved, this document says so rather than filling the gap.
+Every claim below traces to a numbered finding in `docs/dpp/RESEARCH.md`, or to the follow-up docs named above where noted. Where research left something genuinely unresolved, this document says so rather than filling the gap.
 
 ## The fundamental idea
 
@@ -26,8 +26,8 @@ Do not copy Police's domains into DPP. Police investigates; DPP reviews what's r
 
 ODPP's own working term, confirmed directly from its 2023 Decision to Charge Guidelines, is simply **"file"** — not "case," "matter," or "docket" (RESEARCH.md §2). "Case" is used loosely and informally alongside "file" in the same documents, never as a distinct defined term. Three distinct reference numbers exist on one real-world matter (RESEARCH.md §2, §5):
 
-1. A **police-side reference** (station's own case/criminal-register reference — the exact statutory name of this number was not confirmed; treat it as "whatever Police's own referral record carries," not a named field with guessed structure).
-2. The **ODPP registration number**, assigned by ODPP to its own file. Exact format unconfirmed (RESEARCH.md §2) — do not hardcode a pattern.
+1. A **police-side reference** — **format confirmed 2026-09-11** (`docs/police/research/file-structure-and-numbering.md`, cross-checked against three independent ULII case citations): `{full station name} CRB {number}/{year}`, e.g. "JINJA CRB 314/2019" — the station name is always spelled out in full, never abbreviated to a code, and is part of the reference itself, not a separate prefix. The seed/example data used in DPP's first slice ("CRB 221/2026" with the station recorded only in a separate field) was missing this — treat the police reference as a single citation string in this real form, with the separate `policeStation` field kept only as additional structured metadata for search, not as a replacement for the full citation.
+2. The **ODPP registration number**, assigned by ODPP to its own file. Exact format **still unconfirmed** even after the 2026-09-11 follow-up pass (`docs/dpp/research/file-structure-and-jurisdiction.md`) — ODPP's Decision to Charge Guidelines were re-checked in full and contain no file-numbering convention anywhere. Continue treating this as free text; do not invent a pattern.
 3. The **court case number**, assigned only once the Charge Sheet is filed and a court file is opened (RESEARCH.md §2, §5).
 
 **Naming decision, flagged for confirmation**: "Prosecution File" is proposed rather than bare "File" purely for UI/codebase disambiguation across a multi-app product (Police already uses "Case"). This is a Pleadli-specific naming choice, not a claim about ODPP's own vocabulary — the entity's real-world referent is what ODPP itself just calls "the file."
@@ -83,20 +83,19 @@ Not final navigation categories or tables — work capabilities, per the Police 
 
 ### Court Matters
 - **Supports**: what DPP legitimately needs to track about the court side without becoming a judiciary case-management system.
-- **Owns**: court case number, committal status/venue, trial-date notice, adjournment count, bail status, plea/progress status.
+- **Owns**: court case number, committal status/venue, trial-date notice, adjournment count, bail status, plea/progress status — DPP's own **operational copy**, not the authoritative record (see below).
 - **Relates to**: Prosecution File (one file, evolving court state).
-- **Grounded in**: RESEARCH.md §5 — Trial on Indictments Act §27(2) (14-day trial-date notice to DPP), Magistrates Courts Act §168(4)-(5) (bail survives committal unless High Court cancels it), the three-consecutive-adjournments review trigger.
+- **Grounded in**: RESEARCH.md §5 — Trial on Indictments Act §27(2) (14-day trial-date notice to DPP), Magistrates Courts Act §168(4)-(5) (bail survives committal unless High Court cancels it), the three-consecutive-adjournments review trigger. **Confirmed by the 2026-09-11 follow-up** (`docs/courts/RESEARCH.md`): court case numbers follow a real confirmed format for the High Court criminal division, `HCT-{code}-CR-SC-{seq}-{year}` (magistrate-level format still unconfirmed), and ECCMIS's own "Benefits" page states data flows Police → ODPP → Courts → Prisons — evidence that **Courts is the authoritative source for court-side state; DPP legitimately keeps a reference copy, never a competing one.** This is not a change to what was already modeled here, just independent confirmation of it.
 - **Do not assume** a live system-to-system feed from the Judiciary's ECCMIS or ODPP's own PROCAMIS. RESEARCH.md §5 found ECCMIS's own description does not mention PROCAMIS integration at all — treat court-side data as something DPP staff track (manually or via whatever ODPP system Pleadli DPP is meant to complement), never as guaranteed auto-sync. Do not build a miniature Judiciary system here.
 
-### Plea Bargaining
-- **Supports**: the plea-agreement process, which has a dedicated institutional home (ODPP's own Plea Bargain Unit) and its own rules.
-- **Owns**: plea-agreement terms, negotiation status, court-approval outcome.
-- **Relates to**: Prosecution File, Decisions (a plea outcome is a decision-adjacent event).
-- **Grounded in**: RESEARCH.md §4, §6 — governed by the Judicature (Plea Bargain) Rules 2016 (existence confirmed, section text unconfirmed — do not invent specific procedural steps beyond what ODPP's own Guidelines Ch. 4 state: negotiated by the Prosecutor, subject to court approval of any recommended sentence, particular care around mandatory-minimum-sentence cases, victim/family views considered but decision rests with the Prosecutor).
-- **Do not assume** the specific procedural mechanics of the 2016 Rules beyond what's stated above — the Rules' full text could not be extracted (image-scanned PDF, RESEARCH.md §6/§14).
+### Plea Bargaining — **not a DPP-owned domain; do not build a full Plea Bargaining feature inside DPP**
+- **Revised 2026-09-11**, after the user flagged that this looked wrong and a follow-up research pass across Courts (`docs/courts/RESEARCH.md`) and Lawyers (`docs/lawyers/RESEARCH.md`) actually read the Judicature (Plea Bargain) Rules 2016's substantive text (rasterized and read visually — the prior single-app research pass could only confirm the Rules exist, not their content).
+- **What the Rules actually establish**: the signed plea agreement (Schedule 1) is filed **with a court and case number**, closes with the presiding judge/magistrate ordering it "incorporated in the record of proceedings," and Schedule 3 is a separate court-witnessed confirmation form — this is unambiguously a **Courts-of-record document**, not something that lives inside ODPP's file and is merely referenced by the court.
+- **Representation is not mandatory**: Rule 10 lets the agreement be explained to the accused "by his or her advocate **or a justice of the peace**," and Schedule 1's own form has an explicit advocate-waiver clause — so an unrepresented accused can lawfully plea-bargain. A defense lawyer's participation is common but not required, which is why this isn't simply a Lawyers-owned domain either.
+- **The real shape**: genuinely cross-institutional. DPP negotiates and keeps its own operational copy (ODPP's own Decision to Charge Guidelines Ch. 4 already confirm this, RESEARCH.md §6) — that much is a legitimate small part of DPP's own Decisions & Reviews trail (a plea outcome is a decision-adjacent event, as already noted). But the **authoritative agreement, the negotiation-witnessing procedure, and the court-approval step belong to Pleadli Courts**, with Pleadli Lawyers representing the client's side when one is instructed. **Do not build plea-agreement authoring, Schedule 1/3 form generation, or negotiation-workflow UI inside DPP** — that's Courts' (and, when relevant, Lawyers') domain to own once those apps exist. DPP's only legitimate footprint here is recording that a plea-bargain decision was reached, as one row in its own Decisions log (already supported by the existing `plea_bargain_accepted` decision type) — nothing more.
 
 ### Documents
-- **Supports**: the actual document-heavy nature of prosecution work.
+- **Supports**: the actual document-heavy nature of prosecution work. **Standing correction, 2026-09-11** (see [[feedback_pleadli_document_centric_ux]]): the first vertical slice built this domain as a deferred nav item with plain-text fields standing in for it (a "what accompanied the file" textarea, a free-text notes field) — that is not sufficient on its own. A file's workspace needs real attachments (actual documents a prosecutor can open/read, Vault-backed, same DB-owns-facts/Vault-owns-bytes split as Police) and rich text for narrative content (decision reasons, referral material summaries, file notes) as first-class parts of the workspace, not a later polish pass deferred behind a "Documents" nav item that never gets built.
 - **Owns**: nothing beyond structured metadata and generation templates — same DB-owns-facts / Vault-owns-bytes split as Police.
 - **Confirmed document types** (RESEARCH.md §6): Charge Sheet (sanctioned copy retained in the ODPP file), Indictment (High Court, must be in the DPP's name, specific framing rules), Summary of the Case (filed alongside indictment at committal), legal opinion / written review (privileged, confidentiality-restricted), Plea Agreement, committal-proceedings documents (indictment + summary transmitted to the High Court registrar).
 - **Do not assume**: a standard "no case to answer" submission template exists as a named ODPP form — the concept is implicit in trial procedure (TIA Part VII) but not confirmed as a distinct document type ODPP itself names or templates (RESEARCH.md §6).
@@ -125,10 +124,15 @@ Not final navigation categories or tables — work capabilities, per the Police 
 - **Do not**: invent percentage changes, backlog-rate stats, or any metric ODPP itself doesn't track. RESEARCH.md §8 found no ODPP-published disposal/backlog statistics — Police's own 2024 Annual Crime Report figures (37.4% of reported cases fully investigated-sanctioned-court, 41.5% still under inquiry) are a Police-authored proxy for pipeline shape, not an ODPP KPI DPP's own Overview screen should surface as if it were ODPP's official standard.
 
 ### Organizational responsibility
-- **Rank hierarchy** (RESEARCH.md §1, confirmed from ODPP's own site): DPP → Deputy DPP → Principal Assistant DPP → Assistant DPP → Chief State Attorney → Senior State Attorney → State Attorney → Resident State Attorney/Prosecutor.
-- **Specialized units relevant to assignment/work-queue modeling** (RESEARCH.md §7): Anti-Corruption, Gender/Children/Sexual Offences (GBV), Land Crimes, Homicide, Building Control Crimes, Cybercrime, Plea Bargain Unit, Appeals & Applications, International Crimes (incl. Anti-Trafficking), International Cooperation & Asset Recovery, Inspections & Quality Assurance, Research & Training, Field Operations (19 regional offices / 127 RSA stations), Witness Protection & Victim Empowerment.
-- **Do not**: hardcode this as a complete national org chart. Pleadli Cloud's existing org/entitlement infrastructure (Organization, OrganizationUnit, Membership, Entitlement — see `project_pleadli_www_build_state` memory) is the identity/membership substrate; DPP owns only the application-specific operational relationship (who's assigned/responsible for a given Prosecution File), same boundary Police already established.
-- **Confirmed but not modeled as a hard rule**: no ODPP document found specifies a codified file-assignment algorithm (RESEARCH.md §1) — assignment is a human/supervisory act the software should support, not automate.
+- **Scale model — corrected 2026-09-11 (product decision from the user, not a research finding)**: a Pleadli DPP installation is **one prosecutor, never a team or office deployment**. There is no multi-user roster, no workload-balancing-across-prosecutors feature, no office-administration surface to build. This directly supersedes the "Office Admin (prosecutor workload, unit assignment)" nav sketch this document originally proposed — that sketch assumed a team/office model and was wrong. Closer to Police's own "an individual can use the app with zero connection" scaling principle than to a team model.
+- **Regional scope**: a DPP installation only handles matters from its own region — it is not a window onto every ODPP file nationally. RESEARCH.md §1's 19-regions/127-RSA-stations structure is independently reconciled (`docs/dpp/research/file-structure-and-jurisdiction.md`: 16 original regions + 3 newly established, cross-confirmed against ODPP's own FY2023/24 budget document), but whether jurisdiction is *strictly* region-bound (vs. just default practice, with an undocumented transfer path for matters that need to cross regions) remains genuinely **unconfirmed** — no cross-region transfer process was found. Model the region as a fixed property of the installation, but do not hardcode an assumption that a matter can *never* cross regions.
+- **Rank hierarchy** (RESEARCH.md §1, confirmed from ODPP's own site): DPP → Deputy DPP → Principal Assistant DPP → Assistant DPP → Chief State Attorney → Senior State Attorney → State Attorney → Resident State Attorney/Prosecutor. Relevant for knowing *what a prosecutor's own rank/title is* (a profile-level fact about the single user), not for building a multi-prosecutor assignment system.
+- **Specialized units** (RESEARCH.md §7): Anti-Corruption, Gender/Children/Sexual Offences (GBV), Land Crimes, Homicide, Building Control Crimes, Cybercrime, Plea Bargain Unit, Appeals & Applications, International Crimes (incl. Anti-Trafficking), International Cooperation & Asset Recovery, Inspections & Quality Assurance, Research & Training, Field Operations (19 regional offices / 127 RSA stations), Witness Protection & Victim Empowerment — background context on how ODPP is organized nationally, not something this single-prosecutor installation needs to model as navigable structure.
+- **Do not**: hardcode a national org chart, or build any cross-prosecutor administration surface. Pleadli Cloud's existing org/entitlement infrastructure (Organization, OrganizationUnit, Membership, Entitlement) remains the identity/membership substrate at the platform level; it is not something this single-installation app needs its own admin surface for.
+
+### Police ↔ DPP connectivity (design note, not building yet)
+- **Corrected 2026-09-11**: Police and DPP installations of the **same region** connect to each other — not automatically, not globally. The mechanism is **manual pairing**, reusing/extending Police's already-built local-network + Cloudflare Tunnel pairing infrastructure (`docs/police/remote-access.md`, [[project_pleadli_police_remote_access]]), not a new protocol and not automatic discovery.
+- This is a forward-looking constraint to carry into future design, not a feature to build now — no pairing flow, no cross-app referral transport exists yet. The current DPP "Intake" screen still only records what a prosecutor manually enters about a Police referral; it does not receive anything automatically from a Police installation.
 
 ## 3. Police → DPP boundary
 
@@ -168,24 +172,20 @@ Overview                    (what needs my attention: queues above)
 Search
 
 Intake                      (incoming Police referrals, review status)
-Charging Review             (Decision-to-Charge workspace)
+Charging Review             (folded into the Files workspace — see below)
 
-Files                       (Prosecution Files — the core record)
-Decisions                   (cross-file audit trail / decision history)
+Files                       (Prosecution Files — the core record + workspace)
 
-Plea Bargaining
-
-Court Matters                (committal, trial dates, adjournments, outcomes)
+Court Matters                (committal, trial dates, adjournments, outcomes — DPP's own reference copy)
 
 People
-Documents
 
 Reports & Analytics          (derived only — no invented metrics)
-
-Office Admin                 (unit/station assignment, prosecutor workload)
 ```
 
-This is a starting proposal, not a locked structure — same caveat as Police's own nav baseline. "Files" carries the weight Police's "Cases" does; "Intake" and "Charging Review" are pulled out as distinct first-class screens specifically because the brief requires the Police handoff and the charging decision to be real workspaces, not buried inside a generic file-detail page.
+**Revised 2026-09-11**: "Plea Bargaining" is removed as a nav item — it is not a DPP-owned domain (see the Plea Bargaining section above); DPP's only footprint is a decision-type row, already covered by "Files"/Decisions, nothing separate to navigate to. "Office Admin" is removed entirely — it assumed a multi-prosecutor team/office model that doesn't apply (see Organizational responsibility above); nothing replaces it, a single-prosecutor installation doesn't need an administration surface. "Decisions" is folded into "Files" (it was never a separate table, just the same workspace's decision-history section — this only corrects the nav sketch, not the data model). "Documents" is likewise folded into "Files" — attachments/rich text belong inside the file workspace itself, not a separate top-level browse screen, per the Documents section above.
+
+This remains a starting proposal, not a locked structure — same caveat as Police's own nav baseline. "Files" carries the weight Police's "Cases" does; "Intake" is pulled out as a distinct first-class screen specifically because the brief requires the Police handoff to be a real workspace, not buried inside a generic file-detail page. "Charging Review" is not a separate route — it's the same file workspace, same as it was built.
 
 ## 11. What is explicitly out of scope (for now)
 
@@ -198,8 +198,10 @@ This is a starting proposal, not a locked structure — same caveat as Police's 
 - Assuming live PROCAMIS/ECCMIS system integration exists
 - Specific inquest-to-DPP referral procedure (statute not found — RESEARCH.md §3)
 - Specific Uganda Police Act referral-duty clause (not found in the sections extracted — RESEARCH.md §3, ref #10)
-- Exact ODPP registration-number format (not published — RESEARCH.md §2)
-- Full procedural text of the Judicature (Plea Bargain) Rules 2016 (image-scanned, unextracted — RESEARCH.md §6)
+- Exact ODPP registration-number format (still not published, re-confirmed 2026-09-11 — RESEARCH.md §2, `docs/dpp/research/file-structure-and-jurisdiction.md`)
+- Plea-agreement authoring/negotiation UI, Schedule 1/3 form generation — explicitly Courts'/Lawyers' domain, not DPP's (see Plea Bargaining above)
+- A multi-prosecutor office-administration surface — not applicable, single-prosecutor scale model (see Organizational responsibility above)
+- Any Police↔DPP pairing/connectivity implementation — design note only (see Police ↔ DPP connectivity above), reuses Police's existing infrastructure when actually built
 
 ## Uncertainties still open (require product clarification, not invention)
 
@@ -209,6 +211,7 @@ This is a starting proposal, not a locked structure — same caveat as Police's 
 - Whether PROCAM and PROCAMIS denote a manual/digital distinction or something else — Guidelines use both without defining the difference.
 - Whether ODPP has a codified file-assignment rule beyond ad hoc supervisory practice.
 - The specific "no case to answer" submission — whether ODPP has a standard internal template.
+- **Whether RSA jurisdiction is strictly region-bound** — no documented cross-region transfer process was found (`docs/dpp/research/file-structure-and-jurisdiction.md`); a fine-grained police-station-to-RSA-station mapping is also unconfirmed, and a real name-collision risk was flagged (a "Kira" RSA station in Wakiso vs. "Kira Road" Police Station in Kampala Central are likely different administrative homes despite the similar name) — do not assume station names alone are enough to derive the mapping.
 
 ## Final test
 

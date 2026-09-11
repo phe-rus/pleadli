@@ -3,6 +3,7 @@ import { Placeholder } from '@tiptap/extensions'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { richTextExtensions } from './starter-kit'
 import { RichTextToolbar } from './toolbar'
+import { safeParseRichTextDoc } from './utils'
 
 export type RichTextInputProps = {
   /** Initial content, as JSON from a previous `onChange` call. Tiptap is
@@ -23,7 +24,7 @@ const placeholderOverlayClassName =
 export function RichTextInput({ value, onChange, placeholder = 'Write here…', className }: RichTextInputProps) {
   const editor = useEditor({
     extensions: [...richTextExtensions, Placeholder.configure({ placeholder })],
-    content: value ? JSON.parse(value) : '',
+    content: safeParseRichTextDoc(value),
     editorProps: {
       attributes: {
         class: 'typeset min-h-24 max-h-64 overflow-y-auto px-3 py-2 outline-none',

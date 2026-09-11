@@ -94,7 +94,9 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
     >
       <FieldGroup>
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="reference">{(f) => <f.input label="Reference" />}</form.AppField>
+          <form.AppField name="reference">
+            {(f) => <f.input label="Reference" placeholder="e.g. JINJA CRB 314/2019" />}
+          </form.AppField>
           <form.AppField name="status">
             {(f) => <f.select label="Status" options={[...caseStatuses]} />}
           </form.AppField>

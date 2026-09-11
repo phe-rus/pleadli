@@ -1,7 +1,7 @@
 import { cn } from '@pleadli/ui/lib/utils'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { richTextExtensions } from './starter-kit'
-import { isRichTextEmpty } from './utils'
+import { isRichTextEmpty, safeParseRichTextDoc } from './utils'
 
 export type RichTextPreviewProps = {
   value: string | null | undefined
@@ -17,7 +17,7 @@ export function RichTextPreview({ value, className }: RichTextPreviewProps) {
   const editor = useEditor(
     {
       extensions: richTextExtensions,
-      content: value ? JSON.parse(value) : '',
+      content: safeParseRichTextDoc(value),
       editable: false,
       editorProps: {
         attributes: { class: cn('typeset', className) },

@@ -48,9 +48,10 @@ impl From<sqlx::Error> for AttachmentError {
     }
 }
 
-/// Case references are real UPF-style strings like `CRB/123/2026` (see
-/// docs/police/research/custody-and-bonds.md) — used directly as a path
-/// component they'd create nested folders no one asked for, so every
+/// Case references are real UPF-style strings like `JINJA CRB 314/2019` —
+/// the station name spelled out, not a code (see
+/// docs/police/research/file-structure-and-numbering.md) — used directly as
+/// a path component they'd create nested folders no one asked for, so every
 /// path-unsafe character is folded to `-` before it becomes a folder name.
 fn sanitize_folder_name(input: &str) -> String {
     input
