@@ -2,6 +2,14 @@ import * as z from 'zod'
 
 export const entityTypeLabels: Record<string, string> = {
   prisoner: 'Prisoner',
+  court_production: 'Court Production',
+  health_event: 'Health Event',
+  programme_participation: 'Programme',
+  property_record: 'Property',
+  release: 'Release',
+  request: 'Request',
+  transfer: 'Transfer',
+  visit: 'Visit',
 }
 
 export function entityTypeLabel(entityType: string) {

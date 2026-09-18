@@ -13,7 +13,7 @@ _These are recommendations to keep the build orderly, not requirements. A worksp
 |---|---|---|---|
 | `apps/police` | fully caught up with its own product doc, no planned next slice | 23 existing / 0 planned / 23 | [police/scope.md](police/scope.md) |
 | `apps/dpp` | built, 3 real gaps vs its product doc queued as the next slice | 14 existing / 3 planned / 17 | [dpp/scope.md](dpp/scope.md) |
-| `apps/prisons` | fully caught up with its own product doc, no planned next slice | 14 existing / 0 planned / 14 | [prisons/scope.md](prisons/scope.md) |
+| `apps/prisons` | a 2026-09-18 audit found 2 features claimed done that weren't (Reports, Search); 7 features queued to fix that plus real government adoption gaps | 14 existing / 7 planned / 21 | [prisons/scope.md](prisons/scope.md) |
 | `www` (Pleadli Cloud) | built, one feature mid way, several candidate gaps deferred pending a decision | 6 existing / 1 in-progress / 7 | [www/scope.md](www/scope.md) |
 | `_root` (shared packages + monorepo tooling) | packages stable; foundational tooling (AGENTS.md, CI) missing entirely | 3 existing / 3 planned / 6 | [_root/scope.md](_root/scope.md) |
 

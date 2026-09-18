@@ -2,7 +2,9 @@
 
 This is the product model for Pleadli Prisons, produced after the research phase (`docs/prisons/RESEARCH.md`) and revised after a deep operational research pass (RESEARCH.md §11) explicitly demanded before any further code. It follows the same discipline as `docs/police/PRODUCT.md` and `docs/dpp/PRODUCT.md`: only claims grounded in verified research are treated as real requirements; everything else is marked as an open question, not invented.
 
-**Status**: built through Prisoners/Releases/Transfers/Health & Welfare/Court-Production/Remand/Visits(authorization+attendance)/Rehabilitation & Work/Reports, all runtime-verified. **This revision does not itself implement anything** — per explicit instruction, this is research + product-model + gap-analysis + navigation proposal only, for review before any further implementation begins.
+**Status**: built through Prisoners/Releases/Transfers/Health & Welfare/Court-Production/Remand/Visits(authorization+attendance)/Rehabilitation & Work, all runtime-verified. **This revision does not itself implement anything** — per explicit instruction, this is research + product-model + gap-analysis + navigation proposal only, for review before any further implementation begins.
+
+**2026-09-18 correction**: a skeptical code audit (requested after the engineer pushed back on an earlier "zero gaps" scope-planning pass) found this document's own Gap Analysis table was wrong about Reports (claimed done, wasn't) and silent about Search (never listed at all, only covers Prisoners). See the corrected rows in §4 below and `docs/scope/prisons/scope.md` for the resulting planned work. See also `docs/prisons/RESEARCH.md` §12 for new research into what would help Uganda government adoption specifically (JLOS, NITA-U, the Data Protection and Privacy Act 2019) — a different question from the operational research above, not previously covered.
 
 **Why this revision happened**: the built application was assessed, correctly, as "clean and structured" but still too centered on `Person → Admission → Custody → Movement → Release` — real, but only part of what a prison actually is. A prison is a continuously operating institution, not just a place where people are stored and moved. This revision's job was to find out, from real evidence, what else that institution actually does — not to add features until the sidebar looks complete.
 
@@ -118,7 +120,7 @@ This is where the research pass, honestly, found the least — and that is itsel
 | Area | Assessment | Why |
 |---|---|---|
 | Admission & Custody | REAL AND GOOD, extend cautiously | Core model correct; the "conviction without commitment warrant" real-data-state is a genuine open product question, not a bug to silently fix |
-| Property & Effects | MISSING → now buildable | Was UNKNOWN, now directly grounded in the Prisons Act itself (s.62) — a simple admission-time record is honest and evidenced |
+| Property & Effects | REAL BUT DISCONNECTED (2026-09-18 audit) | The admission-time record and returned marker are both built, but Release does not touch property at all — releasing a prisoner never marks or prompts marking their property returned. Two features that coexist, not the one workflow s.62 actually describes |
 | Court Production | REAL BUT TOO SHALLOW | Physical production only; virtual/video-link production is real, operating at 19+ prisons, and has no field to represent it |
 | Movements (escort, other) | NOT CURRENTLY NEEDED | No escort role/procedure exists in Ugandan law at all — confirmed absence, not a gap |
 | Visits | REAL AND GOOD | Structurally right; personal-doctor category, voluntary-visitor taxonomy, and the special/researcher-authorization split are now built (decided 2026-09-11) |
@@ -132,7 +134,8 @@ This is where the research pass, honestly, found the least — and that is itsel
 | Staff duty/shift/handover | UNKNOWN, do not build | Same as above — standing conduct rules exist, a rostering system is not evidenced |
 | Staff discipline | FUTURE | Real, but confidence too low and scope too HR-adjacent to build now; revisit if Standing Orders or a practitioner source surface |
 | Incidents (beyond escape) | UNKNOWN, do not build | No broader taxonomy found; escape response alone doesn't justify a general Incident domain |
-| Reports | REAL AND GOOD, extend | New population-breakdown dimensions (age/offence-type/nationality/sentence) are real and free to add |
+| Reports | MISSING, despite being marked done (2026-09-18 audit correction) | This row previously said "REAL AND GOOD, extend" — a 2026-09-18 code audit found none of the four documented breakdowns (age group, capital-offence type, nationality, sentence category) actually exist in `domain/reports.rs`. Still grounded and buildable exactly as described below; the prior verdict here was simply wrong, not a change in the underlying research |
+| Search (cross-domain) | REAL BUT TOO SHALLOW (2026-09-18 audit) | Not previously in this table. Only searches Prisoners; Visits, Requests, Court Productions, Releases, Transfers, Health Events, Property, and Programme Participation are all real domains with no search coverage |
 | Appointments (general) | NOT CURRENTLY NEEDED | Evidence supports only court-attendance scheduling as a real concept; a cross-cutting Appointments domain would be invention |
 | Attendance (general) | NOT CURRENTLY NEEDED | Confirmed again by an independent primary source (Farms Dept report) — not evidenced beyond court attendance |
 | Facility hierarchy (block/ward/wing/cell) | UNKNOWN, do not build | "Cell"/"ward" are real flat terms; no structured hierarchy is evidenced — free-text location remains right |

@@ -40,9 +40,10 @@ function RootComponent() {
     <>
       <HeadContent />
       <main className={cn(
-        "flex flex-col bg-background h-svh transition-colors",
-        'rounded-sm shadow-lg! border border-border/25 typeset',
-        'print:h-auto print:overflow-visible print:rounded-none print:border-none print:shadow-none',
+        "flex flex-col bg-background h-svh transition-colors overflow-hidden!",
+        'rounded-md! shadow-lg! border border-border/35 typeset',
+        'print:h-auto print:overflow-visible print:rounded-none',
+        'print:border-none print:shadow-none'
       )}>
         <WindowResizeHandles />
         <ThemeProvider

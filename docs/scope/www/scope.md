@@ -55,6 +55,7 @@ Real candidate gaps for a platform like this, not yet confirmed as requirements,
 - **MFA / 2FA**: BetterAuth's `twoFactor` plugin isn't enabled · needs a decision
 - **Per institution settings/branding**: only a logo field exists on the organization table today · needs a decision
 - **Email verification / password reset delivery**: the `forgot-account` route exists, but actual email delivery integration wasn't confirmed as wired up · needs a decision
+- **Uganda data residency**: `www` runs on Cloudflare Workers/D1, US based infrastructure. The Data Protection and Privacy Act 2019 s.19 requires the destination country have "at least equivalent" protection or the data subject's consent for any cross border transfer of personal data, an adequacy or consent model, not hard localization. Real and addressable, not a hard blocker; see `docs/prisons/RESEARCH.md` §12 · needs a decision
 
 ## Legend
 See `docs/scope/index.md` for the shared legend.

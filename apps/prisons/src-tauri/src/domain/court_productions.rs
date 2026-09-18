@@ -59,6 +59,31 @@ pub async fn list_for_prisoner(pool: &SqlitePool, prisoner_id: &str) -> Result<V
     .await
 }
 
+#[derive(Debug, Clone, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct CourtProductionSearchRow {
+    pub id: String,
+    pub prisoner_id: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub court_reference: Option<String>,
+    pub production_date: i64,
+    pub production_method: String,
+}
+
+pub async fn search(pool: &SqlitePool, query: &str) -> Result<Vec<CourtProductionSearchRow>, sqlx::Error> {
+    let like = format!("%{query}%");
+    sqlx::query_as::<_, CourtProductionSearchRow>(
+        "SELECT cp.id, cp.prisoner_id, p.first_name, p.last_name, cp.court_reference, cp.production_date, cp.production_method
+         FROM court_productions cp JOIN prisoners p ON p.id = cp.prisoner_id
+         WHERE cp.court_reference LIKE ?1 OR p.first_name LIKE ?1 OR p.last_name LIKE ?1 OR p.other_names LIKE ?1
+         ORDER BY cp.production_date DESC LIMIT 200",
+    )
+    .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
 /// Every in-custody prisoner alongside their most recent production date
 /// (null if never produced) — the working data behind both the s.118
 /// pre-session list and the Overview "upcoming/overdue" queue.

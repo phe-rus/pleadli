@@ -83,6 +83,19 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Request>, sqlx::Error> {
     .await
 }
 
+pub async fn search(pool: &SqlitePool, query: &str) -> Result<Vec<Request>, sqlx::Error> {
+    let like = format!("%{query}%");
+    sqlx::query_as::<_, Request>(
+        "SELECT r.*, p.first_name AS prisoner_first_name, p.last_name AS prisoner_last_name
+         FROM requests r LEFT JOIN prisoners p ON p.id = r.prisoner_id
+         WHERE r.category LIKE ?1 OR r.description LIKE ?1 OR p.first_name LIKE ?1 OR p.last_name LIKE ?1
+         ORDER BY r.raised_at DESC LIMIT 200",
+    )
+    .bind(like)
+    .fetch_all(pool)
+    .await
+}
+
 pub async fn list_for_prisoner(pool: &SqlitePool, prisoner_id: &str) -> Result<Vec<Request>, sqlx::Error> {
     sqlx::query_as::<_, Request>(
         "SELECT r.*, p.first_name AS prisoner_first_name, p.last_name AS prisoner_last_name

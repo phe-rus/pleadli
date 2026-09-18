@@ -69,3 +69,29 @@ pub async fn list_for_prisoner(pool: &SqlitePool, prisoner_id: &str) -> Result<V
         .fetch_all(pool)
         .await
 }
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct VisitSearchRow {
+    pub id: String,
+    pub prisoner_id: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub visitor_name: String,
+    pub visitor_identification: Option<String>,
+    pub visit_type: String,
+    pub visited_at: i64,
+}
+
+pub async fn search(pool: &SqlitePool, query: &str) -> Result<Vec<VisitSearchRow>, sqlx::Error> {
+    let like = format!("%{query}%");
+    sqlx::query_as::<_, VisitSearchRow>(
+        "SELECT v.id, v.prisoner_id, p.first_name, p.last_name, v.visitor_name, v.visitor_identification, v.visit_type, v.visited_at
+         FROM visits v JOIN prisoners p ON p.id = v.prisoner_id
+         WHERE v.visitor_name LIKE ?1 OR v.visitor_identification LIKE ?1 OR p.first_name LIKE ?1 OR p.last_name LIKE ?1 OR p.other_names LIKE ?1
+         ORDER BY v.visited_at DESC LIMIT 200",
+    )
+    .bind(like)
+    .fetch_all(pool)
+    .await
+}

@@ -5,7 +5,9 @@ The Tauri desktop app for Uganda's prisons service: admission and prisoner custo
 **Build approach:** Tracer Bullet (inherits the project default).
 **Workflow:** GA (inherits the project default).
 
-This workspace is fully caught up with its own product doc: everything `docs/prisons/PRODUCT.md` calls for building is built, and everything it explicitly says not to build (disciplinary records, headcounts, staff duty and roster, general incidents, facility hierarchy, general appointments and attendance) is correctly absent. There is no planned next slice right now. `docs/prisons/PRODUCT.md` §10 records two open product questions worth resolving before they matter: how `admission_instrument_type` should represent "convicted, document pending," and how reliable national ID based cross episode search really is. These are decisions, not missing code, so they aren't scope rows. Raise them with `/architect` directly if and when they become load bearing.
+**2026-09-18 correction**: an earlier pass of this scope said this workspace was "fully caught up, no planned next slice." A skeptical code audit found that was wrong: `docs/prisons/PRODUCT.md`'s own gap analysis table incorrectly marked Reports as done, and never listed Search's real coverage gap at all. See the corrected rows below and `docs/prisons/RESEARCH.md` §12 for new research into what would help real Uganda government adoption (JLOS, NITA-U, the Data Protection and Privacy Act 2019), which surfaced the audit-trail and export items below. Existing features 1 to 14 remain accurately built; the next slice extends two of them (Reports, Search) and adds real gaps the audit found.
+
+`docs/prisons/PRODUCT.md` §10 also records two open product questions worth resolving before they matter: how `admission_instrument_type` should represent "convicted, document pending" (now feature 18 below, since the audit found it still forces a false choice), and how reliable national ID based cross episode search really is (still just a decision, not a scope row, raise with `/architect` if it becomes load bearing).
 
 ## At a glance
 
@@ -25,6 +27,13 @@ This workspace is fully caught up with its own product doc: everything `docs/pri
 | 12 | Reports | Existing | existing |
 | 13 | Search | Existing | existing |
 | 14 | Overview | Existing | existing |
+| 15 | Reports: population breakdowns | Next slice | planned |
+| 16 | Search: full domain coverage | Next slice | in-progress |
+| 17 | Property to Release workflow link | Next slice | planned |
+| 18 | Admission instrument pending state | Next slice | planned |
+| 19 | Audit trail | Next slice | planned |
+| 20 | Print and export | Next slice | planned |
+| 21 | UPS shaped statistics export | Next slice | planned |
 
 ## Existing
 
@@ -69,6 +78,51 @@ code in `apps/prisons/src/features/search/`, `apps/prisons/src-tauri/src/domain/
 
 ### 14. Overview · existing
 code in `apps/prisons/src/routes/_public/index.tsx`
+
+## Next slice
+
+### 15. Reports: population breakdowns · needs a decision
+`docs/prisons/PRODUCT.md` documents four real, UPS sourced breakdown dimensions (age group, capital offence type, nationality, sentence category) as grounded and buildable. None exist in `domain/reports.rs` today. Needs a decision because it likely requires new fields on the Prisoner record to categorize by, not just a report query change.
+**Done when:** Reports shows population counts broken down by age group, capital offence type, nationality, and sentence category, matching the categories UPS's own published statistics use (see `docs/prisons/RESEARCH.md` §11.1).
+- [ ] Design it (spec): `/architect reports population breakdowns`
+
+### 16. Search: full domain coverage · in-progress
+`domain/search.rs` only searches Prisoners. Visits, Requests, Court Productions, Releases, Transfers, Health Events, Property Records, and Programme Participations are real, built domains with no search coverage at all.
+**Done when:** searching from the Search route returns matches across all nine domains, not just Prisoners.
+- [x] Build it: `/develop search full domain coverage`
+code in `apps/prisons/src-tauri/src/domain/search.rs` (plus a new `search()` function added to each of the 8 domain files), `apps/prisons/src/features/search/schema.ts`
+
+### 17. Property to Release workflow link · needs a decision
+Releasing a prisoner never touches their property record; the two exist independently despite s.62 describing return-at-release as one duty. Needs a decision on the exact behavior (auto mark returned, require confirmation before release completes, or just surface a reminder).
+**Done when:** completing a release either marks the linked property record returned or blocks/prompts on an unreturned one, per whichever behavior gets decided.
+- [ ] Design it (spec): `/architect property to release workflow link`
+
+### 18. Admission instrument pending state · needs a decision
+`docs/prisons/PRODUCT.md` §10 flags this as an open product question: UPS's own Commissioner General reports 98 real "convicted, no commitment warrant on file" cases, but `admission_instrument_type` still forces a choice among 4 complete instrument types with no honest way to record a pending document.
+**Done when:** a prisoner can be admitted with the commitment document marked pending, without the schema lying about completeness, per whatever representation gets decided.
+- [ ] Design it (spec): `/architect admission instrument pending state`
+
+### 19. Audit trail · needs a decision
+No `created_by`/`updated_by`/changed-at exists on any domain. Matters for the Data Protection and Privacy Act 2019's security and accountability duties (`docs/prisons/RESEARCH.md` §12, s.20 to 23), not just good practice. Needs a decision because Prisons (like Police and DPP) currently has no signed-in officer identity concept to attribute a change to, which this depends on. Worth checking whether this should be a cross-cutting decision across all three sibling apps rather than Prisons-only before designing it here alone (see `docs/scope/_root/scope.md`'s matching Deferred item).
+**Done when:** every domain record shows who created and last changed it and when, per whatever identity model gets decided.
+- [ ] Design it (spec): `/architect audit trail`
+
+### 20. Print and export
+No admission slip, release order, or remand list printout exists; Police and DPP both have an established print route pattern this can follow.
+**Done when:** an officer can print or export an admission slip, a release order, and the s.118 remand list, following the existing sibling apps' print route pattern.
+- [ ] Build it: `/develop print and export`
+
+### 21. UPS shaped statistics export · needs a decision
+Once feature 15 is built, format an export that mirrors UPS's own real Monthly Statistics Summary layout, so an officer isn't re-typing numbers this system already has into a separate report.
+**Done when:** Reports can produce an export whose shape matches UPS's own published monthly statistics report structure.
+- [ ] Design it (spec): `/architect UPS shaped statistics export`
+
+## Deferred
+Real, evidenced adoption factors from `docs/prisons/RESEARCH.md` §12, not yet decided as build work. Broader than this one workspace, so not planned here as features, but worth surfacing where they were found:
+- **PDPO registration and a documented security policy**: the Data Protection and Privacy Act 2019 requires registering as a data processor and having a documented security policy (s.20 to 29) · needs a decision, organizational not just code
+- **NITA-U certification posture**: reportedly government bodies may only use NITA-U certified IT products, unverified with certainty (two direct fetch attempts failed) · needs a decision, worth confirming directly with NITA-U before treating as a hard gate
+- **Uganda data residency for `www`**: Cloudflare hosting is a real cross-border transfer point under DPPA s.19; see `docs/scope/www/scope.md` · needs a decision
+- **Police, DPP, Prisons interoperability seam**: JLOS's own stated "open standards and APIs for secure data sharing across JLOS institutions" goal is real evidence for eventually connecting the same person/case across the three sibling apps, without building a live sync engine · needs a decision, see `docs/scope/_root/scope.md`
 
 ## Legend
 See `docs/scope/index.md` for the shared legend.
