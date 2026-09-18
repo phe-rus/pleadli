@@ -5,7 +5,9 @@ The offline first Tauri desktop app for individual Ugandan police officers, orga
 **Build approach:** Tracer Bullet (inherits the project default).
 **Workflow:** GA (inherits the project default).
 
-This workspace is fully caught up with its own product doc: every domain in `docs/police/PRODUCT.md`'s sequencing is built, and there is no planned next slice right now. A few real, working pieces (data import and export, shift check ins and handover as their own tables, the Activity feed as a first class domain, and the Cloudflare Tunnel remote access and backup alert infrastructure) are built but not yet explicitly named in `docs/police/PRODUCT.md`'s own domain list. Not a build gap, just documentation drift worth reconciling next time that doc is touched (`/sync` or `/audit`, not a `/scope` row). `docs/police/PRODUCT.md` also still carries one open, unresolved boundary question, how Station Admin scope relates to Duty and Roster: a decision, not missing code.
+This workspace is fully caught up with its own product doc: every domain in `docs/police/PRODUCT.md`'s sequencing is built. A few real, working pieces (data import and export, shift check ins and handover as their own tables, the Activity feed as a first class domain, and the Cloudflare Tunnel remote access and backup alert infrastructure) are built but not yet explicitly named in `docs/police/PRODUCT.md`'s own domain list. Not a build gap, just documentation drift worth reconciling next time that doc is touched (`/sync` or `/audit`, not a `/scope` row). `docs/police/PRODUCT.md` also still carries one open, unresolved boundary question, how Station Admin scope relates to Duty and Roster: a decision, not missing code.
+
+**2026-09-18**: a cross check run while designing `_root`'s officer identity and sign in decision (spec [0001](../../specs/_root/0001-officer-identity-sign-in/index.md)) found a real, small security bug in this app's own existing `officers.rs`, now feature 24 below.
 
 ## At a glance
 
@@ -34,6 +36,7 @@ This workspace is fully caught up with its own product doc: every domain in `doc
 | 21 | Station Admin (profile/establishment/officers nav) | Station operations | existing |
 | 22 | Officers management | Station operations | existing |
 | 23 | Settings incl. remote access & Cloudflare Tunnel | Station operations | existing |
+| 24 | Redact password from officer input Debug output | Next slice | planned |
 
 ## Find & Search
 
@@ -117,6 +120,16 @@ code in `apps/police/src-tauri/src/domain/officers.rs`
 
 ### 23. Settings incl. remote access & Cloudflare Tunnel · existing
 Cloudflare Tunnel pairing, backup alerts, and dispatch live status; substantial infrastructure not yet detailed in `docs/police/PRODUCT.md`'s ecosystem section beyond a general gesture at "connected deployment." code in `apps/police/src/routes/_public/settings/`, `apps/police/src/routes/_public/logs/`
+
+## Next slice
+
+### 24. Redact password from officer input Debug output
+Found 2026-09-18 during a cross check on `_root`'s officer identity spec: `CreateOfficerInput` and `UpdateOfficerInput` in `apps/police/src-tauri/src/domain/officers.rs` derive `Debug` on a struct holding a plain `password: String` field, so any panic or error log involving one of these prints the password verbatim. Prisons' own version of this pattern deliberately avoids the bug (spec [0001](../../specs/_root/0001-officer-identity-sign-in/index.md)); this row is Police fixing the same class of bug in its own existing code.
+**Done when:** neither struct's `Debug` output ever includes the plain password value.
+- [ ] Build it: `/develop redact password from officer input debug output`
+
+## Deferred
+- **Per action admin credential check for Police's own sensitive actions**: `_root`'s officer identity spec introduces this pattern for Prisons; whether Police's main desktop app should adopt it for any of its own sensitive actions (beyond the remote server's existing bearer token login, which is unrelated) was not decided and is not currently planned · needs a decision
 
 ## Legend
 See `docs/scope/index.md` for the shared legend.

@@ -15,6 +15,7 @@ Repo wide infrastructure the four apps and `www` all depend on: the Turborepo/Bu
 | 4 | Root & nested AGENTS.md | Foundation | planned |
 | 5 | CI pipeline | Foundation | planned |
 | 6 | Turbo task definitions for lint/format/typecheck | Foundation | planned |
+| 7 | Officer identity & sign in | Foundation | in-progress |
 
 ## Existing
 
@@ -44,8 +45,20 @@ Root `package.json` scripts call `turbo lint`, `turbo format`, and `turbo typech
 **Done when:** `turbo.json` has explicit `lint`/`format`/`typecheck` task entries with correct `dependsOn`/`outputs`, and `bun run lint`/`format`/`typecheck` from the root actually run something real in every workspace that defines the matching script.
 - [ ] Build it: `/develop turbo task definitions`
 
+### 7. Officer identity & sign in
+Promoted from deferred 2026-09-18: Police, DPP, and Prisons are all no sign in, single officer desktop apps today. Two features now depend directly on a real answer here rather than a placeholder: the audit trail (`docs/scope/prisons/scope.md` feature 19, who changed a record and when) and, the immediate trigger, Head Office facility approval for the Prisons peer sync network (feature 22 in the same file) — the engineer explicitly chose to settle this first rather than record an approver as a free text name. Cross app on purpose: designing it three times, once per app, risks three incompatible answers to the same question.
+**Done when:** an officer can be identified for real in at least Prisons (Police and DPP can adopt the same model afterward), and a Head Office approval action or an audit trail entry records a real identity, not free text.
+- [x] Design it (spec): `/architect officer identity & sign in`
+- [ ] Build it: `/develop officer identity & sign in`
+  - [ ] Prisons officer identity backend: `officers` table, Argon2 hashing, `login`, per action admin credential checks, the last admin guard, and the session domain (satisfies AC-1 through AC-8)
+  - [ ] Prisons officer identity frontend: an Officer management screen, the badge only lookup component, and the Head Office sign in gate including the bootstrap first admin flow (satisfies AC-1, AC-2, AC-4 through AC-7)
+  - [ ] DPP prosecutor profile: migration, domain, settings screen, wired onto the printable Charge Sheet (satisfies AC-9)
+  - [ ] Migrations applied and confirmed live in both apps (satisfies AC-1, AC-9)
+- [ ] Verify it: `/check verify officer identity & sign in`
+- [ ] Test it: `/test officer identity & sign in`
+Spec [0001](../../specs/_root/0001-officer-identity-sign-in/index.md) · code (filled by /develop)
+
 ## Deferred
 Real, evidenced findings from a 2026-09-18 Uganda government adoption research pass (`docs/prisons/RESEARCH.md` §12), cross cutting across the desktop apps rather than owned by one workspace:
-- **Officer identity / signed in session concept**: Police, DPP, and Prisons are all no sign in, single officer desktop apps today. An audit trail (who changed a record, when) needs something to attribute a change to. Worth deciding once, here, rather than three times per app · needs a decision, see `docs/scope/prisons/scope.md` feature 19
-- **Police, DPP, Prisons interoperability seam**: JLOS (Uganda's real cross institution justice sector coordination body) runs a live "E-Justice" project whose stated goal is "open standards and APIs for secure data sharing across JLOS institutions," explicitly spanning Police, Judiciary, Prisons, and DPP. A real, evidenced argument for eventually connecting the same person/case across the three sibling apps, without building a live sync engine (each app's own product doc explicitly keeps sync/multi-installation infrastructure out of scope, and this should not casually reverse that) · needs a decision
+- **Police, DPP, Prisons interoperability seam**: JLOS (Uganda's real cross institution justice sector coordination body) runs a live "E-Justice" project whose stated goal is "open standards and APIs for secure data sharing across JLOS institutions," explicitly spanning Police, Judiciary, Prisons, and DPP. Prisons' own Head Office and peer sync network (feature 22 in its scope file) is a first, concrete step in this direction, scoped to inside Prisons only; the wider cross institution picture (Police, DPP, Courts all connecting, DPP and Lawyers staying individual practitioner tools) stays a documented future direction until Courts exists as a real app · needs a decision
 - **NITA-U certification posture**: government MDAs reportedly may only use NITA-U certified IT products; unverified with certainty (two direct fetch attempts to NITA-U's certification pages failed) · needs a decision, worth confirming directly with NITA-U before treating as a hard gate

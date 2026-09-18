@@ -108,10 +108,10 @@ export const Dashboard: FC<DashboardProps> = ({
               'transition-all duration-300 ease-in-out ease-initial',
               'will-change-transform will-change-backdrop-filter',
               open
-                ? 'w-72 translate-x-0 z-55 md:relative'
+                ? 'w-78 translate-x-0 z-55 md:relative'
                 : isPeeking
-                  ? 'w-72 translate-x-0 z-55 md:absolute shadow-2xl'
-                  : 'w-72 -translate-x-full z-10 md:absolute',
+                  ? 'w-78 translate-x-0 z-55 md:absolute shadow-2xl'
+                  : 'w-78 -translate-x-full z-10 md:absolute',
               className,
             )}
           >
@@ -151,7 +151,7 @@ export const Dashboard: FC<DashboardProps> = ({
                     className={cn(
                       'flex gap-1.5 items-center text-primary',
                       'hover:text-primary/65 tracking-wider font-bold',
-                      'px-1 text-base',
+                      'px-1 text-lg',
                     )}
                   >
                     {brand.icon && <HugeiconsIcon icon={brand.icon} className="size-5" />}
@@ -165,22 +165,25 @@ export const Dashboard: FC<DashboardProps> = ({
                       return (
                         <div key={index} className='flex flex-col gap-1'>
                           <Link to={item.to} className={cn(
-                            'group/icon relative flex items-center gap-2 text-sm',
+                            'group/icon relative flex items-center gap-2 text-base!',
                             'transition-colors duration-150 ease-out py-0.5 px-1',
                             'rounded-md hover:bg-secondary justify-between',
                           )}>
                             <div className='flex items-center gap-2'>
-                              {item.icon && <HugeiconsIcon icon={item.icon} className="size-4" />}
+                              {item.icon && <HugeiconsIcon
+                                icon={item.icon}
+                                className="size-5"
+                              />}
                               {item.label}
                             </div>
 
                             <HugeiconsIcon
                               icon={ChevronDownIcon}
-                              className='size-4'
+                              className='size-5'
                             />
                           </Link>
 
-                          <div className='flex gap-2 pl-2.5 w-full'>
+                          <div className='flex gap-2 pl-3.5 w-full'>
                             <span className='bg-primary w-px' />
                             <div className='flex flex-col w-full'>
                               {item.children.map((child, childIndex) => (
@@ -188,14 +191,17 @@ export const Dashboard: FC<DashboardProps> = ({
                                   key={childIndex}
                                   to={child.to}
                                   className={cn(
-                                    'group/icon relative flex items-center gap-2 text-sm',
-                                    'transition-colors duration-150 ease-out py-0.5 px-1',
+                                    'group/icon relative flex items-center gap-2 text-base',
+                                    'transition-colors duration-150 ease-out py-0.5 px-2',
                                     'rounded-md hover:bg-secondary w-full',
                                   )}
                                   activeProps={{ className: 'text-primary font-medium bg-secondary' }}
                                   activeOptions={{ exact: item.exact }}
                                 >
-                                  {child.icon && <HugeiconsIcon icon={child.icon} className="size-4" />}
+                                  {child.icon && <HugeiconsIcon
+                                    icon={child.icon}
+                                    className="size-5"
+                                  />}
                                   {child.label}
                                 </Link>
                               ))}
@@ -210,14 +216,14 @@ export const Dashboard: FC<DashboardProps> = ({
                         key={index}
                         to={item.to}
                         className={cn(
-                          'group/icon relative flex items-center gap-2 text-sm',
+                          'group/icon relative flex items-center gap-2 text-base',
                           'transition-colors duration-150 ease-out py-0.5 px-1',
                           'rounded-md hover:bg-secondary',
                         )}
                         activeProps={{ className: 'text-primary font-medium bg-secondary' }}
                         activeOptions={{ exact: item.exact }}
                       >
-                        {item.icon && <HugeiconsIcon icon={item.icon} className="size-4" />}
+                        {item.icon && <HugeiconsIcon icon={item.icon} className="size-5" />}
                         {item.label}
                       </Link>
                     )

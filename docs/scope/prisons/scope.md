@@ -34,6 +34,7 @@ The Tauri desktop app for Uganda's prisons service: admission and prisoner custo
 | 19 | Audit trail | Next slice | planned |
 | 20 | Print and export | Next slice | planned |
 | 21 | UPS shaped statistics export | Next slice | planned |
+| 22 | Head Office and peer prison sync network | Foundation | planned |
 
 ## Existing
 
@@ -116,6 +117,29 @@ No admission slip, release order, or remand list printout exists; Police and DPP
 Once feature 15 is built, format an export that mirrors UPS's own real Monthly Statistics Summary layout, so an officer isn't re-typing numbers this system already has into a separate report.
 **Done when:** Reports can produce an export whose shape matches UPS's own published monthly statistics report structure.
 - [ ] Design it (spec): `/architect UPS shaped statistics export`
+
+## Foundation
+
+### 22. Head Office and peer prison sync network · needs a decision
+2026-09-18, from the engineer directly, after testing the desktop app and finding the single installation model too limited. This is a real reversal of `docs/prisons/PRODUCT.md`'s former "not a national UPS system" line, recorded there rather than silently changed. The wider Police, DPP, Courts, Lawyers cross institution topology the engineer described (each institution type running its own internal network, connecting out to Courts only, DPP and Lawyers staying individual practitioner tools) is a real future direction, not built now: Courts has no app or product doc yet, so that leg cannot be designed for real. See `docs/scope/_root/scope.md`'s interoperability seam item for that wider picture.
+
+**Blocked on feature 23** (officer identity and sign in, `_root/scope.md`): Head Office approving a new facility needs to record who approved it for real, not a free text name, and the engineer explicitly chose to settle sign in first rather than fold it into this decision. `/architect` this feature again once feature 23 has a real spec.
+
+**Settled so far, a real `/architect` staged conversation already ran on this, don't re ask these when resuming:**
+- Only Head Office needs a Cloudflare Tunnel and public hostname. Peers push to it over outbound HTTPS only, no inbound port on any peer, no Cloudflare account needed per facility (unrealistic across 266 real facilities). Police's tunnel *provisioning* code is real and reusable; its "pairing QR" is not a registration protocol, it only encodes a local network URL, so the actual peer registration and sync protocol is being designed fresh.
+- A peer's own data is always authoritative; Head Office holds a read only copy. No bidirectional writes, so no conflict resolution is needed.
+- Sync scope for v1 is the core Prisoner record only; the other 8 domains (Visits, Requests, Court Productions, Releases, Transfers, Health Events, Property, Programmes) follow later as the same proven pattern repeated, per this project's own Tracer Bullet approach.
+- A peer's first sync after pairing backfills every existing prisoner it already has, not just new admissions going forward.
+- Registration is a hybrid: a peer self declares its own facility ID, name, location, and branch, but starts `pending_verification`, not active. A verification code goes by real email to a named Head Office officer; only once they verify does the facility unlock. No real UPS facility ID scheme was ever found in RESEARCH.md, so the facility ID field stays self declared free text; the human approval step is the actual safeguard, not a check against a canonical list.
+- Pairing is single use: a short code onboards a facility once, then Head Office issues a separate long lived sync token the peer stores and uses for every sync call after that. Head Office can revoke a peer's token at any time.
+- A peer works fully offline indefinitely once paired; sync only happens whenever it has internet, no fixed schedule.
+- Head Office is purely an aggregator with no prisoners of its own; every prisoner record it ever holds came from a synced peer.
+- Head Office features beyond a normal peer: a facility roster with last synced status, aggregate population and occupancy stats across every paired facility, and cross facility prisoner search.
+- The verification email sends from a real transactional email provider, called directly from the Head Office desktop app itself, not routed through `www`.
+- Security intent stated directly by the engineer, real and worth holding onto: an unauthenticated or invalid request to Head Office's endpoint should reveal nothing (no distinguishing "wrong token" from "unknown facility" from "revoked"), and a token is scoped to exactly one facility's own push, never a broader capability.
+
+**Done when:** a Head Office installation and at least one peer installation exist, pairing (including the email verification step) works end to end, and a peer's Prisoner records genuinely reach Head Office, not just its statistics export.
+- [ ] Design it (spec): `/architect head office and peer prison sync network`
 
 ## Deferred
 Real, evidenced adoption factors from `docs/prisons/RESEARCH.md` §12, not yet decided as build work. Broader than this one workspace, so not planned here as features, but worth surfacing where they were found:

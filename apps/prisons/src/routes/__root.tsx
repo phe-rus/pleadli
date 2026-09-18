@@ -3,7 +3,7 @@ import { SplashScreen } from '@/components/splash-screen'
 import { ThemeProvider } from '@/components/theme-provider'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
 import { forwardErrorsToLog } from '@/lib/forward-errors-to-log'
-import tailwindcss from '@pleadli/ui/globals.css?url'
+import tailwindcss from '@/routes/styles/globals.css?url'
 import { GooeyToaster } from "@pleadli/ui/goey-toaster"
 import { cn } from '@pleadli/ui/lib/utils'
 import { TooltipProvider } from '@pleadli/ui/tooltip'
@@ -51,7 +51,7 @@ function RootComponent() {
           defaultTheme="system"
           enableSystem
           enableColorScheme
-          storageKey="pleadli:themer"
+          storageKey="pleadli:prisons"
           disableTransitionOnChange
         >
           <div className={cn(

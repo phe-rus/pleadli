@@ -1,6 +1,6 @@
 import { Loaders } from '@/components/loaders'
 import { Queryprovider, queryContext } from '@/lib/query-context'
-import "@pleadli/ui/globals.css"
+import "@/routes/styles/globals.css"
 import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import ReactDOM from 'react-dom/client'
