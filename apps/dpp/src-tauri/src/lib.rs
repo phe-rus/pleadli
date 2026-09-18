@@ -137,6 +137,8 @@ pub fn run() {
             commands::review_notes::list_review_notes_for_file,
             commands::comments::create_comment,
             commands::comments::list_comments_for_entity,
+            commands::prosecutor_profile::get_prosecutor_profile,
+            commands::prosecutor_profile::save_prosecutor_profile,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

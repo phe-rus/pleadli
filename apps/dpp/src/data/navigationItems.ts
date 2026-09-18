@@ -3,6 +3,7 @@ import {
   FolderViewIcon,
   LegalDocument01Icon,
   Search01Icon,
+  SettingsIcon,
   UserGroupIcon,
 } from '@hugeicons/core-free-icons'
 
@@ -18,4 +19,5 @@ export const dppNav = [
   { icon: FolderViewIcon, label: 'Intake', to: '/intake' },
   { icon: LegalDocument01Icon, label: 'Files', to: '/files' },
   { icon: UserGroupIcon, label: 'People', to: '/people' },
+  { icon: SettingsIcon, label: 'Settings', to: '/settings' },
 ] as const

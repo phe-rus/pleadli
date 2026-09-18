@@ -49,14 +49,14 @@ Root `package.json` scripts call `turbo lint`, `turbo format`, and `turbo typech
 Promoted from deferred 2026-09-18: Police, DPP, and Prisons are all no sign in, single officer desktop apps today. Two features now depend directly on a real answer here rather than a placeholder: the audit trail (`docs/scope/prisons/scope.md` feature 19, who changed a record and when) and, the immediate trigger, Head Office facility approval for the Prisons peer sync network (feature 22 in the same file) — the engineer explicitly chose to settle this first rather than record an approver as a free text name. Cross app on purpose: designing it three times, once per app, risks three incompatible answers to the same question.
 **Done when:** an officer can be identified for real in at least Prisons (Police and DPP can adopt the same model afterward), and a Head Office approval action or an audit trail entry records a real identity, not free text.
 - [x] Design it (spec): `/architect officer identity & sign in`
-- [ ] Build it: `/develop officer identity & sign in`
-  - [ ] Prisons officer identity backend: `officers` table, Argon2 hashing, `login`, per action admin credential checks, the last admin guard, and the session domain (satisfies AC-1 through AC-8)
-  - [ ] Prisons officer identity frontend: an Officer management screen, the badge only lookup component, and the Head Office sign in gate including the bootstrap first admin flow (satisfies AC-1, AC-2, AC-4 through AC-7)
-  - [ ] DPP prosecutor profile: migration, domain, settings screen, wired onto the printable Charge Sheet (satisfies AC-9)
-  - [ ] Migrations applied and confirmed live in both apps (satisfies AC-1, AC-9)
+- [x] Build it: `/develop officer identity & sign in`
+  - [x] Prisons officer identity backend: `officers` table, Argon2 hashing, `login`, per action admin credential checks, the last admin guard, and the session domain (satisfies AC-1 through AC-8)
+  - [x] Prisons officer identity frontend: an Officer management screen, the badge only lookup component, and the Head Office sign in gate including the bootstrap first admin flow (satisfies AC-1, AC-2, AC-4 through AC-7)
+  - [x] DPP prosecutor profile: migration, domain, settings screen, wired onto the printable Charge Sheet (satisfies AC-9)
+  - [x] Migrations applied and confirmed live in both apps (satisfies AC-1, AC-9)
 - [ ] Verify it: `/check verify officer identity & sign in`
 - [ ] Test it: `/test officer identity & sign in`
-Spec [0001](../../specs/_root/0001-officer-identity-sign-in/index.md) · code (filled by /develop)
+Spec [0001](../../specs/_root/0001-officer-identity-sign-in/index.md) · code in `apps/prisons/src-tauri/src/domain/{officers,session}.rs`, `apps/prisons/src/features/{officers,session}/`, `apps/prisons/src/components/hq-sign-in-gate.tsx`, `apps/prisons/src/routes/_public/settings/`, `apps/dpp/src-tauri/src/domain/prosecutor_profile.rs`, `apps/dpp/src/features/prosecutor-profile/`, `apps/dpp/src/routes/_public/settings/`
 
 ## Deferred
 Real, evidenced findings from a 2026-09-18 Uganda government adoption research pass (`docs/prisons/RESEARCH.md` §12), cross cutting across the desktop apps rather than owned by one workspace:

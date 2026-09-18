@@ -1,5 +1,7 @@
 import { useReportDirty } from '@/hooks/use-report-dirty'
+import { useProsecutorProfile } from '@/features/prosecutor-profile'
 import { RichTextInput } from '@pleadli/rich-text'
+import { useEffect } from 'react'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Badge } from '@pleadli/ui/badge'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -29,6 +31,7 @@ function toDatetimeLocal(ms: number) {
  */
 export function DecisionForm({ prosecutionFileId, onSuccess, onDirtyChange }: DecisionFormProps) {
   const createDecision = useCreateDecision()
+  const { data: prosecutorProfile } = useProsecutorProfile()
 
   const form = useAppForm({
     defaultValues: {
@@ -61,6 +64,15 @@ export function DecisionForm({ prosecutionFileId, onSuccess, onDirtyChange }: De
   })
 
   useReportDirty(form, onDirtyChange)
+
+  // Prefills from the prosecutor's own profile (spec: docs/specs/_root/
+  // 0001-officer-identity-sign-in) rather than requiring it retyped every
+  // time; still a plain editable field, not locked to the profile.
+  useEffect(() => {
+    if (prosecutorProfile?.name && !form.getFieldValue('decidedBy')) {
+      form.setFieldValue('decidedBy', prosecutorProfile.name)
+    }
+  }, [prosecutorProfile, form])
 
   return (
     <form

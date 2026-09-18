@@ -1,3 +1,6 @@
+import { FacilityOnboardingGate } from '@/components/facility-onboarding-gate'
+import { HqOnboardingGate } from '@/components/hq-onboarding-gate'
+import { HqSignInGate } from '@/components/hq-sign-in-gate'
 import { Notfound } from '@/components/notfound'
 import { SplashScreen } from '@/components/splash-screen'
 import { ThemeProvider } from '@/components/theme-provider'
@@ -60,7 +63,13 @@ function RootComponent() {
           )}>
             <TooltipProvider>
               <SplashScreen>
-                <Outlet />
+                <HqOnboardingGate>
+                  <FacilityOnboardingGate>
+                    <HqSignInGate>
+                      <Outlet />
+                    </HqSignInGate>
+                  </FacilityOnboardingGate>
+                </HqOnboardingGate>
               </SplashScreen>
             </TooltipProvider>
             <GooeyToaster richColors />

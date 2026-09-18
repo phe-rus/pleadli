@@ -31,6 +31,7 @@ use crate::domain::prosecution_files::{
 };
 use crate::domain::referrals::{self, CreateResubmissionInput, Referral};
 use crate::domain::search::{self, SearchResult};
+use crate::domain::prosecutor_profile::{self, ProsecutorProfile, SaveProsecutorProfileInput};
 
 pub const PORT: u16 = 47921;
 
@@ -262,6 +263,17 @@ async fn get_attachment_file_handler(State(state): State<AppState>, Path(id): Pa
         .into_response())
 }
 
+async fn get_prosecutor_profile_handler(State(state): State<AppState>) -> Result<Json<Option<ProsecutorProfile>>, ApiError> {
+    prosecutor_profile::get_prosecutor_profile(&state.pool).await.map(Json).map_err(internal_error)
+}
+
+async fn save_prosecutor_profile_handler(
+    State(state): State<AppState>,
+    Json(input): Json<SaveProsecutorProfileInput>,
+) -> Result<Json<ProsecutorProfile>, ApiError> {
+    prosecutor_profile::save_prosecutor_profile(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
 pub async fn serve(pool: SqlitePool, vault_root: PathBuf) {
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
@@ -302,6 +314,10 @@ pub async fn serve(pool: SqlitePool, vault_root: PathBuf) {
         .route("/attachments", post(create_attachment_handler).get(list_attachments_handler))
         .route("/attachments/{id}", axum::routing::delete(delete_attachment_handler))
         .route("/attachments/{id}/file", get(get_attachment_file_handler))
+        .route(
+            "/prosecutor-profile",
+            get(get_prosecutor_profile_handler).post(save_prosecutor_profile_handler),
+        )
         .layer(cors)
         .with_state(AppState { pool, vault_root });
 

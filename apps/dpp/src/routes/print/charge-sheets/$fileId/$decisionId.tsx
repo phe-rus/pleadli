@@ -2,6 +2,7 @@ import { usePrintOnMount } from '@/hooks/use-print-on-mount'
 import { chargesForFileOptions, useChargesForFile } from '@/features/charges'
 import { ChargeSheetPrintable, decisionsForFileOptions, useDecisionsForFile } from '@/features/decisions'
 import { filePeopleOptions, prosecutionFileOptions, useFilePeople, useProsecutionFile } from '@/features/prosecution-files'
+import { prosecutorProfileOptions, useProsecutorProfile } from '@/features/prosecutor-profile'
 import { statementsForFileOptions, useStatementsForFile } from '@/features/statements'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/print/charge-sheets/$fileId/$decisionId')
       context.queryClient.query({ ...chargesForFileOptions(params.fileId), staleTime: 'static' }),
       context.queryClient.query({ ...filePeopleOptions(params.fileId), staleTime: 'static' }),
       context.queryClient.query({ ...statementsForFileOptions(params.fileId), staleTime: 'static' }),
+      context.queryClient.query({ ...prosecutorProfileOptions(), staleTime: 'static' }),
     ])
     if (!file || !decisions.some((d) => d.id === params.decisionId)) throw notFound()
   },
@@ -32,6 +34,7 @@ function RouteComponent() {
   const { data: charges } = useChargesForFile(fileId)
   const { data: filePeople } = useFilePeople(fileId)
   const { data: statements } = useStatementsForFile(fileId)
+  const { data: prosecutorProfile } = useProsecutorProfile()
   usePrintOnMount()
 
   const decision = decisions.find((d) => d.id === decisionId)
@@ -48,7 +51,14 @@ function RouteComponent() {
       <button type="button" onClick={() => window.history.back()} className="w-fit text-xs text-muted-foreground print:hidden">
         ← Back
       </button>
-      <ChargeSheetPrintable file={file} charges={charges} decision={decision} accusedName={accusedName} preferredByName={preferredByName} />
+      <ChargeSheetPrintable
+        file={file}
+        charges={charges}
+        decision={decision}
+        accusedName={accusedName}
+        preferredByName={preferredByName}
+        prosecutorProfile={prosecutorProfile ?? null}
+      />
     </article>
   )
 }

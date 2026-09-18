@@ -1,7 +1,7 @@
 # 0001. Officer identity and sign in
 
 **Date**: 2026-09-18
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

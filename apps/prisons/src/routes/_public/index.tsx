@@ -1,12 +1,26 @@
 import { Sparkline } from '@/components/charts/sparkline'
+import { StatTile } from '@/components/stat-tile'
 import { isHospitalisedAlertsEnabled, setHospitalisedAlertsEnabled, useHospitalisedAlerts } from '@/hooks/use-hospitalised-alerts'
 import { isMandatoryBailAlertsEnabled, setMandatoryBailAlertsEnabled, useMandatoryBailAlerts } from '@/hooks/use-mandatory-bail-alerts'
+import { usePendingFacilityAlerts } from '@/hooks/use-pending-facility-alerts'
 import { mandatoryBailThresholdDays, daysInCustody, prisonerFullName } from '@/features/prisoners'
 import { inCustodyOptions, useInCustody, usePrisoners, prisonersOptions } from '@/features/prisoners/queries'
 import { remandListOptions, useRemandList } from '@/features/court-productions'
 import { healthEventTypeLabel, hospitalisedOptions, useHospitalised } from '@/features/health-events'
+import { useFacilities, facilitiesOptions } from '@/features/facilities'
+import { useHqConfig } from '@/features/session'
 import { weeklyBuckets } from '@/lib/weekly-buckets'
-import { CellsIcon, AlarmClockIcon, HeartAddIcon, ArrowRight01Icon, Notification01Icon } from '@hugeicons/core-free-icons'
+import {
+  CellsIcon,
+  AlarmClockIcon,
+  HeartAddIcon,
+  ArrowRight01Icon,
+  Notification01Icon,
+  NetworkIcon,
+  PauseIcon,
+  CheckmarkCircle02Icon,
+  Clock01Icon,
+} from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Badge } from '@pleadli/ui/badge'
 import { buttonVariants } from '@pleadli/ui/button'
@@ -24,6 +38,7 @@ export const Route = createFileRoute('/_public/')({
       context.queryClient.query({ ...remandListOptions(), staleTime: 'static' }),
       context.queryClient.query({ ...hospitalisedOptions(), staleTime: 'static' }),
       context.queryClient.query({ ...prisonersOptions(''), staleTime: 'static' }),
+      context.queryClient.query({ ...facilitiesOptions(), staleTime: 'static' }),
     ])
   },
   component: RouteComponent,
@@ -31,31 +46,97 @@ export const Route = createFileRoute('/_public/')({
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-type StatTileProps = {
-  label: string
-  labelClassName?: string
-  icon: Parameters<typeof HugeiconsIcon>[0]['icon']
-  iconClassName?: string
-  value: React.ReactNode
-  meta?: React.ReactNode
-  caption: React.ReactNode
+/** Head Office and a facility are different installations of the same
+ * app, not the same screen with different data (spec: docs/specs/
+ * prisons/0001-head-office-peer-sync-network/index.md: "Head Office is
+ * purely an aggregator with no prisoners of its own"). Showing a
+ * facility's custody stat tiles on a Head Office install would be
+ * actively wrong, not just unpolished, so this branches on role rather
+ * than reusing one dashboard for both. */
+function RouteComponent() {
+  const { data: hqConfig, isLoading } = useHqConfig()
+  if (isLoading) return null
+  return hqConfig?.isHeadOffice ? <HqOverview /> : <FacilityOverview />
 }
 
-function StatTile({ label, labelClassName, icon, iconClassName, value, meta, caption }: StatTileProps) {
+/**
+ * Head Office oversees the national estate, not individual prisoners: it
+ * has none of its own. This is deliberately a different shape from the
+ * Facility Overview below (facility counts, not prisoner counts). The
+ * full roster with per-facility detail lives at its own `/facilities`
+ * page now, not embedded here — Overview stays a glance-only dashboard,
+ * matching the same page-for-management/dashboard-for-glance split every
+ * other domain in this app already follows.
+ */
+function HqOverview() {
+  const { data: facilities } = useFacilities()
+  usePendingFacilityAlerts()
+  const all = facilities ?? []
+  const pending = all.filter((f) => f.status === 'pending_verification')
+  const active = all.filter((f) => f.status === 'active')
+  const revoked = all.filter((f) => f.status === 'revoked')
+
   return (
-    <Card className="p-0 h-fit md:min-w-3xs! md:max-w-3xs!">
-      <CardContent className="p-3">
-        <div className="flex items-center justify-between">
-          <h3 className={labelClassName}>{label}</h3>
-          <HugeiconsIcon icon={icon} className={cn('size-5', iconClassName)} />
+    <article className="container flex flex-col gap-6 pt-6 pb-20">
+      <section className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <HugeiconsIcon icon={NetworkIcon} size={18} />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <h1>Head Office Overview</h1>
+            <p className="md:max-w-sm">Every paired facility, at a glance.</p>
+          </div>
         </div>
-        <div className="flex items-baseline justify-between">
-          <span className="text-5xl font-semibold tabular-nums">{value}</span>
-          {meta}
-        </div>
-        <p>{caption}</p>
-      </CardContent>
-    </Card>
+        <Link to="/facilities" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
+          View Facilities
+          <HugeiconsIcon icon={ArrowRight01Icon} />
+        </Link>
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile
+          label="Registered Facilities"
+          icon={NetworkIcon}
+          tint="primary"
+          value={all.length}
+          caption="Paired with this Head Office"
+        />
+        <StatTile
+          label="Pending Verification"
+          icon={Clock01Icon}
+          tint={pending.length > 0 ? 'amber' : 'emerald'}
+          value={pending.length}
+          meta={pending.length > 0 && <Badge variant="destructive">Needs review</Badge>}
+          caption="Waiting on an emailed verification code"
+        />
+        <StatTile label="Active" icon={CheckmarkCircle02Icon} tint="emerald" value={active.length} caption="Pushing their prisoner roster" />
+        <StatTile
+          label="Revoked"
+          icon={PauseIcon}
+          tint={revoked.length > 0 ? 'rose' : 'emerald'}
+          value={revoked.length}
+          caption="No longer able to sync"
+        />
+      </section>
+
+      {all.length === 0 && (
+        <Card className="border-dashed p-0">
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <div className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <HugeiconsIcon icon={NetworkIcon} size={20} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <h3 className="text-sm font-medium">No facilities paired yet</h3>
+              <p className="max-w-sm text-xs text-muted-foreground">
+                Generating a pairing code for a new facility, and reviewing its email verification, are the next slice
+                of this build — not available yet.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </article>
   )
 }
 
@@ -65,7 +146,7 @@ function StatTile({ label, labelClassName, icon, iconClassName, value, meta, cap
  * PRODUCT.md §Work Queues: every number here traces to a confirmed
  * statutory trigger or a plain derived count, nothing invented.
  */
-function RouteComponent() {
+function FacilityOverview() {
   const { data: inCustody } = useInCustody()
   const { data: remand } = useRemandList()
   const { data: hospitalised } = useHospitalised()
@@ -164,29 +245,28 @@ function RouteComponent() {
         </label>
       </section>
 
-      <section className="grid grid-cols-2 md:flex md:flex-wrap gap-3">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile
           label="In Custody"
           icon={CellsIcon}
+          tint="primary"
           value={inCustody.length}
           caption={`${allPrisoners.length} total prisoner records`}
         />
 
         <StatTile
           label="Mandatory-Bail Alerts"
-          labelClassName={overThreshold.length > 0 ? 'text-primary' : undefined}
           icon={AlarmClockIcon}
-          iconClassName={overThreshold.length > 0 ? 'text-primary' : undefined}
-          value={String(overThreshold.length).padStart(2, '0')}
-          meta={<Badge variant={overThreshold.length > 0 ? 'destructive' : 'secondary'}>{overThreshold.length > 0 ? 'Action Needed' : 'OK'}</Badge>}
+          tint={overThreshold.length > 0 ? 'rose' : 'emerald'}
+          value={overThreshold.length}
+          meta={<Badge variant={overThreshold.length > 0 ? 'destructive' : 'secondary'}>{overThreshold.length > 0 ? 'Action needed' : 'OK'}</Badge>}
           caption="Past the 60/180-day constitutional threshold"
         />
 
         <StatTile
           label="Hospitalised"
-          labelClassName={hospitalised.length > 0 ? 'text-primary' : undefined}
           icon={HeartAddIcon}
-          iconClassName={hospitalised.length > 0 ? 'text-primary' : undefined}
+          tint={hospitalised.length > 0 ? 'amber' : 'emerald'}
           value={hospitalised.length}
           meta={<Badge variant={hospitalised.length > 0 ? 'destructive' : 'secondary'}>{hospitalised.length > 0 ? 'Awaiting return' : 'None'}</Badge>}
           caption="Currently away at a hospital"
@@ -195,10 +275,11 @@ function RouteComponent() {
         <StatTile
           label="Admitted Today"
           icon={CellsIcon}
+          tint="primary"
           value={admittedToday.length}
           meta={
             admissionTrendDelta !== null && (
-              <span className={cn('flex items-center font-medium', admissionTrendDelta >= 0 ? 'text-emerald-600' : 'text-muted-foreground')}>
+              <span className={cn('flex items-center text-sm font-medium', admissionTrendDelta >= 0 ? 'text-emerald-600' : 'text-muted-foreground')}>
                 {admissionTrendDelta >= 0 ? '+' : ''}
                 {admissionTrendDelta}%
               </span>
@@ -244,12 +325,14 @@ function RouteComponent() {
 
         <div className="flex flex-col gap-6 col-span-12 lg:col-span-5">
           <Card className="p-0">
-            <CardContent className="p-0">
-              <div className="flex justify-between p-5">
-                <h2>8-Week Admissions Trend</h2>
-                <p className="tabular-nums">Peak: {admissionPeak}/wk</p>
+            <CardContent className="flex flex-col gap-4 p-5">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-sm font-medium">8-Week Admissions Trend</h2>
+                <p className="text-xs tabular-nums text-muted-foreground">Peak: {admissionPeak}/wk</p>
               </div>
-              <Sparkline data={admissionBuckets} />
+              <div className="rounded-md bg-muted/40 px-3 py-2">
+                <Sparkline data={admissionBuckets} className="h-16" />
+              </div>
             </CardContent>
           </Card>
 

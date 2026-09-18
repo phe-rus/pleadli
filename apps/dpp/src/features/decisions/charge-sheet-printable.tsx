@@ -1,5 +1,6 @@
 import type { Charge } from '@/features/charges'
 import type { ProsecutionFile } from '@/features/prosecution-files'
+import type { ProsecutorProfile } from '@/features/prosecutor-profile'
 import type { Decision } from './schema'
 import { format } from 'date-fns/format'
 
@@ -9,6 +10,12 @@ export type ChargeSheetPrintableProps = {
   decision: Decision
   accusedName: string | null
   preferredByName: string | null
+  /** Falls back to this when the decision's own `decidedBy` is empty —
+   * an already recorded decision from before the prosecutor profile
+   * existed. `decision-form.tsx` prefills `decidedBy` from the same
+   * profile going forward, so this is mostly a safety net for older
+   * records (spec: docs/specs/_root/0001-officer-identity-sign-in). */
+  prosecutorProfile: ProsecutorProfile | null
 }
 
 /**
@@ -23,7 +30,10 @@ export type ChargeSheetPrintableProps = {
  * on the Charge Sheet") as a distinct signature block from Police's own
  * "Preferred by" line.
  */
-export function ChargeSheetPrintable({ file, charges, decision, accusedName, preferredByName }: ChargeSheetPrintableProps) {
+export function ChargeSheetPrintable({ file, charges, decision, accusedName, preferredByName, prosecutorProfile }: ChargeSheetPrintableProps) {
+  const sanctionedBy =
+    decision.decidedBy ??
+    (prosecutorProfile ? `${prosecutorProfile.name}${prosecutorProfile.rank ? `, ${prosecutorProfile.rank}` : ''}` : null)
   return (
     <div className="mx-auto w-full max-w-2xl rounded-md border border-border/60 bg-card p-8 text-sm leading-relaxed print:rounded-none print:border-none">
       <header className="mb-6 text-center">
@@ -89,7 +99,7 @@ export function ChargeSheetPrintable({ file, charges, decision, accusedName, pre
         </div>
         <div>
           <p className="mb-6">Sanctioned by (signature, date, and stamp):</p>
-          <p className="border-t border-foreground/40 pt-1">{decision.decidedBy ?? 'Signature of Prosecutor'}</p>
+          <p className="border-t border-foreground/40 pt-1">{sanctionedBy ?? 'Signature of Prosecutor'}</p>
         </div>
       </section>
     </div>

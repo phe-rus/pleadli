@@ -1,6 +1,10 @@
+pub mod activation;
 pub mod attachments;
+pub mod cloudflare_tunnel;
 pub mod court_productions;
+pub mod facilities;
 pub mod health_events;
+pub mod officers;
 pub mod prisoners;
 pub mod programmes;
 pub mod property_records;
@@ -8,5 +12,6 @@ pub mod reports;
 pub mod releases;
 pub mod requests;
 pub mod search;
+pub mod session;
 pub mod transfers;
 pub mod visits;

@@ -5,6 +5,7 @@ pub mod decisions;
 pub mod evidence;
 pub mod people;
 pub mod prosecution_files;
+pub mod prosecutor_profile;
 pub mod referrals;
 pub mod review_notes;
 pub mod search;

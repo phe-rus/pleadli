@@ -32,7 +32,7 @@ export function Breadcrumbs() {
   ]
 
   return (
-    <Breadcrumb data-not-typeset>
+    <Breadcrumb data-not-typeset className='text-base!'>
       <BreadcrumbList>
         {crumbs.map((crumb, index) => {
           const isLast = index === crumbs.length - 1
@@ -40,9 +40,16 @@ export function Breadcrumbs() {
             <Fragment key={crumb.to}>
               <BreadcrumbItem>
                 {isLast ? (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                  <BreadcrumbPage className='text-base!'>{crumb.label}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink render={<Link to={crumb.to as never}>{crumb.label}</Link>} />
+                  <BreadcrumbLink render={
+                    <Link
+                      to={crumb.to as never}
+                      className='text-base!'
+                    >
+                      {crumb.label}
+                    </Link>}
+                  />
                 )}
               </BreadcrumbItem>
               {!isLast && <BreadcrumbSeparator />}

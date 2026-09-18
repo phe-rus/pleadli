@@ -1,21 +1,27 @@
+import { AddRecordPanel } from "@/components/add-record-panel"
 import { CommandMenu } from "@/components/command-menu"
-import { Createpanel } from "@/components/create-panel"
-import { PrisonerForm } from "@/features/prisoners"
+import { DevRoleSwitch } from "@/components/dev-role-switch"
+import { useHqConfig } from "@/features/session"
 import { AddCircleIcon, PanelLeftDashedIcon, PanelRightDashedIcon, Search } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button, buttonVariants } from "@pleadli/ui/button"
 import { cn } from "@pleadli/ui/lib/utils"
 import { useSidebar } from "@pleadli/ui/sidebar"
-import { Suspense, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { Toggletheme } from "../toggle-theme"
 import { Breadcrumbs } from "./breadcrumbs"
 import { Controls } from "./controls"
 
 export const Headers = () => {
     const { open, setOpen } = useSidebar()
-    const [admitOpen, setAdmitOpen] = useState(false)
-    const [admitDirty, setAdmitDirty] = useState(false)
     const [commandOpen, setCommandOpen] = useState(false)
+    const { data: hqConfig } = useHqConfig()
+    // Head Office has no prisoners or visits of its own: every prisoner it
+    // ever holds comes from a synced facility (spec: docs/specs/prisons/
+    // 0001-head-office-peer-sync-network/0003-sync-protocol-and-head-
+    // office-management.md, AC-5). Its own officer creation lives on
+    // `/officers` instead of this global panel.
+    const canAddRecords = !hqConfig?.isHeadOffice
 
     useEffect(() => {
         const handler = (event: KeyboardEvent) => {
@@ -45,6 +51,7 @@ export const Headers = () => {
                             className='group/icon cursor-pointer'
                         >
                             <HugeiconsIcon
+                                className='size-4!'
                                 icon={open ? PanelLeftDashedIcon : PanelRightDashedIcon}
                             />
                         </Button>
@@ -65,23 +72,18 @@ export const Headers = () => {
 
                     <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} />
 
-                    <Createpanel
-                        open={admitOpen}
-                        onOpenChange={setAdmitOpen}
-                        isDirty={admitDirty}
-                        trigger={
-                            <button className={cn(buttonVariants({ size: 'sm' }))}>
-                                <HugeiconsIcon icon={AddCircleIcon} />
-                                Admit prisoner
-                            </button>
-                        }
-                        headings={{ title: 'Admit prisoner', description: 'Receive a prisoner under a warrant or order.' }}
-                    >
-                        <Suspense fallback={<div className="p-4 text-xs text-muted-foreground">Loading…</div>}>
-                            <PrisonerForm onSuccess={() => setAdmitOpen(false)} onDirtyChange={setAdmitDirty} />
-                        </Suspense>
-                    </Createpanel>
+                    {canAddRecords && (
+                        <AddRecordPanel
+                            trigger={
+                                <button className={cn(buttonVariants({ size: 'sm' }))}>
+                                    <HugeiconsIcon icon={AddCircleIcon} />
+                                    Add record
+                                </button>
+                            }
+                        />
+                    )}
 
+                    {import.meta.env.DEV && <DevRoleSwitch />}
                     <Toggletheme />
                     <Controls />
                 </nav>
