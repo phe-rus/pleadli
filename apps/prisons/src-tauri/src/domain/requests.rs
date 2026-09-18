@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
+use sqlx::{FromRow, SqliteConnection, SqlitePool};
 use uuid::Uuid;
+
+use super::audit::{self, AuditEntry};
+use super::authz::Actor;
 
 /// Communication & Requests (docs/prisons/PRODUCT.md, RESEARCH.md §11.6) —
 /// the Human Rights Committee / "Mukutano" mechanism. A plain complaint
@@ -39,7 +42,7 @@ pub struct ResolveRequestInput {
     pub outcome_note: Option<String>,
 }
 
-pub async fn create_request(pool: &SqlitePool, input: CreateRequestInput) -> Result<Request, sqlx::Error> {
+pub async fn create_request(conn: &mut SqliteConnection, actor: &Actor, input: CreateRequestInput) -> Result<Request, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
     sqlx::query("INSERT INTO requests (id, prisoner_id, category, description, raised_at) VALUES (?, ?, ?, ?, ?)")
         .bind(&id)
@@ -47,21 +50,36 @@ pub async fn create_request(pool: &SqlitePool, input: CreateRequestInput) -> Res
         .bind(&input.category)
         .bind(&input.description)
         .bind(input.raised_at)
-        .execute(pool)
+        .execute(&mut *conn)
         .await?;
 
-    get_request(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)
+    let request = get_request_conn(conn, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
+    audit::record(conn, actor, AuditEntry::new("request.log", "request", Some(&id)).after(&request)).await?;
+    Ok(request)
 }
 
-pub async fn resolve_request(pool: &SqlitePool, id: &str, input: ResolveRequestInput) -> Result<Request, sqlx::Error> {
+pub async fn resolve_request(conn: &mut SqliteConnection, actor: &Actor, id: &str, input: ResolveRequestInput) -> Result<Request, sqlx::Error> {
+    let before = get_request_conn(conn, id).await?.ok_or(sqlx::Error::RowNotFound)?;
     sqlx::query("UPDATE requests SET resolved_at = ?, outcome_note = ? WHERE id = ?")
         .bind(input.resolved_at)
         .bind(&input.outcome_note)
         .bind(id)
-        .execute(pool)
+        .execute(&mut *conn)
         .await?;
 
-    get_request(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
+    let after = get_request_conn(conn, id).await?.ok_or(sqlx::Error::RowNotFound)?;
+    audit::record(conn, actor, AuditEntry::new("request.resolve", "request", Some(id)).before(&before).after(&after)).await?;
+    Ok(after)
+}
+
+async fn get_request_conn(conn: &mut SqliteConnection, id: &str) -> Result<Option<Request>, sqlx::Error> {
+    sqlx::query_as::<_, Request>(
+        "SELECT r.*, p.first_name AS prisoner_first_name, p.last_name AS prisoner_last_name
+         FROM requests r LEFT JOIN prisoners p ON p.id = r.prisoner_id WHERE r.id = ?",
+    )
+    .bind(id)
+    .fetch_optional(&mut *conn)
+    .await
 }
 
 pub async fn get_request(pool: &SqlitePool, id: &str) -> Result<Option<Request>, sqlx::Error> {

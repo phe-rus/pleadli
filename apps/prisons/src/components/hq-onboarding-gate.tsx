@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { t } from '@pleadli/ui/goey-toaster'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { ArrowLeft01Icon, ArrowRight01Icon, NetworkIcon, PrisonIcon, ShieldKeyIcon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, ArrowRight01Icon, ComputerIcon, NetworkIcon, PrisonIcon, ShieldKeyIcon } from '@hugeicons/core-free-icons'
 import { AnimatePresence, motion } from 'framer-motion'
 import { PreAuthLayout, ScreenHeader, screenTransition } from '@/components/pre-auth-layout'
 import { useChooseRole, useVerifyActivationCode } from '@/features/activation'
+import { useConnectToNode } from '@/features/node'
+import { ApiError } from '@/lib/api'
 import { useHqConfig } from '@/features/session'
 import type { ReactNode } from 'react'
 
@@ -17,7 +19,7 @@ import type { ReactNode } from 'react'
  * it renders straight through and `HqSignInGate` takes over as before. */
 export function HqOnboardingGate({ children }: { children: ReactNode }) {
   const { data: hqConfig, isLoading } = useHqConfig()
-  const [showActivation, setShowActivation] = useState(false)
+  const [screen, setScreen] = useState<'role' | 'activation' | 'workstation'>('role')
 
   if (isLoading) return null
   if (hqConfig?.role != null) return <>{children}</>
@@ -25,17 +27,23 @@ export function HqOnboardingGate({ children }: { children: ReactNode }) {
   return (
     <PreAuthLayout>
       <AnimatePresence mode="wait" initial={false}>
-        {showActivation ? (
-          <ActivationScreen key="activation" onBack={() => setShowActivation(false)} />
+        {screen === 'activation' ? (
+          <ActivationScreen key="activation" onBack={() => setScreen('role')} />
+        ) : screen === 'workstation' ? (
+          <WorkstationScreen key="workstation" onBack={() => setScreen('role')} />
         ) : (
-          <RoleChoiceScreen key="role" onChooseHeadOffice={() => setShowActivation(true)} />
+          <RoleChoiceScreen
+            key="role"
+            onChooseHeadOffice={() => setScreen('activation')}
+            onChooseWorkstation={() => setScreen('workstation')}
+          />
         )}
       </AnimatePresence>
     </PreAuthLayout>
   )
 }
 
-function RoleChoiceScreen({ onChooseHeadOffice }: { onChooseHeadOffice: () => void }) {
+function RoleChoiceScreen({ onChooseHeadOffice, onChooseWorkstation }: { onChooseHeadOffice: () => void; onChooseWorkstation: () => void }) {
   const chooseRole = useChooseRole()
 
   return (
@@ -63,6 +71,15 @@ function RoleChoiceScreen({ onChooseHeadOffice }: { onChooseHeadOffice: () => vo
           disabled={chooseRole.isPending}
           onClick={onChooseHeadOffice}
           delay={0.16}
+        />
+        <RoleOption
+          icon={ComputerIcon}
+          iconTint="text-sky-600 dark:text-sky-400"
+          title="Workstation of a facility node"
+          description="Another computer in a facility that already has its node."
+          disabled={chooseRole.isPending}
+          onClick={onChooseWorkstation}
+          delay={0.22}
         />
       </div>
     </motion.div>
@@ -169,6 +186,56 @@ function ActivationScreen({ onBack }: { onBack: () => void }) {
           </div>
         </form.AppForm>
       </motion.form>
+    </motion.div>
+  )
+}
+
+
+function WorkstationScreen({ onBack }: { onBack: () => void }) {
+  const connect = useConnectToNode()
+
+  const form = useAppForm({
+    defaultValues: { address: '', fingerprint: '', code: '' },
+    onSubmit: async ({ value }) => {
+      try {
+        await connect.mutateAsync(value)
+      } catch (error) {
+        t.error('Could not connect to the node', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+      }
+    },
+  })
+
+  return (
+    <motion.div {...screenTransition} className="flex w-full max-w-sm flex-col gap-6">
+      <button
+        type="button"
+        onClick={onBack}
+        className="-ml-1 flex w-fit items-center gap-1 rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+        Back
+      </button>
+      <ScreenHeader
+        icon={ComputerIcon}
+        title="Connect to the facility node"
+        description="On the node computer, open Settings, Node and backups, and make an enrolment code. Enter the node's address, its fingerprint and the code here."
+      />
+      <form
+        className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-xs"
+        onSubmit={(event) => {
+          event.preventDefault()
+          form.handleSubmit()
+        }}
+      >
+        <form.AppField name="address">{(f) => <f.input label="Node address" placeholder="192.168.1.10:47921" autoFocus />}</form.AppField>
+        <form.AppField name="fingerprint">{(f) => <f.input label="Fingerprint" placeholder="AB:CD:…" />}</form.AppField>
+        <form.AppField name="code">{(f) => <f.input label="Enrolment code" placeholder="1234-5678" />}</form.AppField>
+        <form.AppForm>
+          <div className="*:w-full">
+            <form.submit label={connect.isPending ? 'Connecting…' : 'Connect'} />
+          </div>
+        </form.AppForm>
+      </form>
     </motion.div>
   )
 }

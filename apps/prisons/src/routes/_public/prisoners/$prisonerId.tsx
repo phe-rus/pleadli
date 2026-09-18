@@ -1,17 +1,9 @@
 import { Createpanel } from '@/components/create-panel'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
-import { CourtProductionForm, courtProductionsForPrisonerOptions, productionMethodLabel, useCourtProductionsForPrisoner } from '@/features/court-productions'
+import { CourtOutcomeForm, CourtProductionForm, courtOutcomeLabel, courtProductionsForPrisonerOptions, productionMethodLabel, useCourtProductionsForPrisoner } from '@/features/court-productions'
+import { PrisonerFileHeader, prisonerFileOptions } from '@/features/custody'
 import { HealthEventForm, healthEventTypeLabel, healthEventsForPrisonerOptions, useHealthEventsForPrisoner } from '@/features/health-events'
-import {
-  admissionInstrumentLabel,
-  custodyStatusLabel,
-  daysInCustody,
-  EditPrisonerForm,
-  mandatoryBailThresholdDays,
-  prisonerOptions,
-  prisonerStatusLabel,
-  usePrisoner,
-} from '@/features/prisoners'
+import { EditPrisonerForm, prisonerOptions, usePrisoner } from '@/features/prisoners'
 import {
   CertifyProgrammeForm,
   ProgrammeParticipationForm,
@@ -28,7 +20,7 @@ import {
   usePropertyRecordsForPrisoner,
   type PropertyRecord,
 } from '@/features/property-records'
-import { releaseTypeLabel, ReleaseForm, releasesForPrisonerOptions, useReleasesForPrisoner } from '@/features/releases'
+import { releaseTypeLabel, releasesForPrisonerOptions, useReleasesForPrisoner } from '@/features/releases'
 import {
   RequestForm,
   ResolveRequestForm,
@@ -37,14 +29,14 @@ import {
   useRequestsForPrisoner,
   type PrisonRequest,
 } from '@/features/requests'
-import { transferDirectionLabel, TransferForm, transfersForPrisonerOptions, useTransfersForPrisoner } from '@/features/transfers'
+import { transferDirectionLabel, transferStateLabel, transfersForPrisonerOptions, useTransfersForPrisoner } from '@/features/transfers'
 import { VisitForm, visitStatusLabel, visitTypeLabel, visitsForPrisonerOptions, useVisitsForPrisoner } from '@/features/visits'
 import { AddCircleIcon, Edit02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { Badge } from '@pleadli/ui/badge'
-import { Button } from '@pleadli/ui/button'
-import { createFileRoute } from '@tanstack/react-router'
+import { Button, buttonVariants } from '@pleadli/ui/button'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useState } from 'react'
 
@@ -52,6 +44,7 @@ export const Route = createFileRoute('/_public/prisoners/$prisonerId')({
   loader: async ({ context, params }) => {
     await Promise.all([
       context.queryClient.query({ ...prisonerOptions(params.prisonerId), staleTime: 'static' }),
+      context.queryClient.query({ ...prisonerFileOptions(params.prisonerId), staleTime: 'static' }),
       context.queryClient.query({ ...courtProductionsForPrisonerOptions(params.prisonerId), staleTime: 'static' }),
       context.queryClient.query({ ...releasesForPrisonerOptions(params.prisonerId), staleTime: 'static' }),
       context.queryClient.query({ ...visitsForPrisonerOptions(params.prisonerId), staleTime: 'static' }),
@@ -85,16 +78,14 @@ function RouteComponent() {
 
   const [editOpen, setEditOpen] = useState(false)
   const [editDirty, setEditDirty] = useState(false)
+  const [outcomeFor, setOutcomeFor] = useState<string | null>(null)
+  const [outcomeDirty, setOutcomeDirty] = useState(false)
   const [productionOpen, setProductionOpen] = useState(false)
   const [productionDirty, setProductionDirty] = useState(false)
-  const [releaseOpen, setReleaseOpen] = useState(false)
-  const [releaseDirty, setReleaseDirty] = useState(false)
   const [visitOpen, setVisitOpen] = useState(false)
   const [visitDirty, setVisitDirty] = useState(false)
   const [healthOpen, setHealthOpen] = useState(false)
   const [healthDirty, setHealthDirty] = useState(false)
-  const [transferOpen, setTransferOpen] = useState(false)
-  const [transferDirty, setTransferDirty] = useState(false)
   const [programmeOpen, setProgrammeOpen] = useState(false)
   const [programmeDirty, setProgrammeDirty] = useState(false)
   const [certifyingParticipation, setCertifyingParticipation] = useState<ProgrammeParticipation | null>(null)
@@ -117,53 +108,28 @@ function RouteComponent() {
   }
 
   const inCustody = prisoner.currentStatus === 'in_custody'
-  const daysHeld = daysInCustody(prisoner.admittedAt)
-  const threshold = mandatoryBailThresholdDays(prisoner.highCourtOnlyOffence)
 
   return (
     <article className="container flex flex-col gap-6 pt-5 pb-20">
-      <section className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <h1>
-              {prisoner.lastName}, {prisoner.firstName}
-              {prisoner.otherNames ? ` ${prisoner.otherNames}` : ''}
-            </h1>
-            <Badge variant="secondary">{prisonerStatusLabel(prisoner.status)}</Badge>
-            <Badge variant={inCustody ? 'outline' : 'secondary'}>{custodyStatusLabel(prisoner.currentStatus)}</Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {prisoner.reference ?? 'No reference recorded'}
-            {prisoner.nationalId ? ` · ${prisoner.nationalId}` : ''}
-            {prisoner.admissionAuthority ? ` · ${prisoner.admissionAuthority}` : ''}
-            {prisoner.currentLocation ? ` · ${prisoner.currentLocation}` : ''}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Admitted {format(prisoner.admittedAt, 'PPp')} under {admissionInstrumentLabel(prisoner.admissionInstrumentType)}
-            {inCustody && ` · ${daysHeld} days in custody (mandatory-bail threshold: ${threshold} days)`}
-          </p>
-          {inCustody && daysHeld >= threshold && (
-            <Badge variant="destructive" className="w-fit">
-              Past constitutional mandatory-bail threshold
-            </Badge>
-          )}
-        </div>
-
-        <Createpanel
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          isDirty={editDirty}
-          trigger={
-            <Button size="sm" variant="secondary">
-              <HugeiconsIcon icon={Edit02Icon} />
-              Edit details
-            </Button>
-          }
-          headings={{ title: 'Edit prisoner details', description: 'Update identity, category, and notes.' }}
-        >
-          <EditPrisonerForm prisoner={prisoner} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
-        </Createpanel>
-      </section>
+      <PrisonerFileHeader
+        prisonerId={prisonerId}
+        actions={
+          <Createpanel
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            isDirty={editDirty}
+            trigger={
+              <Button size="sm" variant="secondary">
+                <HugeiconsIcon icon={Edit02Icon} />
+                Edit details
+              </Button>
+            }
+            headings={{ title: 'Edit prisoner details', description: 'Update identity, category, and notes.' }}
+          >
+            <EditPrisonerForm prisoner={prisoner} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
+          </Createpanel>
+        }
+      />
 
       <RichTextPreview value={prisoner.notes} className="max-w-2xl text-sm text-muted-foreground" />
 
@@ -200,6 +166,15 @@ function RouteComponent() {
                   <span className="text-xs text-muted-foreground">{format(production.productionDate, 'PPp')}</span>
                   {production.courtReference && <Badge variant="outline">{production.courtReference}</Badge>}
                   <Badge variant="secondary">{productionMethodLabel(production.productionMethod)}</Badge>
+                  {production.state === 'scheduled' && (
+                    <>
+                      <Badge variant="outline">Scheduled</Badge>
+                      <Button size="xs" variant="secondary" onClick={() => setOutcomeFor(production.id)}>
+                        Record outcome
+                      </Button>
+                    </>
+                  )}
+                  {production.outcome && <Badge>{courtOutcomeLabel(production.outcome)}</Badge>}
                 </div>
                 <RichTextPreview value={production.purpose} className="text-muted-foreground" />
               </div>
@@ -288,20 +263,11 @@ function RouteComponent() {
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-medium">Transfers</h2>
-          <Createpanel
-            open={transferOpen}
-            onOpenChange={setTransferOpen}
-            isDirty={transferDirty}
-            trigger={
-              <Button size="sm" variant="secondary">
-                <HugeiconsIcon icon={AddCircleIcon} />
-                Record transfer
-              </Button>
-            }
-            headings={{ title: 'Record transfer', description: 'Log a move to or from another prison.' }}
-          >
-            <TransferForm prisonerId={prisonerId} onSuccess={() => setTransferOpen(false)} onDirtyChange={setTransferDirty} />
-          </Createpanel>
+          {inCustody && (
+            <Link to="/procedures/transfer/$prisonerId" params={{ prisonerId }} className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
+              Transfer out
+            </Link>
+          )}
         </div>
 
         {transfers.length === 0 ? (
@@ -312,6 +278,7 @@ function RouteComponent() {
               <div key={transfer.id} className="flex flex-col gap-1 px-3 py-2 text-sm">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{transferDirectionLabel(transfer.direction)}</Badge>
+                  <Badge variant="secondary">{transferStateLabel(transfer.direction, transfer.state)}</Badge>
                   <span className="text-xs text-muted-foreground">{format(transfer.transferredAt, 'PPp')}</span>
                   {transfer.otherPrisonName && <span className="text-xs text-muted-foreground">· {transfer.otherPrisonName}</span>}
                 </div>
@@ -514,20 +481,11 @@ function RouteComponent() {
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-medium">Releases</h2>
-          <Createpanel
-            open={releaseOpen}
-            onOpenChange={setReleaseOpen}
-            isDirty={releaseDirty}
-            trigger={
-              <Button size="sm">
-                <HugeiconsIcon icon={AddCircleIcon} />
-                Record release
-              </Button>
-            }
-            headings={{ title: 'Record release', description: 'Log a formal release event for this prisoner.' }}
-          >
-            <ReleaseForm prisonerId={prisonerId} onSuccess={() => setReleaseOpen(false)} onDirtyChange={setReleaseDirty} />
-          </Createpanel>
+          {inCustody && (
+            <Link to="/procedures/discharge/$prisonerId" params={{ prisonerId }} className={buttonVariants({ size: 'sm' })}>
+              Discharge
+            </Link>
+          )}
         </div>
 
         {releases.length === 0 ? (
@@ -540,6 +498,8 @@ function RouteComponent() {
                   <Badge>{releaseTypeLabel(release.releaseType)}</Badge>
                   <span className="text-xs text-muted-foreground">{format(release.releasedAt, 'PPp')}</span>
                   {release.orderedBy && <span className="text-xs text-muted-foreground">· {release.orderedBy}</span>}
+                  {release.exceptionReason && <Badge variant="destructive">Excepted discharge</Badge>}
+                  {release.afterNoon && <Badge variant="outline">After noon</Badge>}
                 </div>
                 <RichTextPreview value={release.notes} className="text-muted-foreground" />
               </div>
@@ -547,6 +507,15 @@ function RouteComponent() {
           </div>
         )}
       </section>
+
+      <Createpanel
+        open={outcomeFor != null}
+        onOpenChange={(open) => !open && setOutcomeFor(null)}
+        isDirty={outcomeDirty}
+        headings={{ title: 'Record the court outcome', description: 'What the court decided at this production.' }}
+      >
+        {outcomeFor && <CourtOutcomeForm productionId={outcomeFor} onSuccess={() => setOutcomeFor(null)} onDirtyChange={setOutcomeDirty} />}
+      </Createpanel>
     </article>
   )
 }

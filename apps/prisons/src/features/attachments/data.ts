@@ -1,57 +1,54 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
+import { api } from '@/lib/api'
 import { attachmentSchema, type Attachment } from './schema'
 
-const DEV_SERVER_URL = 'http://127.0.0.1:47922'
-
 export async function listAttachments(entityType: string, entityId: string) {
-  const attachments = isTauri()
-    ? await invoke('list_attachments', { entityType, entityId })
-    : await (
-        await fetch(`${DEV_SERVER_URL}/attachments?entityType=${encodeURIComponent(entityType)}&entityId=${encodeURIComponent(entityId)}`)
-      ).json()
-  return z.array(attachmentSchema).parse(attachments)
+  const rows = await api('GET', '/api/prisons/documents', { query: { entityType, entityId } })
+  return z.array(attachmentSchema).parse(rows)
 }
 
-export async function addAttachmentFromPath(entityType: string, entityId: string, sourcePath: string) {
-  const attachment = await invoke('add_attachment', { entityType, entityId, sourcePath })
-  return attachmentSchema.parse(attachment)
+export async function addAttachment(entityType: string, entityId: string, file: { fileName: string; contentBase64: string }) {
+  const body = { entityType, entityId, fileName: file.fileName, contentBase64: file.contentBase64 }
+  return attachmentSchema.parse(await api('POST', '/api/prisons/documents', { body }))
 }
 
-export async function addAttachmentFile(entityType: string, entityId: string, file: File) {
-  const formData = new FormData()
-  formData.append('entityType', entityType)
-  formData.append('entityId', entityId)
-  formData.append('file', file)
-  const response = await fetch(`${DEV_SERVER_URL}/attachments`, { method: 'POST', body: formData })
-  if (!response.ok) throw new Error(await response.text())
-  return attachmentSchema.parse(await response.json())
+export type PickedFile = { fileName: string; contentBase64: string }
+
+/** The native file dialog, in the desktop app. It returns the file's bytes
+ * to the webview; the webview never names a path, so it cannot read a file
+ * the officer did not choose. */
+export async function pickFileNative() {
+  return invoke<PickedFile | null>('pick_file')
 }
 
-export async function deleteAttachment(id: string) {
-  if (isTauri()) {
-    await invoke('delete_attachment', { id })
-    return
-  }
-  const response = await fetch(`${DEV_SERVER_URL}/attachments/${encodeURIComponent(id)}`, { method: 'DELETE' })
-  if (!response.ok) throw new Error(await response.text())
+export async function readBrowserFile(file: File): Promise<PickedFile> {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  let binary = ''
+  const chunk = 0x8000
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+  return { fileName: file.name, contentBase64: btoa(binary) }
 }
 
-export function attachmentFileUrl(id: string) {
-  return `${DEV_SERVER_URL}/attachments/${encodeURIComponent(id)}/file`
+/** Documents are never deleted: voiding keeps the file and the row, and
+ * records who voided it and why. */
+export async function voidAttachment(id: string, reason: string) {
+  await api('POST', `/api/prisons/documents/${encodeURIComponent(id)}/void`, { body: { reason } })
 }
 
 export async function getAttachmentDataUrl(id: string) {
-  if (!isTauri()) return attachmentFileUrl(id)
-  const url = await invoke('get_attachment_data_url', { id })
+  const url = await api('GET', `/api/prisons/documents/${encodeURIComponent(id)}/data-url`)
   return typeof url === 'string' ? url : null
 }
 
 export async function openAttachment(attachment: Attachment) {
   if (isTauri()) {
+    // Only valid while the node runs on this machine; the document reader
+    // in the documents slice replaces this for workstations.
     const { openPath } = await import('@tauri-apps/plugin-opener')
     await openPath(attachment.storedPath)
     return
   }
-  window.open(attachmentFileUrl(attachment.id), '_blank')
+  const url = await getAttachmentDataUrl(attachment.id)
+  if (url) window.open(url, '_blank')
 }

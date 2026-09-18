@@ -1,11 +1,45 @@
+mod api;
 mod commands;
 mod db;
 mod domain;
+mod node;
 mod transport;
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
+
+/// Runs a node without a window: opens the database under `data_dir`, starts
+/// the network supervisor and (debug builds) the loopback listener, and blocks.
+/// Used by `src/bin/node.rs`.
+pub fn run_headless(data_dir: std::path::PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    std::fs::create_dir_all(&data_dir)?;
+    let vault_root = data_dir.join("vault");
+    std::fs::create_dir_all(&vault_root)?;
+    let runtime = tokio::runtime::Runtime::new()?;
+    runtime.block_on(async move {
+        match db::startup(&data_dir, &vault_root).await {
+            Ok(started) => {
+                let node = node::Node::new(started.pool, vault_root, data_dir);
+                tokio::spawn(api::network::supervise(node.clone()));
+                domain::nodeconfig::load_remote(&node).await;
+                tokio::spawn(transport::lan::supervise(node.clone()));
+                tokio::spawn(domain::backup::scheduler(node.clone()));
+                #[cfg(debug_assertions)]
+                tokio::spawn(transport::dev_loopback::serve(node.clone()));
+                log::info!("node running; press Ctrl+C to stop");
+            }
+            Err(db::StartupError::Recovery(reason)) => {
+                eprintln!("the database needs recovery: {reason}");
+                #[cfg(debug_assertions)]
+                tokio::spawn(transport::dev_loopback::serve_router(api::recovery::router(data_dir, reason)));
+            }
+            Err(db::StartupError::Fatal(reason)) => return Err(reason.into()),
+        }
+        tokio::signal::ctrl_c().await?;
+        Ok::<(), Box<dyn std::error::Error>>(())
+    })
+}
 
 pub fn run() {
     tauri::Builder::default()
@@ -41,17 +75,40 @@ pub fn run() {
                 .or_else(|_| app.path().home_dir().map(|home| home.join("Documents")))
                 .unwrap_or_else(|_| data_dir.join("vault"))
                 .join("Pleadli Prisons");
+            std::fs::create_dir_all(&vault_root)?;
 
-            let db = tauri::async_runtime::block_on(db::connect(db_path, vault_root))?;
+            // Integrity check, staged restore, snapshot-before-migration, then
+            // migrate. A database that cannot be trusted is never opened for
+            // work: the node serves only the recovery router instead.
+            match tauri::async_runtime::block_on(db::startup(&data_dir, &vault_root)) {
+                Ok(started) => {
+                    if let Some(snapshot) = &started.pre_migration_snapshot {
+                        log::info!("snapshot before migration: {}", snapshot.display());
+                    }
+                    let node = node::Node::new(started.pool, vault_root, data_dir);
 
-            #[cfg(debug_assertions)]
-            {
-                let pool = db.pool.clone();
-                let vault_root = db.vault_root.clone();
-                tauri::async_runtime::spawn(transport::dev_server::serve(pool, vault_root));
+                    // The desktop shell reaches the node in process: no socket.
+                    tauri::async_runtime::block_on(domain::nodeconfig::load_remote(&node));
+                    app.manage(commands::api::LocalApi { router: api::router(node.clone()), node: Some(node.clone()) });
+
+                    // The network surface, on its own listener. Started when (and
+                    // only when) this installation is Head Office.
+                    tauri::async_runtime::spawn(api::network::supervise(node.clone()));
+                    tauri::async_runtime::spawn(transport::lan::supervise(node.clone()));
+                    tauri::async_runtime::spawn(domain::backup::scheduler(node.clone()));
+                    // Browser development only; compiled out of release builds.
+                    #[cfg(debug_assertions)]
+                    tauri::async_runtime::spawn(transport::dev_loopback::serve(node.clone()));
+                    tauri::async_runtime::spawn(domain::sync::background_loop(node.pool.clone()));
+
+                    app.manage(node);
+                }
+                Err(db::StartupError::Recovery(reason)) => {
+                    log::error!("database needs recovery: {reason}");
+                    app.manage(commands::api::LocalApi { router: api::recovery::router(data_dir, reason), node: None });
+                }
+                Err(db::StartupError::Fatal(reason)) => return Err(reason.into()),
             }
-
-            app.manage(db);
 
             let show_item = MenuItemBuilder::with_id("show", "Show Pleadli Prisons").build(app)?;
             let quit_item = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
@@ -92,64 +149,9 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            commands::prisoners::create_prisoner,
-            commands::prisoners::update_prisoner,
-            commands::prisoners::list_prisoners,
-            commands::prisoners::list_in_custody,
-            commands::prisoners::get_prisoner,
-            commands::releases::create_release,
-            commands::releases::list_releases_for_prisoner,
-            commands::court_productions::create_court_production,
-            commands::court_productions::list_court_productions_for_prisoner,
-            commands::court_productions::list_remand,
-            commands::search::search,
-            commands::visits::create_visit,
-            commands::visits::list_visits_for_prisoner,
-            commands::health_events::create_health_event,
-            commands::health_events::list_health_events_for_prisoner,
-            commands::health_events::list_hospitalised,
-            commands::transfers::create_transfer,
-            commands::transfers::list_transfers_for_prisoner,
-            commands::programmes::create_programme_participation,
-            commands::programmes::certify_programme_participation,
-            commands::programmes::list_programme_participations_for_prisoner,
-            commands::property_records::create_property_record,
-            commands::property_records::return_property_record,
-            commands::property_records::list_property_records_for_prisoner,
-            commands::requests::create_request,
-            commands::requests::resolve_request,
-            commands::requests::list_requests,
-            commands::requests::list_requests_for_prisoner,
-            commands::reports::get_reports_summary,
-            commands::attachments::add_attachment,
-            commands::attachments::list_attachments,
-            commands::attachments::delete_attachment,
-            commands::attachments::get_attachment_data_url,
-            commands::officers::create_officer,
-            commands::officers::update_officer,
-            commands::officers::list_officers,
-            commands::officers::get_officer_by_badge,
-            commands::officers::login,
-            commands::officers::is_bootstrap,
-            commands::officers::list_officers_trusted,
-            commands::officers::create_officer_trusted,
-            commands::officers::update_officer_trusted,
-            commands::session::get_hq_config,
-            commands::session::hq_login,
-            commands::session::get_current_hq_session,
-            commands::session::hq_sign_out,
-            commands::session::set_dev_role,
-            commands::activation::choose_role,
-            commands::activation::verify_activation_code,
-            commands::activation::mint_dev_activation_code,
-            commands::facilities::list_facilities,
-            commands::facilities::get_peer_sync_config,
-            commands::facilities::register_facility_self,
-            commands::facilities::get_own_facility,
-            commands::facilities::verify_facility,
-            commands::cloudflare::get_cloudflare_config,
-            commands::cloudflare::save_cloudflare_config,
+        .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::api::pick_file, commands::api::restart_app,
+            commands::files::export_file,
+            commands::files::import_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

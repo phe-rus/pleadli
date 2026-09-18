@@ -1,29 +1,13 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
+import { api } from '@/lib/api'
 import { cloudflareConfigSchema, saveCloudflareConfigSchema, type SaveCloudflareConfigInput } from './schema'
 
-const DEV_SERVER_URL = 'http://127.0.0.1:47922'
-
-async function devFetch(path: string, init?: RequestInit) {
-  const response = await fetch(`${DEV_SERVER_URL}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  if (!response.ok) throw new Error(await response.text().catch(() => response.statusText))
-  return response.status === 204 ? null : response.json()
-}
-
-/** Never returns the stored API token — see `save_cloudflare_config`'s own
- * doc comment (`domain/cloudflare_tunnel.rs`) for why. */
+/** Never returns the stored API token: the node's config type has no such
+ * field. Head Office only (`hq.network.manage`). */
 export async function getCloudflareConfig() {
-  const config = isTauri() ? await invoke('get_cloudflare_config') : await devFetch('/cloudflare/config')
-  return cloudflareConfigSchema.nullable().parse(config)
+  return cloudflareConfigSchema.nullable().parse(await api('GET', '/api/hq/network/cloudflare'))
 }
 
 export async function saveCloudflareConfig(input: SaveCloudflareConfigInput) {
-  const parsed = saveCloudflareConfigSchema.parse(input)
-  if (isTauri()) {
-    await invoke('save_cloudflare_config', { input: parsed })
-    return
-  }
-  await devFetch('/cloudflare/config', { method: 'PUT', body: JSON.stringify(parsed) })
+  const body = saveCloudflareConfigSchema.parse(input)
+  await api('PUT', '/api/hq/network/cloudflare', { body })
 }

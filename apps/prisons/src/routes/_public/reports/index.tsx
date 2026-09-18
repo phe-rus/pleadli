@@ -6,7 +6,8 @@ import { custodyStatusLabel, prisonerStatusLabel } from '@/features/prisoners'
 import { releaseTypeLabel } from '@/features/releases'
 import { transferDirectionLabel } from '@/features/transfers'
 import { healthEventTypeLabel } from '@/features/health-events'
-import { reportsSummaryOptions, useReportsSummary } from '@/features/reports'
+import { reportsSummaryOptions, useReportsSummary, type ReportsSummary } from '@/features/reports'
+import { Button } from '@pleadli/ui/button'
 import { weekBucketStarts, weeklyBuckets } from '@/lib/weekly-buckets'
 import { createFileRoute } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
@@ -29,6 +30,53 @@ function custodyTone(status: string): BarTone {
   if (status === 'in_custody') return 'warning'
   if (status === 'transferred_out') return 'default'
   return 'success'
+}
+
+const profileSexLabel: Record<string, string> = { male: 'Male', female: 'Female' }
+const profileEducationLabel: Record<string, string> = {
+  none: 'None',
+  primary: 'Primary',
+  secondary: 'Secondary',
+  tertiary: 'Tertiary',
+  other: 'Other',
+}
+const profileNationalityLabel: Record<string, string> = { ugandan: 'Ugandan', foreign: 'Foreign' }
+
+/** UPS-shaped export: the six population-profile dimensions as one
+ * normalized Dimension / Label / Count CSV. UPS labels surface as-is (the
+ * app's display labels), nulls as "Not recorded", the same buckets the
+ * charts show. */
+function populationProfileToCsv(summary: ReportsSummary): string {
+  const blocks: Array<[string, typeof summary.prisonerSexCounts, (raw: string) => string]> = [
+    ['Age group', summary.prisonerAgeGroupCounts, (raw) => raw],
+    ['Sex', summary.prisonerSexCounts, (raw) => profileSexLabel[raw] ?? raw],
+    ['Education level', summary.prisonerEducationCounts, (raw) => profileEducationLabel[raw] ?? raw],
+    ['Nationality', summary.prisonerNationalityCounts, (raw) => profileNationalityLabel[raw] ?? raw],
+    ['Capital-offence type', summary.prisonerOffenceTypeCounts, (raw) => raw],
+    ['Sentence category', summary.prisonerSentenceCategoryCounts, (raw) => raw],
+  ]
+  const lines = ['Dimension,Label,Count']
+  for (const [dimension, counts, labelFn] of blocks) {
+    for (const { label, count } of counts) {
+      const value = labelFn(label)
+      lines.push(
+        [dimension, value, String(count)]
+          .map((cell) => `"${cell.replace(/"/g, '""')}"`)
+          .join(','),
+      )
+    }
+  }
+  return lines.join('\n')
+}
+
+function downloadCsv(filename: string, text: string) {
+  const blob = new Blob([`\uFEFF${text}`], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
 }
 
 function MiniTrend({ title, timestamps }: { title: string; timestamps: number[] }) {
@@ -122,12 +170,107 @@ function RouteComponent() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-muted-foreground">Admissions over time</h2>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <ChartBlock title="Admissions by year" description="Prisoners admitted per calendar year.">
+            <VerticalBars
+              rows={summary.admissionYearCounts.map((c) => ({ label: c.label, value: c.count }))}
+              max={Math.max(...summary.admissionYearCounts.map((c) => c.count), 1)}
+            />
+          </ChartBlock>
+          <ChartBlock title="Admissions by month" description="Prisoners admitted per calendar month.">
+            <VerticalBars
+              rows={summary.admissionMonthCounts.map((c) => ({
+                label: format(new Date(`${c.label}-01`), 'MMM yy'),
+                value: c.count,
+              }))}
+              max={Math.max(...summary.admissionMonthCounts.map((c) => c.count), 1)}
+            />
+          </ChartBlock>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-muted-foreground">Population profile</h2>
+          <div className="print:hidden flex gap-2">
+            <Button size="sm" variant="secondary" onClick={() => downloadCsv('population-profile.csv', populationProfileToCsv(summary))}>
+              Export CSV
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => window.print()}>
+              Print / PDF
+            </Button>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Current prisoner population profiled the way UPS publishes national statistics (RESEARCH.md §8). Records entered
+          from the admission form; "Not recorded" counts admissions captured before those fields existed.
+        </p>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <BreakdownBlock
+            title="By age group"
+            description="All prisoner records, age band at present day."
+            counts={summary.prisonerAgeGroupCounts}
+          />
+          <BreakdownBlock
+            title="By sex"
+            description="All prisoner records, recorded sex."
+            counts={summary.prisonerSexCounts}
+            labelFn={(raw) => profileSexLabel[raw] ?? raw}
+          />
+          <BreakdownBlock
+            title="By education level"
+            description="All prisoner records, recorded education level."
+            counts={summary.prisonerEducationCounts}
+            labelFn={(raw) => profileEducationLabel[raw] ?? raw}
+          />
+          <BreakdownBlock
+            title="By nationality"
+            description="All prisoner records, Ugandan or foreign."
+            counts={summary.prisonerNationalityCounts}
+            labelFn={(raw) => profileNationalityLabel[raw] ?? raw}
+          />
+          <BreakdownBlock
+            title="By capital-offence type"
+            description="Free-text offence grouped by capital-offence keyword at chart time; heuristic."
+            counts={summary.prisonerOffenceTypeCounts}
+          />
+          <BreakdownBlock
+            title="By sentence category"
+            description="Convicted (Sentenced), unconvicted (Remand), or civil."
+            counts={summary.prisonerSentenceCategoryCounts}
+          />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Also tracked</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <MiniTrend title="Releases" timestamps={summary.releaseTimestamps} />
           <MiniTrend title="Transfers" timestamps={summary.transferTimestamps} />
           <MiniTrend title="Visits" timestamps={summary.visitTimestamps} />
           <MiniTrend title="Health events" timestamps={summary.healthEventTimestamps} />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-muted-foreground">By facility reach</h2>
+        <p className="text-xs text-muted-foreground">
+          Snapshot-derived (spec docs/specs/prisons/0001-head-office-peer-sync-network/0003-sync-protocol-and-head-office-
+          management.md): on Head Office every synced facility's prisoners are stamped with it; records that predate pairing
+          show as "Not assigned".
+        </p>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <BreakdownBlock
+            title="Prisoner population by facility"
+            description="All prisoner records held, attributed to the facility that sent them."
+            counts={summary.facilityPopulationCounts}
+          />
+          <BreakdownBlock
+            title="In custody by facility"
+            description="Prisoners currently in custody, attributed to the facility that sent them."
+            counts={summary.facilityInCustodyCounts}
+          />
         </div>
       </section>
 

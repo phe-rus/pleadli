@@ -1,40 +1,40 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
+import { api } from '@/lib/api'
 import {
+  courtOutcomeResultSchema,
   courtProductionSchema,
   createCourtProductionSchema,
+  recordCourtOutcomeSchema,
   remandListEntrySchema,
   type CreateCourtProductionInput,
+  type RecordCourtOutcomeInput,
 } from './schema'
-
-const DEV_SERVER_URL = 'http://127.0.0.1:47922'
-
-async function devFetch(path: string, init?: RequestInit) {
-  const response = await fetch(`${DEV_SERVER_URL}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  if (!response.ok) throw new Error(await response.text())
-  return response.status === 204 ? null : response.json()
-}
 
 export async function createCourtProduction(input: CreateCourtProductionInput) {
   const parsed = createCourtProductionSchema.parse(input)
-  const rustInput = { ...parsed, courtReference: parsed.courtReference || null, purpose: parsed.purpose || null }
-  const production = isTauri()
-    ? await invoke('create_court_production', { input: rustInput })
-    : await devFetch('/court-productions', { method: 'POST', body: JSON.stringify(rustInput) })
-  return courtProductionSchema.parse(production)
+  const body = { ...parsed, courtReference: parsed.courtReference || null, purpose: parsed.purpose || null }
+  return courtProductionSchema.parse(await api('POST', '/api/prisons/court-productions', { body }))
 }
 
 export async function listCourtProductionsForPrisoner(prisonerId: string) {
-  const productions = isTauri()
-    ? await invoke('list_court_productions_for_prisoner', { prisonerId })
-    : await devFetch(`/prisoners/${encodeURIComponent(prisonerId)}/court-productions`)
+  const productions = await api('GET', `/api/prisons/prisoners/${encodeURIComponent(prisonerId)}/court-productions`)
   return z.array(courtProductionSchema).parse(productions)
 }
 
 export async function listRemand() {
-  const entries = isTauri() ? await invoke('list_remand') : await devFetch('/remand')
-  return z.array(remandListEntrySchema).parse(entries)
+  return z.array(remandListEntrySchema).parse(await api('GET', '/api/prisons/remand'))
+}
+
+export async function recordCourtOutcome(input: RecordCourtOutcomeInput) {
+  const { productionId, ...rest } = recordCourtOutcomeSchema.parse(input)
+  const body = { ...rest, notes: rest.notes || null }
+  return courtOutcomeResultSchema.parse(
+    await api('PUT', `/api/prisons/court-productions/${encodeURIComponent(productionId)}/outcome`, { body }),
+  )
+}
+
+export async function cancelCourtProduction(productionId: string, reason: string) {
+  return courtProductionSchema.parse(
+    await api('POST', `/api/prisons/court-productions/${encodeURIComponent(productionId)}/cancel`, { body: { reason } }),
+  )
 }

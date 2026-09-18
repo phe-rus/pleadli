@@ -6,8 +6,13 @@
 
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use serde::Serialize;
+use sqlx::SqliteConnection;
+#[cfg(test)]
 use sqlx::SqlitePool;
 use std::fmt;
+
+use super::audit::{self, AuditEntry};
+use super::authz::Actor;
 use std::sync::OnceLock;
 
 /// Exact wire format (see the spec's Key invariants): `version: u8 (1) ||
@@ -108,9 +113,19 @@ impl From<ActivationError> for ActivationErrorPayload {
 /// screen, and the role only actually becomes `'head_office'` once
 /// `verify_activation_code` succeeds, so a closed, unfinished activation
 /// still shows the role choice screen again next launch.
-pub async fn choose_role(pool: &SqlitePool, role: &str) -> Result<(), sqlx::Error> {
+///
+/// Only possible while no role has been chosen yet (`role IS NULL`): once an
+/// installation is a facility it can never be flipped by an unauthenticated
+/// first-launch call. Audited.
+pub async fn choose_role(conn: &mut SqliteConnection, actor: &Actor, role: &str) -> Result<(), sqlx::Error> {
     if role == "facility" {
-        sqlx::query("UPDATE hq_config SET role = 'facility' WHERE id = 'default'").execute(pool).await?;
+        let changed = sqlx::query("UPDATE hq_config SET role = 'facility' WHERE id = 'default' AND role IS NULL")
+            .execute(&mut *conn)
+            .await?
+            .rows_affected();
+        if changed > 0 {
+            audit::record(conn, actor, AuditEntry::new("install.role_chosen", "installation", Some("default")).reason("facility")).await?;
+        }
     }
     Ok(())
 }
@@ -120,7 +135,7 @@ pub async fn choose_role(pool: &SqlitePool, role: &str) -> Result<(), sqlx::Erro
 /// and check the monotonic clock guard, before setting `hq_config`. Any
 /// failure returns the same generic `ActivationError::Invalid`, never
 /// distinguished, and `hq_config` is left untouched on failure.
-pub async fn verify_activation_code(pool: &SqlitePool, token: &str) -> Result<(), ActivationError> {
+pub async fn verify_activation_code(conn: &mut SqliteConnection, actor: &Actor, token: &str) -> Result<(), ActivationError> {
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 
     let raw = URL_SAFE_NO_PAD.decode(token.trim()).map_err(|_| ActivationError::Invalid)?;
@@ -148,17 +163,27 @@ pub async fn verify_activation_code(pool: &SqlitePool, token: &str) -> Result<()
     // relative to an already activated install (a rolled back system clock
     // replaying an old code against an install that already activated).
     let existing_activated_at: Option<i64> =
-        sqlx::query_scalar("SELECT activated_at FROM hq_config WHERE id = 'default'").fetch_one(pool).await?;
+        sqlx::query_scalar("SELECT activated_at FROM hq_config WHERE id = 'default'").fetch_one(&mut *conn).await?;
     if let Some(existing) = existing_activated_at {
         if now < existing {
             return Err(ActivationError::Invalid);
         }
     }
 
-    sqlx::query("UPDATE hq_config SET is_head_office = 1, role = 'head_office', activated_at = ? WHERE id = 'default'")
-        .bind(now)
-        .execute(pool)
-        .await?;
+    // A facility installation can never be re-activated as Head Office:
+    // that is a reinstall, not a first-launch step.
+    let changed = sqlx::query(
+        "UPDATE hq_config SET is_head_office = 1, role = 'head_office', activated_at = ?
+         WHERE id = 'default' AND (role IS NULL OR role = 'head_office')",
+    )
+    .bind(now)
+    .execute(&mut *conn)
+    .await?
+    .rows_affected();
+    if changed == 0 {
+        return Err(ActivationError::Invalid);
+    }
+    audit::record(conn, actor, AuditEntry::new("install.activated", "installation", Some("default")).reason("head_office")).await?;
 
     Ok(())
 }
@@ -196,6 +221,21 @@ mod tests {
     use base64::Engine as _;
     use sqlx::sqlite::SqlitePoolOptions;
 
+    async fn verify(pool: &SqlitePool, token: &str) -> Result<(), ActivationError> {
+        let mut tx = pool.begin().await.unwrap();
+        let result = verify_activation_code(&mut tx, &Actor::system("test"), token).await;
+        if result.is_ok() {
+            tx.commit().await.unwrap();
+        }
+        result
+    }
+
+    async fn choose(pool: &SqlitePool, role: &str) {
+        let mut tx = pool.begin().await.unwrap();
+        choose_role(&mut tx, &Actor::system("test"), role).await.unwrap();
+        tx.commit().await.unwrap();
+    }
+
     async fn test_pool() -> SqlitePool {
         let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
         sqlx::migrate!("./migrations").run(&pool).await.unwrap();
@@ -207,7 +247,7 @@ mod tests {
         let pool = test_pool().await;
         let token = mint_dev_activation_code();
 
-        verify_activation_code(&pool, &token).await.expect("a validly signed, unexpired dev code should verify");
+        verify(&pool, &token).await.expect("a validly signed, unexpired dev code should verify");
 
         let config = crate::domain::session::get_hq_config(&pool).await.unwrap();
         assert!(config.is_head_office);
@@ -225,7 +265,7 @@ mod tests {
         raw[last] ^= 0xFF;
         let tampered = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(raw);
 
-        let result = verify_activation_code(&pool, &tampered).await;
+        let result = verify(&pool, &tampered).await;
         assert!(matches!(result, Err(ActivationError::Invalid)));
 
         let config = crate::domain::session::get_hq_config(&pool).await.unwrap();
@@ -248,14 +288,14 @@ mod tests {
         raw.extend_from_slice(&signature.to_bytes());
         let token = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(raw);
 
-        let result = verify_activation_code(&pool, &token).await;
+        let result = verify(&pool, &token).await;
         assert!(matches!(result, Err(ActivationError::Invalid)));
     }
 
     #[tokio::test]
     async fn garbage_input_is_rejected() {
         let pool = test_pool().await;
-        let result = verify_activation_code(&pool, "not a real token").await;
+        let result = verify(&pool, "not a real token").await;
         assert!(matches!(result, Err(ActivationError::Invalid)));
     }
 
@@ -263,14 +303,21 @@ mod tests {
     async fn choosing_facility_persists_immediately_and_choosing_head_office_does_not() {
         let pool = test_pool().await;
 
-        choose_role(&pool, "facility").await.unwrap();
+        choose(&pool, "facility").await;
         let config = crate::domain::session::get_hq_config(&pool).await.unwrap();
         assert_eq!(config.role.as_deref(), Some("facility"));
+
+        // A facility can never be flipped by a later first-launch call.
+        choose(&pool, "facility").await;
+        let mut tx = pool.begin().await.unwrap();
+        let reactivate = verify_activation_code(&mut tx, &Actor::system("test"), &mint_dev_activation_code()).await;
+        assert!(matches!(reactivate, Err(ActivationError::Invalid)), "a facility must not become Head Office");
+        drop(tx);
 
         // Resetting to a fresh NULL role, then choosing head_office should
         // leave role untouched: only a real activation sets it.
         sqlx::query("UPDATE hq_config SET role = NULL WHERE id = 'default'").execute(&pool).await.unwrap();
-        choose_role(&pool, "head_office").await.unwrap();
+        choose(&pool, "head_office").await;
         let config = crate::domain::session::get_hq_config(&pool).await.unwrap();
         assert_eq!(config.role, None);
     }

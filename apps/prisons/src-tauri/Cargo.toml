@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
+default-run = "prisons"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -35,14 +36,20 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 sqlx = { version = "0.9", features = ["sqlite", "runtime-tokio", "migrate", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 base64 = "0.22"
-tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "macros", "rt-multi-thread", "signal"] }
 axum = { version = "0.8", features = ["multipart"] }
 tower-http = { version = "0.6", features = ["cors"] }
+tower = { version = "0.5", features = ["util"] }
 argon2 = "0.5"
+chacha20poly1305 = { version = "0.10", features = ["stream"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 ed25519-dalek = "2"
 sha2 = "0.10"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rcgen = "0.13"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+axum-server = { version = "0.8", features = ["tls-rustls-no-provider"] }
+local-ip-address = "0.6"
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

@@ -1,127 +1,322 @@
-import { PrisonerForm, prisonerFullName, usePrisoners, type Prisoner } from '@/features/prisoners'
+import { prisonerFullName, usePrisoners, type Prisoner } from '@/features/prisoners'
 import { OfficerForm } from '@/features/officers'
 import { VisitForm } from '@/features/visits'
-import { GavelIcon, PrisonerIcon, Search01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
+import { CourtProductionForm } from '@/features/court-productions'
+import { HealthEventForm } from '@/features/health-events'
+import { PropertyRecordForm } from '@/features/property-records'
+import { ProgrammeParticipationForm } from '@/features/programme-participations'
+import { RequestForm } from '@/features/requests'
+import {
+  Archive01Icon,
+  ArrowDataTransferHorizontalIcon,
+  ArrowLeft01Icon,
+  Cancel01Icon,
+  DoorOpenIcon,
+  GavelIcon,
+  GraduationCapIcon,
+  HandshakeIcon,
+  HealthIcon,
+  Message01Icon,
+  PrisonerIcon,
+  Search01Icon,
+  UserGroupIcon,
+} from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Badge } from '@pleadli/ui/badge'
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@pleadli/ui/drawer'
 import { Input } from '@pleadli/ui/input'
 import { cn } from '@pleadli/ui/lib/utils'
-import { ReactElement, Suspense, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useNavigate } from '@tanstack/react-router'
+import { cloneElement, Suspense, useEffect, useState, type ReactElement } from 'react'
 
-type Category = 'prisoner' | 'officer' | 'visit'
+type RecordType =
+  | 'admission'
+  | 'visit'
+  | 'court_production'
+  | 'transfer'
+  | 'health_event'
+  | 'release'
+  | 'property_record'
+  | 'programme'
+  | 'request'
+  | 'officer'
 
-const categories: { value: Category; label: string; icon: any; description: string }[] = [
-  { value: 'prisoner', label: 'Prisoner', icon: PrisonerIcon, description: 'Admit under a warrant or order.' },
-  { value: 'officer', label: 'Officer', icon: UserGroupIcon, description: 'Create an account for this installation.' },
-  { value: 'visit', label: 'Visit', icon: GavelIcon, description: 'Record a visit against an existing prisoner.' },
+type RecordTypeInfo = {
+  value: RecordType
+  label: string
+  description: string
+  icon: any
+  requiresPrisoner: boolean
+}
+
+/** The evidence-mapped set of addable records (docs/prisons/navigation.md
+ * §4.6): exactly the built forms, nothing UNKNOWN gets a card. Person-
+ * scoped records (Visit, Court Production, Transfer, Health, Release,
+ * Property, Programme) need which prisoner first; Admission, Officer, and
+ * Request go straight to their form (a complaint may stay anonymous). */
+const recordTypes: readonly RecordTypeInfo[] = [
+  { value: 'admission', label: 'Receive someone', description: 'Reception under a warrant or order: verify, search, inventory, place.', icon: PrisonerIcon, requiresPrisoner: false },
+  { value: 'visit', label: 'Visit', description: 'Authorize or record a visit.', icon: HandshakeIcon, requiresPrisoner: true },
+  { value: 'court_production', label: 'Court production', description: 'Produce a prisoner to court (physical or virtual).', icon: GavelIcon, requiresPrisoner: true },
+  { value: 'transfer', label: 'Transfer out', description: 'Prepare, dispatch and confirm a move to another prison.', icon: ArrowDataTransferHorizontalIcon, requiresPrisoner: true },
+  { value: 'health_event', label: 'Health & welfare event', description: 'Referral or return, hospitalised or medical.', icon: HealthIcon, requiresPrisoner: true },
+  { value: 'release', label: 'Discharge', description: 'Release on entitlement or court order, with the gates checked.', icon: DoorOpenIcon, requiresPrisoner: true },
+  { value: 'property_record', label: 'Property & effects', description: 'The s.62 admission-time record of effects.', icon: Archive01Icon, requiresPrisoner: true },
+  { value: 'programme', label: 'Programme participation', description: 'Link a prisoner to a rehabilitation or work programme.', icon: GraduationCapIcon, requiresPrisoner: true },
+  { value: 'request', label: 'Request / complaint', description: 'Log a Mukutano complaint, linked or anonymous.', icon: Message01Icon, requiresPrisoner: false },
+  { value: 'officer', label: 'Officer', description: 'Create an account for this installation.', icon: UserGroupIcon, requiresPrisoner: false },
 ]
 
+function recordTypeInfo(value: RecordType): RecordTypeInfo {
+  return recordTypes.find((r) => r.value === value)!
+}
+
+type Screen =
+  | { step: 'grid' }
+  | { step: 'prisoner'; record: RecordType }
+  | { step: 'form'; record: RecordType; prisoner?: Prisoner }
+
 /**
- * The single entry point for creating any kind of record, replacing the
- * previous narrow "Admit prisoner" panel: a category picker on the left,
- * the matching form on the right, at 80% of the viewport rather than a
- * fixed narrow drawer width — there's real room needed once more than one
- * form type lives in the same panel. Facility only: Head Office has no
- * prisoners or visits of its own, and already has its own "Add officer"
- * action on `/officers` (spec: docs/specs/prisons/0001-head-office-peer-
- * sync-network/index.md).
+ * The single entry point for creating any kind of record (docs/prisons/
+ * navigation.md §4.6): a framer-motion panel — same animation language as
+ * the onboarding gates, not the Drawer component — showing a grid of
+ * record types. Selecting a card is real "steps": person-scoped records
+ * ask which prisoner via a search (so a visit is never recorded against
+ * the wrong person), then show that record's inputs. Facility only: Head
+ * Office has no prisoners or visits of its own and already manages its
+ * own officers on `/officers`, so the whole panel is hidden there in
+ * `Headers`.
  */
 export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
   const [open, setOpen] = useState(false)
   const [dirty, setDirty] = useState(false)
-  const [category, setCategory] = useState<Category>('prisoner')
-  const [visitPrisoner, setVisitPrisoner] = useState<Prisoner | null>(null)
+  const [screen, setScreen] = useState<Screen>({ step: 'grid' })
+  const navigate = useNavigate()
 
-  const handleOpenChange = (next: boolean) => {
-    if (!next && dirty) {
-      const discard = window.confirm('You have unsaved changes. Discard them?')
-      if (!discard) return
+  /** Reception, discharge and transfer are guided procedures with their own
+   * pages, not drawer forms: the launcher hands off to them. */
+  const startProcedure = (record: RecordType, prisoner?: Prisoner): boolean => {
+    if (record === 'admission') {
+      void navigate({ to: '/procedures/reception' })
+    } else if (record === 'release' && prisoner) {
+      void navigate({ to: '/procedures/discharge/$prisonerId', params: { prisonerId: prisoner.id } })
+    } else if (record === 'transfer' && prisoner) {
+      void navigate({ to: '/procedures/transfer/$prisonerId', params: { prisonerId: prisoner.id } })
+    } else {
+      return false
     }
-    setOpen(next)
-    if (!next) {
-      setDirty(false)
-      setCategory('prisoner')
-      setVisitPrisoner(null)
-    }
-  }
-
-  const close = () => {
     setOpen(false)
-    setDirty(false)
-    setCategory('prisoner')
-    setVisitPrisoner(null)
+    reset()
+    return true
   }
+
+  const reset = () => {
+    setDirty(false)
+    setScreen({ step: 'grid' })
+  }
+
+  const requestClose = () => {
+    if (dirty && !window.confirm('You have unsaved changes. Discard them?')) return
+    setOpen(false)
+    reset()
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') requestClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open, dirty])
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange} swipeDirection="right">
-      <DrawerTrigger render={trigger} />
-      <DrawerContent className="bg-background!" style={{ ['--drawer-content-width' as string]: '80vw' }}>
-        <DrawerHeader className="gap-0!">
-          <DrawerTitle>Add record</DrawerTitle>
-          <DrawerDescription className="md:max-w-sm">Pick what you're adding, then fill it in.</DrawerDescription>
-        </DrawerHeader>
+    <>
+      {cloneElement(trigger as ReactElement<{ onClick?: () => void }>, {
+        onClick: () => setOpen(true),
+      })}
 
-        <div className="flex min-h-0 flex-1">
-          <nav className="flex w-48 shrink-0 flex-col gap-0.5 border-r border-border/60 p-2">
-            {categories.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={() => {
-                  setCategory(c.value)
-                  setVisitPrisoner(null)
-                }}
-                className={cn(
-                  'flex flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left transition-colors',
-                  category === c.value ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/60',
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              key="add-record-backdrop"
+              className="fixed inset-0 z-50 bg-black/40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={requestClose}
+            />
+            <motion.aside
+              key="add-record-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Add record"
+              className="fixed top-0 right-0 z-50 flex h-dvh w-[min(90vw,560px)] flex-col bg-background shadow-2xl"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            >
+              <header className="flex shrink-0 items-center gap-2 border-b border-border/60 p-4">
+                {screen.step !== 'grid' && (
+                  <button
+                    type="button"
+                    aria-label="Back"
+                    className="-ml-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted/60"
+                    onClick={() => setScreen({ step: 'grid' })}
+                  >
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
+                  </button>
                 )}
-              >
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <HugeiconsIcon icon={c.icon} size={15} />
-                  {c.label}
-                </span>
-                <span className="text-xs">{c.description}</span>
-              </button>
-            ))}
-          </nav>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-sm font-medium text-foreground">
+                    {screen.step === 'grid' ? 'Add record' : recordTypeInfo(screen.record).label}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {screen.step === 'prisoner'
+                      ? 'Which prisoner is this for?'
+                      : screen.step === 'form' && screen.record !== 'request'
+                        ? recordTypeInfo(screen.record).description
+                        : 'Pick what you\u2019re adding, then fill it in.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-muted/60"
+                  onClick={requestClose}
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} size={16} />
+                </button>
+              </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {category === 'prisoner' && (
-              <Suspense fallback={<PanelLoading />}>
-                <PrisonerForm onSuccess={close} onDirtyChange={setDirty} />
-              </Suspense>
-            )}
-
-            {category === 'officer' && (
-              <div className="p-4">
-                <OfficerForm onSuccess={close} />
-              </div>
-            )}
-
-            {category === 'visit' &&
-              (visitPrisoner ? (
-                <Suspense fallback={<PanelLoading />}>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Badge variant="secondary">{visitPrisoner.id}</Badge>
-                        {prisonerFullName(visitPrisoner)}
-                      </div>
-                      <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setVisitPrisoner(null)}>
-                        Change
-                      </button>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                {screen.step === 'grid' && (
+                  <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      {recordTypes.map((r) => (
+                        <button
+                          key={r.value}
+                          type="button"
+                          onClick={() => {
+                            if (startProcedure(r.value)) return
+                            setScreen(r.requiresPrisoner ? { step: 'prisoner', record: r.value } : { step: 'form', record: r.value })
+                          }}
+                          className="flex flex-col items-start gap-2 rounded-lg border border-border/60 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                        >
+                          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                            <HugeiconsIcon icon={r.icon} size={16} />
+                          </span>
+                          <span className="text-sm font-medium">{r.label}</span>
+                          <span className="text-xs text-muted-foreground">{r.description}</span>
+                        </button>
+                      ))}
                     </div>
-                    <VisitForm prisonerId={visitPrisoner.id} onSuccess={close} onDirtyChange={setDirty} />
                   </div>
-                </Suspense>
-              ) : (
-                <PrisonerPicker onSelect={setVisitPrisoner} />
-              ))}
+                )}
+
+                {screen.step === 'prisoner' && (
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    <PrisonerPicker
+                      onSelect={(prisoner) => {
+                        if (startProcedure(screen.record, prisoner)) return
+                        setScreen({ step: 'form', record: screen.record, prisoner })
+                      }}
+                    />
+                  </div>
+                )}
+
+                {screen.step === 'form' && (
+                  <RecordFormStep
+                    record={screen.record}
+                    prisoner={screen.prisoner}
+                    onPickPrisoner={() => setScreen({ step: 'prisoner', record: screen.record })}
+                    onSuccess={() => {
+                      setOpen(false)
+                      reset()
+                    }}
+                    onDirtyChange={setDirty}
+                  />
+                )}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
+const prisonerScopedRecords = ['visit', 'court_production', 'transfer', 'health_event', 'release', 'property_record', 'programme'] as const
+
+function isPrisonerScoped(record: RecordType): record is (typeof prisonerScopedRecords)[number] {
+  return (prisonerScopedRecords as readonly string[]).includes(record)
+}
+
+function RecordFormStep({
+  record,
+  prisoner,
+  onPickPrisoner,
+  onSuccess,
+  onDirtyChange,
+}: {
+  record: RecordType
+  prisoner?: Prisoner
+  onPickPrisoner: () => void
+  onSuccess: () => void
+  onDirtyChange: (dirty: boolean) => void
+}) {
+  if (isPrisonerScoped(record) && !prisoner) {
+    return (
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <PrisonerPicker onSelect={onPickPrisoner} />
+      </div>
+    )
+  }
+
+  const common = { onSuccess, onDirtyChange }
+  const withPrisoner = isPrisonerScoped(record) && prisoner ? { prisonerId: prisoner.id, ...common } : null
+
+  const body = (() => {
+    switch (record) {
+      case 'admission':
+      case 'transfer':
+      case 'release':
+        return null
+      case 'visit':
+        return <VisitForm {...withPrisoner!} />
+      case 'court_production':
+        return <CourtProductionForm {...withPrisoner!} />
+      case 'health_event':
+        return <HealthEventForm {...withPrisoner!} />
+      case 'property_record':
+        return <PropertyRecordForm {...withPrisoner!} />
+      case 'programme':
+        return <ProgrammeParticipationForm {...withPrisoner!} />
+      case 'request':
+        return <RequestForm {...common} />
+      case 'officer':
+        return <OfficerForm onSuccess={onSuccess} />
+    }
+  })()
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {prisoner && (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-sm">
+            <Badge variant="secondary">{prisoner.id}</Badge>
+            {prisonerFullName(prisoner)}
           </div>
+          <button type="button" className="text-xs text-muted-foreground underline" onClick={onPickPrisoner}>
+            Change
+          </button>
         </div>
-      </DrawerContent>
-    </Drawer>
+      )}
+      <Suspense fallback={<PanelLoading />}>{body}</Suspense>
+    </div>
   )
 }
 
@@ -132,12 +327,12 @@ function PanelLoading() {
 /** Search within the panel itself, rather than requiring the officer to
  * back out and navigate to Search first — the whole point of Visit living
  * in this shared panel is not having to leave it to find the prisoner a
- * visit is for. */
+ * visit is for. The same picker serves every person-scoped record type. */
 function PrisonerPicker({ onSelect }: { onSelect: (prisoner: Prisoner) => void }) {
   const [query, setQuery] = useState('')
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
       <div className="relative">
         <HugeiconsIcon icon={Search01Icon} size={14} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -174,7 +369,7 @@ function PrisonerPickerResults({ query, onSelect }: { query: string; onSelect: (
           key={p.id}
           type="button"
           onClick={() => onSelect(p)}
-          className="flex items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-muted/60"
+          className={cn('flex items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-muted/60')}
         >
           <span className="truncate">{prisonerFullName(p)}</span>
           <Badge variant="secondary" className="shrink-0 text-[10px]">

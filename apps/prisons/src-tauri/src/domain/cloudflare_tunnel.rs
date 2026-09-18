@@ -5,8 +5,11 @@
 //! at `<station_name>.<domain>` so facilities can reach it from anywhere.
 
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
+use sqlx::{FromRow, SqliteConnection, SqlitePool};
 use std::fmt;
+
+use super::audit::{self, AuditEntry};
+use super::authz::Actor;
 
 const API_BASE: &str = "https://api.cloudflare.com/client/v4";
 
@@ -68,7 +71,7 @@ pub struct TunnelState {
     pub hostname: String,
 }
 
-pub async fn save_config(pool: &SqlitePool, input: SaveCloudflareConfigInput) -> Result<(), sqlx::Error> {
+pub async fn save_config(conn: &mut SqliteConnection, actor: &Actor, input: SaveCloudflareConfigInput) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO cloudflare_config (id, api_token, account_id, domain, station_name)
          VALUES ('default', ?, ?, ?, ?)
@@ -82,7 +85,18 @@ pub async fn save_config(pool: &SqlitePool, input: SaveCloudflareConfigInput) ->
     .bind(&input.account_id)
     .bind(&input.domain)
     .bind(&input.station_name)
-    .execute(pool)
+    .execute(&mut *conn)
+    .await?;
+    // The API token is never written to the audit trail.
+    audit::record(
+        conn,
+        actor,
+        AuditEntry::new("network.cloudflare_config_saved", "cloudflare_config", Some("default")).after(&serde_json::json!({
+            "accountId": input.account_id,
+            "domain": input.domain,
+            "stationName": input.station_name,
+        })),
+    )
     .await?;
     Ok(())
 }

@@ -19,6 +19,10 @@ export const courtProductionSchema = z.object({
   productionDate: z.number(),
   purpose: z.string().nullable(),
   productionMethod: z.string(),
+  state: z.string(),
+  outcome: z.string().nullable(),
+  outcomeNotes: z.string().nullable(),
+  nextDate: z.number().nullable(),
   createdAt: z.number(),
 })
 
@@ -45,3 +49,34 @@ export const remandListEntrySchema = z.object({
 })
 
 export type RemandListEntry = z.infer<typeof remandListEntrySchema>
+
+export const courtOutcomes = [
+  { value: 'remanded', label: 'Remanded', needsDate: true },
+  { value: 'adjourned', label: 'Adjourned', needsDate: true },
+  { value: 'committed_for_trial', label: 'Committed for trial', needsDate: true },
+  { value: 'bail_granted', label: 'Bail granted', needsDate: false },
+  { value: 'acquitted', label: 'Acquitted or discharged', needsDate: false },
+  { value: 'convicted', label: 'Convicted', needsDate: false },
+  { value: 'not_produced', label: 'Not produced', needsDate: false },
+] as const
+
+export function courtOutcomeLabel(value: string | null) {
+  return courtOutcomes.find((o) => o.value === value)?.label ?? value ?? ''
+}
+
+export const recordCourtOutcomeSchema = z.object({
+  productionId: z.string().min(1),
+  outcome: z.string().min(1, 'Choose what the court decided.'),
+  notes: z.string(),
+  nextDate: z.number().nullable(),
+})
+
+export type RecordCourtOutcomeInput = z.infer<typeof recordCourtOutcomeSchema>
+
+export const courtOutcomeResultSchema = z.object({
+  production: courtProductionSchema,
+  nextProduction: courtProductionSchema.nullable(),
+  followUp: z.enum(['discharge', 'sentence']).nullable(),
+})
+
+export type CourtOutcomeResult = z.infer<typeof courtOutcomeResultSchema>

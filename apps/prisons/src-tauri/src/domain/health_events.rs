@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
+use sqlx::{FromRow, SqliteConnection, SqlitePool};
 use uuid::Uuid;
+
+use super::audit::{self, AuditEntry};
+use super::authz::Actor;
 
 /// docs/prisons/PRODUCT.md §Health & Welfare — event log only, never a
 /// clinical record system. Confirmed event pairs (RESEARCH.md §5):
@@ -32,7 +35,7 @@ pub struct CreateHealthEventInput {
     pub notes: Option<String>,
 }
 
-pub async fn create_health_event(pool: &SqlitePool, input: CreateHealthEventInput) -> Result<HealthEvent, sqlx::Error> {
+pub async fn create_health_event(conn: &mut SqliteConnection, actor: &Actor, input: CreateHealthEventInput) -> Result<HealthEvent, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
     sqlx::query(
         "INSERT INTO health_events (id, prisoner_id, event_type, facility_name, occurred_at, authorized_by, notes)
@@ -45,10 +48,12 @@ pub async fn create_health_event(pool: &SqlitePool, input: CreateHealthEventInpu
     .bind(input.occurred_at)
     .bind(&input.authorized_by)
     .bind(&input.notes)
-    .execute(pool)
+    .execute(&mut *conn)
     .await?;
 
-    sqlx::query_as::<_, HealthEvent>("SELECT * FROM health_events WHERE id = ?").bind(&id).fetch_one(pool).await
+    let event = sqlx::query_as::<_, HealthEvent>("SELECT * FROM health_events WHERE id = ?").bind(&id).fetch_one(&mut *conn).await?;
+    audit::record(conn, actor, AuditEntry::new("health.movement", "health_event", Some(&id)).after(&event)).await?;
+    Ok(event)
 }
 
 pub async fn list_for_prisoner(pool: &SqlitePool, prisoner_id: &str) -> Result<Vec<HealthEvent>, sqlx::Error> {

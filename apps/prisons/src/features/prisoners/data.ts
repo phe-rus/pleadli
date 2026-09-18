@@ -1,34 +1,10 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
+import { api } from '@/lib/api'
 import {
-  createPrisonerSchema,
   prisonerSchema,
   updatePrisonerSchema,
-  type CreatePrisonerInput,
   type UpdatePrisonerInput,
 } from './schema'
-
-const DEV_SERVER_URL = 'http://127.0.0.1:47922'
-
-async function devFetch(path: string, init?: RequestInit) {
-  const response = await fetch(`${DEV_SERVER_URL}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  if (!response.ok) throw new Error(await response.text())
-  return response.status === 204 ? null : response.json()
-}
-
-function toRustCreateInput(input: CreatePrisonerInput) {
-  return {
-    ...input,
-    otherNames: input.otherNames || null,
-    nationalId: input.nationalId || null,
-    reference: input.reference || null,
-    admissionAuthority: input.admissionAuthority || null,
-    notes: input.notes || null,
-  }
-}
 
 function toRustUpdateInput(input: UpdatePrisonerInput) {
   return {
@@ -37,39 +13,28 @@ function toRustUpdateInput(input: UpdatePrisonerInput) {
     nationalId: input.nationalId || null,
     reference: input.reference || null,
     currentLocation: input.currentLocation || null,
+    sex: input.sex || null,
+    educationLevel: input.educationLevel || null,
+    nationality: input.nationality || null,
+    offence: input.offence || null,
+    pendingDocumentType: input.documentsPending ? input.pendingDocumentType || null : null,
     notes: input.notes || null,
   }
 }
 
-export async function createPrisoner(input: CreatePrisonerInput) {
-  const parsed = toRustCreateInput(createPrisonerSchema.parse(input))
-  const prisoner = isTauri()
-    ? await invoke('create_prisoner', { input: parsed })
-    : await devFetch('/prisoners', { method: 'POST', body: JSON.stringify(parsed) })
-  return prisonerSchema.parse(prisoner)
-}
-
 export async function updatePrisoner(id: string, input: UpdatePrisonerInput) {
-  const parsed = toRustUpdateInput(updatePrisonerSchema.parse(input))
-  const prisoner = isTauri()
-    ? await invoke('update_prisoner', { id, input: parsed })
-    : await devFetch(`/prisoners/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(parsed) })
-  return prisonerSchema.parse(prisoner)
+  const body = toRustUpdateInput(updatePrisonerSchema.parse(input))
+  return prisonerSchema.parse(await api('PUT', `/api/prisons/prisoners/${encodeURIComponent(id)}`, { body }))
 }
 
 export async function listPrisoners(query: string) {
-  const prisoners = isTauri()
-    ? await invoke('list_prisoners', { query })
-    : await devFetch(`/prisoners?query=${encodeURIComponent(query)}`)
-  return z.array(prisonerSchema).parse(prisoners)
+  return z.array(prisonerSchema).parse(await api('GET', '/api/prisons/prisoners', { query: { query } }))
 }
 
 export async function listInCustody() {
-  const prisoners = isTauri() ? await invoke('list_in_custody') : await devFetch('/prisoners/in-custody')
-  return z.array(prisonerSchema).parse(prisoners)
+  return z.array(prisonerSchema).parse(await api('GET', '/api/prisons/prisoners/in-custody'))
 }
 
 export async function getPrisoner(id: string) {
-  const prisoner = isTauri() ? await invoke('get_prisoner', { id }) : await devFetch(`/prisoners/${encodeURIComponent(id)}`)
-  return prisonerSchema.nullable().parse(prisoner)
+  return prisonerSchema.nullable().parse(await api('GET', `/api/prisons/prisoners/${encodeURIComponent(id)}`))
 }

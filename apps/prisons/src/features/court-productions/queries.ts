@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createCourtProduction, listCourtProductionsForPrisoner, listRemand } from './data'
-import type { CreateCourtProductionInput } from './schema'
+import { cancelCourtProduction, createCourtProduction, listCourtProductionsForPrisoner, listRemand, recordCourtOutcome } from './data'
+import type { CreateCourtProductionInput, RecordCourtOutcomeInput } from './schema'
 
 export const courtProductionsForPrisonerOptions = (prisonerId: string) =>
   queryOptions({
@@ -29,6 +29,32 @@ export function useCreateCourtProduction() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['court-productions', 'prisoner', variables.prisonerId] })
       queryClient.invalidateQueries({ queryKey: ['court-productions', 'remand'] })
+      queryClient.invalidateQueries({ queryKey: ['today'] })
+      queryClient.invalidateQueries({ queryKey: ['legal'] })
     },
+  })
+}
+
+function invalidateAfterCourtChange(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['court-productions'] })
+  queryClient.invalidateQueries({ queryKey: ['today'] })
+  queryClient.invalidateQueries({ queryKey: ['legal'] })
+  queryClient.invalidateQueries({ queryKey: ['custody'] })
+  queryClient.invalidateQueries({ queryKey: ['prisoners'] })
+}
+
+export function useRecordCourtOutcome() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: RecordCourtOutcomeInput) => recordCourtOutcome(input),
+    onSuccess: () => invalidateAfterCourtChange(queryClient),
+  })
+}
+
+export function useCancelCourtProduction() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ productionId, reason }: { productionId: string; reason: string }) => cancelCourtProduction(productionId, reason),
+    onSuccess: () => invalidateAfterCourtChange(queryClient),
   })
 }

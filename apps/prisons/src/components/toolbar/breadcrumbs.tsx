@@ -24,7 +24,7 @@ export function Breadcrumbs() {
   const segments = location.pathname.split("/").filter(Boolean)
 
   const crumbs = [
-    { label: "Overview", to: "/" },
+    { label: "Home", to: "/" },
     ...segments.map((segment, index) => ({
       label: displaySegment(segment),
       to: "/" + segments.slice(0, index + 1).join("/"),

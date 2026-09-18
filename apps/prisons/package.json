@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "check": "tsc --noEmit",
     "preview": "vite preview",
-    "tauri": "NO_AT_BRIDGE=1 GDK_PROGNAME=\"prisons\" WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev"
+    "tauri": "NO_AT_BRIDGE=1 GDK_PROGNAME=\"prisons\" WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
+    "e2e": "bun run scripts/e2e-data-layer.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.0",

@@ -7,7 +7,7 @@ export function useChooseRole() {
   return useMutation({
     mutationFn: (role: HqRole) => chooseRole(role),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hqConfig'] })
+      queryClient.invalidateQueries({ queryKey: ['systemState'] })
     },
   })
 }
@@ -17,7 +17,7 @@ export function useVerifyActivationCode() {
   return useMutation({
     mutationFn: (token: string) => verifyActivationCode(token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hqConfig'] })
+      queryClient.invalidateQueries({ queryKey: ['systemState'] })
     },
   })
 }

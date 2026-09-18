@@ -1,4 +1,4 @@
-import { useStore, type AnyFormApi } from '@tanstack/react-form'
+import { useSelector, type AnyFormApi } from '@tanstack/react-form'
 import { useEffect } from 'react'
 
 /**
@@ -10,7 +10,7 @@ import { useEffect } from 'react'
  * hand-rolled tracker.
  */
 export function useReportDirty(form: AnyFormApi, onDirtyChange?: (dirty: boolean) => void) {
-  const isDirty = useStore(form.store, (state) => state.isDirty)
+  const isDirty = useSelector(form.store, (state) => state.isDirty)
 
   useEffect(() => {
     onDirtyChange?.(isDirty)

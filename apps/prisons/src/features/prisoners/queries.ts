@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createPrisoner, getPrisoner, listInCustody, listPrisoners, updatePrisoner } from './data'
-import type { CreatePrisonerInput, UpdatePrisonerInput } from './schema'
+import { getPrisoner, listInCustody, listPrisoners, updatePrisoner } from './data'
+import type { UpdatePrisonerInput } from './schema'
 
 export const prisonersOptions = (query: string) =>
   queryOptions({
@@ -34,14 +34,6 @@ export function usePrisoner(id: string) {
 
 function invalidatePrisonerQueries(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['prisoners'] })
-}
-
-export function useCreatePrisoner() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (input: CreatePrisonerInput) => createPrisoner(input),
-    onSuccess: () => invalidatePrisonerQueries(queryClient),
-  })
 }
 
 export function useUpdatePrisoner() {

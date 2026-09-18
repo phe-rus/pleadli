@@ -1,11 +1,19 @@
 import { SettingsTable, type SettingsRow } from '@/components/settings-table'
 import { Toggletheme } from '@/components/toggle-theme'
 import { DevRoleSwitch } from '@/components/dev-role-switch'
-import { facilityStatusLabel, ownFacilityOptions, peerSyncConfigOptions, useOwnFacility, usePeerSyncConfig } from '@/features/facilities'
+import {
+  PairWithHeadOfficeForm,
+  peerSyncConfigOptions,
+  syncStatusLabel,
+  usePeerSyncConfig,
+  useSyncNow,
+} from '@/features/facilities'
 import { cloudflareConfigOptions, useCloudflareConfig, useSaveCloudflareConfig } from '@/features/network'
-import { useHqConfig } from '@/features/session'
+import { BackupsPanel, NodePanel, backupsOptions } from '@/features/node'
+import { useHqConfig, usePermissions } from '@/features/session'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Badge } from '@pleadli/ui/badge'
+import { Button } from '@pleadli/ui/button'
 import { FieldDescription, FieldGroup } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
@@ -16,10 +24,12 @@ export const Route = createFileRoute('/_public/settings/')({
   validateSearch: (search: Record<string, unknown>): { tab?: string } =>
     typeof search.tab === 'string' ? { tab: search.tab } : {},
   loader: async ({ context }) => {
-    await Promise.all([
+    // Each of these needs a different permission, and the page renders
+    // fine without any of them, so a refusal here is not an error.
+    await Promise.allSettled([
       context.queryClient.query({ ...peerSyncConfigOptions(), staleTime: 'static' }),
-      context.queryClient.query({ ...ownFacilityOptions(), staleTime: 'static' }),
       context.queryClient.query({ ...cloudflareConfigOptions(), staleTime: 'static' }),
+      context.queryClient.query({ ...backupsOptions(), staleTime: 'static' }),
     ])
   },
   component: RouteComponent,
@@ -33,6 +43,7 @@ export const Route = createFileRoute('/_public/settings/')({
 function RouteComponent() {
   const { tab } = Route.useSearch()
   const navigate = Route.useNavigate()
+  const { can } = usePermissions()
 
   return (
     <article className="container flex flex-col gap-5 pt-5 pb-20">
@@ -48,6 +59,7 @@ function RouteComponent() {
         <TabsList variant="line">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="network">Network & Sync</TabsTrigger>
+          {can('node.manage') && <TabsTrigger value="node">Node and backups</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="general" className="pt-4">
@@ -56,6 +68,14 @@ function RouteComponent() {
         <TabsContent value="network" className="pt-4">
           <NetworkTab />
         </TabsContent>
+        {can('node.manage') && (
+          <TabsContent value="node" className="pt-4">
+            <div className="flex flex-col gap-10">
+              <NodePanel />
+              <BackupsPanel />
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </article>
   )
@@ -84,46 +104,94 @@ function NetworkTab() {
   return hqConfig?.isHeadOffice ? <HqNetworkTab /> : <FacilityNetworkTab />
 }
 
-/** A facility's own registration and connection to Head Office — read
- * only here, since registering happens once at first-launch onboarding
- * (`FacilityOnboardingGate`), not a Settings form. */
+/** A facility's own connection to Head Office. A facility works fully on
+ * its own; pairing is optional and can be done here at any time. A paired
+ * facility has no local `facilities` row of its own: the `peer_sync_config`
+ * credential is its source of truth, and only Head Office holds the roster. */
 function FacilityNetworkTab() {
-  const { data: facility } = useOwnFacility()
+  const { data: state } = useHqConfig()
+  const { can } = usePermissions()
   const { data: config } = usePeerSyncConfig()
+  const syncNow = useSyncNow()
+
+  const paired = state?.paired ?? false
+  const statusBadge = paired ? (
+    <Badge variant={config?.lastSyncStatus === 'ok' ? 'default' : config?.lastSyncStatus === 'rejected' || config?.lastSyncStatus === 'error' ? 'destructive' : 'secondary'}>
+      {config?.lastSyncStatus ? syncStatusLabel(config.lastSyncStatus) : 'Paired'}
+    </Badge>
+  ) : (
+    <Badge variant="secondary">Working on its own</Badge>
+  )
 
   const rows: SettingsRow[] = [
     {
       key: 'facility',
-      label: facility?.name ?? 'This facility',
-      description: facility
-        ? facility.status === 'active'
-          ? `Verified by Head Office.`
-          : facility.status === 'revoked'
-            ? 'Revoked by Head Office — this installation can no longer sync.'
-            : "Pending Head Office verification. You can keep using the system — this doesn't block routine work."
-        : 'Not yet registered.',
-      control: facility && <Badge variant={facility.status === 'active' ? 'default' : facility.status === 'revoked' ? 'destructive' : 'secondary'}>{facilityStatusLabel(facility.status)}</Badge>,
+      label: 'This facility',
+      description: paired
+        ? config?.lastSyncStatus === 'pending_verification'
+          ? 'Registered with Head Office and waiting for its verification. Using the system is not blocked.'
+          : config?.lastSyncStatus === 'rejected'
+            ? config?.lastError ?? 'Head Office rejected this installation. Reach out to re-pair.'
+            : 'Paired with Head Office. It approves or revokes you from its Facilities page.'
+        : 'Not paired with a Head Office. Everything works fully offline; pair when you have a pairing code.',
+      control: statusBadge,
     },
     {
       key: 'hq-connection',
       label: 'Head Office connection',
       description: config?.hqHostname
-        ? `Reachable at ${config.hqHostname}. ${config.lastSyncedAt ? `Last synced ${format(config.lastSyncedAt, 'PPp')}.` : 'Never synced yet.'}`
-        : 'No Head Office reach configured yet — syncing prisoner records isn\'t available in this build.',
+        ? `Reachable at ${config.hqHostname}.${config?.lastSyncedAt ? ` Last synced ${format(config.lastSyncedAt, 'PPp')}.` : ''}`
+        : 'No Head Office connection yet. Sync starts once you pair.',
       control: null,
     },
   ]
 
   if (config?.lastError) {
+    rows.push({ key: 'last-error', label: 'Last sync error', description: config.lastError, control: null })
+  }
+
+  if (config?.hqHostname && paired && can('node.manage')) {
     rows.push({
-      key: 'last-error',
-      label: 'Last sync error',
-      description: config.lastError,
-      control: null,
+      key: 'sync-now',
+      label: 'Send to Head Office now',
+      description: 'Normally sends automatically every five minutes while online; this sends immediately.',
+      control: (
+        <Button
+          size="xs"
+          onClick={() =>
+            syncNow.mutate(undefined, {
+              onSuccess: (result) => {
+                if (result.status === 'ok') t.success(`Synced ${result.count ?? 'all'} records`)
+                else if (result.status === 'pending_verification') t.info('Waiting for Head Office verification')
+                else t.error('Head Office did not accept this sync')
+              },
+              onError: (error) => t.error(error.message || 'Sync failed'),
+            })
+          }
+          disabled={syncNow.isPending}
+        >
+          {syncNow.isPending ? 'Syncing…' : 'Sync now'}
+        </Button>
+      ),
     })
   }
 
-  return <SettingsTable rows={rows} className="md:max-w-lg" />
+  return (
+    <div className="flex flex-col gap-6">
+      <SettingsTable rows={rows} className="md:max-w-lg" />
+      {!paired && can('node.manage') && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-sm font-medium">Pair with Head Office</h2>
+            <p className="text-xs text-muted-foreground md:max-w-lg">
+              Head Office gives you a pairing code. Pairing lets this facility send what Head Office needs; it never blocks local work.
+            </p>
+          </div>
+          <PairWithHeadOfficeForm />
+        </div>
+      )}
+    </div>
+  )
 }
 
 /** Head Office's own reach: the Cloudflare Tunnel config that will make

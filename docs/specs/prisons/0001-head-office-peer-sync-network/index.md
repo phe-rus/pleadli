@@ -1,7 +1,7 @@
 # 0001. Head Office and peer prison sync network
 
 **Date**: 2026-09-18
-**Status**: In Progress
+**Status**: In Progress (child 1 done; child 2 and child 3 implemented end-to-end; awaiting /check verify)
 
 ## Summary
 

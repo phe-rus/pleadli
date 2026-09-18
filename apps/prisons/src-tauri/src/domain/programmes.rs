@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
+use sqlx::{FromRow, SqliteConnection, SqlitePool};
 use uuid::Uuid;
+
+use super::audit::{self, AuditEntry};
+use super::authz::Actor;
 
 /// Rehabilitation & Work Programmes (docs/prisons/PRODUCT.md) — a
 /// prisoner's participation in a named programme, not a calendar or
@@ -38,7 +41,7 @@ pub struct CertifyProgrammeParticipationInput {
     pub certificate_reference: Option<String>,
 }
 
-pub async fn create_participation(pool: &SqlitePool, input: CreateProgrammeParticipationInput) -> Result<ProgrammeParticipation, sqlx::Error> {
+pub async fn create_participation(conn: &mut SqliteConnection, actor: &Actor, input: CreateProgrammeParticipationInput) -> Result<ProgrammeParticipation, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
     sqlx::query(
         "INSERT INTO programme_participations (id, prisoner_id, category, programme_name, status, started_at, notes)
@@ -51,31 +54,40 @@ pub async fn create_participation(pool: &SqlitePool, input: CreateProgrammeParti
     .bind(&input.status)
     .bind(input.started_at)
     .bind(&input.notes)
-    .execute(pool)
+    .execute(&mut *conn)
     .await?;
 
-    sqlx::query_as::<_, ProgrammeParticipation>("SELECT * FROM programme_participations WHERE id = ?")
+    let row = sqlx::query_as::<_, ProgrammeParticipation>("SELECT * FROM programme_participations WHERE id = ?")
         .bind(&id)
-        .fetch_one(pool)
-        .await
+        .fetch_one(&mut *conn)
+        .await?;
+    audit::record(conn, actor, AuditEntry::new("programme.enrol", "programme_participation", Some(&id)).after(&row)).await?;
+    Ok(row)
 }
 
 pub async fn certify_participation(
-    pool: &SqlitePool,
+    conn: &mut SqliteConnection,
+    actor: &Actor,
     id: &str,
     input: CertifyProgrammeParticipationInput,
 ) -> Result<ProgrammeParticipation, sqlx::Error> {
+    let before = sqlx::query_as::<_, ProgrammeParticipation>("SELECT * FROM programme_participations WHERE id = ?")
+        .bind(id)
+        .fetch_one(&mut *conn)
+        .await?;
     sqlx::query("UPDATE programme_participations SET completed_at = ?, certificate_reference = ?, status = 'completed' WHERE id = ?")
         .bind(input.completed_at)
         .bind(&input.certificate_reference)
         .bind(id)
-        .execute(pool)
+        .execute(&mut *conn)
         .await?;
 
-    sqlx::query_as::<_, ProgrammeParticipation>("SELECT * FROM programme_participations WHERE id = ?")
+    let after = sqlx::query_as::<_, ProgrammeParticipation>("SELECT * FROM programme_participations WHERE id = ?")
         .bind(id)
-        .fetch_one(pool)
-        .await
+        .fetch_one(&mut *conn)
+        .await?;
+    audit::record(conn, actor, AuditEntry::new("programme.certify", "programme_participation", Some(id)).before(&before).after(&after)).await?;
+    Ok(after)
 }
 
 pub async fn list_for_prisoner(pool: &SqlitePool, prisoner_id: &str) -> Result<Vec<ProgrammeParticipation>, sqlx::Error> {

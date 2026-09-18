@@ -1,5 +1,5 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { addAttachmentFile, addAttachmentFromPath, deleteAttachment, listAttachments } from './data'
+import { addAttachment, listAttachments, voidAttachment, type PickedFile } from './data'
 
 export const attachmentsOptions = (entityType: string, entityId: string) =>
   queryOptions({
@@ -15,18 +15,17 @@ export function useAttachments(entityType: string, entityId: string) {
 export function useAddAttachment(entityType: string, entityId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: { path: string } | { file: File }) =>
-      'file' in input ? addAttachmentFile(entityType, entityId, input.file) : addAttachmentFromPath(entityType, entityId, input.path),
+    mutationFn: (file: PickedFile) => addAttachment(entityType, entityId, file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attachments', entityType, entityId] })
     },
   })
 }
 
-export function useDeleteAttachment(entityType: string, entityId: string) {
+export function useVoidAttachment(entityType: string, entityId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => deleteAttachment(id),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => voidAttachment(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attachments', entityType, entityId] })
     },

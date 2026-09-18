@@ -1,7 +1,8 @@
 import { FacilityOnboardingGate } from '@/components/facility-onboarding-gate'
 import { HqOnboardingGate } from '@/components/hq-onboarding-gate'
-import { HqSignInGate } from '@/components/hq-sign-in-gate'
+import { NodeUnreachableBanner, RecoveryGate } from '@/features/node'
 import { Notfound } from '@/components/notfound'
+import { SignInGate } from '@/components/sign-in-gate'
 import { SplashScreen } from '@/components/splash-screen'
 import { ThemeProvider } from '@/components/theme-provider'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
@@ -63,13 +64,16 @@ function RootComponent() {
           )}>
             <TooltipProvider>
               <SplashScreen>
-                <HqOnboardingGate>
-                  <FacilityOnboardingGate>
-                    <HqSignInGate>
-                      <Outlet />
-                    </HqSignInGate>
-                  </FacilityOnboardingGate>
-                </HqOnboardingGate>
+                <RecoveryGate>
+                  <HqOnboardingGate>
+                    <FacilityOnboardingGate>
+                      <SignInGate>
+                        <NodeUnreachableBanner />
+                        <Outlet />
+                      </SignInGate>
+                    </FacilityOnboardingGate>
+                  </HqOnboardingGate>
+                </RecoveryGate>
               </SplashScreen>
             </TooltipProvider>
             <GooeyToaster richColors />

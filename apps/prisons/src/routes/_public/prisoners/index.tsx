@@ -1,11 +1,10 @@
-import { Createpanel } from '@/components/create-panel'
 import {
   admissionInstrumentLabel,
   custodyStatusLabel,
+  pendingDocumentTypeLabel,
   prisonerFullName,
   prisonerStatusLabel,
   prisonersOptions,
-  PrisonerForm,
   usePrisoners,
   type Prisoner,
 } from '@/features/prisoners'
@@ -13,11 +12,11 @@ import { AddCircleIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
-import { Button } from '@pleadli/ui/button'
+import { buttonVariants } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/prisoners/')({
   validateSearch: (search: Record<string, unknown>): { open?: string } =>
@@ -37,8 +36,6 @@ export const Route = createFileRoute('/_public/prisoners/')({
 function RouteComponent() {
   const { open: openId } = Route.useSearch()
   const navigate = useNavigate()
-  const [addOpen, setAddOpen] = useState(false)
-  const [addDirty, setAddDirty] = useState(false)
   const { data: prisoners } = usePrisoners('')
 
   useEffect(() => {
@@ -78,6 +75,19 @@ function RouteComponent() {
         cell: ({ getValue }) => <Badge variant="outline">{custodyStatusLabel(getValue<string>())}</Badge>,
       },
       {
+        id: 'documentsPending',
+        accessorFn: (row) => (row.documentsPending ? pendingDocumentTypeLabel(row.pendingDocumentType) ?? 'Documents' : ''),
+        header: 'Documents',
+        cell: ({ row }) =>
+          row.original.documentsPending ? (
+            <Badge variant="destructive">
+              Pending{pendingDocumentTypeLabel(row.original.pendingDocumentType) ? ` — ${pendingDocumentTypeLabel(row.original.pendingDocumentType)}` : ''}
+            </Badge>
+          ) : (
+            '·'
+          ),
+      },
+      {
         accessorKey: 'admissionInstrumentType',
         header: 'Admission instrument',
         cell: ({ getValue }) => admissionInstrumentLabel(getValue<string>()),
@@ -99,24 +109,14 @@ function RouteComponent() {
       <section className="flex items-center gap-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-5">
-            <h1>Prisoners</h1>
+            <h1>Population</h1>
 
-            <Createpanel
-              open={addOpen}
-              onOpenChange={setAddOpen}
-              isDirty={addDirty}
-              trigger={
-                <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
-                  Admit prisoner
-                </Button>
-              }
-              headings={{ title: 'Admit prisoner', description: 'Receive a prisoner under a warrant or order.' }}
-            >
-              <PrisonerForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
-            </Createpanel>
+            <Link to="/procedures/reception" className={buttonVariants({ size: 'sm' })}>
+              <HugeiconsIcon icon={AddCircleIcon} />
+              Receive someone
+            </Link>
           </div>
-          <p className="md:max-w-sm">Every prisoner this installation is responsible for.</p>
+          <p className="md:max-w-sm">Everyone this facility holds or has held. Search by name, reference or national ID.</p>
         </div>
       </section>
 

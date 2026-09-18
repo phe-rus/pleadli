@@ -67,3 +67,29 @@ export const createVisitSchema = z.object({
 })
 
 export type CreateVisitInput = z.infer<typeof createVisitSchema>
+
+// The facility-wide visit log shape: a visit joined with its prisoner's
+// name (docs/prisons/navigation.md §4.5), distinct from the per-prisoner
+// `Visit` list used inside a prisoner's workspace.
+export const visitListItemSchema = z.object({
+  id: z.string(),
+  prisonerId: z.string(),
+  prisonerFirstName: z.string(),
+  prisonerLastName: z.string(),
+  prisonerOtherNames: z.string().nullable(),
+  visitorName: z.string(),
+  visitorIdentification: z.string().nullable(),
+  visitedAt: z.number(),
+  supervisingOfficer: z.string().nullable(),
+  notes: z.string().nullable(),
+  visitType: z.string(),
+  status: z.string(),
+  authorizedBy: z.string().nullable(),
+  createdAt: z.number(),
+})
+
+export type VisitListItem = z.infer<typeof visitListItemSchema>
+
+export function visitListItemFullName(row: Pick<VisitListItem, 'prisonerFirstName' | 'prisonerLastName' | 'prisonerOtherNames'>) {
+  return [row.prisonerFirstName, row.prisonerOtherNames, row.prisonerLastName].filter(Boolean).join(' ')
+}

@@ -31,8 +31,38 @@ export function custodyStatusLabel(status: string) {
   return custodyStatuses.find((s) => s.value === status)?.label ?? status
 }
 
+export const prisonerSexes = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+] as const
+
+export const educationLevels = [
+  { value: 'none', label: 'None' },
+  { value: 'primary', label: 'Primary' },
+  { value: 'secondary', label: 'Secondary' },
+  { value: 'tertiary', label: 'Tertiary' },
+  { value: 'other', label: 'Other' },
+] as const
+
+export const nationalities = [
+  { value: 'ugandan', label: 'Ugandan' },
+  { value: 'foreign', label: 'Foreign' },
+] as const
+
+export const pendingDocumentTypes = [
+  { value: 'charge_sheet', label: 'Charge sheet' },
+  { value: 'committed_warrant', label: 'Committed warrant' },
+  { value: 'both', label: 'Charge sheet and warrant' },
+  { value: 'other', label: 'Other' },
+] as const
+
+export function pendingDocumentTypeLabel(type: string | null) {
+  return pendingDocumentTypes.find((t) => t.value === type)?.label ?? null
+}
+
 export const prisonerSchema = z.object({
   id: z.string(),
+  episodeId: z.string().nullable().optional(),
   firstName: z.string(),
   lastName: z.string(),
   otherNames: z.string().nullable(),
@@ -45,27 +75,18 @@ export const prisonerSchema = z.object({
   currentStatus: z.string(),
   highCourtOnlyOffence: z.boolean(),
   currentLocation: z.string().nullable(),
+  dateOfBirth: z.number().nullable(),
+  sex: z.string().nullable(),
+  educationLevel: z.string().nullable(),
+  nationality: z.string().nullable(),
+  offence: z.string().nullable(),
+  documentsPending: z.boolean(),
+  pendingDocumentType: z.string().nullable(),
   notes: z.string().nullable(),
   createdAt: z.number(),
 })
 
 export type Prisoner = z.infer<typeof prisonerSchema>
-
-export const createPrisonerSchema = z.object({
-  firstName: z.string().min(1, 'First name is required.'),
-  lastName: z.string().min(1, 'Last name is required.'),
-  otherNames: z.string(),
-  nationalId: z.string(),
-  reference: z.string(),
-  status: z.string().min(1),
-  admissionInstrumentType: z.string().min(1, 'Admission instrument is required.'),
-  admissionAuthority: z.string(),
-  admittedAt: z.number(),
-  highCourtOnlyOffence: z.boolean(),
-  notes: z.string(),
-})
-
-export type CreatePrisonerInput = z.infer<typeof createPrisonerSchema>
 
 export const updatePrisonerSchema = z.object({
   firstName: z.string().min(1, 'First name is required.'),
@@ -76,6 +97,13 @@ export const updatePrisonerSchema = z.object({
   status: z.string().min(1),
   highCourtOnlyOffence: z.boolean(),
   currentLocation: z.string(),
+  dateOfBirth: z.number().nullable(),
+  sex: z.string().nullable(),
+  educationLevel: z.string().nullable(),
+  nationality: z.string().nullable(),
+  offence: z.string(),
+  documentsPending: z.boolean(),
+  pendingDocumentType: z.string().nullable(),
   notes: z.string(),
 })
 

@@ -30,6 +30,26 @@ pub struct ReportsSummary {
     pub release_type_counts: Vec<LabeledCount>,
     pub transfer_direction_counts: Vec<LabeledCount>,
     pub health_event_type_counts: Vec<LabeledCount>,
+
+    // UPS-shaped population profile (docs/prisons/RESEARCH.md §8): the six
+    // dimensions UPS publishes its population statistics by, derived from
+    // prisoner records, plus admission time series at year/month level
+    // (week is derived client side from admission_timestamps).
+    pub admission_year_counts: Vec<LabeledCount>,
+    pub admission_month_counts: Vec<LabeledCount>,
+    pub prisoner_age_group_counts: Vec<LabeledCount>,
+    pub prisoner_sex_counts: Vec<LabeledCount>,
+    pub prisoner_education_counts: Vec<LabeledCount>,
+    pub prisoner_nationality_counts: Vec<LabeledCount>,
+    pub prisoner_offence_type_counts: Vec<LabeledCount>,
+    pub prisoner_sentence_category_counts: Vec<LabeledCount>,
+
+    // By-facility reach of a Head Office: every prisoner row it holds is
+    // either stamped `facility_id` from a synced facility (child 3) or not
+    // yet attributable — Head Office's own local records predate the sync
+    // feature, so `Not assigned` is an honest residual label, never hidden.
+    pub facility_population_counts: Vec<LabeledCount>,
+    pub facility_in_custody_counts: Vec<LabeledCount>,
 }
 
 async fn timestamps(pool: &SqlitePool, sql: &'static str) -> Result<Vec<i64>, sqlx::Error> {
@@ -59,6 +79,84 @@ pub async fn get_reports_summary(pool: &SqlitePool) -> Result<ReportsSummary, sq
     let health_event_type_counts =
         labeled_counts(pool, "SELECT event_type AS label, COUNT(*) AS count FROM health_events GROUP BY event_type").await?;
 
+    // Admissions by calendar year, then by month (YEAR-MONTH). Week stays
+    // client side from admission_timestamps.
+    let admission_year_counts = labeled_counts(
+        pool,
+        "SELECT strftime('%Y', datetime(admitted_at / 1000, 'unixepoch')) AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+    ).await?;
+    let admission_month_counts = labeled_counts(
+        pool,
+        "SELECT strftime('%Y-%m', datetime(admitted_at / 1000, 'unixepoch')) AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+    ).await?;
+
+    // Population profile by the dimensions UPS publishes (RESEARCH.md §8).
+    // The capital-offence-type grouping is a display-time keyword classifier
+    // over the free-text offence field (no offence taxonomy is stored), per
+    // spec docs/specs/prisons/0002-… — same honesty limit as any
+    // display-time label derivation.
+    let prisoner_age_group_counts = labeled_counts(
+        pool,
+        "SELECT CASE
+            WHEN date_of_birth IS NULL THEN 'Not recorded'
+            WHEN CAST((julianday('now') - julianday(date(date_of_birth / 1000, 'unixepoch'))) / 365.25 AS INTEGER) <= 17 THEN 'Aged 17 and under'
+            WHEN CAST((julianday('now') - julianday(date(date_of_birth / 1000, 'unixepoch'))) / 365.25 AS INTEGER) <= 36 THEN 'Aged 18-36'
+            WHEN CAST((julianday('now') - julianday(date(date_of_birth / 1000, 'unixepoch'))) / 365.25 AS INTEGER) <= 54 THEN 'Aged 37-54'
+            ELSE 'Aged 55 and over'
+        END AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+    ).await?;
+    let prisoner_sex_counts = labeled_counts(
+        pool,
+        "SELECT COALESCE(sex, 'Not recorded') AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+    ).await?;
+    let prisoner_education_counts = labeled_counts(
+        pool,
+        "SELECT COALESCE(education_level, 'Not recorded') AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+    ).await?;
+    let prisoner_nationality_counts = labeled_counts(
+        pool,
+        "SELECT COALESCE(nationality, 'Not recorded') AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+    ).await?;
+    let prisoner_offence_type_counts = labeled_counts(
+        pool,
+        "SELECT CASE
+            WHEN offence IS NULL THEN 'Not recorded'
+            WHEN LOWER(offence) LIKE '%terroris%' THEN 'Terrorism'
+            WHEN LOWER(offence) LIKE '%treason%' THEN 'Treason'
+            WHEN LOWER(offence) LIKE '%murder%' THEN 'Murder'
+            WHEN LOWER(offence) LIKE '%aggravated robbery%' THEN 'Aggravated robbery'
+            WHEN LOWER(offence) LIKE '%rape%' THEN 'Rape'
+            ELSE 'Other'
+        END AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+    ).await?;
+    let prisoner_sentence_category_counts = labeled_counts(
+        pool,
+        "SELECT CASE status
+            WHEN 'convicted' THEN 'Sentenced'
+            WHEN 'unconvicted' THEN 'Remand'
+            WHEN 'civil' THEN 'Civil'
+            ELSE 'Other'
+        END AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+    ).await?;
+
+    // Snapshot-derived labels: On Head Office, `facility_id` resolves to the
+    // facility's name; at any non-HQ install that has not paired yet every
+    // row is `Not assigned`. LEFT JOIN so rows are never dropped for an
+    // unknown facility id.
+    let facility_population_counts = labeled_counts(
+        pool,
+        "SELECT COALESCE(f.name, 'Not assigned') AS label, COUNT(*) AS count
+         FROM prisoners p LEFT JOIN facilities f ON f.id = p.facility_id
+         GROUP BY label ORDER BY label",
+    ).await?;
+    let facility_in_custody_counts = labeled_counts(
+        pool,
+        "SELECT COALESCE(f.name, 'Not assigned') AS label, COUNT(*) AS count
+         FROM prisoners p LEFT JOIN facilities f ON f.id = p.facility_id
+         WHERE p.current_status = 'in_custody'
+         GROUP BY label ORDER BY label",
+    ).await?;
+
     Ok(ReportsSummary {
         admission_timestamps,
         release_timestamps,
@@ -71,5 +169,15 @@ pub async fn get_reports_summary(pool: &SqlitePool) -> Result<ReportsSummary, sq
         release_type_counts,
         transfer_direction_counts,
         health_event_type_counts,
+        admission_year_counts,
+        admission_month_counts,
+        prisoner_age_group_counts,
+        prisoner_sex_counts,
+        prisoner_education_counts,
+        prisoner_nationality_counts,
+        prisoner_offence_type_counts,
+        prisoner_sentence_category_counts,
+        facility_population_counts,
+        facility_in_custody_counts,
     })
 }

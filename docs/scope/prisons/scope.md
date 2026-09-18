@@ -35,6 +35,7 @@ The Tauri desktop app for Uganda's prisons service: admission and prisoner custo
 | 20 | Print and export | Next slice | planned |
 | 21 | UPS shaped statistics export | Next slice | planned |
 | 22 | Head Office and peer prison sync network | Foundation | in-progress |
+| 23 | Visits page + motion add-record + nav alignment | Next slice | in-progress |
 
 ## Existing
 
@@ -117,6 +118,18 @@ No admission slip, release order, or remand list printout exists; Police and DPP
 Once feature 15 is built, format an export that mirrors UPS's own real Monthly Statistics Summary layout, so an officer isn't re-typing numbers this system already has into a separate report.
 **Done when:** Reports can produce an export whose shape matches UPS's own published monthly statistics report structure.
 - [ ] Design it (spec): `/architect UPS shaped statistics export`
+
+## Next slice
+
+### 23. Visits page + motion add-record + nav alignment · in-progress
+2026-09-18, from the engineer directly. Three UI gaps the audited product model (`docs/prisons/navigation.md` §4.5-4.6) already implies but the app doesn't deliver:
+- **Visits page**: the sidebar has promised a top-level `/visits` since `navigationItems.ts` was written, but the route does not exist — a dead nav link. The domain is fully built (`features/visits/*`, used inside the prisoner workspace); this adds the missing facility-wide destination: a visit log across every prisoner (authorization + attendance), searchable, prisoner rows linking through to the person. Backed by a new facility-wide `list_visits` command.
+- **Motion add-record panel**: `add-record-panel.tsx` uses `@pleadli/ui`'s Drawer with a 3-item text list. Per the engineer the add-record surface is a **framer-motion panel** (same animation language as the existing onboarding gates) containing a **grid of record types**; selecting a card for a person-scoped record asks which prisoner (a search), then shows that record's inputs — real "steps" (grid → prisoner → form), never a nested tree.
+- **Nav alignment**: the flat nav shape is settled (navigation.md D6 = flat); the work is truth—`navigationItems.ts`'s comments describe an older reality (e.g. "Reports is a written document" vs the built `/reports` statistics surface), and its `Visits` link points at a route that now exists. No regrouping.
+
+**Done when:** `/visits` renders the facility-wide visit log and its nav link resolves; the header's "Add record" opens a motion panel with a record-type grid covering every built form (person-scoped ones ask for a prisoner via search first); `navigationItems.ts` matches the `navigation.md` trees with no stale comments.
+- [ ] Build it: `/develop visits page, motion add-record, nav alignment` (in progress)
+- [ ] Verify it: `/check verify` — skip, no backend behavior change beyond a new list command; covered by code review instead
 
 ## Foundation
 

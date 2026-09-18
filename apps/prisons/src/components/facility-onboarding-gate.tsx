@@ -1,42 +1,109 @@
 import { PreAuthLayout, ScreenHeader, screenTransition } from '@/components/pre-auth-layout'
-import { OfficerForm, useIsBootstrap } from '@/features/officers'
-import { facilityRegions, useOwnFacility, useRegisterFacilitySelf, type RegisterFacilityInput } from '@/features/facilities'
+import {
+  facilityRegions,
+  parsePairingCode,
+  usePairWithHeadOffice,
+  type RegisterFacilityInput,
+} from '@/features/facilities'
+import { ApiError } from '@/lib/api'
 import { useHqConfig } from '@/features/session'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Field, FieldLabel } from '@pleadli/ui/field'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { t } from '@pleadli/ui/goey-toaster'
-import { PrisonIcon, UserAdd01Icon } from '@hugeicons/core-free-icons'
+import { Key01Icon, PrisonIcon } from '@hugeicons/core-free-icons'
 import { AnimatePresence, motion } from 'framer-motion'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Button } from '@pleadli/ui/button'
+
+type PendingPairing = { pairingCode: string; hostname: string }
 
 /**
- * First-launch onboarding for a facility installation, as two real steps
- * (spec direction: register the facility, then create the first officer,
- * only after that landing in the app — usable immediately even before
- * Head Office approves it, since a facility never blocks on that). Sits
- * beside `HqOnboardingGate`/`HqSignInGate` in `__root.tsx`: passes
- * straight through for a Head Office installation or once both steps are
- * done, and re-derives which step to show from real state each render
- * rather than a stored "onboarding complete" flag, so it self-heals if
- * either step's data is ever missing.
+ * First-launch pairing for a facility installation, in two steps: paste the
+ * one pairing code Head Office handed over (it carries Head Office's own
+ * hostname), then fill in the facility's details. The node makes the outbound
+ * call to Head Office and stores the credentials; the webview never talks to
+ * Head Office itself.
+ *
+ * Pairing is optional. A facility works completely on its own, so the first
+ * screen offers "Continue without Head Office". Pairing can be done later
+ * from the facility's connectivity settings. This gate only appears while the
+ * installation has no accounts yet (the persisted first-launch state), so it
+ * never returns once the first account exists.
  */
 export function FacilityOnboardingGate({ children }: { children: ReactNode }) {
-  const { data: hqConfig, isLoading: configLoading } = useHqConfig()
-  const isFacility = hqConfig != null && !hqConfig.isHeadOffice
+  const { data: state, isLoading } = useHqConfig()
+  const [skipped, setSkipped] = useState(false)
 
-  const { data: ownFacility, isLoading: facilityLoading } = useOwnFacility(isFacility)
-  const { data: isBootstrap, isLoading: bootstrapLoading } = useIsBootstrap()
-
-  if (!isFacility) return <>{children}</>
-  if (configLoading || facilityLoading || bootstrapLoading) return null
-  if (ownFacility == null) return <FacilityDetailsScreen />
-  if (isBootstrap) return <FirstOfficerScreen />
+  if (isLoading || !state) return null
+  const needsPairingChoice = state.role === 'facility' && !state.paired && state.bootstrap && !skipped
+  if (needsPairingChoice) return <FacilityPairingFlow onSkip={() => setSkipped(true)} />
   return <>{children}</>
 }
 
-function FacilityDetailsScreen() {
-  const registerFacility = useRegisterFacilitySelf()
+function FacilityPairingFlow({ onSkip }: { onSkip: () => void }) {
+  const [pending, setPending] = useState<PendingPairing | null>(null)
+
+  return pending ? (
+    <FacilityDetailsScreen pending={pending} onBack={() => setPending(null)} />
+  ) : (
+    <PairingCodeScreen onEntered={setPending} onSkip={onSkip} />
+  )
+}
+
+function PairingCodeScreen({ onEntered, onSkip }: { onEntered: (pending: PendingPairing) => void; onSkip: () => void }) {
+  const [raw, setRaw] = useState('')
+
+  return (
+    <PreAuthLayout>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key="pairing-code" {...screenTransition} className="flex w-full max-w-sm flex-col gap-6">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-primary">1</span>
+            Step 1 of 2
+          </div>
+          <ScreenHeader
+            icon={Key01Icon}
+            title="Pair with your Head Office"
+            description="Paste the pairing code your Head Office gave you. It carries everything needed to reach it, so you never type a hostname. This facility works fully offline whether or not you pair."
+          />
+          <form
+            className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-xs"
+            onSubmit={(event) => {
+              event.preventDefault()
+              try {
+                const { hostname } = parsePairingCode(raw.trim())
+                onEntered({ pairingCode: raw.trim(), hostname })
+              } catch {
+                t.error('That does not look like a Pleadli pairing code')
+              }
+            }}
+          >
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium">Pairing code</span>
+              <input
+                autoFocus
+                value={raw}
+                onChange={(event) => setRaw(event.target.value)}
+                placeholder="e.g. https://hq.example.com#8f2..."
+                className="h-9 w-full rounded-md border border-border bg-background px-2.5 font-mono text-xs outline-none focus:border-primary"
+              />
+            </label>
+            <Button type="submit" disabled={raw.trim().length === 0} className="w-full">
+              Continue
+            </Button>
+            <Button type="button" variant="secondary" className="w-full" onClick={onSkip}>
+              Continue without Head Office
+            </Button>
+          </form>
+        </motion.div>
+      </AnimatePresence>
+    </PreAuthLayout>
+  )
+}
+
+function FacilityDetailsScreen({ pending, onBack }: { pending: PendingPairing; onBack: () => void }) {
+  const pairWithHeadOffice = usePairWithHeadOffice()
 
   const form = useAppForm({
     defaultValues: {
@@ -48,25 +115,32 @@ function FacilityDetailsScreen() {
     } as RegisterFacilityInput,
     onSubmit: async ({ value }) => {
       try {
-        await registerFacility.mutateAsync(value)
-      } catch {
-        t.error('Could not register this facility', { description: 'Check the details and try again.' })
+        await pairWithHeadOffice.mutateAsync({ pairingCode: pending.pairingCode, input: value })
+      } catch (error) {
+        t.error('Head Office could not register this facility', {
+          description:
+            error instanceof ApiError
+              ? error.message
+              : 'The pairing code may have already been used or expired. Ask for a new one.',
+        })
       }
     },
   })
+
+  const hostname = pending.hostname
 
   return (
     <PreAuthLayout>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key="facility-details" {...screenTransition} className="flex w-full max-w-sm flex-col gap-6">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-primary">1</span>
-            Step 1 of 2
+            <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-primary">2</span>
+            Step 2 of 2
           </div>
           <ScreenHeader
             icon={PrisonIcon}
             title="Register this facility"
-            description="Head Office will see this once it's reachable. You can start using the system before that's approved."
+            description={`These details go straight to your Head Office at ${hostname}. You can start using the system before it approves the pairing.`}
           />
           <form
             className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-xs"
@@ -102,33 +176,13 @@ function FacilityDetailsScreen() {
             <form.AppField name="headOfficerName">{(f) => <f.input label="Head officer's name" />}</form.AppField>
             <form.AppForm>
               <div className="*:w-full">
-                <form.submit label="Continue" />
+                <form.submit label={pairWithHeadOffice.isPending ? 'Pairing…' : 'Confirm'} />
               </div>
             </form.AppForm>
+            <Button type="button" variant="ghost" className="w-full" onClick={onBack} disabled={pairWithHeadOffice.isPending}>
+              Back
+            </Button>
           </form>
-        </motion.div>
-      </AnimatePresence>
-    </PreAuthLayout>
-  )
-}
-
-function FirstOfficerScreen() {
-  return (
-    <PreAuthLayout>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key="first-officer" {...screenTransition} className="flex w-full max-w-sm flex-col gap-6">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-primary">2</span>
-            Step 2 of 2
-          </div>
-          <ScreenHeader
-            icon={UserAdd01Icon}
-            title="Create the first officer account"
-            description="This account becomes the administrator for this facility and can add every other officer afterward."
-          />
-          <div className="rounded-lg border border-border bg-card p-4 shadow-xs">
-            <OfficerForm isBootstrap />
-          </div>
         </motion.div>
       </AnimatePresence>
     </PreAuthLayout>
