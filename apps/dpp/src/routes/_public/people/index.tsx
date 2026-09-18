@@ -32,25 +32,26 @@ function RouteComponent() {
     return [
       selectColumn(),
       {
-        id: 'name',
-        accessorFn: (row) => personFullName(row),
-        header: 'Name',
+        accessorKey: 'id',
+        header: 'ID',
         cell: ({ row }) => (
           <span
             className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
             onClick={() => setEditingPerson(row.original)}
           >
-            {personFullName(row.original)}
+            {row.original.id}
           </span>
         ),
       },
+      { id: 'name', accessorFn: (row) => personFullName(row), header: 'Name' },
+      { accessorKey: 'otherNames', header: 'Other names', cell: ({ row }) => row.original.otherNames ?? '·' },
       { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => row.original.phone ?? '·' },
       { accessorKey: 'nationalId', header: 'National ID', cell: ({ row }) => row.original.nationalId ?? '·' },
       { accessorKey: 'address', header: 'Address', cell: ({ row }) => row.original.address ?? '·' },
       {
         accessorKey: 'createdAt',
         header: 'Recorded',
-        cell: ({ getValue }) => format(getValue<number>(), 'PP'),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])

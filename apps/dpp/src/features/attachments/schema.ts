@@ -3,6 +3,8 @@ import * as z from 'zod'
 export const entityTypes = {
   person: 'person',
   prosecutionFile: 'prosecution_file',
+  statement: 'statement',
+  evidenceItem: 'evidence_item',
 } as const
 
 export type EntityType = (typeof entityTypes)[keyof typeof entityTypes]

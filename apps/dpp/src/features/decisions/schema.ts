@@ -29,6 +29,17 @@ export function decisionTypeDelegable(type: string) {
   return decisionTypes.find((d) => d.value === type)?.delegable ?? true
 }
 
+// Decision types whose real institutional output is a sanctioned Charge
+// Sheet (RESEARCH.md §3: "sanction the charges by appending his or her
+// signature, date, and stamp on the Charge Sheet") — a decline decision's
+// output is a written, privileged reasons record instead, not this
+// document.
+const chargeSheetDecisionTypes = new Set(['sanction', 'threshold_charge', 'amend_charge'])
+
+export function decisionProducesChargeSheet(type: string) {
+  return chargeSheetDecisionTypes.has(type)
+}
+
 export const decisionSchema = z.object({
   id: z.string(),
   prosecutionFileId: z.string(),

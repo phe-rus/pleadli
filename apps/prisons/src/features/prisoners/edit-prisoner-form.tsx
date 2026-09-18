@@ -27,6 +27,7 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
       reference: prisoner.reference ?? '',
       status: prisoner.status,
       highCourtOnlyOffence: prisoner.highCourtOnlyOffence,
+      currentLocation: prisoner.currentLocation ?? '',
       notes: prisoner.notes ?? '',
     },
     validators: {
@@ -67,6 +68,10 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
         <form.AppField name="nationalId">{(f) => <f.input label="National ID" />}</form.AppField>
         <form.AppField name="reference">{(f) => <f.input label="Reference" />}</form.AppField>
       </div>
+
+      <form.AppField name="currentLocation">
+        {(f) => <f.input label="Current location (optional)" placeholder="e.g. Ward 3, whatever this facility calls its own areas" />}
+      </form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
         <form.AppField name="status">

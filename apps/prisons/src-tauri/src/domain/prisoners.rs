@@ -21,6 +21,10 @@ pub struct Prisoner {
     pub admitted_at: i64,
     pub current_status: String,
     pub high_court_only_offence: bool,
+    /// Free text, deliberately not a structured Facility/Block/Wing/Cell
+    /// hierarchy — see docs/prisons/PRODUCT.md's "Current location"
+    /// section; no such hierarchy was verified for Uganda (RESEARCH.md §9).
+    pub current_location: Option<String>,
     pub notes: Option<String>,
     pub created_at: i64,
 }
@@ -51,6 +55,7 @@ pub struct UpdatePrisonerInput {
     pub reference: Option<String>,
     pub status: String,
     pub high_court_only_offence: bool,
+    pub current_location: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -85,7 +90,7 @@ pub async fn update_prisoner(pool: &SqlitePool, id: &str, input: UpdatePrisonerI
     sqlx::query(
         "UPDATE prisoners
          SET first_name = ?, last_name = ?, other_names = ?, national_id = ?, reference = ?,
-             status = ?, high_court_only_offence = ?, notes = ?
+             status = ?, high_court_only_offence = ?, current_location = ?, notes = ?
          WHERE id = ?",
     )
     .bind(&input.first_name)
@@ -95,6 +100,7 @@ pub async fn update_prisoner(pool: &SqlitePool, id: &str, input: UpdatePrisonerI
     .bind(&input.reference)
     .bind(&input.status)
     .bind(input.high_court_only_offence)
+    .bind(&input.current_location)
     .bind(&input.notes)
     .bind(id)
     .execute(pool)

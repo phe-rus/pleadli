@@ -18,8 +18,8 @@ import {
 } from '@pleadli/ui/drawer'
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '@pleadli/ui/empty'
 import { FieldGroup } from '@pleadli/ui/field'
+import { t } from '@pleadli/ui/goey-toaster'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { toast } from 'gooey-toast'
 import { useState } from 'react'
 import * as z from 'zod'
 
@@ -62,12 +62,12 @@ function RouteComponent() {
     onSubmit: async ({ value, formApi }) => {
       try {
         await createOrganization({ data: value })
-        toast.success({ title: 'Organization created', description: value.name })
+        t.success('Organization created', { description: value.name })
         formApi.reset()
         setCreateOpen(false)
         router.invalidate()
       } catch {
-        toast.error({ title: 'Could not create organization', description: 'Please try again.' })
+        t.error('Could not create organization', { description: 'Please try again.' })
       }
     },
   })

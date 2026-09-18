@@ -1,5 +1,12 @@
 pub mod attachments;
 pub mod court_productions;
+pub mod health_events;
 pub mod prisoners;
+pub mod programmes;
+pub mod property_records;
+pub mod reports;
 pub mod releases;
+pub mod requests;
 pub mod search;
+pub mod transfers;
+pub mod visits;

@@ -1,5 +1,6 @@
 import { Createpanel } from '@/components/create-panel'
 import {
+  admissionInstrumentLabel,
   custodyStatusLabel,
   prisonerFullName,
   prisonerStatusLabel,
@@ -50,19 +51,21 @@ function RouteComponent() {
     return [
       selectColumn(),
       {
-        id: 'name',
-        accessorFn: (row) => prisonerFullName(row),
-        header: 'Name',
+        accessorKey: 'id',
+        header: 'ID',
         cell: ({ row }) => (
           <Link
             to="/prisoners/$prisonerId"
             params={{ prisonerId: row.original.id }}
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block max-w-sm truncate')}
+            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block')}
           >
-            {prisonerFullName(row.original)}
+            {row.original.id}
           </Link>
         ),
       },
+      { id: 'name', accessorFn: (row) => prisonerFullName(row), header: 'Name' },
+      { accessorKey: 'otherNames', header: 'Other names', cell: ({ row }) => row.original.otherNames ?? '·' },
+      { accessorKey: 'nationalId', header: 'National ID', cell: ({ row }) => row.original.nationalId ?? '·' },
       { accessorKey: 'reference', header: 'Reference', cell: ({ row }) => row.original.reference ?? '·' },
       {
         accessorKey: 'status',
@@ -74,8 +77,20 @@ function RouteComponent() {
         header: 'Custody status',
         cell: ({ getValue }) => <Badge variant="outline">{custodyStatusLabel(getValue<string>())}</Badge>,
       },
+      {
+        accessorKey: 'admissionInstrumentType',
+        header: 'Admission instrument',
+        cell: ({ getValue }) => admissionInstrumentLabel(getValue<string>()),
+      },
       { accessorKey: 'admissionAuthority', header: 'Admission authority', cell: ({ row }) => row.original.admissionAuthority ?? '·' },
-      { accessorKey: 'admittedAt', header: 'Admitted', cell: ({ getValue }) => format(getValue<number>(), 'PP') },
+      {
+        accessorKey: 'highCourtOnlyOffence',
+        header: 'High Court only',
+        cell: ({ getValue }) => (getValue<boolean>() ? 'Yes' : 'No'),
+      },
+      { accessorKey: 'currentLocation', header: 'Location', cell: ({ row }) => row.original.currentLocation ?? '·' },
+      { accessorKey: 'admittedAt', header: 'Admitted', cell: ({ getValue }) => format(getValue<number>(), 'PPp') },
+      { accessorKey: 'createdAt', header: 'Recorded', cell: ({ getValue }) => format(getValue<number>(), 'PPp') },
     ]
   }, [])
 

@@ -5,8 +5,9 @@ import { DrawerFooter } from '@pleadli/ui/drawer'
 import { Field, FieldLabel } from '@pleadli/ui/field'
 import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useCreateCourtProduction } from './queries'
-import { createCourtProductionSchema, type CourtProduction } from './schema'
+import { createCourtProductionSchema, productionMethods, type CourtProduction } from './schema'
 
 export type CourtProductionFormProps = {
   prisonerId: string
@@ -34,6 +35,7 @@ export function CourtProductionForm({ prisonerId, onSuccess, onDirtyChange }: Co
       courtReference: '',
       productionDate: toDatetimeLocal(Date.now()),
       purpose: '',
+      productionMethod: 'physical',
     },
     validators: {
       onSubmit: ({ value }) => {
@@ -79,6 +81,28 @@ export function CourtProductionForm({ prisonerId, onSuccess, onDirtyChange }: Co
           )}
         </form.AppField>
       </div>
+
+      <form.AppField name="productionMethod">
+        {(f) => (
+          <Field>
+            <FieldLabel>Production method</FieldLabel>
+            <Select items={productionMethods} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {productionMethods.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
+      </form.AppField>
 
       <form.AppField name="purpose">
         {(f) => (

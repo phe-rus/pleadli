@@ -24,6 +24,7 @@ export function admissionInstrumentLabel(type: string) {
 export const custodyStatuses = [
   { value: 'in_custody', label: 'In custody' },
   { value: 'released', label: 'Released' },
+  { value: 'transferred_out', label: 'Transferred out' },
 ] as const
 
 export function custodyStatusLabel(status: string) {
@@ -43,6 +44,7 @@ export const prisonerSchema = z.object({
   admittedAt: z.number(),
   currentStatus: z.string(),
   highCourtOnlyOffence: z.boolean(),
+  currentLocation: z.string().nullable(),
   notes: z.string().nullable(),
   createdAt: z.number(),
 })
@@ -73,6 +75,7 @@ export const updatePrisonerSchema = z.object({
   reference: z.string(),
   status: z.string().min(1),
   highCourtOnlyOffence: z.boolean(),
+  currentLocation: z.string(),
   notes: z.string(),
 })
 

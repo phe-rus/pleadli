@@ -127,6 +127,16 @@ pub fn run() {
             commands::attachments::list_attachments,
             commands::attachments::delete_attachment,
             commands::attachments::get_attachment_data_url,
+            commands::statements::create_statement,
+            commands::statements::list_statements_for_file,
+            commands::evidence::create_evidence_item,
+            commands::evidence::list_evidence_for_file,
+            commands::charges::create_charge,
+            commands::charges::list_charges_for_file,
+            commands::review_notes::create_review_note,
+            commands::review_notes::list_review_notes_for_file,
+            commands::comments::create_comment,
+            commands::comments::list_comments_for_entity,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

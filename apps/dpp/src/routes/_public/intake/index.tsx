@@ -39,17 +39,27 @@ function RouteComponent() {
     return [
       selectColumn(),
       {
-        accessorKey: 'title',
-        header: 'Title',
+        accessorKey: 'id',
+        header: 'ID',
         cell: ({ row }) => (
           <Link
             to="/files/$fileId"
             params={{ fileId: row.original.id }}
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block max-w-sm truncate')}
+            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block')}
           >
-            {row.original.title}
+            {row.original.id}
           </Link>
         ),
+      },
+      {
+        accessorKey: 'title',
+        header: 'Title',
+        cell: ({ row }) => <span className="inline-block max-w-sm truncate">{row.original.title}</span>,
+      },
+      {
+        accessorKey: 'odppRegistrationNumber',
+        header: 'ODPP reg. no.',
+        cell: ({ row }) => row.original.odppRegistrationNumber ?? '·',
       },
       {
         accessorKey: 'policeStation',

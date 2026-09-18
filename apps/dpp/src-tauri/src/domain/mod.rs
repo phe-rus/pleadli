@@ -1,6 +1,11 @@
 pub mod attachments;
+pub mod charges;
+pub mod comments;
 pub mod decisions;
+pub mod evidence;
 pub mod people;
 pub mod prosecution_files;
 pub mod referrals;
+pub mod review_notes;
 pub mod search;
+pub mod statements;

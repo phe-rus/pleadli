@@ -52,6 +52,14 @@ function RouteComponent() {
                   </li>
                 ))}
               </ul>
+              <div className="flex flex-col gap-1 border-t border-border/60 pt-3">
+                <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Usage</h3>
+                <p className="text-sm text-muted-foreground">{application.usage}</p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Download</h3>
+                <p className="text-sm text-muted-foreground">{application.download}</p>
+              </div>
             </CardHeader>
           </Card>
         ))}

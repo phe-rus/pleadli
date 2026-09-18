@@ -20,6 +20,13 @@ use crate::domain::court_productions::{self, CourtProduction, CreateCourtProduct
 use crate::domain::prisoners::{self, CreatePrisonerInput, Prisoner, UpdatePrisonerInput};
 use crate::domain::releases::{self, CreateReleaseInput, Release};
 use crate::domain::search::{self, SearchResult};
+use crate::domain::health_events::{self, CreateHealthEventInput, HealthEvent, HospitalisedEntry};
+use crate::domain::reports::{self, ReportsSummary};
+use crate::domain::programmes::{self, CertifyProgrammeParticipationInput, CreateProgrammeParticipationInput, ProgrammeParticipation};
+use crate::domain::property_records::{self, CreatePropertyRecordInput, PropertyRecord, ReturnPropertyRecordInput};
+use crate::domain::requests::{self, CreateRequestInput, Request as PrisonRequest, ResolveRequestInput};
+use crate::domain::transfers::{self, CreateTransferInput, Transfer};
+use crate::domain::visits::{self, CreateVisitInput, Visit};
 
 pub const PORT: u16 = 47922;
 
@@ -90,6 +97,111 @@ async fn list_remand_handler(State(state): State<AppState>) -> Result<Json<Vec<R
 
 async fn search_handler(State(state): State<AppState>, Query(params): Query<QueryParam>) -> Result<Json<Vec<SearchResult>>, ApiError> {
     search::search(&state.pool, &params.query).await.map(Json).map_err(internal_error)
+}
+
+async fn create_visit_handler(State(state): State<AppState>, Json(input): Json<CreateVisitInput>) -> Result<Json<Visit>, ApiError> {
+    visits::create_visit(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_visits_handler(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Vec<Visit>>, ApiError> {
+    visits::list_for_prisoner(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn create_health_event_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreateHealthEventInput>,
+) -> Result<Json<HealthEvent>, ApiError> {
+    health_events::create_health_event(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_health_events_handler(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Vec<HealthEvent>>, ApiError> {
+    health_events::list_for_prisoner(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn list_hospitalised_handler(State(state): State<AppState>) -> Result<Json<Vec<HospitalisedEntry>>, ApiError> {
+    health_events::list_hospitalised(&state.pool).await.map(Json).map_err(internal_error)
+}
+
+async fn create_transfer_handler(State(state): State<AppState>, Json(input): Json<CreateTransferInput>) -> Result<Json<Transfer>, ApiError> {
+    transfers::create_transfer(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_transfers_handler(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Vec<Transfer>>, ApiError> {
+    transfers::list_for_prisoner(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn create_programme_participation_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreateProgrammeParticipationInput>,
+) -> Result<Json<ProgrammeParticipation>, ApiError> {
+    programmes::create_participation(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_programme_participations_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<ProgrammeParticipation>>, ApiError> {
+    programmes::list_for_prisoner(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn certify_programme_participation_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<CertifyProgrammeParticipationInput>,
+) -> Result<Json<ProgrammeParticipation>, ApiError> {
+    programmes::certify_participation(&state.pool, &id, input).await.map(Json).map_err(internal_error)
+}
+
+async fn create_property_record_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreatePropertyRecordInput>,
+) -> Result<Json<PropertyRecord>, ApiError> {
+    property_records::create_property_record(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn return_property_record_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<ReturnPropertyRecordInput>,
+) -> Result<Json<PropertyRecord>, ApiError> {
+    property_records::mark_returned(&state.pool, &id, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_property_records_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<PropertyRecord>>, ApiError> {
+    property_records::list_for_prisoner(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn create_request_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreateRequestInput>,
+) -> Result<Json<PrisonRequest>, ApiError> {
+    requests::create_request(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn resolve_request_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<ResolveRequestInput>,
+) -> Result<Json<PrisonRequest>, ApiError> {
+    requests::resolve_request(&state.pool, &id, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_requests_handler(State(state): State<AppState>) -> Result<Json<Vec<PrisonRequest>>, ApiError> {
+    requests::list_all(&state.pool).await.map(Json).map_err(internal_error)
+}
+
+async fn list_requests_for_prisoner_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<PrisonRequest>>, ApiError> {
+    requests::list_for_prisoner(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn reports_summary_handler(State(state): State<AppState>) -> Result<Json<ReportsSummary>, ApiError> {
+    reports::get_reports_summary(&state.pool).await.map(Json).map_err(internal_error)
 }
 
 #[derive(Deserialize)]
@@ -166,6 +278,23 @@ pub async fn serve(pool: SqlitePool, vault_root: PathBuf) {
         .route("/court-productions", post(create_court_production_handler))
         .route("/remand", get(list_remand_handler))
         .route("/search", get(search_handler))
+        .route("/visits", post(create_visit_handler))
+        .route("/prisoners/{id}/visits", get(list_visits_handler))
+        .route("/health-events", post(create_health_event_handler))
+        .route("/prisoners/{id}/health-events", get(list_health_events_handler))
+        .route("/hospitalised", get(list_hospitalised_handler))
+        .route("/transfers", post(create_transfer_handler))
+        .route("/prisoners/{id}/transfers", get(list_transfers_handler))
+        .route("/programme-participations", post(create_programme_participation_handler))
+        .route("/programme-participations/{id}/certify", axum::routing::put(certify_programme_participation_handler))
+        .route("/prisoners/{id}/programme-participations", get(list_programme_participations_handler))
+        .route("/property-records", post(create_property_record_handler))
+        .route("/property-records/{id}/return", axum::routing::put(return_property_record_handler))
+        .route("/prisoners/{id}/property-records", get(list_property_records_handler))
+        .route("/requests", post(create_request_handler).get(list_requests_handler))
+        .route("/requests/{id}/resolve", axum::routing::put(resolve_request_handler))
+        .route("/prisoners/{id}/requests", get(list_requests_for_prisoner_handler))
+        .route("/reports/summary", get(reports_summary_handler))
         .route("/attachments", post(create_attachment_handler).get(list_attachments_handler))
         .route("/attachments/{id}", axum::routing::delete(delete_attachment_handler))
         .route("/attachments/{id}/file", get(get_attachment_file_handler))

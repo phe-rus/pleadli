@@ -49,17 +49,22 @@ function RouteComponent() {
     return [
       selectColumn(),
       {
-        accessorKey: 'title',
-        header: 'Title',
+        accessorKey: 'id',
+        header: 'ID',
         cell: ({ row }) => (
           <Link
             to="/files/$fileId"
             params={{ fileId: row.original.id }}
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block max-w-sm truncate')}
+            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block')}
           >
-            {row.original.title}
+            {row.original.id}
           </Link>
         ),
+      },
+      {
+        accessorKey: 'title',
+        header: 'Title',
+        cell: ({ row }) => <span className="inline-block max-w-sm truncate">{row.original.title}</span>,
       },
       {
         accessorKey: 'odppRegistrationNumber',
@@ -89,7 +94,12 @@ function RouteComponent() {
       {
         accessorKey: 'receivedAt',
         header: 'Received',
-        cell: ({ getValue }) => format(getValue<number>(), 'PP'),
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
+      },
+      {
+        accessorKey: 'createdAt',
+        header: 'Recorded',
+        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
   }, [])
@@ -116,7 +126,7 @@ function RouteComponent() {
               <ProsecutionFileForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
             </Createpanel>
           </div>
-          <p className="md:max-w-sm">Every prosecution file ODPP is handling — Intake shows only what's still awaiting a decision.</p>
+          <p className="md:max-w-sm">Every prosecution file ODPP is handling. Intake shows only what's still awaiting a decision.</p>
         </div>
       </section>
 

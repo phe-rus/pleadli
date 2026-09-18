@@ -70,7 +70,7 @@ export function ProsecutionFileForm({ onSuccess, onDirtyChange }: ProsecutionFil
       }}
     >
       <form.AppField name="title">
-        {(f) => <f.input label="Title" placeholder="e.g. State vs. Okello — theft of motor vehicle" />}
+        {(f) => <f.input label="Title" placeholder="e.g. State vs. Okello, theft of motor vehicle" />}
       </form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
@@ -79,7 +79,7 @@ export function ProsecutionFileForm({ onSuccess, onDirtyChange }: ProsecutionFil
             <Field>
               <FieldLabel>ODPP registration number (optional)</FieldLabel>
               <Input value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} placeholder="Assign when known" />
-              <FieldDescription>No standard format was confirmed in research — enter as recorded.</FieldDescription>
+              <FieldDescription>No standard format was confirmed in research. Enter as recorded.</FieldDescription>
             </Field>
           )}
         </form.AppField>

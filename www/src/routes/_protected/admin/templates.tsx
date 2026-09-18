@@ -16,8 +16,8 @@ import {
 } from '@pleadli/ui/drawer'
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '@pleadli/ui/empty'
 import { FieldGroup } from '@pleadli/ui/field'
+import { t } from '@pleadli/ui/goey-toaster'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { toast } from 'gooey-toast'
 import { useState } from 'react'
 import * as z from 'zod'
 
@@ -77,12 +77,12 @@ function RouteComponent() {
     onSubmit: async ({ value, formApi }) => {
       try {
         await updateTemplate({ data: value })
-        toast.success({ title: 'Template saved', description: value.name })
+        t.success('Template saved', { description: value.name })
         formApi.reset()
         setOpen(false)
         router.invalidate()
       } catch {
-        toast.error({ title: 'Could not save template', description: 'Please try again.' })
+        t.error('Could not save template', { description: 'Please try again.' })
       }
     },
   })
@@ -102,7 +102,7 @@ function RouteComponent() {
     {
       accessorKey: 'description',
       header: 'Description',
-      cell: ({ row }) => row.original.description ?? '—',
+      cell: ({ row }) => row.original.description ?? '·',
     },
   ]
 

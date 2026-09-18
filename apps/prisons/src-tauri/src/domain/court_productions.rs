@@ -15,6 +15,7 @@ pub struct CourtProduction {
     pub court_reference: Option<String>,
     pub production_date: i64,
     pub purpose: Option<String>,
+    pub production_method: String,
     pub created_at: i64,
 }
 
@@ -25,19 +26,21 @@ pub struct CreateCourtProductionInput {
     pub court_reference: Option<String>,
     pub production_date: i64,
     pub purpose: Option<String>,
+    pub production_method: String,
 }
 
 pub async fn create_court_production(pool: &SqlitePool, input: CreateCourtProductionInput) -> Result<CourtProduction, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
     sqlx::query(
-        "INSERT INTO court_productions (id, prisoner_id, court_reference, production_date, purpose)
-         VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO court_productions (id, prisoner_id, court_reference, production_date, purpose, production_method)
+         VALUES (?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(&input.prisoner_id)
     .bind(&input.court_reference)
     .bind(input.production_date)
     .bind(&input.purpose)
+    .bind(&input.production_method)
     .execute(pool)
     .await?;
 

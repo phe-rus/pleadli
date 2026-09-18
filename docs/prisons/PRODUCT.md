@@ -1,180 +1,216 @@
-# Pleadli Prisons — Product Model (Phase 1)
+# Pleadli Prisons — Product Model
 
-This is the **Phase 1 product model** for Pleadli Prisons, produced after the research phase (`docs/prisons/RESEARCH.md`) and before any schema or implementation work. It follows the same discipline as `docs/police/PRODUCT.md` and `docs/dpp/PRODUCT.md`: only claims grounded in verified research are treated as real requirements; everything else is marked as an open question, not invented.
+This is the product model for Pleadli Prisons, produced after the research phase (`docs/prisons/RESEARCH.md`) and revised after a deep operational research pass (RESEARCH.md §11) explicitly demanded before any further code. It follows the same discipline as `docs/police/PRODUCT.md` and `docs/dpp/PRODUCT.md`: only claims grounded in verified research are treated as real requirements; everything else is marked as an open question, not invented.
 
-**Status**: draft, pending approval — the same gate DPP went through, applied up front this time rather than after a correction. Do not scaffold `apps/prisons/` or write a schema until the user has reviewed this.
+**Status**: built through Prisoners/Releases/Transfers/Health & Welfare/Court-Production/Remand/Visits(authorization+attendance)/Rehabilitation & Work/Reports, all runtime-verified. **This revision does not itself implement anything** — per explicit instruction, this is research + product-model + gap-analysis + navigation proposal only, for review before any further implementation begins.
 
-**Standing corrections from the DPP cycle, applied here from the start rather than retrofitted:**
-- **Document-centric from day one** (see [[feedback_pleadli_document_centric_ux]]): Prisons is, if anything, more document-bound than DPP — admission requires an actual physical warrant/order (four named instrument types, RESEARCH.md §4), release is driven by court orders, and a "transfer letter" is a named artifact. Attachments (Vault-backed) and rich text must be first-class in the first vertical slice, not added after a UX complaint.
-- **Scale model decided up front**: following DPP's corrected "one installation, one prosecutor, regionally scoped" model, a Pleadli Prisons installation is **one prison, run by its own Officer in charge** — not a national UPS system. This maps directly onto a real statutory role (Prisons Act s.30: an Officer in charge is appointed "for each individual prison"), so it isn't a guess the way DPP's single-prosecutor call initially had to be corrected into — it's the natural unit from the start.
+**Why this revision happened**: the built application was assessed, correctly, as "clean and structured" but still too centered on `Person → Admission → Custody → Movement → Release` — real, but only part of what a prison actually is. A prison is a continuously operating institution, not just a place where people are stored and moved. This revision's job was to find out, from real evidence, what else that institution actually does — not to add features until the sidebar looks complete.
 
-Every claim below traces to a numbered finding in `docs/prisons/RESEARCH.md`.
+## Research method, and what it changed
+
+Four parallel research passes covered: (1) custody depth, movements, court/legal interaction; (2) daily operations, headcounts, staff, incidents, discipline; (3) visits, appointments, attendance, rehabilitation depth; (4) property, medical coordination, requests, documents/registers. Full findings are in RESEARCH.md §11. Two things matter for reading everything below:
+
+1. **A real methodological trap was caught mid-pass and is now a standing rule** (RESEARCH.md §11.0): search-engine snippet synthesis of the still-inaccessible Prisons Regulations 2012 surfaces fluent, specific-sounding text — some of which turned out to be **Barbados's** prison regulations, not Uganda's, due to shared Commonwealth colonial-era legislative boilerplate. Every finding below sourced this way is marked accordingly and treated as unconfirmed unless independently corroborated by a genuinely Ugandan primary source. This directly validates the brief's own instruction not to assume Uganda does what another country's prison service does — it nearly happened here, and was caught.
+2. **Several things previously marked "still genuinely UNKNOWN" are now grounded**, mostly by re-mining the Prisons Act 2006's own already-fetched full text more carefully (prisoner property/effects, sex segregation, cell/ward vocabulary, a disclosure duty at admission) and by two strong new primary sources: the Commissioner General's own Feb 2024 conference paper, and UHRC's 26th Annual Report (2023). Others (headcount mechanics, staff duty rosters, granular prisoner-discipline procedure) remain genuinely unresolved even after this fourth attempt — that is a real finding, not a shortcut, and is stated plainly below rather than filled with a plausible guess.
 
 ## The fundamental idea
 
-> **Pleadli Prisons is software for running one prison's custody, welfare, and release responsibilities — not a national UPS database, and not Police or DPP with different labels.**
+> **Pleadli Prisons is software for operating one prison — both the custody/welfare responsibility for each person in it, and the day-to-day coordination the facility itself requires — not a national UPS database, and not Police or DPP with different labels.**
+
+This has two distinct levels, and the product must answer both:
+
+- **Person level**: what is happening with this person — their custody status, movements, visits, health, rehabilitation, property, discipline, documents.
+- **Facility level**: what is happening in this prison right now — staffing, incidents, and (where the evidence supports it) daily operational coordination. This level is real but, per the research, much thinner than the person level for this specific institution — see the Gap Analysis for exactly why.
 
 ## What Pleadli Prisons is NOT
 
-- a national Uganda Prisons Service system (that's UPS's own PMIS/Prisons Information Management System, RESEARCH.md §2 — Pleadli Prisons is one prison's own working tool)
+- a national Uganda Prisons Service system (that's UPS's own PMIS — RESEARCH.md §11.8 confirms PMIS is real, its own separate system, still pilot-stage at two facilities — Pleadli Prisons is one prison's own working tool, not a competitor to PMIS)
 - a clone of Police's or DPP's domains
-- a health-records system (health care is statutorily hybrid — RESEARCH.md §5 — Prisons doesn't own a health authority)
-- a coronial/inquest-management system (that belongs to the coroner/police chain — RESEARCH.md §7)
+- a health-records system (health care is statutorily hybrid, and evidence this pass shows custody-officer discretion actually dominates real medical-movement decisions — Prisons coordinates around health events, it doesn't direct clinical care)
+- a coronial/inquest-management system
+- a generic calendar or task-management app — scheduling only exists here in service of a real, evidenced workflow (court attendance), not as a general-purpose feature
+- a disciplinary-tribunal system built from unverified regulation text — the granular prisoner-discipline detail found this pass is explicitly flagged low-confidence and not modeled yet
 
-## 1. Core record
+## 1. Core record — unchanged, already correct
 
-**"Prisoner"** — the Act's own term (Prisons Act s.2), confirmed as the live statutory and statistical-reporting noun. "Inmate" is used informally in government prose (especially rehabilitation contexts) but has no statutory definition — do not use it as the entity name.
+**"Prisoner"** (Prisons Act s.2) — one record per custody episode, not a de-duplicated person (RESEARCH.md §9, unchanged this pass). Three statutory categories on one entity (convicted / unconvicted / civil), no official reference-number format. See prior revision's reasoning, still valid — nothing in this pass contradicts it.
 
-**Three statutory categories, all on the same entity, distinguished by a status field, not three separate tables** (RESEARCH.md §2):
-- **Convicted prisoner** — "under a sentence of a court or court-martial."
-- **Unconvicted prisoner** — the Act's own term for what UPS's own published statistics call "Remands" (a real terminology split: the Act uses "unconvicted," UPS's own statistics use "Remands" as the column header — model the field as the prisoner's current status, and it's fine for the UI to say "Remand" since that's UPS's own live usage, while the underlying category logic follows the Act's "unconvicted" framing: presumed innocent, physically separated from convicted prisoners, s.64).
-- **Civil prisoner** — "an indebted person entitled to special treatment" (a debtor, not a criminal prisoner) — UPS's own statistics track this as a third category ("Debtors"), not a subtype of criminal remand or conviction.
+## 2. Person-level operational capabilities
 
-**No official prisoner reference/registration number format was found** (RESEARCH.md §2) — same situation as ODPP's unconfirmed registration number. Treat as free text; do not invent a format. Section 61 requires particulars to be recorded on admission but doesn't enumerate the specific fields — those are left to rules/practice not located in this research pass.
+### Admission & Custody
+- **Owns**: the admission event (instrument type, issuing authority, date, particulars), current status, the s.118 pre-session list, derived mandatory-bail-eligibility flag (60/180 days — now independently re-confirmed by the Commissioner General's own Feb 2024 figures, RESEARCH.md §11.3, not just a secondary case-law source).
+- **New this pass**: a real, named disclosure duty at admission (s.58(5)) — every prisoner must be given written information on the rules governing their category, disciplinary requirements, and the complaints procedure. **Real but too shallow to build a feature around yet** — no named form exists, and the "complaints procedure" this refers to is very likely the Human Rights Committee/Mukutano mechanism (see Communication & Requests below), which is worth grounding as its own domain before wiring a disclosure-acknowledgement feature to it.
+- **A real, named data-integrity state, not an error to prevent**: UPS's own Commissioner General reports "conviction without commitment warrant" (98 cases) and "conviction without sentencing" (4 cases) as real, tracked states (RESEARCH.md §11.3). The current schema effectively assumes admission always has its instrument on file. **Product question, not yet resolved**: should `admission_instrument_type` be able to represent "convicted, document pending" as an honest state rather than forcing a false completeness? Flagged for a product decision, not silently changed.
+- **Sex segregation and cell/ward vocabulary confirmed** (s.29, s.60, s.81, s.124(2)(g)) — corrects an earlier over-broad claim that no such terms exist in the Act. Still no structured Facility→Block→Wing→Cell hierarchy found — the free-text `current_location` field remains the right, honest model, but could reasonably show "ward"/"cell" as real example placeholder text instead of a made-up example.
 
-**Admission requires one of four named legal instruments** (RESEARCH.md §4, s.58): a **commitment**, a **remand warrant**, an **order of detention**, or a **warrant of conviction/committal** — signed with a court seal or authenticated by an authorised person. This is the real "how does a prisoner record even get created" trigger — model admission as requiring a reference to one of these four instrument types, not a generic "intake form."
+### Property & Effects — new, grounded directly in the Prisons Act, no longer UNKNOWN
+- **Supports**: an admission-time record of what the prisoner isn't allowed to retain, returned at release — a real statutory duty, previously flagged as a genuine gap.
+- **Grounded in** (RESEARCH.md §11.1, s.62/s.30(2)(a), **Primary**): non-retainable money/clothes/personal effects are placed in the officer in charge's custody at admission, entered in "prescribed registers," with an inventory kept, and returned at release/discharge. The officer in charge is personally accountable for loss/damage. Corroborated in the field by UHRC's 2023 inspections (a real "property register" and "inventory" exist in practice) and by UK consular guidance noting items sometimes go missing during arrest/transfer.
+- **Model as**: a simple admission-time record (what was retained, brief description) linked to the Prisoner, marked returned at release. **Do not** build a structured multi-field inventory system yet — the exact recordable fields, any signature/receipt step, and precise release-time return procedure remain unconfirmed (most likely in the still-unreachable Regulations). A free-text-heavy record, honest about what's actually known, is the right scope for now.
 
-## 2. Major operational domains
+### Movements — extended beyond transfer
+- **Court production** (s.67, unchanged) now has a real, evidenced alternative delivery mechanism: **virtual/video-link production**, operating in 19 (per the Commissioner General, Feb 2024) to possibly 21 prisons, since a 2019 Chief-Justice-launched pilot at Luzira (RESEARCH.md §11.2, **Primary**). UPS's own Prisoner Management Information System separately names "court attendance and scheduling" as one of its real modules (§11.8) — the clearest evidence this is a first-class UPS concept.
+  - **Model as**: a `production_method` field (physical / virtual) on the existing Court Production record, not a new domain. Only relevant where the installation's prison actually has conference-facility equipment — not universal.
+- **No "escort" role, rank, or procedure exists anywhere in the Prisons Act** (confirmed by direct full-text search this pass) — this is a genuine, confirmed absence, not an unresearched gap. Do not model an escort concept.
+- **Medical movement** remains exactly what's already built (health-event referral/return pairs, ss.74-76) — a distinct full-prison *transfer* for medical reasons (not a temporary hospital removal) is just an application of the existing general transfer power (s.73), with "medical need" as one real, named reason worth allowing as free text, not a new domain.
 
-### Admission
-- **Supports**: receiving a person into custody under a real legal instrument, with the officer in charge's statutory verification duties.
-- **Owns**: the admission event — instrument type (commitment/remand warrant/order of detention/warrant of conviction), issuing authority, admission date, particulars recorded (RESEARCH.md §4, s.58/s.61).
-- **Grounded in**: s.58 (verification duty, refusal only for severe torture/bad health or juvenile-into-adult-facility, clerical errors don't block admission — they get corrected), s.61 (particulars recorded, fields unspecified).
-- **Do not assume**: a specific prescribed particulars form — s.61 leaves this to rules/practice not located. Do not invent field names beyond what a warrant/order itself would carry (instrument type, issuing court/authority, date, prisoner particulars).
+### Visits — refined and built out to six categories (decided and implemented 2026-09-11)
+The authorization+attendance model remains structurally correct. Three concrete refinements were decided and built:
+- **A fourth category, personal_doctor**: a prisoner's personal doctor gets the same "not within hearing" privacy exception as a legal advisor (RESEARCH.md §11.7, **Secondary**), distinct from both an ordinary visitor and the prison's own s.26 medical officer.
+- **A fifth category, voluntary_visitor**: relatives (wife, husband, children, siblings — a narrow list) are now distinguished from "voluntary visitors" (lawyers, NGOs, care officers, clergy, religious teachers), who don't map cleanly onto ordinary/legal/medical.
+- **special_authorization split into two**: `special_authorization_weekend` (a timing exception, any visitor) and `special_authorization_researcher` (a visitor-category exception, any day) — the evidence suggested these are genuinely separate concepts, not one tier. Older rows with the unsplit `special_authorization` value may still exist; the label falls back to the raw value for those.
+- `visit_type` remains a free-text tag (no backend schema change was needed) — the full enumerated set of six real categories lives in `apps/prisons/src/features/visits/schema.ts`.
+- **Still genuinely UNKNOWN, not built**: visit privilege as conduct-contingent (a 3-visitor cap, "conduct and progress" eligibility) — **Secondary, real contamination-risk caveat applies (RESEARCH.md §11.0)**; visit outcomes beyond attended/denied, no-show/cancellation, and repeat-visitor history.
 
-### Custody & Remand tracking
-- **Supports**: the day-to-day fact of who is in custody, as what category, and — critically — the constitutional mandatory-bail clock.
-- **Owns**: current status (convicted/unconvicted/civil), the s.118 "list of prisoners awaiting trial" fields — **admission date, the authority for detention (the warrant/order), and date last appeared in court** (RESEARCH.md §3, s.118) — and a derived mandatory-bail-eligibility flag.
-- **A real, citable legal conflict must be modeled explicitly, not silently resolved**: the Constitution (Art. 23(6)(b)-(c)) sets mandatory-bail thresholds at **60 days** (offences triable by both High Court and a subordinate court) and **180 days** (offences triable only by the High Court), while the Prisons Act s.66 — enacted a year *after* that constitutional amendment — states unreformed **120-day/360-day** figures. The Constitution is supreme (Art. 2). **Use 60/180 days for any mandatory-bail-eligibility derived view; do not use the Prisons Act's 120/360-day text.** Surface this to the officer in charge as a derived flag (same pattern as Police's 48h custody-compliance view — derived from timestamps, never a manually-set status), and flag the discrepancy in the UI copy itself rather than picking a number silently.
-- **Do not assume** a "capital offence" gets a separate constitutional threshold — it doesn't; capital offences are simply "triable only by the High Court" and fall under the 180-day clause (RESEARCH.md §3).
-- **Court production**: s.67 — reactive, court-initiated. A court/competent authority issues an **order** to the officer in charge; no specific named form exists for it (unlike DPP's Police Form 53) — model as a plain record (date, requesting court, purpose) referencing the prisoner, not a templated document.
+### Rehabilitation & Work — extended with a real completion/certification concept
+- The existing "participation as status, not calendar" model holds up — no scheduling/attendance system was found to contradict it, confirmed again by an independent primary source (UPS's own Farms Department FY2022/23 report: real recordkeeping exists, but for produce/machinery outputs, not per-inmate attendance).
+- **New, grounded, and should be added**: the Uganda Vocational and Technical Assessment Board (UVTAB), an external national body, runs real competence-based trade-testing assessments UPS inmates participate in, resulting in an actual certificate (RESEARCH.md §11.9-11.10, **Secondary** — press + UPS's own social-media citation of a JLOS report). This is a discrete, dated, external assessment/certification *outcome*, not daily attendance. The existing domain's own doc comment ("do not invent skill-certification tracking... none of that was found") is now outdated — **add a completion/certification field** (date + optional certificate reference) to Programme Participation; do not build a scheduling system around it.
+- Real staff/instructor detail now exists for at least the Farms sub-programme (3,618 staff, mixed custodial/civilian-technical, 1:6 ratio) — informative context, not a feature to build (staff assignment to programmes is a facility/staff-operations question, not a Prisoner-record one).
+- **Classification-driven programme placement remains aspirational** (a UNODC pilot, six sites, security/radicalization-focused) — do not model programme eligibility as classification-driven.
 
-### Release
-- **Supports**: every real release trigger, as its own auditable event type — **not a single "released" checkbox.**
-- **Grounded in** (RESEARCH.md §4): bail (s.66, subject to the 60/180 vs. 120/360 conflict above), full remission (s.83, discharge before noon on the entitled date), partial remission (s.84, up to 1/3 sentence for good conduct, forfeitable per s.85), parole (s.89, 3+ years served, within 6 months of release date, up to 3 months, breach treated as escape), release on licence (s.87, mandatory for defined "habitual criminals," revocable), acquittal/court-ordered discharge (driven by the court's own order reaching the officer in charge, s.63(2)), and erroneous-release correction via re-arrest warrant (s.79).
-- **Do not assume** a single generic "release" event covers all of these — each has different statutory preconditions and consequences (e.g. parole breach is itself an offence; erroneous release triggers a re-arrest, not a new admission).
+### Health & Welfare — unchanged, doubly corroborated
+No change to the existing referral/return event-pair model. This pass independently confirmed the referral boundary is right (UHRC 2023: in-facility emergency care for minor cases, referral out for complex ones) and surfaced a real, important finding about **what not to build**: evidence (Human Rights Watch, 2011, dated but illustrative) shows medical-movement decisions in practice are custody-officer-led, not medical-directive-led, with officers moving prisoners "including those undergoing medical treatment" without medical consultation. **Do not build a "medical instructs custody" restricted-duty feature** — it would misrepresent real practice, not reflect it.
 
-### Transfers
-- **Supports**: moving a prisoner between prisons, and the emergency/overcrowding-driven relocation power.
-- **Grounded in** (RESEARCH.md §6): general transfer authority rests with the Commissioner General (s.73, "general or special order"), with a discretionary "if practicable" preference for keeping/releasing a prisoner in their home area. A **"transfer letter"** (s.78(2)) is a named artifact — framed in the Act as a prisoner-communication right (paired with an admission-time "reception letter"), not explicitly stated as an internal transfer *record*. No separate named "transfer register" was found beyond the officer in charge's general record-keeping duty (s.30(2)(d)).
-- **Do not assume** a standardised transfer form/register exists beyond what's stated — model a transfer as an event (date, from/to prison, ordering authority) without inventing a specific form name.
-- **Overcrowding-driven relocation** (s.28, "temporary prisons") is a distinct, congestion-specific power, separate from an individual prisoner's ordinary transfer — a facility-level event, not a prisoner-level one; likely out of scope for a single-prison installation's own record (it's a Commissioner-General-level, cross-prison decision).
+### Release — unchanged
+No change. The six-plus-one real trigger types remain correct.
 
-### Health & Welfare
-- **Supports**: tracking a prisoner's health-related events without pretending Prisons runs its own hospital system.
-- **Grounded in** (RESEARCH.md §5): health care is **statutorily hybrid** — s.26 lets the Prisons Authority appoint dedicated medical officers, but the Act's own definition of "medical officer" falls back to the **district (Ministry of Health) health officer** when no dedicated appointment exists. There is no single Prisons-owned health service the Act mandates. Sick-prisoner hospital transfers (s.75-76) keep the prisoner "under detention" at the sending prison even while hospitalised, with a notification duty back from the hospital-side medical officer once care is no longer needed. Insane/mentally-abnormal prisoners must be moved to a mental hospital (s.74), with time there counting toward sentence.
-- **Do not assume** a standardised health-record format — s.26(3)'s rules weren't located; no named "health register" was found beyond the general records duty.
-- **Do not build** a Prisons-owned health-record system as if Prisons were the health authority — track health-transfer *events* (referred out, returned) as Prisons' own operational record, not clinical detail that belongs to the health service.
+### Communication & Requests — new domain, real evidence from two independent sources
+- **Supports**: a real, named grievance/complaint mechanism, distinct from Visits and from a formal Decision-equivalent process.
+- **Grounded in** (RESEARCH.md §11.6, **Primary** — UHRC 26th Annual Report 2023, §11.2.3.20; independently corroborated **Secondary** by UK FCDO consular guidance naming the same mechanism locally as "Mukutano"): an elected inmate committee receives complaints (food quality/quantity, remand overstay, general welfare), escalates to the officer in charge / a staff committee via monthly reports, which then "take further action." UHRC found this mechanism "instituted in the majority of prisons" and "active." A separate "Welfare Officer" channel is also named (Secondary only).
+- **Model as**: a plain complaint log — who raised it (may be anonymous/committee-sourced rather than individually attributed), category (food / remand overstay / general welfare / other), date, a free-text outcome note. **Do not** build a structured multi-stage case-management system — the exact record format and "further action" detail are not confirmed beyond this shape.
+- This is the strongest new candidate for a first-class domain in the entire research pass — real, evidenced by two independent sources, narrow enough not to require invention.
 
-### Death in custody (cross-institutional — Prisons is a participant, not the owner)
-- **Supports**: correctly representing Prisons' real, limited statutory role in a death-in-custody, without building a full inquest-management system.
-- **Grounded in** (RESEARCH.md §7, Inquests Act Ch. 13): death in prison is a **mandatory automatic-inquest trigger** (s.4(2)(a)). The actual notification chain runs **prison → LC I chairperson or nearest police station → coroner** (s.9), with a simplified fast path (Form B, s.10(4)) when a medical practitioner confirms a natural, non-violent death. **DPP's involvement is indirect and conditional, never automatic**: only via the Inspector General of Police when a suspect can't be identified (s.24-25), or directly from the coroner when a stayed inquest isn't worth resuming (s.21(2)). Prisons' own statutory role is limited to being where the death occurred and (per s.9) a potential first person who must alert the LC I/police — not the coroner, not the DPP.
-- **Do not build**: inquest scheduling, coroner findings, or DPP notification logic inside Prisons. Model only what Prisons itself is responsible for: recording the death event and that notification was made (to whom, when) — the inquest itself is Courts'/the coroner's process, referenced, not owned.
-- **No statutory Prisons→DPP notification duty for escapes or general health issues was found** (RESEARCH.md §4, §7) — do not invent one.
+### Disciplinary (prisoner) — real in principle, NOT built, confidence too low for the detail
+- The Act itself confirms a disciplinary system exists in outline (s.85's remission-forfeiture-for-discipline hook is already built and correct). Search-snippet synthesis surfaced a much more detailed hearing-before-punishment rule, an offence taxonomy (minor vs. aggravated), a sanctions ladder, and a medical-veto-on-punishment-diet rule — **but this is exactly the kind of fluent, specific, Commonwealth-boilerplate-shaped text RESEARCH.md §11.0 warns about, with no independent Uganda-specific corroboration**.
+- **Do not build a Disciplinary domain from this pass's findings.** The *existence* of a disciplinary process is real; the *procedure* is not reliably confirmed. This needs either the actual Regulations text or a practitioner source before it becomes a real feature, exactly the same standard already applied to headcounts and staff duty.
 
-### Documents
-- **Supports**: the genuinely document-heavy reality of custody work, first-class from the first slice (see the standing correction at the top of this document).
-- **Confirmed document/instrument types** (RESEARCH.md §4, §6): the four admission instruments (commitment, remand warrant, order of detention, warrant of conviction/committal), the s.118 list of prisoners awaiting trial, s.67 production orders, the "reception letter" (admission) and "transfer letter" (transfer) — both framed as prisoner-communication rights, not necessarily internal records, but worth attaching/scanning where a physical copy exists.
-- **Owns**: structured metadata + Vault-stored bytes, same DB-owns-facts/Vault-owns-bytes split as Police and (now) DPP.
+### Documents — extended with a real register taxonomy
+- **New**: UHRC's 2023 inspection names the actual register set a Ugandan place of detention keeps: admission, release, property, transfer-of-detainees, gate, exhibits, and medical registers, plus medical treatment records (RESEARCH.md §11.6, **Primary** for the names; content/fields UNKNOWN). "Lockup register"/"station diary" read as police-specific in the same source, not prison-specific — excluded here.
+- This closes part of the prior "does a transfer register exist beyond what the Act names" open question — yes, by name, confirmed in real 2023 field inspections, even though the Act itself never names one.
+- **Model as**: names and rough purposes only in this document — do not build field-level schemas for registers whose content isn't independently confirmed. The existing generic Attachment/Vault mechanism remains the right storage pattern.
 
-### People
-- **Deliberately thin, unlike Police's/DPP's People domain.** A Prisoner record already *is* the person — Prisons' core record isn't a case or file that *references* people, it's the person's own custody record. A separate cross-cutting "People" domain the way Police/DPP have one is likely **not needed** here; next-of-kin/family contact details (relevant to the reception-letter right, s.78) may be a small related concept on the Prisoner record itself, not a first-class cross-cutting domain. **Flagged as a genuine architectural difference from Police/DPP, not an oversight** — don't force a "People" domain in just for consistency with the other two apps.
+## 3. Facility-level operational capabilities
 
-### Search
-- One system-wide "Search Pleadli Prisons," same discipline as Police/DPP — no siloed per-domain search.
+This is where the research pass, honestly, found the least — and that is itself the most important finding to carry forward rather than paper over.
 
-### Work Queues ("what needs my attention")
-- **Grounded directly in confirmed statutory triggers, not invented** (RESEARCH.md §3, §4):
-  - Prisoners approaching or past the constitutional 60/180-day mandatory-bail threshold
-  - The s.118 pre-session list of prisoners awaiting trial, due before each High Court session
-  - Pending/upcoming court production orders (s.67)
-  - Parole-eligibility windows opening (3+ years served, within 6 months of release date, s.89)
-  - Sick prisoners currently hospitalised, awaiting the return notification (s.75-76)
-- **Do not invent** percentage changes or vanity metrics. UPS itself already publishes rich monthly statistics (population by category, occupancy vs. approved capacity, escape rate, mortality rate, productions-to-court, by region) — RESEARCH.md §8 found this is a genuinely well-established UPS discipline, unlike ODPP's absent public reporting. A single-prison installation's own Reports view should mirror the *shape* of these real, named metrics for its own prison, not invent new ones.
+### Daily operations & headcounts — mostly still genuinely UNKNOWN after a fourth attempt
+- **What's real**: UPS's own vocabulary for a population snapshot is "**Unlock**" (Commissioner General's own Feb 2024 paper, **Primary**) — worth adopting for the product's own "as of [date]'s count" framing. A regulation titled "Counting prisoners" is confirmed to exist (bare section title, lower contamination risk than full text, but still unread). Escape response is grounded in outline (officer in charge orders an immediate search + police notification, **Secondary**, consistent with the Act's own re-arrest mechanism).
+- **What's still not found**: the actual headcount/muster mechanics (frequency, parade steps, discrepancy escalation), shift handover procedure, and any daily-log/register format for routine facility events. This is not for lack of trying — four independent research attempts across two sessions have now failed to recover this, from official UPS material, UHRC's own field inspections, parliamentary/Auditor-General material, and incident-driven press coverage.
+- **Do not build a headcount, daily-log, or shift-handover feature.** A title existing in a regulation is not a procedure. This stays honestly UNKNOWN.
+
+### Staff operations
+- **Staff establishment** (headcount by rank/category) is real, well-grounded, and already correctly modeled as read-only profile-level context (RESEARCH.md §1, freshly re-confirmed §11.5) — no change needed.
+- **Staff duty/shift/post assignment** — the "who's on duty right now" layer — remains genuinely MISSING/UNKNOWN after a fourth attempt. The Regulations' own standing-conduct rule titles (gatekeeper duties, not leaving a prisoner unattended, not being absent during working hours) don't imply a formal rostering system exists. **Do not build a duty-roster domain.**
+- **Staff discipline** is real (delegated to the Officer in Charge, one fully-documented real case) but currently entirely unbuilt, and the confidence level (mostly Secondary, rank-cutoff details uncertain) doesn't support building it yet as a first-class domain — flagged, not built.
+
+### Incidents & security events
+- **Escape response** is the one real, if thin, grounded workflow (Secondary, search-snippet synthesis, consistent with the Act's own re-arrest mechanism) — officer in charge orders an immediate prison-and-neighbourhood search and notifies police.
+- **No broader incident taxonomy** (altercations, prohibited items, visitor/staff incidents, investigations) was found grounded enough to model. **Do not build a generic Incident domain** from this pass — the one real workflow found (escape) is arguably already representable as a Release-adjacent or Movement-adjacent event once a product decision is made about where it lives; a broader incident-management system would be invention.
+
+### Reports
+- Unchanged in shape. New, real data to extend breakdowns with: the Commissioner General's own age-group / capital-offence-type / nationality / sentence-category statistical categorization (RESEARCH.md §11.1, **Primary**) — real, current, and directly usable to extend Reports' population breakdowns without inventing anything.
 
 ### Organizational responsibility
-- **Scale model**: one installation, one prison, one Officer in charge (RESEARCH.md §1, s.30) — not a multi-prison or national deployment. This is the natural unit, not a retrofit.
-- **Regional scope**: the prison's region is a fixed installation property (RESEARCH.md §1: 19 named UPS regions — Southern, Northern, Kigezi, Mid Central, Central, Kampala Extra, Eastern, North Central, Mid Western, Mid Northern, Mid Eastern, South Western, East Central, North Eastern, Iganga, Western, North Western, Kooki, South Eastern — a real, citable parallel to ODPP's own 19-region structure, though over ~266-270 individual prisons rather than ODPP's 127 stations).
-- **Rank hierarchy** (RESEARCH.md §1, from UPS's own March 2025 payroll table, 21 ranks): Commissioner General of Prisons → Deputy Commissioner General → Assistant Commissioner General → Senior Commissioner → Commissioner → Assistant Commissioner → Senior Superintendent → Superintendent → Senior Assistant Superintendent → Assistant Superintendent → Cadet Assistant Superintendent → Principal Officer I/II → Cadet Principal Officer → Chief Warder/Wardress I/II/III → Sergeant Warder/Wardress → Corporal Warder/Wardress → Lance Corporal → Warder/Wardress. Relevant as profile-level context for the single officer using this installation, not a multi-officer administration surface.
-- **Do not build**: a national rank/staff administration system, or any cross-prison assignment feature — that's UPS's own PMIS territory, not this installation's job.
+- Unchanged. One installation, one prison, one Officer in Charge remains correct and is, if anything, reinforced by this pass (officer-in-charge-level discretion shows up repeatedly as the real locus of day-to-day authority — property custody, disciplinary delegation, movement decisions, escape response).
 
-## 3. Prisons ↔ Courts boundary
+## 4. Gap analysis
 
-Prisons' formal, proactive duty toward Courts is real and specific: the s.118 pre-session list of prisoners awaiting trial. Court production (s.67) is reactive — the court initiates it. Prisons references the court/case reference on both, but does not own or duplicate Courts' own case record (same "referenceability is not visibility" principle as Police/DPP).
+| Area | Assessment | Why |
+|---|---|---|
+| Admission & Custody | REAL AND GOOD, extend cautiously | Core model correct; the "conviction without commitment warrant" real-data-state is a genuine open product question, not a bug to silently fix |
+| Property & Effects | MISSING → now buildable | Was UNKNOWN, now directly grounded in the Prisons Act itself (s.62) — a simple admission-time record is honest and evidenced |
+| Court Production | REAL BUT TOO SHALLOW | Physical production only; virtual/video-link production is real, operating at 19+ prisons, and has no field to represent it |
+| Movements (escort, other) | NOT CURRENTLY NEEDED | No escort role/procedure exists in Ugandan law at all — confirmed absence, not a gap |
+| Visits | REAL AND GOOD | Structurally right; personal-doctor category, voluntary-visitor taxonomy, and the special/researcher-authorization split are now built (decided 2026-09-11) |
+| Rehabilitation & Work | REAL BUT TOO SHALLOW | Participation-as-status model holds; certification/completion (UVTAB trade-testing) is real and missing |
+| Health & Welfare | REAL AND GOOD | Doubly corroborated this pass; explicitly do not extend into "medical instructs custody," since that would misrepresent real (custody-officer-led) practice |
+| Release | REAL AND GOOD | No change |
+| Communication & Requests | MISSING → now buildable | Real, two-source-corroborated mechanism (Human Rights Committee/Mukutano) — the strongest new domain candidate in this pass |
+| Disciplinary (prisoner) | UNKNOWN, do not build | Real in outline (s.85 hook already built); granular procedure is contamination-risk-flagged, not reliable enough to model |
+| Documents | REAL BUT TOO SHALLOW | Register taxonomy now named (UHRC); content/fields still unconfirmed — extend the document list, not the schema |
+| Daily operations / Headcounts | UNKNOWN, do not build | Confirmed unresolved after a fourth independent attempt from new angles — genuinely the hardest gap in Ugandan-specific sourcing |
+| Staff duty/shift/handover | UNKNOWN, do not build | Same as above — standing conduct rules exist, a rostering system is not evidenced |
+| Staff discipline | FUTURE | Real, but confidence too low and scope too HR-adjacent to build now; revisit if Standing Orders or a practitioner source surface |
+| Incidents (beyond escape) | UNKNOWN, do not build | No broader taxonomy found; escape response alone doesn't justify a general Incident domain |
+| Reports | REAL AND GOOD, extend | New population-breakdown dimensions (age/offence-type/nationality/sentence) are real and free to add |
+| Appointments (general) | NOT CURRENTLY NEEDED | Evidence supports only court-attendance scheduling as a real concept; a cross-cutting Appointments domain would be invention |
+| Attendance (general) | NOT CURRENTLY NEEDED | Confirmed again by an independent primary source (Farms Dept report) — not evidenced beyond court attendance |
+| Facility hierarchy (block/ward/wing/cell) | UNKNOWN, do not build | "Cell"/"ward" are real flat terms; no structured hierarchy is evidenced — free-text location remains right |
 
-## 4. Prisons ↔ Police / DPP boundary
+## 5. Prisons ↔ Courts boundary — reinforced, one addition
 
-No general "Prisons must notify DPP" statute analogous to Police's referral duty was found (RESEARCH.md §7) — do not invent one. The one real cross-institutional workflow is death-in-custody, which routes through LC I/police and the coroner, reaching DPP only indirectly and conditionally (see Death in custody above) — Prisons is a participant in that chain, not its owner.
+Unchanged in principle (s.118 proactive list, s.67 reactive production). This pass adds: virtual/video-link production is a real, operating alternative delivery mechanism for the same obligation, worth a `production_method` field, and UPS's own Legal Aid/Paralegal Advisory Services partnership delivers the s.64(3) legal-access entitlement at real scale (12,985 inmates, FY2023/24) through a named external programme — worth noting as context for the legal_advisor visit type, not a new domain.
 
-## 5. Person model
+## 6. Prisons ↔ Police / DPP boundary — unchanged
 
-A Prisoner record is the person — no separate People domain wraps it the way Police's/DPP's do (see People above). Referenceability-is-not-visibility still applies to any next-of-kin/contact detail relative to other institutions' own records.
+No general "Prisons must notify DPP" statute was found, confirmed again. Death-in-custody remains the one real cross-institutional workflow, routing through LC I/police and the coroner.
 
-## 6. Document model
+## 7. Person model, Document model, Search model — unchanged
 
-Database owns structured facts/metadata; Vault owns file bytes — same split as Police and DPP, but **built into the first slice**, not deferred, per the standing document-centric correction.
+See prior revision; nothing in this pass contradicts them. Documents gains the register-name list above; no structural change.
 
-## 7. Search model
-
-One system-wide search surface, composed across domains as they're built.
-
-## 8. Work/queue model
-
-See Work Queues domain above — every bucket traces to a specific statutory trigger.
-
-## 9. Organizational responsibility
-
-See Organizational responsibility domain above.
-
-## 10. Navigation proposal
+## 8. Navigation proposal (revised)
 
 ```
 Pleadli Prisons
 
-Overview                    (what needs my attention: remand thresholds, court sessions due,
-                              parole windows, hospitalised prisoners awaiting return)
+Overview                    (what needs attention: remand thresholds, court sessions due,
+                              parole windows, hospitalised prisoners awaiting return —
+                              real derived stats only, per the standing convention)
 
 Search
 
-Admission                   (receiving a prisoner under a real warrant/order — first-class,
-                              same reasoning as DPP's Intake)
+Admission                   (receiving a prisoner under a real warrant/order)
 
-Prisoners                   (the core record + workspace: status, custody/remand tracking,
-                              health/welfare events, transfer history, release history,
-                              documents — all in one workspace, not scattered registers)
+Prisoners                   (the core record + workspace: custody/remand tracking,
+                              property & effects, health/welfare events, transfer history,
+                              release history, visits (authorization + attendance),
+                              programme participation + certification, documents —
+                              one workspace, not scattered registers)
 
-Court Production & Remand   (s.118 list, s.67 production orders — pulled out as distinct
-                              because it's a real, named statutory duty, same reasoning as
-                              DPP's Charging Review)
+Court Production & Remand   (s.118 list, s.67 production orders, now with a
+                              physical/virtual production-method distinction)
 
-Reports                     (derived only — population by category, occupancy vs. capacity,
-                              escapes, deaths, productions-to-court — mirroring UPS's own
-                              real published metric shape, RESEARCH.md §8)
+Requests & Complaints       (NEW — the Human Rights Committee/Mukutano mechanism:
+                              a plain log of complaints raised, category, and outcome)
+
+Reports                     (population by category incl. age/offence-type/nationality/
+                              sentence breakdowns, occupancy, releases, transfers,
+                              visits, health events, court productions)
 ```
 
-This is a starting proposal, not a locked structure. "Prisoners" carries the weight Police's "Cases" and DPP's "Files" do. Health, Transfers, and Release are folded into the Prisoner workspace as event types, not separate top-level nav — same "workspace over one core record" pattern DPP settled on for Decisions/Documents after its own correction.
+**What is deliberately NOT a new top-level nav item, and why**: Property & Effects lives inside the Prisoner workspace (an admission-time record, not a browsable list of its own). Staff duty, headcounts, and Disciplinary are not in the navigation at all — they're UNKNOWN or FUTURE, not built, and adding an empty or placeholder nav entry for them would misrepresent the product the same way an invented feature would.
 
-## 11. What is explicitly out of scope (for now)
+This is a revised proposal, not a locked structure — it should be confirmed before implementation, same as the original navigation was.
 
-- A national UPS system (PMIS is UPS's own, not this app's job)
-- A health-records/clinical system (hybrid Ministry-of-Health model — Prisons tracks events, not clinical detail)
-- Inquest/coronial process management (Courts'/the coroner's domain — Prisons records the death event and notification only)
+## 9. What is explicitly out of scope (for now)
+
+- A national UPS system (PMIS is UPS's own, confirmed real and separate, still pilot-stage — not this app's job)
+- A health-records/clinical system, or a "medical instructs custody" directive feature (evidence shows the opposite is real practice)
+- Inquest/coronial process management
 - Sync engine, offline conflict-resolution, multi-prison infrastructure
 - Biometric identification, AI decision-making
 - A hardcoded complete UPS national organizational hierarchy
-- Billing, decorative analytics, invented metrics — UPS's own real published statistics (RESEARCH.md §8) are the model to mirror, not exceed
-- Assuming a Prisons↔DPP notification duty exists for escapes/health issues — none found
+- Billing, decorative analytics, invented metrics
+- A structured facility hierarchy (block/ward/wing/cell) — "cell"/"ward" are real flat terms, no hierarchy is evidenced
+- A general cross-cutting Appointments domain — only court-attendance scheduling is evidenced
+- A general cross-cutting Attendance domain — only court attendance is evidenced, confirmed by two independent passes now
+- A Disciplinary (prisoner) domain with granular procedure — real in outline only, detail is contamination-risk-flagged
+- A Staff duty/shift/handover domain — genuinely unevidenced after four attempts
+- A Headcount/daily-log domain — genuinely unevidenced after four attempts
+- A general Incidents domain beyond the one grounded escape-response workflow
+- A generic calendar or task-management feature
 
-## Uncertainties still open (require product clarification, not invention)
+## 10. Uncertainties still open (require product clarification or further research, not invention)
 
-- Exact prescribed admission particulars (s.61 doesn't enumerate them — Prisons Regulations 2012 likely has this, not independently fetched).
-- Whether a standardised transfer-record register or production-order form exists beyond what the Act names (the "transfer letter" is a communication right, not confirmed as an internal record).
-- No official prisoner reference-number format — same open question as ODPP's registration number.
-- Whether UPS Standing Orders (not publicly reachable, `prisons.go.ug` DNS failure — RESEARCH.md §8 ref #8) specify escape/health-issue notification duties to DPP or Courts.
-- Whether the "266 custodial prison units" vs. World Prison Brief's "270 institutions" reflects a real count difference or just different snapshot dates.
+- Exact prescribed admission particulars, and property/effects record fields — the Prisons Regulations 2012 likely has both; still inaccessible after four attempts across four sessions (see RESEARCH.md §9, §11.0).
+- **Headcount/muster mechanics, staff duty rosters/handover, and granular prisoner-discipline procedure remain genuinely UNKNOWN** even after this deep pass — do not build any of these without either the Regulations text or a practitioner source.
+- Whether "convicted without commitment warrant on file" should be representable as an honest state in the schema — a real product decision, not a research question.
+- Whether the Trial on Indictments Act's alleged "officer-in-charge certificate of prior conviction" provision is real — surfaced via search synthesis only, not independently verified; a different, not-yet-attempted URL exists for this one and could be worth a real fetch in a future pass.
+- Whether `nationalId` is a reliable cross-episode search key — unresolved, same as before.
 
 ## Final test
 
 Before considering any implementation complete, ask:
 
-**Does this feel like software for running one prison's custody and welfare responsibilities, or does it feel like Police/DPP with different labels?**
+**Could a prison officer actually use this during their shift? Does it help them know what is happening, coordinate people and activities, and preserve the institutional record — using only what's actually been verified about how this institution works, not a plausible-sounding guess?**

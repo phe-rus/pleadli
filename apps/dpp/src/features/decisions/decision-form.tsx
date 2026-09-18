@@ -93,7 +93,7 @@ export function DecisionForm({ prosecutionFileId, onSuccess, onDirtyChange }: De
                 <Badge variant="secondary" className="mr-1.5">
                   DPP only
                 </Badge>
-                Not delegable under Ugandan law — exercised by the Director of Public Prosecutions personally.
+                Not delegable under Ugandan law: exercised by the Director of Public Prosecutions personally.
               </FieldDescription>
             )}
           </Field>
@@ -118,7 +118,7 @@ export function DecisionForm({ prosecutionFileId, onSuccess, onDirtyChange }: De
             <FieldLabel>Reasons (optional)</FieldLabel>
             <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Reasons…" />
             <FieldDescription>
-              Privileged between ODPP and the investigating agency — never disclosed to unauthorised persons.
+              Privileged between ODPP and the investigating agency, never disclosed to unauthorised persons.
             </FieldDescription>
           </Field>
         )}

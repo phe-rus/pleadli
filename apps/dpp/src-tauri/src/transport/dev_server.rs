@@ -19,8 +19,13 @@ use std::path::PathBuf;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::domain::attachments::{self, Attachment};
+use crate::domain::charges::{self, Charge, CreateChargeInput};
+use crate::domain::comments::{self, Comment, CreateCommentInput};
 use crate::domain::decisions::{self, CreateDecisionInput, Decision};
+use crate::domain::evidence::{self, CreateEvidenceItemInput, EvidenceItem};
 use crate::domain::people::{self, CreatePersonInput, Person};
+use crate::domain::review_notes::{self, CreateReviewNoteInput, ReviewNote};
+use crate::domain::statements::{self, CreateStatementInput, Statement};
 use crate::domain::prosecution_files::{
     self, CreateProsecutionFileInput, ProsecutionFile, ProsecutionFilePerson, UpdateProsecutionFileInput,
 };
@@ -143,6 +148,44 @@ async fn list_decisions_handler(State(state): State<AppState>, Path(id): Path<St
     decisions::list_for_file(&state.pool, &id).await.map(Json).map_err(internal_error)
 }
 
+async fn create_statement_handler(State(state): State<AppState>, Json(input): Json<CreateStatementInput>) -> Result<Json<Statement>, ApiError> {
+    statements::create_statement(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_statements_handler(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Vec<Statement>>, ApiError> {
+    statements::list_for_file(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn create_evidence_item_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreateEvidenceItemInput>,
+) -> Result<Json<EvidenceItem>, ApiError> {
+    evidence::create_evidence_item(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_evidence_handler(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Vec<EvidenceItem>>, ApiError> {
+    evidence::list_for_file(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn create_charge_handler(State(state): State<AppState>, Json(input): Json<CreateChargeInput>) -> Result<Json<Charge>, ApiError> {
+    charges::create_charge(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_charges_handler(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Vec<Charge>>, ApiError> {
+    charges::list_for_file(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
+async fn create_review_note_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreateReviewNoteInput>,
+) -> Result<Json<ReviewNote>, ApiError> {
+    review_notes::create_review_note(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_review_notes_handler(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<Vec<ReviewNote>>, ApiError> {
+    review_notes::list_for_file(&state.pool, &id).await.map(Json).map_err(internal_error)
+}
+
 async fn search_handler(State(state): State<AppState>, Query(params): Query<QueryParam>) -> Result<Json<Vec<SearchResult>>, ApiError> {
     search::search(&state.pool, &params.query).await.map(Json).map_err(internal_error)
 }
@@ -156,6 +199,17 @@ struct EntityQuery {
 
 async fn list_attachments_handler(State(state): State<AppState>, Query(params): Query<EntityQuery>) -> Result<Json<Vec<Attachment>>, ApiError> {
     attachments::list_attachments(&state.pool, &params.entity_type, &params.entity_id)
+        .await
+        .map(Json)
+        .map_err(internal_error)
+}
+
+async fn create_comment_handler(State(state): State<AppState>, Json(input): Json<CreateCommentInput>) -> Result<Json<Comment>, ApiError> {
+    comments::create_comment(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_comments_handler(State(state): State<AppState>, Query(params): Query<EntityQuery>) -> Result<Json<Vec<Comment>>, ApiError> {
+    comments::list_for_entity(&state.pool, &params.entity_type, &params.entity_id)
         .await
         .map(Json)
         .map_err(internal_error)
@@ -236,6 +290,15 @@ pub async fn serve(pool: SqlitePool, vault_root: PathBuf) {
         .route("/decisions", post(create_decision_handler))
         .route("/prosecution-files/{id}/decisions", get(list_decisions_handler))
         .route("/search", get(search_handler))
+        .route("/statements", post(create_statement_handler))
+        .route("/prosecution-files/{id}/statements", get(list_statements_handler))
+        .route("/evidence-items", post(create_evidence_item_handler))
+        .route("/prosecution-files/{id}/evidence-items", get(list_evidence_handler))
+        .route("/charges", post(create_charge_handler))
+        .route("/prosecution-files/{id}/charges", get(list_charges_handler))
+        .route("/review-notes", post(create_review_note_handler))
+        .route("/prosecution-files/{id}/review-notes", get(list_review_notes_handler))
+        .route("/comments", post(create_comment_handler).get(list_comments_handler))
         .route("/attachments", post(create_attachment_handler).get(list_attachments_handler))
         .route("/attachments/{id}", axum::routing::delete(delete_attachment_handler))
         .route("/attachments/{id}/file", get(get_attachment_file_handler))

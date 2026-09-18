@@ -28,18 +28,22 @@ function RouteComponent() {
   const columns: DataTableColumnDef<RemandListEntry>[] = useMemo(() => {
     return [
       {
-        id: 'name',
-        accessorFn: (row) => prisonerFullName({ firstName: row.firstName, lastName: row.lastName, otherNames: null }),
-        header: 'Name',
+        accessorKey: 'prisonerId',
+        header: 'Prisoner ID',
         cell: ({ row }) => (
           <Link
             to="/prisoners/$prisonerId"
             params={{ prisonerId: row.original.prisonerId }}
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block max-w-sm truncate')}
+            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block')}
           >
-            {prisonerFullName({ firstName: row.original.firstName, lastName: row.original.lastName, otherNames: null })}
+            {row.original.prisonerId}
           </Link>
         ),
+      },
+      {
+        id: 'name',
+        accessorFn: (row) => prisonerFullName({ firstName: row.firstName, lastName: row.lastName, otherNames: null }),
+        header: 'Name',
       },
       { accessorKey: 'admissionAuthority', header: 'Authority for detention', cell: ({ row }) => row.original.admissionAuthority ?? '·' },
       { accessorKey: 'admittedAt', header: 'Admitted', cell: ({ getValue }) => format(getValue<number>(), 'PP') },
@@ -69,7 +73,7 @@ function RouteComponent() {
     <article className="container flex flex-col gap-5 pt-5 pb-20">
       <section className="flex flex-col gap-1">
         <h1>Court Production &amp; Remand</h1>
-        <p className="md:max-w-sm">Every prisoner currently on remand — the pre-session list Prisons Act s.118 requires.</p>
+        <p className="md:max-w-sm">Every prisoner currently on remand: the pre-session list Prisons Act s.118 requires.</p>
       </section>
 
       <DataTable

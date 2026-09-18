@@ -36,6 +36,7 @@ function toRustUpdateInput(input: UpdatePrisonerInput) {
     otherNames: input.otherNames || null,
     nationalId: input.nationalId || null,
     reference: input.reference || null,
+    currentLocation: input.currentLocation || null,
     notes: input.notes || null,
   }
 }
