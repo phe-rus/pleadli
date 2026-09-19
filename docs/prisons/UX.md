@@ -4,7 +4,7 @@ Pleadli Prisons is a **legal notebook that runs a prison**, not a dashboard prod
 
 This note is Prisons. The same craft can apply later to Police case files, DPP briefs, court cause lists, and lawyer matters. Do not build those UIs here.
 
-Canonical screen list remains [[../product-map/08-application-structure]]. This note is **how those screens should feel**.
+Canonical screen list remains [[product/08-application-structure]]. This note is **how those screens should feel**.
 
 ## What we take from Obsidian
 
@@ -74,4 +74,4 @@ Obsidian’s “another vault” is the right metaphor: HQ is not a second copy 
 
 ## Copying this to other institutions later
 
-Keep in this note only patterns: file, backlinks, palette, procedure, quiet chrome, local vault. Jurisdiction strings live in [[languages]] and in each product map.
+Keep in this note only patterns: file, backlinks, palette, procedure, quiet chrome, local vault. Jurisdiction strings live in [[LOCALIZATION]] and in each product map.

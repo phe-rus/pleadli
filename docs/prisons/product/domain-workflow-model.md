@@ -1,8 +1,8 @@
 # Pleadli Prisons — Domain & Workflow Model
 
-> **Superseded 2026-09-18 by [`product-map/02-capabilities-domains-workflows.md`](product-map/02-capabilities-domains-workflows.md).** The REMOVE verdicts for daily routine, duty roster, discipline, incidents and facility hierarchy are reversed: unknown procedure is not an unknown responsibility. Evidence in this file is retained.
+> **Superseded 2026-09-18 by [`02-capabilities-domains-workflows.md`](02-capabilities-domains-workflows.md).** The REMOVE verdicts for daily routine, duty roster, discipline, incidents and facility hierarchy are reversed: unknown procedure is not an unknown responsibility. Evidence in this file is retained.
 
-Where every current (or candidate) domain sits, with a **KEEP / IMPROVE / MERGE / SPLIT / MOVE / REMOVE** verdict and the concrete change each implies. Grounded in `RESEARCH.md` (evidence), `PRODUCT.md` (product decisions), and the audited build state recorded in `docs/scope/prisons/scope.md` (2026-09-18).
+Where every current (or candidate) domain sits, with a **KEEP / IMPROVE / MERGE / SPLIT / MOVE / REMOVE** verdict and the concrete change each implies. Grounded in `../research/findings.md` (evidence), `../PRODUCT.md` (product decisions), and the audited build state recorded in `../scope/prisons/scope.md` (2026-09-18).
 
 **Verdict vocabulary.**
 - **KEEP** — correct domain, correct shape; no structural change.
@@ -16,7 +16,7 @@ Where every current (or candidate) domain sits, with a **KEEP / IMPROVE / MERGE 
 
 | Domain | Verdict | Current state (audit) | Change |
 |---|---|---|---|
-| **Prisoners** (admission/custody/status; episode-not-person) | **KEEP** + IMPROVE | Built (scope 1); `admission_instrument_type` forces a false choice among 4 complete types | Represent "convicted, document pending" honestly (real CG-reported state, RESEARCH.md §11.3; scope 18). |
+| **Prisoners** (admission/custody/status; episode-not-person) | **KEEP** + IMPROVE | Built (scope 1); `admission_instrument_type` forces a false choice among 4 complete types | Represent "convicted, document pending" honestly (real CG-reported state, ../research/findings.md §11.3; scope 18). |
 | **Releases** | **KEEP** + IMPROVE | Built (scope 2); normal discharge + court-driven release both flow | (a) MERGE with Property at release (below); (b) align court-release vocabulary with UPS's own 13 named reasons (Jan-2025 abstract); (c) print the release order (scope 20). |
 | **Transfers** | **KEEP** + IMPROVE | Built (scope 3) as a closure at the sending facility | Future (0001/H4): an executed transfer is two-ended — receiving facility opens the episode; HQ coordinates/attests. v1 sync scope covers core Prisoner only; transfer completeness-correlation is a follow-up, not a v2 rework. |
 | **Court Production & Remand** | **KEEP** | Built incl. physical/virtual method (scope 4) and the s.118 list (scope 5) | KEEP; print the s.118 list (scope 20). No structural change. |
@@ -31,7 +31,7 @@ Where every current (or candidate) domain sits, with a **KEEP / IMPROVE / MERGE 
 
 | Domain | Verdict | Reality | Change |
 |---|---|---|---|
-| **Daily routine / headcount / shift handover** | **REMOVE** (never build) | UNKNOWN after five independent attempts; only the "Counting prisoners" regulation title exists | Nothing. Stated closure, RESEARCH.md §13. |
+| **Daily routine / headcount / shift handover** | **REMOVE** (never build) | UNKNOWN after five independent attempts; only the "Counting prisoners" regulation title exists | Nothing. Stated closure, ../research/findings.md §13. |
 | **Staff duty roster** | **REMOVE** | No rostering system evidenced; only standing-conduct rule titles | Nothing. |
 | **Prisoner discipline (procedure)** | **REMOVE** (for now) | Real in outline (s.85 hook); procedure detail contamination-risk-flagged | Keep the s.85 remission-forfeiture hook; no hearing/sanction model without the Regulations 2012 text. |
 | **General Incidents** | **REMOVE** | Only the thin escape-response workflow is grounded | Represent escape as a movement/release-adjacent event (decision), not a general incident system. |
@@ -54,14 +54,14 @@ Where every current (or candidate) domain sits, with a **KEEP / IMPROVE / MERGE 
 | **Search** | **IMPROVE** | Prisoners only (scope 13) | Full coverage across all 8 other domains (scope 16, in progress). |
 | **Reports** | **IMPROVE** | Base exists (scope 12) but none of the 4 grounded breakdowns | Population breakdowns by age group / capital-offence type / nationality / sentence category (scope 15); UPS-shaped monthly-statistics export (scope 21). |
 | **Print & export** | **IMPROVE** | None | Admission slip, release order, s.118 list per the sibling apps' print pattern (scope 20). |
-| **Head Office / peer sync** | **NEW** (HQ tier) | Foundation in progress (scope 22) | Exact capabilities in `capabilities-head-office.md` (H1-H9) and the 0001 spec; v1 syncs core Prisoner record only; no HQ prisoners of its own. |
+| **Head Office / peer sync** | **NEW** (HQ tier) | Foundation in progress (scope 22) | Exact capabilities in `../research/capabilities-head-office.md` (H1-H9) and the 0001 spec; v1 syncs core Prisoner record only; no HQ prisoners of its own. |
 
 ## Workflow seams (the ones that are currently broken or missing)
 
 1. **Admission → Release property lifecycle** (features 8 + 2, scope 17): the single s.62 duty (take at admission, return at release) is implemented as two disconnected features. **MERGE.**
 2. **Transfer execution across facilities** (feature 3 + H4): a sending facility closes; a receiving facility opens; only HQ sees both. This is the one workflow the single-installation model cannot complete alone — it decides the order in which cross-facility sync features ship.
 3. **Court outcome → facility record** (feature 4 + A3): ~6,528 prisoners/month come back to facilities "released from courts due to various reasons"; the reason vocabulary must match UPS's 13 named entries so the facility's release record is a faithful echo of the court's order.
-4. **Reporting duty outward** (C1/C2/C3): three named statute-backed upward flows exist now and get built only against the synced read-model at HQ (capabilities-facility.md Group C × capabilities-head-office.md H6/H7).
+4. **Reporting duty outward** (C1/C2/C3): three named statute-backed upward flows exist now and get built only against the synced read-model at HQ (../research/capabilities-facility.md Group C × ../research/capabilities-head-office.md H6/H7).
 
 ## Rules that keep the model honest
 

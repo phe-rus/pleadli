@@ -1,6 +1,6 @@
 # Pleadli Prisons — Head Office Capability Model
 
-> **Superseded 2026-09-18 by [`product-map/01-product-and-operating-models.md`](product-map/01-product-and-operating-models.md) section C and [`02-capabilities-domains-workflows.md`](product-map/02-capabilities-domains-workflows.md).** The real UPS head-office evidence in section 1 is retained. Section 2 (H1 to H9) is replaced by capabilities HA to HJ, with disclosure tiers replacing full-row read copies.
+> **Superseded 2026-09-18 by [`../product/01-product-and-operating-models.md`](../product/01-product-and-operating-models.md) section C and [`../product/02-capabilities-domains-workflows.md`](../product/02-capabilities-domains-workflows.md).** The real UPS head-office evidence in section 1 is retained. Section 2 (H1 to H9) is replaced by capabilities HA to HJ, with disclosure tiers replacing full-row read copies.
 
 Two lenses, kept deliberately separate:
 

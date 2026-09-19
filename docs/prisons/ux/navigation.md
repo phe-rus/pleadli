@@ -1,6 +1,6 @@
 # Pleadli Prisons — IA, Navigation & Screen Proposal
 
-> **Superseded 2026-09-18 by [`product-map/08-application-structure.md`](product-map/08-application-structure.md).** The flat-nav decision (D6) is reopened because the operating model changed. Kept for history and for the screen notes on Visits and the add-record panel, which carry over.
+> **Superseded 2026-09-18 by [`../product/08-application-structure.md`](../product/08-application-structure.md).** The flat-nav decision (D6) is reopened because the operating model changed. Kept for history and for the screen notes on Visits and the add-record panel, which carry over.
 
 A proposal for confirmation — not a locked structure. Aligned with the built nav (`apps/prisons/src/data/navigationItems.ts`), the 2026-09-18 IA fixes recorded in `docs/scope/prisons/scope.md` (feature 22), and the two-tier facility/HQ reality captured in `capabilities-head-office.md` and `responsibility-matrix.md`.
 
@@ -86,7 +86,7 @@ Head Quarters
 - Single box, result groups by domain (person / visit / request / production / release / transfer / health / property / programme). HQ: a "facility holds" dimension — result rows show which paired facility the record came from.
 
 ### 4.5 Visits (standalone destination)
-- The visit log of this facility as a whole — authorization and attendance as two concepts (RESEARCH.md §9-11), every visit type, per-column search (prisoner, visitor, type, status, date, supervising officer), prisoner ID linking through to the person's workspace.
+- The visit log of this facility as a whole — authorization and attendance as two concepts (../research/findings.md §9-11), every visit type, per-column search (prisoner, visitor, type, status, date, supervising officer), prisoner ID linking through to the person's workspace.
 - Purpose is findability, not duplication: the same records surface inside the Prisoner workspace as that person's own Visits tab; this page is the facility-wide view of the same ledger, exactly as Requests already is.
 
 ### 4.6 Add-record motion panel (the facility-wide entry point)

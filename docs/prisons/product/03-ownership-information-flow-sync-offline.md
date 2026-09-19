@@ -11,7 +11,7 @@ Principles P1 to P5, P7 and P8 (README) are the constraints here. Nothing in thi
 Today one `prisoners` row is the person, the custody and the location, per installation. Ownership across a transfer cannot be expressed that way. The model:
 
 - **Person identity facts**: name, sex, date of birth, national ID, family and next of kin. Recorded by a facility; a copy travels in a transfer dossier.
-- **Custody episode**: one continuous period of imprisonment, with a global identifier created at first reception. A later, unrelated re-arrest starts a new episode (the earlier product decision, RESEARCH.md §9, stands). A transfer does **not** start a new episode (s.73(5), s.73(6) treat transfer as one continuing custody relationship) [P].
+- **Custody episode**: one continuous period of imprisonment, with a global identifier created at first reception. A later, unrelated re-arrest starts a new episode (the earlier product decision, ../research/findings.md §9, stands). A transfer does **not** start a new episode (s.73(5), s.73(6) treat transfer as one continuing custody relationship) [P].
 - **Stay**: the episode as held by one facility, from reception or transfer-in to discharge or transfer-out. **A stay is owned forever by the facility whose stay it was.** It is the record of what happened there.
 - **Live record**: the current working file of the episode. It is owned by the facility currently holding the person. It moves to another facility **only** through a confirmed transfer (W5).
 

@@ -6,7 +6,7 @@
 
 This note is the **staging**. [Scope](../scope/prisons/scope.md) is the checklist the pipeline tools read. Keep them aligned when a stage starts.
 
-Related: [[product-map/README]], [[craft/code]], [[craft/interface]], [[craft/languages]], [[craft/intelligence]].
+Related: [[product/principles]], [[ARCHITECTURE]], [[UX]], [[LOCALIZATION]], [[AI]].
 
 ---
 
@@ -22,7 +22,7 @@ What is still true:
 - **Head Office** can pair and look at copies. It is not yet an estate, oversight, or returns desk.
 - **Sync** still over-discloses full prisoner rows on a legacy path.
 - **Routes** still contain page bodies, helpers, and tables. That is the first code job.
-- **Today / Reports / Start** do not yet match [[product-map/08-application-structure]].
+- **Today / Reports / Start** do not yet match [[product/08-application-structure]].
 - **Count, gate, incidents, discipline** stay provisional until a field week.
 - **AI is not in the app.** We only leave a seam so it can arrive without a rewrite.
 
@@ -43,7 +43,7 @@ Code cleanliness is first because every later stage (Obsidian chrome, languages,
 | 6 | Today and IA | Home is owed work. Care includes health and programmes. Reports is Returns | 2, 5 |
 | 7 | HQ estate | Occupancy, currency, locate “as of”, oversight inbox (not pairing tiles) | 5, 6 |
 | 8 | Intelligence seam | TanStack AI, BYOK or account, tools on `/api/**`, off by default | 1, 4 |
-| 9 | Field modules | Count, gate, incidents, discipline after a real facility week | Field kit in [[product-map/06-research-backlog]] |
+| 9 | Field modules | Count, gate, incidents, discipline after a real facility week | Field kit in [[research/backlog]] |
 
 Safety leftovers (secrets at rest, vault encryption, real HQ transport, stop live full-row snapshot) sit **beside** stages 1 to 7. They never wait for polish. They do not open new product domains.
 
@@ -62,7 +62,7 @@ Done when:
 
 ## Stage 1 — Code craft (first implementation)
 
-See [[craft/code]].
+See [[ARCHITECTURE]].
 
 Done when:
 
@@ -80,7 +80,7 @@ Worst current offenders (move first): `routes/_public/index.tsx` (HQ overview), 
 
 ## Stage 2 — Interface (Obsidian approach)
 
-See [[craft/interface]].
+See [[UX]].
 
 Done when:
 
@@ -105,7 +105,7 @@ Done when:
 
 ## Stage 4 — Languages
 
-See [[craft/languages]].
+See [[LOCALIZATION]].
 
 Done when:
 
@@ -152,7 +152,7 @@ Done when:
 
 ## Stage 8 — Intelligence seam
 
-See [[craft/intelligence]]. **Do not ship a model in the facility** until tools, audit, and an off switch exist.
+See [[AI]]. **Do not ship a model in the facility** until tools, audit, and an off switch exist.
 
 Done when:
 
@@ -165,7 +165,7 @@ Done when:
 
 ## Stage 9 — Field modules
 
-Count, handover, gate, incidents, discipline. Shapes stay provisional until the field kit in [[product-map/06-research-backlog]] has been run at two facilities.
+Count, handover, gate, incidents, discipline. Shapes stay provisional until the field kit in [[research/backlog]] has been run at two facilities.
 
 ---
 

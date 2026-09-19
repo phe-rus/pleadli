@@ -2,13 +2,13 @@
 
 **Date**: 2026-09-18
 **Phase**: product model, operating model, architecture and application structure. **No code, routes, components, schemas or migrations were changed by this phase.**
-**Status**: approved as the implementation contract. Build phase 1 (foundation) is complete and verified; see `07-implementation-gap.md` section 0 for what is built, what is verified, and what is next. Staging after 2026-09-19: [`../PLAN.md`](../PLAN.md).
+**Status**: approved as the implementation contract. Build phase 1 (foundation) is complete and verified; see `status.md` section 2 for what is built, what is verified, and what is next. Staging after 2026-09-19: [`../PLAN.md`](../PLAN.md).
 
 This folder re-establishes what Pleadli Prisons is, how a prison facility and Head Office each operate through it, how information moves between them, and how the same product runs on one machine, on a facility LAN, and across a production network. It was produced after reading every existing Prisons document and inspecting the actual implementation (Rust backend, migrations, HTTP servers, sync, pairing, frontend routes) rather than trusting the documents.
 
 ## Reading order
 
-**Vault home (2026-09-19):** [`../README.md`](../README.md) and staged plan [`../PLAN.md`](../PLAN.md). Craft (thin routes, Obsidian-like UX, Paraglide, TanStack AI seam): [`../craft/`](../craft/README.md). This folder remains the operating-model contract.
+**Vault home (2026-09-19):** [`../README.md`](../README.md) and staged plan [`../PLAN.md`](../PLAN.md). Craft (thin routes, Obsidian-like UX, Paraglide, TanStack AI seam): [`../ARCHITECTURE.md`](../ARCHITECTURE.md), [`../UX.md`](../UX.md), [`../LOCALIZATION.md`](../LOCALIZATION.md), [`../AI.md`](../AI.md). This folder remains the operating-model contract.
 
 | File | Contents | Answers brief sections |
 |---|---|---|
@@ -18,14 +18,14 @@ This folder re-establishes what Pleadli Prisons is, how a prison facility and He
 | [`03-ownership-information-flow-sync-offline.md`](03-ownership-information-flow-sync-offline.md) | G. Data ownership, H. Information flow, K. Sync, L. Offline and failure states | 5, 15, 16, 27 |
 | [`04-deployment-and-networking.md`](04-deployment-and-networking.md) | I. Local and facility LAN, J. Production network, transports, `/api/**` namespace, production-readiness | 11 to 14, 25, 26 |
 | [`05-security-accountability-documents-reporting.md`](05-security-accountability-documents-reporting.md) | M. Security and accountability, N. Document model, O. Reporting | 17, 18, 19 |
-| [`06-research-backlog.md`](06-research-backlog.md) | P. Evidence ledger and research backlog | 3, 20 |
-| [`07-implementation-gap.md`](07-implementation-gap.md) | Q. Intended vs built, plus defects found in the code | 1, 28 |
+| [`../research/backlog.md`](../research/backlog.md) | P. Evidence ledger and research backlog (was `06-research-backlog.md`) | 3, 20 |
+| [`status.md`](status.md) | Q. What is built, verified, and open | 1, 28 |
 | [`08-application-structure.md`](08-application-structure.md) | Facility and Head Office information architecture and interaction patterns | 21, 22, 23, 29 |
 | [`09-migration-map.md`](09-migration-map.md) | Every existing route, feature, backend module and doc mapped to its new place | 24, 30 |
 
 ## Read this first: two findings that change priorities
 
-These came from inspecting the code, not the docs. Details and evidence in [`07-implementation-gap.md`](07-implementation-gap.md).
+These came from inspecting the code, not the docs. Details and evidence in [`status.md`](status.md).
 
 1. **The "dev-only" local API is live in release builds and unauthenticated.** `transport/dev_server.rs` says it is "compiled out of release builds entirely", but `lib.rs` spawns `dev_server::serve` with no `cfg(debug_assertions)` gate. In a shipped build it serves the whole domain API on `127.0.0.1:47922` with `CorsLayer::new().allow_origin(Any)`. Its facility-management routes (pairing code, verify, revoke, save credentials) do not perform the HQ-session check that the equivalent Tauri commands do. Any local process, or any web page open in a local browser, can read and write prisoner records and drive pairing. This must be closed before any real facility use, independent of everything else here.
 2. **The current sync copies more than the ownership model allows.** The peer pushes its entire `prisoners` row, including free-text `notes`, national ID and date of birth, every five minutes, and Head Office stores the rows in its own `prisoners` table. That contradicts "connection does not mean universal visibility". The redesign replaces this with tiered disclosure (locator, attested returns, workflow packages, access on request).
@@ -34,9 +34,9 @@ These came from inspecting the code, not the docs. Details and evidence in [`07-
 
 | Earlier position | Where | New position | Why |
 |---|---|---|---|
-| Headcount, daily log, shift handover, incidents, prisoner discipline, duty roster are "REMOVE / never build" | `PRODUCT.md` §3/§9, `domain-workflow-model.md`, `capabilities-facility.md` B3/B6/A11 | Reclassified **NOT YET RESEARCHED (field)** and modelled as **Provisional** domains with minimal, evidence-shaped records | Five desk-research attempts showing "no source" prove the method is wrong, not that the work does not exist. A prison must know who it holds and where (UPS itself reports an "Unlock" figure and a regulation titled "Counting prisoners" exists). Removing it from the model is a product defect. |
+| Headcount, daily log, shift handover, incidents, prisoner discipline, duty roster are "REMOVE / never build" | `PRODUCT.md` §3/§9, `domain-workflow-model.md`, `capabilities-facility.md` B3/B6/A11 (all now under `research/` and `product/`) | Reclassified **NOT YET RESEARCHED (field)** and modelled as **Provisional** domains with minimal, evidence-shaped records | Five desk-research attempts showing "no source" prove the method is wrong, not that the work does not exist. A prison must know who it holds and where (UPS itself reports an "Unlock" figure and a regulation titled "Counting prisoners" exists). Removing it from the model is a product defect. |
 | "One installation = one prison = one machine" | `PRODUCT.md`, `0001` spec | One prison = one **Facility Node** with N workstations on the facility LAN. Single machine is the degenerate case. | Real facilities have several officers and computers. |
-| Flat nav is "settled" (D6) | `navigation.md`, `scope.md` 23 | Reopened. Navigation is derived from the operating model. | You directed that the sidebar is not the product definition, and the model changed. |
+| Flat nav is "settled" (D6) | `navigation.md` (now `../ux/navigation.md`), `scope.md` 23 | Reopened. Navigation is derived from the operating model. | You directed that the sidebar is not the product definition, and the model changed. |
 | Sync = full `prisoners` snapshot push, "torrent-like" later | `0001` spec, `sync.rs` | Signed exchange packages: ordered event outbox, attested returns, workflow packages, HQ inbox, locator reconcile. Transport-agnostic. | Ownership model and offline reality (see 03, 04). |
 | HQ "has no prisoners of its own" | `0001` spec | **Retained.** HQ holds locator entries and its own institutional records only. | Still correct. |
 | Transfer is a one-ended closure at the sender | `transfers.rs` | Two-ended, ownership-moving workflow with in-transit state and confirmation | s.73(5): a prisoner in transit remains in the custody of the prison officer. Only a defined process may change record ownership. |
@@ -58,9 +58,9 @@ These came from inspecting the code, not the docs. Details and evidence in [`07-
 
 ## Vocabulary
 
-### Implementation status (used in 07 and 09)
+### Implementation status (the single authority is `status.md` in this folder)
 
-`INTENDED` (documented or implied by this model) then one of: `BUILT` (verified in code), `PARTIAL` (exists but incomplete or disconnected), `PLANNED` (documented, no code), `EXCLUDED` (deliberately not built, with reason), `NEEDS RESEARCH` (cannot be specified without evidence).
+The old vocabulary below (`INTENDED` then one of `BUILT`/`PARTIAL`/`PLANNED`/`EXCLUDED`/`NEEDS RESEARCH`) is superseded by the state machine in `status.md`: `research`, `planned`, `designed`, `in-progress`, `implemented`, `verified`, `field-tested`, `deprecated`. `status.md` is checked against the code; the code wins.
 
 ### Evidence state (brief section 20; used in 06)
 
@@ -102,4 +102,4 @@ Recommendations are defaults; nothing proceeds on them without your approval.
 
 ## Supersession
 
-`PRODUCT.md`, `navigation.md`, `domain-workflow-model.md`, `capabilities-facility.md` and `capabilities-head-office.md` each carry a pointer to this folder. Their research findings, statutory citations and evidence labels remain valid and are reused here. Their build-or-never-build verdicts for daily operations, their flat navigation and their single-installation topology are superseded. `responsibility-matrix.md` remains the base for the ownership map in 03, extended with disclosure tiers.
+`PRODUCT.md`, `navigation.md` (now `../ux/navigation.md`), `domain-workflow-model.md`, `capabilities-facility.md` and `capabilities-head-office.md` (now `../research/`) each carry a pointer to this folder. Their research findings, statutory citations and evidence labels remain valid and are reused here. Their build-or-never-build verdicts for daily operations, their flat navigation and their single-installation topology are superseded. `responsibility-matrix.md` remains the base for the ownership map in 03, extended with disclosure tiers.

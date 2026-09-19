@@ -1,6 +1,6 @@
 # Pleadli Prisons — Facility ↔ Head Office Responsibility & Data-Ownership Matrix
 
-> **Extended 2026-09-18 by [`product-map/03-ownership-information-flow-sync-offline.md`](product-map/03-ownership-information-flow-sync-offline.md).** The rule and statutory anchors here stand. New: custody episode and per-facility stays, ownership change only through confirmed transfer, disclosure tiers T0 to T4, and HQ-owned records (transfer orders, decisions, directives). The "HQ holds a read copy" column is replaced by locator entries and attested returns.
+> **Extended 2026-09-18 by [`03-ownership-information-flow-sync-offline.md`](03-ownership-information-flow-sync-offline.md).** The rule and statutory anchors here stand. New: custody episode and per-facility stays, ownership change only through confirmed transfer, disclosure tiers T0 to T4, and HQ-owned records (transfer orders, decisions, directives). The "HQ holds a read copy" column is replaced by locator entries and attested returns.
 
 The answer to: **who is authoritative for each class of record, who may read it, who decides on it, and who coordinates it.**
 
@@ -8,7 +8,7 @@ The answer to: **who is authoritative for each class of record, who may read it,
 
 > **Facility is authoritative for its own operational records.** Head Office (and Region/District command) **reads and decides institutionally** — it never edits a facility's operational record, and it never operates prisoners of its own. Head Office's copy is a **read/reference copy** for aggregation and institutional action.
 
-Grounded in three named statutory examples (RESEARCH.md §13 / PRODUCT.md §3): the Visiting Justices' Book extract duty (s.110(3)), the visitor's-book observation report to the CGP (s.111(2)), and the s.88 periodic sentence review bundle — all follow the same shape: **facility records/ produces → HQ reviews/routes/decides institutionally.**
+Grounded in three named statutory examples (../research/findings.md §13 / ../PRODUCT.md): the Visiting Justices' Book extract duty (s.110(3)), the visitor's-book observation report to the CGP (s.111(2)), and the s.88 periodic sentence review bundle — all follow the same shape: **facility records/ produces → HQ reviews/routes/decides institutionally.**
 
 ## Legend
 
@@ -72,5 +72,5 @@ Grounded in three named statutory examples (RESEARCH.md §13 / PRODUCT.md §3): 
 ## Guardrails
 
 - A facility row must never be silently amended by an upstream event; conflicts resolve on the facility (authoritative) side, and HQ detects divergence rather than overwrites.
-- Regional/District commander read access is *scoped* (their region/district only) — real structure is 19 regions / 43 districts / ~270 units (RESEARCH.md §1, §13), not one flat blob.
+- Regional/District commander read access is *scoped* (their region/district only) — real structure is 19 regions / 43 districts / ~270 units (../research/findings.md §1, §13), not one flat blob.
 - No HQ prisoner-of-its-own (0001 constraint) — the matrix's "HQ ●" column is read-only *because* HQ holds copies, never originals.

@@ -41,7 +41,7 @@ Format per item: **current**, **verdict** (`KEEP`, `MERGE`, `SPLIT`, `MOVE`, `RE
 | `releases` | MERGE | **Discharge** procedure (with gates, softened) | One workflow |
 | `transfers` | SPLIT | Transfer out, in-transit, arrival; HQ coordination | Two-ended |
 | `court-productions` | MERGE | **Legal > Court diary** | Events under a court obligation |
-| `visits` | KEEP | **Care and contact** | Sound model; add the s.113 prison-minister category still open from `navigation.md` |
+| `visits` | KEEP | **Care and contact** | Sound model; add the s.113 prison-minister category still open from `../ux/navigation.md` |
 | `health-events` | KEEP | **Care and contact** | Add notification obligations |
 | `property-records` | MERGE | Property ledger inside Reception and Discharge | Property is a ledger, not a domain |
 | `programme-participations` | KEEP | **Care and contact** | Participation plus certification is right |
@@ -86,10 +86,10 @@ Current HTTP routes to target routes are in 04 ("The `/api/**` namespace"). Summ
 | Document | Verdict | Note |
 |---|---|---|
 | `PRODUCT.md` | Retain research and citations; superseded on daily-operations verdicts, single-installation topology, nav | Pointer added |
-| `RESEARCH.md` | Retain in full; extended by 06 here | Add international-baseline section on next research edit |
-| `capabilities-facility.md`, `capabilities-head-office.md` | Superseded by 02 (capability map); evidence labels retained | Pointer added |
+| `../research/findings.md` | Retain in full; extended by `../research/backlog.md` | Add international-baseline section on next research edit |
+| `../research/capabilities-facility.md`, `../research/capabilities-head-office.md` | Superseded by 02 (capability map); evidence labels retained | Pointer added |
 | `domain-workflow-model.md` | Superseded by 02 (E.3, F) | Pointer added |
-| `navigation.md` | Superseded by 08 | Pointer added |
+| `../ux/navigation.md` | Superseded by 08 | Pointer added |
 | `responsibility-matrix.md` | Retained as base; extended by 03 G | Pointer added |
 | `docs/scope/prisons/scope.md` | To be reconciled after approval (`/scope`); feature 22 and 23 remain valid | Not edited in this phase |
 | `docs/specs/prisons/0001-*` | Sync design superseded by 03 K and 04 J; pairing, activation and identity stay | Not edited; `/architect` to revise after approval |

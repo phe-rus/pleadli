@@ -64,4 +64,4 @@ Mandela r6: the file stays attributable. A model suggestion is not an official e
 
 ## Stage gate
 
-Do not start this until [[code]] is done (so tools have one API) and [[languages]] at least has English catalogs (so the pane is not a third string system).
+Do not start this until [[ARCHITECTURE]] (code) is done (so tools have one API) and [[LOCALIZATION]] (languages) at least has English catalogs (so the pane is not a third string system).

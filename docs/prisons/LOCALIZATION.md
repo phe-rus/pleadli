@@ -56,7 +56,7 @@ Labels, buttons, empty states, help one-liners.
 
 Ship complete `en`. Other locales may lag; missing keys must fall back to English, never to a raw key. Swahili is the second complete catalog when East Africa is in view.
 
-s.58(5) disclosure to the prisoner (rules of their category) is a **generated document** problem, not a chrome string. Vernacular for that document is [[../product-map/06-research-backlog]] R-33, after field work.
+s.58(5) disclosure to the prisoner (rules of their category) is a **generated document** problem, not a chrome string. Vernacular for that document is [[research/backlog]] R-33, after field work.
 
 ## Stage
 

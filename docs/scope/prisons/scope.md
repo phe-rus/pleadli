@@ -5,11 +5,11 @@ The Tauri desktop app for Uganda's prisons service: admission and prisoner custo
 **Build approach:** Tracer Bullet (inherits the project default).
 **Workflow:** GA (inherits the project default).
 
-**Canonical notes:** [vault home](../../prisons/README.md), [PLAN](../../prisons/PLAN.md) (stages 0 to 9), [craft](../../prisons/craft/README.md). Product map remains the operating model.
+**Canonical notes:** [vault home](../../prisons/README.md), [PLAN](../../prisons/PLAN.md) (stages 0 to 9), [ARCHITECTURE](../../prisons/ARCHITECTURE.md), [UX](../../prisons/UX.md), [LOCALIZATION](../../prisons/LOCALIZATION.md), [AI](../../prisons/AI.md). Product map remains the operating model; the single status authority is `docs/prisons/product/status.md`.
 
 **2026-09-19 replan:** docs-first pass after a product review. Stages: (1) thin routes and nested features, (2) Obsidian-like interface, (3) simpler motion, (4) Paraglide `en` `sw` `de` `zh` `fr`, (5) returns and print, (6) Today/IA, (7) HQ estate, (8) TanStack AI seam, (9) field modules. Features 24 to 32 enroll that work. Features 15, 17, 18, 19 and parts of 16, 22, 23 have code that the 2026-09-18 rows still call planned; treat PLAN.md as the status narrative until `/sync` reconciles each row.
 
-**2026-09-18 correction**: an earlier pass of this scope said this workspace was "fully caught up, no planned next slice." A skeptical code audit found that was wrong: `docs/prisons/PRODUCT.md`'s own gap analysis table incorrectly marked Reports as done, and never listed Search's real coverage gap at all. See the corrected rows below and `docs/prisons/RESEARCH.md` §12 for new research into what would help real Uganda government adoption (JLOS, NITA-U, the Data Protection and Privacy Act 2019), which surfaced the audit-trail and export items below. Existing features 1 to 14 remain accurately built; the next slice extends two of them (Reports, Search) and adds real gaps the audit found.
+**2026-09-18 correction**: an earlier pass of this scope said this workspace was "fully caught up, no planned next slice." A skeptical code audit found that was wrong: `docs/prisons/PRODUCT.md`'s own gap analysis table incorrectly marked Reports as done, and never listed Search's real coverage gap at all. See the corrected rows below and `docs/prisons/research/findings.md` §12 for new research into what would help real Uganda government adoption (JLOS, NITA-U, the Data Protection and Privacy Act 2019), which surfaced the audit-trail and export items below. Existing features 1 to 14 remain accurately built; the next slice extends two of them (Reports, Search) and adds real gaps the audit found.
 
 `docs/prisons/PRODUCT.md` §10 also records two open product questions worth resolving before they matter: how `admission_instrument_type` should represent "convicted, document pending" (now feature 18 below, since the audit found it still forces a false choice), and how reliable national ID based cross episode search really is (still just a decision, not a scope row, raise with `/architect` if it becomes load bearing).
 
@@ -98,7 +98,7 @@ code in `apps/prisons/src/routes/_public/index.tsx`
 
 ### 15. Reports: population breakdowns · needs a decision
 `docs/prisons/PRODUCT.md` documents four real, UPS sourced breakdown dimensions (age group, capital offence type, nationality, sentence category) as grounded and buildable. None exist in `domain/reports.rs` today. Needs a decision because it likely requires new fields on the Prisoner record to categorize by, not just a report query change.
-**Done when:** Reports shows population counts broken down by age group, capital offence type, nationality, and sentence category, matching the categories UPS's own published statistics use (see `docs/prisons/RESEARCH.md` §11.1).
+**Done when:** Reports shows population counts broken down by age group, capital offence type, nationality, and sentence category, matching the categories UPS's own published statistics use (see `docs/prisons/research/findings.md` §11.1).
 - [ ] Design it (spec): `/architect reports population breakdowns`
 
 ### 16. Search: full domain coverage · in-progress
@@ -118,7 +118,7 @@ Releasing a prisoner never touches their property record; the two exist independ
 - [ ] Design it (spec): `/architect admission instrument pending state`
 
 ### 19. Audit trail · needs a decision
-No `created_by`/`updated_by`/changed-at exists on any domain. Matters for the Data Protection and Privacy Act 2019's security and accountability duties (`docs/prisons/RESEARCH.md` §12, s.20 to 23), not just good practice. Needs a decision because Prisons (like Police and DPP) currently has no signed-in officer identity concept to attribute a change to, which this depends on. Worth checking whether this should be a cross-cutting decision across all three sibling apps rather than Prisons-only before designing it here alone (see `docs/scope/_root/scope.md`'s matching Deferred item).
+No `created_by`/`updated_by`/changed-at exists on any domain. Matters for the Data Protection and Privacy Act 2019's security and accountability duties (`docs/prisons/research/findings.md` §12, s.20 to 23), not just good practice. Needs a decision because Prisons (like Police and DPP) currently has no signed-in officer identity concept to attribute a change to, which this depends on. Worth checking whether this should be a cross-cutting decision across all three sibling apps rather than Prisons-only before designing it here alone (see `docs/scope/_root/scope.md`'s matching Deferred item).
 **Done when:** every domain record shows who created and last changed it and when, per whatever identity model gets decided.
 - [ ] Design it (spec): `/architect audit trail`
 
@@ -135,10 +135,10 @@ Once feature 15 is built, format an export that mirrors UPS's own real Monthly S
 ## Next slice
 
 ### 23. Visits page + motion add-record + nav alignment · in-progress
-2026-09-18, from the engineer directly. Three UI gaps the audited product model (`docs/prisons/navigation.md` §4.5-4.6) already implies but the app doesn't deliver:
+2026-09-18, from the engineer directly. Three UI gaps the audited product model (`docs/prisons/ux/navigation.md` §4.5-4.6) already implies but the app doesn't deliver:
 - **Visits page**: the sidebar has promised a top-level `/visits` since `navigationItems.ts` was written, but the route does not exist — a dead nav link. The domain is fully built (`features/visits/*`, used inside the prisoner workspace); this adds the missing facility-wide destination: a visit log across every prisoner (authorization + attendance), searchable, prisoner rows linking through to the person. Backed by a new facility-wide `list_visits` command.
 - **Motion add-record panel**: `add-record-panel.tsx` uses `@pleadli/ui`'s Drawer with a 3-item text list. Per the engineer the add-record surface is a **framer-motion panel** (same animation language as the existing onboarding gates) containing a **grid of record types**; selecting a card for a person-scoped record asks which prisoner (a search), then shows that record's inputs — real "steps" (grid → prisoner → form), never a nested tree.
-- **Nav alignment**: the flat nav shape is settled (navigation.md D6 = flat); the work is truth—`navigationItems.ts`'s comments describe an older reality (e.g. "Reports is a written document" vs the built `/reports` statistics surface), and its `Visits` link points at a route that now exists. No regrouping.
+- **Nav alignment**: the flat nav shape is settled (ux/navigation.md D6 = flat); the work is truth—`navigationItems.ts`'s comments describe an older reality (e.g. "Reports is a written document" vs the built `/reports` statistics surface), and its `Visits` link points at a route that now exists. No regrouping.
 
 **Done when:** `/visits` renders the facility-wide visit log and its nav link resolves; the header's "Add record" opens a motion panel with a record-type grid covering every built form (person-scoped ones ask for a prisoner via search first); `navigationItems.ts` matches the `navigation.md` trees with no stale comments.
 - [ ] Build it: `/develop visits page, motion add-record, nav alignment` (in progress)
@@ -156,7 +156,7 @@ Once feature 15 is built, format an export that mirrors UPS's own real Monthly S
 - A peer's own data is always authoritative; Head Office holds a read only copy. No bidirectional writes, so no conflict resolution is needed.
 - Sync scope for v1 is the core Prisoner record only; the other 8 domains (Visits, Requests, Court Productions, Releases, Transfers, Health Events, Property, Programmes) follow later as the same proven pattern repeated, per this project's own Tracer Bullet approach.
 - A peer's first sync after pairing backfills every existing prisoner it already has, not just new admissions going forward.
-- Registration is a hybrid: a peer self declares its own facility identity, but starts `pending_verification`, not active. A verification code goes by real email to a named Head Office officer; only once they verify does the facility unlock. No real UPS facility ID scheme was ever found in RESEARCH.md, so facility identity fields stay self declared free text; the human approval step is the actual safeguard, not a check against a canonical list.
+- Registration is a hybrid: a peer self declares its own facility identity, but starts `pending_verification`, not active. A verification code goes by real email to a named Head Office officer; only once they verify does the facility unlock. No real UPS facility ID scheme was ever found in research/findings.md, so facility identity fields stay self declared free text; the human approval step is the actual safeguard, not a check against a canonical list.
 - Pairing is single use: a short code onboards a facility once, then Head Office issues a separate long lived sync token the peer stores and uses for every sync call after that. Head Office can revoke a peer's token at any time.
 - A peer works fully offline indefinitely once paired; sync only happens whenever it has internet, no fixed schedule.
 - Head Office is purely an aggregator with no prisoners of its own; every prisoner record it ever holds came from a synced peer.
@@ -171,7 +171,7 @@ Once feature 15 is built, format an export that mirrors UPS's own real Monthly S
 - **Existing login already covers**: no users yet → create account (legal full name, badge number, password, confirm), then log in; users exist → confirmed as a two step login, badge number first, then a revealed password field, not a passwordless "ID only" login (directly confirmed, since that reading would have been a real security regression).
 - **HQ path is gated by an activation code**, a decision genuinely separate from facility pairing: a UUID shaped, 38 character code, generated on the `www` (Pleadli Cloud) side, single use, expiring the same day it is issued, verifiable by the Prisons app fully offline. **Confirmed scheme**: asymmetric signing. `www` holds a private signing key it never distributes; the Prisons app ships with only the matching public key baked in at build time, so a decompiled distributed binary can only verify codes, never forge them. `www`'s own generation is explicitly NOT being built now, placeholder only there; the Prisons side (real input screen, real signature and expiry verification) must genuinely work, backed by a small dev only helper that mints validly signed test codes with a separate dev keypair, so the real verification path is actually exercised without `www`.
 - After a valid activation code: a login screen (create the first HQ admin if none exist, else the existing two step login), then Settings, which the engineer described as "locked until the official is added" — read as: Settings requires confirming the responsible officer's identity before the rest of it unlocks, then network permission and reach settings, then Save unlocks full navigation, landing on the Overview with real stats. This interpretation is stated here for the record, not yet directly confirmed word for word; flag it back to the engineer if wrong when resuming.
-- **Facility registration dialog fields, refined**: facility name, ID or number, location, **region** (real: Uganda Prisons Service uses a genuine 19 region structure, RESEARCH.md §1), and **the head officer**'s name — added to the previously settled facility identity fields.
+- **Facility registration dialog fields, refined**: facility name, ID or number, location, **region** (real: Uganda Prisons Service uses a genuine 19 region structure, research/findings.md §1), and **the head officer**'s name — added to the previously settled facility identity fields.
 - **Sync sophistication for v1, deliberately kept simple**: a full current snapshot pushed whenever Head Office is reachable (an idempotent upsert of everything a peer currently has), not incremental version diffing yet. The engineer described a fuller "torrent like," version aware sync as the real long term direction; that is a named, real Follow-up for a later slice once this simpler loop is proven, not something to design blind before anything syncs at all.
 - **Dev only role switcher, confirmed**: a toggle visible only in dev builds that flips the real `hq_config.is_head_office` flag in the local dev database (not a fake, parallel view), so one signed in account can be used to test both the Head Office and facility sides without needing two real installations.
 - TanStack DB was raised again as a tooling suggestion; not decided this pass, still likely premature per the same reasoning already recorded for Police (single collection in v1, still beta) — worth a fresh, quick check at write time rather than assuming, not a re litigation of the whole question.
@@ -192,12 +192,12 @@ Once feature 15 is built, format an export that mirrors UPS's own real Monthly S
 
 ## Craft (2026-09-19)
 
-Code cleanliness first. Then interface, motion, languages. Product completeness after the files sit in the right place. Details in `docs/prisons/PLAN.md` and `docs/prisons/craft/`.
+Code cleanliness first. Then interface, motion, languages. Product completeness after the files sit in the right place. Details in `docs/prisons/PLAN.md` and `docs/prisons/ARCHITECTURE.md` (+ `UX.md`, `LOCALIZATION.md`).
 
 ### 24. Code craft: thin routes, nested features
 Routes under `apps/prisons/src/routes/` may export only `Route` and `RouteComponent`. Page bodies, tables, and helpers move into nested `features/` (by work, not one flat folder per table). Shared chrome stays in `components/`. TanStack Router, Query, and Form only; no second client database; no extra AI SDK.
 **Done when:** no extra functions in route files except the RouteComponent; features grouped by Today, legal, movements, care, returns, facility, network; `CreatePanel` named correctly; no `icon: any` on nav.
-- [ ] Design it (spec): `/architect prisons code craft` (optional if PLAN + craft/code.md are enough)
+- [ ] Design it (spec): `/architect prisons code craft` (optional if PLAN + ARCHITECTURE.md are enough)
 - [ ] Build it: `/develop prisons code craft`
 
 ### 25. Obsidian-like interface
@@ -231,7 +231,7 @@ Monthly return in UPS shape (build, check, attest, export) plus print of admissi
 - [ ] Build it: `/develop prisons returns and print`
 
 ### 30. Today and information architecture
-Today is owed work (Unlock, due, exceptions, node). Movements includes court and hospital in flight. Care includes health and programmes. Officers and Settings sit as facility administration. Aligns nav with product-map 08.
+Today is owed work (Unlock, due, exceptions, node). Movements includes court and hospital in flight. Care includes health and programmes. Officers and Settings sit as facility administration. Aligns nav with product 08 (application structure).
 **Done when:** home has no analytics tiles as its purpose; care area lists visits, requests, health, programmes; Start is procedures (with 25).
 - [ ] Build it: `/develop prisons today and ia`
 
@@ -241,12 +241,12 @@ Estate health: occupancy, last exchange, facilities in trouble, locate with “a
 - [ ] Build it: `/develop prisons hq estate`
 
 ### 32. Field modules (count, gate, incidents, discipline)
-Provisional only after the field kit in `docs/prisons/product-map/06-research-backlog.md`. Not invented from desk research.
+Provisional only after the field kit in `docs/prisons/research/backlog.md`. Not invented from desk research.
 **Done when:** two facilities have validated the shapes, then minimal modules ship labelled provisional.
 - [ ] Design it (spec): `/architect prisons field modules` (after field notes exist)
 
 ## Deferred
-Real, evidenced adoption factors from `docs/prisons/RESEARCH.md` §12, not yet decided as build work. Broader than this one workspace, so not planned here as features, but worth surfacing where they were found:
+Real, evidenced adoption factors from `docs/prisons/research/findings.md` §12, not yet decided as build work. Broader than this one workspace, so not planned here as features, but worth surfacing where they were found:
 - **PDPO registration and a documented security policy**: the Data Protection and Privacy Act 2019 requires registering as a data processor and having a documented security policy (s.20 to 29) · needs a decision, organizational not just code
 - **NITA-U certification posture**: reportedly government bodies may only use NITA-U certified IT products, unverified with certainty (two direct fetch attempts failed) · needs a decision, worth confirming directly with NITA-U before treating as a hard gate
 - **Uganda data residency for `www`**: Cloudflare hosting is a real cross-border transfer point under DPPA s.19; see `docs/scope/www/scope.md` · needs a decision

@@ -133,7 +133,7 @@ Ordered per the project's Tracer Bullet approach: each numbered step leaves a ge
 ## Follow-up
 
 - [ ] **Scope 19 audit trail** was not decided here (identity model crosses apps — Police/DPP/Prisons each have their own officer identity). Needs its own `/architect` pass before implementation.
-- [ ] D2 `prison_minister` visit type (Prisons Act s.113, Prison Ministers), D3 escape-event home, and D5 Visiting Justice Book (s.110(3)) receipt surface remain open from `docs/prisons/navigation.md`; none is decided by this spec.
+- [ ] D2 `prison_minister` visit type (Prisons Act s.113, Prison Ministers), D3 escape-event home, and D5 Visiting Justice Book (s.110(3)) receipt surface remain open from `docs/prisons/ux/navigation.md`; none is decided by this spec.
 - [ ] Backfill strategy for the new fields on existing prisoner rows (batch edit screen vs. leaving to natural re-entry).
 - [ ] Whether the capital-offence type labels should one day become a stored value rather than a display-time classifier, once the app grows an offence model.
 

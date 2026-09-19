@@ -18,7 +18,7 @@ Professional code here means: an officer’s job is easy to find, a route file i
 
 **Local truth stays Rust + sqlx SQLite on the node.** TanStack DB is a client collection layer. This app already has an authoritative node. Do not put a second database in the renderer.
 
-Query talks to `/api/**`. Router owns the URL. Form owns input. AI, when it exists, calls the same API as tools ([[intelligence]]).
+Query talks to `/api/**`. Router owns the URL. Form owns input. AI, when it exists, calls the same API as tools ([[AI]], deep detail in `ai/README`).
 
 ## What a route file may contain
 
@@ -72,7 +72,7 @@ src/
 
 ### Nesting (not a flat `features/` dump)
 
-Group by **work**, which already matches the IA in [[../product-map/08-application-structure]]:
+Group by **work**, which already matches the IA in [[product/08-application-structure]]:
 
 | Folder | Owns |
 |---|---|
@@ -109,7 +109,7 @@ Rust mirrors work where it is cheap (`domain/legal.rs` already exists). Do not r
 
 ## Naming
 
-- Paths stay English and stable (`/legal`, `/procedures/reception`). Locale does not rewrite paths ([[languages]]).
+- Paths stay English and stable (`/legal`, `/procedures/reception`). Locale does not rewrite paths ([[LOCALIZATION]]).
 - Domain language in code: `prisoner`, `stay`, `instrument`, `obligation`. Not `inmate` unless quoting a source.
 - Comments cite the product map or the Act when they encode a rule. They do not narrate the file.
 
