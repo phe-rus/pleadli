@@ -1,6 +1,8 @@
 # Pleadli Prisons — Product Model
 
 > **Partly superseded 2026-09-18 by [`product-map/`](product-map/README.md).** Research findings, statutory citations and evidence labels below remain valid. Superseded: the "never build" verdicts for headcount, daily log, handover, incidents, prisoner discipline and duty (now `NOT YET RESEARCHED (FIELD)` and modelled as provisional domains), the single-installation topology (now Facility Node with LAN workstations), the flat navigation, and the full-row snapshot sync (now tiered disclosure and exchange packages).
+>
+> **Vault (2026-09-19):** start at [`README.md`](README.md). Staging in [`PLAN.md`](PLAN.md). Code, Obsidian-like interface, Paraglide languages, and the AI seam live under [`craft/`](craft/README.md). This file stays the research narrative.
 
 This is the product model for Pleadli Prisons, produced after the research phase (`docs/prisons/RESEARCH.md`) and revised after a deep operational research pass (RESEARCH.md §11) explicitly demanded before any further code. It follows the same discipline as `docs/police/PRODUCT.md` and `docs/dpp/PRODUCT.md`: only claims grounded in verified research are treated as real requirements; everything else is marked as an open question, not invented.
 

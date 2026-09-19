@@ -2,11 +2,13 @@
 
 **Date**: 2026-09-18
 **Phase**: product model, operating model, architecture and application structure. **No code, routes, components, schemas or migrations were changed by this phase.**
-**Status**: approved as the implementation contract. Build phase 1 (foundation) is complete and verified; see `07-implementation-gap.md` section 0 for what is built, what is verified, and what is next.
+**Status**: approved as the implementation contract. Build phase 1 (foundation) is complete and verified; see `07-implementation-gap.md` section 0 for what is built, what is verified, and what is next. Staging after 2026-09-19: [`../PLAN.md`](../PLAN.md).
 
 This folder re-establishes what Pleadli Prisons is, how a prison facility and Head Office each operate through it, how information moves between them, and how the same product runs on one machine, on a facility LAN, and across a production network. It was produced after reading every existing Prisons document and inspecting the actual implementation (Rust backend, migrations, HTTP servers, sync, pairing, frontend routes) rather than trusting the documents.
 
 ## Reading order
+
+**Vault home (2026-09-19):** [`../README.md`](../README.md) and staged plan [`../PLAN.md`](../PLAN.md). Craft (thin routes, Obsidian-like UX, Paraglide, TanStack AI seam): [`../craft/`](../craft/README.md). This folder remains the operating-model contract.
 
 | File | Contents | Answers brief sections |
 |---|---|---|

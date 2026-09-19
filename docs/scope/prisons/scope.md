@@ -5,6 +5,10 @@ The Tauri desktop app for Uganda's prisons service: admission and prisoner custo
 **Build approach:** Tracer Bullet (inherits the project default).
 **Workflow:** GA (inherits the project default).
 
+**Canonical notes:** [vault home](../../prisons/README.md), [PLAN](../../prisons/PLAN.md) (stages 0 to 9), [craft](../../prisons/craft/README.md). Product map remains the operating model.
+
+**2026-09-19 replan:** docs-first pass after a product review. Stages: (1) thin routes and nested features, (2) Obsidian-like interface, (3) simpler motion, (4) Paraglide `en` `sw` `de` `zh` `fr`, (5) returns and print, (6) Today/IA, (7) HQ estate, (8) TanStack AI seam, (9) field modules. Features 24 to 32 enroll that work. Features 15, 17, 18, 19 and parts of 16, 22, 23 have code that the 2026-09-18 rows still call planned; treat PLAN.md as the status narrative until `/sync` reconciles each row.
+
 **2026-09-18 correction**: an earlier pass of this scope said this workspace was "fully caught up, no planned next slice." A skeptical code audit found that was wrong: `docs/prisons/PRODUCT.md`'s own gap analysis table incorrectly marked Reports as done, and never listed Search's real coverage gap at all. See the corrected rows below and `docs/prisons/RESEARCH.md` §12 for new research into what would help real Uganda government adoption (JLOS, NITA-U, the Data Protection and Privacy Act 2019), which surfaced the audit-trail and export items below. Existing features 1 to 14 remain accurately built; the next slice extends two of them (Reports, Search) and adds real gaps the audit found.
 
 `docs/prisons/PRODUCT.md` §10 also records two open product questions worth resolving before they matter: how `admission_instrument_type` should represent "convicted, document pending" (now feature 18 below, since the audit found it still forces a false choice), and how reliable national ID based cross episode search really is (still just a decision, not a scope row, raise with `/architect` if it becomes load bearing).
@@ -36,6 +40,15 @@ The Tauri desktop app for Uganda's prisons service: admission and prisoner custo
 | 21 | UPS shaped statistics export | Next slice | planned |
 | 22 | Head Office and peer prison sync network | Foundation | in-progress |
 | 23 | Visits page + motion add-record + nav alignment | Next slice | in-progress |
+| 24 | Code craft: thin routes, nested features | Craft | planned |
+| 25 | Obsidian-like interface | Craft | planned |
+| 26 | Motion and simpler tasks | Craft | planned |
+| 27 | Languages (Paraglide) | Craft | planned |
+| 28 | Intelligence seam (TanStack AI, BYOK) | Later | planned |
+| 29 | Returns and named print | Product | planned |
+| 30 | Today and information architecture | Product | planned |
+| 31 | Head Office estate | Product | planned |
+| 32 | Field modules (count, gate, incidents, discipline) | Field | planned |
 
 ## Existing
 
@@ -176,6 +189,61 @@ Once feature 15 is built, format an export that mirrors UPS's own real Monthly S
 - [ ] Test it: `/test head office and peer prison sync network`
 - [ ] Review it (fresh model): `/check review head office and peer prison sync network`
 - [ ] Document it: `/document head office and peer prison sync network`
+
+## Craft (2026-09-19)
+
+Code cleanliness first. Then interface, motion, languages. Product completeness after the files sit in the right place. Details in `docs/prisons/PLAN.md` and `docs/prisons/craft/`.
+
+### 24. Code craft: thin routes, nested features
+Routes under `apps/prisons/src/routes/` may export only `Route` and `RouteComponent`. Page bodies, tables, and helpers move into nested `features/` (by work, not one flat folder per table). Shared chrome stays in `components/`. TanStack Router, Query, and Form only; no second client database; no extra AI SDK.
+**Done when:** no extra functions in route files except the RouteComponent; features grouped by Today, legal, movements, care, returns, facility, network; `CreatePanel` named correctly; no `icon: any` on nav.
+- [ ] Design it (spec): `/architect prisons code craft` (optional if PLAN + craft/code.md are enough)
+- [ ] Build it: `/develop prisons code craft`
+
+### 25. Obsidian-like interface
+Command palette as primary go; prisoner file as a linked note with backlinks; Start launches procedures not record types; quiet chrome; HQ as an index vault not a second copy of every file. Prisons only; other institutions copy the craft later.
+**Done when:** palette reaches people and procedures; file header plus timeline carry the “right now” and “what happened”; Start is a procedure grid; pairing tiles are not the HQ home (home change may wait on 31).
+- [ ] Build it: `/develop prisons obsidian interface`
+
+### 26. Motion and simpler tasks
+One procedure motion language; dirty close without `window.confirm`; no extra wizard steps when Today or the file already knows the job.
+**Done when:** reception, discharge, transfer, arrival share ProcedureShell motion; dirty guard matches Pleadli; lists do not bounce.
+- [ ] Build it: `/develop prisons motion and simpler tasks`
+
+### 27. Languages (Paraglide) · needs a decision
+`@inlang/paraglide-js` catalogs: `en` default, `sw`, `de`, `zh`, `fr`. Desktop locale in node settings, not URL prefixes. Chrome only in this feature; jurisdiction packs are separate.
+**Done when:** `m.*` covers chrome, procedures, and empty states; English complete; others fall back to English; pathnames unchanged.
+- [ ] Design it (spec): `/architect prisons languages`
+- [ ] Build it: `/develop prisons languages`
+
+### 28. Intelligence seam (TanStack AI, BYOK)
+Off by default. Tools call existing `/api/**`. BYOK or later Pleadli account. Threads on node SQLite. No Vercel AI SDK. No custody write without the same gates as the UI.
+**Done when:** OIC can enable BYOK; Ask in the palette; every tool call audited; default remains off.
+- [ ] Design it (spec): `/architect prisons intelligence seam`
+- [ ] Build it: `/develop prisons intelligence seam`
+
+## Product completeness (2026-09-19)
+
+### 29. Returns and named print
+Monthly return in UPS shape (build, check, attest, export) plus print of admission, property inventory, s.118 list, transfer dossier, discharge. Charts stay as a view, not the official return. Absorbs the intent of features 20 and 21.
+**Done when:** an officer can attest a monthly return and print those five documents.
+- [ ] Design it (spec): `/architect prisons returns and print`
+- [ ] Build it: `/develop prisons returns and print`
+
+### 30. Today and information architecture
+Today is owed work (Unlock, due, exceptions, node). Movements includes court and hospital in flight. Care includes health and programmes. Officers and Settings sit as facility administration. Aligns nav with product-map 08.
+**Done when:** home has no analytics tiles as its purpose; care area lists visits, requests, health, programmes; Start is procedures (with 25).
+- [ ] Build it: `/develop prisons today and ia`
+
+### 31. Head Office estate
+Estate health: occupancy, last exchange, facilities in trouble, locate with “as of”. Pairing is Network, not Overview.
+**Done when:** HQ home is estate, not pairing counts as the job.
+- [ ] Build it: `/develop prisons hq estate`
+
+### 32. Field modules (count, gate, incidents, discipline)
+Provisional only after the field kit in `docs/prisons/product-map/06-research-backlog.md`. Not invented from desk research.
+**Done when:** two facilities have validated the shapes, then minimal modules ship labelled provisional.
+- [ ] Design it (spec): `/architect prisons field modules` (after field notes exist)
 
 ## Deferred
 Real, evidenced adoption factors from `docs/prisons/RESEARCH.md` §12, not yet decided as build work. Broader than this one workspace, so not planned here as features, but worth surfacing where they were found:
