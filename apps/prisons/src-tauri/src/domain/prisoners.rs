@@ -43,6 +43,10 @@ pub struct Prisoner {
     pub pending_document_type: Option<String>,
     pub notes: Option<String>,
     pub created_at: i64,
+    /// Issued by this facility at admission from its numbering scheme
+    /// (domain/numbering.rs). NULL for people admitted before numbering existed.
+    #[serde(default)]
+    pub prisoner_number: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -99,14 +103,15 @@ pub(crate) async fn insert_prisoner(
     audit_action: &str,
 ) -> Result<Prisoner, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
+    let prisoner_number = super::numbering::next_number(conn).await?;
 
     sqlx::query(
         "INSERT INTO prisoners
             (id, episode_id, first_name, last_name, other_names, national_id, reference, status,
              admission_instrument_type, admission_authority, admitted_at, high_court_only_offence,
              date_of_birth, sex, education_level, nationality, offence,
-             documents_pending, pending_document_type, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             documents_pending, pending_document_type, notes, prisoner_number)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(episode_id)
@@ -128,6 +133,7 @@ pub(crate) async fn insert_prisoner(
     .bind(input.documents_pending)
     .bind(&input.pending_document_type)
     .bind(&input.notes)
+    .bind(&prisoner_number)
     .execute(&mut *conn)
     .await?;
 
@@ -246,7 +252,7 @@ pub async fn list_prisoners(pool: &SqlitePool, query: &str) -> Result<Vec<Prison
     sqlx::query_as::<_, Prisoner>(
         "SELECT * FROM prisoners
          WHERE first_name LIKE ?1 OR last_name LIKE ?1 OR other_names LIKE ?1
-            OR national_id LIKE ?1 OR reference LIKE ?1
+            OR national_id LIKE ?1 OR reference LIKE ?1 OR prisoner_number LIKE ?1
          ORDER BY admitted_at DESC LIMIT 200",
     )
     .bind(like)

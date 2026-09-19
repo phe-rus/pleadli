@@ -26,6 +26,8 @@ export const contactRelationships = [
   { value: 'other', label: 'Other' },
 ] as const
 
+export type PhotoDrafts = { front: string | null; left: string | null; right: string | null }
+
 export type ContactDraft = {
   name: string
   relationship: string
@@ -50,6 +52,7 @@ export type ReceptionDraft = {
   otherNames: string
   nationalId: string
   reference: string
+  photos: PhotoDrafts
   sex: string
   dateOfBirth: string
   nationality: string

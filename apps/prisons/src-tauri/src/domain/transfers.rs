@@ -634,7 +634,8 @@ pub async fn confirm_arrival(
                     last_name: p.last_name.clone(),
                     other_names: p.other_names.clone(),
                     national_id: p.national_id.clone(),
-                    reference: p.reference.clone(),
+                    // The receiving facility issues its own number; the sending facility's number is kept as the reference when none was written.
+                    reference: p.reference.clone().or_else(|| p.prisoner_number.clone()),
                     status: p.status.clone(),
                     admission_instrument_type: p.admission_instrument_type.clone(),
                     admission_authority: p.admission_authority.clone(),

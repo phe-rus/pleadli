@@ -4,20 +4,27 @@
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::error::ApiError;
 use super::guard::{Need, RouteTable};
 use super::write;
 use crate::domain::authz::{perm, Actor};
 use crate::domain::cloudflare_tunnel::{self, CloudflareConfig, SaveCloudflareConfigInput};
-use crate::domain::facilities::{self, Facility, PairingPayload};
+use crate::domain::connection::{self, ConnectionRequest, FacilityOfficer};
+use crate::domain::facilities::{self, Facility, PairingPayload, RegisterFacilityInput, FACILITY_REGIONS};
 use crate::node::NodeRef;
 
 pub fn routes(node: NodeRef) -> RouteTable {
     use perm::*;
     RouteTable::new(node)
         .get("/api/hq/facilities", Need::Perm(HQ_ESTATE_READ), list_facilities)
+        .post("/api/hq/facilities", Need::Perm(HQ_NETWORK_MANAGE), create_facility)
+        .get("/api/hq/connection-requests", Need::Perm(HQ_NETWORK_MANAGE), list_requests)
+        .post("/api/hq/connection-requests/{id}/approve", Need::Perm(HQ_NETWORK_MANAGE), approve_request)
+        .post("/api/hq/connection-requests/{id}/reject", Need::Perm(HQ_NETWORK_MANAGE), reject_request)
+        .get("/api/hq/facility-officers", Need::Perm(HQ_ESTATE_READ), list_facility_officers)
+        .get("/api/hq/network/status", Need::Perm(HQ_NETWORK_MANAGE), network_status)
         .post("/api/hq/facilities/pairing-code", Need::Perm(HQ_NETWORK_MANAGE), generate_pairing_code)
         .post("/api/hq/facilities/{id}/verify", Need::Perm(HQ_NETWORK_MANAGE), verify_facility)
         .post("/api/hq/facilities/{id}/resend-code", Need::Perm(HQ_NETWORK_MANAGE), resend_code)
@@ -82,4 +89,120 @@ async fn save_cloudflare(
 ) -> Result<StatusCode, ApiError> {
     write(&node, |c| Box::pin(async move { Ok(cloudflare_tunnel::save_config(c, &actor, input).await?) })).await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateFacilityBody {
+    name: String,
+    facility_number: String,
+    location: String,
+    region: String,
+    head_officer_name: String,
+}
+
+async fn create_facility(
+    State(node): State<NodeRef>,
+    Extension(actor): Extension<Actor>,
+    Json(body): Json<CreateFacilityBody>,
+) -> Api<Facility> {
+    if [&body.name, &body.facility_number, &body.location, &body.head_officer_name].iter().any(|v| v.trim().is_empty()) {
+        return Err(ApiError::bad_request("Name, facility number, location and head officer are all required."));
+    }
+    if !FACILITY_REGIONS.contains(&body.region.as_str()) {
+        return Err(ApiError::bad_request("Choose one of the Uganda Prisons Service regions."));
+    }
+    let input = RegisterFacilityInput {
+        name: body.name,
+        facility_number: body.facility_number,
+        location: body.location,
+        region: body.region,
+        head_officer_name: body.head_officer_name,
+    };
+    Ok(Json(
+        write(&node, |c| {
+            Box::pin(async move {
+                if facilities::number_taken(c, &input.facility_number).await? {
+                    return Err(ApiError::conflict("FACILITY_NUMBER_TAKEN", "A facility with that number is already on the roster."));
+                }
+                Ok(facilities::create_facility(c, &actor, input).await?)
+            })
+        })
+        .await?,
+    ))
+}
+
+async fn list_requests(State(node): State<NodeRef>) -> Api<Vec<ConnectionRequest>> {
+    Ok(Json(connection::list_requests(&node.pool).await?))
+}
+
+async fn approve_request(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<ConnectionRequest> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(connection::decide(c, &actor, &id, true).await?) })).await?))
+}
+
+async fn reject_request(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<ConnectionRequest> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(connection::decide(c, &actor, &id, false).await?) })).await?))
+}
+
+async fn list_facility_officers(State(node): State<NodeRef>) -> Api<Vec<FacilityOfficer>> {
+    Ok(Json(connection::list_facility_officers(&node.pool).await?))
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LocalStatus {
+    listening: bool,
+    address: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CloudflareStatus {
+    configured: bool,
+    tunnel_provisioned: bool,
+    hostname: Option<String>,
+    /// `not_configured`, `configured_not_connected` or `connected`. Connected
+    /// only when the public hostname answered a health check just now.
+    state: &'static str,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct NetworkStatus {
+    local: LocalStatus,
+    cloudflare: CloudflareStatus,
+    public_base: String,
+    pending_requests: i64,
+}
+
+async fn network_status(State(node): State<NodeRef>) -> Api<NetworkStatus> {
+    let configured = cloudflare_tunnel::get_config(&node.pool).await?.is_some();
+    let tunnel = cloudflare_tunnel::get_tunnel_state(&node.pool).await?;
+    let hostname = tunnel.map(|t| t.hostname);
+
+    let reachable = match &hostname {
+        Some(host) => match reqwest::Client::builder().timeout(std::time::Duration::from_secs(3)).build() {
+            Ok(client) => client.get(format!("https://{host}/api/network/v1/health")).send().await.map(|r| r.status().is_success()).unwrap_or(false),
+            Err(_) => false,
+        },
+        None => false,
+    };
+    let state = if reachable {
+        "connected"
+    } else if configured || hostname.is_some() {
+        "configured_not_connected"
+    } else {
+        "not_configured"
+    };
+
+    let public_base = {
+        let mut conn = node.pool.acquire().await?;
+        facilities::hq_register_base(&mut conn).await
+    };
+    Ok(Json(NetworkStatus {
+        local: LocalStatus { listening: super::network::is_listening().await, address: format!("127.0.0.1:{}", super::network::PORT) },
+        cloudflare: CloudflareStatus { configured, tunnel_provisioned: hostname.is_some(), hostname, state },
+        public_base,
+        pending_requests: connection::pending_count(&node.pool).await?,
+    }))
 }

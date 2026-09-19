@@ -14,7 +14,8 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
  * 401 or 403 when the answer is no.
  */
 
-const DEV_BASE_URL = 'http://127.0.0.1:47922'
+const DEV_PORT = Number(import.meta.env.VITE_PLEADLI_DEV_PORT) || 47922
+const DEV_BASE_URL = `http://127.0.0.1:${DEV_PORT}`
 const TOKEN_KEY = 'pleadli:prisons:session'
 
 export class ApiError extends Error {

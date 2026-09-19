@@ -39,12 +39,14 @@ export const Createpanel: FC<createPanelProps> = ({
     return (
         <Drawer open={open} onOpenChange={handleOpenChange} swipeDirection="right">
             {trigger && <DrawerTrigger render={trigger} />}
-            <DrawerContent className='bg-background!'>
-                <DrawerHeader className='gap-0!'>
-                    <DrawerTitle>{headings.title}</DrawerTitle>
-                    <DrawerDescription className='md:max-w-sm'>{headings.description}</DrawerDescription>
-                </DrawerHeader>
-                {children}
+            <DrawerContent className='bg-background! data-[swipe-axis=x]:[--drawer-content-width:max(85vw,24rem)] data-[swipe-axis=x]:sm:[--drawer-content-width:max(85vw,24rem)]'>
+                <div className='mx-auto flex min-h-0 w-full flex-1 flex-col md:max-w-2xl'>
+                    <DrawerHeader className='gap-0!'>
+                        <DrawerTitle>{headings.title}</DrawerTitle>
+                        <DrawerDescription className='md:max-w-md'>{headings.description}</DrawerDescription>
+                    </DrawerHeader>
+                    {children}
+                </div>
             </DrawerContent>
         </Drawer>
     )

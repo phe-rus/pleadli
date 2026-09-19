@@ -11,6 +11,8 @@ use super::error::ApiError;
 use super::guard::{Need, RouteTable};
 use super::write;
 use crate::domain::attachments::{self, Attachment};
+use crate::domain::capture::{self, OpenedSession, SessionStatus};
+use crate::domain::prisoner_photos::{self, PrisonerPhoto};
 use crate::domain::authz::{perm, role_permissions, Actor, Forbidden};
 use crate::domain::court_productions::{self, CourtOutcomeInput, CourtOutcomeResult, CourtProduction, CreateCourtProductionInput, RemandListEntry};
 use crate::domain::custody::{self, ReceptionInput, ReceptionResult};
@@ -26,11 +28,14 @@ use crate::domain::prisoners::{self, Prisoner, UpdatePrisonerInput};
 use crate::domain::programmes::{self, CertifyProgrammeParticipationInput, CreateProgrammeParticipationInput, ProgrammeParticipation};
 use crate::domain::property_records::{self, CreatePropertyRecordInput, PropertyRecord, ReturnPropertyRecordInput};
 use crate::domain::releases::{self, Authoriser, CreateReleaseInput, DischargeAssessment, Release};
-use crate::domain::reports::{self, ReportsSummary};
+use crate::domain::reports::{self, GeneratedReport, ReportDocument, ReportRecord};
 use crate::domain::requests::{self, CreateRequestInput, Request as PrisonRequest, ResolveRequestInput};
 use crate::domain::search::{self, SearchResult};
 use crate::domain::transfers::{self, Checklist, ConfirmArrivalInput, DispatchInput, DispatchResult, DossierPreview, FileExport, PrepareTransferInput, Transfer};
-use crate::domain::visits::{self, CreateVisitInput, Visit, VisitListItem};
+use crate::domain::visits::{
+    self, ApproveVisitorInput, ApprovedVisitor, CheckInInput, CreateVisitInput, SaveVisitRulesInput, Visit, VisitItem, VisitListItem,
+    VisitRules, Visitor,
+};
 use crate::node::NodeRef;
 
 pub fn routes(node: NodeRef) -> RouteTable {
@@ -62,6 +67,11 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/prisons/transfers/{id}/dossier", Need::Perm(PRISONER_READ), dossier_preview)
         .get("/api/prisons/transfers/{id}/dossier-file", Need::Perm(TRANSFER_MANAGE), dossier_file)
         .get("/api/prisons/transfers/{id}/receipt-file", Need::Perm(TRANSFER_MANAGE), receipt_file)
+        .get("/api/prisons/prisoners/{id}/photos", Need::Perm(PRISONER_READ), prisoner_photos_list)
+        .put("/api/prisons/prisoners/{id}/photos/{view}", Need::Perm(CUSTODY_EDIT), prisoner_photo_save)
+        .post("/api/prisons/capture-sessions", Need::Perm(CUSTODY_ADMIT), open_capture_session)
+        .get("/api/prisons/capture-sessions/{id}", Need::Perm(CUSTODY_ADMIT), capture_session_status)
+        .delete("/api/prisons/capture-sessions/{id}", Need::Perm(CUSTODY_ADMIT), close_capture_session)
         .get("/api/prisons/prisoners/in-custody", Need::Perm(PRISONER_READ), list_in_custody)
         .get("/api/prisons/prisoners/{id}", Need::Perm(PRISONER_READ), get_prisoner)
         .put("/api/prisons/prisoners/{id}", Need::Perm(CUSTODY_EDIT), update_prisoner)
@@ -79,6 +89,20 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/prisons/search", Need::AnyPerm(&[PRISONER_READ, HQ_LOCATE]), search)
         .post("/api/prisons/visits", Need::Perm(VISIT_MANAGE), create_visit)
         .get("/api/prisons/visits", Need::Perm(PRISONER_READ), list_visits)
+        .get("/api/prisons/visits/{id}/items", Need::Perm(PRISONER_READ), visit_items)
+        .post("/api/prisons/visits/{id}/approve", Need::Perm(VISIT_MANAGE), approve_visit)
+        .post("/api/prisons/visits/{id}/deny", Need::Perm(VISIT_MANAGE), deny_visit)
+        .post("/api/prisons/visits/{id}/check-in", Need::Perm(VISIT_MANAGE), check_in_visit)
+        .post("/api/prisons/visits/{id}/start", Need::Perm(VISIT_MANAGE), start_visit)
+        .post("/api/prisons/visits/{id}/complete", Need::Perm(VISIT_MANAGE), complete_visit)
+        .post("/api/prisons/visits/{id}/no-show", Need::Perm(VISIT_MANAGE), no_show_visit)
+        .post("/api/prisons/visits/{id}/cancel", Need::Perm(VISIT_MANAGE), cancel_visit)
+        .get("/api/prisons/visit-rules", Need::Perm(PRISONER_READ), get_visit_rules)
+        .put("/api/prisons/visit-rules", Need::Perm(AUTHORISE_EXCEPTION), save_visit_rules)
+        .get("/api/prisons/visitors", Need::Perm(PRISONER_READ), search_visitors)
+        .get("/api/prisons/prisoners/{id}/visitors", Need::Perm(PRISONER_READ), approved_visitors)
+        .post("/api/prisons/prisoners/{id}/visitors", Need::Perm(VISIT_MANAGE), approve_visitor)
+        .post("/api/prisons/prisoners/{id}/visitors/{visitor_id}/status", Need::Perm(VISIT_MANAGE), set_visitor_status)
         .post("/api/prisons/health-events", Need::Perm(HEALTH_MANAGE), create_health_event)
         .get("/api/prisons/hospitalised", Need::Perm(PRISONER_READ), list_hospitalised)
         .post("/api/prisons/transfers", Need::Perm(TRANSFER_MANAGE), create_transfer)
@@ -89,7 +113,10 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .post("/api/prisons/requests", Need::Perm(REQUEST_MANAGE), create_request)
         .get("/api/prisons/requests", Need::Perm(PRISONER_READ), list_requests)
         .put("/api/prisons/requests/{id}/resolve", Need::Perm(REQUEST_MANAGE), resolve_request)
-        .get("/api/prisons/reports/summary", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), reports_summary)
+        .get("/api/prisons/reports/preview", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), report_preview)
+        .get("/api/prisons/reports", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), list_reports)
+        .post("/api/prisons/reports", Need::Perm(REPORT_GENERATE), generate_report)
+        .get("/api/prisons/reports/{id}", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), get_report)
         .post("/api/prisons/documents", Need::Perm(DOCUMENT_WRITE), add_document)
         .get("/api/prisons/documents", Need::Perm(DOCUMENT_READ), list_documents)
         .get("/api/prisons/documents/{id}/data-url", Need::Perm(DOCUMENT_READ), document_data_url)
@@ -205,6 +232,79 @@ async fn list_visits(State(node): State<NodeRef>, Query(q): Query<QueryParam>) -
     Ok(Json(visits::list_all(&node.pool, &q.query).await?))
 }
 
+async fn visit_items(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<Vec<VisitItem>> {
+    Ok(Json(visits::list_items(&node.pool, &id).await?))
+}
+
+async fn approve_visit(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<Visit> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::approve(c, &actor, &id).await?) })).await?))
+}
+
+async fn deny_visit(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(body): Json<ReasonBody>) -> Api<Visit> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::deny(c, &actor, &id, &body.reason).await?) })).await?))
+}
+
+async fn cancel_visit(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(body): Json<ReasonBody>) -> Api<Visit> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::cancel(c, &actor, &id, &body.reason).await?) })).await?))
+}
+
+async fn check_in_visit(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(input): Json<CheckInInput>) -> Api<Visit> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::check_in(c, &actor, &id, input).await?) })).await?))
+}
+
+async fn start_visit(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<Visit> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::start(c, &actor, &id).await?) })).await?))
+}
+
+#[derive(Deserialize, Default)]
+struct CompleteBody {
+    note: Option<String>,
+}
+
+async fn complete_visit(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, body: Option<Json<CompleteBody>>) -> Api<Visit> {
+    let note = body.and_then(|Json(b)| b.note);
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::complete(c, &actor, &id, note).await?) })).await?))
+}
+
+async fn no_show_visit(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<Visit> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::no_show(c, &actor, &id).await?) })).await?))
+}
+
+async fn get_visit_rules(State(node): State<NodeRef>) -> Api<VisitRules> {
+    Ok(Json(visits::get_rules(&node.pool).await?))
+}
+
+async fn save_visit_rules(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Json(input): Json<SaveVisitRulesInput>) -> Api<VisitRules> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::save_rules(c, &actor, input).await?) })).await?))
+}
+
+async fn search_visitors(State(node): State<NodeRef>, Query(q): Query<QueryParam>) -> Api<Vec<Visitor>> {
+    Ok(Json(visits::search_visitors(&node.pool, &q.query).await?))
+}
+
+async fn approved_visitors(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<Vec<ApprovedVisitor>> {
+    Ok(Json(visits::list_approved(&node.pool, &id).await?))
+}
+
+async fn approve_visitor(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(input): Json<ApproveVisitorInput>) -> Api<ApprovedVisitor> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::approve_visitor(c, &actor, &id, input).await?) })).await?))
+}
+
+#[derive(Deserialize)]
+struct VisitorStatusBody {
+    status: String,
+    note: Option<String>,
+}
+
+async fn set_visitor_status(
+    State(node): State<NodeRef>,
+    Extension(actor): Extension<Actor>,
+    Path((id, visitor_id)): Path<(String, String)>,
+    Json(body): Json<VisitorStatusBody>,
+) -> Api<ApprovedVisitor> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(visits::set_approval_status(c, &actor, &id, &visitor_id, &body.status, body.note).await?) })).await?))
+}
+
 async fn create_health_event(
     State(node): State<NodeRef>,
     Extension(actor): Extension<Actor>,
@@ -318,8 +418,71 @@ async fn save_facility(State(node): State<NodeRef>, Extension(actor): Extension<
     Ok(Json(write(&node, |c| Box::pin(async move { Ok(facility_profile::save(c, &actor, input).await?) })).await?))
 }
 
-async fn receive(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Json(input): Json<ReceptionInput>) -> Api<ReceptionResult> {
-    Ok(Json(write(&node, |c| Box::pin(async move { Ok(custody::receive(c, &actor, input).await?) })).await?))
+async fn receive(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Json(mut input): Json<ReceptionInput>) -> Api<ReceptionResult> {
+    let photos = prisoner_photos::decode_reception_photos(&input.photos.take().unwrap_or_default())?;
+    let vault_root = node.vault_root.clone();
+    Ok(Json(
+        write(&node, |c| {
+            Box::pin(async move {
+                let result = custody::receive(c, &actor, input).await?;
+                if let Some(prisoner) = &result.prisoner {
+                    prisoner_photos::save_reception_photos(c, &actor, &vault_root, &prisoner.id, &photos).await?;
+                }
+                Ok(result)
+            })
+        })
+        .await?,
+    ))
+}
+
+async fn prisoner_photos_list(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<Vec<PrisonerPhoto>> {
+    Ok(Json(prisoner_photos::list_current(&node.pool, &id).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PhotoBody {
+    data_url: String,
+}
+
+async fn prisoner_photo_save(
+    State(node): State<NodeRef>,
+    Extension(actor): Extension<Actor>,
+    Path((id, view)): Path<(String, String)>,
+    Json(body): Json<PhotoBody>,
+) -> Api<PrisonerPhoto> {
+    prisoner_photos::check_view(&view)?;
+    let bytes = prisoner_photos::decode_jpeg_data_url(&body.data_url)?;
+    let vault_root = node.vault_root.clone();
+    Ok(Json(
+        write(&node, |c| Box::pin(async move { Ok(prisoner_photos::save_photo(c, &actor, &vault_root, &id, &view, &bytes, "retake").await?) })).await?,
+    ))
+}
+
+async fn open_capture_session(State(node): State<NodeRef>, Extension(actor): Extension<Actor>) -> Api<OpenedSession> {
+    let pool = node.pool.clone();
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(capture::open_session(&pool, c, &actor).await?) })).await?))
+}
+
+#[derive(Deserialize)]
+struct KnownQuery {
+    #[serde(default)]
+    known: String,
+}
+
+async fn capture_session_status(
+    State(node): State<NodeRef>,
+    Extension(actor): Extension<Actor>,
+    Path(id): Path<String>,
+    Query(q): Query<KnownQuery>,
+) -> Api<SessionStatus> {
+    let known: Vec<String> = q.known.split(',').filter(|s| !s.is_empty()).map(str::to_string).collect();
+    Ok(Json(capture::status(&node.pool, &actor, &id, &known).await?))
+}
+
+async fn close_capture_session(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    write(&node, |c| Box::pin(async move { Ok(capture::close_session(c, &actor, &id).await?) })).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn prisoner_file(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<custody::PrisonerFile> {
@@ -429,8 +592,41 @@ async fn resolve_request(
     Ok(Json(write(&node, |c| Box::pin(async move { Ok(requests::resolve_request(c, &actor, &id, input).await?) })).await?))
 }
 
-async fn reports_summary(State(node): State<NodeRef>) -> Api<ReportsSummary> {
-    Ok(Json(reports::get_reports_summary(&node.pool).await?))
+#[derive(Deserialize)]
+struct ReportQuery {
+    kind: String,
+    from: Option<i64>,
+    to: Option<i64>,
+}
+
+#[derive(Deserialize)]
+struct GenerateReportInput {
+    kind: String,
+    from: Option<i64>,
+    to: Option<i64>,
+}
+
+async fn report_preview(State(node): State<NodeRef>, Query(q): Query<ReportQuery>) -> Api<ReportDocument> {
+    let kind = reports::Kind::parse(&q.kind)?;
+    reports::check_available(kind, crate::domain::session::is_head_office(&node.pool).await)?;
+    let period = reports::resolve_period(kind, q.from, q.to)?;
+    let mut conn = node.pool.acquire().await?;
+    Ok(Json(reports::build(&mut conn, kind, period).await?))
+}
+
+async fn generate_report(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Json(input): Json<GenerateReportInput>) -> Api<GeneratedReport> {
+    let kind = reports::Kind::parse(&input.kind)?;
+    reports::check_available(kind, crate::domain::session::is_head_office(&node.pool).await)?;
+    let period = reports::resolve_period(kind, input.from, input.to)?;
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(reports::generate(c, &actor, kind, period).await?) })).await?))
+}
+
+async fn list_reports(State(node): State<NodeRef>) -> Api<Vec<ReportRecord>> {
+    Ok(Json(reports::list(&node.pool).await?))
+}
+
+async fn get_report(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<GeneratedReport> {
+    reports::get(&node.pool, &id).await?.map(Json).ok_or_else(|| ApiError::not_found("That report"))
 }
 
 #[derive(Deserialize)]

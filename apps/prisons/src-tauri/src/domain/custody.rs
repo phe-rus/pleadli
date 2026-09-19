@@ -175,6 +175,8 @@ pub struct ReceptionInput {
     pub contacts: Vec<ContactInput>,
     pub placement: Option<String>,
     pub notes: Option<String>,
+    #[serde(default)]
+    pub photos: Option<super::prisoner_photos::ReceptionPhotos>,
 }
 
 #[derive(Debug, Serialize)]

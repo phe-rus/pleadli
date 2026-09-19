@@ -8,6 +8,8 @@ import {
   usePrisoners,
   type Prisoner,
 } from '@/features/prisoners'
+import { UniformChip } from '@/features/numbering'
+import { PrisonerAvatar } from '@/features/prisoners/prisoner-avatar'
 import { AddCircleIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
@@ -29,7 +31,7 @@ export const Route = createFileRoute('/_public/prisoners/')({
 
 /**
  * Prisoners has its own detail route ($prisonerId, the custody/remand/
- * release/documents workspace) rather than an in-place drawer — a deep
+ * release/documents workspace) rather than an in-place drawer: a deep
  * link with ?open= redirects straight there, same pattern DPP's Files
  * list uses.
  */
@@ -60,15 +62,37 @@ function RouteComponent() {
           </Link>
         ),
       },
-      { id: 'name', accessorFn: (row) => prisonerFullName(row), header: 'Name' },
+      {
+        id: 'name',
+        accessorFn: (row) => prisonerFullName(row),
+        header: 'Name',
+        cell: ({ row }) => (
+          <Link to="/prisoners/$prisonerId" params={{ prisonerId: row.original.id }} className="flex items-center gap-2.5">
+            <PrisonerAvatar prisonerId={row.original.id} name={prisonerFullName(row.original)} size={32} className="rounded-md" />
+            <span className="font-medium">{prisonerFullName(row.original)}</span>
+          </Link>
+        ),
+      },
+      {
+        id: 'prisonerNumber',
+        accessorFn: (row) => row.prisonerNumber ?? row.id,
+        header: 'Prisoner number',
+        cell: ({ row }) => <span className="font-mono text-xs">{row.original.prisonerNumber ?? row.original.id}</span>,
+      },
       { accessorKey: 'otherNames', header: 'Other names', cell: ({ row }) => row.original.otherNames ?? '·' },
       { accessorKey: 'nationalId', header: 'National ID', cell: ({ row }) => row.original.nationalId ?? '·' },
       { accessorKey: 'reference', header: 'Reference', cell: ({ row }) => row.original.reference ?? '·' },
       {
         accessorKey: 'status',
         header: 'Category',
-        cell: ({ getValue }) => <Badge variant="secondary">{prisonerStatusLabel(getValue<string>())}</Badge>,
+        cell: ({ row }) => (
+          <span className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="secondary">{prisonerStatusLabel(row.original.status)}</Badge>
+            <UniformChip status={row.original.status} />
+          </span>
+        ),
       },
+      { accessorKey: 'offence', header: 'Offence', cell: ({ row }) => row.original.offence ?? '·' },
       {
         accessorKey: 'currentStatus',
         header: 'Custody status',
@@ -81,7 +105,7 @@ function RouteComponent() {
         cell: ({ row }) =>
           row.original.documentsPending ? (
             <Badge variant="destructive">
-              Pending{pendingDocumentTypeLabel(row.original.pendingDocumentType) ? ` — ${pendingDocumentTypeLabel(row.original.pendingDocumentType)}` : ''}
+              Pending{pendingDocumentTypeLabel(row.original.pendingDocumentType) ? ` · ${pendingDocumentTypeLabel(row.original.pendingDocumentType)}` : ''}
             </Badge>
           ) : (
             '·'
@@ -116,7 +140,7 @@ function RouteComponent() {
               Receive someone
             </Link>
           </div>
-          <p className="md:max-w-sm">Everyone this facility holds or has held. Search by name, reference or national ID.</p>
+          <p className="md:max-w-md">Everyone this facility holds or has held. Search by name, number, reference or national ID.</p>
         </div>
       </section>
 

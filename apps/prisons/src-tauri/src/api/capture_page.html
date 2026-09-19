@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Send photos</title>
+<style>
+:root{--bg:oklch(.985 0 0);--card:#fff;--fg:oklch(.2 0 0);--muted:oklch(.5 0 0);--border:oklch(.9 0 0);--primary:oklch(.48 .13 250);--primary-fg:#fff;--ok:oklch(.55 .14 155);--bad:oklch(.55 .2 27)}
+@media (prefers-color-scheme:dark){:root{--bg:oklch(.16 0 0);--card:oklch(.21 0 0);--fg:oklch(.96 0 0);--muted:oklch(.7 0 0);--border:oklch(.3 0 0);--primary:oklch(.7 .12 250);--primary-fg:oklch(.15 0 0);--ok:oklch(.75 .15 155);--bad:oklch(.72 .19 27)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:30rem;margin:0 auto;padding:1.25rem 1rem 3rem;display:flex;flex-direction:column;gap:1rem}
+h1{font-size:1.2rem;margin:0}
+p{margin:0;color:var(--muted);font-size:.875rem}
+.slot{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:.75rem;display:flex;gap:.75rem;align-items:center}
+.thumb{width:4.5rem;aspect-ratio:3/4;border-radius:.5rem;background:var(--bg);border:1px dashed var(--border);object-fit:cover;flex:none}
+.body{flex:1;min-width:0;display:flex;flex-direction:column;gap:.35rem}
+.name{font-weight:600}
+.state{font-size:.8rem;color:var(--muted)}
+.state.ok{color:var(--ok)}
+.state.bad{color:var(--bad)}
+button{appearance:none;border:0;border-radius:.5rem;background:var(--primary);color:var(--primary-fg);font:inherit;font-weight:600;padding:.6rem .9rem;width:fit-content}
+button.secondary{background:transparent;color:var(--fg);border:1px solid var(--border)}
+button:disabled{opacity:.55}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Send photos to reception</h1>
+    <p>Take each photo and it is sent straight to the officer at the reception screen. Nothing is kept on this phone.</p>
+  </div>
+  <div id="slots"></div>
+  <p id="foot">This link stops working 15 minutes after it was made.</p>
+</main>
+<script>
+(function () {
+  var token = location.pathname.replace(/\/+$/, '').split('/').pop();
+  var views = [['front', 'Front', 'Face the camera, head and shoulders'], ['left', 'Left side', 'Turn to show the left side of the head'], ['right', 'Right side', 'Turn to show the right side of the head']];
+  var root = document.getElementById('slots');
+  root.style.cssText = 'display:flex;flex-direction:column;gap:.75rem';
+
+  function shrink(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, 960 / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That image could not be read.')); };
+      img.src = url;
+    });
+  }
+
+  views.forEach(function (v) {
+    var el = document.createElement('div');
+    el.className = 'slot';
+    el.innerHTML = '<img class="thumb" alt=""><div class="body"><span class="name"></span><span class="state"></span><div></div></div>';
+    el.querySelector('.name').textContent = v[1];
+    el.querySelector('.state').textContent = v[2];
+    var state = el.querySelector('.state');
+    var thumb = el.querySelector('.thumb');
+    thumb.removeAttribute('src');
+    var input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.setAttribute('capture', v[0] === 'front' ? 'user' : 'environment');
+    var btn = document.createElement('button');
+    btn.textContent = 'Take photo';
+    btn.onclick = function () { input.click(); };
+    el.querySelector('.body > div').appendChild(btn);
+    el.appendChild(input);
+    input.onchange = function () {
+      var file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      btn.disabled = true; state.className = 'state'; state.textContent = 'Sending...';
+      shrink(file).then(function (dataUrl) {
+        thumb.src = dataUrl;
+        return fetch('/api/capture/' + encodeURIComponent(token) + '/photo', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ view: v[0], dataUrl: dataUrl })
+        });
+      }).then(function (r) {
+        if (r.ok) { state.className = 'state ok'; state.textContent = 'Sent. Take again to replace it.'; btn.textContent = 'Retake'; btn.className = 'secondary'; return; }
+        return r.json().catch(function () { return {}; }).then(function (b) { throw new Error(b.message || 'This link has expired.'); });
+      }).catch(function (e) {
+        state.className = 'state bad'; state.textContent = e.message || 'Could not send. Try again.';
+      }).then(function () { btn.disabled = false; });
+    };
+    root.appendChild(el);
+  });
+})();
+</script>
+</body>
+</html>

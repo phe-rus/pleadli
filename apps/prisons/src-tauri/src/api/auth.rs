@@ -26,6 +26,7 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/auth/accounts", Need::Perm(perm::ACCOUNTS_MANAGE), list_accounts)
         .post("/api/auth/accounts", Need::Perm(perm::ACCOUNTS_MANAGE), create_account)
         .put("/api/auth/accounts/{id}", Need::Perm(perm::ACCOUNTS_MANAGE), update_account)
+        .delete("/api/auth/accounts/{id}", Need::Perm(perm::ACCOUNTS_MANAGE), delete_account)
         .get("/api/auth/devices", Need::Perm(perm::DEVICES_MANAGE), list_devices)
         .post("/api/auth/devices/enrolment-codes", Need::Perm(perm::DEVICES_MANAGE), create_enrolment_code)
         .post("/api/auth/devices/{id}/revoke", Need::Perm(perm::DEVICES_MANAGE), revoke_device)
@@ -135,6 +136,15 @@ async fn update_account(
     Json(input): Json<UpdateOfficerInput>,
 ) -> Result<Json<Officer>, ApiError> {
     Ok(Json(write(&node, |c| Box::pin(async move { Ok(officers::update_officer(c, &actor, &id, input).await?) })).await?))
+}
+
+async fn delete_account(
+    State(node): State<NodeRef>,
+    Extension(actor): Extension<Actor>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    write(&node, |c| Box::pin(async move { Ok(officers::delete_officer(c, &actor, &id).await?) })).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn list_devices(State(node): State<NodeRef>) -> Result<Json<Vec<Device>>, ApiError> {

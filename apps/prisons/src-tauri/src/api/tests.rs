@@ -132,6 +132,8 @@ async fn no_route_lives_outside_the_api_namespace() {
 /// deliberate, reviewed act: anything else that quietly becomes `Public`,
 /// `Device` or `Onboarding` would be skipped by the walker below.
 const OPEN_BY_DESIGN: &[&str] = &[
+    "/api/capture/{token}",
+    "/api/capture/{token}/photo",
     "/api/auth/bootstrap",
     "/api/auth/bootstrap-status",
     "/api/auth/devices/enrol",
@@ -143,6 +145,10 @@ const OPEN_BY_DESIGN: &[&str] = &[
     "/api/system/local/disconnect",
     "/api/system/onboarding/activate",
     "/api/system/onboarding/connect",
+    "/api/system/onboarding/facility-lookup",
+    "/api/system/onboarding/connection/refresh",
+    "/api/system/onboarding/connection/cancel",
+    "/api/system/onboarding/connect-facility",
     "/api/system/onboarding/pair",
     "/api/system/onboarding/role",
     "/api/system/recovery",
@@ -154,7 +160,7 @@ async fn only_reviewed_routes_can_be_called_without_signing_in() {
     let h = harness().await;
     let mut open: Vec<&str> = super::route_specs(h.node.clone())
         .into_iter()
-        .filter(|s| matches!(s.need, Need::Public | Need::Device | Need::Onboarding))
+        .filter(|s| matches!(s.need, Need::Public | Need::Device | Need::Onboarding | Need::CaptureToken))
         .map(|s| s.path)
         .collect();
     open.sort_unstable();
@@ -185,7 +191,7 @@ async fn every_guarded_route_refuses_anonymous_and_unprivileged_callers() {
     for spec in specs {
         let path = concrete(spec.path);
         match spec.need {
-            Need::Public | Need::Device | Need::Onboarding => continue,
+            Need::Public | Need::Device | Need::Onboarding | Need::CaptureToken => continue,
             Need::Session => {
                 let (status, _) = send(&h.router, Call { method: spec.method.clone(), ..Call::new(Method::GET, &path) }).await;
                 assert_eq!(status, StatusCode::UNAUTHORIZED, "{} {} must need a session", spec.method, spec.path);

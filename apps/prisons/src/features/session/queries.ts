@@ -24,15 +24,16 @@ export function useSessionToken() {
 /** The signed-in officer and what they may do. `null` when signed out. The
  * node answers 401 for a session it no longer accepts, which clears the
  * token and returns the app to the sign-in screen. */
+export const sessionOptions = (token: string | null) => ({
+  queryKey: ['session', token] as const,
+  queryFn: () => getSession(),
+  retry: false,
+  staleTime: 30_000,
+})
+
 export function useSession() {
   const token = useSessionToken()
-  return useQuery({
-    queryKey: ['session', token] as const,
-    queryFn: () => getSession(),
-    enabled: token != null,
-    retry: false,
-    staleTime: 30_000,
-  })
+  return useQuery({ ...sessionOptions(token), enabled: token != null })
 }
 
 /** UI courtesy only: the node enforces every permission on every request. */

@@ -1,11 +1,11 @@
-import { prisonerFullName, usePrisoners, type Prisoner } from '@/features/prisoners'
-import { OfficerForm } from '@/features/officers'
-import { VisitForm } from '@/features/visits'
 import { CourtProductionForm } from '@/features/court-productions'
 import { HealthEventForm } from '@/features/health-events'
-import { PropertyRecordForm } from '@/features/property-records'
+import { OfficerForm } from '@/features/officers'
+import { prisonerFullName, usePrisoners, type Prisoner } from '@/features/prisoners'
 import { ProgrammeParticipationForm } from '@/features/programme-participations'
+import { PropertyRecordForm } from '@/features/property-records'
 import { RequestForm } from '@/features/requests'
+import { VisitForm } from '@/features/visits'
 import {
   Archive01Icon,
   ArrowDataTransferHorizontalIcon,
@@ -25,8 +25,8 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Badge } from '@pleadli/ui/badge'
 import { Input } from '@pleadli/ui/input'
 import { cn } from '@pleadli/ui/lib/utils'
-import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
+import { AnimatePresence, motion } from 'framer-motion'
 import { cloneElement, Suspense, useEffect, useState, type ReactElement } from 'react'
 
 type RecordType =
@@ -141,7 +141,7 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
           <>
             <motion.div
               key="add-record-backdrop"
-              className="fixed inset-0 z-50 bg-black/40"
+              className="fixed inset-0 z-50 bg-background/15 backdrop-blur"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -153,49 +153,54 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
               role="dialog"
               aria-modal="true"
               aria-label="Add record"
-              className="fixed top-0 right-0 z-50 flex h-dvh w-[min(90vw,560px)] flex-col bg-background shadow-2xl"
+              className={cn(
+                "fixed top-0 right-0 z-50 h-dvh w-full md:max-w-[80wvh]!",
+                'flex flex-col bg-background shadow-2xl border-l border-border/35'
+              )}
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
-              <header className="flex shrink-0 items-center gap-2 border-b border-border/60 p-4">
-                {screen.step !== 'grid' && (
+              <header className="flex items-center shrink-0 border-b w-full border-border/60">
+                <section className="flex w-full items-center gap-2 px-5 py-3">
+                  {screen.step !== 'grid' && (
+                    <button
+                      type="button"
+                      aria-label="Back"
+                      className="-ml-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted/60"
+                      onClick={() => setScreen({ step: 'grid' })}
+                    >
+                      <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
+                    </button>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-sm font-medium text-foreground">
+                      {screen.step === 'grid' ? 'Add record' : recordTypeInfo(screen.record).label}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {screen.step === 'prisoner'
+                        ? 'Which prisoner is this for?'
+                        : screen.step === 'form' && screen.record !== 'request'
+                          ? recordTypeInfo(screen.record).description
+                          : 'Pick what you\u2019re adding, then fill it in.'}
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    aria-label="Back"
-                    className="-ml-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted/60"
-                    onClick={() => setScreen({ step: 'grid' })}
+                    aria-label="Close"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted/60"
+                    onClick={requestClose}
                   >
-                    <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
+                    <HugeiconsIcon icon={Cancel01Icon} size={16} />
                   </button>
-                )}
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-sm font-medium text-foreground">
-                    {screen.step === 'grid' ? 'Add record' : recordTypeInfo(screen.record).label}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {screen.step === 'prisoner'
-                      ? 'Which prisoner is this for?'
-                      : screen.step === 'form' && screen.record !== 'request'
-                        ? recordTypeInfo(screen.record).description
-                        : 'Pick what you\u2019re adding, then fill it in.'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  aria-label="Close"
-                  className="rounded-md p-1.5 text-muted-foreground hover:bg-muted/60"
-                  onClick={requestClose}
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} size={16} />
-                </button>
+                </section>
               </header>
 
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="px-5 flex min-h-0 w-full flex-1 flex-col overflow-hidden">
                 {screen.step === 'grid' && (
                   <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {recordTypes.map((r) => (
                         <button
                           key={r.value}
@@ -204,7 +209,7 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
                             if (startProcedure(r.value)) return
                             setScreen(r.requiresPrisoner ? { step: 'prisoner', record: r.value } : { step: 'form', record: r.value })
                           }}
-                          className="flex flex-col items-start gap-2 rounded-lg border border-border/60 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                          className="flex min-w-52 flex-1 basis-56 flex-col items-start gap-2 rounded-lg border border-border/60 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                         >
                           <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
                             <HugeiconsIcon icon={r.icon} size={16} />
@@ -307,7 +312,7 @@ function RecordFormStep({
       {prisoner && (
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
           <div className="flex items-center gap-2 text-sm">
-            <Badge variant="secondary">{prisoner.id}</Badge>
+            <Badge variant="secondary">{prisoner.prisonerNumber ?? prisoner.id}</Badge>
             {prisonerFullName(prisoner)}
           </div>
           <button type="button" className="text-xs text-muted-foreground underline" onClick={onPickPrisoner}>
@@ -373,7 +378,7 @@ function PrisonerPickerResults({ query, onSelect }: { query: string; onSelect: (
         >
           <span className="truncate">{prisonerFullName(p)}</span>
           <Badge variant="secondary" className="shrink-0 text-[10px]">
-            {p.id}
+            {p.prisonerNumber ?? p.id}
           </Badge>
         </button>
       ))}

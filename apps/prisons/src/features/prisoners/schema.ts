@@ -84,6 +84,7 @@ export const prisonerSchema = z.object({
   pendingDocumentType: z.string().nullable(),
   notes: z.string().nullable(),
   createdAt: z.number(),
+  prisonerNumber: z.string().nullable().optional(),
 })
 
 export type Prisoner = z.infer<typeof prisonerSchema>

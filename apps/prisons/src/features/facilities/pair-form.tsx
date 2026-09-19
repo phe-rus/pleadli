@@ -41,17 +41,17 @@ export function PairWithHeadOfficeForm({ onPaired }: { onPaired?: () => void }) 
 
   return (
     <form
-      className="flex flex-col gap-4 md:max-w-lg"
+      className="flex flex-col gap-4 md:max-w-xl"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
       }}
     >
-      <form.AppField name="pairingCode">{(f) => <f.input label="Pairing code" placeholder="Paste the code Head Office gave you" />}</form.AppField>
-      <form.AppField name="name">{(f) => <f.input label="Facility name" />}</form.AppField>
+      <form.AppField name="pairingCode">{(f) => <f.input label="Pairing code" autoComplete="off" placeholder="Paste the code Head Office gave you" />}</form.AppField>
+      <form.AppField name="name">{(f) => <f.input label="Facility name" autoComplete="organization" />}</form.AppField>
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="facilityNumber">{(f) => <f.input label="Facility ID or number" />}</form.AppField>
-        <form.AppField name="location">{(f) => <f.input label="Location" />}</form.AppField>
+        <form.AppField name="facilityNumber">{(f) => <f.input label="Facility ID or number" autoComplete="off" />}</form.AppField>
+        <form.AppField name="location">{(f) => <f.input label="Location" autoComplete="address-level2" />}</form.AppField>
       </div>
       <form.AppField name="region">
         {(f) => (
@@ -74,7 +74,7 @@ export function PairWithHeadOfficeForm({ onPaired }: { onPaired?: () => void }) 
           </Field>
         )}
       </form.AppField>
-      <form.AppField name="headOfficerName">{(f) => <f.input label="Head officer's name" />}</form.AppField>
+      <form.AppField name="headOfficerName">{(f) => <f.input label="Head officer's name" autoComplete="name" />}</form.AppField>
       <form.AppForm>
         <form.submit label={pair.isPending ? 'Pairing…' : 'Pair with Head Office'} />
       </form.AppForm>

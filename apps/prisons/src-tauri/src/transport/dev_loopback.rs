@@ -19,12 +19,25 @@ use crate::node::NodeRef;
 
 pub const PORT: u16 = 47922;
 
+/// Debug builds may redirect the loopback listener away from the default
+/// port so a test node can run alongside a serving app without colliding.
+/// Set `VITE_PLEADLI_DEV_PORT` before the process starts; the frontend's
+/// `api()` reads the same variable (Vite only exposes `VITE_*`).
+fn port() -> u16 {
+    std::env::var("VITE_PLEADLI_DEV_PORT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|p| *p != 0)
+        .unwrap_or(PORT)
+}
+
 async fn loopback_host_only(req: Request, next: Next) -> Response {
+    let port = port();
     let host_ok = req
         .headers()
         .get(header::HOST)
         .and_then(|h| h.to_str().ok())
-        .is_some_and(|h| h == format!("127.0.0.1:{PORT}") || h == format!("localhost:{PORT}"));
+        .is_some_and(|h| h == format!("127.0.0.1:{port}") || h == format!("localhost:{port}"));
     if !host_ok {
         return StatusCode::FORBIDDEN.into_response();
     }
@@ -48,10 +61,11 @@ pub async fn serve_router(router: axum::Router) {
         .layer(from_fn(loopback_host_only))
         .layer(cors);
 
-    let listener = match tokio::net::TcpListener::bind(("127.0.0.1", PORT)).await {
+    let port = port();
+    let listener = match tokio::net::TcpListener::bind(("127.0.0.1", port)).await {
         Ok(listener) => listener,
         Err(e) => {
-            log::warn!("dev loopback could not bind 127.0.0.1:{PORT}: {e}");
+            log::warn!("dev loopback could not bind 127.0.0.1:{port}: {e}");
             return;
         }
     };

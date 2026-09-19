@@ -164,6 +164,12 @@ pub struct AuditFilter {
     pub entity_type: Option<String>,
     pub entity_id: Option<String>,
     pub actor_id: Option<String>,
+    /// Everything an officer did, plus what was done to their account
+    /// (sign-ins, edits).
+    pub officer_id: Option<String>,
+    /// Rows performed by this badge, or that name it exactly as a value
+    /// (for example a connection request made by that officer).
+    pub badge: Option<String>,
     pub limit: Option<i64>,
 }
 
@@ -176,12 +182,17 @@ pub async fn list(pool: &SqlitePool, filter: &AuditFilter) -> Result<Vec<AuditRo
          WHERE (?1 IS NULL OR entity_type = ?1)
            AND (?2 IS NULL OR entity_id = ?2)
            AND (?3 IS NULL OR actor_id = ?3)
+           AND (?5 IS NULL OR actor_id = ?5 OR (entity_type = 'officer' AND entity_id = ?5))
+           AND (?6 IS NULL OR actor_badge = ?6 COLLATE NOCASE OR reason = ?6
+                OR instr(COALESCE(after_json, ''), '\"' || ?6 || '\"') > 0)
          ORDER BY seq DESC LIMIT ?4",
     )
     .bind(&filter.entity_type)
     .bind(&filter.entity_id)
     .bind(&filter.actor_id)
     .bind(limit)
+    .bind(&filter.officer_id)
+    .bind(&filter.badge)
     .fetch_all(pool)
     .await
 }

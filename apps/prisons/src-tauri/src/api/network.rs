@@ -11,7 +11,7 @@
 use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
 
-use axum::extract::{ConnectInfo, DefaultBodyLimit, Request, State};
+use axum::extract::{ConnectInfo, DefaultBodyLimit, Query, Request, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::middleware::{from_fn, Next};
 use axum::response::Response;
@@ -20,7 +20,8 @@ use axum::{Extension, Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::domain::facilities::{self, RegisterFacilityInput, RegisterPeerResult};
+use crate::domain::connection::{self, ConnectionOutcome, ConnectionRequestInput, ConnectionStatus, FacilityLookup, RosterEntry};
+use crate::domain::facilities::{self, hash_secret, RegisterFacilityInput, RegisterPeerResult};
 use crate::domain::prisoners::Prisoner;
 use crate::domain::sync;
 use crate::node::NodeRef;
@@ -71,6 +72,11 @@ pub fn router(node: NodeRef) -> Router {
         .route("/api/network/v1/health", get(health))
         .route("/api/network/v1/pairing/register", post(register_peer))
         .route("/api/network/v1/legacy/snapshot", post(legacy_snapshot))
+        .route("/api/network/v1/facilities/lookup", get(lookup_facility))
+        .route("/api/network/v1/connection/request", post(connection_request))
+        .route("/api/network/v1/connection/status", post(connection_status))
+        .route("/api/network/v1/roster", post(roster))
+        .route("/api/network/v1/policy", get(policy))
         .layer(from_fn(client_key))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .with_state(node)
@@ -126,6 +132,101 @@ async fn legacy_snapshot(
         .ok_or_else(invalid)?;
     let roster: Vec<Prisoner> = serde_json::from_slice(&body).map_err(|_| invalid())?;
     sync::resolve_facility_and_ingest(&node.pool, &token, roster).await.map(Json).map_err(|_| invalid())
+}
+
+async fn policy(
+    State(node): State<NodeRef>,
+    Extension(client): Extension<ClientKey>,
+    headers: HeaderMap,
+    Query(report): Query<crate::domain::policy_sync::PolicyReport>,
+) -> Result<Json<crate::domain::policy_sync::PolicyPayload>, NetError> {
+    if !node.limiter.check(&format!("net:{}", client.0), RATE_LIMIT_PER_CLIENT, RATE_LIMIT_WINDOW) {
+        return Err(invalid());
+    }
+    let token = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .ok_or_else(invalid)?;
+    match crate::domain::policy_sync::serve_policy(&node.pool, token, report).await {
+        Ok(Some(payload)) => Ok(Json(payload)),
+        _ => Err(invalid()),
+    }
+}
+
+fn bearer_token(headers: &HeaderMap) -> Result<String, NetError> {
+    headers
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .map(|v| v.to_string())
+        .ok_or_else(invalid)
+}
+
+/// Polling and lookups are chattier than registration, so they get their own
+/// allowance rather than sharing the registration one.
+fn allowed(node: &NodeRef, client: &ClientKey, bucket: &str, limit: usize) -> Result<(), NetError> {
+    if node.limiter.check(&format!("net-{bucket}:{}", client.0), limit, RATE_LIMIT_WINDOW) {
+        Ok(())
+    } else {
+        Err(invalid())
+    }
+}
+
+#[derive(Deserialize)]
+struct LookupQuery {
+    number: String,
+}
+
+async fn lookup_facility(
+    State(node): State<NodeRef>,
+    Extension(client): Extension<ClientKey>,
+    Query(query): Query<LookupQuery>,
+) -> Result<Json<FacilityLookup>, NetError> {
+    allowed(&node, &client, "lookup", 30)?;
+    connection::lookup(&node.pool, &query.number).await.ok().flatten().map(Json).ok_or_else(invalid)
+}
+
+async fn connection_request(
+    State(node): State<NodeRef>,
+    Extension(client): Extension<ClientKey>,
+    Json(body): Json<ConnectionRequestInput>,
+) -> Result<Json<ConnectionOutcome>, NetError> {
+    allowed(&node, &client, "request", 10)?;
+    connection::request_connection(&node.pool, body, &client.0).await.map(Json).map_err(|_| invalid())
+}
+
+async fn connection_status(
+    State(node): State<NodeRef>,
+    Extension(client): Extension<ClientKey>,
+    headers: HeaderMap,
+) -> Result<Json<ConnectionStatus>, NetError> {
+    allowed(&node, &client, "status", 60)?;
+    let token = bearer_token(&headers)?;
+    connection::request_status(&node.pool, &hash_secret(&token)).await.ok().flatten().map(Json).ok_or_else(invalid)
+}
+
+#[derive(Deserialize)]
+struct RosterBody {
+    officers: Vec<RosterEntry>,
+}
+
+async fn roster(
+    State(node): State<NodeRef>,
+    Extension(client): Extension<ClientKey>,
+    headers: HeaderMap,
+    Json(body): Json<RosterBody>,
+) -> Result<Json<Value>, NetError> {
+    allowed(&node, &client, "roster", 20)?;
+    let token = bearer_token(&headers)?;
+    let count = connection::ingest_roster(&node.pool, &token, body.officers).await.map_err(|_| invalid())?;
+    Ok(Json(serde_json::json!({ "count": count })))
+}
+
+/// Whether something is accepting connections on the network listener's port
+/// right now. Used by Head Office's own status panel.
+pub async fn is_listening() -> bool {
+    tokio::time::timeout(Duration::from_millis(400), tokio::net::TcpStream::connect(("127.0.0.1", PORT))).await.map(|r| r.is_ok()).unwrap_or(false)
 }
 
 /// Supervises the network listener. A facility never listens; only a Head

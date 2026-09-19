@@ -43,7 +43,7 @@ let node = Bun.spawn([NODE_BIN, dir], { stdout: 'ignore', stderr: 'ignore' })
 async function waitForNode() {
   for (let i = 0; i < 150; i++) {
     try {
-      const res = await fetch('http://127.0.0.1:47922/api/system/health')
+      const res = await fetch(`http://127.0.0.1:${process.env.VITE_PLEADLI_DEV_PORT || 47922}/api/system/health`)
       if (res.status < 500) return
     } catch {
       // not up yet

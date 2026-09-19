@@ -46,6 +46,9 @@ pub enum Need {
     Device,
     /// First-launch onboarding on the node's own machine only.
     Onboarding,
+    /// A phone capture link: no enrolled device and no sign-in. The handler
+    /// itself must check the link token, which is the only credential.
+    CaptureToken,
     /// A signed-in officer, any role.
     Session,
     /// A signed-in officer holding this permission.
@@ -158,7 +161,7 @@ async fn guard(State(g): State<Guard>, mut req: Request, next: Next) -> Response
 }
 
 async fn authorise(g: &Guard, ingress: Ingress, headers: &HeaderMap) -> Result<(Option<Actor>, Option<String>), ApiError> {
-    if matches!(g.need, Need::Public) {
+    if matches!(g.need, Need::Public | Need::CaptureToken) {
         return Ok((None, None));
     }
     if matches!(g.need, Need::Onboarding) && !ingress.is_local() {

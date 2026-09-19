@@ -55,16 +55,16 @@ export function PersonStep({ draft, set }: StepProps) {
     <>
       <StepHeading title="Person" description="Identity and the legal category the person is held under." />
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="First name" value={draft.firstName} onChange={(v) => set('firstName', v)} autoFocus />
-        <TextField label="Last name" value={draft.lastName} onChange={(v) => set('lastName', v)} />
+        <TextField label="First name" value={draft.firstName} onChange={(v) => set('firstName', v)} autoFocus autoComplete="given-name" />
+        <TextField label="Last name" value={draft.lastName} onChange={(v) => set('lastName', v)} autoComplete="family-name" />
       </div>
-      <TextField label="Other names" value={draft.otherNames} onChange={(v) => set('otherNames', v)} />
+      <TextField label="Other names" value={draft.otherNames} onChange={(v) => set('otherNames', v)} autoComplete="additional-name" />
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="National ID" value={draft.nationalId} onChange={(v) => set('nationalId', v)} />
-        <TextField label="Reference" value={draft.reference} onChange={(v) => set('reference', v)} description="No standard prisoner number format was confirmed in research." />
+        <TextField label="National ID" value={draft.nationalId} onChange={(v) => set('nationalId', v)} autoComplete="off" />
+        <TextField label="Reference" value={draft.reference} onChange={(v) => set('reference', v)} autoComplete="off" description="No standard prisoner number format was confirmed in research." />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="Date of birth" type="date" value={draft.dateOfBirth} onChange={(v) => set('dateOfBirth', v)} />
+        <TextField label="Date of birth" type="date" value={draft.dateOfBirth} onChange={(v) => set('dateOfBirth', v)} autoComplete="bday" />
         <SelectField label="Sex" value={draft.sex} onChange={(v) => set('sex', v)} options={prisonerSexes} placeholder="Select sex" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -73,7 +73,7 @@ export function PersonStep({ draft, set }: StepProps) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <SelectField label="Legal category" value={draft.legalStatus} onChange={(v) => set('legalStatus', v)} options={prisonerStatuses} placeholder="Select category" />
-        <TextField label="Offence or charge" value={draft.offence} onChange={(v) => set('offence', v)} placeholder="e.g. Aggravated robbery" />
+        <TextField label="Offence or charge" value={draft.offence} onChange={(v) => set('offence', v)} autoComplete="off" placeholder="e.g. Aggravated robbery" />
       </div>
       <SwitchField
         label="Offence triable only by the High Court"

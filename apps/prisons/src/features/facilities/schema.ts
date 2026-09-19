@@ -52,8 +52,11 @@ export const facilitySchema = z.object({
   /** Manual, no-email-yet stand-in — see `domain/facilities.rs`'s own doc
    * comment. Only ever set while `status === 'pending_verification'`. */
   verificationCodePlaintext: z.string().nullable(),
+  verificationExpiresAt: z.number().nullable(),
   lastSyncedAt: z.number().nullable(),
   createdAt: z.number(),
+  connectedBy: z.string().nullable(),
+  officerCount: z.number(),
 })
 
 export type Facility = z.infer<typeof facilitySchema>
@@ -71,12 +74,20 @@ export type RegisterFacilityInput = z.infer<typeof registerFacilityInputSchema>
 /** A peer's own local sync status (`peer_sync_config`), read by Settings'
  * Network & Sync section on a facility installation. Meaningless (all
  * null) on Head Office, which never registers with anyone. */
+export const connectionStates = ['none', 'pending', 'connected', 'rejected'] as const
+
 export const peerSyncConfigSchema = z.object({
   hqHostname: z.string().nullable(),
   facilityId: z.string().nullable(),
   lastSyncedAt: z.number().nullable(),
   lastSyncStatus: z.string().nullable(),
   lastError: z.string().nullable(),
+  connectionState: z.enum(connectionStates),
+  requestedByBadge: z.string().nullable(),
+  requestedByName: z.string().nullable(),
+  facilityDisplayName: z.string().nullable(),
+  rosterPushedAt: z.number().nullable(),
+  rosterCount: z.number().nullable(),
 })
 
 export type PeerSyncConfig = z.infer<typeof peerSyncConfigSchema>
@@ -132,3 +143,84 @@ export function syncStatusLabel(status: string | null) {
       return 'Never synced'
   }
 }
+
+
+/** What Head Office tells a facility about a number it looked up. */
+export const facilityLookupSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  location: z.string(),
+  region: z.string(),
+  status: z.enum(facilityStatuses),
+})
+
+export type FacilityLookup = z.infer<typeof facilityLookupSchema>
+
+export const connectResultSchema = z.object({
+  state: z.enum(['connected', 'pending']),
+  facilityId: z.string(),
+  facilityName: z.string(),
+})
+
+export type ConnectResult = z.infer<typeof connectResultSchema>
+
+export type ConnectFacilityInput = {
+  hqAddress: string
+  facilityNumber: string
+  requesterBadge: string
+  requesterName: string
+  activationCode?: string
+}
+
+/** Where a connect call goes: before any account exists it is an onboarding
+ * route, afterwards a permission-checked network route. */
+export type ConnectScope = 'onboarding' | 'network'
+
+export const connectionRequestSchema = z.object({
+  id: z.string(),
+  facilityId: z.string(),
+  facilityName: z.string(),
+  facilityNumber: z.string(),
+  requestedByBadge: z.string(),
+  requestedByName: z.string(),
+  requestedFrom: z.string(),
+  status: z.enum(['pending', 'approved', 'rejected', 'superseded']),
+  replacesExisting: z.boolean(),
+  decidedByBadge: z.string().nullable(),
+  decidedByName: z.string().nullable(),
+  decidedAt: z.number().nullable(),
+  createdAt: z.number(),
+})
+
+export type ConnectionRequest = z.infer<typeof connectionRequestSchema>
+
+export const facilityOfficerSchema = z.object({
+  facilityId: z.string(),
+  facilityName: z.string(),
+  badgeNumber: z.string(),
+  name: z.string(),
+  role: z.string(),
+  isAdmin: z.boolean(),
+  active: z.boolean(),
+  syncedAt: z.number(),
+})
+
+export type FacilityOfficer = z.infer<typeof facilityOfficerSchema>
+
+export const hqNetworkStatusSchema = z.object({
+  local: z.object({ listening: z.boolean(), address: z.string() }),
+  cloudflare: z.object({
+    configured: z.boolean(),
+    tunnelProvisioned: z.boolean(),
+    hostname: z.string().nullable(),
+    state: z.enum(['not_configured', 'configured_not_connected', 'connected']),
+  }),
+  publicBase: z.string(),
+  pendingRequests: z.number(),
+})
+
+export type HqNetworkStatus = z.infer<typeof hqNetworkStatusSchema>
+
+export const reachabilitySchema = z.object({ reachable: z.boolean(), checkedAt: z.number() })
+
+export const createFacilityInputSchema = registerFacilityInputSchema

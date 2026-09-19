@@ -93,9 +93,9 @@ impl From<OfficerError> for ApiError {
         let payload = OfficerErrorPayload::from(err);
         let status = match payload.code.as_str() {
             "INVALID_CREDENTIALS" => StatusCode::UNAUTHORIZED,
-            "BADGE_TAKEN" | "LAST_ADMIN_GUARD" | "ALREADY_INITIALISED" => StatusCode::CONFLICT,
+            "BADGE_TAKEN" | "LAST_ADMIN_GUARD" | "ALREADY_INITIALISED" | "DELETE_NOT_ALLOWED" | "CANNOT_DELETE_SELF" => StatusCode::CONFLICT,
             "NOT_FOUND" => StatusCode::NOT_FOUND,
-            "INVALID_ROLE" | "WEAK_PASSWORD" => StatusCode::UNPROCESSABLE_ENTITY,
+            "INVALID_ROLE" | "WEAK_PASSWORD" | "INVALID_PHOTO" => StatusCode::UNPROCESSABLE_ENTITY,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError { status, code: payload.code, message: payload.message }

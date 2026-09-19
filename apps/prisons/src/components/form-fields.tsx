@@ -14,6 +14,7 @@ export function TextField({
   placeholder,
   description,
   autoFocus,
+  autoComplete,
 }: {
   label: string
   value: string
@@ -22,11 +23,12 @@ export function TextField({
   placeholder?: string
   description?: string
   autoFocus?: boolean
+  autoComplete?: string
 }) {
   return (
     <Field>
       <FieldLabel>{label}</FieldLabel>
-      <Input type={type} value={value} placeholder={placeholder} autoFocus={autoFocus} onChange={(e) => onChange(e.target.value)} />
+      <Input type={type} value={value} placeholder={placeholder} autoFocus={autoFocus} autoComplete={autoComplete} onChange={(e) => onChange(e.target.value)} />
       {description && <FieldDescription>{description}</FieldDescription>}
     </Field>
   )

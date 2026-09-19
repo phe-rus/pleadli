@@ -184,6 +184,9 @@ pub async fn push_snapshot(pool: &SqlitePool) -> Result<SyncRunResult, String> {
     let count = json.get("syncedCount").and_then(|v| v.as_i64()).unwrap_or_else(|| roster.len() as i64);
     let last_synced_at = json.get("lastSyncedAt").and_then(|v| v.as_i64()).unwrap_or_else(now_ms);
     set_peer_status(pool, "ok", Some(last_synced_at), None).await.map_err(|e| e.to_string())?;
+    if let Err(e) = super::peer::push_roster(pool).await {
+        log::info!("roster push skipped: {e}");
+    }
 
     Ok(SyncRunResult { status: "ok".to_string(), count: Some(count) })
 }
@@ -281,9 +284,15 @@ pub async fn background_loop(pool: SqlitePool) {
             continue;
         }
 
+        if let Err(e) = super::peer::refresh_connection(&pool).await {
+            log::info!("connection check skipped: {e:?}");
+        }
         match push_snapshot(&pool).await {
             Ok(result) => log::info!("background sync: {}", result.status),
             Err(e) => log::info!("background sync skipped: {e}"),
+        }
+        if let Err(e) = crate::domain::policy_sync::pull_policy(&pool).await {
+            log::info!("policy pull skipped: {e}");
         }
     }
 }

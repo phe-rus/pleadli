@@ -67,6 +67,7 @@ export function toReceptionPayload(draft: ReceptionDraft) {
       })),
     placement: blankToNull(draft.placement),
     notes: blankToNull(draft.notes),
+    photos: draft.decision === 'refuse' ? null : draft.photos,
   }
 }
 

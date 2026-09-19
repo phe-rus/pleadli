@@ -1,4 +1,5 @@
 export * from './data'
+export * from './photos-step'
 export * from './queries'
 export * from './reception-procedure'
 export * from './schema'

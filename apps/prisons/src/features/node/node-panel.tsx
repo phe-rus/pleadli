@@ -28,7 +28,7 @@ export function NodePanel() {
   const serving = network.mode === 'node'
 
   return (
-    <div className="flex flex-col gap-6 md:max-w-2xl">
+    <div className="flex flex-col gap-6 md:max-w-none">
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
           <div className="flex flex-col gap-0.5">

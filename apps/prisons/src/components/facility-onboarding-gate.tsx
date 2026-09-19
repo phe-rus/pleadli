@@ -1,190 +1,216 @@
 import { PreAuthLayout, ScreenHeader, screenTransition } from '@/components/pre-auth-layout'
-import {
-  facilityRegions,
-  parsePairingCode,
-  usePairWithHeadOffice,
-  type RegisterFacilityInput,
-} from '@/features/facilities'
-import { ApiError } from '@/lib/api'
+import { ConnectFlow, StepsProgress, cancelConnection, connectSteps, refreshConnection, type PeerSyncConfig } from '@/features/facilities'
 import { useHqConfig } from '@/features/session'
-import { useAppForm } from '@pleadli/forms-tables/forms'
-import { Field, FieldLabel } from '@pleadli/ui/field'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
-import { t } from '@pleadli/ui/goey-toaster'
-import { Key01Icon, PrisonIcon } from '@hugeicons/core-free-icons'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useState, type ReactNode } from 'react'
+import { CheckmarkCircle02Icon, Clock01Icon, NetworkIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@pleadli/ui/button'
+import { t } from '@pleadli/ui/goey-toaster'
+import { useQueryClient } from '@tanstack/react-query'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useState, type ReactNode } from 'react'
 
-type PendingPairing = { pairingCode: string; hostname: string }
+const POLL_MS = 4000
 
 /**
- * First-launch pairing for a facility installation, in two steps: paste the
- * one pairing code Head Office handed over (it carries Head Office's own
- * hostname), then fill in the facility's details. The node makes the outbound
- * call to Head Office and stores the credentials; the webview never talks to
- * Head Office itself.
+ * First launch of a facility installation: connect to Head Office by picking
+ * the facility from its roster, or carry on alone. Connecting is optional and
+ * never blocks local work. A request Head Office has not decided yet waits on
+ * its own screen that polls every few seconds and moves on by itself when
+ * approved, or lets the officer carry on and finish setting up meanwhile.
  *
- * Pairing is optional. A facility works completely on its own, so the first
- * screen offers "Continue without Head Office". Pairing can be done later
- * from the facility's connectivity settings. This gate only appears while the
- * installation has no accounts yet (the persisted first-launch state), so it
- * never returns once the first account exists.
+ * The gate only shows while the installation has no accounts (the persisted
+ * first-launch state), so it never returns once the first account exists;
+ * Settings, Network and sync takes over from there.
  */
 export function FacilityOnboardingGate({ children }: { children: ReactNode }) {
   const { data: state, isLoading } = useHqConfig()
+  const queryClient = useQueryClient()
   const [skipped, setSkipped] = useState(false)
+  const [confirmed, setConfirmed] = useState<string | null>(null)
 
   if (isLoading || !state) return null
-  const needsPairingChoice = state.role === 'facility' && !state.paired && state.bootstrap && !skipped
-  if (needsPairingChoice) return <FacilityPairingFlow onSkip={() => setSkipped(true)} />
-  return <>{children}</>
+
+  const refreshState = () => {
+    queryClient.invalidateQueries({ queryKey: ['systemState'] })
+    queryClient.invalidateQueries({ queryKey: ['peerSyncConfig'] })
+  }
+  // Shown before the state flips to connected, so the officer sees the result.
+  const connected = (facilityName: string) => {
+    setConfirmed(facilityName)
+    refreshState()
+  }
+
+  if (confirmed !== null) return <ConnectedScreen facilityName={confirmed} onContinue={() => setConfirmed(null)} />
+
+  const needsChoice = state.role === 'facility' && state.bootstrap && !state.paired && !skipped
+  if (!needsChoice) return <>{children}</>
+
+  if (state.connection === 'pending') {
+    return <WaitingScreen onConnected={connected} onRejected={refreshState} onContinue={() => setSkipped(true)} onCancelled={refreshState} />
+  }
+  if (state.connection === 'rejected') {
+    return <RejectedScreen onCancelled={refreshState} onContinue={() => setSkipped(true)} />
+  }
+  return <ConnectScreen onConnected={connected} onPending={refreshState} onSkip={() => setSkipped(true)} />
 }
 
-function FacilityPairingFlow({ onSkip }: { onSkip: () => void }) {
-  const [pending, setPending] = useState<PendingPairing | null>(null)
-
-  return pending ? (
-    <FacilityDetailsScreen pending={pending} onBack={() => setPending(null)} />
-  ) : (
-    <PairingCodeScreen onEntered={setPending} onSkip={onSkip} />
-  )
-}
-
-function PairingCodeScreen({ onEntered, onSkip }: { onEntered: (pending: PendingPairing) => void; onSkip: () => void }) {
-  const [raw, setRaw] = useState('')
-
+function Shell({ stepKey, children }: { stepKey: string; children: ReactNode }) {
   return (
     <PreAuthLayout>
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div key="pairing-code" {...screenTransition} className="flex w-full max-w-sm flex-col gap-6">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-primary">1</span>
-            Step 1 of 2
-          </div>
-          <ScreenHeader
-            icon={Key01Icon}
-            title="Pair with your Head Office"
-            description="Paste the pairing code your Head Office gave you. It carries everything needed to reach it, so you never type a hostname. This facility works fully offline whether or not you pair."
-          />
-          <form
-            className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-xs"
-            onSubmit={(event) => {
-              event.preventDefault()
-              try {
-                const { hostname } = parsePairingCode(raw.trim())
-                onEntered({ pairingCode: raw.trim(), hostname })
-              } catch {
-                t.error('That does not look like a Pleadli pairing code')
-              }
-            }}
-          >
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium">Pairing code</span>
-              <input
-                autoFocus
-                value={raw}
-                onChange={(event) => setRaw(event.target.value)}
-                placeholder="e.g. https://hq.example.com#8f2..."
-                className="h-9 w-full rounded-md border border-border bg-background px-2.5 font-mono text-xs outline-none focus:border-primary"
-              />
-            </label>
-            <Button type="submit" disabled={raw.trim().length === 0} className="w-full">
-              Continue
-            </Button>
-            <Button type="button" variant="secondary" className="w-full" onClick={onSkip}>
-              Continue without Head Office
-            </Button>
-          </form>
+        <motion.div key={stepKey} {...screenTransition} className="flex w-full max-w-md flex-col gap-6">
+          {children}
         </motion.div>
       </AnimatePresence>
     </PreAuthLayout>
   )
 }
 
-function FacilityDetailsScreen({ pending, onBack }: { pending: PendingPairing; onBack: () => void }) {
-  const pairWithHeadOffice = usePairWithHeadOffice()
+function ConnectScreen({ onConnected, onPending, onSkip }: { onConnected: (name: string) => void; onPending: () => void; onSkip: () => void }) {
+  return (
+    <Shell stepKey="connect">
+      <ScreenHeader
+        icon={NetworkIcon}
+        title="Connect to Head Office"
+        description="Pick your facility from Head Office's list. You do not retype its details. Working offline is fine: you can skip this and connect later from Settings."
+      />
+      <div className="rounded-lg border border-border bg-card p-4 shadow-xs">
+        <ConnectFlow scope="onboarding" onConnected={onConnected} onPending={onPending} onSkip={onSkip} />
+      </div>
+    </Shell>
+  )
+}
 
-  const form = useAppForm({
-    defaultValues: {
-      name: '',
-      facilityNumber: '',
-      location: '',
-      region: '' as RegisterFacilityInput['region'],
-      headOfficerName: '',
-    } as RegisterFacilityInput,
-    onSubmit: async ({ value }) => {
+function WaitingScreen({
+  onConnected,
+  onRejected,
+  onContinue,
+  onCancelled,
+}: {
+  onConnected: (name: string) => void
+  onRejected: () => void
+  onContinue: () => void
+  onCancelled: () => void
+}) {
+  const [config, setConfig] = useState<PeerSyncConfig | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+
+  useEffect(() => {
+    let live = true
+    const check = async () => {
       try {
-        await pairWithHeadOffice.mutateAsync({ pairingCode: pending.pairingCode, input: value })
-      } catch (error) {
-        t.error('Head Office could not register this facility', {
-          description:
-            error instanceof ApiError
-              ? error.message
-              : 'The pairing code may have already been used or expired. Ask for a new one.',
-        })
+        const next = await refreshConnection('onboarding')
+        if (!live) return
+        setConfig(next)
+        if (next.connectionState === 'connected') onConnected(next.facilityDisplayName ?? 'this facility')
+        else if (next.connectionState === 'rejected') onRejected()
+      } catch {
+        // Head Office may be unreachable for a while; keep waiting.
       }
-    },
-  })
+    }
+    void check()
+    const timer = setInterval(check, POLL_MS)
+    return () => {
+      live = false
+      clearInterval(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  const hostname = pending.hostname
+  const cancel = async () => {
+    setCancelling(true)
+    try {
+      await cancelConnection('onboarding')
+      onCancelled()
+    } catch {
+      t.error('Could not cancel the request')
+      setCancelling(false)
+    }
+  }
 
   return (
-    <PreAuthLayout>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key="facility-details" {...screenTransition} className="flex w-full max-w-sm flex-col gap-6">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-primary">2</span>
-            Step 2 of 2
-          </div>
-          <ScreenHeader
-            icon={PrisonIcon}
-            title="Register this facility"
-            description={`These details go straight to your Head Office at ${hostname}. You can start using the system before it approves the pairing.`}
-          />
-          <form
-            className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-xs"
-            onSubmit={(event) => {
-              event.preventDefault()
-              form.handleSubmit()
-            }}
-          >
-            <form.AppField name="name">{(f) => <f.input label="Facility name" autoFocus />}</form.AppField>
-            <form.AppField name="facilityNumber">{(f) => <f.input label="Facility ID or number" />}</form.AppField>
-            <form.AppField name="location">{(f) => <f.input label="Location" />}</form.AppField>
-            <form.AppField name="region">
-              {(f) => (
-                <Field>
-                  <FieldLabel>Region</FieldLabel>
-                  <Select value={f.state.value} onValueChange={(value) => f.handleChange((value as never) ?? f.state.value)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select region" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {facilityRegions.map((region) => (
-                          <SelectItem key={region} value={region}>
-                            {region}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
-            </form.AppField>
-            <form.AppField name="headOfficerName">{(f) => <f.input label="Head officer's name" />}</form.AppField>
-            <form.AppForm>
-              <div className="*:w-full">
-                <form.submit label={pairWithHeadOffice.isPending ? 'Pairing…' : 'Confirm'} />
-              </div>
-            </form.AppForm>
-            <Button type="button" variant="ghost" className="w-full" onClick={onBack} disabled={pairWithHeadOffice.isPending}>
-              Back
-            </Button>
-          </form>
-        </motion.div>
-      </AnimatePresence>
-    </PreAuthLayout>
+    <Shell stepKey="waiting">
+      <StepsProgress steps={connectSteps} current={2} />
+      <ScreenHeader
+        icon={Clock01Icon}
+        title="Waiting for Head Office to approve"
+        description={
+          config?.facilityDisplayName
+            ? `Your request to connect as ${config.facilityDisplayName} has reached Head Office. This screen moves on by itself when it is approved.`
+            : 'Your request has reached Head Office. This screen moves on by itself when it is approved.'
+        }
+      />
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 text-sm shadow-xs">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-500/60" />
+            <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
+          </span>
+          Checking every few seconds
+        </div>
+        {config?.requestedByName && (
+          <p className="text-xs text-muted-foreground">
+            Requested by <span className="font-medium text-foreground">{config.requestedByName}</span> ({config.requestedByBadge}). Head
+            Office sees your name and badge number when it decides.
+          </p>
+        )}
+        <Button type="button" className="w-full" onClick={onContinue}>
+          Continue working while I wait
+        </Button>
+        <Button type="button" variant="ghost" className="w-full" disabled={cancelling} onClick={cancel}>
+          Cancel request
+        </Button>
+      </div>
+    </Shell>
+  )
+}
+
+function RejectedScreen({ onCancelled, onContinue }: { onCancelled: () => void; onContinue: () => void }) {
+  const [busy, setBusy] = useState(false)
+  return (
+    <Shell stepKey="rejected">
+      <ScreenHeader
+        icon={NetworkIcon}
+        title="Head Office did not approve the request"
+        description="Check the facility number with Head Office, or ask for an activation code and try again. You can also carry on offline and connect later."
+      />
+      <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 shadow-xs">
+        <Button
+          type="button"
+          className="w-full"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true)
+            try {
+              await cancelConnection('onboarding')
+              onCancelled()
+            } catch {
+              t.error('Could not reset the request')
+              setBusy(false)
+            }
+          }}
+        >
+          Try again
+        </Button>
+        <Button type="button" variant="secondary" className="w-full" onClick={onContinue}>
+          Continue without Head Office
+        </Button>
+      </div>
+    </Shell>
+  )
+}
+
+function ConnectedScreen({ facilityName, onContinue }: { facilityName: string; onContinue: () => void }) {
+  return (
+    <Shell stepKey="connected">
+      <StepsProgress steps={connectSteps} current={3} />
+      <ScreenHeader
+        icon={CheckmarkCircle02Icon}
+        title={`Connected as ${facilityName}`}
+        description="This installation is linked to Head Office. Your records stay on this machine and Head Office receives updates in the background."
+      />
+      <Button type="button" className="w-full" onClick={onContinue}>
+        Continue setting up
+      </Button>
+    </Shell>
   )
 }

@@ -176,6 +176,7 @@ function ActivationScreen({ onBack }: { onBack: () => void }) {
               label="Activation code"
               placeholder="Paste the code here"
               icon={<HugeiconsIcon icon={ShieldKeyIcon} size={14} />}
+              autoComplete="off"
               autoFocus
             />
           )}
@@ -227,9 +228,9 @@ function WorkstationScreen({ onBack }: { onBack: () => void }) {
           form.handleSubmit()
         }}
       >
-        <form.AppField name="address">{(f) => <f.input label="Node address" placeholder="192.168.1.10:47921" autoFocus />}</form.AppField>
-        <form.AppField name="fingerprint">{(f) => <f.input label="Fingerprint" placeholder="AB:CD:…" />}</form.AppField>
-        <form.AppField name="code">{(f) => <f.input label="Enrolment code" placeholder="1234-5678" />}</form.AppField>
+        <form.AppField name="address">{(f) => <f.input label="Node address" placeholder="192.168.1.10:47921" autoComplete="url" autoFocus />}</form.AppField>
+        <form.AppField name="fingerprint">{(f) => <f.input label="Fingerprint" placeholder="AB:CD:…" autoComplete="off" />}</form.AppField>
+        <form.AppField name="code">{(f) => <f.input label="Enrolment code" placeholder="1234-5678" autoComplete="off" />}</form.AppField>
         <form.AppForm>
           <div className="*:w-full">
             <form.submit label={connect.isPending ? 'Connecting…' : 'Connect'} />

@@ -18,6 +18,7 @@ import {
   PropertyStep,
   SearchStep,
 } from './reception-steps'
+import { PhotosStep } from './photos-step'
 import type { ReceptionDraft } from './schema'
 
 function initialDraft(): ReceptionDraft {
@@ -35,6 +36,7 @@ function initialDraft(): ReceptionDraft {
     otherNames: '',
     nationalId: '',
     reference: '',
+    photos: { front: null, left: null, right: null },
     sex: '',
     dateOfBirth: '',
     nationality: '',
@@ -63,11 +65,15 @@ function initialDraft(): ReceptionDraft {
   }
 }
 
-const STEP_ORDER = ['instrument', 'person', 'search', 'property', 'contacts', 'health', 'placement', 'decision'] as const
+const STEP_ORDER = ['instrument', 'person', 'photos', 'search', 'property', 'contacts', 'health', 'placement', 'decision'] as const
 type StepId = (typeof STEP_ORDER)[number]
 
 function fullName(d: ReceptionDraft) {
   return [d.lastName.trim(), d.firstName.trim(), d.otherNames.trim()].filter(Boolean).join(', ')
+}
+
+function photoCount(d: ReceptionDraft) {
+  return [d.photos.front, d.photos.left, d.photos.right].filter(Boolean).length
 }
 
 function sentenceEntered(d: ReceptionDraft) {
@@ -119,6 +125,13 @@ export function ReceptionProcedure() {
       done: Boolean(draft.firstName.trim() && draft.lastName.trim()) && (draft.legalStatus !== 'convicted' || sentenceEntered(draft)),
       summary: name || null,
     },
+    {
+      id: 'photos',
+      label: 'Photos',
+      optional: true,
+      done: photoCount(draft) === 3,
+      summary: photoCount(draft) ? `${photoCount(draft)} of 3 taken` : null,
+    },
     { id: 'search', label: 'Search and condition', done: draft.searchDone, summary: draft.searchDone ? 'Search done' : null },
     { id: 'property', label: 'Property', optional: true, done: draft.property.some((p) => p.trim()), summary: draft.property.filter((p) => p.trim()).length ? `${draft.property.filter((p) => p.trim()).length} item(s)` : null },
     { id: 'contacts', label: 'Family and contacts', optional: true, done: draft.contacts.some((c) => c.name.trim()), summary: draft.contacts.filter((c) => c.name.trim()).length ? `${draft.contacts.filter((c) => c.name.trim()).length} contact(s)` : null },
@@ -160,7 +173,7 @@ export function ReceptionProcedure() {
       current={current}
       onSelect={(id) => setCurrent(id as StepId)}
       aside={
-        <div className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 text-xs">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border/60 px-3 py-2 text-xs">
           <span className="text-muted-foreground">Receiving</span>
           <span className="text-sm font-medium">{name || 'Name not entered yet'}</span>
           <div className="flex flex-wrap gap-1.5">
@@ -172,6 +185,7 @@ export function ReceptionProcedure() {
     >
       {current === 'instrument' && <InstrumentStep draft={draft} set={set} />}
       {current === 'person' && <PersonStep draft={draft} set={set} />}
+      {current === 'photos' && <PhotosStep draft={draft} set={set} />}
       {current === 'search' && <SearchStep draft={draft} set={set} />}
       {current === 'property' && <PropertyStep draft={draft} set={set} />}
       {current === 'contacts' && <ContactsStep draft={draft} set={set} />}

@@ -23,9 +23,13 @@ use uuid::Uuid;
 const VERIFICATION_CODE_TTL_MS: i64 = 24 * 60 * 60 * 1000;
 const PAIRING_CODE_TTL_MS: i64 = 24 * 60 * 60 * 1000;
 
-fn now_ms() -> i64 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64
-}
+use super::time::now_ms;
+
+pub const FACILITY_REGIONS: &[&str] = &[
+    "Southern", "Northern", "Kigezi", "Mid Central", "Central", "Kampala Extra", "Eastern", "North Central", "Mid Western",
+    "Mid Northern", "Mid Eastern", "South Western", "East Central", "North Eastern", "Iganga", "Western", "North Western",
+    "Kooki", "South Eastern",
+];
 
 fn hash_hex(value: &str) -> String {
     let mut hasher = Sha256::new();
@@ -57,19 +61,36 @@ pub struct Facility {
     pub status: String,
     pub verifying_officer_email: String,
     pub verification_code_plaintext: Option<String>,
+    pub verification_expires_at: Option<i64>,
     pub last_synced_at: Option<i64>,
     pub created_at: i64,
+    /// "Name (badge)" of the officer whose connection request was approved,
+    /// when the facility was connected through a request.
+    pub connected_by: Option<String>,
+    pub officer_count: i64,
+}
+
+macro_rules! facility_select {
+    ($tail:literal) => {
+        concat!(
+            "SELECT id, name, facility_number, location, region, head_officer_name, status,
+                    verifying_officer_email, verification_code_plaintext, verification_expires_at,
+                    last_synced_at, created_at,
+                    (SELECT r.requested_by_name || ' (' || r.requested_by_badge || ')'
+                       FROM facility_connection_requests r
+                      WHERE r.facility_id = facilities.id AND r.status = 'approved'
+                      ORDER BY r.created_at DESC LIMIT 1) AS connected_by,
+                    (SELECT COUNT(*) FROM facility_officers o WHERE o.facility_id = facilities.id) AS officer_count
+             FROM facilities ",
+            $tail
+        )
+    };
 }
 
 pub async fn list_facilities(pool: &SqlitePool) -> Result<Vec<Facility>, sqlx::Error> {
-    sqlx::query_as::<_, Facility>(
-        "SELECT id, name, facility_number, location, region, head_officer_name, status,
-                verifying_officer_email, verification_code_plaintext, last_synced_at, created_at
-         FROM facilities
-         ORDER BY created_at DESC",
-    )
-    .fetch_all(pool)
-    .await
+    sqlx::query_as::<_, Facility>(facility_select!("ORDER BY created_at DESC"))
+        .fetch_all(pool)
+        .await
 }
 
 #[derive(Debug, Deserialize)]
@@ -83,25 +104,71 @@ pub struct RegisterFacilityInput {
 }
 
 async fn get_facility_conn(conn: &mut SqliteConnection, id: &str) -> Result<Option<Facility>, sqlx::Error> {
-    sqlx::query_as::<_, Facility>(
-        "SELECT id, name, facility_number, location, region, head_officer_name, status,
-                verifying_officer_email, verification_code_plaintext, last_synced_at, created_at
-         FROM facilities WHERE id = ?",
-    )
-    .bind(id)
-    .fetch_optional(&mut *conn)
-    .await
+    sqlx::query_as::<_, Facility>(facility_select!("WHERE id = ?"))
+        .bind(id)
+        .fetch_optional(&mut *conn)
+        .await
 }
 
 async fn get_facility(pool: &SqlitePool, id: &str) -> Result<Option<Facility>, sqlx::Error> {
-    sqlx::query_as::<_, Facility>(
-        "SELECT id, name, facility_number, location, region, head_officer_name, status,
-                verifying_officer_email, verification_code_plaintext, last_synced_at, created_at
-         FROM facilities WHERE id = ?",
-    )
-    .bind(id)
+    sqlx::query_as::<_, Facility>(facility_select!("WHERE id = ?"))
+        .bind(id)
+        .fetch_optional(pool)
+        .await
+}
+
+/// Exact match on the facility number (any case) or the facility id. A
+/// revoked entry loses to a live one when a number was reused.
+pub async fn find_by_number_or_id(pool: &SqlitePool, key: &str) -> Result<Option<Facility>, sqlx::Error> {
+    let key = key.trim();
+    if key.is_empty() {
+        return Ok(None);
+    }
+    sqlx::query_as::<_, Facility>(facility_select!(
+        "WHERE facility_number = ? COLLATE NOCASE OR id = ? ORDER BY (status = 'revoked'), created_at LIMIT 1"
+    ))
+    .bind(key)
+    .bind(key)
     .fetch_optional(pool)
     .await
+}
+
+pub async fn number_taken(conn: &mut SqliteConnection, number: &str) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM facilities WHERE facility_number = ? COLLATE NOCASE AND status != 'revoked')")
+        .bind(number.trim())
+        .fetch_one(&mut *conn)
+        .await
+}
+
+/// Head Office adds a facility to its roster before the facility connects.
+/// The row is `pending_verification` with an unusable sync token; the fresh
+/// 8 digit code is the activation code the facility can present to connect
+/// without waiting for approval.
+pub async fn create_facility(conn: &mut SqliteConnection, actor: &Actor, input: RegisterFacilityInput) -> Result<Facility, sqlx::Error> {
+    let id = Uuid::new_v4().to_string();
+    let code = random_8_digit_code();
+    sqlx::query(
+        "INSERT INTO facilities
+            (id, name, facility_number, location, region, head_officer_name, status,
+             verification_code_hash, verification_expires_at, verification_code_plaintext,
+             verifying_officer_email, sync_token_hash)
+         VALUES (?, ?, ?, ?, ?, ?, 'pending_verification', ?, ?, ?, '', ?)",
+    )
+    .bind(&id)
+    .bind(input.name.trim())
+    .bind(input.facility_number.trim())
+    .bind(input.location.trim())
+    .bind(&input.region)
+    .bind(input.head_officer_name.trim())
+    .bind(hash_hex(&code))
+    .bind(now_ms() + VERIFICATION_CODE_TTL_MS)
+    .bind(&code)
+    .bind(hash_hex(&random_secret(32)))
+    .execute(&mut *conn)
+    .await?;
+    let created = get_facility_conn(conn, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
+    audit::record(conn, actor, AuditEntry::new("facility.created", "facility", Some(&id)).after(&created)).await?;
+    Ok(created)
 }
 
 /// This installation's own facility, resolved through its own
@@ -174,11 +241,22 @@ pub struct PeerSyncConfig {
     pub last_synced_at: Option<i64>,
     pub last_sync_status: Option<String>,
     pub last_error: Option<String>,
+    /// `none`, `pending`, `connected` or `rejected`. A facility registered
+    /// through the older pairing code path has no stored state and counts as
+    /// connected.
+    pub connection_state: String,
+    pub requested_by_badge: Option<String>,
+    pub requested_by_name: Option<String>,
+    pub facility_display_name: Option<String>,
+    pub roster_pushed_at: Option<i64>,
+    pub roster_count: Option<i64>,
 }
 
 pub async fn get_peer_sync_config(pool: &SqlitePool) -> Result<PeerSyncConfig, sqlx::Error> {
     sqlx::query_as::<_, PeerSyncConfig>(
-        "SELECT hq_hostname, facility_id, last_synced_at, last_sync_status, last_error
+        "SELECT hq_hostname, facility_id, last_synced_at, last_sync_status, last_error,
+                COALESCE(connection_state, CASE WHEN facility_id IS NOT NULL THEN 'connected' ELSE 'none' END) AS connection_state,
+                requested_by_badge, requested_by_name, facility_display_name, roster_pushed_at, roster_count
          FROM peer_sync_config WHERE id = 'default'",
     )
     .fetch_one(pool)
@@ -187,7 +265,7 @@ pub async fn get_peer_sync_config(pool: &SqlitePool) -> Result<PeerSyncConfig, s
 
 /// A high entropy random value, base64url encoded — the pairing secret and
 /// the sync token both come from here (24 and 32 bytes respectively).
-fn random_secret(bytes: usize) -> String {
+pub(crate) fn random_secret(bytes: usize) -> String {
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
     let mut buf = vec![0u8; bytes];
     OsRng.fill_bytes(&mut buf);
@@ -198,21 +276,19 @@ fn random_8_digit_code() -> String {
     format!("{:08}", OsRng.next_u32() % 100_000_000)
 }
 
-/// The public base a facility calls to reach this Head Office: its
-/// Cloudflare Tunnel hostname when configured, otherwise the local
-/// `hq_server.rs` port (the dev single-machine loop). Never a value the
-/// facility types by hand — it rides inside the pairing code itself.
-async fn hq_register_base(conn: &mut SqliteConnection) -> String {
-    let cloudflare: Option<(String, String)> = sqlx::query_as(
-        "SELECT station_name, domain FROM cloudflare_config WHERE id = 'default'",
-    )
-    .fetch_optional(&mut *conn)
-    .await
-    .ok()
-    .flatten();
-    match cloudflare {
-        Some((station, domain)) => format!("https://{station}.{domain}"),
-        None => "http://127.0.0.1:47923".to_string(),
+/// The base a facility calls to reach this Head Office: the tunnel's public
+/// hostname once a tunnel has actually been provisioned, otherwise the local
+/// network listener. Saving Cloudflare credentials alone does not make Head
+/// Office reachable, so it must not change what a pairing code points at.
+pub(crate) async fn hq_register_base(conn: &mut SqliteConnection) -> String {
+    let tunnel: Option<String> = sqlx::query_scalar("SELECT hostname FROM cloudflare_tunnel_state WHERE id = 'default'")
+        .fetch_optional(&mut *conn)
+        .await
+        .ok()
+        .flatten();
+    match tunnel {
+        Some(hostname) => format!("https://{hostname}"),
+        None => format!("http://127.0.0.1:{}", crate::api::network::PORT),
     }
 }
 
@@ -310,6 +386,10 @@ pub async fn register_peer(
         return Err(RegisterPeerError::Invalid);
     }
 
+    if find_by_number_or_id(pool, &input.facility_number).await?.is_some() {
+        return Err(RegisterPeerError::Invalid);
+    }
+
     let facility_id = Uuid::new_v4().to_string();
     let sync_token = random_secret(32);
     let sync_token_hash = hash_hex(&sync_token);
@@ -383,7 +463,8 @@ pub async fn save_peer_credentials(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "UPDATE peer_sync_config
-         SET hq_hostname = ?, facility_id = ?, sync_token = ?, last_sync_status = NULL, last_error = NULL
+         SET hq_hostname = ?, facility_id = ?, sync_token = ?, last_sync_status = NULL, last_error = NULL,
+             connection_state = 'connected', connection_request_id = NULL
          WHERE id = 'default'",
     )
     .bind(hostname)
@@ -440,10 +521,12 @@ impl From<sqlx::Error> for FacilityError {
 
 /// AC-5: an expired, still unverified code can be regenerated and resent
 /// without the facility re registering. Overwrites the previous code and
-/// expiry rather than allowing two codes to be valid at once.
+/// expiry rather than allowing two codes to be valid at once. An active
+/// facility can be issued a code too: it is the activation code a facility
+/// presents to reconnect (a reinstalled machine, a replaced computer).
 pub async fn resend_verification_code(conn: &mut SqliteConnection, actor: &Actor, facility_id: &str) -> Result<Facility, FacilityError> {
     let facility = get_facility_conn(conn, facility_id).await?.ok_or(FacilityError::NotFound)?;
-    if facility.status != "pending_verification" {
+    if facility.status == "revoked" {
         return Err(FacilityError::NotPending);
     }
 
@@ -462,7 +545,7 @@ pub async fn resend_verification_code(conn: &mut SqliteConnection, actor: &Actor
     .await?;
 
     let after = get_facility_conn(conn, facility_id).await?.ok_or(FacilityError::NotFound)?;
-    audit::record(conn, actor, AuditEntry::new("facility.verification_resent", "facility", Some(facility_id))).await?;
+    audit::record(conn, actor, AuditEntry::new("facility.activation_code_issued", "facility", Some(facility_id))).await?;
     Ok(after)
 }
 

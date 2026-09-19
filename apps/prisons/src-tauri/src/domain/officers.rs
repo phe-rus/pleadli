@@ -44,6 +44,9 @@ pub enum OfficerError {
     LastAdminGuard,
     NotFound,
     AlreadyInitialised,
+    HeadOfficeOnly,
+    CannotDeleteSelf,
+    InvalidPhoto,
 }
 
 impl fmt::Display for OfficerError {
@@ -88,6 +91,12 @@ impl From<OfficerError> for OfficerErrorPayload {
             OfficerError::AlreadyInitialised => {
                 ("ALREADY_INITIALISED", "This installation already has accounts.".to_string())
             }
+            OfficerError::HeadOfficeOnly => (
+                "DELETE_NOT_ALLOWED",
+                "Facility accounts are deactivated, never deleted, so every record still shows who acted. Deactivate this account instead.".to_string(),
+            ),
+            OfficerError::CannotDeleteSelf => ("CANNOT_DELETE_SELF", "You cannot delete the account you are signed in with.".to_string()),
+            OfficerError::InvalidPhoto => ("INVALID_PHOTO", "The photo must be a JPEG image under 200 KB.".to_string()),
         };
         OfficerErrorPayload { code: code.to_string(), message }
     }
@@ -103,14 +112,69 @@ pub struct Officer {
     pub is_admin: bool,
     pub active: bool,
     pub created_at: i64,
+    pub rank: Option<String>,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub photo_data: Option<String>,
+    pub posted_facility_id: Option<String>,
+    pub last_login_at: Option<i64>,
 }
 
-const SELECT_OFFICER_BY_ID: &str =
-    "SELECT id, badge_number, name, role, is_admin, active, created_at FROM officers WHERE id = ?";
-const SELECT_OFFICERS: &str =
-    "SELECT id, badge_number, name, role, is_admin, active, created_at FROM officers ORDER BY name";
+macro_rules! officer_select {
+    ($tail:literal) => {
+        concat!(
+            "SELECT id, badge_number, name, role, is_admin, active, created_at, rank, phone, email, photo_data, posted_facility_id,
+             (SELECT MAX(at) FROM audit_log WHERE action = 'auth.login' AND entity_type = 'officer' AND entity_id = officers.id) AS last_login_at
+             FROM officers ",
+            $tail
+        )
+    };
+}
 
-#[derive(Deserialize)]
+const SELECT_OFFICER_BY_ID: &str = officer_select!("WHERE id = ?");
+const SELECT_OFFICERS: &str = officer_select!("ORDER BY name");
+
+const MAX_PHOTO_CHARS: usize = 200 * 1024;
+
+/// The audit trail keeps who and what changed, never the photo itself.
+fn audit_snapshot(officer: &Officer) -> serde_json::Value {
+    let mut value = serde_json::to_value(officer).unwrap_or_default();
+    if let Some(object) = value.as_object_mut() {
+        let has_photo = object.get("photoData").is_some_and(|v| !v.is_null());
+        object.remove("photoData");
+        object.insert("hasPhoto".to_string(), serde_json::Value::Bool(has_photo));
+    }
+    value
+}
+
+fn clean(value: Option<String>) -> Option<String> {
+    value.map(|v| v.trim().to_string()).filter(|v| !v.is_empty())
+}
+
+fn clean_photo(value: Option<String>) -> Result<Option<String>, OfficerError> {
+    match value.filter(|v| !v.is_empty()) {
+        None => Ok(None),
+        Some(photo) if photo.starts_with("data:image/jpeg;base64,") && photo.len() <= MAX_PHOTO_CHARS => Ok(Some(photo)),
+        Some(_) => Err(OfficerError::InvalidPhoto),
+    }
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileInput {
+    #[serde(default)]
+    pub rank: Option<String>,
+    #[serde(default)]
+    pub phone: Option<String>,
+    #[serde(default)]
+    pub email: Option<String>,
+    #[serde(default)]
+    pub photo_data: Option<String>,
+    #[serde(default)]
+    pub posted_facility_id: Option<String>,
+}
+
+#[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateOfficerInput {
     pub badge_number: String,
@@ -119,6 +183,8 @@ pub struct CreateOfficerInput {
     pub role: String,
     #[serde(default)]
     pub is_admin: bool,
+    #[serde(flatten)]
+    pub profile: ProfileInput,
 }
 
 impl fmt::Debug for CreateOfficerInput {
@@ -133,7 +199,7 @@ impl fmt::Debug for CreateOfficerInput {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateOfficerInput {
     pub name: String,
@@ -142,6 +208,8 @@ pub struct UpdateOfficerInput {
     pub is_admin: bool,
     pub active: bool,
     pub password: Option<String>,
+    #[serde(flatten)]
+    pub profile: ProfileInput,
 }
 
 impl fmt::Debug for UpdateOfficerInput {
@@ -242,7 +310,7 @@ pub async fn create_first_admin(
     }
     let role = if is_head_office(conn).await? { "hq_admin" } else { "oic" };
     let actor = Actor::system("first launch");
-    insert_officer(conn, &actor, badge_number, name, role, true, password, "account.bootstrap").await
+    insert_officer(conn, &actor, badge_number, name, role, true, password, ProfileInput::default(), "account.bootstrap").await
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -254,6 +322,7 @@ async fn insert_officer(
     role: &str,
     is_admin: bool,
     password: &str,
+    profile: ProfileInput,
     action: &str,
 ) -> Result<Officer, OfficerError> {
     if !authz::is_known_role(role, is_head_office(conn).await?) {
@@ -263,14 +332,23 @@ async fn insert_officer(
     let badge_number = normalize_badge(badge_number);
     let password_hash = hash_password(password)?;
     let is_admin = effective_admin(role, is_admin);
+    let photo = clean_photo(profile.photo_data)?;
 
-    sqlx::query("INSERT INTO officers (id, badge_number, name, role, is_admin, password_hash) VALUES (?, ?, ?, ?, ?, ?)")
+    sqlx::query(
+        "INSERT INTO officers (id, badge_number, name, role, is_admin, password_hash, rank, phone, email, photo_data, posted_facility_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
         .bind(&id)
         .bind(&badge_number)
         .bind(name)
         .bind(role)
         .bind(is_admin)
         .bind(&password_hash)
+        .bind(clean(profile.rank))
+        .bind(clean(profile.phone))
+        .bind(clean(profile.email))
+        .bind(&photo)
+        .bind(clean(profile.posted_facility_id))
         .execute(&mut *conn)
         .await
         .map_err(|e| {
@@ -282,12 +360,12 @@ async fn insert_officer(
         })?;
 
     let officer = get_officer_conn(conn, &id).await?.ok_or(OfficerError::NotFound)?;
-    audit::record(conn, actor, AuditEntry::new(action, "officer", Some(&id)).after(&officer)).await?;
+    audit::record(conn, actor, AuditEntry::new(action, "officer", Some(&id)).after(&audit_snapshot(&officer))).await?;
     Ok(officer)
 }
 
 pub async fn create_officer(conn: &mut SqliteConnection, actor: &Actor, input: CreateOfficerInput) -> Result<Officer, OfficerError> {
-    insert_officer(conn, actor, &input.badge_number, &input.name, &input.role, input.is_admin, &input.password, "account.create").await
+    insert_officer(conn, actor, &input.badge_number, &input.name, &input.role, input.is_admin, &input.password, input.profile, "account.create").await
 }
 
 pub async fn update_officer(
@@ -318,31 +396,49 @@ pub async fn update_officer(
         }
     }
 
+    let photo = clean_photo(input.profile.photo_data)?;
+    let (rank, phone, email, posted) =
+        (clean(input.profile.rank), clean(input.profile.phone), clean(input.profile.email), clean(input.profile.posted_facility_id));
+
     match input.password.as_deref() {
         Some(password) => {
             let password_hash = hash_password(password)?;
             sqlx::query(
                 "UPDATE officers SET name = ?, role = ?, is_admin = ?, active = ?, password_hash = ?,
-                        failed_attempts = 0, locked_until = NULL WHERE id = ?",
+                        failed_attempts = 0, locked_until = NULL,
+                        rank = ?, phone = ?, email = ?, photo_data = ?, posted_facility_id = ? WHERE id = ?",
             )
             .bind(&input.name)
             .bind(&input.role)
             .bind(is_admin)
             .bind(input.active)
             .bind(&password_hash)
+            .bind(&rank)
+            .bind(&phone)
+            .bind(&email)
+            .bind(&photo)
+            .bind(&posted)
             .bind(id)
             .execute(&mut *conn)
             .await?;
         }
         None => {
-            sqlx::query("UPDATE officers SET name = ?, role = ?, is_admin = ?, active = ? WHERE id = ?")
-                .bind(&input.name)
-                .bind(&input.role)
-                .bind(is_admin)
-                .bind(input.active)
-                .bind(id)
-                .execute(&mut *conn)
-                .await?;
+            sqlx::query(
+                "UPDATE officers SET name = ?, role = ?, is_admin = ?, active = ?,
+                        rank = ?, phone = ?, email = ?, photo_data = ?, posted_facility_id = ? WHERE id = ?",
+            )
+            .bind(&input.name)
+            .bind(&input.role)
+            .bind(is_admin)
+            .bind(input.active)
+            .bind(&rank)
+            .bind(&phone)
+            .bind(&email)
+            .bind(&photo)
+            .bind(&posted)
+            .bind(id)
+            .execute(&mut *conn)
+            .await?;
         }
     }
 
@@ -358,8 +454,37 @@ pub async fn update_officer(
 
     let updated = get_officer_conn(conn, id).await?.ok_or(OfficerError::NotFound)?;
     let action = if input.password.is_some() { "account.update_with_password_change" } else { "account.update" };
-    audit::record(conn, actor, AuditEntry::new(action, "officer", Some(id)).before(&existing).after(&updated)).await?;
+    audit::record(conn, actor, AuditEntry::new(action, "officer", Some(id)).before(&audit_snapshot(&existing)).after(&audit_snapshot(&updated))).await?;
     Ok(updated)
+}
+
+/// Head Office only: a facility keeps deactivate-only accounts. The account's
+/// sessions go with it (`sessions.officer_id` is a foreign key); the audit
+/// trail keeps the badge and name it recorded at the time, so attribution of
+/// everything the officer ever did survives.
+pub async fn delete_officer(conn: &mut SqliteConnection, actor: &Actor, id: &str) -> Result<(), OfficerError> {
+    if !is_head_office(conn).await? {
+        return Err(OfficerError::HeadOfficeOnly);
+    }
+    if actor.officer_id.as_deref() == Some(id) {
+        return Err(OfficerError::CannotDeleteSelf);
+    }
+    let existing = get_officer_conn(conn, id).await?.ok_or(OfficerError::NotFound)?;
+
+    if existing.is_admin && existing.active {
+        let other_admin: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM officers WHERE is_admin = 1 AND active = 1 AND id != ?)")
+            .bind(id)
+            .fetch_one(&mut *conn)
+            .await?;
+        if !other_admin {
+            return Err(OfficerError::LastAdminGuard);
+        }
+    }
+
+    sqlx::query("DELETE FROM sessions WHERE officer_id = ?").bind(id).execute(&mut *conn).await?;
+    sqlx::query("DELETE FROM officers WHERE id = ?").bind(id).execute(&mut *conn).await?;
+    audit::record(conn, actor, AuditEntry::new("account.delete", "officer", Some(id)).before(&audit_snapshot(&existing))).await?;
+    Ok(())
 }
 
 #[derive(FromRow)]
@@ -449,14 +574,38 @@ pub async fn ensure_dev_account(pool: &SqlitePool, head_office: bool) -> Result<
     } else {
         ("DEV-FAC", "Development Officer in Charge", "oic")
     };
-    let exists: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM officers WHERE badge_number = ?)")
-        .bind(badge)
-        .fetch_one(pool)
-        .await?;
-    if !exists {
-        let mut tx = crate::db::begin_write(pool).await?;
-        insert_officer(&mut tx, &Actor::system("development"), badge, name, role, true, PASSWORD, "account.dev_seed").await?;
-        tx.commit().await?;
+    let existing: Option<(String, String, bool, bool, String)> =
+        sqlx::query_as("SELECT id, role, is_admin, active, password_hash FROM officers WHERE badge_number = ?")
+            .bind(badge)
+            .fetch_optional(pool)
+            .await?;
+    let actor = Actor::system("development");
+    match existing {
+        None => {
+            let mut tx = crate::db::begin_write(pool).await?;
+            insert_officer(&mut tx, &actor, badge, name, role, true, PASSWORD, ProfileInput::default(), "account.dev_seed").await?;
+            tx.commit().await?;
+        }
+        // The dev account is only useful while it can sign in with the known
+        // password and holds the role it is named for. Editing it away (for
+        // example to an administrator role with no record access) would
+        // otherwise strand the installation, so restore it through the normal
+        // audited update.
+        Some((id, current_role, is_admin, active, hash)) => {
+            if current_role != role || !is_admin || !active || !verify_password(PASSWORD, &hash) {
+                let mut tx = crate::db::begin_write(pool).await?;
+                let input = UpdateOfficerInput {
+                    name: name.to_string(),
+                    role: role.to_string(),
+                    is_admin: true,
+                    active: true,
+                    password: Some(PASSWORD.to_string()),
+                    profile: ProfileInput::default(),
+                };
+                update_officer(&mut tx, &actor, &id, input).await?;
+                tx.commit().await?;
+            }
+        }
     }
     Ok((badge.to_string(), PASSWORD.to_string()))
 }
@@ -507,6 +656,7 @@ mod tests {
                 password: "another-password".into(),
                 role: "records".into(),
                 is_admin: false,
+                profile: ProfileInput::default(),
             },
         )
         .await
@@ -531,7 +681,7 @@ mod tests {
             &mut tx,
             &actor,
             &admin.id,
-            UpdateOfficerInput { name: admin.name.clone(), role: "oic".into(), is_admin: false, active: true, password: None },
+            UpdateOfficerInput { name: admin.name.clone(), role: "oic".into(), is_admin: false, active: true, password: None, profile: ProfileInput::default() },
         )
         .await;
         assert!(matches!(result, Err(OfficerError::LastAdminGuard)));

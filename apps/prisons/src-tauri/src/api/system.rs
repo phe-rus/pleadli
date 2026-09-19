@@ -15,7 +15,8 @@ use crate::domain::backup::{self, BackupConfig, BackupInfo, BackupSummary, SaveB
 use crate::domain::authz::{perm, Actor};
 use crate::domain::facilities::{self, PeerSyncConfig};
 use crate::domain::nodeconfig::{self, ConnectError, Environment};
-use crate::domain::peer::{self, PairInput, PairResult};
+use crate::domain::connection::FacilityLookup;
+use crate::domain::peer::{self, ConnectFacilityInput, ConnectResult, PairError, PairInput, PairResult};
 use crate::domain::session::{self, HqConfig};
 use crate::domain::sync::{self, SyncRunResult};
 use crate::node::NodeRef;
@@ -32,7 +33,16 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .post("/api/system/onboarding/activate", Need::Onboarding, activate)
         .post("/api/system/onboarding/pair", Need::Onboarding, pair_first_launch)
         .get("/api/system/network/peer", Need::Session, get_peer)
+        .post("/api/system/onboarding/facility-lookup", Need::Onboarding, lookup_first_launch)
+        .post("/api/system/onboarding/connect-facility", Need::Onboarding, connect_first_launch)
+        .post("/api/system/onboarding/connection/refresh", Need::Onboarding, refresh_first_launch)
+        .post("/api/system/onboarding/connection/cancel", Need::Onboarding, cancel_first_launch)
         .post("/api/system/network/pair", Need::Perm(perm::NODE_MANAGE), pair_later)
+        .post("/api/system/network/facility-lookup", Need::Perm(perm::NODE_MANAGE), lookup_later)
+        .post("/api/system/network/connect-facility", Need::Perm(perm::NODE_MANAGE), connect_later)
+        .post("/api/system/network/connection/refresh", Need::Perm(perm::NODE_MANAGE), refresh_later)
+        .post("/api/system/network/connection/cancel", Need::Perm(perm::NODE_MANAGE), cancel_later)
+        .get("/api/system/network/reachability", Need::Session, reachability)
         .post("/api/system/network/sync-now", Need::Perm(perm::NODE_MANAGE), sync_now)
         .get("/api/system/environment", Need::Session, environment)
         .put("/api/system/node-mode", Need::Perm(perm::NODE_MANAGE), set_node_mode)
@@ -78,6 +88,9 @@ struct SystemState {
     config: HqConfig,
     bootstrap: bool,
     paired: bool,
+    /// `none`, `pending`, `connected` or `rejected`: where this installation
+    /// stands with Head Office.
+    connection: String,
     api_level: u32,
 }
 
@@ -85,7 +98,7 @@ async fn state(State(node): State<NodeRef>) -> Result<Json<SystemState>, ApiErro
     let config = session::get_hq_config(&node.pool).await?;
     let bootstrap = crate::domain::officers::is_bootstrap(&node.pool).await?;
     let peer = facilities::get_peer_sync_config(&node.pool).await?;
-    Ok(Json(SystemState { config, bootstrap, paired: peer.facility_id.is_some(), api_level: API_LEVEL }))
+    Ok(Json(SystemState { config, bootstrap, paired: peer.connection_state == "connected" && peer.facility_id.is_some(), connection: peer.connection_state, api_level: API_LEVEL }))
 }
 
 #[derive(Deserialize)]
@@ -128,6 +141,96 @@ async fn pair_later(
     Json(input): Json<PairInput>,
 ) -> Result<Json<PairResult>, ApiError> {
     Ok(Json(peer::pair_with_head_office(&node.pool, &actor, input).await?))
+}
+
+/// A refusal from Head Office on the connect path is about the facility
+/// number or activation code, not a pairing code.
+fn connect_error(err: PairError) -> ApiError {
+    match err {
+        PairError::Rejected => ApiError::new(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "CONNECTION_NOT_ACCEPTED",
+            "Head Office did not accept this. Check the facility number, and that the activation code (if you used one) is current.",
+        ),
+        other => other.into(),
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LookupBody {
+    hq_address: String,
+    facility_number: String,
+}
+
+async fn lookup(body: LookupBody) -> Result<Json<Option<FacilityLookup>>, ApiError> {
+    Ok(Json(peer::lookup_facility(&body.hq_address, &body.facility_number).await.map_err(connect_error)?))
+}
+
+async fn require_bootstrap(node: &NodeRef) -> Result<(), ApiError> {
+    if crate::domain::officers::is_bootstrap(&node.pool).await? {
+        Ok(())
+    } else {
+        Err(ApiError::conflict("ALREADY_INITIALISED", "This installation is already set up."))
+    }
+}
+
+async fn lookup_first_launch(State(node): State<NodeRef>, Json(body): Json<LookupBody>) -> Result<Json<Option<FacilityLookup>>, ApiError> {
+    require_bootstrap(&node).await?;
+    lookup(body).await
+}
+
+async fn lookup_later(Json(body): Json<LookupBody>) -> Result<Json<Option<FacilityLookup>>, ApiError> {
+    lookup(body).await
+}
+
+async fn connect_first_launch(State(node): State<NodeRef>, Json(input): Json<ConnectFacilityInput>) -> Result<Json<ConnectResult>, ApiError> {
+    require_bootstrap(&node).await?;
+    Ok(Json(peer::connect_facility(&node.pool, &Actor::system("first launch"), input).await.map_err(connect_error)?))
+}
+
+async fn connect_later(
+    State(node): State<NodeRef>,
+    axum::Extension(actor): axum::Extension<Actor>,
+    Json(input): Json<ConnectFacilityInput>,
+) -> Result<Json<ConnectResult>, ApiError> {
+    Ok(Json(peer::connect_facility(&node.pool, &actor, input).await.map_err(connect_error)?))
+}
+
+async fn refresh(node: &NodeRef) -> Result<Json<PeerSyncConfig>, ApiError> {
+    peer::refresh_connection(&node.pool).await?;
+    Ok(Json(facilities::get_peer_sync_config(&node.pool).await?))
+}
+
+async fn refresh_first_launch(State(node): State<NodeRef>) -> Result<Json<PeerSyncConfig>, ApiError> {
+    require_bootstrap(&node).await?;
+    refresh(&node).await
+}
+
+async fn refresh_later(State(node): State<NodeRef>) -> Result<Json<PeerSyncConfig>, ApiError> {
+    refresh(&node).await
+}
+
+async fn cancel_first_launch(State(node): State<NodeRef>) -> Result<StatusCode, ApiError> {
+    require_bootstrap(&node).await?;
+    peer::cancel_connection(&node.pool, &Actor::system("first launch")).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn cancel_later(State(node): State<NodeRef>, axum::Extension(actor): axum::Extension<Actor>) -> Result<StatusCode, ApiError> {
+    peer::cancel_connection(&node.pool, &actor).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Reachability {
+    reachable: bool,
+    checked_at: i64,
+}
+
+async fn reachability(State(node): State<NodeRef>) -> Json<Reachability> {
+    Json(Reachability { reachable: peer::hq_reachable(&node.pool).await, checked_at: crate::domain::time::now_ms() })
 }
 
 async fn get_peer(State(node): State<NodeRef>) -> Result<Json<PeerSyncConfig>, ApiError> {

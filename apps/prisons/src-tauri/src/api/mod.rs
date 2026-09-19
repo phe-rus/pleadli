@@ -5,6 +5,7 @@
 //! * `/api/auth/**`     identity: sign-in, session, accounts, devices
 //! * `/api/prisons/**`  the facility domain
 //! * `/api/hq/**`       the Head Office domain
+//! * `/api/capture/**`  phone photo links, authenticated by the link token
 //! * `/api/system/**`   liveness, first-launch state, node operations, audit
 //! * `/api/network/v1/**` inter-installation exchange (own router and
 //!   listener, see `network.rs`; never mounted here)
@@ -15,10 +16,12 @@
 //! pass the same guard.
 
 pub mod auth;
+pub mod capture;
 pub mod error;
 pub mod guard;
 pub mod hq;
 pub mod network;
+pub mod numbering;
 pub mod prisons;
 pub mod recovery;
 pub mod system;
@@ -59,6 +62,8 @@ pub fn route_table(node: NodeRef) -> RouteTable {
         .merge(auth::routes(node.clone()))
         .merge(prisons::routes(node.clone()))
         .merge(hq::routes(node.clone()))
+        .merge(numbering::routes(node.clone()))
+        .merge(capture::routes(node.clone()))
         .merge(system::routes(node))
 }
 

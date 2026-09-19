@@ -3,8 +3,9 @@ import { useFacilities, facilitiesOptions } from '@/features/facilities'
 import { todayOptions } from '@/features/obligations'
 import { TodayView } from '@/features/today'
 import { usePendingFacilityAlerts } from '@/hooks/use-pending-facility-alerts'
-import { useHqConfig } from '@/features/session'
-import { ArrowRight01Icon, NetworkIcon, PauseIcon, CheckmarkCircle02Icon, Clock01Icon } from '@hugeicons/core-free-icons'
+import { officerRoleLabel } from '@/features/officers'
+import { useHqConfig, usePermissions } from '@/features/session'
+import { ArrowRight01Icon, NetworkIcon, PauseIcon, CheckmarkCircle02Icon, Clock01Icon, ShieldKeyIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Badge } from '@pleadli/ui/badge'
 import { buttonVariants } from '@pleadli/ui/button'
@@ -30,8 +31,35 @@ export const Route = createFileRoute('/_public/')({
  * than reusing one dashboard for both. */
 function RouteComponent() {
   const { data: hqConfig, isLoading } = useHqConfig()
+  const { can, session } = usePermissions()
   if (isLoading) return null
-  return hqConfig?.isHeadOffice ? <HqOverview /> : <TodayView />
+  if (hqConfig?.isHeadOffice) return <HqOverview />
+  if (session && !can('prisoner.read')) return <NoRecordAccess role={session.officer.role} />
+  return <TodayView />
+}
+
+/** An administrator role holds no record access by design (administering
+ * accounts never implies reading prisoner records), so the facility's daily
+ * view has nothing it may show. */
+function NoRecordAccess({ role }: { role: string }) {
+  return (
+    <article className="container flex flex-col gap-5 pt-5 pb-20">
+      <section className="flex flex-col gap-1">
+        <h1>Today</h1>
+        <p className="md:max-w-lg">This account can administer the facility but cannot open prisoner records.</p>
+      </section>
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-16 text-center text-muted-foreground">
+        <HugeiconsIcon icon={ShieldKeyIcon} size={20} />
+        <p className="max-w-sm text-sm">
+          The {officerRoleLabel(role).toLowerCase()} role manages accounts, workstations and the node. Sign in with an Officer in charge,
+          Officer or Records account to work with records.
+        </p>
+        <Link to="/officers" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+          Manage accounts
+        </Link>
+      </div>
+    </article>
+  )
 }
 
 /**
@@ -105,7 +133,7 @@ function HqOverview() {
               <h3 className="text-sm font-medium">No facilities paired yet</h3>
               <p className="max-w-sm text-xs text-muted-foreground">
                 Generating a pairing code for a new facility, and reviewing its email verification, are the next slice
-                of this build — not available yet.
+                of this build, not available yet.
               </p>
             </div>
           </CardContent>

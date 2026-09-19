@@ -214,3 +214,95 @@
   --color-node-isolated: var(--node-isolated);
   --color-security-badge: var(--security-badge);
 }
+
+/* ---------- Page rhythm ----------
+   Every route is one <article class="page"> made of a <header class="page-header">
+   followed by <section class="page-section"> blocks. Spacing lives here, once.
+   Use `page page-narrow` for reading-width pages (procedures, forms). */
+@utility page {
+  width: 100%;
+  max-width: var(--page-max, 90rem);
+  margin-inline: auto;
+  padding-inline: 1rem;
+  padding-block: 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: page-in 160ms ease-out;
+
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+    padding-block-start: 1.5rem;
+  }
+
+  @media (width >= 90rem) {
+    padding-inline: 2rem;
+  }
+}
+
+@utility page-narrow {
+  --page-max: 52rem;
+}
+
+@utility page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+
+  & > :first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  & > :first-child p {
+    max-width: 65ch;
+  }
+}
+
+@utility page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@utility page-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+
+  & h2 {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+}
+
+@utility section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

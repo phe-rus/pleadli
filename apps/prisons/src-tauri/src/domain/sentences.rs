@@ -241,6 +241,7 @@ mod tests {
             pending_document_type: None,
             notes: None,
             created_at: admitted_at,
+            prisoner_number: None,
         }
     }
 

@@ -28,7 +28,7 @@ export function BackupsPanel() {
   const { config, backups } = data
 
   return (
-    <div className="flex flex-col gap-6 md:max-w-2xl">
+    <div className="flex flex-col gap-6 md:max-w-none">
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">

@@ -1,7 +1,7 @@
 import { AddRecordPanel } from "@/components/add-record-panel"
 import { CommandMenu } from "@/components/command-menu"
 import { DevRoleSwitch } from "@/components/dev-role-switch"
-import { useHqConfig } from "@/features/session"
+import { useHqConfig, usePermissions } from "@/features/session"
 import { AddCircleIcon, PanelLeftDashedIcon, PanelRightDashedIcon, Search } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button, buttonVariants } from "@pleadli/ui/button"
@@ -21,18 +21,21 @@ export const Headers = () => {
     // 0001-head-office-peer-sync-network/0003-sync-protocol-and-head-
     // office-management.md, AC-5). Its own officer creation lives on
     // `/officers` instead of this global panel.
-    const canAddRecords = !hqConfig?.isHeadOffice
+    const { can, session } = usePermissions()
+    // Until the session loads nothing is hidden; the node refuses either way.
+    const canAddRecords = !hqConfig?.isHeadOffice && (!session || can('prisoner.read'))
+    const canSearch = !session || can('prisoner.read') || can('hq.locate')
 
     useEffect(() => {
         const handler = (event: KeyboardEvent) => {
-            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+            if (canSearch && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
                 event.preventDefault()
                 setCommandOpen((prev) => !prev)
             }
         }
         window.addEventListener('keydown', handler)
         return () => window.removeEventListener('keydown', handler)
-    }, [])
+    }, [canSearch])
 
     return (
         <header
@@ -60,17 +63,21 @@ export const Headers = () => {
                 </div>
 
                 <nav data-tauri-drag-region className='flex items-center gap-1'>
-                    <button
-                        type="button"
-                        onClick={() => setCommandOpen(true)}
-                        className={cn(buttonVariants({ size: 'icon-sm', variant: 'ghost' }))}
-                        aria-label="Search (Ctrl+K)"
-                        title="Search (Ctrl+K)"
-                    >
-                        <HugeiconsIcon icon={Search} />
-                    </button>
+                    {canSearch && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setCommandOpen(true)}
+                                className={cn(buttonVariants({ size: 'icon-sm', variant: 'ghost' }))}
+                                aria-label="Search (Ctrl+K)"
+                                title="Search (Ctrl+K)"
+                            >
+                                <HugeiconsIcon icon={Search} />
+                            </button>
 
-                    <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} />
+                            <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} />
+                        </>
+                    )}
 
                     {canAddRecords && (
                         <AddRecordPanel

@@ -32,6 +32,10 @@ export type SidebarNavItem = {
    * from Head Office; a facility installation has no other facility to
    * manage. */
   hqOnly?: boolean;
+  /** Shown only to an officer holding at least one of these permissions,
+   * matching what the node requires for the route (`api/prisons.rs`). A
+   * courtesy: the node still refuses the call regardless. */
+  requires?: readonly string[];
 }
 
 /** Facility navigation follows the work, Head Office navigation follows
@@ -46,6 +50,7 @@ export const prisonsNav: readonly SidebarNavItem[] = [
     to: '/',
     exact: true,
     facilityOnly: true,
+    requires: ['prisoner.read'],
   },
   {
     icon: DashboardBrowsingIcon,
@@ -58,6 +63,7 @@ export const prisonsNav: readonly SidebarNavItem[] = [
     icon: Search01Icon,
     label: 'Search',
     to: '/search',
+    requires: ['prisoner.read', 'hq.locate'],
   },
   {
     icon: NetworkIcon,
@@ -70,32 +76,36 @@ export const prisonsNav: readonly SidebarNavItem[] = [
     label: 'Movements',
     to: '/movements',
     facilityOnly: true,
+    requires: ['prisoner.read'],
   },
   {
     icon: GavelIcon,
     label: 'Legal',
     to: '/legal',
     facilityOnly: true,
+    requires: ['prisoner.read'],
   },
   {
     icon: PrisonerIcon,
     label: 'Population',
     to: '/prisoners',
     facilityOnly: true,
+    requires: ['prisoner.read'],
   },
   {
     icon: HandshakeIcon,
     label: 'Care and contact',
     facilityOnly: true,
     children: [
-      { icon: HandshakeIcon, label: 'Visits', to: '/visits' },
-      { icon: Message01Icon, label: 'Requests and grievances', to: '/requests' },
+      { icon: HandshakeIcon, label: 'Visits', to: '/visits', requires: ['prisoner.read'] },
+      { icon: Message01Icon, label: 'Requests and grievances', to: '/requests', requires: ['prisoner.read'] },
     ],
   },
   {
     icon: FileEditIcon,
     label: 'Reports',
     to: '/reports',
+    requires: ['report.read', 'hq.reports'],
   },
   {
     icon: UserGroupIcon,
@@ -108,3 +118,20 @@ export const prisonsNav: readonly SidebarNavItem[] = [
     to: '/settings',
   },
 ] as const
+
+/** Routes that are not in the sidebar but read the same records. */
+const unlistedRequires: Record<string, readonly string[]> = {
+  '/procedures': ['prisoner.read'],
+}
+
+/** The permissions of which an officer must hold at least one to open
+ * `pathname`, or `undefined` when any signed-in officer may. Today (`/`) is
+ * left out: it explains a missing permission itself instead of redirecting. */
+export function permissionsForPath(pathname: string): readonly string[] | undefined {
+  const flat = prisonsNav.flatMap((item) => [item, ...(item.children ?? [])])
+  const entries: [string, readonly string[]][] = [
+    ...flat.flatMap((item): [string, readonly string[]][] => (item.to && item.to !== '/' && item.requires ? [[item.to, item.requires]] : [])),
+    ...Object.entries(unlistedRequires),
+  ]
+  return entries.find(([to]) => pathname === to || pathname.startsWith(`${to}/`))?.[1]
+}

@@ -175,6 +175,7 @@ mod tests {
                 password: "second-password".into(),
                 role: "oic".into(),
                 is_admin: true,
+                profile: officers::ProfileInput::default(),
             },
         )
         .await
@@ -189,7 +190,7 @@ mod tests {
             &mut tx,
             &actor,
             &second.id,
-            officers::UpdateOfficerInput { name: "Second".into(), role: "oic".into(), is_admin: true, active: false, password: None },
+            officers::UpdateOfficerInput { name: "Second".into(), role: "oic".into(), is_admin: true, active: false, password: None, profile: officers::ProfileInput::default() },
         )
         .await
         .unwrap();

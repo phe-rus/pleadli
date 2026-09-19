@@ -1,4 +1,6 @@
 export { OfficerForm } from './officer-form'
+export { OfficerAvatar } from './officer-avatar'
+export { OfficerProfile, FacilityOfficerProfile } from './officer-profile'
 export * from './data'
 export * from './queries'
 export * from './schema'

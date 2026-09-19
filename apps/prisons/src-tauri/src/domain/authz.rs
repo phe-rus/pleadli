@@ -28,6 +28,7 @@ pub mod perm {
     pub const DOCUMENT_WRITE: &str = "document.write";
     pub const DOCUMENT_VOID: &str = "document.void";
     pub const REPORT_READ: &str = "report.read";
+    pub const REPORT_GENERATE: &str = "report.generate";
 
     pub const ACCOUNTS_MANAGE: &str = "accounts.manage";
     pub const DEVICES_MANAGE: &str = "devices.manage";
@@ -72,6 +73,7 @@ const FACILITY_ROUTINE: &[&str] = &[
     DOCUMENT_READ,
     DOCUMENT_WRITE,
     REPORT_READ,
+    REPORT_GENERATE,
 ];
 
 const HQ_WORKING: &[&str] = &[
@@ -82,6 +84,7 @@ const HQ_WORKING: &[&str] = &[
     HQ_DECISIONS,
     HQ_DIRECTIVES,
     HQ_REPORTS,
+    REPORT_GENERATE,
 ];
 
 /// Permissions granted by a role template. `is_admin` adds account, device,
@@ -110,6 +113,7 @@ pub fn role_permissions(role: &str, is_admin: bool) -> BTreeSet<&'static str> {
             DOCUMENT_READ,
             DOCUMENT_WRITE,
             REPORT_READ,
+            REPORT_GENERATE,
         ]),
         // Administration only; no access to records by default.
         "facility_admin" => {}

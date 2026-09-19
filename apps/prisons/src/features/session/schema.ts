@@ -10,6 +10,7 @@ export const systemStateSchema = z.object({
   activatedAt: z.number().nullable(),
   bootstrap: z.boolean(),
   paired: z.boolean(),
+  connection: z.enum(['none', 'pending', 'connected', 'rejected']),
   apiLevel: z.number(),
 })
 

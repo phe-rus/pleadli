@@ -40,6 +40,24 @@ export function SignInGate({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+const LAST_BADGE_KEY = 'prisons.lastBadge'
+
+function rememberedBadge() {
+  try {
+    return localStorage.getItem(LAST_BADGE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function rememberBadge(badgeNumber: string) {
+  try {
+    localStorage.setItem(LAST_BADGE_KEY, badgeNumber.trim())
+  } catch {
+    // Remembering the badge is a convenience only.
+  }
+}
+
 function BootstrapScreen({ headOffice }: { headOffice: boolean }) {
   const bootstrap = useBootstrapFirstAccount()
   const form = useAppForm({
@@ -47,6 +65,7 @@ function BootstrapScreen({ headOffice }: { headOffice: boolean }) {
     onSubmit: async ({ value }) => {
       try {
         await bootstrap.mutateAsync(value)
+        rememberBadge(value.badgeNumber)
       } catch (error) {
         t.error('Could not create the account', { description: error instanceof ApiError ? error.message : 'Please try again.' })
       }
@@ -72,9 +91,9 @@ function BootstrapScreen({ headOffice }: { headOffice: boolean }) {
             form.handleSubmit()
           }}
         >
-          <form.AppField name="badgeNumber">{(f) => <f.input label="Badge number" autoFocus />}</form.AppField>
-          <form.AppField name="name">{(f) => <f.input label="Full name" />}</form.AppField>
-          <form.AppField name="password">{(f) => <f.input type="password" label="Password" />}</form.AppField>
+          <form.AppField name="badgeNumber">{(f) => <f.input label="Badge number" autoComplete="username" autoFocus />}</form.AppField>
+          <form.AppField name="name">{(f) => <f.input label="Full name" autoComplete="name" />}</form.AppField>
+          <form.AppField name="password">{(f) => <f.input type="password" label="Password" autoComplete="new-password" />}</form.AppField>
           <form.AppForm>
             <div className="*:w-full">
               <form.submit label="Create account" />
@@ -89,10 +108,11 @@ function BootstrapScreen({ headOffice }: { headOffice: boolean }) {
 function SignInScreen({ headOffice }: { headOffice: boolean }) {
   const signIn = useSignIn()
   const form = useAppForm({
-    defaultValues: { badgeNumber: '', password: '' },
+    defaultValues: { badgeNumber: rememberedBadge(), password: '' },
     onSubmit: async ({ value }) => {
       try {
         await signIn.mutateAsync(value)
+        rememberBadge(value.badgeNumber)
       } catch (error) {
         t.error('Could not sign in', {
           description: error instanceof ApiError ? error.message : 'Check your badge number and password.',
@@ -116,8 +136,8 @@ function SignInScreen({ headOffice }: { headOffice: boolean }) {
             form.handleSubmit()
           }}
         >
-          <form.AppField name="badgeNumber">{(f) => <f.input label="Badge number" autoFocus />}</form.AppField>
-          <form.AppField name="password">{(f) => <f.input type="password" label="Password" />}</form.AppField>
+          <form.AppField name="badgeNumber">{(f) => <f.input label="Badge number" autoComplete="username" autoFocus={!rememberedBadge()} />}</form.AppField>
+          <form.AppField name="password">{(f) => <f.input type="password" label="Password" autoComplete="current-password" autoFocus={Boolean(rememberedBadge())} />}</form.AppField>
           <form.AppForm>
             <div className="*:w-full">
               <form.submit label="Sign in" />

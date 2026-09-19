@@ -23,20 +23,26 @@ type ProcedureShellProps = {
   steps: readonly ProcedureStep[]
   current: string
   onSelect: (id: string) => void
-  /** Shown under the step list: the person, flags, anything that must stay in view. */
+  /** Shown as a slim summary bar under the steps: the person, flags, anything that must stay in view. */
   aside?: ReactNode
   children: ReactNode
 }
 
 /**
- * The guided-procedure layout (docs/prisons/product-map/08 1.5): the steps on
- * the left, the current step on the right. Reception, discharge and transfer
- * share it so the work looks the same wherever an officer performs it.
+ * The guided-procedure layout (docs/prisons/product-map/08 1.5): a horizontal
+ * steps progress on top, the current step in a card below. Reception,
+ * discharge and transfer share it so the work looks the same wherever an
+ * officer performs it. Every step can be revisited at any time.
  */
 export function ProcedureShell({ title, description, backTo, backLabel, steps, current, onSelect, aside, children }: ProcedureShellProps) {
+  const currentIndex = Math.max(
+    0,
+    steps.findIndex((step) => step.id === current),
+  )
+
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-1">
+    <article className="container flex flex-col gap-6 pt-5 pb-20">
+      <section className="mx-auto flex w-full flex-col gap-1 md:max-w-3xl">
         <Link to={backTo as never} className="w-fit text-xs text-muted-foreground underline-offset-4 hover:underline">
           {backLabel}
         </Link>
@@ -44,50 +50,59 @@ export function ProcedureShell({ title, description, backTo, backLabel, steps, c
         {description && <p className="md:max-w-xl">{description}</p>}
       </section>
 
-      <div className="grid gap-6 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
-        <aside className="flex flex-col gap-4">
-          <ol className="flex flex-col gap-1">
-            {steps.map((step, index) => {
-              const active = step.id === current
-              return (
-                <li key={step.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(step.id)}
-                    aria-current={active ? 'step' : undefined}
+      <nav aria-label={`${title} steps`} className="mx-auto w-full md:max-w-3xl">
+        <ol className="flex items-start">
+          {steps.map((step, index) => {
+            const active = index === currentIndex
+            const passed = index < currentIndex
+            return (
+              <li key={step.id} className="relative flex min-w-0 flex-1 flex-col items-center">
+                {index < steps.length - 1 && (
+                  <span
+                    aria-hidden
+                    className={cn('absolute top-[13px] left-[calc(50%+16px)] h-0.5 w-[calc(100%-32px)] rounded-full transition-colors', passed || step.done ? 'bg-primary' : 'bg-border')}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => onSelect(step.id)}
+                  aria-current={active ? 'step' : undefined}
+                  aria-label={`${step.label}${step.optional ? ' (optional)' : ''}${step.done ? ', done' : ''}`}
+                  className="group relative flex flex-col items-center gap-1.5 rounded-md px-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span
                     className={cn(
-                      'flex w-full items-start gap-3 rounded-lg border border-transparent px-3 py-2 text-left transition-colors hover:bg-muted/60',
-                      active && 'border-primary/30 bg-primary/5',
+                      'flex size-7 items-center justify-center rounded-full border text-xs font-medium transition-colors',
+                      step.done || passed ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground group-hover:border-primary/50',
+                      active && 'border-primary ring-4 ring-primary/20',
+                      active && !step.done && !passed && 'text-primary',
                     )}
                   >
-                    <span
-                      className={cn(
-                        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px]',
-                        step.done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-600' : 'border-border text-muted-foreground',
-                        active && !step.done && 'border-primary text-primary',
-                      )}
-                    >
-                      {step.done ? <HugeiconsIcon icon={CheckmarkCircle02Icon} size={13} /> : index + 1}
-                    </span>
-                    <span className="flex min-w-0 flex-col">
-                      <span className={cn('text-sm', active ? 'font-medium text-foreground' : 'text-foreground/80')}>
-                        {step.label}
-                        {step.optional && <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">optional</span>}
-                      </span>
-                      {step.summary && <span className="truncate text-xs text-muted-foreground">{step.summary}</span>}
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ol>
-          {aside}
-        </aside>
+                    {step.done ? <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} /> : index + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      'max-w-[7rem] text-center text-[11px] leading-tight',
+                      active ? 'font-medium text-foreground' : 'hidden text-muted-foreground md:block',
+                    )}
+                  >
+                    {step.label}
+                    {step.optional && <span className="block text-[10px] font-normal text-muted-foreground">optional</span>}
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ol>
+      </nav>
 
-        <Card>
-          <CardContent className="flex flex-col gap-5 py-5">{children}</CardContent>
-        </Card>
-      </div>
+      {aside && <div className="mx-auto w-full md:max-w-3xl">{aside}</div>}
+
+      <Card className="mx-auto w-full md:max-w-3xl">
+        <CardContent className="flex flex-col gap-5 py-5">
+          {children}
+        </CardContent>
+      </Card>
     </article>
   )
 }
