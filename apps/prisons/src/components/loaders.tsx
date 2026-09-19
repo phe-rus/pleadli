@@ -11,7 +11,7 @@ export const Loaders = () => {
             <div className="m-auto">
                 <HugeiconsIcon
                     icon={LoaderCircleIcon}
-                    className="size-8 animate-spin"
+                    className="size-7.5 animate-spin"
                 />
             </div>
         </main>

@@ -31,9 +31,10 @@ export const Route = createFileRoute('/_public/')({
  * than reusing one dashboard for both. */
 function RouteComponent() {
   const { data: hqConfig, isLoading } = useHqConfig()
-  const { can, session } = usePermissions()
+  const { can, session, isPending } = usePermissions()
   if (isLoading) return null
   if (hqConfig?.isHeadOffice) return <HqOverview />
+  if (isPending) return null
   if (session && !can('prisoner.read')) return <NoRecordAccess role={session.officer.role} />
   return <TodayView />
 }

@@ -38,9 +38,9 @@ export function useSession() {
 
 /** UI courtesy only: the node enforces every permission on every request. */
 export function usePermissions() {
-  const { data: session } = useSession()
+  const { data: session, isPending } = useSession()
   const granted = new Set(session?.permissions ?? [])
-  return { can: (permission: string) => granted.has(permission), session }
+  return { can: (permission: string) => granted.has(permission), session, isPending }
 }
 
 export function useSignIn() {

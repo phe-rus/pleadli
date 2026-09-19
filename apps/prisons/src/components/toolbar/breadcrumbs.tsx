@@ -32,7 +32,7 @@ export function Breadcrumbs() {
   ]
 
   return (
-    <Breadcrumb data-not-typeset className='text-base!'>
+    <Breadcrumb data-not-typeset={true} className='text-base!'>
       <BreadcrumbList>
         {crumbs.map((crumb, index) => {
           const isLast = index === crumbs.length - 1
