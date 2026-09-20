@@ -8,6 +8,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useCreateHealthEvent } from './queries'
 import { createHealthEventSchema, healthEventTypes, type HealthEvent } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type HealthEventFormProps = {
   prisonerId: string
@@ -47,11 +48,11 @@ export function HealthEventForm({ prisonerId, onSuccess, onDirtyChange }: Health
       try {
         const input = { ...value, prisonerId, occurredAt: new Date(value.occurredAt).getTime() }
         const result = await createEvent.mutateAsync(input)
-        t.success('Health event recorded')
+        t.success(m.health_events_health_event_recorded())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record health event', { description: 'Please try again.' })
+        t.error(m.health_events_could_not_record_health_event(), { description: m.health_events_please_try_again() })
       }
     },
   })
@@ -60,7 +61,7 @@ export function HealthEventForm({ prisonerId, onSuccess, onDirtyChange }: Health
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
@@ -69,10 +70,10 @@ export function HealthEventForm({ prisonerId, onSuccess, onDirtyChange }: Health
       <form.AppField name="eventType">
         {(f) => (
           <Field>
-            <FieldLabel>Event type</FieldLabel>
+            <FieldLabel>{m.health_events_event_type()}</FieldLabel>
             <Select items={healthEventTypes} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select event type" />
+                <SelectValue placeholder={m.health_events_select_event_type()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -84,37 +85,37 @@ export function HealthEventForm({ prisonerId, onSuccess, onDirtyChange }: Health
                 </SelectGroup>
               </SelectContent>
             </Select>
-            <FieldDescription>Recording this never changes custody status — the prisoner stays legally under detention throughout.</FieldDescription>
+            <FieldDescription>{m.health_events_recording_this_never_changes_custody_sta()}</FieldDescription>
           </Field>
         )}
       </form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="facilityName">{(f) => <f.input label="Facility (optional)" placeholder="e.g. Murchison Bay Hospital" />}</form.AppField>
+        <form.AppField name="facilityName">{(f) => <f.input label={m.health_events_facility_optional()} placeholder={m.health_events_e_g_murchison_bay_hospital()} />}</form.AppField>
         <form.AppField name="occurredAt">
           {(f) => (
             <Field>
-              <FieldLabel>Occurred at</FieldLabel>
+              <FieldLabel>{m.health_events_occurred_at()}</FieldLabel>
               <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
             </Field>
           )}
         </form.AppField>
       </div>
 
-      <form.AppField name="authorizedBy">{(f) => <f.input label="Authorized by (optional)" placeholder="Medical officer / officer in charge" />}</form.AppField>
+      <form.AppField name="authorizedBy">{(f) => <f.input label={m.health_events_authorized_by_optional()} placeholder={m.health_events_medical_officer_officer_in_charge()} />}</form.AppField>
 
       <form.AppField name="notes">
         {(f) => (
           <Field>
-            <FieldLabel>Notes (optional)</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Notes…" />
+            <FieldLabel>{m.health_events_notes_optional()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m.health_events_notes()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Record event" />
+          <form.submit label={m.health_events_record_event()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

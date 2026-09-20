@@ -1,16 +1,17 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 // Six real, grounded categories (docs/prisons/RESEARCH.md 9-10, 11.7).
 // legal_advisor (Prisons Act s.64(3)) and personal_doctor are seen within
 // sight but not within hearing, so their record keeps no content.
 // special_authorization_* need the Officer in Charge to approve.
 export const visitTypes = [
-  { value: 'ordinary', label: 'Ordinary visit' },
-  { value: 'legal_advisor', label: 'Legal advisor (s.64(3))' },
-  { value: 'personal_doctor', label: 'Personal doctor' },
-  { value: 'voluntary_visitor', label: 'Voluntary visitor (NGO, clergy, care officer)' },
-  { value: 'special_authorization_weekend', label: 'Special authorization: weekend visit' },
-  { value: 'special_authorization_researcher', label: 'Special authorization: researcher' },
+  { value: 'ordinary', get label() { return m.visits_ordinary_visit() } },
+  { value: 'legal_advisor', get label() { return m.visits_legal_advisor_s_64_3() } },
+  { value: 'personal_doctor', get label() { return m.visits_personal_doctor() } },
+  { value: 'voluntary_visitor', get label() { return m.visits_voluntary_visitor_ngo_clergy_care_office() } },
+  { value: 'special_authorization_weekend', get label() { return m.visits_special_authorization_weekend_visit() } },
+  { value: 'special_authorization_researcher', get label() { return m.visits_special_authorization_researcher() } },
 ] as const
 
 export function visitTypeLabel(value: string) {
@@ -26,17 +27,17 @@ export function isSpecialType(value: string) {
 }
 
 export const visitStatuses = [
-  { value: 'requested', label: 'Requested' },
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'checked_in', label: 'At the gate' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'denied', label: 'Refused' },
-  { value: 'no_show', label: 'No show' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'requested', get label() { return m.visits_requested() } },
+  { value: 'scheduled', get label() { return m.visits_scheduled() } },
+  { value: 'checked_in', get label() { return m.visits_at_the_gate() } },
+  { value: 'in_progress', get label() { return m.visits_in_progress() } },
+  { value: 'completed', get label() { return m.visits_completed_2() } },
+  { value: 'denied', get label() { return m.visits_refused() } },
+  { value: 'no_show', get label() { return m.visits_no_show() } },
+  { value: 'cancelled', get label() { return m.visits_cancelled() } },
 ] as const
 
-const legacyStatusLabels: Record<string, string> = { authorized: 'Scheduled', attended: 'Completed' }
+const legacyStatusLabels: Record<string, string> = { get authorized() { return m.visits_scheduled() }, get attended() { return m.visits_completed_2() } }
 
 export function visitStatusLabel(value: string) {
   return visitStatuses.find((v) => v.value === value)?.label ?? legacyStatusLabels[value] ?? value
@@ -60,10 +61,10 @@ export function visitStatusVariant(value: string): 'default' | 'secondary' | 'de
 }
 
 export const idTypes = [
-  { value: 'national_id', label: 'National ID' },
-  { value: 'passport', label: 'Passport' },
-  { value: 'driving_permit', label: 'Driving permit' },
-  { value: 'other', label: 'Other photo ID' },
+  { value: 'national_id', get label() { return m.visits_national_id() } },
+  { value: 'passport', get label() { return m.visits_passport() } },
+  { value: 'driving_permit', get label() { return m.visits_driving_permit() } },
+  { value: 'other', get label() { return m.visits_other_photo_id() } },
 ] as const
 
 export function idTypeLabel(value: string) {
@@ -71,9 +72,9 @@ export function idTypeLabel(value: string) {
 }
 
 export const itemDispositions = [
-  { value: 'handed_over', label: 'Handed to the prisoner' },
-  { value: 'held', label: 'Held at the gate' },
-  { value: 'refused', label: 'Refused' },
+  { value: 'handed_over', get label() { return m.visits_handed_to_the_prisoner() } },
+  { value: 'held', get label() { return m.visits_held_at_the_gate() } },
+  { value: 'refused', get label() { return m.visits_refused() } },
 ] as const
 
 export function itemDispositionLabel(value: string) {
@@ -177,13 +178,13 @@ export type VisitRules = z.infer<typeof visitRulesSchema>
 export type SaveVisitRulesInput = Omit<VisitRules, 'updatedAt' | 'updatedBy'>
 
 export const weekdays = [
-  { value: 1, label: 'Mon' },
-  { value: 2, label: 'Tue' },
-  { value: 3, label: 'Wed' },
-  { value: 4, label: 'Thu' },
-  { value: 5, label: 'Fri' },
-  { value: 6, label: 'Sat' },
-  { value: 7, label: 'Sun' },
+  { value: 1, get label() { return m.visits_mon() } },
+  { value: 2, get label() { return m.visits_tue() } },
+  { value: 3, get label() { return m.visits_wed() } },
+  { value: 4, get label() { return m.visits_thu() } },
+  { value: 5, get label() { return m.visits_fri() } },
+  { value: 6, get label() { return m.visits_sat() } },
+  { value: 7, get label() { return m.visits_sun() } },
 ] as const
 
 export function minutesToTime(minutes: number) {

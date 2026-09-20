@@ -1,6 +1,7 @@
 import { SettingsTable, type SettingsRow } from '@/components/settings-table'
 import { ApiError } from '@/lib/api'
-import { useCloudflareConfig, useSaveCloudflareConfig } from '@/features/network'
+import { DisconnectFromHeadOffice, SharedWithHeadOffice, stateCopy, transportLabel, useConnectivityStatus } from '@/features/connectivity'
+import { useCloudflareConfig, useProvisionCloudflareTunnel, useSaveCloudflareConfig } from '@/features/network'
 import { useHqConfig, usePermissions } from '@/features/session'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Badge } from '@pleadli/ui/badge'
@@ -14,7 +15,7 @@ import { format } from 'date-fns/format'
 import { useEffect } from 'react'
 import { ConnectFlow } from './connect-flow'
 import { useCancelConnection, useHqNetworkStatus, useHqReachability, usePeerSyncConfig, useRefreshConnection, useSyncNow } from './queries'
-import { syncStatusLabel } from './schema'
+import { m } from '@/paraglide/messages'
 
 /** Settings > Network and sync. What it shows depends on what this
  * installation is: a facility shows its own link to Head Office, Head Office
@@ -32,6 +33,7 @@ function FacilityNetworkTab() {
   const refresh = useRefreshConnection('network')
   const cancel = useCancelConnection('network')
   const reachability = useHqReachability()
+  const { data: link } = useConnectivityStatus()
 
   const connection = config?.connectionState ?? 'none'
   const canManage = can('node.manage')
@@ -46,43 +48,49 @@ function FacilityNetworkTab() {
 
   const statusBadge =
     connection === 'connected' ? (
-      <Badge variant={config?.lastSyncStatus === 'rejected' || config?.lastSyncStatus === 'error' ? 'destructive' : 'default'}>Connected</Badge>
+      <Badge variant={config?.lastSyncStatus === 'rejected' || config?.lastSyncStatus === 'error' ? 'destructive' : 'default'}>{m.facilities_connected()}</Badge>
     ) : connection === 'pending' ? (
-      <Badge variant="secondary">Waiting for approval</Badge>
+      <Badge variant="secondary">{m.facilities_waiting_for_approval()}</Badge>
     ) : connection === 'rejected' ? (
-      <Badge variant="destructive">Not approved</Badge>
+      <Badge variant="destructive">{m.facilities_not_approved()}</Badge>
     ) : (
-      <Badge variant="secondary">Working on its own</Badge>
+      <Badge variant="secondary">{link?.state === 'disconnected' ? m.facilities_disconnected() : m.facilities_working_on_its_own()}</Badge>
     )
 
   const facilityDescription =
     connection === 'connected'
       ? config?.lastSyncStatus === 'pending_verification'
-        ? `Registered with Head Office as ${config.facilityDisplayName ?? 'this facility'} and waiting for its verification. Using the system is not blocked.`
+        ? m.facilities_registered_with_head_office_as_and({ facilityDisplayName: config.facilityDisplayName ?? m.facilities_this_facility_lower() })
         : config?.lastSyncStatus === 'rejected'
-          ? (config.lastError ?? 'Head Office rejected this installation. Ask it to reconnect you.')
-          : `Connected to Head Office${config?.facilityDisplayName ? ` as ${config.facilityDisplayName}` : ''}.`
+          ? (config.lastError ?? m.facilities_head_office_rejected_this_installation_a())
+          : config?.facilityDisplayName
+            ? m.facilities_connected_to_head_office_as({ name: config.facilityDisplayName })
+            : m.facilities_connected_to_head_office()
       : connection === 'pending'
-        ? `Head Office has your request${config?.requestedByName ? `, made by ${config.requestedByName} (${config.requestedByBadge})` : ''}. It approves or rejects it from its Facilities page. Local work is not blocked.`
+        ? config?.requestedByName
+          ? m.facilities_request_made_by({ name: config.requestedByName, badge: config.requestedByBadge ?? '' })
+          : m.facilities_request_pending()
         : connection === 'rejected'
-          ? (config?.lastError ?? 'Head Office did not approve the request.')
-          : 'Not connected to a Head Office. Everything works fully offline. Connect when you are ready.'
+          ? (config?.lastError ?? m.facilities_head_office_did_not_approve_the())
+          : link?.state === 'disconnected' && link.disconnectedAt
+            ? m.facilities_disconnected_from_head_office_on_local({ disconnectedAt: format(link.disconnectedAt, 'PPp') })
+            : m.facilities_not_connected_to_a_head_office()
 
-  const rows: SettingsRow[] = [{ key: 'facility', label: 'This facility', description: facilityDescription, control: statusBadge }]
+  const rows: SettingsRow[] = [{ key: 'facility', label: m.facilities_this_facility(), description: facilityDescription, control: statusBadge }]
 
   if (config?.hqHostname) {
     rows.push({
       key: 'hq',
-      label: 'Head Office address',
+      label: m.facilities_head_office_address(),
       description: (
         <span>
-          <span className="font-mono">{config.hqHostname}</span>
+          <code>{config.hqHostname}</code>
           {reachability.data && (reachability.data.reachable ? '. Answering just now.' : '. Did not answer just now.')}
         </span>
       ),
       control: (
         <Button size="xs" variant="secondary" disabled={reachability.isPending} onClick={() => reachability.mutate()}>
-          {reachability.isPending ? 'Checking…' : 'Check'}
+          {reachability.isPending ? m.facilities_checking() : m.facilities_check()}
         </Button>
       ),
     })
@@ -91,8 +99,15 @@ function FacilityNetworkTab() {
   if (connection === 'connected') {
     rows.push({
       key: 'sync',
-      label: 'Last sync',
-      description: `${config?.lastSyncedAt ? format(config.lastSyncedAt, 'PPp') : 'Never synced'} · ${syncStatusLabel(config?.lastSyncStatus ?? null)}. Sends automatically every five minutes while online.`,
+      label: m.facilities_last_exchange(),
+      description: link
+        ? m.facilities_last_exchange_summary({
+            lastExchange: link.lastExchangeAt ? format(link.lastExchangeAt, 'PPp') : m.facilities_not_yet(),
+            state: stateCopy[link.state].label,
+            pending: link.pending.total === 0 ? m.facilities_nothing_waiting() : m.facilities_n_waiting({ count: link.pending.total }),
+            transport: transportLabel[link.transport],
+          })
+        : m.facilities_checked_every_minute_and_only_changes(),
       control: canManage ? (
         <Button
           size="xs"
@@ -100,37 +115,37 @@ function FacilityNetworkTab() {
           onClick={() =>
             syncNow.mutate(undefined, {
               onSuccess: (result) => {
-                if (result.status === 'ok') t.success(`Synced ${result.count ?? 'all'} records`)
-                else if (result.status === 'pending_verification') t.info('Waiting for Head Office verification')
-                else t.error('Head Office did not accept this sync')
+                if (result.status === 'ok') t.success(m.facilities_synced_records({ count: result.count ?? 'all' }))
+                else if (result.status === 'pending_verification') t.info(m.facilities_waiting_for_head_office_verification())
+                else t.error(m.facilities_head_office_did_not_accept_this())
               },
-              onError: (error) => t.error(error.message || 'Sync failed'),
+              onError: (error) => t.error(error.message || m.facilities_sync_failed()),
             })
           }
         >
-          {syncNow.isPending ? 'Syncing…' : 'Sync now'}
+          {syncNow.isPending ? m.facilities_syncing() : m.facilities_sync_now()}
         </Button>
       ) : null,
     })
     rows.push({
       key: 'roster',
-      label: 'Accounts shared with Head Office',
+      label: m.facilities_accounts_shared_with_head_office(),
       description: config?.rosterPushedAt
-        ? `${config.rosterCount ?? 0} account(s), last sent ${format(config.rosterPushedAt, 'PPp')}. Names, badge numbers and roles only, never passwords.`
-        : 'Not sent yet. Sent after each successful sync. Names, badge numbers and roles only, never passwords.',
+        ? m.facilities_account_s_last_sent_names_badge({ rosterCount: config.rosterCount ?? 0, rosterPushedAt: format(config.rosterPushedAt, 'PPp') })
+        : m.facilities_not_sent_yet_sent_after_each(),
       control: null,
     })
   }
 
   if (config?.lastError && connection !== 'rejected') {
-    rows.push({ key: 'last-error', label: 'Last error', description: config.lastError, control: null })
+    rows.push({ key: 'last-error', label: m.facilities_last_error(), description: config.lastError, control: null })
   }
 
   if (connection === 'pending' && canManage) {
     rows.push({
       key: 'pending-actions',
-      label: 'Request',
-      description: 'Checked automatically while this page is open.',
+      label: m.facilities_request(),
+      description: m.facilities_checked_automatically_while_this_page_is(),
       control: (
         <div className="flex items-center gap-1.5">
           <Button
@@ -141,17 +156,17 @@ function FacilityNetworkTab() {
               refresh.mutate(undefined, {
                 onSuccess: (next) => {
                   queryClient.invalidateQueries({ queryKey: ['systemState'] })
-                  if (next.connectionState === 'pending') t.info('Still waiting for Head Office')
-                  if (next.connectionState === 'connected') t.success('Head Office approved the connection')
+                  if (next.connectionState === 'pending') t.info(m.facilities_still_waiting_for_head_office())
+                  if (next.connectionState === 'connected') t.success(m.facilities_head_office_approved_the_connection())
                 },
-                onError: () => t.error('Head Office could not be reached'),
+                onError: () => t.error(m.facilities_head_office_could_not_be_reached()),
               })
             }
           >
-            Check now
+            {m.facilities_check_now()}
           </Button>
           <Button size="xs" variant="ghost" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
-            Cancel request
+            {m.facilities_cancel_request()}
           </Button>
         </div>
       ),
@@ -161,11 +176,11 @@ function FacilityNetworkTab() {
   if (connection === 'rejected' && canManage) {
     rows.push({
       key: 'rejected-actions',
-      label: 'Try again',
-      description: 'Clears this request so you can connect again, for example with an activation code.',
+      label: m.facilities_try_again(),
+      description: m.facilities_clears_this_request_so_you_can(),
       control: (
         <Button size="xs" variant="secondary" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
-          Start over
+          {m.facilities_start_over()}
         </Button>
       ),
     })
@@ -175,28 +190,31 @@ function FacilityNetworkTab() {
     <div className="flex flex-col gap-8">
       <SettingsTable rows={rows} />
 
+      {connection === 'connected' && <SharedWithHeadOffice canManage={canManage} />}
+      {connection === 'connected' && canManage && <DisconnectFromHeadOffice />}
+
       {connection === 'none' &&
         (canManage && session ? (
           <section className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-              <h2 className="text-sm font-medium">Connect to Head Office</h2>
-              <p className="text-xs text-muted-foreground md:max-w-lg">
-                Pick this facility from Head Office's list. Connecting never blocks local work.
+              <h3>{m.facilities_connect_to_head_office()}</h3>
+              <p>
+                {m.facilities_pick_this_facility_from_head_office()}
               </p>
             </div>
-            <Card className="p-0 md:max-w-xl">
+            <Card className="p-0">
               <CardContent className="py-4">
                 <ConnectFlow
                   scope="network"
                   requester={{ badge: session.officer.badgeNumber, name: session.officer.name }}
                   lockRequester
                   onConnected={(name) => {
-                    t.success(`Connected as ${name}`)
+                    t.success(m.facilities_connected_as_2({ name }))
                     queryClient.invalidateQueries({ queryKey: ['systemState'] })
                     queryClient.invalidateQueries({ queryKey: ['peerSyncConfig'] })
                   }}
                   onPending={() => {
-                    t.info('Request sent to Head Office')
+                    t.info(m.facilities_request_sent_to_head_office())
                     queryClient.invalidateQueries({ queryKey: ['systemState'] })
                     queryClient.invalidateQueries({ queryKey: ['peerSyncConfig'] })
                   }}
@@ -205,7 +223,7 @@ function FacilityNetworkTab() {
             </Card>
           </section>
         ) : (
-          <p className="text-xs text-muted-foreground">An administrator of this facility can connect it to Head Office.</p>
+          <p>{m.facilities_an_administrator_of_this_facility_can()}</p>
         ))}
     </div>
   )
@@ -214,39 +232,61 @@ function FacilityNetworkTab() {
 function HqNetworkTab() {
   const { data: status } = useHqNetworkStatus()
   const cloudflareState = status?.cloudflare.state ?? 'not_configured'
+  const provision = useProvisionCloudflareTunnel()
+  const setUpTunnel = () =>
+    provision.mutate(undefined, {
+      onSuccess: ({ hostname, connector }) =>
+        connector === 'running' ? t.success(m.facilities_tunnel_set_up({ hostname })) : t.warning(m.facilities_tunnel_set_up_no_connector({ hostname })),
+      onError: (error) => t.error(m.facilities_could_not_set_up_the_tunnel(), { description: error instanceof ApiError ? error.message : m.facilities_please_try_again() }),
+    })
 
   const rows: SettingsRow[] = [
     {
       key: 'local',
-      label: 'Local network',
+      label: m.facilities_local_network(),
       description: status
-        ? `This machine ${status.local.listening ? 'is listening' : 'is not listening'} on ${status.local.address}. Facilities on this computer or its local network can connect now.`
-        : 'Checking…',
-      control: status ? <Badge variant={status.local.listening ? 'default' : 'destructive'}>{status.local.listening ? 'Listening' : 'Not listening'}</Badge> : null,
+        ? status.local.listening
+          ? m.facilities_local_listening({ address: status.local.address })
+          : m.facilities_local_not_listening({ address: status.local.address })
+        : m.facilities_checking(),
+      control: status ? <Badge variant={status.local.listening ? 'default' : 'destructive'}>{status.local.listening ? m.facilities_listening() : m.facilities_not_listening()}</Badge> : null,
     },
     {
       key: 'cloudflare',
-      label: 'Cloudflare Tunnel',
+      label: m.facilities_cloudflare_tunnel(),
       description:
         cloudflareState === 'connected'
-          ? `Reachable from outside at https://${status?.cloudflare.hostname}.`
+          ? m.facilities_reachable_from_outside({ hostname: status?.cloudflare.hostname ?? '' })
           : cloudflareState === 'configured_not_connected'
             ? status?.cloudflare.tunnelProvisioned
-              ? `A tunnel is set up for ${status.cloudflare.hostname}, but it did not answer just now, so facilities elsewhere cannot reach this Head Office.`
-              : 'Credentials are saved, but no tunnel is running, so facilities elsewhere cannot reach this Head Office. Saving credentials does not start one.'
-            : 'No tunnel is configured. Facilities on other networks cannot reach this Head Office yet.',
-      control: <Badge variant={cloudflareState === 'connected' ? 'default' : 'secondary'}>{cloudflareState === 'connected' ? 'Connected' : 'Not connected'}</Badge>,
+              ? status.cloudflare.connector === 'missing'
+                ? m.facilities_tunnel_connector_missing({ hostname: status.cloudflare.hostname ?? '' })
+                : status.cloudflare.connector === 'stopped'
+                  ? m.facilities_tunnel_connector_stopped({ hostname: status.cloudflare.hostname ?? '' })
+                  : m.facilities_a_tunnel_is_set_up_for({ hostname: status.cloudflare.hostname ?? '' })
+              : m.facilities_credentials_are_saved_but_no_tunnel()
+            : m.facilities_no_tunnel_is_configured_facilities_on(),
+      control: (
+        <span className="flex items-center gap-2">
+          {status?.cloudflare.configured && (
+            <Button size="xs" variant="secondary" disabled={provision.isPending} onClick={setUpTunnel}>
+              {provision.isPending ? m.facilities_setting_up_the_tunnel() : status.cloudflare.tunnelProvisioned ? m.facilities_check_the_tunnel() : m.facilities_set_up_the_tunnel()}
+            </Button>
+          )}
+          <Badge variant={cloudflareState === 'connected' ? 'default' : 'secondary'}>{cloudflareState === 'connected' ? m.facilities_connected() : m.facilities_not_connected()}</Badge>
+        </span>
+      ),
     },
     {
       key: 'requests',
-      label: 'Connection requests',
+      label: m.facilities_connection_requests(),
       description:
         (status?.pendingRequests ?? 0) > 0
-          ? `${status?.pendingRequests} facility request(s) waiting for a decision.`
-          : 'No requests waiting.',
+          ? m.facilities_facility_request_s_waiting_for_a({ pendingRequests: status?.pendingRequests ?? 0 })
+          : m.facilities_no_requests_waiting(),
       control: (
         <Button size="xs" variant="secondary" nativeButton={false} render={<Link to="/facilities" />}>
-          Review
+          {m.facilities_review()}
         </Button>
       ),
     },
@@ -254,8 +294,8 @@ function HqNetworkTab() {
   if (status) {
     rows.push({
       key: 'base',
-      label: 'Address facilities use',
-      description: <span className="font-mono">{status.publicBase}</span>,
+      label: m.facilities_address_facilities_use(),
+      description: <code>{status.publicBase}</code>,
       control: null,
     })
   }
@@ -265,10 +305,9 @@ function HqNetworkTab() {
       <SettingsTable rows={rows} />
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-medium">Cloudflare Tunnel</h2>
-          <p className="text-xs text-muted-foreground md:max-w-lg">
-            Makes this Head Office reachable from anywhere. These are the credentials the tunnel will use; saving them does not start a
-            tunnel by itself.
+          <h3>{m.facilities_cloudflare_tunnel()}</h3>
+          <p>
+            {m.facilities_makes_this_head_office_reachable_from()}
           </p>
         </div>
         <CloudflareForm />
@@ -291,16 +330,16 @@ function CloudflareForm() {
     onSubmit: async ({ value }) => {
       try {
         await saveConfig.mutateAsync(value)
-        t.success('Cloudflare configuration saved')
+        t.success(m.facilities_cloudflare_configuration_saved())
       } catch (error) {
-        t.error('Could not save Cloudflare configuration', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+        t.error(m.facilities_could_not_save_cloudflare_configuration(), { description: error instanceof ApiError ? error.message : m.facilities_please_try_again() })
       }
     },
   })
 
   return (
     <form
-      className="flex flex-col gap-4 md:max-w-xl"
+      className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
@@ -311,27 +350,27 @@ function CloudflareForm() {
           {(f) => (
             <f.input
               type="password"
-              label="API token"
+              label={m.facilities_api_token()}
               autoComplete="off"
-              placeholder={config ? 'Leave blank to keep the current token' : undefined}
+              placeholder={config ? m.facilities_leave_blank_to_keep_the_current() : undefined}
             />
           )}
         </form.AppField>
         <div className="grid gap-3 sm:grid-cols-2">
-          <form.AppField name="accountId">{(f) => <f.input label="Account ID" autoComplete="off" />}</form.AppField>
-          <form.AppField name="domain">{(f) => <f.input label="Domain" autoComplete="off" placeholder="e.g. pleadli.com" />}</form.AppField>
+          <form.AppField name="accountId">{(f) => <f.input label={m.facilities_account_id()} autoComplete="off" />}</form.AppField>
+          <form.AppField name="domain">{(f) => <f.input label={m.facilities_domain()} autoComplete="off" placeholder={m.facilities_e_g_pleadli_com()} />}</form.AppField>
         </div>
-        <form.AppField name="stationName">{(f) => <f.input label="Station name" autoComplete="off" placeholder="e.g. hq" />}</form.AppField>
+        <form.AppField name="stationName">{(f) => <f.input label={m.facilities_station_name()} autoComplete="off" placeholder={m.facilities_e_g_hq()} />}</form.AppField>
 
         <form.Subscribe selector={(state) => [state.values.stationName, state.values.domain] as const}>
           {([stationName, domain]) => (
-            <FieldDescription>Becomes {stationName || 'station-name'}.{domain || 'pleadli.com'}</FieldDescription>
+            <FieldDescription>{m.facilities_becomes({ address: `${stationName || 'station-name'}.${domain || 'pleadli.com'}` })}</FieldDescription>
           )}
         </form.Subscribe>
       </FieldGroup>
 
       <form.AppForm>
-        <form.submit label="Save Cloudflare configuration" />
+        <form.submit label={m.facilities_save_cloudflare_configuration()} />
       </form.AppForm>
     </form>
   )

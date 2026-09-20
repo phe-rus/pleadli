@@ -1,13 +1,14 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 // Real, named complaint categories confirmed via the Human Rights Committee
 // / "Mukutano" mechanism (docs/prisons/RESEARCH.md §11.6, UHRC 2023 +
 // UK FCDO consular guidance, two independent sources).
 export const requestCategories = [
-  { value: 'food', label: 'Food quality/quantity' },
-  { value: 'remand_overstay', label: 'Remand overstay' },
-  { value: 'general_welfare', label: 'General welfare' },
-  { value: 'other', label: 'Other' },
+  { value: 'food', get label() { return m.requests_food_quality_quantity() } },
+  { value: 'remand_overstay', get label() { return m.requests_remand_overstay() } },
+  { value: 'general_welfare', get label() { return m.requests_general_welfare() } },
+  { value: 'other', get label() { return m.requests_other() } },
 ] as const
 
 export function requestCategoryLabel(value: string) {

@@ -4,6 +4,7 @@ import { Card, CardContent } from '@pleadli/ui/card'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { m } from '@/paraglide/messages'
 
 export type ProcedureStep = {
   id: string
@@ -50,7 +51,7 @@ export function ProcedureShell({ title, description, backTo, backLabel, steps, c
         {description && <p className="md:max-w-xl">{description}</p>}
       </section>
 
-      <nav aria-label={`${title} steps`} className="mx-auto w-full md:max-w-3xl">
+      <nav aria-label={m.ui_steps({ title })} className="mx-auto w-full md:max-w-3xl">
         <ol className="flex items-start">
           {steps.map((step, index) => {
             const active = index === currentIndex
@@ -87,7 +88,7 @@ export function ProcedureShell({ title, description, backTo, backLabel, steps, c
                     )}
                   >
                     {step.label}
-                    {step.optional && <span className="block text-[10px] font-normal text-muted-foreground">optional</span>}
+                    {step.optional && <span className="block text-[10px] font-normal text-muted-foreground">{m.ui_optional()}</span>}
                   </span>
                 </button>
               </li>

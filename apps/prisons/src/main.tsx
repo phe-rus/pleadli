@@ -1,4 +1,5 @@
 import { Loaders } from '@/components/loaders'
+import { RouteError } from '@/features/diagnostics'
 import { Queryprovider, queryContext } from '@/lib/query-context'
 import "@/routes/styles/globals.css"
 import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/react-router'
@@ -17,6 +18,7 @@ const getRouter = () => {
         defaultPreload: 'intent',
         defaultPreloadStaleTime: 0,
         defaultPendingComponent: () => <Loaders />,
+        defaultErrorComponent: RouteError,
         Wrap: ({ children }) => {
             return (
                 <Queryprovider query={queryClient}>

@@ -79,7 +79,6 @@ struct TransferRow {
     id: String,
     prisoner_id: Option<String>,
     direction: String,
-    state: String,
     person_name: Option<String>,
     other_prison_name: Option<String>,
     dispatched_at: Option<i64>,
@@ -282,7 +281,7 @@ pub async fn derive(pool: &SqlitePool, now: i64) -> Result<Vec<Obligation>, sqlx
     }
 
     let transfers = sqlx::query_as::<_, TransferRow>(
-        "SELECT t.id, t.prisoner_id, t.direction, t.state, t.person_name, t.other_prison_name, t.dispatched_at, t.arrived_at,
+        "SELECT t.id, t.prisoner_id, t.direction, t.person_name, t.other_prison_name, t.dispatched_at, t.arrived_at,
                 p.first_name, p.last_name
          FROM transfers t LEFT JOIN prisoners p ON p.id = t.prisoner_id
          WHERE (t.direction = 'out' AND t.state = 'in_transit') OR (t.direction = 'in' AND t.state = 'arrived')",

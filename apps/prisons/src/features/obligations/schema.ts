@@ -1,5 +1,6 @@
 import * as z from 'zod'
 import { facilityProfileSchema } from '@/features/facility/schema'
+import { m } from '@/paraglide/messages'
 
 export const obligationSchema = z.object({
   key: z.string(),
@@ -68,8 +69,8 @@ export function bucketOf(obligation: Pick<Obligation, 'dueAt'>, now: number): Bu
 }
 
 export const bucketLabels: Record<Bucket, string> = {
-  overdue: 'Overdue',
-  today: 'Today',
-  soon: 'Coming up',
-  open: 'Waiting',
+  get overdue() { return m.obligations_overdue() },
+  get today() { return m.obligations_today() },
+  get soon() { return m.obligations_coming_up() },
+  get open() { return m.obligations_waiting() },
 }

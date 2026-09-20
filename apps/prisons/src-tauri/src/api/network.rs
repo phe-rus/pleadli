@@ -22,7 +22,7 @@ use serde_json::Value;
 
 use crate::domain::connection::{self, ConnectionOutcome, ConnectionRequestInput, ConnectionStatus, FacilityLookup, RosterEntry};
 use crate::domain::facilities::{self, hash_secret, RegisterFacilityInput, RegisterPeerResult};
-use crate::domain::prisoners::Prisoner;
+use crate::domain::sync::SnapshotRow;
 use crate::domain::sync;
 use crate::node::NodeRef;
 
@@ -40,6 +40,40 @@ type NetError = (StatusCode, Json<Invalid>);
 
 fn invalid() -> NetError {
     (StatusCode::UNAUTHORIZED, Json(Invalid { error: "invalid" }))
+}
+
+/// A domain failure that may be the database rather than the caller.
+trait Failure {
+    fn database(&self) -> Option<&sqlx::Error>;
+}
+
+impl Failure for facilities::RegisterPeerError {
+    fn database(&self) -> Option<&sqlx::Error> {
+        if let Self::Db(e) = self { Some(e) } else { None }
+    }
+}
+
+impl Failure for connection::ConnectionError {
+    fn database(&self) -> Option<&sqlx::Error> {
+        if let Self::Db(e) = self { Some(e) } else { None }
+    }
+}
+
+impl Failure for sync::IngestError {
+    fn database(&self) -> Option<&sqlx::Error> {
+        if let Self::Db(e) = self { Some(e) } else { None }
+    }
+}
+
+/// The wire answer stays the uniform 401, but a database failure is not a bad
+/// credential: log it so a broken node is not invisible behind "invalid".
+fn refuse<E: Failure>(route: &'static str) -> impl FnOnce(E) -> NetError {
+    move |e| {
+        if let Some(db) = e.database() {
+            log::error!("network {route}: database failure behind a 401: {db}");
+        }
+        invalid()
+    }
 }
 
 #[derive(Clone)]
@@ -77,6 +111,8 @@ pub fn router(node: NodeRef) -> Router {
         .route("/api/network/v1/connection/status", post(connection_status))
         .route("/api/network/v1/roster", post(roster))
         .route("/api/network/v1/policy", get(policy))
+        .route("/api/network/v1/returns", post(receive_return))
+        .route("/api/network/v1/status", post(receive_status))
         .layer(from_fn(client_key))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .with_state(node)
@@ -112,7 +148,7 @@ async fn register_peer(
         region: body.region,
         head_officer_name: body.head_officer_name,
     };
-    facilities::register_peer(&node.pool, &body.pairing_secret, input).await.map(Json).map_err(|_| invalid())
+    facilities::register_peer(&node.pool, &body.pairing_secret, input).await.map(Json).map_err(refuse("pairing/register"))
 }
 
 async fn legacy_snapshot(
@@ -130,8 +166,32 @@ async fn legacy_snapshot(
         .and_then(|v| v.strip_prefix("Bearer "))
         .map(|v| v.to_string())
         .ok_or_else(invalid)?;
-    let roster: Vec<Prisoner> = serde_json::from_slice(&body).map_err(|_| invalid())?;
-    sync::resolve_facility_and_ingest(&node.pool, &token, roster).await.map(Json).map_err(|_| invalid())
+    let roster: Vec<SnapshotRow> = serde_json::from_slice(&body).map_err(|_| invalid())?;
+    sync::resolve_facility_and_ingest(&node.pool, &token, roster).await.map(Json).map_err(refuse("snapshot"))
+}
+
+async fn receive_status(
+    State(node): State<NodeRef>,
+    Extension(client): Extension<ClientKey>,
+    headers: HeaderMap,
+    body: axum::body::Bytes,
+) -> Result<Json<Value>, NetError> {
+    allowed(&node, &client, "status", RATE_LIMIT_PER_CLIENT)?;
+    let token = bearer_token(&headers)?;
+    let report: crate::domain::estate::StatusReport = serde_json::from_slice(&body).map_err(|_| invalid())?;
+    crate::domain::estate::receive_status(&node.pool, &token, report).await.map(Json).map_err(refuse("status"))
+}
+
+async fn receive_return(
+    State(node): State<NodeRef>,
+    Extension(client): Extension<ClientKey>,
+    headers: HeaderMap,
+    body: axum::body::Bytes,
+) -> Result<Json<Value>, NetError> {
+    allowed(&node, &client, "returns", RATE_LIMIT_PER_CLIENT)?;
+    let token = bearer_token(&headers)?;
+    let package: crate::domain::returns::ReturnPackage = serde_json::from_slice(&body).map_err(|_| invalid())?;
+    crate::domain::returns::receive(&node.pool, &token, package).await.map(Json).map_err(refuse("returns"))
 }
 
 async fn policy(
@@ -193,7 +253,7 @@ async fn connection_request(
     Json(body): Json<ConnectionRequestInput>,
 ) -> Result<Json<ConnectionOutcome>, NetError> {
     allowed(&node, &client, "request", 10)?;
-    connection::request_connection(&node.pool, body, &client.0).await.map(Json).map_err(|_| invalid())
+    connection::request_connection(&node.pool, body, &client.0).await.map(Json).map_err(refuse("connection/request"))
 }
 
 async fn connection_status(
@@ -219,7 +279,7 @@ async fn roster(
 ) -> Result<Json<Value>, NetError> {
     allowed(&node, &client, "roster", 20)?;
     let token = bearer_token(&headers)?;
-    let count = connection::ingest_roster(&node.pool, &token, body.officers).await.map_err(|_| invalid())?;
+    let count = connection::ingest_roster(&node.pool, &token, body.officers).await.map_err(refuse("roster"))?;
     Ok(Json(serde_json::json!({ "count": count })))
 }
 

@@ -6,6 +6,7 @@ import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useReturnPropertyRecord } from './queries'
 import { returnPropertyRecordSchema, type PropertyRecord } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type ReturnPropertyFormProps = {
   record: PropertyRecord
@@ -38,11 +39,11 @@ export function ReturnPropertyForm({ record, onSuccess, onDirtyChange }: ReturnP
       try {
         const input = { ...value, returnedAt: new Date(value.returnedAt).getTime() }
         const result = await returnRecord.mutateAsync({ id: record.id, input })
-        t.success('Marked as returned')
+        t.success(m.property_records_marked_as_returned())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not mark as returned', { description: 'Please try again.' })
+        t.error(m.property_records_could_not_mark_as_returned(), { description: m.property_records_please_try_again() })
       }
     },
   })
@@ -51,7 +52,7 @@ export function ReturnPropertyForm({ record, onSuccess, onDirtyChange }: ReturnP
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
@@ -60,17 +61,17 @@ export function ReturnPropertyForm({ record, onSuccess, onDirtyChange }: ReturnP
       <form.AppField name="returnedAt">
         {(f) => (
           <Field>
-            <FieldLabel>Returned at</FieldLabel>
+            <FieldLabel>{m.property_records_returned_at()}</FieldLabel>
             <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
           </Field>
         )}
       </form.AppField>
 
-      <form.AppField name="returnedNote">{(f) => <f.input label="Note (optional)" placeholder="e.g. Handed to next of kin" />}</form.AppField>
+      <form.AppField name="returnedNote">{(f) => <f.input label={m.property_records_note_optional()} placeholder={m.property_records_e_g_handed_to_next_of()} />}</form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Mark returned" />
+          <form.submit label={m.property_records_mark_returned()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

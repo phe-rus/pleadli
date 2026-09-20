@@ -22,15 +22,16 @@ import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useState, type ReactNode } from 'react'
 import { buildTimeline } from './timeline'
+import { m } from '@/paraglide/messages'
 
 type View = 'front' | 'left' | 'right'
 const views: readonly { value: View; label: string }[] = [
-  { value: 'front', label: 'Front' },
-  { value: 'left', label: 'Left side' },
-  { value: 'right', label: 'Right side' },
+  { value: 'front', get label() { return m.prisoners_front() } },
+  { value: 'left', get label() { return m.prisoners_left_side() } },
+  { value: 'right', get label() { return m.prisoners_right_side() } },
 ]
 
-const dateOnly = (ms: number | null) => (ms == null ? 'Not computed' : format(ms, 'd MMM yyyy'))
+const dateOnly = (ms: number | null) => (ms == null ? m.prisoners_not_computed() : format(ms, 'd MMM yyyy'))
 
 function ageOn(dateOfBirth: number | null) {
   if (dateOfBirth == null) return null
@@ -74,10 +75,10 @@ function IdentityHeader({ prisoner }: { prisoner: Prisoner }) {
               type="button"
               onClick={() => {
                 void navigator.clipboard?.writeText(number)
-                t.success('Number copied')
+                t.success(m.prisoners_number_copied())
               }}
               className="font-mono text-sm text-muted-foreground hover:text-primary"
-              title="Copy number"
+              title={m.prisoners_copy_number()}
             >
               {number}
             </button>
@@ -93,26 +94,26 @@ function IdentityHeader({ prisoner }: { prisoner: Prisoner }) {
             className="flex w-fit items-center gap-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             <HugeiconsIcon icon={Camera01Icon} size={14} />
-            {photos.length > 0 ? 'Photos on file' : 'Take a photo'}
+            {photos.length > 0 ? m.prisoners_photos_on_file() : m.prisoners_take_a_photo()}
           </button>
         </div>
       </div>
 
       <dl className="flex flex-wrap gap-y-3 text-sm">
-        <InlineFact label="Age" value={ageOn(prisoner.dateOfBirth) != null ? `${ageOn(prisoner.dateOfBirth)} years` : null} />
-        <InlineFact label="Sex" value={lookup(prisonerSexes, prisoner.sex)} />
-        <InlineFact label="Nationality" value={lookup(nationalities, prisoner.nationality)} />
-        <InlineFact label="National ID" value={prisoner.nationalId} />
-        <InlineFact label="Reference" value={prisoner.reference} />
-        <InlineFact label="Offence" value={prisoner.offence} />
+        <InlineFact label={m.prisoners_age()} value={ageOn(prisoner.dateOfBirth) != null ? `${ageOn(prisoner.dateOfBirth)} years` : null} />
+        <InlineFact label={m.prisoners_sex()} value={lookup(prisonerSexes, prisoner.sex)} />
+        <InlineFact label={m.prisoners_nationality()} value={lookup(nationalities, prisoner.nationality)} />
+        <InlineFact label={m.prisoners_national_id()} value={prisoner.nationalId} />
+        <InlineFact label={m.prisoners_reference()} value={prisoner.reference} />
+        <InlineFact label={m.prisoners_offence()} value={prisoner.offence} />
       </dl>
 
       <FlagStrip prisonerId={prisoner.id} />
       <Dialog open={photoOpen} onOpenChange={setPhotoOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Photos of {prisonerFullName(prisoner)}</DialogTitle>
-            <DialogDescription>Take each view with a camera or upload a file. A new photo replaces the one on file for that view.</DialogDescription>
+            <DialogTitle>{m.prisoners_photos_of({ prisoner: prisonerFullName(prisoner) })}</DialogTitle>
+            <DialogDescription>{m.prisoners_take_each_view_with_a_camera()}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-wrap gap-4">
             {views.map((view) => (
@@ -136,13 +137,13 @@ function FlagStrip({ prisonerId }: { prisonerId: string }) {
   const inWindow = inCustody && clocks.paroleWindowOpensOn != null && clocks.paroleWindowOpensOn <= now && (clocks.releaseDueOn ?? 0) > now
 
   const flags = [
-    (pendingInstruments || prisoner.documentsPending) && { label: 'Documents pending', tone: 'destructive' as const },
-    pastBail && { label: 'Past mandatory bail', tone: 'destructive' as const },
+    (pendingInstruments || prisoner.documentsPending) && { label: m.prisoners_documents_pending(), tone: 'destructive' as const },
+    pastBail && { label: m.prisoners_past_mandatory_bail(), tone: 'destructive' as const },
     overdue > 0 && { label: `${overdue} overdue`, tone: 'destructive' as const },
-    inWindow && { label: 'Parole window open', tone: 'outline' as const },
+    inWindow && { label: m.prisoners_parole_window_open(), tone: 'outline' as const },
     clocks.reviewable && inCustody && { label: 's.88 review applies', tone: 'outline' as const },
-    prisoner.highCourtOnlyOffence && { label: 'High Court only', tone: 'secondary' as const },
-    prisoner.currentStatus === 'in_transit' && { label: 'In transit', tone: 'outline' as const },
+    prisoner.highCourtOnlyOffence && { label: m.prisoners_high_court_only(), tone: 'secondary' as const },
+    prisoner.currentStatus === 'in_transit' && { label: m.prisoners_in_transit(), tone: 'outline' as const },
   ].filter(Boolean) as { label: string; tone: 'destructive' | 'outline' | 'secondary' }[]
 
   if (flags.length === 0) return null
@@ -167,7 +168,7 @@ function Timeline({ prisonerId }: { prisonerId: string }) {
   const { data: releases } = useReleasesForPrisoner(prisonerId)
 
   const entries = buildTimeline({ stays: file.stays, productions, visits, healthEvents, transfers, releases })
-  if (entries.length === 0) return <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
+  if (entries.length === 0) return <p className="text-sm text-muted-foreground">{m.prisoners_nothing_recorded_yet()}</p>
 
   return (
     <ol className="flex flex-col">
@@ -193,20 +194,20 @@ function LegalPosition({ prisonerId, onOpenTab }: { prisonerId: string; onOpenTa
   const { sentence, clocks, prisoner } = file
   const rows: [string, string][] = sentence
     ? [
-        ['Sentence', sentenceTermText(sentence)],
-        ['Runs from', format(sentence.startsOn, 'd MMM yyyy')],
-        ...(!clocks.isLife ? ([['Term ends', dateOnly(clocks.sentenceEndsOn)]] as [string, string][]) : []),
-        ...(!clocks.isLife ? ([['Release due', dateOnly(clocks.releaseDueOn)]] as [string, string][]) : []),
-        ...(clocks.paroleWindowOpensOn != null ? ([['Parole window opens', dateOnly(clocks.paroleWindowOpensOn)]] as [string, string][]) : []),
-        ['Instruments', `${file.instruments.length}`],
+        [m.prisoners_sentence(), sentenceTermText(sentence)],
+        [m.prisoners_runs_from(), format(sentence.startsOn, 'd MMM yyyy')],
+        ...(!clocks.isLife ? ([[m.prisoners_term_ends(), dateOnly(clocks.sentenceEndsOn)]] as [string, string][]) : []),
+        ...(!clocks.isLife ? ([[m.prisoners_release_due(), dateOnly(clocks.releaseDueOn)]] as [string, string][]) : []),
+        ...(clocks.paroleWindowOpensOn != null ? ([[m.prisoners_parole_window_opens(), dateOnly(clocks.paroleWindowOpensOn)]] as [string, string][]) : []),
+        [m.prisoners_instruments(), `${file.instruments.length}`],
       ]
-    : [['Sentence', prisoner.status === 'convicted' ? 'Not recorded' : 'Unconvicted — no sentence yet'], ['Instruments', `${file.instruments.length}`]]
+    : [[m.prisoners_sentence(), prisoner.status === 'convicted' ? m.prisoners_not_recorded() : m.prisoners_unconvicted_no_sentence_yet()], [m.prisoners_instruments(), `${file.instruments.length}`]]
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Legal position</h3>
+        <h3 className="text-sm font-medium">{m.prisoners_legal_position()}</h3>
         <button type="button" onClick={() => onOpenTab('legal')} className="text-xs text-muted-foreground underline-offset-2 hover:underline">
-          Open legal
+          {m.prisoners_open_legal()}
         </button>
       </div>
       <dl className="flex flex-col gap-1.5 text-sm">
@@ -252,20 +253,19 @@ export function PrisonerDocument({
 
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border/60 pb-4">
         <p className="text-sm text-muted-foreground">
-          Admitted {format(prisoner.admittedAt, 'd MMM yyyy')}
-          {inCustody ? ` · ${clocks.daysHeld} days held` : ''} · {prisoner.currentLocation ?? 'Not placed'}
+          {m.prisoners_admitted({ admittedAt: format(prisoner.admittedAt, 'd MMM yyyy') })}{inCustody ? m.prisoners_days_held({ daysHeld: clocks.daysHeld }) : ''} · {prisoner.currentLocation ?? m.prisoners_not_placed()}
         </p>
         <div className="flex flex-wrap gap-2">
           <Link to="/prisoners" className={buttonVariants({ size: 'sm', variant: 'ghost' })}>
-            Back to population
+            {m.prisoners_back_to_population()}
           </Link>
           {inCustody && (
             <>
               <Link to="/procedures/transfer/$prisonerId" params={{ prisonerId }} className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
-                {file.openTransfer ? 'Continue transfer' : 'Transfer out'}
+                {file.openTransfer ? m.prisoners_continue_transfer() : m.prisoners_transfer_out()}
               </Link>
               <Link to="/procedures/discharge/$prisonerId" params={{ prisonerId }} className={buttonVariants({ size: 'sm' })}>
-                Discharge
+                {m.prisoners_discharge()}
               </Link>
             </>
           )}
@@ -276,26 +276,26 @@ export function PrisonerDocument({
       <div className="flex flex-col gap-6 py-4">
         <div className="flex flex-wrap gap-x-8 gap-y-3">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] tracking-wide text-muted-foreground uppercase">Next court</span>
+            <span className="text-[11px] tracking-wide text-muted-foreground uppercase">{m.prisoners_next_court()}</span>
             <span className={cn('text-sm font-medium', remand && inCustody && !file.nextCourtAt && 'text-destructive')}>
-              {file.nextCourtAt ? format(file.nextCourtAt, 'd MMM yyyy p') : 'None scheduled'}
+              {file.nextCourtAt ? format(file.nextCourtAt, 'd MMM yyyy p') : m.prisoners_none_scheduled()}
             </span>
             {remand && (
               <span className="text-xs text-muted-foreground">
-                {prisoner.highCourtOnlyOffence ? '180 days, High Court offence (Art. 23(6))' : '60 days (Art. 23(6))'}
+                {prisoner.highCourtOnlyOffence ? m.prisoners_180_days_high_court_offence_art() : m.prisoners_60_days_art_23_6()}
               </span>
             )}
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] tracking-wide text-muted-foreground uppercase">{remand ? 'Mandatory-bail threshold' : 'Entitlement date'}</span>
+            <span className="text-[11px] tracking-wide text-muted-foreground uppercase">{remand ? m.prisoners_mandatory_bail_threshold() : m.prisoners_entitlement_date()}</span>
             <span className="text-sm font-medium">{dateOnly(remand ? clocks.mandatoryBailOn : clocks.releaseDueOn)}</span>
             {sentence == null && (
-              <span className="text-xs text-muted-foreground">{remand ? 'Computed from the remand period once the threshold applies' : 'Record the sentence to compute it'}</span>
+              <span className="text-xs text-muted-foreground">{remand ? m.prisoners_computed_from_the_remand_period_once() : m.prisoners_record_the_sentence_to_compute_it()}</span>
             )}
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] tracking-wide text-muted-foreground uppercase">Where</span>
-            <span className="text-sm font-medium">{prisoner.currentLocation ?? 'Not placed'}</span>
+            <span className="text-[11px] tracking-wide text-muted-foreground uppercase">{m.prisoners_where()}</span>
+            <span className="text-sm font-medium">{prisoner.currentLocation ?? m.prisoners_not_placed()}</span>
             {openStay && (
               <span className="text-xs text-muted-foreground">
                 {stayEntryKinds[openStay.entryKind as keyof typeof stayEntryKinds] ?? openStay.entryKind} {format(openStay.enteredAt, 'd MMM yyyy')}
@@ -306,19 +306,19 @@ export function PrisonerDocument({
 
         <section className="flex flex-col gap-3">
           <div className="section-head">
-            <h2>Open for this person</h2>
-            <span className="text-xs text-muted-foreground">{obligations.length} open</span>
+            <h2>{m.prisoners_open_for_this_person()}</h2>
+            <span className="text-xs text-muted-foreground">{m.prisoners_open({ length: obligations.length })}</span>
           </div>
-          <ObligationQueue obligations={obligations} now={now} flat emptyMessage="Nothing is open for this person." />
+          <ObligationQueue obligations={obligations} now={now} flat emptyMessage={m.prisoners_nothing_is_open_for_this_person()} />
         </section>
 
         <LegalPosition prisonerId={prisonerId} onOpenTab={onOpenTab} />
 
         <section className="flex flex-col gap-3">
           <div className="section-head">
-            <h2>Timeline</h2>
+            <h2>{m.prisoners_timeline()}</h2>
             <button type="button" onClick={() => onOpenTab('history')} className="text-xs text-muted-foreground underline-offset-2 hover:underline">
-              Open full history
+              {m.prisoners_open_full_history()}
             </button>
           </div>
           <Timeline prisonerId={prisonerId} />
@@ -338,7 +338,7 @@ function PhotoSlot({ prisoner, view, label }: { prisoner: Prisoner; view: View; 
 
   return (
     <div className="flex min-w-40 flex-1 basis-44 flex-col gap-2">
-      <PhotoCapture value={draft} onChange={setDraft} label={label} hint={onFile ? 'On file' : 'None yet'} shape="portrait" />
+      <PhotoCapture value={draft} onChange={setDraft} label={label} hint={onFile ? m.prisoners_on_file() : m.prisoners_none_yet()} shape="portrait" />
       {draft && (
         <Button
           size="xs"
@@ -347,13 +347,13 @@ function PhotoSlot({ prisoner, view, label }: { prisoner: Prisoner; view: View; 
             try {
               await save.mutateAsync(draft)
               setDraft(null)
-              t.success(`${label} photo saved`)
+              t.success(m.prisoners_photo_saved({ label }))
             } catch (error) {
-              t.error('Could not save the photo', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+              t.error(m.prisoners_could_not_save_the_photo(), { description: error instanceof ApiError ? error.message : m.prisoners_please_try_again() })
             }
           }}
         >
-          {save.isPending ? 'Saving…' : `Save ${label.toLowerCase()} photo`}
+          {save.isPending ? m.prisoners_saving() : m.prisoners_save_photo({ label: label.toLowerCase() })}
         </Button>
       )}
     </div>

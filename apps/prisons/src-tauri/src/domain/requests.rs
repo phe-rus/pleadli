@@ -82,16 +82,6 @@ async fn get_request_conn(conn: &mut SqliteConnection, id: &str) -> Result<Optio
     .await
 }
 
-pub async fn get_request(pool: &SqlitePool, id: &str) -> Result<Option<Request>, sqlx::Error> {
-    sqlx::query_as::<_, Request>(
-        "SELECT r.*, p.first_name AS prisoner_first_name, p.last_name AS prisoner_last_name
-         FROM requests r LEFT JOIN prisoners p ON p.id = r.prisoner_id WHERE r.id = ?",
-    )
-    .bind(id)
-    .fetch_optional(pool)
-    .await
-}
-
 pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Request>, sqlx::Error> {
     sqlx::query_as::<_, Request>(
         "SELECT r.*, p.first_name AS prisoner_first_name, p.last_name AS prisoner_last_name

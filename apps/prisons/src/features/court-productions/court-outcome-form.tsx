@@ -11,6 +11,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Textarea } from '@pleadli/ui/textarea'
 import { useRecordCourtOutcome } from './queries'
 import { courtOutcomes, type CourtOutcomeResult } from './schema'
+import { m } from '@/paraglide/messages'
 
 type CourtOutcomeFormProps = {
   productionId: string
@@ -37,17 +38,17 @@ export function CourtOutcomeForm({ productionId, onSuccess, onDirtyChange }: Cou
           notes: value.notes,
           nextDate: meta?.needsDate ? fromDatetimeLocal(value.nextDate) : null,
         })
-        t.success('Outcome recorded', {
+        t.success(m.court_productions_outcome_recorded(), {
           description:
             result.followUp === 'discharge'
-              ? 'The court order points at discharge. Open Discharge from the prisoner file.'
+              ? m.court_productions_the_court_order_points_at_discharge()
               : result.followUp === 'sentence'
-                ? 'Now record the sentence from the warrant.'
+                ? m.court_productions_now_record_the_sentence_from_the()
                 : undefined,
         })
         onSuccess?.(result)
       } catch (error) {
-        t.error('Could not record the outcome', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+        t.error(m.court_productions_could_not_record_the_outcome(), { description: error instanceof ApiError ? error.message : m.court_productions_please_try_again() })
       }
     },
   })
@@ -56,7 +57,7 @@ export function CourtOutcomeForm({ productionId, onSuccess, onDirtyChange }: Cou
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
@@ -65,10 +66,10 @@ export function CourtOutcomeForm({ productionId, onSuccess, onDirtyChange }: Cou
       <form.AppField name="outcome">
         {(f) => (
           <Field>
-            <FieldLabel>What did the court decide?</FieldLabel>
+            <FieldLabel>{m.court_productions_what_did_the_court_decide()}</FieldLabel>
             <Select items={courtOutcomes} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose the outcome" />
+                <SelectValue placeholder={m.court_productions_choose_the_outcome()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -90,7 +91,7 @@ export function CourtOutcomeForm({ productionId, onSuccess, onDirtyChange }: Cou
             <form.AppField name="nextDate">
               {(f) => (
                 <Field>
-                  <FieldLabel>Next court date</FieldLabel>
+                  <FieldLabel>{m.court_productions_next_court_date()}</FieldLabel>
                   <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
                 </Field>
               )}
@@ -102,8 +103,8 @@ export function CourtOutcomeForm({ productionId, onSuccess, onDirtyChange }: Cou
       <form.AppField name="notes">
         {(f) => (
           <Field>
-            <FieldLabel>Notes (optional)</FieldLabel>
-            <Textarea value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} placeholder="Order reference, conditions, anything the file should carry" />
+            <FieldLabel>{m.court_productions_notes_optional()}</FieldLabel>
+            <Textarea value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} placeholder={m.court_productions_order_reference_conditions_anything_the()} />
           </Field>
         )}
       </form.AppField>
@@ -112,7 +113,7 @@ export function CourtOutcomeForm({ productionId, onSuccess, onDirtyChange }: Cou
         <form.Subscribe selector={(state) => state.values.outcome}>
           {(outcome) => (
             <Button type="submit" disabled={!outcome || record.isPending}>
-              Record outcome
+              {m.court_productions_record_outcome()}
             </Button>
           )}
         </form.Subscribe>

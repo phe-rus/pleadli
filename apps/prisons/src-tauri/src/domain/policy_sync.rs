@@ -43,7 +43,7 @@ pub async fn serve_policy(pool: &SqlitePool, sync_token: &str, report: PolicyRep
     }
 
     sqlx::query(
-        "UPDATE facilities SET numbering_pattern = ?, numbering_source = ?, numbering_locked = ?, numbering_reported_at = ? WHERE id = ?",
+        "UPDATE facilities SET numbering_pattern = ?1, numbering_source = ?2, numbering_locked = ?3, numbering_reported_at = ?4, last_contact_at = ?4 WHERE id = ?5",
     )
     .bind(report.pattern.as_deref().map(|p| p.chars().take(60).collect::<String>()))
     .bind(report.source.as_deref().map(|s| s.chars().take(20).collect::<String>()))

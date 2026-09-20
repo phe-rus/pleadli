@@ -4,9 +4,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSyncExternalStore } from 'react'
 import { bootstrapFirstAccount, getSession, getSystemState, setDevRole, signIn, signOut } from './data'
 import type { BootstrapInput } from './schema'
+import { m } from '@/paraglide/messages'
 
 export function systemStateOptions() {
-  return { queryKey: ['systemState'] as const, queryFn: () => getSystemState() }
+  return {
+    queryKey: ['systemState'] as const,
+    queryFn: () => getSystemState(),
+    // While the node does not answer (it restarts), ask again every few
+    // seconds so the waiting screen gives way by itself.
+    refetchInterval: (query: { state: { status: string } }) => (query.state.status === 'error' ? 3000 : false),
+  }
 }
 
 export function useSystemState() {
@@ -63,23 +70,20 @@ export function useBootstrapFirstAccount() {
   })
 }
 
+/** Ending the session clears the cache itself: `signOut` drops the token and
+ * the sign-in gate's session-change listener clears every query and reloads
+ * the routes. Clearing again here, after the system state has already been
+ * fetched for the sign-in screen, would wipe it and leave the screen blank. */
 export function useSignOut() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: () => signOut(),
-    onSuccess: () => {
-      queryClient.clear()
-    },
-  })
+  return useMutation({ mutationFn: () => signOut() })
 }
 
 export function useSetDevRole() {
-  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (isHeadOffice: boolean) => setDevRole(isHeadOffice),
+    // `setDevRole` drops the token, which clears the cache (see `useSignOut`).
     onSuccess: (account) => {
-      queryClient.clear()
-      t.info('Role switched. Signed out.', { description: `Development account ${account.badgeNumber}, password ${account.password}.` })
+      t.info(m.session_role_switched_signed_out(), { description: m.session_development_account_password({ badgeNumber: account.badgeNumber, password: account.password }) })
     },
   })
 }

@@ -17,8 +17,8 @@ Canonical security stance for Pleadli Prisons. Deep detail: `product/03` (owners
 
 | # | Finding | Consequence |
 |---|---|---|
-| X4 | Legacy snapshot sync pushes the full `prisoners` row (free-text `notes`, `national_id`, `date_of_birth`) to HQ every five minutes over `/api/network/v1/legacy/snapshot` | Contradicts P3/P4; a breach of HQ or transport exposes every prisoner row. Retire with tiered exchange. |
-| X9 | `sync_token`, `cloudflare_config.api_token`, `remote_device_token` are stored **plaintext** as columns | Disk theft or local read exposes network credentials. Encrypt secrets at rest before pilot. |
+| X4 | Legacy snapshot sync used to push the full `prisoners` row (free-text `notes`, `national_id`, `date_of_birth`) to HQ over `/api/network/v1/legacy/snapshot`. **Narrowed 2026-09-20**: it now sends `SnapshotRow` only (status, sex, year of birth, nationality, education, offence, custody status, dates), HQ stores nothing else and scrubs rows already held (migration 0140). | Remaining exposure: `offence` is free text and is still sent, and a facility's people are still individually listed at HQ. Retire with tiered exchange. |
+| X9 | `sync_token`, `cloudflare_config.api_token`, tunnel `run_token`, `remote_device_token` were stored plaintext. **Fixed at rest 2026-09-20**: ChaCha20-Poly1305 under a 32-byte key in `secrets.key` beside the database (owner-only on Unix), each value bound to its column. | The key sits next to the data, so taking the whole data folder still exposes the credentials, and `pre-migration/` snapshots from earlier builds still hold plaintext. Key in the OS keystore or under a passphrase is D14. |
 
 **Carried from the 2026-09-18 ledger:** X1/X2 (unauthenticated dev API) fixed; X3 (two clients) fixed; X10 database/vault plaintext — designed under D14 (SQLCipher / encrypted vault vs verified OS-level encryption); Cloudflare Tunnel never provisioned (`cloudflare_tunnel::provision` has no caller) — a production path only exists against loopback today. Full ledger in `product/status.md` §5.
 

@@ -1,105 +1,118 @@
-import { AddCircleIcon, PinIcon, XIcon } from '@hugeicons/core-free-icons'
+import { PinIcon, XIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { motion } from 'motion/react'
 import { cn } from '@pleadli/ui/lib/utils'
-import { useNavigate } from '@tanstack/react-router'
+import { useEffect, useRef, useState } from 'react'
+import { useTabActions } from './tab-actions'
+import { tabIcon } from './tab-icon'
 import { useWorkspace, type WorkspaceTab } from './tabs-store'
-import { useTabTitle } from './tab-identity'
+import { m } from '@/paraglide/messages'
 
-/** One open record as a flat, Obsidian-style tab: a quiet pill under a thin
- * accent on the active one, noting records it is pinned to the little pin
- * toggle. Its live title comes from the query cache. */
-function TabItem({ tab }: { tab: WorkspaceTab }) {
-  const { activeKey, closeTab, setActive, isPinned, togglePinned } = useWorkspace()
-  const navigate = useNavigate()
-  const title = useTabTitle(tab)
+const iconButton =
+  'flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground'
+
+/** One open tab. The label is the tab's saved title (a prisoner's name once
+ * their file has loaded). Unpinned tabs show pin and close on hover; a pinned
+ * tab keeps its pin showing and cannot be closed until unpinned. Dragging a
+ * tab onto another reorders them. */
+function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: string | null; onDragging: (key: string | null) => void }) {
+  const { activeKey, togglePinned, moveTab } = useWorkspace()
+  const { activate, close } = useTabActions()
   const active = activeKey === tab.key
-  const pinned = isPinned(tab.key)
+  const pinned = tab.pinned === true
+  const fixed = tab.kind === 'today'
 
   return (
-    <motion.div
-      layout
-      key={tab.key}
-      onClick={() => {
-        setActive(tab.key)
-        void navigate({ to: tab.to as never })
+    <div
+      role="presentation"
+      draggable={!fixed}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = 'move'
+        onDragging(tab.key)
       }}
+      onDragOver={(event) => dragging && !fixed && event.preventDefault()}
+      onDrop={() => {
+        if (dragging) moveTab(dragging, tab.key)
+        onDragging(null)
+      }}
+      onDragEnd={() => onDragging(null)}
+      onAuxClick={(event) => {
+        if (event.button === 1) close(tab.key)
+      }}
+      data-active={active || undefined}
       className={cn(
-        'group/tab relative flex h-6.5 shrink-0 cursor-pointer items-center gap-1.5 rounded-sm px-2 text-sm whitespace-nowrap',
-        'transition-colors duration-100 ease-out',
-        active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+        // Tabs share the strip like a browser's: they open long and give way
+        // evenly as they multiply, down to a readable minimum. The strip holds
+        // five at most, so it never has to scroll at a normal window width.
+        'group/tab relative flex h-8 min-w-28 items-center gap-1.5 rounded-t-lg pr-1.5 pl-3 text-sm whitespace-nowrap select-none',
+        fixed ? 'flex-[0_1_9rem]' : 'flex-[0_1_15rem]',
+        'transition-colors duration-100 motion-reduce:transition-none',
+        // The open tab is a filled tab with an accent line along its foot, on
+        // the header's own hairline.
+        active
+          ? 'bg-secondary text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary'
+          : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
+        dragging === tab.key && 'opacity-50',
       )}
     >
-      {tab.kind === 'today' && <HugeiconsIcon icon={PinIcon} className="size-3 shrink-0 text-muted-foreground" />}
-      <span className="truncate">{title}</span>
-      {tab.subtitle && <span className="hidden text-xs text-muted-foreground sm:inline">· {tab.subtitle}</span>}
-      {tab.closable && (
-        <button
-          type="button"
-          aria-label={`Close ${title}`}
-          title="Close this record"
-          onClick={(event) => {
-            event.stopPropagation()
-            closeTab(tab.key)
-          }}
-          className={cn(
-            'flex size-3.5 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-            'opacity-0 transition-opacity group-hover/tab:opacity-70 group-hover/tab:hover:opacity-100',
-            active && 'opacity-70',
+      <button
+        type="button"
+        role="tab"
+        aria-selected={active}
+        tabIndex={active ? 0 : -1}
+        onClick={() => activate(tab)}
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      >
+        <HugeiconsIcon icon={tabIcon(tab)} className="size-4 shrink-0" />
+        <span className="truncate">{tab.title}</span>
+      </button>
+      {!fixed && (
+        <>
+          <button
+            type="button"
+            aria-label={pinned ? m.workspace_unpin_2({ title: tab.title }) : m.workspace_pin_2({ title: tab.title })}
+            title={pinned ? m.workspace_unpin() : m.workspace_pin()}
+            onClick={() => togglePinned(tab.key)}
+            className={cn(iconButton, !pinned && 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100')}
+          >
+            <HugeiconsIcon icon={PinIcon} className={cn('size-3.5', pinned && 'text-foreground')} />
+          </button>
+          {!pinned && (
+            <button
+              type="button"
+              aria-label={m.workspace_close({ title: tab.title })}
+              title={m.workspace_close_ctrl_w()}
+              onClick={() => close(tab.key)}
+              className={cn(iconButton, 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100', active && 'opacity-70')}
+            >
+              <HugeiconsIcon icon={XIcon} className="size-3.5" />
+            </button>
           )}
-        >
-          <HugeiconsIcon icon={XIcon} className="size-3" />
-        </button>
+        </>
       )}
-      {tab.closable && (
-        <button
-          type="button"
-          aria-label={pinned ? 'Unpin' : 'Pin'}
-          title={pinned ? 'Unpin' : 'Pin'}
-          onClick={(event) => {
-            event.stopPropagation()
-            togglePinned(tab.key)
-          }}
-          className={cn(
-            'flex size-3.5 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground',
-            'opacity-0 transition-opacity group-hover/tab:opacity-70 group-hover/tab:hover:opacity-100',
-            active && 'opacity-50',
-          )}
-        >
-          <HugeiconsIcon icon={PinIcon} className={cn('size-3', pinned && 'text-foreground')} />
-        </button>
-      )}
-      {active && (
-        <motion.span
-          layoutId="active-tab-underline"
-          className="absolute inset-x-1.5 -bottom-px z-10 h-0.5 rounded-full bg-primary"
-        />
-      )}
-    </motion.div>
+    </div>
   )
 }
 
-/** Open records as flat tabs atop the working pane, Today always first as a
- * pinned lead. Clicking a tab returns to its record; the `+` opens the
- * command palette. */
+/** Every open area and record as a tab standing on the bottom of the centre
+ * header, five at most. Today leads, pinned. The empty stretch after the last
+ * tab is the window's drag handle. */
 export function TabStrip() {
-  const { tabs, setCommandOpen } = useWorkspace()
-  if (tabs.length === 0) return null
+  const { tabs, activeKey } = useWorkspace()
+  const [dragging, setDragging] = useState<string | null>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    listRef.current?.querySelector('[data-active]')?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+  }, [activeKey, tabs.length])
 
   return (
-    <div className="no-scrollbar flex h-8 shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border/20 bg-background px-1.5">
-      {tabs.map((tab) => (
-        <TabItem key={tab.key} tab={tab} />
-      ))}
-      <button
-        type="button"
-        aria-label="Open records or commands"
-        title="Open a record (Ctrl K)"
-        onClick={() => setCommandOpen(true)}
-        className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-      >
-        <HugeiconsIcon icon={AddCircleIcon} className="size-3.5" />
-      </button>
+    <div data-tauri-drag-region className="flex min-w-0 flex-1 items-end self-stretch">
+      <div ref={listRef} role="tablist" aria-label={m.workspace_open_tabs()} className="no-scrollbar flex min-w-0 items-end gap-1 overflow-x-auto pl-2">
+        {tabs.map((tab) => (
+          <TabItem key={tab.key} tab={tab} dragging={dragging} onDragging={setDragging} />
+        ))}
+      </div>
+      <div data-tauri-drag-region className="h-full min-w-6 flex-1" />
     </div>
   )
 }

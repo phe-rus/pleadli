@@ -8,6 +8,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useCreateCourtProduction } from './queries'
 import { createCourtProductionSchema, productionMethods, type CourtProduction } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type CourtProductionFormProps = {
   prisonerId: string
@@ -51,11 +52,11 @@ export function CourtProductionForm({ prisonerId, onSuccess, onDirtyChange }: Co
       try {
         const input = { ...value, prisonerId, productionDate: new Date(value.productionDate).getTime() }
         const result = await createProduction.mutateAsync(input)
-        t.success('Court production recorded')
+        t.success(m.court_productions_court_production_recorded())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record court production', { description: 'Please try again.' })
+        t.error(m.court_productions_could_not_record_court_production(), { description: m.court_productions_please_try_again() })
       }
     },
   })
@@ -64,18 +65,18 @@ export function CourtProductionForm({ prisonerId, onSuccess, onDirtyChange }: Co
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
       }}
     >
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="courtReference">{(f) => <f.input label="Court reference (optional)" />}</form.AppField>
+        <form.AppField name="courtReference">{(f) => <f.input label={m.court_productions_court_reference_optional()} />}</form.AppField>
         <form.AppField name="productionDate">
           {(f) => (
             <Field>
-              <FieldLabel>Production date</FieldLabel>
+              <FieldLabel>{m.court_productions_production_date()}</FieldLabel>
               <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
             </Field>
           )}
@@ -85,10 +86,10 @@ export function CourtProductionForm({ prisonerId, onSuccess, onDirtyChange }: Co
       <form.AppField name="productionMethod">
         {(f) => (
           <Field>
-            <FieldLabel>Production method</FieldLabel>
+            <FieldLabel>{m.court_productions_production_method()}</FieldLabel>
             <Select items={productionMethods} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select method" />
+                <SelectValue placeholder={m.court_productions_select_method()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -107,15 +108,15 @@ export function CourtProductionForm({ prisonerId, onSuccess, onDirtyChange }: Co
       <form.AppField name="purpose">
         {(f) => (
           <Field>
-            <FieldLabel>Purpose (optional)</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="e.g. Mention, plea, sentencing…" />
+            <FieldLabel>{m.court_productions_purpose_optional()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m.court_productions_e_g_mention_plea_sentencing()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Record production" />
+          <form.submit label={m.court_productions_record_production()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

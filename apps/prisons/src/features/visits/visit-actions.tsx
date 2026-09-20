@@ -11,6 +11,7 @@ import { useState } from 'react'
 import type { VisitAction } from './data'
 import { useVisitAction } from './queries'
 import { itemDispositions, type Visit } from './schema'
+import { m } from '@/paraglide/messages'
 
 type Dialogs = null | 'check-in' | 'deny' | 'cancel'
 
@@ -31,7 +32,7 @@ export function VisitActions({ visit, className }: { visit: Pick<Visit, 'id' | '
           t.success(done, { description: visit.visitorName })
           after?.()
         },
-        onError: (error) => t.error('Could not do that', { description: error instanceof ApiError ? error.message : 'Please try again.' }),
+        onError: (error) => t.error(m.visits_could_not_do_that(), { description: error instanceof ApiError ? error.message : m.visits_please_try_again() }),
       },
     )
 
@@ -41,42 +42,42 @@ export function VisitActions({ visit, className }: { visit: Pick<Visit, 'id' | '
     <div className={className ?? 'flex flex-wrap items-center gap-1.5'}>
       {visit.status === 'requested' && (
         <>
-          <Button size="xs" disabled={busy} onClick={() => run('approve', 'Visit approved')}>
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} /> Approve
+          <Button size="xs" disabled={busy} onClick={() => run('approve', m.visits_visit_approved())}>
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} /> {m.visits_approve()}
           </Button>
           <Button size="xs" variant="secondary" disabled={busy} onClick={() => setDialog('deny')}>
-            Refuse
+            {m.visits_refuse()}
           </Button>
         </>
       )}
       {visit.status === 'scheduled' && (
         <>
           <Button size="xs" disabled={busy} onClick={() => setDialog('check-in')}>
-            <HugeiconsIcon icon={Login01Icon} size={12} /> Check in
+            <HugeiconsIcon icon={Login01Icon} size={12} /> {m.visits_check_in()}
           </Button>
-          <Button size="xs" variant="secondary" disabled={busy} onClick={() => run('no-show', 'Marked as a no show')}>
-            No show
+          <Button size="xs" variant="secondary" disabled={busy} onClick={() => run('no-show', m.visits_marked_as_a_no_show())}>
+            {m.visits_no_show()}
           </Button>
         </>
       )}
       {visit.status === 'checked_in' && (
         <>
-          <Button size="xs" disabled={busy} onClick={() => run('start', 'Visit started')}>
-            <HugeiconsIcon icon={PlayIcon} size={12} /> Start visit
+          <Button size="xs" disabled={busy} onClick={() => run('start', m.visits_visit_started())}>
+            <HugeiconsIcon icon={PlayIcon} size={12} /> {m.visits_start_visit()}
           </Button>
           <Button size="xs" variant="secondary" disabled={busy} onClick={() => setDialog('deny')}>
-            <HugeiconsIcon icon={UserBlock01Icon} size={12} /> Turn away
+            <HugeiconsIcon icon={UserBlock01Icon} size={12} /> {m.visits_turn_away()}
           </Button>
         </>
       )}
       {visit.status === 'in_progress' && (
-        <Button size="xs" disabled={busy} onClick={() => run('complete', 'Visit completed')}>
-          <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} /> Complete
+        <Button size="xs" disabled={busy} onClick={() => run('complete', m.visits_visit_completed())}>
+          <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} /> {m.visits_complete()}
         </Button>
       )}
       {['requested', 'scheduled', 'checked_in'].includes(visit.status) && (
         <Button size="xs" variant="ghost" disabled={busy} onClick={() => setDialog('cancel')}>
-          Cancel
+          {m.visits_cancel()}
         </Button>
       )}
 
@@ -89,23 +90,23 @@ export function VisitActions({ visit, className }: { visit: Pick<Visit, 'id' | '
       <ReasonDialog
         open={dialog === 'deny'}
         onOpenChange={(open) => setDialog(open ? 'deny' : null)}
-        title={visit.status === 'checked_in' || visit.status === 'scheduled' ? 'Turn the visitor away' : 'Refuse this visit'}
-        description="Record the reason. It stays on the visit and in the audit trail."
-        label="Reason"
-        confirm="Record refusal"
+        title={visit.status === 'checked_in' || visit.status === 'scheduled' ? m.visits_turn_the_visitor_away() : m.visits_refuse_this_visit()}
+        description={m.visits_record_the_reason_it_stays_on()}
+        label={m.visits_reason()}
+        confirm={m.visits_record_refusal()}
         destructive
         pending={busy}
-        onConfirm={(reason) => run('deny', 'Visit refused', { reason }, () => setDialog(null))}
+        onConfirm={(reason) => run('deny', m.visits_visit_refused(), { reason }, () => setDialog(null))}
       />
       <ReasonDialog
         open={dialog === 'cancel'}
         onOpenChange={(open) => setDialog(open ? 'cancel' : null)}
-        title="Cancel this visit"
-        description="Say why it is cancelled."
-        label="Reason"
-        confirm="Cancel visit"
+        title={m.visits_cancel_this_visit()}
+        description={m.visits_say_why_it_is_cancelled()}
+        label={m.visits_reason()}
+        confirm={m.visits_cancel_visit()}
         pending={busy}
-        onConfirm={(reason) => run('cancel', 'Visit cancelled', { reason }, () => setDialog(null))}
+        onConfirm={(reason) => run('cancel', m.visits_visit_cancelled(), { reason }, () => setDialog(null))}
       />
     </div>
   )
@@ -152,7 +153,7 @@ function ReasonDialog({
         </Field>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Back
+            {m.visits_back()}
           </Button>
           <Button variant={destructive ? 'destructive' : 'default'} disabled={pending || !reason.trim()} onClick={() => onConfirm(reason.trim())}>
             {confirm}
@@ -194,11 +195,11 @@ function CheckInDialog({
       { id: visit.id, action: 'check-in', body: { idVerified, searchDone, items: items.filter((i) => i.description.trim()) } },
       {
         onSuccess: () => {
-          t.success('Checked in', { description: visit.visitorName })
+          t.success(m.visits_checked_in(), { description: visit.visitorName })
           reset()
           onOpenChange(false)
         },
-        onError: (error) => t.error('Could not check in', { description: error instanceof ApiError ? error.message : 'Please try again.' }),
+        onError: (error) => t.error(m.visits_could_not_check_in(), { description: error instanceof ApiError ? error.message : m.visits_please_try_again() }),
       },
     )
 
@@ -214,34 +215,34 @@ function CheckInDialog({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Check in {visit.visitorName}</DialogTitle>
-          <DialogDescription>Photographic ID and a search come before anyone goes in.</DialogDescription>
+          <DialogTitle>{m.visits_check_in_2({ visitorName: visit.visitorName })}</DialogTitle>
+          <DialogDescription>{m.visits_photographic_id_and_a_search_come()}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
           <Field orientation="horizontal">
             <Switch checked={idVerified} onCheckedChange={setIdVerified} />
-            <FieldLabel>Photographic ID checked against the visitor</FieldLabel>
+            <FieldLabel>{m.visits_photographic_id_checked_against_the_visi()}</FieldLabel>
           </Field>
           <Field orientation="horizontal">
             <Switch checked={searchDone} onCheckedChange={setSearchDone} />
-            <FieldLabel>Visitor and belongings searched</FieldLabel>
+            <FieldLabel>{m.visits_visitor_and_belongings_searched()}</FieldLabel>
           </Field>
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium">Items brought for the prisoner</span>
+          <span className="text-xs font-medium">{m.visits_items_brought_for_the_prisoner()}</span>
           {items.map((item, index) => (
             <div key={index} className="flex flex-wrap items-center gap-2">
               <Input
                 autoComplete="off"
                 className="min-w-40 flex-1"
-                placeholder="What is it"
+                placeholder={m.visits_what_is_it()}
                 value={item.description}
                 onChange={(event) => setItem(index, { description: event.target.value })}
               />
               <select
-                aria-label="What happens to it"
+                aria-label={m.visits_what_happens_to_it()}
                 value={item.disposition}
                 onChange={(event) => setItem(index, { disposition: event.target.value })}
                 className="h-8 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary"
@@ -253,16 +254,16 @@ function CheckInDialog({
                 ))}
               </select>
               <Button size="xs" variant="ghost" onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}>
-                Remove
+                {m.visits_remove()}
               </Button>
             </div>
           ))}
           <div>
             <Button size="xs" variant="secondary" onClick={() => setItems((prev) => [...prev, { description: '', disposition: 'handed_over' }])}>
-              Add an item
+              {m.visits_add_an_item()}
             </Button>
           </div>
-          <FieldDescription>Leave empty if the visitor brought nothing.</FieldDescription>
+          <FieldDescription>{m.visits_leave_empty_if_the_visitor_brought()}</FieldDescription>
         </div>
 
         <DialogFooter className="flex-wrap">
@@ -274,10 +275,10 @@ function CheckInDialog({
               onTurnAway()
             }}
           >
-            Refused ID or search? Turn away
+            {m.visits_refused_id_or_search_turn_away()}
           </Button>
           <Button disabled={action.isPending || !idVerified || !searchDone} onClick={submit}>
-            Check in
+            {m.visits_check_in()}
           </Button>
         </DialogFooter>
       </DialogContent>

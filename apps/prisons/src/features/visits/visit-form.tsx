@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useApprovedVisitors, useCreateVisit, useVisitorSearch, visitRulesOptions } from './queries'
 import { idTypes, isOutsideVisitingHours, isPrivilegedType, isSpecialType, visitTypes, type Visit } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type VisitFormProps = {
   prisonerId: string
@@ -29,7 +30,7 @@ function toDatetimeLocal(ms: number) {
 
 type Source = 'approved' | 'find' | 'new'
 
-const sourceLabels: Record<Source, string> = { approved: 'Approved for this prisoner', find: 'Find a registered visitor', new: 'New visitor' }
+const sourceLabels: Record<Source, string> = { get approved() { return m.visits_approved_for_this_prisoner() }, get find() { return m.visits_find_a_registered_visitor() }, get new() { return m.visits_new_visitor() } }
 
 function Chip({ selected, disabled, onClick, children }: { selected: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -79,12 +80,12 @@ export function VisitForm({ prisonerId, onSuccess, onDirtyChange }: VisitFormPro
     },
     onSubmit: async ({ value, formApi }) => {
       const visitedAt = new Date(value.visitedAt).getTime()
-      if (Number.isNaN(visitedAt)) return void t.error('Choose the date and time of the visit.')
+      if (Number.isNaN(visitedAt)) return void t.error(m.visits_choose_the_date_and_time_of())
       if (activeSource === 'new') {
-        if (!value.fullName.trim()) return void t.error('Enter the visitor’s full name.')
-        if (!value.idNumber.trim()) return void t.error('Every visitor needs a photographic ID.')
+        if (!value.fullName.trim()) return void t.error(m.visits_enter_the_visitor_s_full_name())
+        if (!value.idNumber.trim()) return void t.error(m.visits_every_visitor_needs_a_photographic_id())
       } else if (!selected) {
-        return void t.error('Choose who is visiting.')
+        return void t.error(m.visits_choose_who_is_visiting())
       }
       try {
         const result = await createVisit.mutateAsync({
@@ -107,13 +108,13 @@ export function VisitForm({ prisonerId, onSuccess, onDirtyChange }: VisitFormPro
               }
             : { visitorId: selected!.id }),
         })
-        t.success(result.status === 'requested' ? 'Visit requested' : 'Visit scheduled', {
-          description: result.status === 'requested' ? 'It waits for the Officer in Charge to authorise it.' : result.visitorName,
+        t.success(result.status === 'requested' ? m.visits_visit_requested() : m.visits_visit_scheduled(), {
+          description: result.status === 'requested' ? m.visits_it_waits_for_the_officer_in() : result.visitorName,
         })
         formApi.reset()
         onSuccess?.(result)
       } catch (error) {
-        t.error('Could not save the visit', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+        t.error(m.visits_could_not_save_the_visit(), { description: error instanceof ApiError ? error.message : m.visits_please_try_again() })
       }
     },
   })
@@ -122,14 +123,14 @@ export function VisitForm({ prisonerId, onSuccess, onDirtyChange }: VisitFormPro
 
   return (
     <form
-      className="flex flex-1 flex-col gap-5 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
       }}
     >
       <section className="flex flex-col gap-2.5">
-        <h3 className="text-xs font-medium">1. Who is visiting</h3>
+        <h3 className="text-xs font-medium">{m.visits_1_who_is_visiting()}</h3>
         <div className="flex flex-wrap gap-1.5">
           {(Object.keys(sourceLabels) as Source[]).map((key) => (
             <Button key={key} type="button" size="xs" variant={activeSource === key ? 'default' : 'secondary'} onClick={() => setSource(key)}>
@@ -150,49 +151,49 @@ export function VisitForm({ prisonerId, onSuccess, onDirtyChange }: VisitFormPro
                 >
                   <span className="font-medium">{visitor.fullName}</span>
                   <span className="text-muted-foreground">
-                    {visitor.relationship ?? 'Visitor'} · {visitor.visitsCompleted} visit{visitor.visitsCompleted === 1 ? '' : 's'}
+                    {visitor.relationship ?? m.visits_visitor()} {m.visits_visit_2({ visitsCompleted: visitor.visitsCompleted })}{visitor.visitsCompleted === 1 ? '' : 's'}
                   </span>
-                  {visitor.status === 'suspended' && <Badge variant="destructive">Suspended</Badge>}
+                  {visitor.status === 'suspended' && <Badge variant="destructive">{m.visits_suspended_2()}</Badge>}
                 </Chip>
               ))
             ) : (
-              <p className="text-xs text-muted-foreground">No one is approved for this prisoner yet. Find a registered visitor or add a new one.</p>
+              <p className="text-xs text-muted-foreground">{m.visits_no_one_is_approved_for_this()}</p>
             )}
           </div>
         )}
 
         {activeSource === 'find' && (
           <div className="flex flex-col gap-2">
-            <Input autoComplete="off" placeholder="Search by name, ID number or phone" value={search} onChange={(event) => setSearch(event.target.value)} />
+            <Input autoComplete="off" placeholder={m.visits_search_by_name_id_number_or()} value={search} onChange={(event) => setSearch(event.target.value)} />
             <div className="flex flex-wrap gap-2">
               {found?.map((visitor) => (
                 <Chip key={visitor.id} selected={selected?.id === visitor.id} onClick={() => setSelected({ id: visitor.id, name: visitor.fullName })}>
                   <span className="font-medium">{visitor.fullName}</span>
-                  <span className="text-muted-foreground">{visitor.idNumber ?? 'No ID number'}</span>
+                  <span className="text-muted-foreground">{visitor.idNumber ?? m.visits_no_id_number()}</span>
                 </Chip>
               ))}
-              {search.trim().length >= 2 && found?.length === 0 && <p className="text-xs text-muted-foreground">No registered visitor matches.</p>}
+              {search.trim().length >= 2 && found?.length === 0 && <p className="text-xs text-muted-foreground">{m.visits_no_registered_visitor_matches()}</p>}
             </div>
-            <FieldDescription>Choosing someone here approves them for this prisoner too.</FieldDescription>
+            <FieldDescription>{m.visits_choosing_someone_here_approves_them_for()}</FieldDescription>
           </div>
         )}
 
         {activeSource === 'new' && (
           <div className="flex flex-col gap-3 rounded-lg border border-border/60 p-3">
             <div className="flex flex-wrap gap-3 *:min-w-48 *:flex-1">
-              <form.AppField name="fullName">{(f) => <f.input label="Full name" autoComplete="name" />}</form.AppField>
-              <form.AppField name="relationship">{(f) => <f.input label="Relationship" placeholder="e.g. wife, brother, lawyer" autoComplete="off" />}</form.AppField>
+              <form.AppField name="fullName">{(f) => <f.input label={m.visits_full_name()} autoComplete="name" />}</form.AppField>
+              <form.AppField name="relationship">{(f) => <f.input label={m.visits_relationship()} placeholder={m.visits_e_g_wife_brother_lawyer()} autoComplete="off" />}</form.AppField>
             </div>
             <div className="flex flex-wrap gap-3 *:min-w-48 *:flex-1">
-              <form.AppField name="idType">{(f) => <f.select label="ID type" options={[...idTypes]} />}</form.AppField>
-              <form.AppField name="idNumber">{(f) => <f.input label="ID number" autoComplete="off" />}</form.AppField>
+              <form.AppField name="idType">{(f) => <f.select label={m.visits_id_type()} options={[...idTypes]} />}</form.AppField>
+              <form.AppField name="idNumber">{(f) => <f.input label={m.visits_id_number()} autoComplete="off" />}</form.AppField>
             </div>
-            <form.AppField name="phone">{(f) => <f.input label="Phone (optional)" type="tel" autoComplete="tel" />}</form.AppField>
-            <FieldDescription>If this ID is already registered, that visitor is reused instead of added twice.</FieldDescription>
+            <form.AppField name="phone">{(f) => <f.input label={m.visits_phone_optional()} type="tel" autoComplete="tel" />}</form.AppField>
+            <FieldDescription>{m.visits_if_this_id_is_already_registered()}</FieldDescription>
           </div>
         )}
 
-        {activeSource !== 'new' && selected && <p className="text-xs">Selected: <span className="font-medium">{selected.name}</span></p>}
+        {activeSource !== 'new' && selected && <p className="text-xs">{m.visits_selected()} <span className="font-medium">{selected.name}</span></p>}
       </section>
 
       <form.Subscribe selector={(state) => state.values}>
@@ -205,37 +206,37 @@ export function VisitForm({ prisonerId, onSuccess, onDirtyChange }: VisitFormPro
           return (
             <>
               <section className="flex flex-col gap-3">
-                <h3 className="text-xs font-medium">2. When and what kind</h3>
+                <h3 className="text-xs font-medium">{m.visits_2_when_and_what_kind()}</h3>
                 <div className="flex flex-wrap gap-3 *:min-w-48 *:flex-1">
-                  <form.AppField name="visitType">{(f) => <f.select label="Visit type" options={[...visitTypes]} />}</form.AppField>
+                  <form.AppField name="visitType">{(f) => <f.select label={m.visits_visit_type()} options={[...visitTypes]} />}</form.AppField>
                   <form.AppField name="visitedAt">
                     {(f) => (
                       <Field>
-                        <FieldLabel>Date and time</FieldLabel>
+                        <FieldLabel>{m.visits_date_and_time()}</FieldLabel>
                         <Input type="datetime-local" value={f.state.value} onChange={(event) => f.handleChange(event.target.value)} />
                       </Field>
                     )}
                   </form.AppField>
-                  <form.AppField name="partySize">{(f) => <f.input label="Visitors in the party" type="number" min={1} inputMode="numeric" autoComplete="off" />}</form.AppField>
+                  <form.AppField name="partySize">{(f) => <f.input label={m.visits_visitors_in_the_party()} type="number" min={1} inputMode="numeric" autoComplete="off" />}</form.AppField>
                 </div>
 
                 {privileged && (
                   <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
-                    Seen within sight but not within hearing of an officer. Nothing said is recorded, so no notes are kept.
+                    {m.visits_seen_within_sight_but_not_within()}
                   </p>
                 )}
                 {held && (
                   <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs">
-                    This is a special authorization or falls outside visiting hours, so it is sent to the Officer in Charge to approve first.
+                    {m.visits_this_is_a_special_authorization_or()}
                   </p>
                 )}
                 {overParty && rules && (
                   <div className="flex flex-col gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
-                    <span>This facility allows {rules.maxVisitorsPerVisit} visitors at a time.</span>
+                    <span>{m.visits_this_facility_allows_visitors_at_a({ maxVisitorsPerVisit: rules.maxVisitorsPerVisit })}</span>
                     {can('authorise.exception') ? (
-                      <form.AppField name="overLimitReason">{(f) => <f.input label="Reason for the exception" autoComplete="off" />}</form.AppField>
+                      <form.AppField name="overLimitReason">{(f) => <f.input label={m.visits_reason_for_the_exception()} autoComplete="off" />}</form.AppField>
                     ) : (
-                      <span>An Officer in Charge can authorise an exception.</span>
+                      <span>{m.visits_an_officer_in_charge_can_authorise()}</span>
                     )}
                   </div>
                 )}
@@ -243,12 +244,12 @@ export function VisitForm({ prisonerId, onSuccess, onDirtyChange }: VisitFormPro
 
               {!privileged && (
                 <section className="flex flex-col gap-2">
-                  <h3 className="text-xs font-medium">3. Notes</h3>
+                  <h3 className="text-xs font-medium">{m.visits_3_notes()}</h3>
                   <form.AppField name="notes">
                     {(f) => (
                       <Field>
-                        <FieldLabel>Notes (optional)</FieldLabel>
-                        <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Anything the gate or supervising officer should know" />
+                        <FieldLabel>{m.visits_notes_optional()}</FieldLabel>
+                        <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m.visits_anything_the_gate_or_supervising_officer()} />
                       </Field>
                     )}
                   </form.AppField>
@@ -257,7 +258,7 @@ export function VisitForm({ prisonerId, onSuccess, onDirtyChange }: VisitFormPro
 
               <DrawerFooter>
                 <form.AppForm>
-                  <form.submit label={held ? 'Request visit' : 'Schedule visit'} />
+                  <form.submit label={held ? m.visits_request_visit() : m.visits_schedule_visit()} />
                 </form.AppForm>
               </DrawerFooter>
             </>

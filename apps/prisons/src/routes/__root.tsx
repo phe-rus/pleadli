@@ -1,11 +1,12 @@
-import { FacilityOnboardingGate } from '@/components/facility-onboarding-gate'
-import { HqOnboardingGate } from '@/components/hq-onboarding-gate'
-import { NodeUnreachableBanner, RecoveryGate } from '@/features/node'
 import { Notfound } from '@/components/notfound'
-import { SignInGate } from '@/components/sign-in-gate'
 import { SplashScreen } from '@/components/splash-screen'
 import { ThemeProvider } from '@/components/theme-provider'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
+import { AppErrorBoundary, ErrorOverlay, watchWindowErrors } from '@/features/diagnostics'
+import { LocaleBoundary } from '@/features/i18n'
+import { NodeUnreachableBanner, RecoveryGate } from '@/features/node'
+import { OnboardingGate } from '@/features/onboarding'
+import { SignInGate } from '@/features/session'
 import { forwardErrorsToLog } from '@/lib/forward-errors-to-log'
 import tailwindcss from '@/routes/styles/globals.css?url'
 import { GooeyToaster } from "@pleadli/ui/goey-toaster"
@@ -13,7 +14,9 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { TooltipProvider } from '@pleadli/ui/tooltip'
 import { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
+import { MotionConfig } from 'framer-motion'
 import { useEffect } from 'react'
+import { m } from '@/paraglide/messages'
 
 type RouterAppContext = {
   queryClient: QueryClient;
@@ -27,7 +30,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { charSet: "utf-8" },
       { name: "theme-color", content: "oklch(0.9904 0.0148 94.1935)" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: 'Pleadli Prisons' },
+      { title: m.route_app_pleadli_prisons() },
     ],
     scripts: [
       { href: tailwindcss, rel: "stylesheet" }
@@ -38,6 +41,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 function RootComponent() {
   useEffect(() => {
     forwardErrorsToLog()
+    return watchWindowErrors()
   }, [])
 
   return (
@@ -62,21 +66,26 @@ function RootComponent() {
             'relative isolate transition-colors wrap-anywhere',
             'selection:bg-primary/15'
           )}>
-            <TooltipProvider>
-              <SplashScreen>
-                <RecoveryGate>
-                  <HqOnboardingGate>
-                    <FacilityOnboardingGate>
-                      <SignInGate>
-                        <NodeUnreachableBanner />
-                        <Outlet />
-                      </SignInGate>
-                    </FacilityOnboardingGate>
-                  </HqOnboardingGate>
-                </RecoveryGate>
-              </SplashScreen>
-            </TooltipProvider>
+            <MotionConfig reducedMotion="user">
+              <TooltipProvider>
+                <SplashScreen>
+                  <LocaleBoundary>
+                    <AppErrorBoundary>
+                    <RecoveryGate>
+                      <OnboardingGate>
+                        <SignInGate>
+                          <NodeUnreachableBanner />
+                          <Outlet />
+                        </SignInGate>
+                      </OnboardingGate>
+                    </RecoveryGate>
+                    </AppErrorBoundary>
+                  </LocaleBoundary>
+                </SplashScreen>
+              </TooltipProvider>
+            </MotionConfig>
             <GooeyToaster richColors />
+            <ErrorOverlay />
           </div>
         </ThemeProvider>
       </main>

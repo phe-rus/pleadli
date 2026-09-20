@@ -9,6 +9,7 @@ import { useState, type ReactNode } from 'react'
 import { restartApp } from './data'
 import { useRecoveryBackups, useRecoveryStatus, useRestoreInRecovery } from './queries'
 import { formatBytes, type BackupInfo } from './schema'
+import { m } from '@/paraglide/messages'
 
 /**
  * When the node finds its database untrustworthy at startup it does not open
@@ -21,7 +22,7 @@ export function RecoveryGate({ children }: { children: ReactNode }) {
   const { data, isLoading, isError } = useRecoveryStatus()
   if (isLoading) return null
   if (isError || !data?.recovering) return <>{children}</>
-  return <RecoveryScreen reason={data.reason ?? 'The database could not be trusted.'} defaultDir={data.defaultBackupDir ?? ''} />
+  return <RecoveryScreen reason={data.reason ?? m.node_the_database_could_not_be_trusted()} defaultDir={data.defaultBackupDir ?? ''} />
 }
 
 function RecoveryScreen({ reason, defaultDir }: { reason: string; defaultDir: string }) {
@@ -38,22 +39,22 @@ function RecoveryScreen({ reason, defaultDir }: { reason: string; defaultDir: st
       <motion.div {...screenTransition} className="flex w-full max-w-lg flex-col gap-6">
         <ScreenHeader
           icon={Alert02Icon}
-          title="This installation needs recovery"
-          description="The database failed its safety check, so nothing has been opened or changed. Restore a backup to continue. The damaged database is kept aside, not deleted."
+          title={m.node_this_installation_needs_recovery()}
+          description={m.node_the_database_failed_its_safety_check()}
         />
         <p className="rounded-md border border-border bg-muted/40 p-3 font-mono text-xs text-muted-foreground">{reason}</p>
 
         {staged ? (
           <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
             <p className="text-sm">
-              The backup checked out and is ready. Restart the application to finish: it swaps the database in before anything opens.
+              {m.node_the_backup_checked_out_and_is()}
             </p>
-            <Button onClick={() => restartApp()}>Restart now</Button>
+            <Button onClick={() => restartApp()}>{m.node_restart_now()}</Button>
           </div>
         ) : (
           <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium">Backup folder</span>
+              <span className="text-xs font-medium">{m.node_backup_folder()}</span>
               <div className="flex gap-2">
                 <input
                   value={dir}
@@ -70,16 +71,16 @@ function RecoveryScreen({ reason, defaultDir }: { reason: string; defaultDir: st
                       setChosen(null)
                     } catch {
                       setBackups([])
-                      t.error('That folder could not be read')
+                      t.error(m.node_that_folder_could_not_be_read())
                     }
                   }}
                 >
-                  Find backups
+                  {m.node_find_backups()}
                 </Button>
               </div>
             </label>
 
-            {backups && backups.length === 0 && <p className="text-xs text-muted-foreground">No Pleadli backups found in that folder.</p>}
+            {backups && backups.length === 0 && <p className="text-xs text-muted-foreground">{m.node_no_pleadli_backups_found_in_that()}</p>}
             {backups && backups.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 {backups.map((backup) => (
@@ -107,12 +108,12 @@ function RecoveryScreen({ reason, defaultDir }: { reason: string; defaultDir: st
                     await restore.mutateAsync({ path: chosen.path, passphrase })
                     setStaged(true)
                   } catch (error) {
-                    t.error('Could not use that backup', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+                    t.error(m.node_could_not_use_that_backup(), { description: error instanceof ApiError ? error.message : m.node_please_try_again() })
                   }
                 }}
               >
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-medium">Recovery passphrase</span>
+                  <span className="text-xs font-medium">{m.node_recovery_passphrase()}</span>
                   <input
                     type="password"
                     autoFocus
@@ -122,7 +123,7 @@ function RecoveryScreen({ reason, defaultDir }: { reason: string; defaultDir: st
                   />
                 </label>
                 <Button type="submit" disabled={passphrase.length === 0 || restore.isPending}>
-                  {restore.isPending ? 'Checking the backup…' : 'Check and restore'}
+                  {restore.isPending ? m.node_checking_the_backup() : m.node_check_and_restore()}
                 </Button>
               </form>
             )}

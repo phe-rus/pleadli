@@ -2,6 +2,7 @@ import { buttonVariants } from '@pleadli/ui/button'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { usePrisonerFile } from './queries'
+import { m } from '@/paraglide/messages'
 
 type PrisonerFileHeaderProps = {
   prisonerId: string
@@ -22,23 +23,23 @@ export function PrisonerFileHeader({ prisonerId, actions }: PrisonerFileHeaderPr
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Link to="/prisoners" className="text-xs text-muted-foreground underline-offset-4 hover:underline">
-        Back to population
+        {m.custody_back_to_population()}
       </Link>
       <div className="flex flex-wrap items-center gap-2">
         {actions}
         {inCustody && (
           <>
             <Link to="/procedures/transfer/$prisonerId" params={{ prisonerId }} className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
-              {file.openTransfer ? 'Continue transfer' : 'Transfer out'}
+              {file.openTransfer ? m.custody_continue_transfer() : m.custody_transfer_out()}
             </Link>
             <Link to="/procedures/discharge/$prisonerId" params={{ prisonerId }} className={buttonVariants({ size: 'sm' })}>
-              Discharge
+              {m.custody_discharge()}
             </Link>
           </>
         )}
         {prisoner.currentStatus === 'in_transit' && (
           <Link to="/movements" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
-            Open movements
+            {m.custody_open_movements()}
           </Link>
         )}
       </div>

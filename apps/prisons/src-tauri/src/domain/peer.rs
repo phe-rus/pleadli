@@ -50,6 +50,12 @@ impl From<sqlx::Error> for PairError {
     }
 }
 
+impl From<super::secrets::SecretError> for PairError {
+    fn from(e: super::secrets::SecretError) -> Self {
+        PairError::Db(e.into())
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RegisterResponse {
@@ -225,7 +231,7 @@ pub async fn connect_facility(pool: &SqlitePool, actor: &Actor, input: ConnectFa
          WHERE id = 'default'",
     )
     .bind(&host)
-    .bind(&token)
+    .bind(super::secrets::seal(super::secrets::PEER_SYNC_TOKEN, &token)?)
     .bind(if connected { Some(outcome.facility_id.clone()) } else { None })
     .bind(if connected { "connected" } else { "pending" })
     .bind(&outcome.request_id)
@@ -259,6 +265,7 @@ pub async fn refresh_connection(pool: &SqlitePool) -> Result<(), PairError> {
     let (Some(host), Some(token), Some("pending")) = (host, token, state.as_deref()) else {
         return Ok(());
     };
+    let token = super::secrets::open(super::secrets::PEER_SYNC_TOKEN, &token)?;
     let response = client(10)?
         .post(format!("{host}/api/network/v1/connection/status"))
         .bearer_auth(&token)
@@ -280,7 +287,7 @@ pub async fn refresh_connection(pool: &SqlitePool) -> Result<(), PairError> {
             let mut tx = crate::db::begin_write(pool).await?;
             sqlx::query(
                 "UPDATE peer_sync_config SET facility_id = ?, facility_display_name = ?, connection_state = 'connected',
-                        last_sync_status = NULL, last_error = NULL WHERE id = 'default'",
+                        last_sync_status = NULL, last_error = NULL, disconnected_at = NULL WHERE id = 'default'",
             )
             .bind(&status.facility_id)
             .bind(&status.facility_name)
@@ -291,6 +298,19 @@ pub async fn refresh_connection(pool: &SqlitePool) -> Result<(), PairError> {
                 &actor,
                 AuditEntry::new("peer.paired", "peer_sync_config", Some("default"))
                     .after(&serde_json::json!({ "hqHostname": host, "facilityName": status.facility_name })),
+            )
+            .await?;
+            super::inbox::notify(
+                &mut tx,
+                super::inbox::Event {
+                    kind: "connection",
+                    origin: "head_office",
+                    source: "Head Office",
+                    subject: "Head Office approved this facility",
+                    body: Some("The connection is live. Local work is unchanged."),
+                    route: Some("/settings?tab=network"),
+                    permission: Some(super::authz::perm::NODE_MANAGE),
+                },
             )
             .await?;
             tx.commit().await?;
@@ -342,6 +362,8 @@ pub async fn push_roster(pool: &SqlitePool) -> Result<usize, String> {
         .await
         .map_err(|e| e.to_string())?
         .ok_or_else(|| "This installation is not connected to a Head Office yet.".to_string())?;
+    // Anything that changes after this instant stays pending for the next push.
+    let started = super::time::now_ms();
     let rows: Vec<(String, String, String, bool, bool)> =
         sqlx::query_as("SELECT badge_number, name, role, is_admin, active FROM officers ORDER BY name")
             .fetch_all(pool)
@@ -368,6 +390,7 @@ pub async fn push_roster(pool: &SqlitePool) -> Result<usize, String> {
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM sync_outbox WHERE class = 'roster' AND changed_at <= ?").bind(started).execute(pool).await.map_err(|e| e.to_string())?;
     Ok(officers.len())
 }
 

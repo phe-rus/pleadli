@@ -20,8 +20,9 @@ import { Card, CardContent } from '@pleadli/ui/card'
 import { format } from 'date-fns/format'
 import { useState } from 'react'
 import { Dash, FormDrawer, ItemDrawer, ProfileSection, ProfileTable } from './blocks'
+import { m } from '@/paraglide/messages'
 
-const dateOnly = (ms: number | null) => (ms == null ? 'Not computed' : format(ms, 'd MMM yyyy'))
+const dateOnly = (ms: number | null) => (ms == null ? m.prisoners_not_computed() : format(ms, 'd MMM yyyy'))
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -42,11 +43,11 @@ export function LegalTab({ prisonerId }: { prisonerId: string }) {
   return (
     <div className="flex flex-col gap-8">
       <ProfileSection
-        title="Legal authority"
+        title={m.prisoners_legal_authority()}
         count={instruments.length}
-        description="The warrants and orders this person is held under."
+        description={m.prisoners_the_warrants_and_orders_this_person()}
         action={
-          <FormDrawer label="Record an instrument" title="Record an instrument" description="A warrant, order or other document that arrived for this person.">
+          <FormDrawer label={m.prisoners_record_an_instrument()} title={m.prisoners_record_an_instrument()} description={m.prisoners_a_warrant_order_or_other_document()}>
             {(close, setDirty) => <InstrumentForm prisonerId={prisonerId} pending={pending} onSuccess={close} onDirtyChange={setDirty} />}
           </FormDrawer>
         }
@@ -54,22 +55,22 @@ export function LegalTab({ prisonerId }: { prisonerId: string }) {
         <ProfileTable
           rows={instruments}
           getKey={(i) => i.id}
-          empty="No instruments recorded."
+          empty={m.prisoners_no_instruments_recorded()}
           columns={[
             {
-              header: 'Instrument',
+              header: m.prisoners_instrument(),
               cell: (i) => (
                 <span className={i.status === 'superseded' ? 'text-muted-foreground line-through' : 'font-medium'}>
                   {instrumentKindLabel(i.kind)}
                 </span>
               ),
             },
-            { header: 'Reference', cell: (i) => i.reference ?? <Dash /> },
-            { header: 'Issued by', cell: (i) => i.issuingAuthority ?? <Dash /> },
-            { header: 'Received', cell: (i) => (i.receivedAt ? format(i.receivedAt, 'd MMM yyyy') : 'Not yet') },
-            { header: 'Verified by', cell: (i) => i.verifiedBy ?? <Dash /> },
+            { header: m.prisoners_reference(), cell: (i) => i.reference ?? <Dash /> },
+            { header: m.prisoners_issued_by(), cell: (i) => i.issuingAuthority ?? <Dash /> },
+            { header: m.prisoners_received(), cell: (i) => (i.receivedAt ? format(i.receivedAt, 'd MMM yyyy') : m.prisoners_not_yet()) },
+            { header: m.prisoners_verified_by(), cell: (i) => i.verifiedBy ?? <Dash /> },
             {
-              header: 'Status',
+              header: m.prisoners_status(),
               cell: (i) => (
                 <div className="flex flex-col gap-0.5">
                   <Badge variant={i.status === 'verified' ? 'outline' : i.status === 'superseded' ? 'secondary' : 'destructive'} className="w-fit">
@@ -84,14 +85,14 @@ export function LegalTab({ prisonerId }: { prisonerId: string }) {
       </ProfileSection>
 
       <ProfileSection
-        title="Sentence"
+        title={m.prisoners_sentence()}
         action={
           <FormDrawer
             key={sentence?.id ?? 'new'}
-            label={sentence ? 'Correct the sentence' : 'Record the sentence'}
+            label={sentence ? m.prisoners_correct_the_sentence() : m.prisoners_record_the_sentence()}
             add={false}
-            title={sentence ? 'Correct the sentence' : 'Record the sentence'}
-            description="From the warrant of conviction or committal."
+            title={sentence ? m.prisoners_correct_the_sentence() : m.prisoners_record_the_sentence()}
+            description={m.prisoners_from_the_warrant_of_conviction_or()}
           >
             {(close, setDirty) => (
               <SentenceForm
@@ -110,17 +111,17 @@ export function LegalTab({ prisonerId }: { prisonerId: string }) {
           <CardContent className="flex flex-col gap-1.5 py-3">
             {sentence ? (
               <>
-                <Row label="Sentence" value={sentenceTermText(sentence)} />
-                <Row label="Runs from" value={format(sentence.startsOn, 'd MMM yyyy')} />
-                {!clocks.isLife && <Row label="Term ends" value={dateOnly(clocks.sentenceEndsOn)} />}
-                {!clocks.isLife && <Row label="Remission (one third)" value={clocks.remissionDays != null ? `${clocks.remissionDays} days` : 'Not computed'} />}
-                {!clocks.isLife && <Row label="Release due" value={dateOnly(clocks.releaseDueOn)} />}
-                {clocks.paroleWindowOpensOn != null && <Row label="Parole window opens" value={dateOnly(clocks.paroleWindowOpensOn)} />}
-                <p className="pt-1 text-xs text-muted-foreground">Dates are computed. Check them against the warrant.</p>
+                <Row label={m.prisoners_sentence()} value={sentenceTermText(sentence)} />
+                <Row label={m.prisoners_runs_from()} value={format(sentence.startsOn, 'd MMM yyyy')} />
+                {!clocks.isLife && <Row label={m.prisoners_term_ends()} value={dateOnly(clocks.sentenceEndsOn)} />}
+                {!clocks.isLife && <Row label={m.prisoners_remission_one_third()} value={clocks.remissionDays != null ? `${clocks.remissionDays} days` : 'Not computed'} />}
+                {!clocks.isLife && <Row label={m.prisoners_release_due()} value={dateOnly(clocks.releaseDueOn)} />}
+                {clocks.paroleWindowOpensOn != null && <Row label={m.prisoners_parole_window_opens()} value={dateOnly(clocks.paroleWindowOpensOn)} />}
+                <p className="pt-1 text-xs text-muted-foreground">{m.prisoners_dates_are_computed_check_them_against()}</p>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No sentence recorded{prisoner.status === 'convicted' ? '. Record it to compute the entitlement date.' : '.'}
+                {prisoner.status === 'convicted' ? m.prisoners_no_sentence_recorded_convicted() : m.prisoners_no_sentence_recorded()}
               </p>
             )}
           </CardContent>
@@ -128,10 +129,10 @@ export function LegalTab({ prisonerId }: { prisonerId: string }) {
       </ProfileSection>
 
       <ProfileSection
-        title="Court production and remand"
+        title={m.prisoners_court_production_and_remand()}
         count={productions.length}
         action={
-          <FormDrawer label="Record production" title="Record court production" description="Log a court-ordered production (s.67).">
+          <FormDrawer label={m.prisoners_record_production()} title={m.prisoners_record_court_production()} description={m.prisoners_log_a_court_ordered_production_s()}>
             {(close, setDirty) => <CourtProductionForm prisonerId={prisonerId} onSuccess={close} onDirtyChange={setDirty} />}
           </FormDrawer>
         }
@@ -139,19 +140,19 @@ export function LegalTab({ prisonerId }: { prisonerId: string }) {
         <ProfileTable
           rows={productions}
           getKey={(p) => p.id}
-          empty="No court productions recorded yet."
+          empty={m.prisoners_no_court_productions_recorded_yet()}
           columns={[
-            { header: 'Date', cell: (p) => format(p.productionDate, 'd MMM yyyy p') },
-            { header: 'Court reference', cell: (p) => p.courtReference ?? <Dash /> },
-            { header: 'Method', cell: (p) => <Badge variant="secondary">{productionMethodLabel(p.productionMethod)}</Badge> },
+            { header: m.prisoners_date(), cell: (p) => format(p.productionDate, 'd MMM yyyy p') },
+            { header: m.prisoners_court_reference(), cell: (p) => p.courtReference ?? <Dash /> },
+            { header: m.prisoners_method(), cell: (p) => <Badge variant="secondary">{productionMethodLabel(p.productionMethod)}</Badge> },
             {
-              header: 'Outcome',
+              header: m.prisoners_outcome(),
               cell: (p) =>
                 p.state === 'scheduled' ? (
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">Scheduled</Badge>
+                    <Badge variant="outline">{m.prisoners_scheduled()}</Badge>
                     <Button size="xs" variant="secondary" onClick={() => setOutcomeFor(p.id)}>
-                      Record outcome
+                      {m.prisoners_record_outcome()}
                     </Button>
                   </div>
                 ) : p.outcome ? (
@@ -160,13 +161,13 @@ export function LegalTab({ prisonerId }: { prisonerId: string }) {
                   <Dash />
                 ),
             },
-            { header: 'Next date', cell: (p) => (p.nextDate ? format(p.nextDate, 'd MMM yyyy') : <Dash />) },
-            { header: 'Purpose', className: 'min-w-40', cell: (p) => (p.purpose ? <RichTextPreview value={p.purpose} className="text-muted-foreground" /> : <Dash />) },
+            { header: m.prisoners_next_date(), cell: (p) => (p.nextDate ? format(p.nextDate, 'd MMM yyyy') : <Dash />) },
+            { header: m.prisoners_purpose(), className: 'min-w-40', cell: (p) => (p.purpose ? <RichTextPreview value={p.purpose} className="text-muted-foreground" /> : <Dash />) },
           ]}
         />
       </ProfileSection>
 
-      <ItemDrawer item={outcomeFor} onClose={() => setOutcomeFor(null)} title="Record the court outcome" description="What the court decided at this production.">
+      <ItemDrawer item={outcomeFor} onClose={() => setOutcomeFor(null)} title={m.prisoners_record_the_court_outcome()} description={m.prisoners_what_the_court_decided_at_this()}>
         {(id, close, setDirty) => <CourtOutcomeForm productionId={id} onSuccess={close} onDirtyChange={setDirty} />}
       </ItemDrawer>
     </div>

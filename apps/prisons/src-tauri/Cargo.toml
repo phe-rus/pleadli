@@ -36,7 +36,7 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 sqlx = { version = "0.9", features = ["sqlite", "runtime-tokio", "migrate", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 base64 = "0.22"
-tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "macros", "rt-multi-thread", "signal"] }
+tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "macros", "rt-multi-thread", "signal", "process"] }
 axum = { version = "0.8", features = ["multipart"] }
 tower-http = { version = "0.6", features = ["cors"] }
 tower = { version = "0.5", features = ["util"] }

@@ -1,4 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import { m } from '@/paraglide/messages'
 
 /**
  * The one client for the node API (docs/prisons/product-map/04, "The /api/**
@@ -139,7 +140,7 @@ export async function api(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: strin
 
   const payload = (body && typeof body === 'object' ? body : {}) as { code?: string; message?: string }
   const code = payload.code ?? `HTTP_${status}`
-  const message = payload.message ?? (typeof body === 'string' && body ? body : 'The request failed.')
+  const message = payload.message ?? (typeof body === 'string' && body ? body : m.lib_the_request_failed())
 
   // The node no longer accepts this session (signed out elsewhere, deactivated,
   // idle timeout). Drop it so the sign-in screen appears.

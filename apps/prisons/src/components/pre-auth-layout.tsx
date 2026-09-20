@@ -2,6 +2,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { PrisonIcon } from '@hugeicons/core-free-icons'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
+import { m } from '@/paraglide/messages'
 
 /** Shared visual shell for every screen that renders before an officer is
  * signed in and working (role choice, activation, HQ bootstrap, HQ sign
@@ -40,20 +41,19 @@ function BrandPanel() {
         <div className="flex size-8 items-center justify-center rounded-md bg-primary-foreground/15">
           <HugeiconsIcon icon={PrisonIcon} size={17} />
         </div>
-        <span className="text-sm font-semibold tracking-tight">Pleadli Prisons</span>
+        <span className="text-sm font-semibold tracking-tight">{m.app_name()}</span>
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.35 }}
-        className="relative flex max-w-sm flex-col gap-3"
+        className="not-typeset relative flex max-w-sm flex-col gap-3"
       >
         <h2 className="text-2xl leading-snug font-semibold text-balance">
-          A custody and operations platform for Uganda's prison service.
+          {m.brand_headline()}
         </h2>
         <p className="text-sm text-balance text-primary-foreground/70">
-          Every facility keeps working offline first. Head Office sees the national picture the moment a facility
-          reaches it.
+          {m.brand_body()}
         </p>
       </motion.div>
     </div>

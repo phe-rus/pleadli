@@ -9,6 +9,7 @@ import { Badge } from '@pleadli/ui/badge'
 import { format } from 'date-fns/format'
 import { Dash, ProfileSection, ProfileTable } from './blocks'
 import { buildTimeline } from './timeline'
+import { m } from '@/paraglide/messages'
 
 export function HistoryTab({ prisonerId }: { prisonerId: string }) {
   const { data: file } = usePrisonerFile(prisonerId)
@@ -21,63 +22,63 @@ export function HistoryTab({ prisonerId }: { prisonerId: string }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <ProfileSection title="Stays" count={file.stays.length} description="Each time this facility has held this person.">
+      <ProfileSection title={m.prisoners_stays()} count={file.stays.length} description={m.prisoners_each_time_this_facility_has_held()}>
         <ProfileTable
           rows={file.stays}
           getKey={(s) => s.id}
-          empty="No stays recorded."
+          empty={m.prisoners_no_stays_recorded()}
           columns={[
-            { header: 'Entered', cell: (s) => format(s.enteredAt, 'd MMM yyyy') },
-            { header: 'How', cell: (s) => stayEntryKinds[s.entryKind as keyof typeof stayEntryKinds] ?? s.entryKind },
-            { header: 'Left', cell: (s) => (s.exitedAt ? format(s.exitedAt, 'd MMM yyyy') : <Badge variant="outline">Current stay</Badge>) },
-            { header: 'How', cell: (s) => (s.exitKind ? (stayExitKinds[s.exitKind as keyof typeof stayExitKinds] ?? s.exitKind) : <Dash />) },
+            { header: m.prisoners_entered(), cell: (s) => format(s.enteredAt, 'd MMM yyyy') },
+            { header: m.prisoners_how(), cell: (s) => stayEntryKinds[s.entryKind as keyof typeof stayEntryKinds] ?? s.entryKind },
+            { header: m.prisoners_left(), cell: (s) => (s.exitedAt ? format(s.exitedAt, 'd MMM yyyy') : <Badge variant="outline">{m.prisoners_current_stay()}</Badge>) },
+            { header: m.prisoners_how(), cell: (s) => (s.exitKind ? (stayExitKinds[s.exitKind as keyof typeof stayExitKinds] ?? s.exitKind) : <Dash />) },
           ]}
         />
       </ProfileSection>
 
-      <ProfileSection title="Transfers" count={transfers.length}>
+      <ProfileSection title={m.prisoners_transfers()} count={transfers.length}>
         <ProfileTable
           rows={transfers}
           getKey={(t) => t.id}
-          empty="No transfers recorded yet."
+          empty={m.prisoners_no_transfers_recorded_yet()}
           columns={[
-            { header: 'Direction', cell: (t) => <Badge variant="outline">{transferDirectionLabel(t.direction)}</Badge> },
-            { header: 'State', cell: (t) => <Badge variant="secondary">{transferStateLabel(t.direction, t.state)}</Badge> },
-            { header: 'Date', cell: (t) => format(t.transferredAt, 'd MMM yyyy') },
-            { header: 'Other prison', cell: (t) => t.otherPrisonName ?? <Dash /> },
-            { header: 'Ordered by', cell: (t) => t.orderingAuthority ?? <Dash /> },
-            { header: 'Notes', className: 'min-w-40', cell: (t) => (t.notes ? <RichTextPreview value={t.notes} className="text-muted-foreground" /> : <Dash />) },
+            { header: m.prisoners_direction(), cell: (t) => <Badge variant="outline">{transferDirectionLabel(t.direction)}</Badge> },
+            { header: m.prisoners_state(), cell: (t) => <Badge variant="secondary">{transferStateLabel(t.direction, t.state)}</Badge> },
+            { header: m.prisoners_date(), cell: (t) => format(t.transferredAt, 'd MMM yyyy') },
+            { header: m.prisoners_other_prison(), cell: (t) => t.otherPrisonName ?? <Dash /> },
+            { header: m.prisoners_ordered_by(), cell: (t) => t.orderingAuthority ?? <Dash /> },
+            { header: m.prisoners_notes(), className: 'min-w-40', cell: (t) => (t.notes ? <RichTextPreview value={t.notes} className="text-muted-foreground" /> : <Dash />) },
           ]}
         />
       </ProfileSection>
 
-      <ProfileSection title="Releases" count={releases.length}>
+      <ProfileSection title={m.prisoners_releases()} count={releases.length}>
         <ProfileTable
           rows={releases}
           getKey={(r) => r.id}
-          empty="No releases recorded yet."
+          empty={m.prisoners_no_releases_recorded_yet()}
           columns={[
-            { header: 'Type', cell: (r) => <Badge>{releaseTypeLabel(r.releaseType)}</Badge> },
-            { header: 'When', cell: (r) => format(r.releasedAt, 'd MMM yyyy p') },
-            { header: 'Ordered by', cell: (r) => r.orderedBy ?? <Dash /> },
+            { header: m.prisoners_type(), cell: (r) => <Badge>{releaseTypeLabel(r.releaseType)}</Badge> },
+            { header: m.prisoners_when(), cell: (r) => format(r.releasedAt, 'd MMM yyyy p') },
+            { header: m.prisoners_ordered_by(), cell: (r) => r.orderedBy ?? <Dash /> },
             {
-              header: 'Flags',
+              header: m.prisoners_flags(),
               cell: (r) => (
                 <div className="flex flex-wrap gap-1">
-                  {r.exceptionReason && <Badge variant="destructive">Excepted discharge</Badge>}
-                  {r.afterNoon && <Badge variant="outline">After noon</Badge>}
+                  {r.exceptionReason && <Badge variant="destructive">{m.prisoners_excepted_discharge()}</Badge>}
+                  {r.afterNoon && <Badge variant="outline">{m.prisoners_after_noon()}</Badge>}
                   {!r.exceptionReason && !r.afterNoon && <Dash />}
                 </div>
               ),
             },
-            { header: 'Notes', className: 'min-w-40', cell: (r) => (r.notes ? <RichTextPreview value={r.notes} className="text-muted-foreground" /> : <Dash />) },
+            { header: m.prisoners_notes(), className: 'min-w-40', cell: (r) => (r.notes ? <RichTextPreview value={r.notes} className="text-muted-foreground" /> : <Dash />) },
           ]}
         />
       </ProfileSection>
 
-      <ProfileSection title="Timeline" count={timeline.length} description="Everything on this file, newest first.">
+      <ProfileSection title={m.prisoners_timeline()} count={timeline.length} description={m.prisoners_everything_on_this_file_newest_first()}>
         {timeline.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
+          <p className="text-sm text-muted-foreground">{m.prisoners_nothing_recorded_yet()}</p>
         ) : (
           <ol className="flex flex-col divide-y divide-border/60 rounded-lg border border-border/60">
             {timeline.map((entry) => (

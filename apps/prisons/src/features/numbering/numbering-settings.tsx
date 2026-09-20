@@ -1,4 +1,5 @@
 import { SelectField } from '@/components/form-fields'
+import { SettingsCard } from '@/components/settings-card'
 import { ApiError } from '@/lib/api'
 import { useHqConfig, usePermissions } from '@/features/session'
 import { LockKeyIcon } from '@hugeicons/core-free-icons'
@@ -23,9 +24,10 @@ import {
   type UniformEntry,
   type UniformInput,
 } from './schema'
+import { m } from '@/paraglide/messages'
 
 function failure(title: string, error: unknown) {
-  t.error(title, { description: error instanceof ApiError ? error.message : 'Please try again.' })
+  t.error(title, { description: error instanceof ApiError ? error.message : m.numbering_please_try_again() })
 }
 
 /** Settings tab: how prisoner numbers are formed and which colour each category
@@ -46,7 +48,9 @@ function FacilitySettings() {
 
   if (!view) return null
   const lockedNote = view.locked
-    ? `Locked: ${view.admittedCount} ${view.admittedCount === 1 ? 'person has' : 'people have'} been admitted here. Numbering can only be set before the first admission, so a number on a file never changes meaning.`
+    ? view.admittedCount === 1
+      ? m.numbering_locked_one()
+      : m.numbering_locked_many({ count: view.admittedCount })
     : null
 
   return (
@@ -60,7 +64,7 @@ function FacilitySettings() {
         lockedNote={lockedNote}
         readOnly={!allowed || view.locked}
         pending={save.isPending}
-        onSave={(input) => save.mutate(input, { onSuccess: () => t.success('Numbering saved'), onError: (e) => failure('Could not save numbering', e) })}
+        onSave={(input) => save.mutate(input, { onSuccess: () => t.success(m.numbering_numbering_saved()), onError: (e) => failure(m.numbering_could_not_save_numbering(), e) })}
         extra={
           state?.paired && allowed ? (
             <div className="flex flex-col gap-1.5">
@@ -73,16 +77,16 @@ function FacilitySettings() {
                 onClick={() =>
                   fetchDefaults.mutate(undefined, {
                     onSuccess: (r) =>
-                      t.success(r.numberingApplied || r.uniformsApplied > 0 ? 'Head Office defaults applied' : 'Already up to date', {
+                      t.success(r.numberingApplied || r.uniformsApplied > 0 ? m.numbering_head_office_defaults_applied() : m.numbering_already_up_to_date(), {
                         description: r.numberingKeptReason ?? undefined,
                       }),
-                    onError: (e) => failure('Could not fetch Head Office defaults', e),
+                    onError: (e) => failure(m.numbering_could_not_fetch_head_office_defaults(), e),
                   })
                 }
               >
-                {fetchDefaults.isPending ? 'Fetching…' : 'Fetch Head Office defaults'}
+                {fetchDefaults.isPending ? m.numbering_fetching() : m.numbering_fetch_head_office_defaults()}
               </Button>
-              <p className="text-xs text-muted-foreground">Numbering is taken only while nobody has been admitted. Colours you set yourself are kept.</p>
+              <p>{m.numbering_numbering_is_taken_only_while_nobody()}</p>
             </div>
           ) : null
         }
@@ -92,7 +96,7 @@ function FacilitySettings() {
         entries={view.uniforms}
         readOnly={!allowed}
         pending={saveUniforms.isPending}
-        onSave={(uniforms) => saveUniforms.mutate(uniforms, { onSuccess: () => t.success('Uniform colours saved'), onError: (e) => failure('Could not save uniform colours', e) })}
+        onSave={(uniforms) => saveUniforms.mutate(uniforms, { onSuccess: () => t.success(m.numbering_uniform_colours_saved()), onError: (e) => failure(m.numbering_could_not_save_uniform_colours(), e) })}
         showSource
       />
     </div>
@@ -115,12 +119,12 @@ function EstateSettings() {
         reset={policy.reset}
         facilityNumber={null}
         source={policy.updatedAt ? 'head_office' : 'default'}
-        heading="Estate default for prisoner numbers"
-        intro="Facilities that have not set their own numbering take this when they connect. A facility that has already admitted someone keeps what it has."
+        heading={m.numbering_estate_default_for_prisoner_numbers()}
+        intro={m.numbering_facilities_that_have_not_set_their()}
         lockedNote={null}
         readOnly={!allowed}
         pending={save.isPending}
-        onSave={(input) => save.mutate(input, { onSuccess: () => t.success('Estate numbering saved'), onError: (e) => failure('Could not save numbering', e) })}
+        onSave={(input) => save.mutate(input, { onSuccess: () => t.success(m.numbering_estate_numbering_saved()), onError: (e) => failure(m.numbering_could_not_save_numbering(), e) })}
         extra={null}
       />
       <UniformForm
@@ -128,18 +132,18 @@ function EstateSettings() {
         entries={policy.uniforms}
         readOnly={!allowed}
         pending={saveUniforms.isPending}
-        heading="Estate default for uniform colours"
-        intro="Shown at facilities that have not chosen their own colour for a category."
-        onSave={(uniforms) => saveUniforms.mutate(uniforms, { onSuccess: () => t.success('Estate uniform colours saved'), onError: (e) => failure('Could not save uniform colours', e) })}
+        heading={m.numbering_estate_default_for_uniform_colours()}
+        intro={m.numbering_shown_at_facilities_that_have_not()}
+        onSave={(uniforms) => saveUniforms.mutate(uniforms, { onSuccess: () => t.success(m.numbering_estate_uniform_colours_saved()), onError: (e) => failure(m.numbering_could_not_save_uniform_colours(), e) })}
       />
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-medium">Facilities</h2>
-          <p className="text-xs text-muted-foreground">What each facility last reported when it fetched these defaults.</p>
+          <h3>{m.numbering_facilities()}</h3>
+          <p>{m.numbering_what_each_facility_last_reported_when()}</p>
         </div>
         {policy.facilities.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No facilities are paired yet.</p>
+          <p>{m.numbering_no_facilities_are_paired_yet()}</p>
         ) : (
           <table className="w-full">
             <tbody>
@@ -147,16 +151,16 @@ function EstateSettings() {
                 <tr key={f.facilityId}>
                   <td className="align-top">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium">{f.name}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <h4>{f.name}</h4>
+                      <p>
                         {f.reportedAt
-                          ? `${f.pattern ?? 'No pattern reported'} · ${numberingSourceLabel(f.source)} · reported ${format(f.reportedAt, 'PPp')}`
-                          : 'Has not fetched the defaults yet'}
-                      </span>
+                          ? m.numbering_reported({ pattern: f.pattern ?? 'No pattern reported', source: numberingSourceLabel(f.source), reportedAt: format(f.reportedAt, 'PPp') })
+                          : m.numbering_has_not_fetched_the_defaults_yet()}
+                      </p>
                     </div>
                   </td>
                   <td className="text-right align-top whitespace-nowrap">
-                    {f.reportedAt && (f.locked ? <Badge variant="secondary">Locked, in use</Badge> : <Badge variant="outline">Not locked</Badge>)}
+                    {f.reportedAt && (f.locked ? <Badge variant="secondary">{m.numbering_locked_in_use()}</Badge> : <Badge variant="outline">{m.numbering_not_locked()}</Badge>)}
                   </td>
                 </tr>
               ))}
@@ -173,8 +177,8 @@ function NumberingForm({
   reset: initialReset,
   facilityNumber,
   source,
-  heading = 'Prisoner numbers',
-  intro = 'How the number written on every new prisoner file is formed. Each admission takes the next number.',
+  heading = m.numbering_prisoner_numbers(),
+  intro = m.numbering_how_the_number_written_on_every(),
   lockedNote,
   readOnly,
   pending,
@@ -199,83 +203,74 @@ function NumberingForm({
   const dirty = pattern !== initialPattern || reset !== initialReset
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-medium">{heading}</h2>
-          <Badge variant={source === 'default' ? 'outline' : 'secondary'}>{numberingSourceLabel(source)}</Badge>
-        </div>
-        <p className="text-xs text-muted-foreground">{intro}</p>
-      </div>
-
-      {source === 'default' && (
-        <p className="rounded-md border border-dashed border-amber-500/50 bg-amber-500/5 px-3 py-2 text-xs text-foreground">{provisionalNotice}</p>
-      )}
-      {lockedNote && (
-        <div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
-          <HugeiconsIcon icon={LockKeyIcon} size={14} className="mt-0.5 shrink-0" />
-          <span>{lockedNote}</span>
-        </div>
-      )}
-
-      <form
-        className="flex flex-col gap-4 md:max-w-xl"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (!result.error && dirty) onSave({ pattern: pattern.trim(), reset })
-        }}
-      >
-        <Field>
-          <FieldLabel>Pattern</FieldLabel>
-          <Input value={pattern} disabled={readOnly} autoComplete="off" spellCheck={false} onChange={(e) => setPattern(e.target.value)} className="font-mono" />
-          {!readOnly && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {numberingTokens.map((item) => (
-                <button
-                  key={item.token}
-                  type="button"
-                  title={item.meaning}
-                  onClick={() => setPattern((p) => `${p}${item.token}`)}
-                  className="rounded-md bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                >
-                  {item.token}
-                </button>
-              ))}
-            </div>
-          )}
-          <FieldDescription>Letters, digits, / - . _ and spaces, plus the parts above. At most 40 characters.</FieldDescription>
-        </Field>
-
-        <SelectField
-          label="Counter"
-          value={reset}
-          onChange={setReset}
-          options={numberingResets}
-          placeholder="Choose"
-          description="A yearly counter starts again at 1 each January and needs a year in the pattern."
-        />
-
-        <div className="flex flex-col gap-1 rounded-md bg-muted/40 px-3 py-2">
-          <span className="text-xs text-muted-foreground">Preview</span>
-          {result.error ? (
-            <span className="text-xs text-destructive">{result.error}</span>
-          ) : (
-            <span className="flex flex-wrap gap-x-4 font-mono text-sm">
-              {result.examples.map((example) => (
-                <span key={example}>{example}</span>
-              ))}
-            </span>
-          )}
-        </div>
-
-        {!readOnly && (
-          <Button type="submit" className="w-fit" disabled={pending || Boolean(result.error) || !dirty}>
-            {pending ? 'Saving…' : 'Save numbering'}
+    <SettingsCard
+      title={heading}
+      badge={<Badge variant={source === 'default' ? 'outline' : 'secondary'}>{numberingSourceLabel(source)}</Badge>}
+      description={intro}
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (!result.error && dirty) onSave({ pattern: pattern.trim(), reset })
+      }}
+      hint={extra}
+      action={
+        readOnly ? undefined : (
+          <Button type="submit" size="sm" disabled={pending || Boolean(result.error) || !dirty}>
+            {pending ? m.numbering_saving() : m.numbering_save_numbering()}
           </Button>
+        )
+      }
+    >
+      {source === 'default' && <p className="rounded-md border border-dashed border-amber-500/50 bg-amber-500/5 px-3 py-2">{provisionalNotice()}</p>}
+      {lockedNote && (
+        <div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
+          <HugeiconsIcon icon={LockKeyIcon} size={14} className="mt-0.5 shrink-0" />
+          <p>{lockedNote}</p>
+        </div>
+      )}
+
+      <Field>
+        <FieldLabel>{m.numbering_pattern()}</FieldLabel>
+        <Input value={pattern} disabled={readOnly} autoComplete="off" spellCheck={false} onChange={(e) => setPattern(e.target.value)} />
+        {!readOnly && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {numberingTokens.map((item) => (
+              <button
+                key={item.token}
+                type="button"
+                title={item.meaning}
+                onClick={() => setPattern((p) => `${p}${item.token}`)}
+                className="rounded-md bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              >
+                {item.token}
+              </button>
+            ))}
+          </div>
         )}
-        {extra}
-      </form>
-    </section>
+        <FieldDescription>{m.numbering_letters_digits_and_spaces_plus_the()}</FieldDescription>
+      </Field>
+
+      <SelectField
+        label={m.numbering_counter()}
+        value={reset}
+        onChange={setReset}
+        options={numberingResets}
+        placeholder={m.numbering_choose()}
+        description={m.numbering_a_yearly_counter_starts_again_at()}
+      />
+
+      <div className="flex flex-col gap-1 rounded-md bg-muted/40 px-3 py-2">
+        <h4>{m.numbering_preview()}</h4>
+        {result.error ? (
+          <p className="text-destructive">{result.error}</p>
+        ) : (
+          <p className="flex flex-wrap gap-x-4">
+            {result.examples.map((example) => (
+              <code key={example}>{example}</code>
+            ))}
+          </p>
+        )}
+      </div>
+    </SettingsCard>
   )
 }
 
@@ -283,8 +278,8 @@ function UniformForm({
   entries,
   readOnly,
   pending,
-  heading = 'Uniform colours',
-  intro = 'The colour each category of prisoner wears. Nothing is assumed: choose what your facility actually uses.',
+  heading = m.numbering_uniform_colours(),
+  intro = m.numbering_the_colour_each_category_of_prisoner(),
   onSave,
   showSource = false,
 }: {
@@ -302,23 +297,33 @@ function UniformForm({
     setDraft((rows) => rows.map((row) => (row.category === category ? { ...row, ...patch } : row)))
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-sm font-medium">{heading}</h2>
-        <p className="text-xs text-muted-foreground">{intro}</p>
-      </div>
-
-      <div className="flex flex-col divide-y divide-border/60 md:max-w-xl">
+    <SettingsCard
+      title={heading}
+      description={intro}
+      action={
+        readOnly ? undefined : (
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending || !dirty}
+            onClick={() => onSave(draft.map((d) => ({ category: d.category, colour: d.colour, label: d.colour ? d.label.trim() || null : null })))}
+          >
+            {pending ? m.numbering_saving() : m.numbering_save_colours()}
+          </Button>
+        )
+      }
+    >
+      <div className="flex flex-col divide-y divide-border/60">
         {draft.map((row) => {
           const entry = entries.find((e) => e.category === row.category)
           return (
             <div key={row.category} className="flex flex-col gap-2 py-3 first:pt-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium">{uniformCategoryLabel(row.category)}</span>
-                {!row.colour && <Badge variant="outline" className="border-amber-500/50 text-amber-700 dark:text-amber-400">Not set. Choose a colour</Badge>}
-                {showSource && entry?.source === 'head_office' && row.colour && <Badge variant="secondary">Head Office default</Badge>}
+                <h4>{uniformCategoryLabel(row.category)}</h4>
+                {!row.colour && <Badge variant="outline" className="border-amber-500/50 text-amber-700 dark:text-amber-400">{m.numbering_not_set_choose_a_colour()}</Badge>}
+                {showSource && entry?.source === 'head_office' && row.colour && <Badge variant="secondary">{m.numbering_head_office_default()}</Badge>}
               </div>
-              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`${uniformCategoryLabel(row.category)} colour`}>
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={m.numbering_colour({ category: uniformCategoryLabel(row.category) })}>
                 {uniformPalette.map((c) => (
                   <button
                     key={c.value}
@@ -341,7 +346,7 @@ function UniformForm({
                 value={row.label}
                 disabled={readOnly || !row.colour}
                 autoComplete="off"
-                placeholder="Optional label, for example Yellow tunic"
+                placeholder={m.numbering_optional_label_for_example_yellow_tunic()}
                 maxLength={60}
                 onChange={(e) => set(row.category, { label: e.target.value })}
               />
@@ -350,16 +355,6 @@ function UniformForm({
         })}
       </div>
 
-      {!readOnly && (
-        <Button
-          type="button"
-          className="w-fit"
-          disabled={pending || !dirty}
-          onClick={() => onSave(draft.map((d) => ({ category: d.category, colour: d.colour, label: d.colour ? d.label.trim() || null : null })))}
-        >
-          {pending ? 'Saving…' : 'Save colours'}
-        </Button>
-      )}
-    </section>
+    </SettingsCard>
   )
 }

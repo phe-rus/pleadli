@@ -58,6 +58,10 @@ Ship complete `en`. Other locales may lag; missing keys must fall back to Englis
 
 s.58(5) disclosure to the prisoner (rules of their category) is a **generated document** problem, not a chrome string. Vernacular for that document is [[research/backlog]] R-33, after field work.
 
+## Status (2026-09-20)
+
+Adopted. Paraglide is wired in `apps/prisons` (see `product/10-facility-first-workspace-model.md` Phase E). The shell, first-run onboarding and Settings chrome are extracted; the rest follows area by area as each is touched. Message keys are flat with underscores, prefixed by area (`settings_nav_facility`, `visits_...`, `route_reports_...`), not dotted. Rules learned extracting the rest: literal braces in a message (like `{SEQ:4}`) are passed in as arguments; a module-level table gets a getter (`get label() { return m.x() }`) so it follows the current language, while code inside a function calls `m.x()` directly; a translated string is display only and must never be compared, used as a `value`, a key or an API field (`event.key === 'Escape'` and status codes stay literals); plurals are two messages chosen in code until ICU plurals are needed; dates still use date-fns' English names.
+
 ## Stage
 
 [[../PLAN]] stage 4. After route/feature moves so we are not translating strings that will be deleted.

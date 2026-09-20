@@ -4,6 +4,8 @@ mod db;
 mod domain;
 mod node;
 mod transport;
+#[cfg(target_os = "linux")]
+mod watchdog;
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
@@ -22,9 +24,12 @@ pub fn run_headless(data_dir: std::path::PathBuf) -> Result<(), Box<dyn std::err
             Ok(started) => {
                 let node = node::Node::new(started.pool, vault_root, data_dir);
                 tokio::spawn(api::network::supervise(node.clone()));
+                tokio::spawn(domain::tunnel_connector::supervise(node.clone()));
                 domain::nodeconfig::load_remote(&node).await;
                 tokio::spawn(transport::lan::supervise(node.clone()));
                 tokio::spawn(domain::backup::scheduler(node.clone()));
+                // A headless node is a real facility node: it exchanges with Head Office too.
+                tokio::spawn(domain::sync::background_loop(node.pool.clone()));
                 #[cfg(debug_assertions)]
                 tokio::spawn(transport::dev_loopback::serve(node.clone()));
                 log::info!("node running; press Ctrl+C to stop");
@@ -65,9 +70,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            // The ceiling on memory and CPU: see `watchdog.rs`.
+            #[cfg(target_os = "linux")]
+            watchdog::start(app.handle().clone());
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
-            let db_path = data_dir.join("prisons.db");
 
             let vault_root = app
                 .path()
@@ -94,6 +101,7 @@ pub fn run() {
                     // The network surface, on its own listener. Started when (and
                     // only when) this installation is Head Office.
                     tauri::async_runtime::spawn(api::network::supervise(node.clone()));
+                    tauri::async_runtime::spawn(domain::tunnel_connector::supervise(node.clone()));
                     tauri::async_runtime::spawn(transport::lan::supervise(node.clone()));
                     tauri::async_runtime::spawn(domain::backup::scheduler(node.clone()));
                     // Browser development only; compiled out of release builds.
@@ -153,6 +161,14 @@ pub fn run() {
             commands::files::export_file,
             commands::files::import_file
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // The tunnel's connector is a child process: stop it with the app.
+            if let tauri::RunEvent::Exit = event {
+                if let Some(node) = app.try_state::<commands::api::LocalApi>().and_then(|api| api.node.clone()) {
+                    tauri::async_runtime::block_on(node.connector.stop());
+                }
+            }
+        });
 }

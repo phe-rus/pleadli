@@ -284,10 +284,14 @@ pub(crate) async fn get_prisoner_conn(conn: &mut SqliteConnection, id: &str) -> 
         .await
 }
 
+/// Development seed. Waits until the installation has been set up: a person
+/// admitted before first setup would lock the numbering and the facility code
+/// the setup is about to choose, which a real install never has.
 #[cfg(debug_assertions)]
 pub async fn seed_if_empty(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM prisoners").fetch_one(pool).await?;
-    if count > 0 {
+    let officers: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM officers").fetch_one(pool).await?;
+    if count > 0 || officers == 0 {
         return Ok(());
     }
 

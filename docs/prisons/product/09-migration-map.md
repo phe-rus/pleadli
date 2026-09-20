@@ -70,7 +70,7 @@ Format per item: **current**, **verdict** (`KEEP`, `MERGE`, `SPLIT`, `MOVE`, `RE
 | `domain/activation.rs` | KEEP | HQ initialisation | Sound |
 | `domain/facilities.rs` | SPLIT | HQ registry and trust; peer config | Roles differ |
 | `domain/sync.rs` | REBUILD | Exchange (outbox, inbox, packages, transports) | 03 K |
-| `domain/cloudflare_tunnel.rs` | KEEP, wire | Transport adapter (provisioning wired, token to keystore) | X6, X9 |
+| `domain/cloudflare_tunnel.rs` | KEEP, wire | Transport adapter (provisioning wired, tokens sealed by `domain/secrets.rs`; keystore is D14) | X6, X9 |
 | `domain/reports.rs` | KEEP queries | Returns builder inputs | UPS-shaped breakdowns are correct |
 | `commands/*` and `transport/dev_server.rs` | REBUILD | **One** node API under `/api/**` | D2, X1 to X3 |
 | `transport/hq_server.rs` | KEEP shape | Network listener on `/api/network/v1/**` | Two-listener design |

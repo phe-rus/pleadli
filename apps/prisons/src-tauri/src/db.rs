@@ -30,6 +30,7 @@ pub async fn begin_write(pool: &SqlitePool) -> Result<Transaction<'static, Sqlit
 pub struct Startup {
     pub pool: SqlitePool,
     /// Set when a staged restore was applied on this start.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub restored: Option<RestoreApplied>,
     /// Set when migrations were about to change the schema and a snapshot of
     /// the previous database was taken first.
@@ -55,6 +56,8 @@ pub async fn startup(data_dir: &Path, vault_root: &Path) -> Result<Startup, Star
     let restored = backup::apply_pending_restore(data_dir, &db_path, vault_root).map_err(|e| StartupError::Fatal(format!("could not apply the staged restore: {e}")))?;
     let existed = db_path.exists();
 
+    crate::domain::secrets::init(data_dir).map_err(|e| StartupError::Fatal(e.to_string()))?;
+
     let pool = SqlitePoolOptions::new()
         .max_connections(8)
         .connect_with(connect_options(&db_path))
@@ -70,6 +73,10 @@ pub async fn startup(data_dir: &Path, vault_root: &Path) -> Result<Startup, Star
         }
     }
 
+    // Before the pre-migration snapshot below, which would otherwise copy any
+    // credential still stored as plaintext into a second file.
+    crate::domain::secrets::seal_existing(&pool).await.map_err(|e| StartupError::Fatal(format!("could not seal stored credentials: {e}")))?;
+
     let migrator = sqlx::migrate!("./migrations");
     let mut pre_migration_snapshot = None;
     if existed {
@@ -83,6 +90,7 @@ pub async fn startup(data_dir: &Path, vault_root: &Path) -> Result<Startup, Star
     }
 
     migrator.run(&pool).await.map_err(|e| StartupError::Fatal(format!("migration failed: {e}")))?;
+    crate::domain::secrets::seal_existing(&pool).await.map_err(|e| StartupError::Fatal(format!("could not seal stored credentials: {e}")))?;
 
     if let Some(applied) = &restored {
         backup::record_restore(&pool, applied).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
@@ -125,6 +133,27 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pleadli-startup-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(dir.join("vault")).unwrap();
         dir
+    }
+
+    #[tokio::test]
+    async fn starting_creates_the_key_and_seals_a_credential_left_as_plaintext() {
+        let dir = temp_dir();
+        let first = match startup(&dir, &dir.join("vault")).await {
+            Ok(started) => started,
+            Err(_) => panic!("a fresh start must succeed"),
+        };
+        assert!(dir.join("secrets.key").exists());
+        sqlx::query("UPDATE node_config SET remote_device_token = 'plain-device' WHERE id = 'default'").execute(&first.pool).await.unwrap();
+        first.pool.close().await;
+
+        // An install from before secrets were sealed comes up sealed.
+        let second = match startup(&dir, &dir.join("vault")).await {
+            Ok(started) => started,
+            Err(_) => panic!("a restart must succeed"),
+        };
+        let stored: String = sqlx::query_scalar("SELECT remote_device_token FROM node_config WHERE id = 'default'").fetch_one(&second.pool).await.unwrap();
+        assert!(stored.starts_with("enc:v1:") && !stored.contains("plain-device"));
+        assert_eq!(crate::domain::nodeconfig::get(&second.pool).await.unwrap().remote_device_token.as_deref(), Some("plain-device"));
     }
 
     #[tokio::test]

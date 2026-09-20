@@ -13,6 +13,7 @@ import {
   type ContactDraft,
   type ReceptionDraft,
 } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type StepProps = {
   draft: ReceptionDraft
@@ -22,29 +23,29 @@ export type StepProps = {
 export function InstrumentStep({ draft, set }: StepProps) {
   return (
     <>
-      <StepHeading title="Instrument" description="Verify the document the person arrived under (s.58). Check the court seal or the authorised signature, and that the particulars match the person." />
+      <StepHeading title={m.reception_instrument()} description={m.reception_verify_the_document_the_person_arrived()} />
       <SelectField
-        label="Instrument type"
+        label={m.reception_instrument_type()}
         value={draft.instrumentKind}
         onChange={(v) => set('instrumentKind', v)}
         options={admissionInstrumentTypes}
-        placeholder="Select the instrument"
+        placeholder={m.reception_select_the_instrument()}
       />
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="Issuing court or authority" value={draft.issuingAuthority} onChange={(v) => set('issuingAuthority', v)} placeholder="e.g. Jinja Chief Magistrate's Court" />
-        <TextField label="Instrument reference" value={draft.instrumentReference} onChange={(v) => set('instrumentReference', v)} />
+        <TextField label={m.reception_issuing_court_or_authority()} value={draft.issuingAuthority} onChange={(v) => set('issuingAuthority', v)} placeholder={m.reception_e_g_jinja_chief_magistrate_s()} />
+        <TextField label={m.reception_instrument_reference()} value={draft.instrumentReference} onChange={(v) => set('instrumentReference', v)} />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="Date issued" type="date" value={draft.issuedOn} onChange={(v) => set('issuedOn', v)} />
-        <TextField label="Received at" type="datetime-local" value={draft.receivedAt} onChange={(v) => set('receivedAt', v)} />
+        <TextField label={m.reception_date_issued()} type="date" value={draft.issuedOn} onChange={(v) => set('issuedOn', v)} />
+        <TextField label={m.reception_received_at()} type="datetime-local" value={draft.receivedAt} onChange={(v) => set('receivedAt', v)} />
       </div>
       <SwitchField
-        label="Seal or signature verified, particulars match"
+        label={m.reception_seal_or_signature_verified_particulars_m()}
         checked={draft.authenticated}
         onChange={(v) => set('authenticated', v)}
-        description="Required to accept. Without it, the person can only be accepted with the document pending, or refused."
+        description={m.reception_required_to_accept_without_it_the()}
       />
-      <AreaField label="Verification note" value={draft.verificationNote} onChange={(v) => set('verificationNote', v)} placeholder="Who signed, which seal, any discrepancy noticed" />
+      <AreaField label={m.reception_verification_note()} value={draft.verificationNote} onChange={(v) => set('verificationNote', v)} placeholder={m.reception_who_signed_which_seal_any_discrepancy()} />
     </>
   )
 }
@@ -53,55 +54,55 @@ export function PersonStep({ draft, set }: StepProps) {
   const convicted = draft.legalStatus === 'convicted'
   return (
     <>
-      <StepHeading title="Person" description="Identity and the legal category the person is held under." />
+      <StepHeading title={m.reception_person()} description={m.reception_identity_and_the_legal_category_the()} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="First name" value={draft.firstName} onChange={(v) => set('firstName', v)} autoFocus autoComplete="given-name" />
-        <TextField label="Last name" value={draft.lastName} onChange={(v) => set('lastName', v)} autoComplete="family-name" />
+        <TextField label={m.reception_first_name()} value={draft.firstName} onChange={(v) => set('firstName', v)} autoFocus autoComplete="given-name" />
+        <TextField label={m.reception_last_name()} value={draft.lastName} onChange={(v) => set('lastName', v)} autoComplete="family-name" />
       </div>
-      <TextField label="Other names" value={draft.otherNames} onChange={(v) => set('otherNames', v)} autoComplete="additional-name" />
+      <TextField label={m.reception_other_names()} value={draft.otherNames} onChange={(v) => set('otherNames', v)} autoComplete="additional-name" />
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="National ID" value={draft.nationalId} onChange={(v) => set('nationalId', v)} autoComplete="off" />
-        <TextField label="Reference" value={draft.reference} onChange={(v) => set('reference', v)} autoComplete="off" description="No standard prisoner number format was confirmed in research." />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <TextField label="Date of birth" type="date" value={draft.dateOfBirth} onChange={(v) => set('dateOfBirth', v)} autoComplete="bday" />
-        <SelectField label="Sex" value={draft.sex} onChange={(v) => set('sex', v)} options={prisonerSexes} placeholder="Select sex" />
+        <TextField label={m.reception_national_id()} value={draft.nationalId} onChange={(v) => set('nationalId', v)} autoComplete="off" />
+        <TextField label={m.reception_reference()} value={draft.reference} onChange={(v) => set('reference', v)} autoComplete="off" description={m.reception_no_standard_prisoner_number_format_was()} />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <SelectField label="Nationality" value={draft.nationality} onChange={(v) => set('nationality', v)} options={nationalities} placeholder="Select nationality" />
-        <SelectField label="Education level" value={draft.educationLevel} onChange={(v) => set('educationLevel', v)} options={educationLevels} placeholder="Select level" />
+        <TextField label={m.reception_date_of_birth()} type="date" value={draft.dateOfBirth} onChange={(v) => set('dateOfBirth', v)} autoComplete="bday" />
+        <SelectField label={m.reception_sex()} value={draft.sex} onChange={(v) => set('sex', v)} options={prisonerSexes} placeholder={m.reception_select_sex()} />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <SelectField label="Legal category" value={draft.legalStatus} onChange={(v) => set('legalStatus', v)} options={prisonerStatuses} placeholder="Select category" />
-        <TextField label="Offence or charge" value={draft.offence} onChange={(v) => set('offence', v)} autoComplete="off" placeholder="e.g. Aggravated robbery" />
+        <SelectField label={m.reception_nationality()} value={draft.nationality} onChange={(v) => set('nationality', v)} options={nationalities} placeholder={m.reception_select_nationality()} />
+        <SelectField label={m.reception_education_level()} value={draft.educationLevel} onChange={(v) => set('educationLevel', v)} options={educationLevels} placeholder={m.reception_select_level()} />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SelectField label={m.reception_legal_category()} value={draft.legalStatus} onChange={(v) => set('legalStatus', v)} options={prisonerStatuses} placeholder={m.reception_select_category()} />
+        <TextField label={m.reception_offence_or_charge()} value={draft.offence} onChange={(v) => set('offence', v)} autoComplete="off" placeholder={m.reception_e_g_aggravated_robbery()} />
       </div>
       <SwitchField
-        label="Offence triable only by the High Court"
+        label={m.reception_offence_triable_only_by_the_high()}
         checked={draft.highCourtOnly}
         onChange={(v) => set('highCourtOnly', v)}
-        description="Sets the mandatory-bail threshold: 180 days if High Court only, otherwise 60 days (Art. 23(6))."
+        description={m.reception_sets_the_mandatory_bail_threshold_180()}
       />
 
       {convicted && (
         <div className="flex flex-col gap-3 rounded-lg border border-border/60 p-3">
           <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">Sentence</span>
-            <span className="text-xs text-muted-foreground">Dates are computed from this and shown as computed. Check them against the warrant.</span>
+            <span className="text-sm font-medium">{m.reception_sentence()}</span>
+            <span className="text-xs text-muted-foreground">{m.reception_dates_are_computed_from_this_and()}</span>
           </div>
-          <SwitchField label="Life sentence" checked={draft.isLife} onChange={(v) => set('isLife', v)} />
+          <SwitchField label={m.reception_life_sentence()} checked={draft.isLife} onChange={(v) => set('isLife', v)} />
           {!draft.isLife && (
             <div className="grid gap-3 sm:grid-cols-3">
-              <TextField label="Years" type="number" value={draft.termYears} onChange={(v) => set('termYears', v)} />
-              <TextField label="Months" type="number" value={draft.termMonths} onChange={(v) => set('termMonths', v)} />
-              <TextField label="Days" type="number" value={draft.termDays} onChange={(v) => set('termDays', v)} />
+              <TextField label={m.reception_years()} type="number" value={draft.termYears} onChange={(v) => set('termYears', v)} />
+              <TextField label={m.reception_months()} type="number" value={draft.termMonths} onChange={(v) => set('termMonths', v)} />
+              <TextField label={m.reception_days()} type="number" value={draft.termDays} onChange={(v) => set('termDays', v)} />
             </div>
           )}
           <TextField
-            label="Sentence starts on"
+            label={m.reception_sentence_starts_on()}
             type="date"
             value={draft.sentenceStartsOn}
             onChange={(v) => set('sentenceStartsOn', v)}
-            description="Defaults to the date received. Change it if the warrant counts from an earlier date."
+            description={m.reception_defaults_to_the_date_received_change()}
           />
         </div>
       )}
@@ -112,15 +113,15 @@ export function PersonStep({ draft, set }: StepProps) {
 export function SearchStep({ draft, set }: StepProps) {
   return (
     <>
-      <StepHeading title="Search and condition" description="Search on reception (s.62(1)) and the person's visible condition." />
-      <SwitchField label="Search carried out" checked={draft.searchDone} onChange={(v) => set('searchDone', v)} />
-      <AreaField label="Visible injuries" value={draft.injuriesNote} onChange={(v) => set('injuriesNote', v)} placeholder="Describe any visible injury, or write none observed" />
+      <StepHeading title={m.reception_search_and_condition()} description={m.reception_search_on_reception_s_62_1()} />
+      <SwitchField label={m.reception_search_carried_out()} checked={draft.searchDone} onChange={(v) => set('searchDone', v)} />
+      <AreaField label={m.reception_visible_injuries()} value={draft.injuriesNote} onChange={(v) => set('injuriesNote', v)} placeholder={m.reception_describe_any_visible_injury_or_write()} />
       <AreaField
-        label="Complaint of ill-treatment before arrival"
+        label={m.reception_complaint_of_ill_treatment_before_arriva()}
         value={draft.complaintsNote}
         onChange={(v) => set('complaintsNote', v)}
-        placeholder="Record what the person says, in their words"
-        description="Record the complaint as made. Do not assess it here."
+        placeholder={m.reception_record_what_the_person_says_in()}
+        description={m.reception_record_the_complaint_as_made_do()}
       />
     </>
   )
@@ -130,27 +131,27 @@ export function PropertyStep({ draft, set }: StepProps) {
   const update = (index: number, value: string) => set('property', draft.property.map((line, i) => (i === index ? value : line)))
   return (
     <>
-      <StepHeading title="Property" description="Money, clothes and effects taken into the Officer in Charge's custody (s.62). One line for each item." />
+      <StepHeading title={m.reception_property()} description={m.reception_money_clothes_and_effects_taken_into()} />
       <div className="flex flex-col gap-2">
         {draft.property.map((line, index) => (
           <div key={index} className="flex items-center gap-2">
             <Input
               className="min-w-0 flex-1"
               value={line}
-              placeholder="e.g. Cash UGX 45,000"
+              placeholder={m.reception_e_g_cash_ugx_45_000()}
               autoFocus={index === draft.property.length - 1 && line === ''}
               onChange={(e) => update(index, e.target.value)}
             />
-            <Button type="button" size="icon-sm" variant="ghost" aria-label="Remove item" onClick={() => set('property', draft.property.filter((_, i) => i !== index))}>
+            <Button type="button" size="icon-sm" variant="ghost" aria-label={m.reception_remove_item()} onClick={() => set('property', draft.property.filter((_, i) => i !== index))}>
               <HugeiconsIcon icon={Cancel01Icon} />
             </Button>
           </div>
         ))}
-        {draft.property.length === 0 && <p className="text-sm text-muted-foreground">No property listed yet.</p>}
+        {draft.property.length === 0 && <p className="text-sm text-muted-foreground">{m.reception_no_property_listed_yet()}</p>}
       </div>
       <Button type="button" size="sm" variant="secondary" className="w-fit" onClick={() => set('property', [...draft.property, ''])}>
         <HugeiconsIcon icon={AddCircleIcon} />
-        Add item
+        {m.reception_add_item()}
       </Button>
     </>
   )
@@ -160,34 +161,34 @@ export function ContactsStep({ draft, set }: StepProps) {
   const update = (index: number, patch: Partial<ContactDraft>) => set('contacts', draft.contacts.map((c, i) => (i === index ? { ...c, ...patch } : c)))
   return (
     <>
-      <StepHeading title="Family and contacts" description="Next of kin and emergency contacts. Offer to notify them of the imprisonment." />
+      <StepHeading title={m.reception_family_and_contacts()} description={m.reception_next_of_kin_and_emergency_contacts()} />
       <div className="flex flex-col gap-3">
         {draft.contacts.map((contact, index) => (
           <div key={index} className="flex flex-col gap-3 rounded-lg border border-border/60 p-3">
             <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="Name" value={contact.name} onChange={(v) => update(index, { name: v })} autoFocus={contact.name === ''} />
-              <SelectField label="Relationship" value={contact.relationship} onChange={(v) => update(index, { relationship: v })} options={contactRelationships} placeholder="Select" />
+              <TextField label={m.reception_name()} value={contact.name} onChange={(v) => update(index, { name: v })} autoFocus={contact.name === ''} />
+              <SelectField label={m.reception_relationship()} value={contact.relationship} onChange={(v) => update(index, { relationship: v })} options={contactRelationships} placeholder={m.reception_select()} />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="Phone" value={contact.phone} onChange={(v) => update(index, { phone: v })} />
-              <TextField label="Address" value={contact.address} onChange={(v) => update(index, { address: v })} />
+              <TextField label={m.reception_phone()} value={contact.phone} onChange={(v) => update(index, { phone: v })} />
+              <TextField label={m.reception_address()} value={contact.address} onChange={(v) => update(index, { address: v })} />
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-x-6 gap-y-2">
-                <SwitchField label="Emergency contact" checked={contact.isEmergency} onChange={(v) => update(index, { isEmergency: v })} />
-                <SwitchField label="Notify of imprisonment" checked={contact.notifyOnImprisonment} onChange={(v) => update(index, { notifyOnImprisonment: v })} />
+                <SwitchField label={m.reception_emergency_contact()} checked={contact.isEmergency} onChange={(v) => update(index, { isEmergency: v })} />
+                <SwitchField label={m.reception_notify_of_imprisonment()} checked={contact.notifyOnImprisonment} onChange={(v) => update(index, { notifyOnImprisonment: v })} />
               </div>
               <Button type="button" size="sm" variant="ghost" onClick={() => set('contacts', draft.contacts.filter((_, i) => i !== index))}>
-                Remove
+                {m.reception_remove()}
               </Button>
             </div>
           </div>
         ))}
-        {draft.contacts.length === 0 && <p className="text-sm text-muted-foreground">No contacts recorded yet.</p>}
+        {draft.contacts.length === 0 && <p className="text-sm text-muted-foreground">{m.reception_no_contacts_recorded_yet()}</p>}
       </div>
       <Button type="button" size="sm" variant="secondary" className="w-fit" onClick={() => set('contacts', [...draft.contacts, emptyContact()])}>
         <HugeiconsIcon icon={AddCircleIcon} />
-        Add contact
+        {m.reception_add_contact()}
       </Button>
     </>
   )
@@ -196,13 +197,13 @@ export function ContactsStep({ draft, set }: StepProps) {
 export function HealthStep({ draft, set }: StepProps) {
   return (
     <>
-      <StepHeading title="Health and information" description="Health screening as soon as possible, and the written information the person must receive." />
-      <AreaField label="Health screening note" value={draft.healthScreenNote} onChange={(v) => set('healthScreenNote', v)} placeholder="Who screened, and anything that needs follow-up" description="Coordination only. Clinical detail is not kept here." />
+      <StepHeading title={m.reception_health_and_information()} description={m.reception_health_screening_as_soon_as_possible()} />
+      <AreaField label={m.reception_health_screening_note()} value={draft.healthScreenNote} onChange={(v) => set('healthScreenNote', v)} placeholder={m.reception_who_screened_and_anything_that_needs()} description={m.reception_coordination_only_clinical_detail_is_not()} />
       <SwitchField
-        label="Written information given"
+        label={m.reception_written_information_given()}
         checked={draft.rulesInformationGiven}
         onChange={(v) => set('rulesInformationGiven', v)}
-        description="Rules, discipline and the complaints procedure (s.58(5))."
+        description={m.reception_rules_discipline_and_the_complaints_proc()}
       />
     </>
   )
@@ -211,9 +212,9 @@ export function HealthStep({ draft, set }: StepProps) {
 export function PlacementStep({ draft, set }: StepProps) {
   return (
     <>
-      <StepHeading title="Placement" description="Where the person is accommodated. Check separation rules for category, sex and age." />
-      <TextField label="Location" value={draft.placement} onChange={(v) => set('placement', v)} placeholder="e.g. Ward 3, cell 2" autoFocus />
-      <AreaField label="Notes" value={draft.notes} onChange={(v) => set('notes', v)} placeholder="Anything else the next officer should know" />
+      <StepHeading title={m.reception_placement()} description={m.reception_where_the_person_is_accommodated_check()} />
+      <TextField label={m.reception_location()} value={draft.placement} onChange={(v) => set('placement', v)} placeholder={m.reception_e_g_ward_3_cell_2()} autoFocus />
+      <AreaField label={m.reception_notes()} value={draft.notes} onChange={(v) => set('notes', v)} placeholder={m.reception_anything_else_the_next_officer_should()} />
     </>
   )
 }
@@ -221,7 +222,7 @@ export function PlacementStep({ draft, set }: StepProps) {
 export function DecisionStep({ draft, set, problems }: StepProps & { problems: string[] }) {
   return (
     <>
-      <StepHeading title="Decision" description="Accept, accept with a document pending, or refuse. This is recorded with your name." />
+      <StepHeading title={m.reception_decision()} description={m.reception_accept_accept_with_a_document_pending()} />
       <div className="grid gap-2 sm:grid-cols-3">
         {receptionDecisions.map((option) => {
           const active = draft.decision === option.value
@@ -245,25 +246,25 @@ export function DecisionStep({ draft, set, problems }: StepProps & { problems: s
 
       {draft.decision === 'accept_pending' && (
         <SelectField
-          label="Which document is pending"
+          label={m.reception_which_document_is_pending()}
           value={draft.pendingDocumentType}
           onChange={(v) => set('pendingDocumentType', v)}
           options={pendingDocumentTypes}
-          placeholder="Select the document"
-          description="It becomes an open item on Today until the instrument is recorded."
+          placeholder={m.reception_select_the_document()}
+          description={m.reception_it_becomes_an_open_item_on()}
         />
       )}
 
       {draft.decision === 'refuse' && (
         <>
-          <SelectField label="Ground for refusal" value={draft.refusalGround} onChange={(v) => set('refusalGround', v)} options={refusalGrounds} placeholder="Select the ground" />
-          <AreaField label="Reason" value={draft.decisionReason} onChange={(v) => set('decisionReason', v)} placeholder="Say exactly why reception is refused" />
+          <SelectField label={m.reception_ground_for_refusal()} value={draft.refusalGround} onChange={(v) => set('refusalGround', v)} options={refusalGrounds} placeholder={m.reception_select_the_ground()} />
+          <AreaField label={m.reception_reason()} value={draft.decisionReason} onChange={(v) => set('decisionReason', v)} placeholder={m.reception_say_exactly_why_reception_is_refused()} />
         </>
       )}
 
       {problems.length > 0 && (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          <p className="font-medium">Before this can be recorded:</p>
+          <p className="font-medium">{m.reception_before_this_can_be_recorded()}</p>
           <ul className="list-disc pl-4">
             {problems.map((problem) => (
               <li key={problem}>{problem}</li>

@@ -16,6 +16,7 @@ use std::sync::OnceLock;
 use uuid::Uuid;
 
 use super::audit::{self, AuditEntry};
+use super::auth_policy::{self, AuthPolicy};
 use super::authz::{self, Actor};
 
 const MAX_FAILED_ATTEMPTS: i64 = 5;
@@ -47,6 +48,9 @@ pub enum OfficerError {
     HeadOfficeOnly,
     CannotDeleteSelf,
     InvalidPhoto,
+    InvalidSecret(String),
+    BadgePrefix(String),
+    BadgeOnlyNotAllowed,
 }
 
 impl fmt::Display for OfficerError {
@@ -97,6 +101,12 @@ impl From<OfficerError> for OfficerErrorPayload {
             ),
             OfficerError::CannotDeleteSelf => ("CANNOT_DELETE_SELF", "You cannot delete the account you are signed in with.".to_string()),
             OfficerError::InvalidPhoto => ("INVALID_PHOTO", "The photo must be a JPEG image under 200 KB.".to_string()),
+            OfficerError::InvalidSecret(message) => ("WEAK_PASSWORD", message),
+            OfficerError::BadgePrefix(prefix) => ("BADGE_FORMAT", format!("Badge numbers at this facility start with {prefix}.")),
+            OfficerError::BadgeOnlyNotAllowed => (
+                "BADGE_ONLY_NOT_ALLOWED",
+                "Badge-only sign-in is off, or this account is an administrator. Administrators always use a password.".to_string(),
+            ),
         };
         OfficerErrorPayload { code: code.to_string(), message }
     }
@@ -118,12 +128,13 @@ pub struct Officer {
     pub photo_data: Option<String>,
     pub posted_facility_id: Option<String>,
     pub last_login_at: Option<i64>,
+    pub passwordless: bool,
 }
 
 macro_rules! officer_select {
     ($tail:literal) => {
         concat!(
-            "SELECT id, badge_number, name, role, is_admin, active, created_at, rank, phone, email, photo_data, posted_facility_id,
+            "SELECT id, badge_number, name, role, is_admin, active, created_at, rank, phone, email, photo_data, posted_facility_id, passwordless,
              (SELECT MAX(at) FROM audit_log WHERE action = 'auth.login' AND entity_type = 'officer' AND entity_id = officers.id) AS last_login_at
              FROM officers ",
             $tail
@@ -179,10 +190,14 @@ pub struct ProfileInput {
 pub struct CreateOfficerInput {
     pub badge_number: String,
     pub name: String,
+    #[serde(default)]
     pub password: String,
     pub role: String,
     #[serde(default)]
     pub is_admin: bool,
+    /// Sign in with the badge alone (only when the facility policy allows it).
+    #[serde(default)]
+    pub passwordless: bool,
     #[serde(flatten)]
     pub profile: ProfileInput,
 }
@@ -208,6 +223,10 @@ pub struct UpdateOfficerInput {
     pub is_admin: bool,
     pub active: bool,
     pub password: Option<String>,
+    /// `Some(true)` switches the account to badge-only sign-in, `Some(false)`
+    /// back to a secret (which must then be given in `password`).
+    #[serde(default)]
+    pub passwordless: Option<bool>,
     #[serde(flatten)]
     pub profile: ProfileInput,
 }
@@ -224,15 +243,34 @@ impl fmt::Debug for UpdateOfficerInput {
     }
 }
 
-fn hash_password(password: &str) -> Result<String, OfficerError> {
-    if password.chars().count() < MIN_PASSWORD_LEN {
-        return Err(OfficerError::WeakPassword);
-    }
+fn argon_hash(secret: &str) -> Result<String, OfficerError> {
     let salt = SaltString::generate(&mut OsRng);
     Argon2::default()
-        .hash_password(password.as_bytes(), &salt)
+        .hash_password(secret.as_bytes(), &salt)
         .map(|hash| hash.to_string())
         .map_err(|e| OfficerError::Hash(e.to_string()))
+}
+
+/// Applies the facility's sign-in policy to a new secret. Administrators
+/// always need a password; under the `pin` mode everyone else may use 4 to 8
+/// digits instead.
+fn hash_secret(secret: &str, policy: &AuthPolicy, is_admin: bool) -> Result<String, OfficerError> {
+    let length = secret.chars().count();
+    let is_pin = (4..=8).contains(&length) && secret.chars().all(|c| c.is_ascii_digit());
+    if length < MIN_PASSWORD_LEN && !(is_pin && policy.allows_pin(is_admin)) {
+        return Err(if policy.allows_pin(is_admin) {
+            OfficerError::InvalidSecret("Use a PIN of 4 to 8 digits, or a password of at least 8 characters.".to_string())
+        } else {
+            OfficerError::WeakPassword
+        });
+    }
+    argon_hash(secret)
+}
+
+/// A hash nobody can produce a secret for, for an account that signs in with
+/// its badge alone.
+fn unusable_hash() -> Result<String, OfficerError> {
+    argon_hash(&Uuid::new_v4().to_string())
 }
 
 fn verify_password(password: &str, hash: &str) -> bool {
@@ -254,6 +292,17 @@ fn dummy_hash() -> &'static str {
 
 pub(crate) fn normalize_badge(badge_number: &str) -> String {
     badge_number.trim().to_string()
+}
+
+/// Badge numbers must start with the facility's prefix when it has set one.
+/// Checked when an account is created, not on sign-in, so accounts that
+/// pre-date the prefix keep working.
+async fn check_badge_prefix(conn: &mut SqliteConnection, badge: &str) -> Result<(), OfficerError> {
+    let prefix: Option<String> = sqlx::query_scalar("SELECT badge_prefix FROM facility_profile WHERE id = 'default'").fetch_one(&mut *conn).await?;
+    match prefix.filter(|p| !p.is_empty()) {
+        Some(prefix) if !badge.to_uppercase().starts_with(&prefix.to_uppercase()) => Err(OfficerError::BadgePrefix(prefix)),
+        _ => Ok(()),
+    }
 }
 
 /// Administrator role templates always carry the admin flag, so creating a
@@ -310,7 +359,14 @@ pub async fn create_first_admin(
     }
     let role = if is_head_office(conn).await? { "hq_admin" } else { "oic" };
     let actor = Actor::system("first launch");
-    insert_officer(conn, &actor, badge_number, name, role, true, password, ProfileInput::default(), "account.bootstrap").await
+    check_badge_prefix(conn, &normalize_badge(badge_number)).await?;
+    insert_officer(conn, &actor, badge_number, name, role, true, Secret::Set(password), ProfileInput::default(), "account.bootstrap").await
+}
+
+/// What an account signs in with when it is created.
+enum Secret<'a> {
+    Set(&'a str),
+    BadgeOnly,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -321,7 +377,7 @@ async fn insert_officer(
     name: &str,
     role: &str,
     is_admin: bool,
-    password: &str,
+    secret: Secret<'_>,
     profile: ProfileInput,
     action: &str,
 ) -> Result<Officer, OfficerError> {
@@ -330,13 +386,22 @@ async fn insert_officer(
     }
     let id = Uuid::new_v4().to_string();
     let badge_number = normalize_badge(badge_number);
-    let password_hash = hash_password(password)?;
     let is_admin = effective_admin(role, is_admin);
+    let policy = auth_policy::get_conn(conn).await?;
+    let (password_hash, passwordless) = match secret {
+        Secret::Set(secret) => (hash_secret(secret, &policy, is_admin)?, false),
+        Secret::BadgeOnly => {
+            if !policy.allows_passwordless(is_admin, is_head_office(conn).await?) {
+                return Err(OfficerError::BadgeOnlyNotAllowed);
+            }
+            (unusable_hash()?, true)
+        }
+    };
     let photo = clean_photo(profile.photo_data)?;
 
     sqlx::query(
-        "INSERT INTO officers (id, badge_number, name, role, is_admin, password_hash, rank, phone, email, photo_data, posted_facility_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO officers (id, badge_number, name, role, is_admin, password_hash, rank, phone, email, photo_data, posted_facility_id, passwordless)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
         .bind(&id)
         .bind(&badge_number)
@@ -349,6 +414,7 @@ async fn insert_officer(
         .bind(clean(profile.email))
         .bind(&photo)
         .bind(clean(profile.posted_facility_id))
+        .bind(passwordless)
         .execute(&mut *conn)
         .await
         .map_err(|e| {
@@ -365,7 +431,9 @@ async fn insert_officer(
 }
 
 pub async fn create_officer(conn: &mut SqliteConnection, actor: &Actor, input: CreateOfficerInput) -> Result<Officer, OfficerError> {
-    insert_officer(conn, actor, &input.badge_number, &input.name, &input.role, input.is_admin, &input.password, input.profile, "account.create").await
+    check_badge_prefix(conn, &normalize_badge(&input.badge_number)).await?;
+    let secret = if input.passwordless { Secret::BadgeOnly } else { Secret::Set(&input.password) };
+    insert_officer(conn, actor, &input.badge_number, &input.name, &input.role, input.is_admin, secret, input.profile, "account.create").await
 }
 
 pub async fn update_officer(
@@ -402,7 +470,7 @@ pub async fn update_officer(
 
     match input.password.as_deref() {
         Some(password) => {
-            let password_hash = hash_password(password)?;
+            let password_hash = hash_secret(password, &auth_policy::get_conn(conn).await?, is_admin)?;
             sqlx::query(
                 "UPDATE officers SET name = ?, role = ?, is_admin = ?, active = ?, password_hash = ?,
                         failed_attempts = 0, locked_until = NULL,
@@ -442,9 +510,37 @@ pub async fn update_officer(
         }
     }
 
-    // A deactivated account, or one whose password just changed, loses its
+    // Badge-only sign-in is a property of the account, changed only here.
+    // Whether an account keeps it after this update decides what it needs.
+    // Giving the account a secret ends badge-only sign-in unless said otherwise.
+    let passwordless = input.passwordless.or(input.password.as_ref().map(|_| false));
+    let stays_passwordless = passwordless.unwrap_or(existing.passwordless);
+    if stays_passwordless {
+        let policy = auth_policy::get_conn(conn).await?;
+        if !policy.allows_passwordless(is_admin, is_head_office(conn).await?) {
+            return Err(OfficerError::BadgeOnlyNotAllowed);
+        }
+    }
+    match passwordless {
+        Some(true) => {
+            sqlx::query("UPDATE officers SET passwordless = 1, password_hash = ?, failed_attempts = 0, locked_until = NULL WHERE id = ?")
+                .bind(unusable_hash()?)
+                .bind(id)
+                .execute(&mut *conn)
+                .await?;
+        }
+        Some(false) => {
+            if existing.passwordless && input.password.is_none() {
+                return Err(OfficerError::InvalidSecret("Give this account a password or PIN to stop it signing in with its badge alone.".to_string()));
+            }
+            sqlx::query("UPDATE officers SET passwordless = 0 WHERE id = ?").bind(id).execute(&mut *conn).await?;
+        }
+        None => {}
+    }
+
+    // A deactivated account, or one whose secret just changed, loses its
     // sessions immediately: the next request from any device is rejected.
-    if !input.active || input.password.is_some() {
+    if !input.active || input.password.is_some() || passwordless.is_some() {
         sqlx::query("UPDATE sessions SET revoked_at = ? WHERE officer_id = ? AND revoked_at IS NULL")
             .bind(now_ms())
             .bind(id)
@@ -491,6 +587,8 @@ pub async fn delete_officer(conn: &mut SqliteConnection, actor: &Actor, id: &str
 struct CredentialRow {
     id: String,
     active: bool,
+    is_admin: bool,
+    passwordless: bool,
     password_hash: String,
     failed_attempts: i64,
     locked_until: Option<i64>,
@@ -511,7 +609,7 @@ pub async fn check_credentials(
 ) -> Result<Officer, OfficerError> {
     let badge = normalize_badge(badge_number);
     let row = sqlx::query_as::<_, CredentialRow>(
-        "SELECT id, active, password_hash, failed_attempts, locked_until FROM officers WHERE badge_number = ?",
+        "SELECT id, active, is_admin, passwordless, password_hash, failed_attempts, locked_until FROM officers WHERE badge_number = ?",
     )
     .bind(&badge)
     .fetch_optional(pool)
@@ -521,9 +619,18 @@ pub async fn check_credentials(
     let locked = row.as_ref().is_some_and(|r| r.locked_until.is_some_and(|until| until > now));
     let hash_to_check = row.as_ref().map(|r| r.password_hash.clone()).unwrap_or_else(|| dummy_hash().to_string());
     let password_owned = password.to_string();
-    let password_ok = tokio::task::spawn_blocking(move || verify_password(&password_owned, &hash_to_check))
+    let secret_ok = tokio::task::spawn_blocking(move || verify_password(&password_owned, &hash_to_check))
         .await
         .unwrap_or(false);
+
+    // Badge alone: only an account marked for it, only while the policy says
+    // so, never an administrator or Head Office, and never from a workstation.
+    let policy = auth_policy::get(pool).await?;
+    let head_office = sqlx::query_scalar::<_, bool>("SELECT is_head_office FROM hq_config WHERE id = 'default'").fetch_optional(pool).await?.unwrap_or(false);
+    let badge_only = password.is_empty()
+        && device_id.is_none()
+        && row.as_ref().is_some_and(|r| r.passwordless && policy.allows_passwordless(r.is_admin, head_office));
+    let password_ok = secret_ok || badge_only;
 
     let mut actor = Actor::system("sign-in");
     actor.device_id = device_id.map(|d| d.to_string());
@@ -536,7 +643,8 @@ pub async fn check_credentials(
                 .execute(&mut *tx)
                 .await?;
             let officer = get_officer_conn(&mut tx, &r.id).await?.ok_or(OfficerError::InvalidCredentials)?;
-            audit::record(&mut tx, &actor, AuditEntry::new("auth.login", "officer", Some(&r.id)).reason(&badge)).await?;
+            let action = if badge_only && !secret_ok { "auth.login_badge_only" } else { "auth.login" };
+            audit::record(&mut tx, &actor, AuditEntry::new(action, "officer", Some(&r.id)).reason(&badge)).await?;
             Ok(officer)
         }
         Some(r) => {
@@ -583,7 +691,7 @@ pub async fn ensure_dev_account(pool: &SqlitePool, head_office: bool) -> Result<
     match existing {
         None => {
             let mut tx = crate::db::begin_write(pool).await?;
-            insert_officer(&mut tx, &actor, badge, name, role, true, PASSWORD, ProfileInput::default(), "account.dev_seed").await?;
+            insert_officer(&mut tx, &actor, badge, name, role, true, Secret::Set(PASSWORD), ProfileInput::default(), "account.dev_seed").await?;
             tx.commit().await?;
         }
         // The dev account is only useful while it can sign in with the known
@@ -600,6 +708,7 @@ pub async fn ensure_dev_account(pool: &SqlitePool, head_office: bool) -> Result<
                     is_admin: true,
                     active: true,
                     password: Some(PASSWORD.to_string()),
+                    passwordless: Some(false),
                     profile: ProfileInput::default(),
                 };
                 update_officer(&mut tx, &actor, &id, input).await?;
@@ -656,6 +765,7 @@ mod tests {
                 password: "another-password".into(),
                 role: "records".into(),
                 is_admin: false,
+                passwordless: false,
                 profile: ProfileInput::default(),
             },
         )
@@ -667,7 +777,8 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].action, "account.create");
         assert_eq!(rows[0].actor_badge.as_deref(), Some("OIC-1"));
-        assert!(!rows[0].after_json.as_deref().unwrap_or("").contains("password"), "hashes never enter the audit trail");
+        let after = rows[0].after_json.as_deref().unwrap_or("");
+        assert!(!after.contains("password_hash") && !after.contains("passwordHash") && !after.contains("argon2"), "hashes never enter the audit trail");
     }
 
     #[tokio::test]
@@ -681,7 +792,7 @@ mod tests {
             &mut tx,
             &actor,
             &admin.id,
-            UpdateOfficerInput { name: admin.name.clone(), role: "oic".into(), is_admin: false, active: true, password: None, profile: ProfileInput::default() },
+            UpdateOfficerInput { name: admin.name.clone(), role: "oic".into(), is_admin: false, active: true, password: None, passwordless: None, profile: ProfileInput::default() },
         )
         .await;
         assert!(matches!(result, Err(OfficerError::LastAdminGuard)));
@@ -712,5 +823,139 @@ mod tests {
         let wrong = OfficerErrorPayload::from(check_credentials(&pool, "OIC-1", "whatever-password", None).await.unwrap_err());
         assert_eq!(unknown.code, wrong.code);
         assert_eq!(unknown.message, wrong.message);
+    }
+
+    fn actor_of(admin: &Officer) -> Actor {
+        Actor::officer(admin.id.clone(), admin.badge_number.clone(), admin.name.clone(), admin.role.clone(), true, None)
+    }
+
+    async fn set_mode(pool: &SqlitePool, actor: &Actor, mode: &str) -> Result<AuthPolicy, crate::domain::error::DomainError> {
+        let mut tx = pool.begin().await.unwrap();
+        let saved = auth_policy::save(
+            &mut tx,
+            actor,
+            auth_policy::AuthPolicyInput { mode: mode.into(), idle_timeout_minutes: 240, absolute_lifetime_hours: 12 },
+        )
+        .await;
+        if saved.is_ok() {
+            tx.commit().await.unwrap();
+        }
+        saved
+    }
+
+    async fn add(pool: &SqlitePool, actor: &Actor, badge: &str, role: &str, secret: &str, passwordless: bool) -> Result<Officer, OfficerError> {
+        let mut tx = pool.begin().await.unwrap();
+        let created = create_officer(
+            &mut tx,
+            actor,
+            CreateOfficerInput {
+                badge_number: badge.into(),
+                name: badge.into(),
+                password: secret.into(),
+                role: role.into(),
+                is_admin: false,
+                passwordless,
+                profile: ProfileInput::default(),
+            },
+        )
+        .await;
+        if created.is_ok() {
+            tx.commit().await.unwrap();
+        }
+        created
+    }
+
+    #[tokio::test]
+    async fn a_pin_is_accepted_only_in_pin_mode_and_never_for_an_administrator() {
+        let pool = pool().await;
+        let admin = bootstrap(&pool).await;
+        let actor = actor_of(&admin);
+
+        assert!(matches!(add(&pool, &actor, "R-1", "records", "4821", false).await, Err(OfficerError::WeakPassword)));
+        set_mode(&pool, &actor, "pin").await.unwrap();
+        add(&pool, &actor, "R-2", "records", "4821", false).await.unwrap();
+        assert!(matches!(add(&pool, &actor, "R-3", "records", "48", false).await, Err(OfficerError::InvalidSecret(_))));
+        assert!(matches!(add(&pool, &actor, "R-4", "records", "48ab12", false).await, Err(OfficerError::InvalidSecret(_))));
+
+        let mut tx = pool.begin().await.unwrap();
+        let mut input = CreateOfficerInput { badge_number: "A-1".into(), name: "Admin".into(), password: "4821".into(), role: "facility_admin".into(), ..Default::default() };
+        input.is_admin = true;
+        let refused = create_officer(&mut tx, &actor, input).await;
+        assert!(matches!(refused, Err(OfficerError::InvalidSecret(_)) | Err(OfficerError::WeakPassword)), "an administrator needs a real password");
+        drop(tx);
+
+        assert!(check_credentials(&pool, "R-2", "4821", None).await.is_ok(), "the PIN signs in like any secret");
+    }
+
+    #[tokio::test]
+    async fn badge_only_signs_in_without_a_secret_only_when_every_condition_holds() {
+        let pool = pool().await;
+        let admin = bootstrap(&pool).await;
+        let actor = actor_of(&admin);
+
+        // Not while the policy is `password`.
+        assert!(matches!(add(&pool, &actor, "G-1", "records", "", true).await, Err(OfficerError::BadgeOnlyNotAllowed)));
+
+        set_mode(&pool, &actor, "badge_only").await.unwrap();
+        let clerk = add(&pool, &actor, "G-1", "records", "", true).await.unwrap();
+        assert!(clerk.passwordless);
+
+        assert!(check_credentials(&pool, "G-1", "", None).await.is_ok(), "badge alone signs in");
+        assert!(check_credentials(&pool, "G-1", "anything", None).await.is_err(), "a guess is not the badge-only path");
+        assert!(check_credentials(&pool, "G-1", "", Some("workstation-1")).await.is_err(), "never from a workstation");
+        assert!(check_credentials(&pool, "OIC-1", "", None).await.is_err(), "an administrator always needs the password");
+        assert!(check_credentials(&pool, "NOBODY", "", None).await.is_err());
+
+        // An administrator can never be badge-only.
+        let mut tx = pool.begin().await.unwrap();
+        let refused = create_officer(
+            &mut tx,
+            &actor,
+            CreateOfficerInput { badge_number: "A-2".into(), name: "A".into(), role: "facility_admin".into(), is_admin: true, passwordless: true, ..Default::default() },
+        )
+        .await;
+        assert!(matches!(refused, Err(OfficerError::BadgeOnlyNotAllowed)));
+        drop(tx);
+    }
+
+    #[tokio::test]
+    async fn leaving_badge_only_takes_the_no_secret_sign_in_away() {
+        let pool = pool().await;
+        let admin = bootstrap(&pool).await;
+        let actor = actor_of(&admin);
+        set_mode(&pool, &actor, "badge_only").await.unwrap();
+        add(&pool, &actor, "G-1", "records", "", true).await.unwrap();
+        assert!(check_credentials(&pool, "G-1", "", None).await.is_ok());
+
+        set_mode(&pool, &actor, "password").await.unwrap();
+        assert!(check_credentials(&pool, "G-1", "", None).await.is_err(), "the account must be given a secret now");
+        let flagged: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM officers WHERE passwordless = 1").fetch_one(&pool).await.unwrap();
+        assert_eq!(flagged, 0);
+    }
+
+    #[tokio::test]
+    async fn badge_only_is_refused_on_head_office_and_while_serving_workstations() {
+        let pool = pool().await;
+        let admin = bootstrap(&pool).await;
+        let actor = actor_of(&admin);
+
+        sqlx::query("UPDATE node_config SET node_mode = 'node' WHERE id = 'default'").execute(&pool).await.unwrap();
+        assert!(set_mode(&pool, &actor, "badge_only").await.is_err());
+        sqlx::query("UPDATE node_config SET node_mode = 'standalone' WHERE id = 'default'").execute(&pool).await.unwrap();
+
+        sqlx::query("UPDATE hq_config SET is_head_office = 1 WHERE id = 'default'").execute(&pool).await.unwrap();
+        assert!(set_mode(&pool, &actor, "badge_only").await.is_err());
+    }
+
+    #[tokio::test]
+    async fn the_facility_badge_prefix_applies_to_new_accounts_only() {
+        let pool = pool().await;
+        let admin = bootstrap(&pool).await;
+        let actor = actor_of(&admin);
+        sqlx::query("UPDATE facility_profile SET badge_prefix = 'UP-' WHERE id = 'default'").execute(&pool).await.unwrap();
+
+        assert!(matches!(add(&pool, &actor, "R-1", "records", "another-password", false).await, Err(OfficerError::BadgePrefix(p)) if p == "UP-"));
+        add(&pool, &actor, "up-0142", "records", "another-password", false).await.unwrap();
+        assert!(check_credentials(&pool, "OIC-1", "correct-horse", None).await.is_ok(), "an account from before the prefix still signs in");
     }
 }

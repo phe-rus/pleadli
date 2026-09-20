@@ -15,12 +15,13 @@ import { format } from 'date-fns/format'
 import { useState } from 'react'
 import { custodyStatusLabel, prisonerFullName, prisonerSexes, nationalities, prisonerStatusLabel, type Prisoner } from '../schema'
 import { Facts } from './blocks'
+import { m } from '@/paraglide/messages'
 
 type View = 'front' | 'left' | 'right'
 const views: readonly { value: View; label: string }[] = [
-  { value: 'front', label: 'Front' },
-  { value: 'left', label: 'Left side' },
-  { value: 'right', label: 'Right side' },
+  { value: 'front', get label() { return m.prisoners_front() } },
+  { value: 'left', get label() { return m.prisoners_left_side() } },
+  { value: 'right', get label() { return m.prisoners_right_side() } },
 ]
 
 function ageOn(dateOfBirth: number | null) {
@@ -73,7 +74,7 @@ export function ProfileRail({ prisoner }: { prisoner: Prisoner }) {
           )}
           <Button size="xs" variant="secondary" onClick={() => setPhotoOpen(true)}>
             <HugeiconsIcon icon={Camera01Icon} size={12} />
-            {photos.length > 0 ? 'Retake photo' : 'Take photo'}
+            {photos.length > 0 ? m.prisoners_retake_photo() : m.prisoners_take_photo()}
           </Button>
         </div>
 
@@ -83,10 +84,10 @@ export function ProfileRail({ prisoner }: { prisoner: Prisoner }) {
             type="button"
             onClick={() => {
               void navigator.clipboard?.writeText(number)
-              t.success('Number copied')
+              t.success(m.prisoners_number_copied())
             }}
             className="flex w-fit max-w-full items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 font-mono text-xs text-primary"
-            title="Copy"
+            title={m.prisoners_copy()}
           >
             <span className="truncate">{number}</span>
             <HugeiconsIcon icon={Copy01Icon} size={12} className="shrink-0" />
@@ -100,29 +101,29 @@ export function ProfileRail({ prisoner }: { prisoner: Prisoner }) {
 
         <Facts
           items={[
-            { label: 'Age', value: age != null ? `${age} years (born ${format(prisoner.dateOfBirth!, 'd MMM yyyy')})` : null },
-            { label: 'Sex', value: lookup(prisonerSexes, prisoner.sex) },
-            { label: 'Nationality', value: lookup(nationalities, prisoner.nationality) },
-            { label: 'National ID', value: prisoner.nationalId },
-            { label: 'Reference', value: prisoner.reference },
+            { label: m.prisoners_age(), value: age != null ? `${age} years (born ${format(prisoner.dateOfBirth!, 'd MMM yyyy')})` : null },
+            { label: m.prisoners_sex(), value: lookup(prisonerSexes, prisoner.sex) },
+            { label: m.prisoners_nationality(), value: lookup(nationalities, prisoner.nationality) },
+            { label: m.prisoners_national_id(), value: prisoner.nationalId },
+            { label: m.prisoners_reference(), value: prisoner.reference },
             {
-              label: 'Admitted',
-              value: `${format(prisoner.admittedAt, 'd MMM yyyy')}${inCustody ? ` · ${clocks.daysHeld} days held` : ''}`,
+              label: m.prisoners_admitted_2(),
+              value: `${format(prisoner.admittedAt, 'd MMM yyyy')}${inCustody ? ` · ${m.prisoners_days_held_plain({ days: clocks.daysHeld })}` : ''}`,
             },
-            { label: 'Location', value: prisoner.currentLocation ?? 'Not placed' },
-            { label: 'Offence', value: prisoner.offence },
+            { label: m.prisoners_location(), value: prisoner.currentLocation ?? m.prisoners_not_placed() },
+            { label: m.prisoners_offence(), value: prisoner.offence },
           ]}
         />
 
         {(pendingInstruments || pastBail || inWindow || clocks.reviewable || prisoner.documentsPending || prisoner.highCourtOnlyOffence || overdue > 0 || prisoner.currentStatus === 'in_transit') && (
           <div className="flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
-            {(pendingInstruments || prisoner.documentsPending) && <Badge variant="destructive">Documents pending</Badge>}
-            {pastBail && <Badge variant="destructive">Past mandatory bail</Badge>}
-            {overdue > 0 && <Badge variant="destructive">{overdue} overdue</Badge>}
-            {inWindow && <Badge variant="outline">Parole window open</Badge>}
-            {clocks.reviewable && inCustody && <Badge variant="outline">s.88 review applies</Badge>}
-            {prisoner.highCourtOnlyOffence && <Badge variant="secondary">High Court only</Badge>}
-            {prisoner.currentStatus === 'in_transit' && <Badge variant="outline">In transit</Badge>}
+            {(pendingInstruments || prisoner.documentsPending) && <Badge variant="destructive">{m.prisoners_documents_pending()}</Badge>}
+            {pastBail && <Badge variant="destructive">{m.prisoners_past_mandatory_bail()}</Badge>}
+            {overdue > 0 && <Badge variant="destructive">{m.prisoners_overdue({ overdue })}</Badge>}
+            {inWindow && <Badge variant="outline">{m.prisoners_parole_window_open()}</Badge>}
+            {clocks.reviewable && inCustody && <Badge variant="outline">{m.prisoners_s_88_review_applies()}</Badge>}
+            {prisoner.highCourtOnlyOffence && <Badge variant="secondary">{m.prisoners_high_court_only()}</Badge>}
+            {prisoner.currentStatus === 'in_transit' && <Badge variant="outline">{m.prisoners_in_transit()}</Badge>}
           </div>
         )}
       </CardContent>
@@ -130,8 +131,8 @@ export function ProfileRail({ prisoner }: { prisoner: Prisoner }) {
       <Dialog open={photoOpen} onOpenChange={setPhotoOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Photos of {prisonerFullName(prisoner)}</DialogTitle>
-            <DialogDescription>Take each view with a camera or upload a file. A new photo replaces the one on file for that view.</DialogDescription>
+            <DialogTitle>{m.prisoners_photos_of({ prisoner: prisonerFullName(prisoner) })}</DialogTitle>
+            <DialogDescription>{m.prisoners_take_each_view_with_a_camera()}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-wrap gap-4">
             {views.map((view) => (
@@ -152,7 +153,7 @@ function PhotoSlot({ prisoner, view, label }: { prisoner: Prisoner; view: View; 
 
   return (
     <div className="flex min-w-40 flex-1 basis-44 flex-col gap-2">
-      <PhotoCapture value={draft} onChange={setDraft} label={label} hint={onFile ? 'On file' : 'None yet'} shape="portrait" />
+      <PhotoCapture value={draft} onChange={setDraft} label={label} hint={onFile ? m.prisoners_on_file() : m.prisoners_none_yet()} shape="portrait" />
       {draft && (
         <Button
           size="xs"
@@ -161,13 +162,13 @@ function PhotoSlot({ prisoner, view, label }: { prisoner: Prisoner; view: View; 
             try {
               await save.mutateAsync(draft)
               setDraft(null)
-              t.success(`${label} photo saved`)
+              t.success(m.prisoners_photo_saved({ label }))
             } catch (error) {
-              t.error('Could not save the photo', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+              t.error(m.prisoners_could_not_save_the_photo(), { description: error instanceof ApiError ? error.message : m.prisoners_please_try_again() })
             }
           }}
         >
-          {save.isPending ? 'Saving…' : `Save ${label.toLowerCase()} photo`}
+          {save.isPending ? m.prisoners_saving() : m.prisoners_save_photo({ label: label.toLowerCase() })}
         </Button>
       )}
     </div>

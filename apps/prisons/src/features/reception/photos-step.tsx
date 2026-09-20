@@ -3,11 +3,12 @@ import { PhoneLink, photoViewLabel, photoViews, type PhotoView } from '@/feature
 import { useCallback, useRef } from 'react'
 import { StepHeading, type StepProps } from './reception-steps'
 import type { PhotoDrafts } from './schema'
+import { m } from '@/paraglide/messages'
 
 const hints: Record<PhotoView, string> = {
-  front: 'Head and shoulders, facing the camera',
-  left: 'Turn to show the left side',
-  right: 'Turn to show the right side',
+  get front() { return m.reception_head_and_shoulders_facing_the_camera() },
+  get left() { return m.reception_turn_to_show_the_left_side() },
+  get right() { return m.reception_turn_to_show_the_right_side() },
 }
 
 /** Front, left and right photographs. Optional at reception; a photo can be
@@ -22,9 +23,9 @@ export function PhotosStep({ draft, set }: StepProps) {
 
   return (
     <>
-      <StepHeading title="Photos" description="A front photo and both sides, for identification. These can also be taken later from the prisoner's profile." />
+      <StepHeading title={m.reception_photos()} description={m.reception_a_front_photo_and_both_sides()} />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm font-medium">{taken} of 3 taken</span>
+        <span className="text-sm font-medium">{m.reception_of_3_taken({ taken })}</span>
         <PhoneLink taken={draft.photos} onPhotos={merge} />
       </div>
       <div className="flex flex-wrap gap-4">

@@ -29,6 +29,9 @@ pub mod perm {
     pub const DOCUMENT_VOID: &str = "document.void";
     pub const REPORT_READ: &str = "report.read";
     pub const REPORT_GENERATE: &str = "report.generate";
+    /// Attest a return as correct and send it to Head Office. The post's own
+    /// authority: only the OIC holds it.
+    pub const REPORT_ATTEST: &str = "report.attest";
 
     pub const ACCOUNTS_MANAGE: &str = "accounts.manage";
     pub const DEVICES_MANAGE: &str = "devices.manage";
@@ -99,7 +102,7 @@ pub fn role_permissions(role: &str, is_admin: bool) -> BTreeSet<&'static str> {
         // to a discharge gate.
         "oic" => {
             set.extend(FACILITY_ROUTINE);
-            set.extend([AUTHORISE_EXCEPTION, DOCUMENT_VOID]);
+            set.extend([AUTHORISE_EXCEPTION, DOCUMENT_VOID, REPORT_ATTEST]);
         }
         // General duty (the legacy 'officer'): routine work, no authorisations.
         "officer" => set.extend(FACILITY_ROUTINE),
@@ -156,8 +159,6 @@ pub struct Actor {
     pub officer_id: Option<String>,
     pub badge_number: Option<String>,
     pub name: String,
-    pub role: String,
-    pub is_admin: bool,
     pub device_id: Option<String>,
     permissions: BTreeSet<&'static str>,
 }
@@ -172,7 +173,7 @@ impl Actor {
         device_id: Option<String>,
     ) -> Self {
         let permissions = role_permissions(&role, is_admin);
-        Actor { officer_id: Some(officer_id), badge_number: Some(badge_number), name, role, is_admin, device_id, permissions }
+        Actor { officer_id: Some(officer_id), badge_number: Some(badge_number), name, device_id, permissions }
     }
 
     /// An automated or pre-sign-in actor. Holds no permissions: a system
@@ -182,8 +183,6 @@ impl Actor {
             officer_id: None,
             badge_number: None,
             name: format!("system: {label}"),
-            role: "system".to_string(),
-            is_admin: false,
             device_id: None,
             permissions: BTreeSet::new(),
         }

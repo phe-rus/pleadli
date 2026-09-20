@@ -1,12 +1,13 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 // Real, named categories confirmed on the Uganda Prisons Service's own site
 // (docs/prisons/RESEARCH.md §10), at real scale (21,996 participants in
 // FY2021/22 alone). Not an invented generic "activities" list.
 export const programmeCategories = [
-  { value: 'vocational_training', label: 'Vocational training (tailoring, welding, agricultural engineering)' },
-  { value: 'prison_industries', label: 'Prison industries (furniture production)' },
-  { value: 'prison_farming', label: 'Prison farming (livestock, cotton, maize, oil crops)' },
+  { value: 'vocational_training', get label() { return m.programme_participations_vocational_training_tailoring_welding_ag() } },
+  { value: 'prison_industries', get label() { return m.programme_participations_prison_industries_furniture_production() } },
+  { value: 'prison_farming', get label() { return m.programme_participations_prison_farming_livestock_cotton_maize_oi() } },
 ] as const
 
 export function programmeCategoryLabel(value: string) {
@@ -16,9 +17,9 @@ export function programmeCategoryLabel(value: string) {
 // No attendance-tracking system for programmes was found (unlike Visits) —
 // only participation status is modeled.
 export const programmeStatuses = [
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'discontinued', label: 'Discontinued' },
+  { value: 'active', get label() { return m.programme_participations_active() } },
+  { value: 'completed', get label() { return m.programme_participations_completed() } },
+  { value: 'discontinued', get label() { return m.programme_participations_discontinued() } },
 ] as const
 
 export function programmeStatusLabel(value: string) {

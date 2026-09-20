@@ -5,7 +5,6 @@
 //! issued codes.
 
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
-use serde::Serialize;
 use sqlx::SqliteConnection;
 #[cfg(test)]
 use sqlx::SqlitePool;
@@ -90,23 +89,6 @@ impl From<sqlx::Error> for ActivationError {
     }
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActivationErrorPayload {
-    pub code: String,
-    pub message: String,
-}
-
-impl From<ActivationError> for ActivationErrorPayload {
-    fn from(e: ActivationError) -> Self {
-        let (code, message) = match e {
-            ActivationError::Invalid => ("INVALID_ACTIVATION_CODE".to_string(), "Invalid or expired activation code.".to_string()),
-            ActivationError::Db(err) => ("DB_ERROR".to_string(), err.to_string()),
-        };
-        ActivationErrorPayload { code, message }
-    }
-}
-
 /// First launch role choice. `'facility'` persists immediately, so the
 /// choice screen never reappears (AC-1). `'head_office'` is not persisted
 /// here at all: it only navigates the frontend to the activation code
@@ -128,6 +110,22 @@ pub async fn choose_role(conn: &mut SqliteConnection, actor: &Actor, role: &str)
         }
     }
     Ok(())
+}
+
+/// Head Office set up on this installation with no Pleadli Cloud code. Only
+/// possible while no role has been chosen, so it can never turn a working
+/// facility into Head Office. `activated_at` stays empty: it now means "this
+/// installation was verified with Pleadli", which `verify_activation_code`
+/// can still do later. Audited.
+pub async fn choose_head_office(conn: &mut SqliteConnection, actor: &Actor) -> Result<bool, sqlx::Error> {
+    let changed = sqlx::query("UPDATE hq_config SET is_head_office = 1, role = 'head_office' WHERE id = 'default' AND role IS NULL")
+        .execute(&mut *conn)
+        .await?
+        .rows_affected();
+    if changed > 0 {
+        audit::record(conn, actor, AuditEntry::new("install.role_chosen", "installation", Some("default")).reason("head_office")).await?;
+    }
+    Ok(changed > 0)
 }
 
 /// The one real check: decode, verify the signature against whichever key

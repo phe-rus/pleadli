@@ -59,13 +59,6 @@ pub async fn list_for_prisoner(pool: &SqlitePool, prisoner_id: &str) -> Result<V
         .await
 }
 
-pub async fn list_for_prisoner_conn(conn: &mut SqliteConnection, prisoner_id: &str) -> Result<Vec<Instrument>, sqlx::Error> {
-    sqlx::query_as::<_, Instrument>("SELECT * FROM instruments WHERE prisoner_id = ? ORDER BY created_at DESC")
-        .bind(prisoner_id)
-        .fetch_all(&mut *conn)
-        .await
-}
-
 async fn get_conn(conn: &mut SqliteConnection, id: &str) -> Result<Instrument, sqlx::Error> {
     sqlx::query_as::<_, Instrument>("SELECT * FROM instruments WHERE id = ?").bind(id).fetch_one(&mut *conn).await
 }

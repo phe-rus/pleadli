@@ -591,6 +591,17 @@ pub struct ReportRecord {
     pub content_hash: String,
     pub generated_by_name: String,
     pub generated_at: i64,
+    /// Set once the OIC has attested it (`returns.rs`). Never changes after.
+    pub attested_at: Option<i64>,
+    pub attested_by_name: Option<String>,
+    pub attested_by_badge: Option<String>,
+    /// What the officer affirmed, as worded when they attested.
+    pub attestation_statement: Option<String>,
+    /// `queued` (waiting for Head Office) or `acknowledged`; `None` if it has
+    /// not been submitted.
+    pub submission: Option<String>,
+    pub acknowledged_at: Option<i64>,
+    pub submission_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -604,8 +615,13 @@ pub struct GeneratedReport {
 macro_rules! select_record {
     ($tail:literal) => {
         concat!(
-            "SELECT id, reference, kind, title, period_from, period_to, template_version, content_hash, generated_by_name, generated_at
-             FROM generated_reports ",
+            "SELECT g.id, g.reference, g.kind, g.title, g.period_from, g.period_to, g.template_version, g.content_hash, g.generated_by_name, g.generated_at,
+                    a.attested_at, a.attested_by_name, a.attested_by_badge, a.statement AS attestation_statement,
+                    CASE WHEN s.report_id IS NULL THEN NULL WHEN s.acknowledged_at IS NULL THEN 'queued' ELSE 'acknowledged' END AS submission,
+                    s.acknowledged_at, s.last_error AS submission_error
+             FROM generated_reports g
+             LEFT JOIN return_attestations a ON a.report_id = g.id
+             LEFT JOIN return_submissions s ON s.report_id = g.id ",
             $tail
         )
     };
@@ -644,7 +660,7 @@ pub async fn generate(conn: &mut SqliteConnection, actor: &Actor, kind: Kind, pe
     .await?;
 
     let record: ReportRecord =
-        sqlx::query_as(select_record!("WHERE id = ?")).bind(&id).fetch_one(&mut *conn).await?;
+        sqlx::query_as(select_record!("WHERE g.id = ?")).bind(&id).fetch_one(&mut *conn).await?;
     audit::record(conn, actor, AuditEntry::new("report.generate", "report", Some(&id)).after(&record)).await?;
     Ok(GeneratedReport { record, document: value(&document) })
 }
@@ -809,12 +825,12 @@ pub async fn summary(conn: &mut SqliteConnection) -> Result<SummaryStatement, sq
 }
 
 pub async fn list(pool: &SqlitePool) -> Result<Vec<ReportRecord>, sqlx::Error> {
-    sqlx::query_as(select_record!("ORDER BY generated_at DESC LIMIT 200")).fetch_all(pool).await
+    sqlx::query_as(select_record!("ORDER BY g.generated_at DESC LIMIT 200")).fetch_all(pool).await
 }
 
 pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<GeneratedReport>, DomainError> {
     let record: Option<ReportRecord> =
-        sqlx::query_as(select_record!("WHERE id = ?")).bind(id).fetch_optional(pool).await?;
+        sqlx::query_as(select_record!("WHERE g.id = ?")).bind(id).fetch_optional(pool).await?;
     let Some(record) = record else { return Ok(None) };
     let content: String = sqlx::query_scalar("SELECT content_json FROM generated_reports WHERE id = ?").bind(id).fetch_one(pool).await?;
     let document = serde_json::from_str(&content).map_err(|e| DomainError::rejected(e.to_string()))?;

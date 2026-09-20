@@ -6,6 +6,7 @@ import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useCertifyProgrammeParticipation } from './queries'
 import { certifyProgrammeParticipationSchema, type ProgrammeParticipation } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type CertifyProgrammeFormProps = {
   participation: ProgrammeParticipation
@@ -45,11 +46,11 @@ export function CertifyProgrammeForm({ participation, onSuccess, onDirtyChange }
       try {
         const input = { ...value, completedAt: new Date(value.completedAt).getTime() }
         const result = await certify.mutateAsync({ id: participation.id, input })
-        t.success('Programme participation certified')
+        t.success(m.programme_participations_programme_participation_certified())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record certification', { description: 'Please try again.' })
+        t.error(m.programme_participations_could_not_record_certification(), { description: m.programme_participations_please_try_again() })
       }
     },
   })
@@ -58,7 +59,7 @@ export function CertifyProgrammeForm({ participation, onSuccess, onDirtyChange }
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
@@ -67,19 +68,19 @@ export function CertifyProgrammeForm({ participation, onSuccess, onDirtyChange }
       <form.AppField name="completedAt">
         {(f) => (
           <Field>
-            <FieldLabel>Completed / assessed at</FieldLabel>
+            <FieldLabel>{m.programme_participations_completed_assessed_at()}</FieldLabel>
             <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
           </Field>
         )}
       </form.AppField>
 
       <form.AppField name="certificateReference">
-        {(f) => <f.input label="Certificate reference (optional)" placeholder="e.g. UVTAB National Certificate Level 3" />}
+        {(f) => <f.input label={m.programme_participations_certificate_reference_optional()} placeholder={m.programme_participations_e_g_uvtab_national_certificate_level()} />}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Mark completed & certified" />
+          <form.submit label={m.programme_participations_mark_completed_certified()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

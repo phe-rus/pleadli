@@ -81,7 +81,7 @@ pub async fn save_config(conn: &mut SqliteConnection, actor: &Actor, input: Save
             domain = excluded.domain,
             station_name = excluded.station_name",
     )
-    .bind(&input.api_token)
+    .bind(super::secrets::seal(super::secrets::CLOUDFLARE_API_TOKEN, &input.api_token)?)
     .bind(&input.account_id)
     .bind(&input.domain)
     .bind(&input.station_name)
@@ -112,12 +112,14 @@ pub async fn get_config(pool: &SqlitePool) -> Result<Option<CloudflareConfig>, s
 }
 
 async fn full_config(pool: &SqlitePool) -> Result<SaveCloudflareConfigInput, CloudflareError> {
-    sqlx::query_as::<_, SaveCloudflareConfigInput>(
+    let mut config = sqlx::query_as::<_, SaveCloudflareConfigInput>(
         "SELECT api_token, account_id, domain, station_name FROM cloudflare_config WHERE id = 'default'",
     )
     .fetch_optional(pool)
     .await?
-    .ok_or(CloudflareError::NotConfigured)
+    .ok_or(CloudflareError::NotConfigured)?;
+    config.api_token = super::secrets::open(super::secrets::CLOUDFLARE_API_TOKEN, &config.api_token).map_err(sqlx::Error::from)?;
+    Ok(config)
 }
 
 pub async fn get_tunnel_state(pool: &SqlitePool) -> Result<Option<TunnelState>, sqlx::Error> {
@@ -126,6 +128,13 @@ pub async fn get_tunnel_state(pool: &SqlitePool) -> Result<Option<TunnelState>, 
     )
     .fetch_optional(pool)
     .await
+}
+
+/// The secret the connector runs with. Only the connector reads it; it is
+/// never part of anything sent to the frontend.
+pub async fn get_run_token(pool: &SqlitePool) -> Result<Option<String>, sqlx::Error> {
+    let stored: Option<String> = sqlx::query_scalar("SELECT run_token FROM cloudflare_tunnel_state WHERE id = 'default'").fetch_optional(pool).await?;
+    Ok(stored.map(|token| super::secrets::open(super::secrets::TUNNEL_RUN_TOKEN, &token)).transpose()?)
 }
 
 async fn save_tunnel_state(
@@ -142,7 +151,7 @@ async fn save_tunnel_state(
     )
     .bind(tunnel_id)
     .bind(hostname)
-    .bind(run_token)
+    .bind(super::secrets::seal(super::secrets::TUNNEL_RUN_TOKEN, run_token)?)
     .execute(pool)
     .await?;
     Ok(())
@@ -277,11 +286,12 @@ async fn create_dns_record(
     Ok(())
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
+/// What provisioning hands back. The tunnel's run token is a secret: it is
+/// stored in `cloudflare_tunnel_state` for the connector to read, and is never
+/// part of a result that could be serialised to the frontend.
+#[derive(Debug, Clone)]
 pub struct ProvisionResult {
     pub hostname: String,
-    pub run_token: String,
 }
 
 /// Creates (or reuses) a Cloudflare Tunnel for this station and points
@@ -290,14 +300,15 @@ pub struct ProvisionResult {
 /// rather than duplicated.
 pub async fn provision(pool: &SqlitePool, local_port: u16) -> Result<ProvisionResult, CloudflareError> {
     let config = full_config(pool).await?;
-    let client = reqwest::Client::new();
+    // Bounded: a stalled Cloudflare call must not hold the request open.
+    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(30)).build()?;
     let hostname = format!("{}.{}", config.station_name, config.domain);
 
     if let Some(existing) = get_tunnel_state(pool).await? {
         let run_token = get_tunnel_token(&client, &config.api_token, &config.account_id, &existing.tunnel_id).await?;
         set_ingress(&client, &config.api_token, &config.account_id, &existing.tunnel_id, &hostname, local_port).await?;
         save_tunnel_state(pool, &existing.tunnel_id, &hostname, &run_token).await?;
-        return Ok(ProvisionResult { hostname, run_token });
+        return Ok(ProvisionResult { hostname });
     }
 
     let tunnel_id = create_tunnel(&client, &config.api_token, &config.account_id, &config.station_name).await?;
@@ -308,5 +319,5 @@ pub async fn provision(pool: &SqlitePool, local_port: u16) -> Result<ProvisionRe
     create_dns_record(&client, &config.api_token, &zone_id, &config.station_name, &tunnel_id).await?;
 
     save_tunnel_state(pool, &tunnel_id, &hostname, &run_token).await?;
-    Ok(ProvisionResult { hostname, run_token })
+    Ok(ProvisionResult { hostname })
 }

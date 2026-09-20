@@ -10,6 +10,7 @@ import { format } from 'date-fns/format'
 import { useEffect, useRef, useState } from 'react'
 import { closeCaptureSession, getCaptureStatus, openCaptureSession } from './data'
 import { photoViewLabel, photoViews, type CaptureSession, type PhotoView } from './schema'
+import { m } from '@/paraglide/messages'
 
 type Taken = Record<PhotoView, string | null>
 
@@ -46,7 +47,7 @@ export function PhoneLink({ taken, onPhotos }: { taken: Taken; onPhotos: (batch:
       setFailure(
         error instanceof ApiError
           ? { code: error.code, message: error.message }
-          : { code: 'UNKNOWN', message: 'The link could not be made. Try again.' },
+          : { code: 'UNKNOWN', message: m.prisoner_photos_the_link_could_not_be_made() },
       )
     } finally {
       setStarting(false)
@@ -88,39 +89,39 @@ export function PhoneLink({ taken, onPhotos }: { taken: Taken; onPhotos: (batch:
           if (!session || expired) void start()
         }}
       >
-        <HugeiconsIcon icon={SmartPhone01Icon} size={12} /> Phone link
+        <HugeiconsIcon icon={SmartPhone01Icon} size={12} /> {m.prisoner_photos_phone_link()}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Take the photos with a phone</DialogTitle>
+            <DialogTitle>{m.prisoner_photos_take_the_photos_with_a_phone()}</DialogTitle>
             <DialogDescription>
-              Scan the code or open the link on a phone connected to this facility network. Each photo it takes appears in the slots on this screen.
+              {m.prisoner_photos_scan_the_code_or_open_the()}
             </DialogDescription>
           </DialogHeader>
 
           {failure ? (
             <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border p-4 text-sm">
-              <p>{failure.code === 'NOT_SERVING' ? 'Turn on serving workstations to use a phone as a camera.' : failure.message}</p>
+              <p>{failure.code === 'NOT_SERVING' ? m.prisoner_photos_turn_on_serving_workstations_to_use() : failure.message}</p>
               {failure.code === 'NOT_SERVING' ? (
-                <Link to="/settings" search={{ tab: 'node' }} className="w-fit text-xs underline underline-offset-4" onClick={() => setOpen(false)}>
-                  Open Settings, Node and backups
+                <Link to="/settings/$section" params={{ section: 'device' }} className="w-fit text-xs underline underline-offset-4" onClick={() => setOpen(false)}>
+                  {m.prisoner_photos_open_settings_device_and_node()}
                 </Link>
               ) : (
                 <Button type="button" size="xs" onClick={() => void start()} disabled={starting}>
-                  Try again
+                  {m.prisoner_photos_try_again()}
                 </Button>
               )}
             </div>
           ) : !session || starting ? (
-            <p className="py-6 text-center text-xs text-muted-foreground">Making a link…</p>
+            <p className="py-6 text-center text-xs text-muted-foreground">{m.prisoner_photos_making_a_link()}</p>
           ) : (
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-4">
                 <div
                   className="size-44 shrink-0 rounded-lg bg-white p-2 [&>svg]:size-full"
-                  aria-label="QR code for the phone link"
+                  aria-label={m.prisoner_photos_qr_code_for_the_phone_link()}
                   dangerouslySetInnerHTML={{ __html: session.qrSvg }}
                 />
                 <div className="flex min-w-0 flex-1 basis-48 flex-col gap-2">
@@ -136,19 +137,19 @@ export function PhoneLink({ taken, onPhotos }: { taken: Taken; onPhotos: (batch:
                       size="xs"
                       onClick={() => {
                         void navigator.clipboard?.writeText(session.url)
-                        t.success('Link copied')
+                        t.success(m.prisoner_photos_link_copied())
                       }}
                     >
-                      <HugeiconsIcon icon={Copy01Icon} size={12} /> Copy link
+                      <HugeiconsIcon icon={Copy01Icon} size={12} /> {m.prisoner_photos_copy_link()}
                     </Button>
                     {expired && (
                       <Button type="button" size="xs" variant="secondary" onClick={() => void start()} disabled={starting}>
-                        New link
+                        {m.prisoner_photos_new_link()}
                       </Button>
                     )}
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    {expired ? 'This link has expired.' : `Works until ${format(session.expiresAt, 'p')}.`} The phone may warn about the connection once, because the node uses its own certificate. Continue to the page.
+                    {expired ? m.prisoner_photos_this_link_has_expired() : m.prisoner_photos_works_until({ expiresAt: format(session.expiresAt, 'p') })} {m.prisoner_photos_phone_warning()}
                   </p>
                 </div>
               </div>
@@ -159,15 +160,15 @@ export function PhoneLink({ taken, onPhotos }: { taken: Taken; onPhotos: (batch:
                     <span>{photoViewLabel[view]}</span>
                     {taken[view] ? (
                       <span className="flex items-center gap-1 text-xs text-emerald-600">
-                        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} /> Received
+                        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} /> {m.prisoner_photos_received()}
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground">Waiting</span>
+                      <span className="text-xs text-muted-foreground">{m.prisoner_photos_waiting()}</span>
                     )}
                   </li>
                 ))}
               </ul>
-              <p className="text-[11px] text-muted-foreground">{arrived} of 3 photos in.</p>
+              <p className="text-[11px] text-muted-foreground">{m.prisoner_photos_of_3_photos_in({ arrived })}</p>
             </div>
           )}
         </DialogContent>

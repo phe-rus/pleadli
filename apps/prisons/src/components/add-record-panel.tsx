@@ -28,6 +28,7 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { useNavigate } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cloneElement, Suspense, useEffect, useState, type ReactElement } from 'react'
+import { m } from '@/paraglide/messages'
 
 type RecordType =
   | 'admission'
@@ -55,16 +56,16 @@ type RecordTypeInfo = {
  * Property, Programme) need which prisoner first; Admission, Officer, and
  * Request go straight to their form (a complaint may stay anonymous). */
 const recordTypes: readonly RecordTypeInfo[] = [
-  { value: 'admission', label: 'Receive someone', description: 'Reception under a warrant or order: verify, search, inventory, place.', icon: PrisonerIcon, requiresPrisoner: false },
-  { value: 'visit', label: 'Visit', description: 'Authorize or record a visit.', icon: HandshakeIcon, requiresPrisoner: true },
-  { value: 'court_production', label: 'Court production', description: 'Produce a prisoner to court (physical or virtual).', icon: GavelIcon, requiresPrisoner: true },
-  { value: 'transfer', label: 'Transfer out', description: 'Prepare, dispatch and confirm a move to another prison.', icon: ArrowDataTransferHorizontalIcon, requiresPrisoner: true },
-  { value: 'health_event', label: 'Health & welfare event', description: 'Referral or return, hospitalised or medical.', icon: HealthIcon, requiresPrisoner: true },
-  { value: 'release', label: 'Discharge', description: 'Release on entitlement or court order, with the gates checked.', icon: DoorOpenIcon, requiresPrisoner: true },
-  { value: 'property_record', label: 'Property & effects', description: 'The s.62 admission-time record of effects.', icon: Archive01Icon, requiresPrisoner: true },
-  { value: 'programme', label: 'Programme participation', description: 'Link a prisoner to a rehabilitation or work programme.', icon: GraduationCapIcon, requiresPrisoner: true },
-  { value: 'request', label: 'Request / complaint', description: 'Log a Mukutano complaint, linked or anonymous.', icon: Message01Icon, requiresPrisoner: false },
-  { value: 'officer', label: 'Officer', description: 'Create an account for this installation.', icon: UserGroupIcon, requiresPrisoner: false },
+  { value: 'admission', get label() { return m.ui_receive_someone() }, get description() { return m.ui_reception_under_a_warrant_or_order() }, icon: PrisonerIcon, requiresPrisoner: false },
+  { value: 'visit', get label() { return m.ui_visit() }, get description() { return m.ui_authorize_or_record_a_visit() }, icon: HandshakeIcon, requiresPrisoner: true },
+  { value: 'court_production', get label() { return m.ui_court_production() }, get description() { return m.ui_produce_a_prisoner_to_court_physical() }, icon: GavelIcon, requiresPrisoner: true },
+  { value: 'transfer', get label() { return m.ui_transfer_out() }, get description() { return m.ui_prepare_dispatch_and_confirm_a_move() }, icon: ArrowDataTransferHorizontalIcon, requiresPrisoner: true },
+  { value: 'health_event', get label() { return m.ui_health_welfare_event() }, get description() { return m.ui_referral_or_return_hospitalised_or_medic() }, icon: HealthIcon, requiresPrisoner: true },
+  { value: 'release', get label() { return m.ui_discharge() }, get description() { return m.ui_release_on_entitlement_or_court_order() }, icon: DoorOpenIcon, requiresPrisoner: true },
+  { value: 'property_record', get label() { return m.ui_property_effects() }, get description() { return m.ui_the_s_62_admission_time_record() }, icon: Archive01Icon, requiresPrisoner: true },
+  { value: 'programme', get label() { return m.ui_programme_participation() }, get description() { return m.ui_link_a_prisoner_to_a_rehabilitation() }, icon: GraduationCapIcon, requiresPrisoner: true },
+  { value: 'request', get label() { return m.ui_request_complaint() }, get description() { return m.ui_log_a_mukutano_complaint_linked_or() }, icon: Message01Icon, requiresPrisoner: false },
+  { value: 'officer', get label() { return m.ui_officer() }, get description() { return m.ui_create_an_account_for_this_installation() }, icon: UserGroupIcon, requiresPrisoner: false },
 ]
 
 function recordTypeInfo(value: RecordType): RecordTypeInfo {
@@ -87,8 +88,22 @@ type Screen =
  * own officers on `/officers`, so the whole panel is hidden there in
  * `Headers`.
  */
-export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
-  const [open, setOpen] = useState(false)
+export function AddRecordPanel({
+  trigger,
+  open: openProp,
+  onOpenChange,
+}: {
+  trigger?: ReactElement
+  /** Controlled use, for a launcher that lives elsewhere (the ribbon menu). */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
+  const [openState, setOpenState] = useState(false)
+  const open = openProp ?? openState
+  const setOpen = (next: boolean) => {
+    setOpenState(next)
+    onOpenChange?.(next)
+  }
   const [dirty, setDirty] = useState(false)
   const [screen, setScreen] = useState<Screen>({ step: 'grid' })
   const navigate = useNavigate()
@@ -116,7 +131,7 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
   }
 
   const requestClose = () => {
-    if (dirty && !window.confirm('You have unsaved changes. Discard them?')) return
+    if (dirty && !window.confirm(m.ui_you_have_unsaved_changes_discard_them())) return
     setOpen(false)
     reset()
   }
@@ -132,9 +147,10 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
 
   return (
     <>
-      {cloneElement(trigger as ReactElement<{ onClick?: () => void }>, {
-        onClick: () => setOpen(true),
-      })}
+      {trigger &&
+        cloneElement(trigger as ReactElement<{ onClick?: () => void }>, {
+          onClick: () => setOpen(true),
+        })}
 
       <AnimatePresence>
         {open && (
@@ -152,9 +168,9 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
               key="add-record-panel"
               role="dialog"
               aria-modal="true"
-              aria-label="Add record"
+              aria-label={m.ui_add_record()}
               className={cn(
-                "fixed top-0 right-0 z-50 h-dvh w-full md:max-w-[80wvh]!",
+                "fixed top-0 right-0 z-50 h-dvh w-(--panel-width)",
                 'flex flex-col bg-background shadow-2xl border-l border-border/35'
               )}
               initial={{ x: '100%' }}
@@ -162,12 +178,12 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
-              <header className="flex items-center shrink-0 border-b w-full border-border/60">
-                <section className="flex w-full items-center gap-2 px-5 py-3">
+              <header className="panel-header gap-2">
+                <section className="flex w-full items-center gap-2">
                   {screen.step !== 'grid' && (
                     <button
                       type="button"
-                      aria-label="Back"
+                      aria-label={m.ui_back()}
                       className="-ml-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted/60"
                       onClick={() => setScreen({ step: 'grid' })}
                     >
@@ -176,19 +192,19 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
                   )}
                   <div className="min-w-0 flex-1">
                     <h2 className="text-sm font-medium text-foreground">
-                      {screen.step === 'grid' ? 'Add record' : recordTypeInfo(screen.record).label}
+                      {screen.step === 'grid' ? m.ui_add_record() : recordTypeInfo(screen.record).label}
                     </h2>
                     <p className="text-xs text-muted-foreground">
                       {screen.step === 'prisoner'
-                        ? 'Which prisoner is this for?'
+                        ? m.ui_which_prisoner_is_this_for()
                         : screen.step === 'form' && screen.record !== 'request'
                           ? recordTypeInfo(screen.record).description
-                          : 'Pick what you\u2019re adding, then fill it in.'}
+                          : m.ui_pick_what_you_re_adding_then()}
                     </p>
                   </div>
                   <button
                     type="button"
-                    aria-label="Close"
+                    aria-label={m.ui_close()}
                     className="rounded-md p-1.5 text-muted-foreground hover:bg-muted/60"
                     onClick={requestClose}
                   >
@@ -197,10 +213,10 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
                 </section>
               </header>
 
-              <div className="px-5 flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+              <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
                 {screen.step === 'grid' && (
-                  <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                    <div className="flex flex-wrap gap-2">
+                  <div className="panel-body">
+                    <div className="flex flex-col gap-2">
                       {recordTypes.map((r) => (
                         <button
                           key={r.value}
@@ -209,7 +225,7 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
                             if (startProcedure(r.value)) return
                             setScreen(r.requiresPrisoner ? { step: 'prisoner', record: r.value } : { step: 'form', record: r.value })
                           }}
-                          className="flex min-w-52 flex-1 basis-56 flex-col items-start gap-2 rounded-lg border border-border/60 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                          className="flex w-full flex-col items-start gap-2 rounded-lg border border-border/60 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                         >
                           <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
                             <HugeiconsIcon icon={r.icon} size={16} />
@@ -223,7 +239,7 @@ export function AddRecordPanel({ trigger }: { trigger: ReactElement }) {
                 )}
 
                 {screen.step === 'prisoner' && (
-                  <div className="min-h-0 flex-1 overflow-y-auto">
+                  <div className="flex min-h-0 flex-1 flex-col">
                     <PrisonerPicker
                       onSelect={(prisoner) => {
                         if (startProcedure(screen.record, prisoner)) return
@@ -275,7 +291,7 @@ function RecordFormStep({
 }) {
   if (isPrisonerScoped(record) && !prisoner) {
     return (
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col">
         <PrisonerPicker onSelect={onPickPrisoner} />
       </div>
     )
@@ -310,13 +326,13 @@ function RecordFormStep({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {prisoner && (
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
+        <div className="panel-header justify-between gap-2 py-2.5">
           <div className="flex items-center gap-2 text-sm">
             <Badge variant="secondary">{prisoner.prisonerNumber ?? prisoner.id}</Badge>
             {prisonerFullName(prisoner)}
           </div>
           <button type="button" className="text-xs text-muted-foreground underline" onClick={onPickPrisoner}>
-            Change
+            {m.ui_change()}
           </button>
         </div>
       )}
@@ -326,7 +342,7 @@ function RecordFormStep({
 }
 
 function PanelLoading() {
-  return <div className="p-4 text-xs text-muted-foreground">Loading…</div>
+  return <div className="p-4 text-xs text-muted-foreground">{m.ui_loading()}</div>
 }
 
 /** Search within the panel itself, rather than requiring the officer to
@@ -337,14 +353,14 @@ function PrisonerPicker({ onSelect }: { onSelect: (prisoner: Prisoner) => void }
   const [query, setQuery] = useState('')
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+    <div className="panel-body gap-3">
       <div className="relative">
         <HugeiconsIcon icon={Search01Icon} size={14} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search prisoners by name or national ID…"
+          placeholder={m.ui_search_prisoners_by_name_or_national()}
           className="pl-8"
         />
       </div>
@@ -360,11 +376,11 @@ function PrisonerPickerResults({ query, onSelect }: { query: string; onSelect: (
   const { data: prisoners } = usePrisoners(query)
 
   if (!query.trim()) {
-    return <p className="px-1 py-6 text-center text-xs text-muted-foreground">Start typing to find a prisoner.</p>
+    return <p className="px-1 py-6 text-center text-xs text-muted-foreground">{m.ui_start_typing_to_find_a_prisoner()}</p>
   }
 
   if (prisoners.length === 0) {
-    return <p className="px-1 py-6 text-center text-xs text-muted-foreground">No prisoners match "{query}".</p>
+    return <p className="px-1 py-6 text-center text-xs text-muted-foreground">{m.ui_no_prisoners_match({ query })}</p>
   }
 
   return (

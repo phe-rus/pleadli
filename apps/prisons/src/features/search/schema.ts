@@ -1,15 +1,16 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 export const entityTypeLabels: Record<string, string> = {
-  prisoner: 'Prisoner',
-  court_production: 'Court Production',
-  health_event: 'Health Event',
-  programme_participation: 'Programme',
-  property_record: 'Property',
-  release: 'Release',
-  request: 'Request',
-  transfer: 'Transfer',
-  visit: 'Visit',
+  get prisoner() { return m.search_prisoner() },
+  get court_production() { return m.search_court_production() },
+  get health_event() { return m.search_health_event() },
+  get programme_participation() { return m.search_programme() },
+  get property_record() { return m.search_property() },
+  get release() { return m.search_release() },
+  get request() { return m.search_request() },
+  get transfer() { return m.search_transfer() },
+  get visit() { return m.search_visit() },
 }
 
 export function entityTypeLabel(entityType: string) {

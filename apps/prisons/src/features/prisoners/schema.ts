@@ -1,9 +1,10 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 export const prisonerStatuses = [
-  { value: 'unconvicted', label: 'Unconvicted (Remand)' },
-  { value: 'convicted', label: 'Convicted' },
-  { value: 'civil', label: 'Civil (debtor)' },
+  { value: 'unconvicted', get label() { return m.prisoners_unconvicted_remand() } },
+  { value: 'convicted', get label() { return m.prisoners_convicted() } },
+  { value: 'civil', get label() { return m.prisoners_civil_debtor() } },
 ] as const
 
 export function prisonerStatusLabel(status: string) {
@@ -11,10 +12,10 @@ export function prisonerStatusLabel(status: string) {
 }
 
 export const admissionInstrumentTypes = [
-  { value: 'commitment', label: 'Commitment' },
-  { value: 'remand_warrant', label: 'Remand warrant' },
-  { value: 'order_of_detention', label: 'Order of detention' },
-  { value: 'warrant_of_conviction', label: 'Warrant of conviction / committal' },
+  { value: 'commitment', get label() { return m.prisoners_commitment() } },
+  { value: 'remand_warrant', get label() { return m.prisoners_remand_warrant() } },
+  { value: 'order_of_detention', get label() { return m.prisoners_order_of_detention() } },
+  { value: 'warrant_of_conviction', get label() { return m.prisoners_warrant_of_conviction_committal() } },
 ] as const
 
 export function admissionInstrumentLabel(type: string) {
@@ -22,9 +23,9 @@ export function admissionInstrumentLabel(type: string) {
 }
 
 export const custodyStatuses = [
-  { value: 'in_custody', label: 'In custody' },
-  { value: 'released', label: 'Released' },
-  { value: 'transferred_out', label: 'Transferred out' },
+  { value: 'in_custody', get label() { return m.prisoners_in_custody() } },
+  { value: 'released', get label() { return m.prisoners_released() } },
+  { value: 'transferred_out', get label() { return m.prisoners_transferred_out() } },
 ] as const
 
 export function custodyStatusLabel(status: string) {
@@ -32,28 +33,28 @@ export function custodyStatusLabel(status: string) {
 }
 
 export const prisonerSexes = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
+  { value: 'male', get label() { return m.prisoners_male() } },
+  { value: 'female', get label() { return m.prisoners_female() } },
 ] as const
 
 export const educationLevels = [
-  { value: 'none', label: 'None' },
-  { value: 'primary', label: 'Primary' },
-  { value: 'secondary', label: 'Secondary' },
-  { value: 'tertiary', label: 'Tertiary' },
-  { value: 'other', label: 'Other' },
+  { value: 'none', get label() { return m.prisoners_none() } },
+  { value: 'primary', get label() { return m.prisoners_primary() } },
+  { value: 'secondary', get label() { return m.prisoners_secondary() } },
+  { value: 'tertiary', get label() { return m.prisoners_tertiary() } },
+  { value: 'other', get label() { return m.prisoners_other() } },
 ] as const
 
 export const nationalities = [
-  { value: 'ugandan', label: 'Ugandan' },
-  { value: 'foreign', label: 'Foreign' },
+  { value: 'ugandan', get label() { return m.prisoners_ugandan() } },
+  { value: 'foreign', get label() { return m.prisoners_foreign() } },
 ] as const
 
 export const pendingDocumentTypes = [
-  { value: 'charge_sheet', label: 'Charge sheet' },
-  { value: 'committed_warrant', label: 'Committed warrant' },
-  { value: 'both', label: 'Charge sheet and warrant' },
-  { value: 'other', label: 'Other' },
+  { value: 'charge_sheet', get label() { return m.prisoners_charge_sheet() } },
+  { value: 'committed_warrant', get label() { return m.prisoners_committed_warrant() } },
+  { value: 'both', get label() { return m.prisoners_charge_sheet_and_warrant() } },
+  { value: 'other', get label() { return m.prisoners_other() } },
 ] as const
 
 export function pendingDocumentTypeLabel(type: string | null) {

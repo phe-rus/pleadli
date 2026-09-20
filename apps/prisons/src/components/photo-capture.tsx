@@ -4,6 +4,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { m } from '@/paraglide/messages'
 
 type PhotoCaptureProps = {
   /** A JPEG data URL, or null when nothing has been taken yet. */
@@ -47,7 +48,7 @@ export function PhotoCapture({ value, onChange, label, hint, shape = 'portrait',
     async (wanted?: string) => {
       setMessage(null)
       if (!navigator.mediaDevices?.getUserMedia) {
-        setMessage('A camera cannot be opened from this window. Upload a photo instead.')
+        setMessage(m.ui_a_camera_cannot_be_opened_from())
         return
       }
       try {
@@ -63,7 +64,7 @@ export function PhotoCapture({ value, onChange, label, hint, shape = 'portrait',
         setDeviceId(stream.getVideoTracks()[0]?.getSettings().deviceId ?? wanted ?? '')
       } catch {
         stop()
-        setMessage('No camera could be opened. Check it is connected and allowed, or upload a photo instead.')
+        setMessage(m.ui_no_camera_could_be_opened_check())
       }
     },
     [stop],
@@ -82,7 +83,7 @@ export function PhotoCapture({ value, onChange, label, hint, shape = 'portrait',
       onChange(videoFrameToDataUrl(videoRef.current))
       stop()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not take the photo.')
+      setMessage(error instanceof Error ? error.message : m.ui_could_not_take_the_photo())
     }
   }
 
@@ -92,7 +93,7 @@ export function PhotoCapture({ value, onChange, label, hint, shape = 'portrait',
     try {
       onChange(await fileToDataUrl(file))
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not read that image.')
+      setMessage(error instanceof Error ? error.message : m.ui_could_not_read_that_image())
     }
   }
 
@@ -111,7 +112,7 @@ export function PhotoCapture({ value, onChange, label, hint, shape = 'portrait',
         ) : (
           <div className="flex size-full flex-col items-center justify-center gap-1.5 text-muted-foreground">
             <HugeiconsIcon icon={UserIcon} size={28} />
-            <span className="text-[11px]">No photo yet</span>
+            <span className="text-[11px]">{m.ui_no_photo_yet()}</span>
           </div>
         )}
       </div>
@@ -123,12 +124,12 @@ export function PhotoCapture({ value, onChange, label, hint, shape = 'portrait',
             setDeviceId(event.target.value)
             void start(event.target.value)
           }}
-          aria-label="Camera"
+          aria-label={m.ui_camera()}
           className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary"
         >
           {devices.map((device, index) => (
             <option key={device.deviceId} value={device.deviceId}>
-              {device.label || `Camera ${index + 1}`}
+              {device.label || m.ui_camera_2({ index: index + 1 })}
             </option>
           ))}
         </select>
@@ -138,23 +139,23 @@ export function PhotoCapture({ value, onChange, label, hint, shape = 'portrait',
         {live ? (
           <>
             <Button type="button" size="xs" onClick={snap}>
-              <HugeiconsIcon icon={Camera01Icon} size={12} /> Take photo
+              <HugeiconsIcon icon={Camera01Icon} size={12} /> {m.ui_take_photo()}
             </Button>
             <Button type="button" size="xs" variant="ghost" onClick={stop}>
-              Cancel
+              {m.ui_cancel()}
             </Button>
           </>
         ) : (
           <>
             <Button type="button" size="xs" variant={value ? 'secondary' : 'default'} onClick={() => void start()}>
-              <HugeiconsIcon icon={value ? RefreshIcon : Camera01Icon} size={12} /> {value ? 'Retake' : 'Camera'}
+              <HugeiconsIcon icon={value ? RefreshIcon : Camera01Icon} size={12} /> {value ? m.ui_retake() : m.ui_camera()}
             </Button>
             <Button type="button" size="xs" variant="secondary" onClick={() => fileRef.current?.click()}>
-              <HugeiconsIcon icon={Upload01Icon} size={12} /> Upload
+              <HugeiconsIcon icon={Upload01Icon} size={12} /> {m.ui_upload()}
             </Button>
             {actions}
             {value && (
-              <Button type="button" size="xs" variant="ghost" onClick={() => onChange(null)} aria-label={`Remove ${label}`}>
+              <Button type="button" size="xs" variant="ghost" onClick={() => onChange(null)} aria-label={m.ui_remove({ label })}>
                 <HugeiconsIcon icon={Delete02Icon} size={12} />
               </Button>
             )}

@@ -1,6 +1,7 @@
 import { cn } from "@pleadli/ui/lib/utils"
 import { isTauri } from "@tauri-apps/api/core"
 import { getCurrentWindow } from "@tauri-apps/api/window"
+import { m } from '@/paraglide/messages'
 
 export const Controls = () => {
     if (typeof window === 'undefined' || !isTauri()) return null
@@ -9,7 +10,7 @@ export const Controls = () => {
     return (
         <section className='flex items-center gap-1'>
             <span
-                title='Minimize'
+                title={m.ui_minimize()}
                 onClick={() => frame.minimize()}
                 className={cn(
                     'bg-olive-500/80 rounded-full size-4 cursor-pointer',
@@ -18,7 +19,7 @@ export const Controls = () => {
                 )}
             />
             <span
-                title='Maximize'
+                title={m.ui_maximize()}
                 onClick={() => frame.toggleMaximize()}
                 className={cn(
                     'bg-yellow-500/80 rounded-full size-4 cursor-pointer',
@@ -27,7 +28,7 @@ export const Controls = () => {
                 )}
             />
             <span
-                title='Close'
+                title={m.ui_close()}
                 onClick={() => frame.close()}
                 className={cn(
                     'bg-red-500/80 rounded-full size-4 cursor-pointer',

@@ -6,6 +6,7 @@ import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useCreatePropertyRecord } from './queries'
 import { createPropertyRecordSchema, type PropertyRecord } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type PropertyRecordFormProps = {
   prisonerId: string
@@ -47,11 +48,11 @@ export function PropertyRecordForm({ prisonerId, onSuccess, onDirtyChange }: Pro
       try {
         const input = { ...value, prisonerId, recordedAt: new Date(value.recordedAt).getTime() }
         const result = await createRecord.mutateAsync(input)
-        t.success('Property record added')
+        t.success(m.property_records_property_record_added())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not add property record', { description: 'Please try again.' })
+        t.error(m.property_records_could_not_add_property_record(), { description: m.property_records_please_try_again() })
       }
     },
   })
@@ -60,20 +61,20 @@ export function PropertyRecordForm({ prisonerId, onSuccess, onDirtyChange }: Pro
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
       }}
     >
       <form.AppField name="description">
-        {(f) => <f.input label="Description" placeholder="e.g. Phone, wallet with UGX 40,000, wristwatch" />}
+        {(f) => <f.input label={m.property_records_description()} placeholder={m.property_records_e_g_phone_wallet_with_ugx()} />}
       </form.AppField>
 
       <form.AppField name="recordedAt">
         {(f) => (
           <Field>
-            <FieldLabel>Recorded at</FieldLabel>
+            <FieldLabel>{m.property_records_recorded_at()}</FieldLabel>
             <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
           </Field>
         )}
@@ -81,7 +82,7 @@ export function PropertyRecordForm({ prisonerId, onSuccess, onDirtyChange }: Pro
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Add property record" />
+          <form.submit label={m.property_records_add_property_record()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

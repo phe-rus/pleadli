@@ -10,6 +10,7 @@ use crate::domain::activation::ActivationError;
 use crate::domain::attachments::AttachmentError;
 use crate::domain::authz::Forbidden;
 use crate::domain::backup::BackupError;
+use crate::domain::cloudflare_tunnel::CloudflareError;
 use crate::domain::facilities::{FacilityError, VerifyFacilityError};
 use crate::domain::nodeconfig::ConnectError;
 use crate::domain::officers::{OfficerError, OfficerErrorPayload};
@@ -61,6 +62,22 @@ impl IntoResponse for ApiError {
     }
 }
 
+impl From<CloudflareError> for ApiError {
+    fn from(err: CloudflareError) -> Self {
+        match err {
+            CloudflareError::NotConfigured => ApiError::bad_request("Save the Cloudflare details first, then set up the tunnel."),
+            // Cloudflare's own message is the useful part (a wrong token, a
+            // domain not on the account); it never contains the token.
+            CloudflareError::Api(message) => ApiError::new(StatusCode::BAD_GATEWAY, "CLOUDFLARE_REJECTED", &format!("Cloudflare refused the request: {message}")),
+            CloudflareError::Http(e) => {
+                log::warn!("cloudflare unreachable: {e}");
+                ApiError::new(StatusCode::BAD_GATEWAY, "CLOUDFLARE_UNREACHABLE", "Cloudflare could not be reached. Check this machine's internet connection and try again.")
+            }
+            CloudflareError::Db(e) => ApiError::from(e),
+        }
+    }
+}
+
 impl From<sqlx::Error> for ApiError {
     fn from(err: sqlx::Error) -> Self {
         let text = err.to_string();
@@ -95,7 +112,7 @@ impl From<OfficerError> for ApiError {
             "INVALID_CREDENTIALS" => StatusCode::UNAUTHORIZED,
             "BADGE_TAKEN" | "LAST_ADMIN_GUARD" | "ALREADY_INITIALISED" | "DELETE_NOT_ALLOWED" | "CANNOT_DELETE_SELF" => StatusCode::CONFLICT,
             "NOT_FOUND" => StatusCode::NOT_FOUND,
-            "INVALID_ROLE" | "WEAK_PASSWORD" | "INVALID_PHOTO" => StatusCode::UNPROCESSABLE_ENTITY,
+            "INVALID_ROLE" | "WEAK_PASSWORD" | "INVALID_PHOTO" | "BADGE_FORMAT" | "BADGE_ONLY_NOT_ALLOWED" => StatusCode::UNPROCESSABLE_ENTITY,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError { status, code: payload.code, message: payload.message }

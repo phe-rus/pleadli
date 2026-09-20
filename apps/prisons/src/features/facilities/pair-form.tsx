@@ -5,6 +5,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { usePairWithHeadOfficeLater } from './queries'
 import { facilityRegions, parsePairingCode, type RegisterFacilityInput } from './schema'
+import { m } from '@/paraglide/messages'
 
 /** Pairs a facility that started on its own with a Head Office, from
  * settings. The same details as first-launch pairing; the node makes the
@@ -25,16 +26,16 @@ export function PairWithHeadOfficeForm({ onPaired }: { onPaired?: () => void }) 
       try {
         parsePairingCode(value.pairingCode.trim())
       } catch {
-        t.error('That does not look like a Pleadli pairing code')
+        t.error(m.facilities_that_does_not_look_like_a())
         return
       }
       const { pairingCode, ...input } = value
       try {
         await pair.mutateAsync({ pairingCode: pairingCode.trim(), input })
-        t.success('Paired with Head Office')
+        t.success(m.facilities_paired_with_head_office())
         onPaired?.()
       } catch (error) {
-        t.error('Could not pair', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+        t.error(m.facilities_could_not_pair(), { description: error instanceof ApiError ? error.message : m.facilities_please_try_again() })
       }
     },
   })
@@ -47,19 +48,19 @@ export function PairWithHeadOfficeForm({ onPaired }: { onPaired?: () => void }) 
         form.handleSubmit()
       }}
     >
-      <form.AppField name="pairingCode">{(f) => <f.input label="Pairing code" autoComplete="off" placeholder="Paste the code Head Office gave you" />}</form.AppField>
-      <form.AppField name="name">{(f) => <f.input label="Facility name" autoComplete="organization" />}</form.AppField>
+      <form.AppField name="pairingCode">{(f) => <f.input label={m.facilities_pairing_code()} autoComplete="off" placeholder={m.facilities_paste_the_code_head_office_gave()} />}</form.AppField>
+      <form.AppField name="name">{(f) => <f.input label={m.facilities_facility_name()} autoComplete="organization" />}</form.AppField>
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="facilityNumber">{(f) => <f.input label="Facility ID or number" autoComplete="off" />}</form.AppField>
-        <form.AppField name="location">{(f) => <f.input label="Location" autoComplete="address-level2" />}</form.AppField>
+        <form.AppField name="facilityNumber">{(f) => <f.input label={m.facilities_facility_id_or_number()} autoComplete="off" />}</form.AppField>
+        <form.AppField name="location">{(f) => <f.input label={m.facilities_location()} autoComplete="address-level2" />}</form.AppField>
       </div>
       <form.AppField name="region">
         {(f) => (
           <Field>
-            <FieldLabel>Region</FieldLabel>
+            <FieldLabel>{m.facilities_region()}</FieldLabel>
             <Select value={f.state.value} onValueChange={(value) => f.handleChange((value as never) ?? f.state.value)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select region" />
+                <SelectValue placeholder={m.facilities_select_region()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -74,9 +75,9 @@ export function PairWithHeadOfficeForm({ onPaired }: { onPaired?: () => void }) 
           </Field>
         )}
       </form.AppField>
-      <form.AppField name="headOfficerName">{(f) => <f.input label="Head officer's name" autoComplete="name" />}</form.AppField>
+      <form.AppField name="headOfficerName">{(f) => <f.input label={m.facilities_head_officer_s_name()} autoComplete="name" />}</form.AppField>
       <form.AppForm>
-        <form.submit label={pair.isPending ? 'Pairing…' : 'Pair with Head Office'} />
+        <form.submit label={pair.isPending ? m.facilities_pairing() : m.facilities_pair_with_head_office()} />
       </form.AppForm>
     </form>
   )

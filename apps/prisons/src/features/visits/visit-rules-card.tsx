@@ -11,6 +11,7 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { useState } from 'react'
 import { useSaveVisitRules, useVisitRules } from './queries'
 import { minutesToTime, timeToMinutes, weekdays, type VisitRules } from './schema'
+import { m } from '@/paraglide/messages'
 
 function summary(rules: VisitRules) {
   const days = weekdays.filter((d) => rules.visitingDays.includes(d.value)).map((d) => d.label)
@@ -29,13 +30,13 @@ export function VisitRulesCard() {
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border/60 px-3 py-2 text-xs">
-      <span className="font-medium">Visiting rules</span>
+      <span className="font-medium">{m.visits_visiting_rules()}</span>
       <span className="text-muted-foreground">{summary(rules)}</span>
-      <span className="text-muted-foreground">Up to {rules.maxVisitorsPerVisit} visitors at a time, {rules.maxVisitorsPerPrisonerPerDay} a day per prisoner</span>
-      <span className="text-muted-foreground">{rules.defaultDurationMinutes} min each</span>
+      <span className="text-muted-foreground">{m.visits_up_to_visitors_at_a_time({ maxVisitorsPerVisit: rules.maxVisitorsPerVisit, maxVisitorsPerPrisonerPerDay: rules.maxVisitorsPerPrisonerPerDay })}</span>
+      <span className="text-muted-foreground">{m.visits_min_each({ defaultDurationMinutes: rules.defaultDurationMinutes })}</span>
       {can('authorise.exception') && (
         <Button size="xs" variant="ghost" className="ml-auto" onClick={() => setOpen(true)}>
-          <HugeiconsIcon icon={Settings02Icon} size={12} /> Edit
+          <HugeiconsIcon icon={Settings02Icon} size={12} /> {m.visits_edit()}
         </Button>
       )}
       {open && <RulesDialog rules={rules} onClose={() => setOpen(false)} />}
@@ -64,10 +65,10 @@ function RulesDialog({ rules, onClose }: { rules: VisitRules; onClose: () => voi
       },
       {
         onSuccess: () => {
-          t.success('Visiting rules saved')
+          t.success(m.visits_visiting_rules_saved())
           onClose()
         },
-        onError: (error) => t.error('Could not save the rules', { description: error instanceof ApiError ? error.message : 'Please try again.' }),
+        onError: (error) => t.error(m.visits_could_not_save_the_rules(), { description: error instanceof ApiError ? error.message : m.visits_please_try_again() }),
       },
     )
 
@@ -75,14 +76,14 @@ function RulesDialog({ rules, onClose }: { rules: VisitRules; onClose: () => voi
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Visiting rules</DialogTitle>
+          <DialogTitle>{m.visits_visiting_rules()}</DialogTitle>
           <DialogDescription>
-            Defaults follow the published visiting hours and party limit, which are not confirmed against the Regulations. Set what this facility applies.
+            {m.visits_defaults_follow_the_published_visiting_h()}
           </DialogDescription>
         </DialogHeader>
 
         <Field>
-          <FieldLabel>Visiting days</FieldLabel>
+          <FieldLabel>{m.visits_visiting_days()}</FieldLabel>
           <div className="flex flex-wrap gap-1.5">
             {weekdays.map((day) => {
               const on = days.includes(day.value)
@@ -99,41 +100,41 @@ function RulesDialog({ rules, onClose }: { rules: VisitRules; onClose: () => voi
               )
             })}
           </div>
-          <FieldDescription>Anything outside these days and hours is sent to the Officer in Charge to authorise.</FieldDescription>
+          <FieldDescription>{m.visits_anything_outside_these_days_and_hours()}</FieldDescription>
         </Field>
 
         <div className="flex flex-wrap gap-3 *:min-w-32 *:flex-1">
           <Field>
-            <FieldLabel>Opens</FieldLabel>
+            <FieldLabel>{m.visits_opens()}</FieldLabel>
             <Input type="time" value={opens} onChange={(event) => setOpens(event.target.value)} />
           </Field>
           <Field>
-            <FieldLabel>Closes</FieldLabel>
+            <FieldLabel>{m.visits_closes()}</FieldLabel>
             <Input type="time" value={closes} onChange={(event) => setCloses(event.target.value)} />
           </Field>
         </div>
 
         <div className="flex flex-wrap gap-3 *:min-w-32 *:flex-1">
           <Field>
-            <FieldLabel>Visitors at a time</FieldLabel>
+            <FieldLabel>{m.visits_visitors_at_a_time()}</FieldLabel>
             <Input type="number" min={1} autoComplete="off" value={perVisit} onChange={(event) => setPerVisit(event.target.value)} />
           </Field>
           <Field>
-            <FieldLabel>Visitors a day, per prisoner</FieldLabel>
+            <FieldLabel>{m.visits_visitors_a_day_per_prisoner()}</FieldLabel>
             <Input type="number" min={1} autoComplete="off" value={perDay} onChange={(event) => setPerDay(event.target.value)} />
           </Field>
           <Field>
-            <FieldLabel>Minutes per visit</FieldLabel>
+            <FieldLabel>{m.visits_minutes_per_visit()}</FieldLabel>
             <Input type="number" min={5} max={240} autoComplete="off" value={duration} onChange={(event) => setDuration(event.target.value)} />
           </Field>
         </div>
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {m.visits_cancel()}
           </Button>
           <Button disabled={save.isPending} onClick={submit}>
-            Save rules
+            {m.visits_save_rules()}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -16,8 +16,6 @@ use super::audit::{self, AuditEntry};
 use super::authz::Actor;
 use super::officers::{self, Officer, OfficerError};
 
-pub const IDLE_TIMEOUT_MS: i64 = 4 * 60 * 60 * 1000;
-pub const ABSOLUTE_LIFETIME_MS: i64 = 12 * 60 * 60 * 1000;
 const TOUCH_INTERVAL_MS: i64 = 60 * 1000;
 
 fn now_ms() -> i64 {
@@ -55,7 +53,7 @@ pub async fn sign_in(
 
     let token = new_token();
     let now = now_ms();
-    let expires_at = now + ABSOLUTE_LIFETIME_MS;
+    let expires_at = now + super::auth_policy::get(pool).await?.absolute_lifetime_hours * 60 * 60 * 1000;
 
     let mut tx = crate::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO sessions (id, officer_id, device_id, created_at, last_seen_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)")
@@ -86,6 +84,7 @@ struct SessionRow {
     role: String,
     is_admin: bool,
     active: bool,
+    idle_timeout_minutes: i64,
 }
 
 /// Resolves a bearer token to an `Actor`, or `None` for any reason it is not
@@ -94,7 +93,8 @@ pub async fn resolve(pool: &SqlitePool, token: &str) -> Result<Option<Actor>, sq
     let id = hash_token(token);
     let row = sqlx::query_as::<_, SessionRow>(
         "SELECT s.id, s.officer_id, s.device_id, s.last_seen_at, s.expires_at, s.revoked_at,
-                o.badge_number, o.name, o.role, o.is_admin, o.active
+                o.badge_number, o.name, o.role, o.is_admin, o.active,
+                (SELECT idle_timeout_minutes FROM auth_policy WHERE id = 'default') AS idle_timeout_minutes
          FROM sessions s JOIN officers o ON o.id = s.officer_id
          WHERE s.id = ?",
     )
@@ -104,7 +104,7 @@ pub async fn resolve(pool: &SqlitePool, token: &str) -> Result<Option<Actor>, sq
 
     let Some(row) = row else { return Ok(None) };
     let now = now_ms();
-    if row.revoked_at.is_some() || !row.active || row.expires_at <= now || row.last_seen_at + IDLE_TIMEOUT_MS <= now {
+    if row.revoked_at.is_some() || !row.active || row.expires_at <= now || row.last_seen_at + row.idle_timeout_minutes * 60 * 1000 <= now {
         return Ok(None);
     }
 
@@ -175,6 +175,7 @@ mod tests {
                 password: "second-password".into(),
                 role: "oic".into(),
                 is_admin: true,
+                passwordless: false,
                 profile: officers::ProfileInput::default(),
             },
         )
@@ -190,7 +191,7 @@ mod tests {
             &mut tx,
             &actor,
             &second.id,
-            officers::UpdateOfficerInput { name: "Second".into(), role: "oic".into(), is_admin: true, active: false, password: None, profile: officers::ProfileInput::default() },
+            officers::UpdateOfficerInput { name: "Second".into(), role: "oic".into(), is_admin: true, active: false, password: None, passwordless: None, profile: officers::ProfileInput::default() },
         )
         .await
         .unwrap();
@@ -203,7 +204,7 @@ mod tests {
     async fn idle_timeout_ends_a_session() {
         let pool = pool_with_admin().await;
         let session = sign_in(&pool, "OIC-1", "correct-horse", None).await.unwrap();
-        sqlx::query("UPDATE sessions SET last_seen_at = ?").bind(now_ms() - IDLE_TIMEOUT_MS - 1).execute(&pool).await.unwrap();
+        sqlx::query("UPDATE sessions SET last_seen_at = ?").bind(now_ms() - 240 * 60 * 1000 - 1).execute(&pool).await.unwrap();
         assert!(resolve(&pool, &session.token).await.unwrap().is_none());
     }
 }

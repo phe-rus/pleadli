@@ -8,6 +8,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useCreateProgrammeParticipation } from './queries'
 import { createProgrammeParticipationSchema, programmeCategories, programmeStatuses, type ProgrammeParticipation } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type ProgrammeParticipationFormProps = {
   prisonerId: string
@@ -52,11 +53,11 @@ export function ProgrammeParticipationForm({ prisonerId, onSuccess, onDirtyChang
       try {
         const input = { ...value, prisonerId, startedAt: new Date(value.startedAt).getTime() }
         const result = await createParticipation.mutateAsync(input)
-        t.success('Programme participation recorded')
+        t.success(m.programme_participations_programme_participation_recorded())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record participation', { description: 'Please try again.' })
+        t.error(m.programme_participations_could_not_record_participation(), { description: m.programme_participations_please_try_again() })
       }
     },
   })
@@ -65,7 +66,7 @@ export function ProgrammeParticipationForm({ prisonerId, onSuccess, onDirtyChang
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
@@ -74,10 +75,10 @@ export function ProgrammeParticipationForm({ prisonerId, onSuccess, onDirtyChang
       <form.AppField name="category">
         {(f) => (
           <Field>
-            <FieldLabel>Category</FieldLabel>
+            <FieldLabel>{m.programme_participations_category()}</FieldLabel>
             <Select items={programmeCategories} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={m.programme_participations_select_category()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -94,14 +95,14 @@ export function ProgrammeParticipationForm({ prisonerId, onSuccess, onDirtyChang
       </form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="programmeName">{(f) => <f.input label="Programme name" placeholder="e.g. Tailoring workshop" />}</form.AppField>
+        <form.AppField name="programmeName">{(f) => <f.input label={m.programme_participations_programme_name()} placeholder={m.programme_participations_e_g_tailoring_workshop()} />}</form.AppField>
         <form.AppField name="status">
           {(f) => (
             <Field>
-              <FieldLabel>Status</FieldLabel>
+              <FieldLabel>{m.programme_participations_status()}</FieldLabel>
               <Select items={programmeStatuses} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={m.programme_participations_select_status()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -121,7 +122,7 @@ export function ProgrammeParticipationForm({ prisonerId, onSuccess, onDirtyChang
       <form.AppField name="startedAt">
         {(f) => (
           <Field>
-            <FieldLabel>Started at</FieldLabel>
+            <FieldLabel>{m.programme_participations_started_at()}</FieldLabel>
             <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
           </Field>
         )}
@@ -130,15 +131,15 @@ export function ProgrammeParticipationForm({ prisonerId, onSuccess, onDirtyChang
       <form.AppField name="notes">
         {(f) => (
           <Field>
-            <FieldLabel>Notes (optional)</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Notes…" />
+            <FieldLabel>{m.programme_participations_notes_optional()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m.programme_participations_notes()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Record participation" />
+          <form.submit label={m.programme_participations_record_participation()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

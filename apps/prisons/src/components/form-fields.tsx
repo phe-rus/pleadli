@@ -1,4 +1,5 @@
-import { Field, FieldDescription, FieldLabel } from '@pleadli/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@pleadli/ui/field'
+import { useId } from 'react'
 import { Input } from '@pleadli/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { Switch } from '@pleadli/ui/switch'
@@ -15,6 +16,8 @@ export function TextField({
   description,
   autoFocus,
   autoComplete,
+  error,
+  className,
 }: {
   label: string
   value: string
@@ -24,12 +27,16 @@ export function TextField({
   description?: string
   autoFocus?: boolean
   autoComplete?: string
+  /** Why the value is refused, shown under the field. */
+  error?: string
+  className?: string
 }) {
+  const id = useId()
   return (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
-      <Input type={type} value={value} placeholder={placeholder} autoFocus={autoFocus} autoComplete={autoComplete} onChange={(e) => onChange(e.target.value)} />
-      {description && <FieldDescription>{description}</FieldDescription>}
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <Input id={id} type={type} value={value} placeholder={placeholder} autoFocus={autoFocus} autoComplete={autoComplete} aria-invalid={error ? true : undefined} className={className} onChange={(e) => onChange(e.target.value)} />
+      {error ? <FieldError>{error}</FieldError> : description && <FieldDescription>{description}</FieldDescription>}
     </Field>
   )
 }
@@ -47,10 +54,11 @@ export function AreaField({
   placeholder?: string
   description?: string
 }) {
+  const id = useId()
   return (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
-      <Textarea value={value} placeholder={placeholder} rows={3} onChange={(e) => onChange(e.target.value)} />
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <Textarea id={id} value={value} placeholder={placeholder} rows={3} onChange={(e) => onChange(e.target.value)} />
       {description && <FieldDescription>{description}</FieldDescription>}
     </Field>
   )
@@ -71,11 +79,12 @@ export function SelectField({
   placeholder: string
   description?: string
 }) {
+  const id = useId()
   return (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Select items={options} value={value} onValueChange={(next) => onChange(next ?? value)}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger id={id} className="w-full">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

@@ -6,11 +6,13 @@ import {
   HandshakeIcon,
   Message01Icon,
   NetworkIcon,
+  Notification01Icon,
   PrisonerIcon,
   Search01Icon,
   SettingsIcon,
   UserGroupIcon,
 } from '@hugeicons/core-free-icons'
+import { m } from '@/paraglide/messages'
 
 // Type definition supplied by the design system
 export type SidebarNavItem = {
@@ -50,86 +52,95 @@ export type SidebarNavItem = {
 export const prisonsNav: readonly SidebarNavItem[] = [
   {
     icon: Search01Icon,
-    label: 'Search',
+    get label() { return m.nav_search() },
     to: '/search',
     requires: ['prisoner.read', 'hq.locate'],
   },
   {
     icon: DashboardBrowsingIcon,
-    label: 'Today',
+    get label() { return m.nav_today() },
     to: '/',
     exact: true,
     facilityOnly: true,
     requires: ['prisoner.read'],
-    section: 'Work',
+    get section() { return m.nav_work() },
   },
   {
     icon: DashboardBrowsingIcon,
-    label: 'Overview',
+    get label() { return m.nav_overview() },
     to: '/',
     exact: true,
     hqOnly: true,
-    section: 'The network',
+    get section() { return m.nav_the_network() },
+  },
+  {
+    icon: Notification01Icon,
+    get label() { return m.nav_inbox() },
+    to: '/inbox',
+    get section() { return m.nav_work() },
   },
   {
     icon: ArrowDataTransferHorizontalIcon,
-    label: 'Movements',
+    get label() { return m.nav_movements() },
     to: '/movements',
     facilityOnly: true,
     requires: ['prisoner.read'],
-    section: 'Work',
+    get section() { return m.nav_work() },
   },
   {
     icon: GavelIcon,
-    label: 'Legal',
+    get label() { return m.nav_legal() },
     to: '/legal',
     facilityOnly: true,
     requires: ['prisoner.read'],
-    section: 'Work',
+    get section() { return m.nav_work() },
   },
   {
     icon: PrisonerIcon,
-    label: 'Population',
+    get label() { return m.nav_population() },
     to: '/prisoners',
     facilityOnly: true,
     requires: ['prisoner.read'],
-    section: 'People',
+    get section() { return m.nav_people() },
   },
   {
     icon: HandshakeIcon,
-    label: 'Care and contact',
+    get label() { return m.nav_care_and_contact() },
     facilityOnly: true,
-    section: 'People',
+    get section() { return m.nav_people() },
     children: [
-      { icon: HandshakeIcon, label: 'Visits', to: '/visits', requires: ['prisoner.read'] },
-      { icon: Message01Icon, label: 'Requests and grievances', to: '/requests', requires: ['prisoner.read'] },
+      { icon: HandshakeIcon, get label() { return m.nav_visits() }, to: '/visits', requires: ['prisoner.read'] },
+      { icon: Message01Icon, get label() { return m.nav_requests_and_grievances() }, to: '/requests', requires: ['prisoner.read'] },
     ],
   },
   {
     icon: FileEditIcon,
-    label: 'Reports',
+    get label() { return m.nav_reports() },
     to: '/reports',
     requires: ['report.read', 'hq.reports'],
-    section: 'Institution',
+    get section() { return m.nav_institution() },
   },
   {
     icon: NetworkIcon,
-    label: 'Facilities',
+    get label() { return m.nav_facilities() },
     to: '/facilities',
     hqOnly: true,
-    section: 'Administration',
+    // Without this the route guard let any signed-in role in, and the roster
+    // call then failed with a 403 (hq.estate.read) instead of a redirect.
+    requires: ['hq.estate.read'],
+    get section() { return m.nav_administration() },
   },
   {
     icon: UserGroupIcon,
-    label: 'Officers',
+    get label() { return m.nav_officers() },
     to: '/officers',
-    section: 'Institution',
+    get section() { return m.nav_institution() },
   },
   {
     icon: SettingsIcon,
-    label: 'Settings',
+    get label() { return m.nav_settings() },
     to: '/settings',
-    section: 'Institution',
+    get section() { return m.nav_institution() },
   },
 ] as const
 
@@ -148,11 +159,12 @@ export function visibleNav(isHeadOffice: boolean, permissions: readonly string[]
   // Head Office groups by institutional responsibility (08 §2.1), not by
   // the facility's Work/People/Institution split (08 §1.1).
   const sectionOverride: Record<string, string> = {
-    '/': 'The network',
-    '/facilities': 'Administration',
-    '/reports': 'Institutional work',
-    '/officers': 'Administration',
-    '/settings': 'Administration',
+    '/': m.nav_the_network(),
+    '/inbox': m.nav_the_network(),
+    '/facilities': m.nav_administration(),
+    '/reports': m.nav_institutional_work(),
+    '/officers': m.nav_administration(),
+    '/settings': m.nav_administration(),
   }
   return prisonsNav
     .filter((item) => (isHeadOffice ? !item.facilityOnly : !item.hqOnly))
@@ -176,27 +188,13 @@ export function permissionsForPath(pathname: string): readonly string[] | undefi
   return entries.find(([to]) => pathname === to || pathname.startsWith(`${to}/`))?.[1]
 }
 
-/** Which routes a segment label belongs to, used by the breadcrumb: the
- * label of a known nav route, then the procedure names that live under
- * the routes that are not in the sidebar. Nothing else is ever guessed. */
-const pathLabels: Record<string, string> = Object.fromEntries(
-  prisonsNav
-    .flatMap((item) => [item, ...(item.children ?? [])])
-    .flatMap((item) => (item.to ? [[item.to, item.label] as const] : [])),
-)
-const procedureLabels: Record<string, string> = {
-  '/procedures': 'Procedures',
-  '/procedures/reception': 'Reception',
-  '/procedures/receive': 'Receive a transfer',
-  '/procedures/arrival': 'Arrival confirmation',
-  '/procedures/discharge': 'Discharge',
-  '/procedures/transfer': 'Transfer',
-}
-
-/** Breadcrumb label for one pathname prefix: resolves to the nav label
- * (Population, Movements…) or a procedure name (Reception, Discharge…)
- * before falling back to the raw segment. The breadcrumb's job is
- * orientation in the tree, never a fabricated name for an unknown route. */
-export function breadcrumbSegmentLabel(prefix: string, segment: string): string {
-  return pathLabels[prefix] ?? procedureLabels[prefix] ?? segment
+/** The nav entry an area pathname belongs to, for tab titles and icons. `/`
+ * is Today for a facility and Overview for Head Office; every other area has
+ * one label regardless of role. Unknown paths are not areas. */
+export function areaMeta(pathname: string, isHeadOffice = false): { label: string; icon: any } | undefined {
+  const path = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname
+  const item = prisonsNav
+    .flatMap((entry) => [entry, ...(entry.children ?? [])])
+    .find((entry) => entry.to === path && (path !== '/' || (isHeadOffice ? entry.hqOnly : entry.facilityOnly)))
+  return item ? { label: item.label, icon: item.icon } : undefined
 }

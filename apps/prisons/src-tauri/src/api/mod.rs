@@ -17,9 +17,11 @@
 
 pub mod auth;
 pub mod capture;
+pub mod documents;
 pub mod error;
 pub mod guard;
 pub mod hq;
+pub mod inbox;
 pub mod network;
 pub mod numbering;
 pub mod prisons;
@@ -35,7 +37,9 @@ use sqlx::SqliteConnection;
 
 use crate::node::NodeRef;
 use error::ApiError;
-use guard::{RouteSpec, RouteTable};
+use guard::RouteTable;
+#[cfg(test)]
+use guard::RouteSpec;
 
 /// Large enough for a 25 MB document carried as base64 in JSON.
 const MAX_BODY_BYTES: usize = 40 * 1024 * 1024;
@@ -62,8 +66,10 @@ pub fn route_table(node: NodeRef) -> RouteTable {
         .merge(auth::routes(node.clone()))
         .merge(prisons::routes(node.clone()))
         .merge(hq::routes(node.clone()))
+        .merge(inbox::routes(node.clone()))
         .merge(numbering::routes(node.clone()))
         .merge(capture::routes(node.clone()))
+        .merge(documents::routes(node.clone()))
         .merge(system::routes(node))
 }
 
@@ -72,6 +78,7 @@ pub fn router(node: NodeRef) -> Router {
     router.layer(DefaultBodyLimit::max(MAX_BODY_BYTES)).with_state(node)
 }
 
+#[cfg(test)]
 pub fn route_specs(node: NodeRef) -> Vec<RouteSpec> {
     route_table(node).into_parts().1
 }

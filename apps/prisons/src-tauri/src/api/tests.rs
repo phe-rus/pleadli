@@ -147,6 +147,9 @@ const OPEN_BY_DESIGN: &[&str] = &[
     "/api/system/onboarding/connect",
     "/api/system/onboarding/facility-lookup",
     "/api/system/onboarding/connection/refresh",
+    "/api/system/onboarding/facility",
+    "/api/system/onboarding/head-office",
+    "/api/system/onboarding/numbering-preview",
     "/api/system/onboarding/connection/cancel",
     "/api/system/onboarding/connect-facility",
     "/api/system/onboarding/pair",
@@ -183,6 +186,7 @@ async fn every_guarded_route_refuses_anonymous_and_unprivileged_callers() {
     let officer = account(&h, &admin, "OFF-1", "officer").await;
     let facility_admin = account(&h, &admin, "ADM-1", "facility_admin").await;
     let officer_perms = role_permissions("officer", false);
+    let admin_perms = role_permissions("facility_admin", true);
 
     let specs = super::route_specs(h.node.clone());
     assert!(specs.len() > 40, "the route table should not be empty");
@@ -205,7 +209,16 @@ async fn every_guarded_route_refuses_anonymous_and_unprivileged_callers() {
                     Need::AnyPerm(ps) => ps.to_vec(),
                     _ => vec![p],
                 };
-                let token = if all.iter().any(|x| officer_perms.contains(x)) { &facility_admin } else { &officer };
+                // A caller holding none of the permissions the route accepts.
+                // A route accepting a permission of each account has no such
+                // test caller here and is covered by its own test.
+                let token = if !all.iter().any(|x| officer_perms.contains(x)) {
+                    &officer
+                } else if !all.iter().any(|x| admin_perms.contains(x)) {
+                    &facility_admin
+                } else {
+                    continue;
+                };
                 let (status, body) = send(&h.router, Call { method: spec.method.clone(), ..Call::new(Method::GET, &path).token(token) }).await;
                 assert_eq!(status, StatusCode::FORBIDDEN, "{} {} must refuse a caller without {all:?}: {body}", spec.method, spec.path);
                 checked += 1;
@@ -478,4 +491,276 @@ async fn a_transfer_moves_the_record_between_two_nodes_and_closes_the_sender_onl
 
     let (status, _) = send(&a.router, Call::new(Method::POST, "/api/prisons/transfers/import-receipt").token(&admin_a).body(json!({ "contentBase64": receipt }))).await;
     assert_eq!(status, StatusCode::CONFLICT, "a receipt closes a transfer once");
+}
+
+fn setup_body(badge: &str, pattern: &str) -> Value {
+    json!({
+        "profile": { "name": "Luzira Upper Prison", "facilityNumber": "UG-LUZ-001", "location": "Luzira", "region": "Kampala Extra",
+                     "approvedCapacity": null, "country": "Uganda", "jurisdiction": "ug", "language": "en",
+                     "badgePrefix": "UP-", "documentPrefix": "LUZ" },
+        "numbering": { "pattern": pattern, "reset": "yearly" },
+        "authMode": "pin",
+        "admin": { "badgeNumber": badge, "name": "Officer In Charge", "password": "correct-horse" }
+    })
+}
+
+#[tokio::test]
+async fn first_setup_saves_everything_and_signs_the_administrator_in() {
+    let h = harness().await;
+    let (status, body) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body(setup_body("UP-0142", "{SEQ:4}/{YEAR}"))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let token = body["token"].as_str().unwrap().to_string();
+
+    let (_, profile) = send(&h.router, Call::new(Method::GET, "/api/prisons/facility").token(&token)).await;
+    assert_eq!(profile["name"], "Luzira Upper Prison");
+    assert_eq!(profile["facilityNumber"], "UG-LUZ-001");
+    assert_eq!(profile["badgePrefix"], "UP-");
+    assert_eq!(profile["jurisdiction"], "ug");
+
+    let (_, state) = send(&h.router, Call::new(Method::GET, "/api/system/state")).await;
+    assert_eq!(state["role"], "facility");
+    assert_eq!(state["bootstrap"], false);
+    assert_eq!(state["authMode"], "pin");
+
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body(setup_body("UP-0143", "{SEQ:4}/{YEAR}"))).await;
+    assert_eq!(status, StatusCode::CONFLICT, "setup runs once");
+}
+
+fn head_office_body(badge: &str) -> Value {
+    json!({
+        "profile": { "name": "Uganda Prisons Headquarters", "facilityNumber": "UPS-HQ", "location": "Kampala", "region": null,
+                     "approvedCapacity": null, "country": "Uganda", "jurisdiction": "ug", "language": "en",
+                     "badgePrefix": "HQ-", "documentPrefix": "UPS" },
+        "admin": { "badgeNumber": badge, "name": "Commissioner General", "password": "correct-horse" }
+    })
+}
+
+#[tokio::test]
+async fn head_office_stands_alone_with_no_cloud_code_and_is_all_or_nothing() {
+    let h = harness().await;
+    // A badge that breaks the organisation's own prefix keeps nothing, not even the role.
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/head-office").body(head_office_body("XX-1"))).await;
+    assert!(status.is_client_error(), "{status}");
+    let (_, state) = send(&h.router, Call::new(Method::GET, "/api/system/state")).await;
+    assert_eq!(state["bootstrap"], true);
+    assert!(state["role"].is_null(), "the role was not chosen either");
+
+    let (status, body) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/head-office").body(head_office_body("HQ-001"))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (_, state) = send(&h.router, Call::new(Method::GET, "/api/system/state")).await;
+    assert_eq!(state["role"], "head_office");
+    assert_eq!(state["bootstrap"], false);
+    assert!(state["activatedAt"].is_null(), "not verified with Pleadli yet");
+
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/head-office").body(head_office_body("HQ-002"))).await;
+    assert_eq!(status, StatusCode::CONFLICT, "setup runs once");
+}
+
+#[tokio::test]
+async fn a_facility_cannot_be_set_up_as_head_office_and_lan_callers_are_refused() {
+    let h = harness().await;
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/head-office").ingress(Ingress::Lan).body(head_office_body("HQ-1"))).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/role").body(json!({ "role": "facility" }))).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/head-office").body(head_office_body("HQ-1"))).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+}
+
+#[tokio::test]
+async fn first_setup_is_all_or_nothing() {
+    let h = harness().await;
+    // The administrator's badge breaks the facility's own prefix, after the profile and numbering were saved.
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body(setup_body("XX-1", "{SEQ:4}/{YEAR}"))).await;
+    assert!(status.is_client_error(), "{status}");
+    // A pattern the node would refuse.
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body(setup_body("UP-1", "{NOPE}"))).await;
+    assert!(status.is_client_error(), "{status}");
+
+    let (_, state) = send(&h.router, Call::new(Method::GET, "/api/system/state")).await;
+    assert_eq!(state["bootstrap"], true, "nothing was kept");
+    assert!(state["role"].is_null(), "the role was not chosen either");
+    let (_, preview) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/numbering-preview").body(json!({ "pattern": "{SEQ:4}/{YEAR}", "reset": "yearly", "facilityNumber": null }))).await;
+    assert_eq!(preview["valid"], true);
+    let (_, preview) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/numbering-preview").body(json!({ "pattern": "{SEQ:4}", "reset": "yearly" }))).await;
+    assert_eq!(preview["valid"], false, "a yearly counter needs a year in the pattern");
+    assert!(preview["message"].as_str().unwrap().contains("YEAR"));
+}
+
+#[tokio::test]
+async fn setup_and_its_preview_are_local_only_and_the_policy_needs_the_right_permission() {
+    let h = harness().await;
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").ingress(Ingress::Lan).body(setup_body("UP-1", "{SEQ:4}/{YEAR}"))).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+
+    let admin = bootstrap(&h).await;
+    let clerk = account(&h, &admin, "R-1", "records").await;
+    let (status, _) = send(&h.router, Call::new(Method::PUT, "/api/system/auth-policy").token(&clerk).body(json!({ "mode": "pin", "idleTimeoutMinutes": 30, "absoluteLifetimeHours": 8 }))).await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "a records clerk cannot change how the facility signs in");
+    let (status, body) = send(&h.router, Call::new(Method::PUT, "/api/system/auth-policy").token(&admin).body(json!({ "mode": "pin", "idleTimeoutMinutes": 30, "absoluteLifetimeHours": 8 }))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["idleTimeoutMinutes"], 30);
+}
+
+#[tokio::test]
+async fn the_inbox_shows_an_officer_only_what_they_may_see_and_tracks_reading() {
+    let h = harness().await;
+    let admin = bootstrap(&h).await;
+    let clerk = account(&h, &admin, "R-1", "records").await;
+    let admin_only = account(&h, &admin, "ADM-1", "facility_admin").await;
+
+    let (status, body) = send(
+        &h.router,
+        Call::new(Method::POST, "/api/prisons/inbox").token(&admin).body(json!({ "source": "High Court, Kampala", "subject": "Production order", "body": "Produce on 3 Oct" })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let id = body["id"].as_str().unwrap().to_string();
+
+    let (_, count) = send(&h.router, Call::new(Method::GET, "/api/prisons/inbox/unread-count").token(&clerk)).await;
+    assert_eq!(count["unread"], 1);
+    let (_, hidden) = send(&h.router, Call::new(Method::GET, "/api/prisons/inbox").token(&admin_only)).await;
+    assert!(hidden.as_array().unwrap().iter().all(|i| i["id"] != id.as_str()), "an administrator without record access does not see it");
+    let (status, _) = send(&h.router, Call::new(Method::GET, &format!("/api/prisons/inbox/{id}")).token(&admin_only)).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+
+    let (status, _) = send(&h.router, Call::new(Method::POST, &format!("/api/prisons/inbox/{id}/read")).token(&clerk)).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (_, count) = send(&h.router, Call::new(Method::GET, "/api/prisons/inbox/unread-count").token(&clerk)).await;
+    assert_eq!(count["unread"], 0);
+    let (status, _) = send(&h.router, Call::new(Method::POST, &format!("/api/prisons/inbox/{id}/status")).token(&clerk).body(json!({ "status": "actioned", "note": "Done" }))).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (_, detail) = send(&h.router, Call::new(Method::GET, &format!("/api/prisons/inbox/{id}")).token(&admin)).await;
+    assert_eq!(detail["status"], "actioned");
+    assert_eq!(detail["actionedByName"], "R-1");
+}
+
+#[tokio::test]
+async fn the_connection_status_disconnect_and_class_switches_behave_for_an_unconnected_facility() {
+    let h = harness().await;
+    let admin = bootstrap(&h).await;
+
+    let (status, body) = send(&h.router, Call::new(Method::GET, "/api/system/network/status").token(&admin)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["state"], "not_connected");
+    assert_eq!(body["pending"]["total"], 0);
+    assert_eq!(body["classes"].as_array().unwrap().len(), 5);
+    assert!(body["classes"].as_array().unwrap().iter().any(|c| c["class"] == "returns" && c["direction"] == "up" && c["label"] == "Attested returns"));
+
+    let (status, body) = send(&h.router, Call::new(Method::POST, "/api/system/network/disconnect").token(&admin)).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+
+    let (status, body) = send(&h.router, Call::new(Method::PUT, "/api/system/network/sync-classes/legacy_snapshot").token(&admin).body(json!({ "enabled": false }))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let off = body["classes"].as_array().unwrap().iter().find(|c| c["class"] == "legacy_snapshot").unwrap().clone();
+    assert_eq!(off["enabled"], false);
+    let (status, _) = send(&h.router, Call::new(Method::PUT, "/api/system/network/sync-classes/nonsense").token(&admin).body(json!({ "enabled": false }))).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn documents_are_issued_once_reprinted_after_and_verified_against_the_register() {
+    let h = harness().await;
+    let admin = bootstrap(&h).await;
+    let clerk = account(&h, &admin, "R-1", "records").await;
+    let admin_only = account(&h, &admin, "ADM-1", "facility_admin").await;
+
+    sqlx::query("UPDATE facility_profile SET facility_number = 'UG-LUZ-001', document_prefix = 'LUZ' WHERE id = 'default'").execute(&h.node.pool).await.unwrap();
+    sqlx::query("INSERT INTO transfers (id, direction, state, transferred_at, created_at) VALUES ('t1', 'out', 'planned', 1, 1)").execute(&h.node.pool).await.unwrap();
+
+    let body = json!({ "kind": "transfer_dossier", "recordId": "t1" });
+    let (status, first) = send(&h.router, Call::new(Method::POST, "/api/prisons/documents/issue").token(&clerk).body(body.clone())).await;
+    assert_eq!(status, StatusCode::OK, "{first}");
+    let number = first["number"].as_str().unwrap().to_string();
+    assert!(number.starts_with("LUZ/") && number.ends_with("/0001"), "{number}");
+    assert_eq!(first["reprints"], 0);
+
+    let (_, again) = send(&h.router, Call::new(Method::POST, "/api/prisons/documents/issue").token(&clerk).body(body)).await;
+    assert_eq!((again["number"].as_str().unwrap(), again["reprints"].as_i64().unwrap()), (number.as_str(), 1));
+
+    let (_, found) = send(&h.router, Call::new(Method::GET, "/api/prisons/documents/issued?kind=transfer_dossier&recordId=t1").token(&clerk)).await;
+    assert_eq!(found["number"], number.as_str());
+    let (_, none) = send(&h.router, Call::new(Method::GET, "/api/prisons/documents/issued?kind=transfer_dossier&recordId=zzz").token(&clerk)).await;
+    assert!(none.is_null());
+
+    let code = first["verification"].as_str().unwrap();
+    let (_, ok) = send(&h.router, Call::new(Method::POST, "/api/prisons/documents/verify").token(&clerk).body(json!({ "number": number, "code": code }))).await;
+    assert_eq!(ok["valid"], true);
+    let (_, bad) = send(&h.router, Call::new(Method::POST, "/api/prisons/documents/verify").token(&clerk).body(json!({ "number": number, "code": "AAAAA-AAAAA" }))).await;
+    assert_eq!(bad["valid"], false);
+
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/prisons/documents/issue").token(&admin_only).body(json!({ "kind": "transfer_dossier", "recordId": "t1" }))).await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "an administrator without document access cannot issue");
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/prisons/documents/issue").token(&clerk).body(json!({ "kind": "passport", "recordId": "t1" }))).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[tokio::test]
+async fn only_the_officer_in_charge_attests_and_a_return_is_final() {
+    let h = harness().await;
+    let oic = bootstrap(&h).await;
+    let officer = account(&h, &oic, "OFF-1", "officer").await;
+
+    // A closed period, so the checks can pass: January 2020.
+    let (status, generated) = send(
+        &h.router,
+        Call::new(Method::POST, "/api/prisons/reports").token(&officer).body(json!({ "kind": "monthly_return", "from": 1577836800000i64, "to": 1580515200000i64 })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{generated}");
+    let id = generated["id"].as_str().unwrap().to_string();
+    assert_eq!(generated["attestedAt"], Value::Null);
+
+    // Anyone who can read reports sees the checks; only the OIC attests or submits.
+    let (status, checks) = send(&h.router, Call::new(Method::GET, &format!("/api/prisons/reports/{id}/checks")).token(&officer)).await;
+    assert_eq!(status, StatusCode::OK, "{checks}");
+    assert_eq!(checks["passed"], true, "{checks}");
+    assert!(checks["statement"].as_str().unwrap().starts_with("I certify"));
+    for action in ["attest", "submit"] {
+        let (status, body) = send(&h.router, Call::new(Method::POST, &format!("/api/prisons/reports/{id}/{action}")).token(&officer)).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "an ordinary officer must not {action}: {body}");
+    }
+
+    let (status, body) = send(&h.router, Call::new(Method::POST, &format!("/api/prisons/reports/{id}/submit")).token(&oic)).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "not attested yet: {body}");
+
+    let (status, attested) = send(&h.router, Call::new(Method::POST, &format!("/api/prisons/reports/{id}/attest")).token(&oic)).await;
+    assert_eq!(status, StatusCode::OK, "{attested}");
+    assert_eq!((attested["attestedByName"].as_str(), attested["attestedByBadge"].as_str()), (Some("Officer In Charge"), Some("OIC-1")));
+    let (status, _) = send(&h.router, Call::new(Method::POST, &format!("/api/prisons/reports/{id}/attest")).token(&oic)).await;
+    assert_eq!(status, StatusCode::CONFLICT, "attesting twice must be refused");
+
+    // Attested, but this facility is not connected to a Head Office.
+    let (status, body) = send(&h.router, Call::new(Method::POST, &format!("/api/prisons/reports/{id}/submit")).token(&oic)).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert_eq!(body["code"], "NOT_CONNECTED", "{body}");
+
+    let (_, listed) = send(&h.router, Call::new(Method::GET, "/api/prisons/reports").token(&officer)).await;
+    assert_eq!(listed[0]["attestedByName"], "Officer In Charge");
+    assert_eq!(listed[0]["submission"], Value::Null);
+
+    // A facility has no received returns to list.
+    let (status, _) = send(&h.router, Call::new(Method::GET, "/api/prisons/returns/received").token(&oic)).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn the_estate_is_for_head_office_roles_and_starts_empty_rather_than_zero() {
+    let h = harness().await;
+    let (status, body) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/head-office").body(head_office_body("HQ-001"))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let token = body["token"].as_str().unwrap().to_string();
+
+    let (status, estate) = send(&h.router, Call::new(Method::GET, "/api/hq/estate").token(&token)).await;
+    assert_eq!(status, StatusCode::OK, "{estate}");
+    assert_eq!(estate["regions"], json!([]));
+    assert_eq!(estate["attention"], json!([]));
+    assert_eq!(estate["connectionRequestsWaiting"], 0);
+    assert!(estate["asOf"].as_i64().unwrap() > 0 && estate["returnPeriodTo"].as_i64().unwrap() > estate["returnPeriodFrom"].as_i64().unwrap());
+
+    // A facility's officer in charge holds no estate permission.
+    let facility = harness().await;
+    let oic = bootstrap(&facility).await;
+    let (status, _) = send(&facility.router, Call::new(Method::GET, "/api/hq/estate").token(&oic)).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
 }

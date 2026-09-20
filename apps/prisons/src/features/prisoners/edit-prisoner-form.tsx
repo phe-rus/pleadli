@@ -18,6 +18,7 @@ import {
   updatePrisonerSchema,
   type Prisoner,
 } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type EditPrisonerFormProps = {
   prisoner: Prisoner
@@ -56,7 +57,7 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
     },
     validators: {
       onSubmit: ({ value }) => {
-        if (value.documentsPending && !value.pendingDocumentType) return 'Select which document is pending.'
+        if (value.documentsPending && !value.pendingDocumentType) return m.prisoners_select_which_document_is_pending()
         const parsed = updatePrisonerSchema.safeParse({
           ...value,
           dateOfBirth: value.dateOfBirth ? new Date(value.dateOfBirth).getTime() : null,
@@ -71,10 +72,10 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
           dateOfBirth: value.dateOfBirth ? new Date(value.dateOfBirth).getTime() : null,
         }
         const result = await updatePrisoner.mutateAsync({ id: prisoner.id, input })
-        t.success('Prisoner details updated')
+        t.success(m.prisoners_prisoner_details_updated())
         onSuccess?.(result)
       } catch {
-        t.error('Could not update prisoner details', { description: 'Please try again.' })
+        t.error(m.prisoners_could_not_update_prisoner_details(), { description: m.prisoners_please_try_again() })
       }
     },
   })
@@ -83,33 +84,33 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
       }}
     >
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="firstName">{(f) => <f.input label="First name" />}</form.AppField>
-        <form.AppField name="lastName">{(f) => <f.input label="Last name" />}</form.AppField>
+        <form.AppField name="firstName">{(f) => <f.input label={m.prisoners_first_name()} />}</form.AppField>
+        <form.AppField name="lastName">{(f) => <f.input label={m.prisoners_last_name()} />}</form.AppField>
       </div>
 
-      <form.AppField name="otherNames">{(f) => <f.input label="Other names" />}</form.AppField>
+      <form.AppField name="otherNames">{(f) => <f.input label={m.prisoners_other_names()} />}</form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="nationalId">{(f) => <f.input label="National ID" />}</form.AppField>
-        <form.AppField name="reference">{(f) => <f.input label="Reference" />}</form.AppField>
+        <form.AppField name="nationalId">{(f) => <f.input label={m.prisoners_national_id()} />}</form.AppField>
+        <form.AppField name="reference">{(f) => <f.input label={m.prisoners_reference()} />}</form.AppField>
       </div>
 
       <form.AppField name="currentLocation">
-        {(f) => <f.input label="Current location (optional)" placeholder="e.g. Ward 3, whatever this facility calls its own areas" />}
+        {(f) => <f.input label={m.prisoners_current_location_optional()} placeholder={m.prisoners_e_g_ward_3_whatever_this()} />}
       </form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
         <form.AppField name="dateOfBirth">
           {(f) => (
             <Field>
-              <FieldLabel>Date of birth</FieldLabel>
+              <FieldLabel>{m.prisoners_date_of_birth()}</FieldLabel>
               <Input type="date" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
             </Field>
           )}
@@ -117,10 +118,10 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
         <form.AppField name="sex">
           {(f) => (
             <Field>
-              <FieldLabel>Sex</FieldLabel>
+              <FieldLabel>{m.prisoners_sex()}</FieldLabel>
               <Select items={prisonerSexes} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select sex" />
+                  <SelectValue placeholder={m.prisoners_select_sex()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -141,10 +142,10 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
         <form.AppField name="educationLevel">
           {(f) => (
             <Field>
-              <FieldLabel>Education level</FieldLabel>
+              <FieldLabel>{m.prisoners_education_level()}</FieldLabel>
               <Select items={educationLevels} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select level" />
+                  <SelectValue placeholder={m.prisoners_select_level()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -162,10 +163,10 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
         <form.AppField name="nationality">
           {(f) => (
             <Field>
-              <FieldLabel>Nationality</FieldLabel>
+              <FieldLabel>{m.prisoners_nationality()}</FieldLabel>
               <Select items={nationalities} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select nationality" />
+                  <SelectValue placeholder={m.prisoners_select_nationality()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -184,7 +185,7 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
 
       <div className="grid grid-cols-2 gap-3">
         <form.AppField name="offence">
-          {(f) => <f.input label="Offence / charge (optional)" placeholder="e.g. Aggravated robbery" />}
+          {(f) => <f.input label={m.prisoners_offence_charge_optional()} placeholder={m.prisoners_e_g_aggravated_robbery()} />}
         </form.AppField>
         <form.AppField name="documentsPending">
           {(f) => (
@@ -196,24 +197,23 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
                   if (!v) form.setFieldValue('pendingDocumentType', '')
                 }}
               />
-              <FieldLabel>Documents pending</FieldLabel>
+              <FieldLabel>{m.prisoners_documents_pending()}</FieldLabel>
             </Field>
           )}
         </form.AppField>
       </div>
       <FieldDescription>
-        Mark when a prisoner was admitted before the committed warrant arrived. Their status stays 'Convicted'; release is
-        blocked until the documents are received.
+        {m.prisoners_mark_when_a_prisoner_was_admitted()}
       </FieldDescription>
 
       {useStore(form.baseStore, (s) => s.values.documentsPending) && (
         <form.AppField name="pendingDocumentType">
           {(f) => (
             <Field>
-              <FieldLabel>What is pending</FieldLabel>
+              <FieldLabel>{m.prisoners_what_is_pending()}</FieldLabel>
               <Select items={pendingDocumentTypes} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? '')}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select document" />
+                  <SelectValue placeholder={m.prisoners_select_document()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -234,10 +234,10 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
         <form.AppField name="status">
           {(f) => (
             <Field>
-              <FieldLabel>Status</FieldLabel>
+              <FieldLabel>{m.prisoners_status()}</FieldLabel>
               <Select items={prisonerStatuses} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={m.prisoners_select_status()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -257,7 +257,7 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
           {(f) => (
             <Field orientation="horizontal" className="items-center pt-6">
               <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-              <FieldLabel>Offence triable only by the High Court</FieldLabel>
+              <FieldLabel>{m.prisoners_offence_triable_only_by_the_high()}</FieldLabel>
             </Field>
           )}
         </form.AppField>
@@ -266,15 +266,15 @@ export function EditPrisonerForm({ prisoner, onSuccess, onDirtyChange }: EditPri
       <form.AppField name="notes">
         {(f) => (
           <Field>
-            <FieldLabel>Notes</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Notes…" />
+            <FieldLabel>{m.prisoners_notes()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m.prisoners_notes_2()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Save changes" />
+          <form.submit label={m.prisoners_save_changes()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

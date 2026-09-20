@@ -2,211 +2,72 @@
 @source "../src/**/*.{tsx,ts}";
 
 :root {
-  /* ---------- Surfaces ---------- */
-  --background: oklch(97.529% 0.00751 260.892);
-  --foreground: oklch(0.22 0.03 256);
-
-  --card: oklch(0.995 0.005 95);
-  --card-foreground: oklch(0.22 0.03 256);
-
-  --popover: oklch(0.995 0.005 95);
-  --popover-foreground: oklch(0.22 0.03 256);
-
-  /* ---------- Primary — UPS Navy ---------- */
-  --primary: oklch(0.34 0.09 256);
-  --primary-foreground: oklch(0.985 0.008 95);
-
-  /* ---------- Secondary / Muted / Accent ---------- */
-  --secondary: oklch(0.95 0.015 256);
-  --secondary-foreground: oklch(0.3 0.05 256);
-
-  --muted: oklch(0.96 0.012 256);
-  --muted-foreground: oklch(0.5 0.03 256);
-
-  --accent: oklch(0.95 0.015 256);
-  --accent-foreground: oklch(0.25 0.05 60);
-
-  /* ---------- Status: Destructive / Warning / Success / Info ---------- */
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.985 0.008 95);
-
-  --warning: oklch(0.72 0.17 65);
-  --warning-foreground: oklch(0.22 0.05 60);
-
-  --success: oklch(0.55 0.14 150);
-  --success-foreground: oklch(0.985 0.008 95);
-
-  --info: oklch(0.6 0.13 230);
-  --info-foreground: oklch(0.985 0.008 95);
-
-  /* ---------- Borders / Inputs / Focus ring ---------- */
-  --border: oklch(0.92 0.012 256);
-  --input: oklch(0.92 0.012 256);
-  --ring: oklch(0.45 0.1 256);
-
-  /* ---------- Charts ---------- */
-  --chart-1: oklch(0.34 0.09 256); /* Remand — Navy      */
-  --chart-2: oklch(0.55 0.14 150); /* Convicted — Green  */
-  --chart-3: oklch(0.85 0.16 88); /* Assets — Gold      */
-  --chart-4: oklch(0.72 0.17 65); /* Medical — Amber    */
-  --chart-5: oklch(0.55 0.22 25); /* High-risk — Red    */
-
-  /* ---------- Sidebar — command surface ---------- */
-  --sidebar: oklch(0.965 0.015 256);
-  --sidebar-foreground: oklch(0.25 0.04 256);
-  --sidebar-primary: oklch(0.34 0.09 256);
-  --sidebar-primary-foreground: oklch(0.985 0.008 95);
-  --sidebar-accent: oklch(0.93 0.02 256);
-  --sidebar-accent-foreground: oklch(0.25 0.04 256);
-  --sidebar-border: oklch(0.9 0.012 256);
-  --sidebar-ring: oklch(0.45 0.1 256);
-
-  /* ---------- Custom prison infrastructure tokens ---------- */
-  --node-online: oklch(0.62 0.16 145);
-  --node-isolated: oklch(0.72 0.18 60);
-  --security-badge: oklch(0.42 0.1 268);
-
-  /* ---------- Fonts (kept consistent with library) ---------- */
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
-
-  /* ---------- Radius / Spacing / Tracking ---------- */
-  --radius: 0.5rem;
-  --spacing: 0.25rem;
-  --tracking-normal: 0em;
-
-  /* ---------- Shadows (institutional, slightly tighter) ---------- */
-  --shadow-x: 0;
-  --shadow-y: 1px;
-  --shadow-blur: 3px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.1;
-  --shadow-color: oklch(0.22 0.03 256);
-  --shadow-2xs: 0 1px 3px 0px oklch(0.22 0.03 256 / 0.05);
-  --shadow-xs: 0 1px 3px 0px oklch(0.22 0.03 256 / 0.05);
-  --shadow-sm:
-    0 1px 3px 0px oklch(0.22 0.03 256 / 0.1),
-    0 1px 2px -1px oklch(0.22 0.03 256 / 0.1);
-  --shadow:
-    0 1px 3px 0px oklch(0.22 0.03 256 / 0.1),
-    0 1px 2px -1px oklch(0.22 0.03 256 / 0.1);
-  --shadow-md:
-    0 1px 3px 0px oklch(0.22 0.03 256 / 0.1),
-    0 2px 4px -1px oklch(0.22 0.03 256 / 0.1);
-  --shadow-lg:
-    0 1px 3px 0px oklch(0.22 0.03 256 / 0.1),
-    0 4px 6px -1px oklch(0.22 0.03 256 / 0.1);
-  --shadow-xl:
-    0 1px 3px 0px oklch(0.22 0.03 256 / 0.1),
-    0 8px 10px -1px oklch(0.22 0.03 256 / 0.1);
-  --shadow-2xl: 0 1px 3px 0px oklch(0.22 0.03 256 / 0.25);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.147 0.004 49.3);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.147 0.004 49.3);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.147 0.004 49.3);
+  --primary: oklch(0.505 0.213 27.518);
+  --primary-foreground: oklch(0.971 0.013 17.38);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.96 0.002 17.2);
+  --muted-foreground: oklch(0.547 0.021 43.1);
+  --accent: oklch(0.96 0.002 17.2);
+  --accent-foreground: oklch(0.214 0.009 43.1);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0.005 34.3);
+  --input: oklch(0.922 0.005 34.3);
+  --ring: oklch(0.714 0.014 41.2);
+  --chart-1: oklch(0.808 0.114 19.571);
+  --chart-2: oklch(0.637 0.237 25.331);
+  --chart-3: oklch(0.577 0.245 27.325);
+  --chart-4: oklch(0.505 0.213 27.518);
+  --chart-5: oklch(0.444 0.177 26.899);
+  --radius: 0;
+  --sidebar: oklch(0.986 0.002 67.8);
+  --sidebar-foreground: oklch(0.147 0.004 49.3);
+  --sidebar-primary: oklch(0.577 0.245 27.325);
+  --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
+  --sidebar-accent: oklch(0.96 0.002 17.2);
+  --sidebar-accent-foreground: oklch(0.214 0.009 43.1);
+  --sidebar-border: oklch(0.922 0.005 34.3);
+  --sidebar-ring: oklch(0.714 0.014 41.2);
 }
 
 .dark {
-  /* ---------- Surfaces — tactical navy-charcoal ---------- */
-  --background: oklch(0.17 0.02 256);
-  --foreground: oklch(0.95 0.01 95);
-
-  --card: oklch(0.21 0.025 256);
-  --card-foreground: oklch(0.95 0.01 95);
-
-  --popover: oklch(0.21 0.025 256);
-  --popover-foreground: oklch(0.95 0.01 95);
-
-  /* ---------- Primary — lifted navy for dark visibility ---------- */
-  --primary: oklch(0.58 0.11 256);
-  --primary-foreground: oklch(0.15 0.02 256);
-
-  /* ---------- Secondary / Muted / Accent ---------- */
-  --secondary: oklch(0.26 0.02 256);
-  --secondary-foreground: oklch(0.92 0.01 95);
-
-  --muted: oklch(0.26 0.02 256);
-  --muted-foreground: oklch(0.65 0.02 256);
-
-  --accent: oklch(0.26 0.02 256);
-  --accent-foreground: oklch(0.2 0.04 60);
-
-  /* ---------- Status tokens ---------- */
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.95 0.01 95);
-
-  --warning: oklch(0.7 0.16 65);
-  --warning-foreground: oklch(0.17 0.02 256);
-
-  --success: oklch(0.62 0.15 150);
-  --success-foreground: oklch(0.17 0.02 256);
-
-  --info: oklch(0.62 0.13 230);
-  --info-foreground: oklch(0.17 0.02 256);
-
-  /* ---------- Borders / Inputs / Ring ---------- */
-  --border: oklch(0.3 0.02 256);
-  --input: oklch(0.3 0.02 256);
-  --ring: oklch(0.58 0.11 256);
-
-  /* ---------- Charts ---------- */
-  --chart-1: oklch(0.58 0.11 256);
-  --chart-2: oklch(0.62 0.15 150);
-  --chart-3: oklch(0.8 0.16 88);
-  --chart-4: oklch(0.7 0.16 65);
-  --chart-5: oklch(0.58 0.22 25);
-
-  /* ---------- Sidebar ---------- */
-  --sidebar: oklch(0.17 0.02 256);
-  --sidebar-foreground: oklch(0.92 0.01 95);
-  --sidebar-primary: oklch(0.58 0.11 256);
-  --sidebar-primary-foreground: oklch(0.15 0.02 256);
-  --sidebar-accent: oklch(0.26 0.02 256);
-  --sidebar-accent-foreground: oklch(0.92 0.01 95);
-  --sidebar-border: oklch(0.3 0.02 256);
-  --sidebar-ring: oklch(0.58 0.11 256);
-
-  /* ---------- Custom tokens ---------- */
-  --node-online: oklch(0.62 0.16 145);
-  --node-isolated: oklch(0.7 0.18 60);
-  --security-badge: oklch(0.55 0.12 268);
-
-  /* ---------- Fonts ---------- */
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
-
-  /* ---------- Radius / Spacing / Tracking ---------- */
-  --radius: 0.5rem;
-  --spacing: 0.25rem;
-  --tracking-normal: 0em;
-
-  /* ---------- Shadows — softened on dark surfaces ---------- */
-  --shadow-x: 0;
-  --shadow-y: 1px;
-  --shadow-blur: 3px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.3;
-  --shadow-color: oklch(0.05 0.01 256);
-  --shadow-2xs: 0 1px 3px 0px oklch(0 0 0 / 0.2);
-  --shadow-xs: 0 1px 3px 0px oklch(0 0 0 / 0.2);
-  --shadow-sm:
-    0 1px 3px 0px oklch(0 0 0 / 0.3), 0 1px 2px -1px oklch(0 0 0 / 0.3);
-  --shadow: 0 1px 3px 0px oklch(0 0 0 / 0.3), 0 1px 2px -1px oklch(0 0 0 / 0.3);
-  --shadow-md:
-    0 1px 3px 0px oklch(0 0 0 / 0.3), 0 2px 4px -1px oklch(0 0 0 / 0.3);
-  --shadow-lg:
-    0 1px 3px 0px oklch(0 0 0 / 0.3), 0 4px 6px -1px oklch(0 0 0 / 0.3);
-  --shadow-xl:
-    0 1px 3px 0px oklch(0 0 0 / 0.3), 0 8px 10px -1px oklch(0 0 0 / 0.3);
-  --shadow-2xl: 0 1px 3px 0px oklch(0 0 0 / 0.5);
+  --background: oklch(0.147 0.004 49.3);
+  --foreground: oklch(0.986 0.002 67.8);
+  --card: oklch(0.214 0.009 43.1);
+  --card-foreground: oklch(0.986 0.002 67.8);
+  --popover: oklch(0.214 0.009 43.1);
+  --popover-foreground: oklch(0.986 0.002 67.8);
+  --primary: oklch(0.444 0.177 26.899);
+  --primary-foreground: oklch(0.971 0.013 17.38);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.268 0.011 36.5);
+  --muted-foreground: oklch(0.714 0.014 41.2);
+  --accent: oklch(0.268 0.011 36.5);
+  --accent-foreground: oklch(0.986 0.002 67.8);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.547 0.021 43.1);
+  --chart-1: oklch(0.808 0.114 19.571);
+  --chart-2: oklch(0.637 0.237 25.331);
+  --chart-3: oklch(0.577 0.245 27.325);
+  --chart-4: oklch(0.505 0.213 27.518);
+  --chart-5: oklch(0.444 0.177 26.899);
+  --sidebar: oklch(0.214 0.009 43.1);
+  --sidebar-foreground: oklch(0.986 0.002 67.8);
+  --sidebar-primary: oklch(0.637 0.237 25.331);
+  --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
+  --sidebar-accent: oklch(0.268 0.011 36.5);
+  --sidebar-accent-foreground: oklch(0.986 0.002 67.8);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.547 0.021 43.1);
 }
 
 @theme inline {
@@ -237,6 +98,42 @@
 
   @media (width >= 90rem) {
     padding-inline: 2rem;
+  }
+}
+
+/* ---------- Side panels ----------
+   Every side panel (record forms, Add record) is the same shape: a header, one
+   scrolling body, and a footer pinned to the bottom edge. Nothing inside sets
+   a width of its own, and nothing is centred: the panel is anchored to the
+   right, its content runs left to right in one column. */
+@utility panel-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+}
+
+@utility panel-body {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  /* A form's own footer stays at the bottom edge of the panel, whether the
+     form is short (it sits at the foot) or long (it sticks while scrolling). */
+  & > [data-slot="drawer-footer"] {
+    position: sticky;
+    bottom: -1rem;
+    z-index: 1;
+    margin: auto -1rem -1rem;
+    padding: 0.75rem 1rem;
+    background: var(--background);
+    border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
   }
 }
 
@@ -304,5 +201,40 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* A sheet of paper: always light, whatever the theme, so a document reads on
+ * screen the way it will print. The variables re-point the global typography
+ * (which reads them) at black on white. */
+.paper {
+  --foreground: #000;
+  --color-foreground: #000;
+  --muted-foreground: #3f3f46;
+  --border: #000;
+  --muted: #f4f4f5;
+  color-scheme: light;
+  background: #fff;
+  color: #000;
+  border: 1px solid #d4d4d8;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  min-height: 297mm;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm 22mm;
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 9pt;
+    }
+  }
+
+  .paper {
+    border: 0;
+    box-shadow: none;
+    min-height: 0;
   }
 }

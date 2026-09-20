@@ -7,18 +7,24 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 
 use super::error::ApiError;
-use super::guard::{Need, RouteTable};
+use super::guard::{CallerDevice, Need, RouteTable};
 use super::write;
 use crate::domain::activation;
+use crate::domain::auth_policy::{self, AuthPolicy, AuthPolicyInput};
+use crate::domain::facility_profile::{self, SaveFacilityProfileInput};
+use crate::domain::numbering::{self, NumberingInput};
+use crate::domain::officers;
+use crate::domain::sessions::{self, SessionInfo};
 use crate::domain::audit::{self, AuditFilter, AuditRow, ChainStatus};
 use crate::domain::backup::{self, BackupConfig, BackupInfo, BackupSummary, SaveBackupConfigInput};
 use crate::domain::authz::{perm, Actor};
+use crate::domain::connectivity::{self, ConnectivityStatus};
 use crate::domain::facilities::{self, PeerSyncConfig};
-use crate::domain::nodeconfig::{self, ConnectError, Environment};
+use crate::domain::nodeconfig::{self, Environment};
 use crate::domain::connection::FacilityLookup;
 use crate::domain::peer::{self, ConnectFacilityInput, ConnectResult, PairError, PairInput, PairResult};
 use crate::domain::session::{self, HqConfig};
-use crate::domain::sync::{self, SyncRunResult};
+use crate::domain::sync::SyncRunResult;
 use crate::node::NodeRef;
 
 /// Bumped when the shape of the node API changes incompatibly, so a
@@ -30,6 +36,11 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/system/health", Need::Public, health)
         .get("/api/system/state", Need::Device, state)
         .post("/api/system/onboarding/role", Need::Onboarding, choose_role)
+        .post("/api/system/onboarding/facility", Need::Onboarding, setup_facility)
+        .post("/api/system/onboarding/head-office", Need::Onboarding, setup_head_office)
+        .post("/api/system/onboarding/numbering-preview", Need::Onboarding, numbering_preview)
+        .get("/api/system/auth-policy", Need::Session, get_auth_policy)
+        .put("/api/system/auth-policy", Need::Perm(perm::NODE_MANAGE), save_auth_policy)
         .post("/api/system/onboarding/activate", Need::Onboarding, activate)
         .post("/api/system/onboarding/pair", Need::Onboarding, pair_first_launch)
         .get("/api/system/network/peer", Need::Session, get_peer)
@@ -44,6 +55,9 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .post("/api/system/network/connection/cancel", Need::Perm(perm::NODE_MANAGE), cancel_later)
         .get("/api/system/network/reachability", Need::Session, reachability)
         .post("/api/system/network/sync-now", Need::Perm(perm::NODE_MANAGE), sync_now)
+        .get("/api/system/network/status", Need::Session, network_status)
+        .post("/api/system/network/disconnect", Need::Perm(perm::NODE_MANAGE), disconnect_from_head_office)
+        .put("/api/system/network/sync-classes/{class}", Need::Perm(perm::NODE_MANAGE), set_sync_class)
         .get("/api/system/environment", Need::Session, environment)
         .put("/api/system/node-mode", Need::Perm(perm::NODE_MANAGE), set_node_mode)
         .post("/api/system/onboarding/connect", Need::Onboarding, connect_workstation)
@@ -91,6 +105,9 @@ struct SystemState {
     /// `none`, `pending`, `connected` or `rejected`: where this installation
     /// stands with Head Office.
     connection: String,
+    /// The facility's sign-in mode, so the sign-in screen knows whether a
+    /// blank secret can be submitted. Says nothing about any account.
+    auth_mode: String,
     api_level: u32,
 }
 
@@ -98,7 +115,8 @@ async fn state(State(node): State<NodeRef>) -> Result<Json<SystemState>, ApiErro
     let config = session::get_hq_config(&node.pool).await?;
     let bootstrap = crate::domain::officers::is_bootstrap(&node.pool).await?;
     let peer = facilities::get_peer_sync_config(&node.pool).await?;
-    Ok(Json(SystemState { config, bootstrap, paired: peer.connection_state == "connected" && peer.facility_id.is_some(), connection: peer.connection_state, api_level: API_LEVEL }))
+    let auth_mode = auth_policy::get(&node.pool).await?.mode;
+    Ok(Json(SystemState { config, bootstrap, paired: peer.connection_state == "connected" && peer.facility_id.is_some(), connection: peer.connection_state, auth_mode, api_level: API_LEVEL }))
 }
 
 #[derive(Deserialize)]
@@ -110,6 +128,137 @@ async fn choose_role(State(node): State<NodeRef>, Json(body): Json<RoleBody>) ->
     let actor = Actor::system("first launch");
     write(&node, |c| Box::pin(async move { Ok(activation::choose_role(c, &actor, &body.role).await?) })).await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Everything a new facility decides at first setup, saved together. Nothing
+/// is kept if any part is refused, and the first administrator is signed in.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FacilitySetupBody {
+    profile: SaveFacilityProfileInput,
+    numbering: NumberingInput,
+    auth_mode: String,
+    admin: SetupAdmin,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetupAdmin {
+    badge_number: String,
+    name: String,
+    password: String,
+}
+
+async fn setup_facility(
+    State(node): State<NodeRef>,
+    axum::Extension(device): axum::Extension<CallerDevice>,
+    Json(body): Json<FacilitySetupBody>,
+) -> Result<Json<SessionInfo>, ApiError> {
+    require_bootstrap(&node).await?;
+    if session::get_hq_config(&node.pool).await?.is_head_office {
+        return Err(ApiError::conflict("NOT_A_FACILITY", "This installation is set up as Head Office."));
+    }
+    let FacilitySetupBody { profile, numbering, auth_mode, admin } = body;
+    let (badge, password) = (admin.badge_number.clone(), admin.password.clone());
+    write(&node, |c| {
+        Box::pin(async move {
+            let actor = Actor::system("first launch");
+            activation::choose_role(c, &actor, "facility").await?;
+            // The profile comes first: the badge prefix it sets applies to the
+            // administrator created next.
+            facility_profile::save(c, &actor, profile).await?;
+            numbering::save_config(c, &actor, numbering).await?;
+            officers::create_first_admin(c, &admin.badge_number, &admin.name, &admin.password).await?;
+            let current = auth_policy::get_conn(c).await?;
+            auth_policy::save(
+                c,
+                &actor,
+                AuthPolicyInput { mode: auth_mode, idle_timeout_minutes: current.idle_timeout_minutes, absolute_lifetime_hours: current.absolute_lifetime_hours },
+            )
+            .await?;
+            Ok(())
+        })
+    })
+    .await?;
+    Ok(Json(sessions::sign_in(&node.pool, &badge, &password, device.0.as_deref()).await?))
+}
+
+/// What a new Head Office decides at first setup. There is no numbering or
+/// sign-in choice: Head Office holds no prisoners and its accounts always use
+/// a password.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HeadOfficeSetupBody {
+    profile: SaveFacilityProfileInput,
+    admin: SetupAdmin,
+}
+
+/// Head Office first setup, saved together like a facility's: the role, the
+/// identity, and the first administrator, with nothing kept if any part is
+/// refused. No Pleadli Cloud code is needed; verifying with Pleadli is a later,
+/// optional step in Settings.
+async fn setup_head_office(
+    State(node): State<NodeRef>,
+    axum::Extension(device): axum::Extension<CallerDevice>,
+    Json(body): Json<HeadOfficeSetupBody>,
+) -> Result<Json<SessionInfo>, ApiError> {
+    require_bootstrap(&node).await?;
+    if session::get_hq_config(&node.pool).await?.role.as_deref() == Some("facility") {
+        return Err(ApiError::conflict("NOT_A_HEAD_OFFICE", "This installation is set up as a facility."));
+    }
+    let HeadOfficeSetupBody { profile, admin } = body;
+    let (badge, password) = (admin.badge_number.clone(), admin.password.clone());
+    write(&node, |c| {
+        Box::pin(async move {
+            let actor = Actor::system("first launch");
+            // Already Head Office (a code was used earlier) changes nothing here and carries on.
+            activation::choose_head_office(c, &actor).await?;
+            facility_profile::save(c, &actor, profile).await?;
+            officers::create_first_admin(c, &admin.badge_number, &admin.name, &admin.password).await?;
+            Ok(())
+        })
+    })
+    .await?;
+    Ok(Json(sessions::sign_in(&node.pool, &badge, &password, device.0.as_deref()).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NumberingPreviewBody {
+    pattern: String,
+    reset: String,
+    facility_number: Option<String>,
+}
+
+#[derive(Serialize)]
+struct NumberingPreview {
+    valid: bool,
+    /// Why the pattern is refused, in words for an officer.
+    message: Option<String>,
+    preview: Vec<String>,
+}
+
+/// What a prisoner-number pattern would produce, checked by the same rules
+/// that will apply once it is saved, so the setup screen never previews a
+/// pattern the node would refuse.
+async fn numbering_preview(State(node): State<NodeRef>, Json(body): Json<NumberingPreviewBody>) -> Result<Json<NumberingPreview>, ApiError> {
+    require_bootstrap(&node).await?;
+    Ok(Json(match numbering::validate(&body.pattern, &body.reset) {
+        Ok(()) => NumberingPreview { valid: true, message: None, preview: numbering::preview(body.pattern.trim(), body.facility_number.as_deref()) },
+        Err(error) => NumberingPreview { valid: false, message: Some(error.to_string()), preview: Vec::new() },
+    }))
+}
+
+async fn get_auth_policy(State(node): State<NodeRef>) -> Result<Json<AuthPolicy>, ApiError> {
+    Ok(Json(auth_policy::get(&node.pool).await?))
+}
+
+async fn save_auth_policy(
+    State(node): State<NodeRef>,
+    axum::Extension(actor): axum::Extension<Actor>,
+    Json(input): Json<AuthPolicyInput>,
+) -> Result<Json<AuthPolicy>, ApiError> {
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(auth_policy::save(c, &actor, input).await?) })).await?))
 }
 
 #[derive(Deserialize)]
@@ -237,8 +386,35 @@ async fn get_peer(State(node): State<NodeRef>) -> Result<Json<PeerSyncConfig>, A
     Ok(Json(facilities::get_peer_sync_config(&node.pool).await?))
 }
 
+/// The one status the shell, Settings and the inbox read: where this facility
+/// stands with Head Office, what it shares, and what is waiting to be sent.
+async fn network_status(State(node): State<NodeRef>) -> Result<Json<ConnectivityStatus>, ApiError> {
+    Ok(Json(connectivity::status(&node.pool).await?))
+}
+
+/// Ends the link. Local records, officers, audit and backups are untouched.
+async fn disconnect_from_head_office(State(node): State<NodeRef>, axum::Extension(actor): axum::Extension<Actor>) -> Result<Json<ConnectivityStatus>, ApiError> {
+    write(&node, |c| Box::pin(async move { Ok(connectivity::disconnect(c, &actor).await?) })).await?;
+    Ok(Json(connectivity::status(&node.pool).await?))
+}
+
+#[derive(Deserialize)]
+struct ClassBody {
+    enabled: bool,
+}
+
+async fn set_sync_class(
+    State(node): State<NodeRef>,
+    axum::Extension(actor): axum::Extension<Actor>,
+    axum::extract::Path(class): axum::extract::Path<String>,
+    Json(body): Json<ClassBody>,
+) -> Result<Json<ConnectivityStatus>, ApiError> {
+    write(&node, |c| Box::pin(async move { Ok(connectivity::set_class_enabled(c, &actor, &class, body.enabled).await?) })).await?;
+    Ok(Json(connectivity::status(&node.pool).await?))
+}
+
 async fn sync_now(State(node): State<NodeRef>) -> Result<Json<SyncRunResult>, ApiError> {
-    sync::push_snapshot(&node.pool).await.map(Json).map_err(|e| {
+    connectivity::exchange(&node.pool, true).await.map(Json).map_err(|e| {
         log::warn!("manual sync: {e}");
         ApiError::new(StatusCode::BAD_GATEWAY, "SYNC_FAILED", &e)
     })

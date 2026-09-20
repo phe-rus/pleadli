@@ -4,16 +4,18 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "check": "tsc --noEmit",
+    "dev": "NODE_OPTIONS=--max-old-space-size=768 vite",
+    "build": "bun run i18n && tsc && vite build && bun run i18n",
+    "check": "bun run i18n && tsc --noEmit",
     "preview": "vite preview",
-    "tauri": "NO_AT_BRIDGE=1 GDK_PROGNAME=\"prisons\" WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
-    "e2e": "bun run scripts/e2e-data-layer.ts"
+    "tauri": "node scripts/guard.mjs && NODE_OPTIONS=--max-old-space-size=768 CARGO_BUILD_JOBS=2 NO_AT_BRIDGE=1 GDK_PROGNAME=\"prisons\" WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
+    "e2e": "bun run scripts/e2e-data-layer.ts",
+    "i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --output-structure locale-modules"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.0",
     "@hugeicons/react": "^1.1.10",
+    "@inlang/paraglide-js": "^2.25.4",
     "@pleadli/forms-tables": "workspace:*",
     "@pleadli/rich-text": "workspace:*",
     "@pleadli/ui": "workspace:*",
@@ -36,6 +38,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@inlang/plugin-message-format": "^4.4.4",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/router-plugin": "^1.168.36",
     "@tauri-apps/cli": "^2",

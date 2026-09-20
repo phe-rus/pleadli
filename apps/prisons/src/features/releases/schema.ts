@@ -1,15 +1,16 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 // The six distinct statutory triggers confirmed in docs/prisons/RESEARCH.md
 // §4, plus the one correction type (s.79) that reverses a release.
 export const releaseTypes = [
-  { value: 'bail', label: 'Bail' },
-  { value: 'full_remission', label: 'Full remission' },
-  { value: 'partial_remission', label: 'Partial remission' },
-  { value: 'parole', label: 'Parole' },
-  { value: 'release_on_licence', label: 'Release on licence' },
-  { value: 'acquittal', label: 'Acquittal / court-ordered discharge' },
-  { value: 'erroneous_release_correction', label: 'Erroneous release: re-arrested (s.79)' },
+  { value: 'bail', get label() { return m.releases_bail() } },
+  { value: 'full_remission', get label() { return m.releases_full_remission() } },
+  { value: 'partial_remission', get label() { return m.releases_partial_remission() } },
+  { value: 'parole', get label() { return m.releases_parole() } },
+  { value: 'release_on_licence', get label() { return m.releases_release_on_licence() } },
+  { value: 'acquittal', get label() { return m.releases_acquittal_court_ordered_discharge() } },
+  { value: 'erroneous_release_correction', get label() { return m.releases_erroneous_release_re_arrested_s_79() } },
 ] as const
 
 export function releaseTypeLabel(type: string) {

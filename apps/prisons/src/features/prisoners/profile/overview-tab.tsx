@@ -13,8 +13,9 @@ import { format } from 'date-fns/format'
 import type { ReactNode } from 'react'
 import { ProfileSection } from './blocks'
 import { buildTimeline } from './timeline'
+import { m } from '@/paraglide/messages'
 
-const dateOnly = (ms: number | null) => (ms == null ? 'Not computed' : format(ms, 'd MMM yyyy'))
+const dateOnly = (ms: number | null) => (ms == null ? m.prisoners_not_computed() : format(ms, 'd MMM yyyy'))
 
 function Fact({ label, value, hint, warn }: { label: string; value: ReactNode; hint?: string; warn?: boolean }) {
   return (
@@ -56,26 +57,26 @@ export function OverviewTab({ prisonerId, onOpenTab }: { prisonerId: string; onO
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap gap-3">
         <Fact
-          label="Next court"
+          label={m.prisoners_next_court()}
           value={file.nextCourtAt ? format(file.nextCourtAt, 'd MMM yyyy p') : 'None scheduled'}
-          hint={remand ? 'Remand: a court date should always be booked' : undefined}
+          hint={remand ? m.prisoners_remand_a_court_date_should_always() : undefined}
           warn={remand && inCustody && !file.nextCourtAt}
         />
         <Fact
-          label={remand ? 'Mandatory-bail threshold' : 'Entitlement date'}
+          label={remand ? m.prisoners_mandatory_bail_threshold() : m.prisoners_entitlement_date()}
           value={dateOnly(remand ? clocks.mandatoryBailOn : clocks.releaseDueOn)}
           hint={
             remand
               ? prisoner.highCourtOnlyOffence
-                ? '180 days, High Court offence (Art. 23(6))'
-                : '60 days (Art. 23(6))'
+                ? m.prisoners_180_days_high_court_offence_art()
+                : m.prisoners_60_days_art_23_6()
               : sentence
-                ? 'Computed with one-third remission. Check the warrant.'
-                : 'Record the sentence to compute it'
+                ? m.prisoners_computed_with_one_third_remission_check()
+                : m.prisoners_record_the_sentence_to_compute_it()
           }
         />
         <Fact
-          label="Where"
+          label={m.prisoners_where()}
           value={prisoner.currentLocation ?? 'Not placed'}
           hint={
             openStay
@@ -86,16 +87,16 @@ export function OverviewTab({ prisonerId, onOpenTab }: { prisonerId: string; onO
       </div>
 
       <div className="flex flex-wrap items-start gap-6">
-        <ProfileSection title="Open for this person" className="min-w-72 flex-1 basis-80">
-          <ObligationQueue obligations={file.obligations} now={now} flat emptyMessage="Nothing is open for this person." />
+        <ProfileSection title={m.prisoners_open_for_this_person()} className="min-w-72 flex-1 basis-80">
+          <ObligationQueue obligations={file.obligations} now={now} flat emptyMessage={m.prisoners_nothing_is_open_for_this_person()} />
         </ProfileSection>
 
         <ProfileSection
-          title="Legal position"
+          title={m.prisoners_legal_position()}
           className="min-w-72 flex-1 basis-80"
           action={
             <Button size="xs" variant="ghost" onClick={() => onOpenTab('legal')}>
-              Open legal
+              {m.prisoners_open_legal()}
             </Button>
           }
         >
@@ -103,26 +104,26 @@ export function OverviewTab({ prisonerId, onOpenTab }: { prisonerId: string; onO
             <CardContent className="flex flex-col gap-1.5 py-3">
               {sentence ? (
                 <>
-                  <Row label="Sentence" value={sentenceTermText(sentence)} />
-                  <Row label="Runs from" value={format(sentence.startsOn, 'd MMM yyyy')} />
-                  {!clocks.isLife && <Row label="Term ends" value={dateOnly(clocks.sentenceEndsOn)} />}
-                  {!clocks.isLife && <Row label="Release due" value={dateOnly(clocks.releaseDueOn)} />}
-                  {clocks.paroleWindowOpensOn != null && <Row label="Parole window opens" value={dateOnly(clocks.paroleWindowOpensOn)} />}
+                  <Row label={m.prisoners_sentence()} value={sentenceTermText(sentence)} />
+                  <Row label={m.prisoners_runs_from()} value={format(sentence.startsOn, 'd MMM yyyy')} />
+                  {!clocks.isLife && <Row label={m.prisoners_term_ends()} value={dateOnly(clocks.sentenceEndsOn)} />}
+                  {!clocks.isLife && <Row label={m.prisoners_release_due()} value={dateOnly(clocks.releaseDueOn)} />}
+                  {clocks.paroleWindowOpensOn != null && <Row label={m.prisoners_parole_window_opens()} value={dateOnly(clocks.paroleWindowOpensOn)} />}
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No sentence recorded{prisoner.status === 'convicted' ? '. Record it to compute the entitlement date.' : '.'}
+                  {prisoner.status === 'convicted' ? m.prisoners_no_sentence_recorded_convicted() : m.prisoners_no_sentence_recorded()}
                 </p>
               )}
-              <Row label="Instruments" value={`${file.instruments.length}`} />
+              <Row label={m.prisoners_instruments()} value={`${file.instruments.length}`} />
             </CardContent>
           </Card>
         </ProfileSection>
       </div>
 
-      <ProfileSection title="Recent activity" description="Latest events on this file.">
+      <ProfileSection title={m.prisoners_recent_activity()} description={m.prisoners_latest_events_on_this_file()}>
         {recent.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
+          <p className="text-sm text-muted-foreground">{m.prisoners_nothing_recorded_yet()}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-border/60 rounded-lg border border-border/60">
             {recent.map((entry) => (
@@ -142,7 +143,7 @@ export function OverviewTab({ prisonerId, onOpenTab }: { prisonerId: string; onO
       </ProfileSection>
 
       {prisoner.notes && (
-        <ProfileSection title="Notes">
+        <ProfileSection title={m.prisoners_notes()}>
           <RichTextPreview value={prisoner.notes} className="text-sm text-muted-foreground md:max-w-2xl" />
         </ProfileSection>
       )}

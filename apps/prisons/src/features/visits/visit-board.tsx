@@ -7,12 +7,13 @@ import { isToday, isTomorrow, startOfDay, addDays } from 'date-fns'
 import { useMemo } from 'react'
 import { VisitActions } from './visit-actions'
 import { isSpecialType, visitListItemFullName, visitTypeLabel, type VisitListItem } from './schema'
+import { m } from '@/paraglide/messages'
 
 const COLUMNS = [
-  { key: 'expected', title: 'Expected', hint: 'Requested or scheduled for today', statuses: ['requested', 'scheduled'] },
-  { key: 'gate', title: 'At the gate', hint: 'Checked in, not yet started', statuses: ['checked_in'] },
-  { key: 'progress', title: 'In progress', hint: 'Visit under way', statuses: ['in_progress'] },
-  { key: 'done', title: 'Completed', hint: 'Finished today', statuses: ['completed'] },
+  { key: 'expected', get title() { return m.visits_expected() }, get hint() { return m.visits_requested_or_scheduled_for_today() }, statuses: ['requested', 'scheduled'] },
+  { key: 'gate', get title() { return m.visits_at_the_gate() }, get hint() { return m.visits_checked_in_not_yet_started() }, statuses: ['checked_in'] },
+  { key: 'progress', get title() { return m.visits_in_progress() }, get hint() { return m.visits_visit_under_way() }, statuses: ['in_progress'] },
+  { key: 'done', get title() { return m.visits_completed_2() }, get hint() { return m.visits_finished_today() }, statuses: ['completed'] },
 ] as const
 
 function VisitCard({ visit }: { visit: VisitListItem }) {
@@ -22,16 +23,15 @@ function VisitCard({ visit }: { visit: VisitListItem }) {
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{visit.visitorName}</p>
           <Link to="/prisoners/$prisonerId" params={{ prisonerId: visit.prisonerId }} className="truncate text-muted-foreground underline-offset-4 hover:underline">
-            to see {visitListItemFullName(visit)}
-          </Link>
+            {m.visits_to_see({ visit: visitListItemFullName(visit) })}</Link>
         </div>
         <span className="shrink-0 tabular-nums text-muted-foreground">{isToday(visit.visitedAt) ? format(visit.visitedAt, 'HH:mm') : format(visit.visitedAt, 'd MMM HH:mm')}</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         <Badge variant="outline">{visitTypeLabel(visit.visitType)}</Badge>
-        {visit.privileged && <Badge variant="secondary">Privileged</Badge>}
-        {visit.partySize > 1 && <Badge variant="secondary">{visit.partySize} visitors</Badge>}
-        {visit.status === 'requested' && <Badge variant="destructive">{isSpecialType(visit.visitType) ? 'Needs authorization' : 'Needs approval'}</Badge>}
+        {visit.privileged && <Badge variant="secondary">{m.visits_privileged()}</Badge>}
+        {visit.partySize > 1 && <Badge variant="secondary">{m.visits_visitors({ partySize: visit.partySize })}</Badge>}
+        {visit.status === 'requested' && <Badge variant="destructive">{isSpecialType(visit.visitType) ? m.visits_needs_authorization() : m.visits_needs_approval()}</Badge>}
       </div>
       <VisitActions visit={visit} />
     </div>
@@ -51,10 +51,10 @@ export function TodayBoard({ visits }: { visits: VisitListItem[] }) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-medium">Today</h2>
+        <h2 className="text-sm font-medium">{m.visits_today()}</h2>
         <span className="text-xs text-muted-foreground">
-          {today.length} visit{today.length === 1 ? '' : 's'} · {format(new Date(), 'EEEE d MMMM')}
-          {closed > 0 && ` · ${closed} refused, cancelled or no show`}
+          {m.visits_visit({ length: today.length })}{today.length === 1 ? '' : 's'} · {format(new Date(), 'EEEE d MMMM')}
+          {closed > 0 && m.visits_refused_cancelled_or_no_show({ closed })}
         </span>
       </div>
       <div className="flex flex-wrap gap-3">
@@ -72,7 +72,7 @@ export function TodayBoard({ visits }: { visits: VisitListItem[] }) {
                     {rows.length}
                   </span>
                 </div>
-                {rows.length === 0 ? <p className="py-3 text-center text-xs text-muted-foreground">Nothing here.</p> : rows.map((visit) => <VisitCard key={visit.id} visit={visit} />)}
+                {rows.length === 0 ? <p className="py-3 text-center text-xs text-muted-foreground">{m.visits_nothing_here()}</p> : rows.map((visit) => <VisitCard key={visit.id} visit={visit} />)}
               </CardContent>
             </Card>
           )
@@ -81,8 +81,8 @@ export function TodayBoard({ visits }: { visits: VisitListItem[] }) {
           <Card className="min-w-64 flex-1 basis-64 border-amber-500/40 p-0">
             <CardContent className="flex flex-col gap-2.5 p-3">
               <div className="flex flex-col">
-                <span className="text-xs font-medium">Left open from earlier days</span>
-                <span className="text-[11px] text-muted-foreground">Close each one: complete it, mark a no show, or cancel it.</span>
+                <span className="text-xs font-medium">{m.visits_left_open_from_earlier_days()}</span>
+                <span className="text-[11px] text-muted-foreground">{m.visits_close_each_one_complete_it_mark()}</span>
               </div>
               {stale.map((visit) => (
                 <VisitCard key={visit.id} visit={visit} />
@@ -96,7 +96,7 @@ export function TodayBoard({ visits }: { visits: VisitListItem[] }) {
 }
 
 function dayLabel(ms: number) {
-  if (isTomorrow(ms)) return 'Tomorrow'
+  if (isTomorrow(ms)) return m.visits_tomorrow()
   return format(ms, 'EEEE d MMMM')
 }
 
@@ -118,9 +118,9 @@ export function UpcomingVisits({ visits }: { visits: VisitListItem[] }) {
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-sm font-medium">Coming up</h2>
+      <h2 className="text-sm font-medium">{m.visits_coming_up()}</h2>
       {groups.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No visits are booked for the next two weeks.</p>
+        <p className="text-xs text-muted-foreground">{m.visits_no_visits_are_booked_for_the()}</p>
       ) : (
         <div className="flex flex-wrap gap-3">
           {groups.map(([day, rows]) => (
@@ -134,7 +134,7 @@ export function UpcomingVisits({ visits }: { visits: VisitListItem[] }) {
                       <p className="truncate text-muted-foreground">{visitListItemFullName(visit)}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      {visit.status === 'requested' && <Badge variant="secondary">Requested</Badge>}
+                      {visit.status === 'requested' && <Badge variant="secondary">{m.visits_requested()}</Badge>}
                       <span className="tabular-nums text-muted-foreground">{format(visit.visitedAt, 'HH:mm')}</span>
                     </div>
                   </div>

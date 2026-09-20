@@ -1,8 +1,9 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 export const transferDirections = [
-  { value: 'out', label: 'Sent to another prison' },
-  { value: 'in', label: 'Received from another prison' },
+  { value: 'out', get label() { return m.transfers_sent_to_another_prison() } },
+  { value: 'in', get label() { return m.transfers_received_from_another_prison() } },
 ] as const
 
 export function transferDirectionLabel(direction: string) {
@@ -10,14 +11,14 @@ export function transferDirectionLabel(direction: string) {
 }
 
 const outStates: Record<string, string> = {
-  preparing: 'Preparing',
-  in_transit: 'In transit',
-  confirmed: 'Confirmed by receiver',
-  cancelled: 'Cancelled',
+  get preparing() { return m.transfers_preparing() },
+  get in_transit() { return m.transfers_in_transit() },
+  get confirmed() { return m.transfers_confirmed_by_receiver() },
+  get cancelled() { return m.transfers_cancelled() },
 }
 const inStates: Record<string, string> = {
-  arrived: 'Arrived, awaiting confirmation',
-  confirmed: 'Received and confirmed',
+  get arrived() { return m.transfers_arrived_awaiting_confirmation() },
+  get confirmed() { return m.transfers_received_and_confirmed() },
 }
 
 export function transferStateLabel(direction: string, state: string) {
@@ -64,13 +65,13 @@ export const checklistSchema = z.object({
 export type Checklist = z.infer<typeof checklistSchema>
 
 export const checklistItems = [
-  { key: 'propertyStatement', label: 'Property packed and a statement of it prepared' },
-  { key: 'documentsCopied', label: 'Instruments and documents copied for the dossier' },
-  { key: 'medicalSummary', label: 'Medical summary prepared, as permitted' },
-  { key: 'familyInformed', label: 'Family or next of kin informed' },
-  { key: 'transferLetter', label: 'Transfer letter written (s.78(2))' },
-  { key: 'courtConflictsChecked', label: 'Scheduled court productions checked for conflict' },
-  { key: 'keepInAreaNoted', label: 'Preference to stay near home noted (s.73(4))' },
+  { key: 'propertyStatement', get label() { return m.transfers_property_packed_and_a_statement_of() } },
+  { key: 'documentsCopied', get label() { return m.transfers_instruments_and_documents_copied_for_the() } },
+  { key: 'medicalSummary', get label() { return m.transfers_medical_summary_prepared_as_permitted() } },
+  { key: 'familyInformed', get label() { return m.transfers_family_or_next_of_kin_informed() } },
+  { key: 'transferLetter', get label() { return m.transfers_transfer_letter_written_s_78_2() } },
+  { key: 'courtConflictsChecked', get label() { return m.transfers_scheduled_court_productions_checked_for() } },
+  { key: 'keepInAreaNoted', get label() { return m.transfers_preference_to_stay_near_home_noted() } },
 ] as const satisfies readonly { key: keyof Checklist; label: string }[]
 
 export function parseChecklist(json: string | null): Checklist {

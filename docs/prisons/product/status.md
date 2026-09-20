@@ -36,7 +36,7 @@ The 2026-09-18 ledger (the previous `07`) recorded phase 2, the **custody spine,
 | F2.8 review | `sentences.rs` review marks computed for the s.88/parole cycle (node), not yet a bundle workflow |
 | F3.1 next of kin | `prisoner_contacts` table, `insert_contact` (0023) |
 | S4 obligation engine "none" | `obligations.rs` `derive()`/`resolve()`, typed keys, `obligation_resolutions` (0023); 60/180 mandatory-bail derives from `mandatory_bail` procedures |
-| F7.1 monthly return data | `reports.rs` `build()`/`generate()` with report `Kind`, `GeneratedReport`, validation |
+| F7.1 monthly return data | `reports.rs` `build()`/`generate()` with report `Kind`, `GeneratedReport`; `returns.rs` `checks()`, `attest()`, `submit()`, `send_queued()`, and `receive()` on the Head Office side |
 | S2 audit "none" | `audit.rs` same-transaction `before`/`after` audit, `verify_chain()` tamper check |
 | S10 backup "no backup anywhere" | `backup.rs` create/verify/restore/scheduler, startup integrity, snapshot-before-migration |
 
@@ -72,11 +72,11 @@ Facility capabilities, keyed to the F map in `02-capabilities-domains-workflows.
 | F5.3 | Gate register | `research` | PROVISIONAL |
 | F5.4 | Prohibited articles | `research` | list is HQ-owned directive (W15); not built |
 | F6.1 | Instruments (received docs) | `implemented` | shipped inside F2.2 |
-| F6.2 | Generated documents | `in-progress` | reports documents, transfer dossier + receipt built; admission slip, release order, s.118 print `planned` |
+| F6.2 | Generated documents | `in-progress` | reports documents (now with a UI: numbered, printable, listed), transfer dossier + receipt built; admission slip, release order `planned`. The s.118 list is the remand list report |
 | F6.3 | Registers as views | `designed` | this vault (`registers.md`) now defines them; no code |
 | F6.4 | Dispatch and receipt | `in-progress` | transfer dossier receipt built; general dispatch tracking `designed` |
 | F6.5 | Prisoner access to own record | `research` | r9 [I]; Uganda position [U] |
-| F7.1 | Monthly return | `in-progress` | data assembly built; attest, validate, submit `designed` (stage 5) |
+| F7.1 | Monthly return | `implemented` | generate, check, OIC attests (final), submit to Head Office as T2 counts, Head Office acknowledges and lists what it received (2026-09-20). Tests cover the checks, attestation, and a real facility to Head Office HTTP round trip. Not yet run in the packaged app. Still open: signed exchange package (K.2), staff by rank, escapes, deaths and other UPS fields the records do not hold yet, HQ discrepancy check against the event stream |
 | F7.2 | VJ book extract and observations | `research` | physical-book authority is [U] (R-24) |
 | F7.3 | Incident notification to HQ | `research` | depends on F5.1 |
 | F7.4 | s.88 review bundle | `planned` | duty documented; no shape |
@@ -93,13 +93,13 @@ Head Office (keyed to `D.2` in 02):
 | ID | Capability | State | Layers note |
 |---|---|---|---|
 | HA | Network administration | `in-progress` | onboard/verify/revoke/roster built; suspend, decommission, versions, keys `designed` |
-| HB | Estate awareness | `in-progress` | aggregate stats partial; contact health and congestion `designed` |
+| HB | Estate awareness | `implemented` | `domain/estate.rs`, `GET /api/hq/estate`, the Home page (2026-09-20): contact health, occupancy against reported capacity, last-closed-month return state, attention list. Facilities report counts on the `status` sync class. Tests cover the view against a fixed clock and a real facility to Head Office round trip. Not run in the packaged app. By region only: no unit-level occupancy, no region scoping for commanders (R-23), no map, no oversight items or transfers in the attention list |
 | HC | Coordination (transfers, decongestion) | `planned` | W5 HQ side designed |
 | HD | Oversight | `planned` | W14 designed |
 | HE | Decisions register | `planned` | W15 designed |
 | HF | Directives | `planned` | W15 designed |
 | HG | Consolidation | `in-progress` | HQ report kinds built; remand-overstay analysis `planned` |
-| HH | Locate | `in-progress` | search over synced rows; access-request model `designed` |
+| HH | Locate | `blocked` | Head Office search used the synced prisoner rows, which no longer carry names after the X4 narrowing (2026-09-20), so it finds nobody by name. Needs the T1 locator (03 tier T1: field list awaits Prison Service and legal confirmation) and the event stream. Access-request model `designed` |
 | HI | HQ administration | `implemented` | activation code, HQ sign-in, roles, audit |
 | HJ | Personnel inputs | `planned` | DEFERRED |
 
@@ -112,9 +112,9 @@ Shared infrastructure (`D.3`):
 | S3 | Vault and documents | `in-progress` | attachments vault; at-rest encryption `designed` (D14) |
 | S4 | Obligation engine | `implemented` | typed keys, due rules, resolutions |
 | S5 | Event log and outbox | `designed` | ownership model (03) specifies; legacy snapshot retained |
-| S6 | Exchange and transports | `in-progress` | LAN listener/TLS, pairing, dev-loopback debug; Cloudflare provisioning and file carrier `designed` |
-| S7 | Print and export | `in-progress` | CSV and browser print of reports; PDF/letterhead `planned` |
-| S8 | Search | `implemented` | node: nine entity types; HQ locate partial |
+| S6 | Exchange and transports | `in-progress` | LAN listener/TLS, pairing, dev-loopback debug; Cloudflare provisioning route, Settings button and a supervised bundled `cloudflared` connector `implemented` 2026-09-20 (never run against Cloudflare); file carrier `designed` |
+| S7 | Print and export | `in-progress` | browser print of reports, registers and named documents (landscape for registers); the population-profile CSV export moved with the statistics to Today/Overview. PDF/letterhead `planned` |
+| S8 | Search | `implemented` | node: nine entity types; HQ locate blocked (see HH) |
 | S9 | Config and templates | `in-progress` | visit rules, facility profile, numbering; directives `planned` |
 | S10 | Backup, restore, update | `implemented` | round-trip, tamper-refusal, restore-at-startup, retention verified by tests |
 
@@ -133,14 +133,14 @@ Shared infrastructure (`D.3`):
 |---|---|---|
 | X1, X2 | Unauthenticated dev API in release builds; duplicate API surface | **Fixed** — single authenticated `/api/**`; no per-domain commands |
 | X3 | Two frontend clients | **Fixed** — one `api.ts` client |
-| X4 | Snapshot sync over-discloses full `prisoners` rows (notes, national ID, DOB) | **Open**, legacy path; replacement is tiered exchange (S5/S6) |
+| X4 | Snapshot sync over-discloses full `prisoners` rows (notes, national ID, DOB) | **Narrowed 2026-09-20**, legacy path still live: `SnapshotRow` carries only what HQ's counts read; HQ ignores anything else a sender includes and migration 0140 scrubs rows already held. Retire fully with tiered exchange (S5/S6) |
 | X5 | HQ listener starts only at launch | **Fixed** |
 | X8 | Legacy `register_facility_self` | **Fixed** |
-| X9 | `sync_token`, `cloudflare_config.api_token`, `remote_device_token` in plaintext | **Open** — blocks before any real network use |
+| X9 | `sync_token`, `cloudflare_config.api_token`, `remote_device_token`, tunnel `run_token` in plaintext | **Fixed at rest 2026-09-20**: `domain/secrets.rs`, sealed under `secrets.key` in the data folder. A DB copy alone is safe; the whole data folder is not (D14). A database restored from another machine cannot open them and must be paired again |
 | X10 | Database and vault plaintext; absolute `stored_path` in vault | **Open** — D14 designed |
 | X14 | Hard release gates | **Fixed** — OIC-authorized exception (D13) in `releases.rs` |
 | X15 | Contradictory docs | Addressed by this restructure |
 | — | Packaged Tauri app never run in this environment | **Open** — stage 2 verify |
-| — | Cloudflare Tunnel never provisioned (`provision()` has no caller) | **Open** — blocked with S6 |
+| — | Cloudflare Tunnel never provisioned (`provision()` has no caller) | **Wired 2026-09-20**: `POST /api/hq/network/cloudflare/provision`, `domain/tunnel_connector.rs`. Not run against Cloudflare; X9 now also covers the run token |
 
 See `SECURITY.md` for the two blockers that gate any real facility use.

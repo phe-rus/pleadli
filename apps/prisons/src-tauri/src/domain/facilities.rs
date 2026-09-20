@@ -110,13 +110,6 @@ async fn get_facility_conn(conn: &mut SqliteConnection, id: &str) -> Result<Opti
         .await
 }
 
-async fn get_facility(pool: &SqlitePool, id: &str) -> Result<Option<Facility>, sqlx::Error> {
-    sqlx::query_as::<_, Facility>(facility_select!("WHERE id = ?"))
-        .bind(id)
-        .fetch_optional(pool)
-        .await
-}
-
 /// Exact match on the facility number (any case) or the facility id. A
 /// revoked entry loses to a live one when a number was reused.
 pub async fn find_by_number_or_id(pool: &SqlitePool, key: &str) -> Result<Option<Facility>, sqlx::Error> {
@@ -169,20 +162,6 @@ pub async fn create_facility(conn: &mut SqliteConnection, actor: &Actor, input: 
     let created = get_facility_conn(conn, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     audit::record(conn, actor, AuditEntry::new("facility.created", "facility", Some(&id)).after(&created)).await?;
     Ok(created)
-}
-
-/// This installation's own facility, resolved through its own
-/// `peer_sync_config.facility_id` — what the facility side's Settings >
-/// Network & Sync tab shows, not the Head Office roster (`list_facilities`).
-pub async fn get_own_facility(pool: &SqlitePool) -> Result<Option<Facility>, sqlx::Error> {
-    let facility_id: Option<String> = sqlx::query_scalar::<_, Option<String>>("SELECT facility_id FROM peer_sync_config WHERE id = 'default'")
-        .fetch_optional(pool)
-        .await?
-        .flatten();
-    match facility_id {
-        Some(id) => get_facility(pool, &id).await,
-        None => Ok(None),
-    }
 }
 
 #[derive(Debug)]
@@ -464,12 +443,12 @@ pub async fn save_peer_credentials(
     sqlx::query(
         "UPDATE peer_sync_config
          SET hq_hostname = ?, facility_id = ?, sync_token = ?, last_sync_status = NULL, last_error = NULL,
-             connection_state = 'connected', connection_request_id = NULL
+             connection_state = 'connected', connection_request_id = NULL, disconnected_at = NULL
          WHERE id = 'default'",
     )
     .bind(hostname)
     .bind(facility_id)
-    .bind(sync_token)
+    .bind(super::secrets::seal(super::secrets::PEER_SYNC_TOKEN, sync_token)?)
     .execute(&mut *conn)
     .await?;
     audit::record(
@@ -477,6 +456,19 @@ pub async fn save_peer_credentials(
         actor,
         AuditEntry::new("peer.paired", "peer_sync_config", Some("default"))
             .after(&serde_json::json!({ "hqHostname": hostname, "facilityId": facility_id })),
+    )
+    .await?;
+    super::inbox::notify(
+        conn,
+        super::inbox::Event {
+            kind: "connection",
+            origin: "head_office",
+            source: "Head Office",
+            subject: "Connected to Head Office",
+            body: Some("Head Office receives what Settings lists under what is shared. Local work is unchanged."),
+            route: Some("/settings?tab=network"),
+            permission: Some(super::authz::perm::NODE_MANAGE),
+        },
     )
     .await?;
     Ok(())
@@ -487,7 +479,6 @@ pub async fn save_peer_credentials(
 #[derive(Debug, Clone)]
 pub struct PeerSyncContext {
     pub hostname: String,
-    pub facility_id: String,
     pub sync_token: String,
 }
 
@@ -497,8 +488,8 @@ pub async fn get_peer_sync_context(pool: &SqlitePool) -> Result<Option<PeerSyncC
             .fetch_one(pool)
             .await?;
     match (hostname, facility_id, sync_token) {
-        (Some(hostname), Some(facility_id), Some(sync_token)) => {
-            Ok(Some(PeerSyncContext { hostname, facility_id, sync_token }))
+        (Some(hostname), Some(_), Some(sync_token)) => {
+            Ok(Some(PeerSyncContext { hostname, sync_token: super::secrets::open(super::secrets::PEER_SYNC_TOKEN, &sync_token)? }))
         }
         _ => Ok(None),
     }

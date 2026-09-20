@@ -5,6 +5,7 @@ import { healthEventTypeLabel, type HealthEvent } from '@/features/health-events
 import { releaseTypeLabel, type Release } from '@/features/releases'
 import { transferDirectionLabel, transferStateLabel, type Transfer } from '@/features/transfers'
 import { visitStatusLabel, visitTypeLabel, type Visit } from '@/features/visits'
+import { m } from '@/paraglide/messages'
 
 export type TimelineEntry = { id: string; at: number; kind: string; title: string; detail: string | null }
 
@@ -20,10 +21,10 @@ export function buildTimeline(input: {
 
   for (const stay of input.stays) {
     const entry = stayEntryKinds[stay.entryKind as keyof typeof stayEntryKinds] ?? stay.entryKind
-    entries.push({ id: `stay-in-${stay.id}`, at: stay.enteredAt, kind: 'Stay', title: `Entered: ${entry}`, detail: null })
+    entries.push({ id: `stay-in-${stay.id}`, at: stay.enteredAt, kind: 'Stay', title: m.prisoners_stay_entered({ entry }), detail: null })
     if (stay.exitedAt != null) {
-      const exit = stayExitKinds[stay.exitKind as keyof typeof stayExitKinds] ?? stay.exitKind ?? 'Left'
-      entries.push({ id: `stay-out-${stay.id}`, at: stay.exitedAt, kind: 'Stay', title: `Left: ${exit}`, detail: null })
+      const exit = stayExitKinds[stay.exitKind as keyof typeof stayExitKinds] ?? stay.exitKind ?? m.prisoners_left_plain()
+      entries.push({ id: `stay-out-${stay.id}`, at: stay.exitedAt, kind: 'Stay', title: m.prisoners_stay_left({ exit }), detail: null })
     }
   }
   for (const p of input.productions) {
@@ -31,8 +32,8 @@ export function buildTimeline(input: {
       id: `court-${p.id}`,
       at: p.productionDate,
       kind: 'Court',
-      title: `Court production, ${productionMethodLabel(p.productionMethod).toLowerCase()}`,
-      detail: [p.courtReference, p.outcome ? courtOutcomeLabel(p.outcome) : 'Scheduled'].filter(Boolean).join(' · '),
+      title: m.prisoners_court_production({ method: productionMethodLabel(p.productionMethod).toLowerCase() }),
+      detail: [p.courtReference, p.outcome ? courtOutcomeLabel(p.outcome) : m.prisoners_scheduled()].filter(Boolean).join(' · '),
     })
   }
   for (const v of input.visits) {
@@ -62,7 +63,7 @@ export function buildTimeline(input: {
       at: r.releasedAt,
       kind: 'Release',
       title: releaseTypeLabel(r.releaseType),
-      detail: r.exceptionReason ? 'Excepted discharge' : r.orderedBy,
+      detail: r.exceptionReason ? m.prisoners_excepted_discharge() : r.orderedBy,
     })
   }
 

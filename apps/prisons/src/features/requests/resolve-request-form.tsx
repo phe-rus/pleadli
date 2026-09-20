@@ -7,6 +7,7 @@ import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useResolveRequest } from './queries'
 import { resolveRequestSchema, type PrisonRequest } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type ResolveRequestFormProps = {
   request: PrisonRequest
@@ -39,11 +40,11 @@ export function ResolveRequestForm({ request, onSuccess, onDirtyChange }: Resolv
       try {
         const input = { ...value, resolvedAt: new Date(value.resolvedAt).getTime() }
         const result = await resolve.mutateAsync({ id: request.id, input })
-        t.success('Complaint resolved')
+        t.success(m.requests_complaint_resolved())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record resolution', { description: 'Please try again.' })
+        t.error(m.requests_could_not_record_resolution(), { description: m.requests_please_try_again() })
       }
     },
   })
@@ -52,7 +53,7 @@ export function ResolveRequestForm({ request, onSuccess, onDirtyChange }: Resolv
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
@@ -61,7 +62,7 @@ export function ResolveRequestForm({ request, onSuccess, onDirtyChange }: Resolv
       <form.AppField name="resolvedAt">
         {(f) => (
           <Field>
-            <FieldLabel>Resolved at</FieldLabel>
+            <FieldLabel>{m.requests_resolved_at()}</FieldLabel>
             <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
           </Field>
         )}
@@ -70,15 +71,15 @@ export function ResolveRequestForm({ request, onSuccess, onDirtyChange }: Resolv
       <form.AppField name="outcomeNote">
         {(f) => (
           <Field>
-            <FieldLabel>Outcome / further action (optional)</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="What was done…" />
+            <FieldLabel>{m.requests_outcome_further_action_optional()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m.requests_what_was_done()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Mark resolved" />
+          <form.submit label={m.requests_mark_resolved()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

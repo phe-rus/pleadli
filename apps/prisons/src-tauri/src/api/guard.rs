@@ -65,6 +65,7 @@ struct Guard {
 
 /// One registered route, kept for the guard-coverage test.
 #[derive(Debug, Clone)]
+#[cfg_attr(not(test), allow(dead_code))]
 pub struct RouteSpec {
     pub method: Method,
     pub path: &'static str,

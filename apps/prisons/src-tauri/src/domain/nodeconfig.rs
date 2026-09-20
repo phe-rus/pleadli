@@ -33,12 +33,14 @@ pub struct NodeConfig {
 }
 
 pub async fn get(pool: &SqlitePool) -> Result<NodeConfig, sqlx::Error> {
-    sqlx::query_as::<_, NodeConfig>(
+    let mut config = sqlx::query_as::<_, NodeConfig>(
         "SELECT node_mode, lan_port, lan_bind, remote_node_url, remote_node_fingerprint, remote_device_token
          FROM node_config WHERE id = 'default'",
     )
     .fetch_one(pool)
-    .await
+    .await?;
+    config.remote_device_token = config.remote_device_token.map(|token| super::secrets::open(super::secrets::DEVICE_TOKEN, &token)).transpose()?;
+    Ok(config)
 }
 
 /// Serving workstations is switched on and off here. Becoming a workstation
@@ -47,6 +49,12 @@ pub async fn set_serving(conn: &mut SqliteConnection, actor: &Actor, serve: bool
     let before: String = sqlx::query_scalar("SELECT node_mode FROM node_config WHERE id = 'default'").fetch_one(&mut *conn).await?;
     if before == "client" {
         return Err(sqlx::Error::Protocol("this machine is a workstation of another node".into()));
+    }
+    if serve {
+        let policy = super::auth_policy::get_conn(conn).await?;
+        if policy.mode == "badge_only" {
+            return Err(sqlx::Error::Protocol("badge-only sign-in is on; change the sign-in policy before serving workstations".into()));
+        }
     }
     let mode = if serve { "node" } else { "standalone" };
     let port = port.unwrap_or(DEFAULT_LAN_PORT).clamp(1024, 65535);
@@ -83,6 +91,12 @@ pub enum ConnectError {
 impl From<sqlx::Error> for ConnectError {
     fn from(e: sqlx::Error) -> Self {
         ConnectError::Db(e)
+    }
+}
+
+impl From<super::secrets::SecretError> for ConnectError {
+    fn from(e: super::secrets::SecretError) -> Self {
+        ConnectError::Db(e.into())
     }
 }
 
@@ -150,7 +164,7 @@ pub async fn connect_as_workstation(node: &NodeRef, address: &str, fingerprint: 
     )
     .bind(&base)
     .bind(&fingerprint_norm)
-    .bind(&enrolled.device_token)
+    .bind(super::secrets::seal(super::secrets::DEVICE_TOKEN, &enrolled.device_token)?)
     .execute(&mut *tx)
     .await?;
     audit::record(

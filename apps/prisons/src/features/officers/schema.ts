@@ -1,19 +1,20 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 /** Role templates (docs/prisons/product-map/05 M.2). The permissions each
  * grants are defined once, on the node (`domain/authz.rs`); this list only
  * names them for the screen. The vocabulary is provisional (research R-07). */
 export const facilityRoles = [
-  { value: 'oic', label: 'Officer in Charge' },
-  { value: 'officer', label: 'Officer (general duty)' },
-  { value: 'records', label: 'Records and reception' },
-  { value: 'facility_admin', label: 'Facility administrator' },
+  { value: 'oic', get label() { return m.officers_officer_in_charge() } },
+  { value: 'officer', get label() { return m.officers_officer_general_duty() } },
+  { value: 'records', get label() { return m.officers_records_and_reception() } },
+  { value: 'facility_admin', get label() { return m.officers_facility_administrator() } },
 ] as const
 
 export const headOfficeRoles = [
-  { value: 'hq_admin', label: 'Head Office administrator' },
-  { value: 'hq_officer', label: 'Head Office officer' },
-  { value: 'hq_commander', label: 'Regional or District Commander' },
+  { value: 'hq_admin', get label() { return m.officers_head_office_administrator() } },
+  { value: 'hq_officer', get label() { return m.officers_head_office_officer() } },
+  { value: 'hq_commander', get label() { return m.officers_regional_or_district_commander() } },
 ] as const
 
 export function officerRoles(headOffice: boolean) {
@@ -38,6 +39,7 @@ export const officerSchema = z.object({
   photoData: z.string().nullable(),
   postedFacilityId: z.string().nullable(),
   lastLoginAt: z.number().nullable(),
+  passwordless: z.boolean(),
 })
 
 export type Officer = z.infer<typeof officerSchema>
@@ -45,7 +47,10 @@ export type Officer = z.infer<typeof officerSchema>
 export const createOfficerSchema = z.object({
   badgeNumber: z.string().min(1, 'Badge number is required.'),
   name: z.string().min(1, 'Name is required.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
+  // The node owns the secret rules (password, PIN, or none), so it answers
+  // with the reason instead of a length guessed here.
+  password: z.string(),
+  passwordless: z.boolean().optional(),
   role: z.string().min(1, 'Role is required.'),
   isAdmin: z.boolean(),
   rank: z.string().nullable().optional(),
@@ -62,7 +67,9 @@ export const updateOfficerSchema = z.object({
   role: z.string().min(1, 'Role is required.'),
   isAdmin: z.boolean(),
   active: z.boolean(),
-  password: z.string().min(8, 'Password must be at least 8 characters.').nullable(),
+  password: z.string().nullable(),
+  /** Set only to change it; null leaves badge-only sign-in as it is. */
+  passwordless: z.boolean().nullable().optional(),
   rank: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
@@ -90,19 +97,19 @@ export type OfficerActivity = z.infer<typeof auditRowSchema>
 /** Plain-language names for the audit actions an account profile is likely to show. */
 export function activityLabel(action: string) {
   const known: Record<string, string> = {
-    'auth.login': 'Signed in',
-    'auth.login_failed': 'Failed sign-in attempt',
-    'auth.logout': 'Signed out',
-    'account.create': 'Account created',
-    'account.update': 'Account updated',
-    'account.update_with_password_change': 'Account updated, password changed',
-    'account.delete': 'Account deleted',
-    'account.bootstrap': 'First account created',
-    'facility.connection_requested': 'Asked to connect a facility',
-    'facility.connection_approved': 'Approved a facility connection',
-    'facility.registered': 'Facility registered',
-    'facility.verified': 'Facility verified',
-    'facility.revoked': 'Facility revoked',
+    'auth.login': m.officers_signed_in(),
+    'auth.login_failed': m.officers_failed_sign_in_attempt(),
+    'auth.logout': m.officers_signed_out(),
+    'account.create': m.officers_account_created(),
+    'account.update': m.officers_account_updated(),
+    'account.update_with_password_change': m.officers_account_updated_password_changed(),
+    'account.delete': m.officers_account_deleted(),
+    'account.bootstrap': m.officers_first_account_created(),
+    'facility.connection_requested': m.officers_asked_to_connect_a_facility(),
+    'facility.connection_approved': m.officers_approved_a_facility_connection(),
+    'facility.registered': m.officers_facility_registered(),
+    'facility.verified': m.officers_facility_verified(),
+    'facility.revoked': m.officers_facility_revoked(),
   }
   return known[action] ?? action.replace(/[._]/g, ' ').replace(/^./, (c) => c.toUpperCase())
 }

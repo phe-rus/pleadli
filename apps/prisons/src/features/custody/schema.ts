@@ -2,9 +2,10 @@ import * as z from 'zod'
 import { obligationSchema } from '@/features/obligations/schema'
 import { prisonerSchema } from '@/features/prisoners/schema'
 import { transferSchema } from '@/features/transfers/schema'
+import { m } from '@/paraglide/messages'
 
-export const stayEntryKinds = { reception: 'Reception', transfer_in: 'Transfer in', re_arrest: 'Re-arrest' } as const
-export const stayExitKinds = { discharge: 'Discharge', transfer_out: 'Transfer out' } as const
+export const stayEntryKinds = { get reception() { return m.custody_reception() }, get transfer_in() { return m.custody_transfer_in() }, get re_arrest() { return m.custody_re_arrest() } } as const
+export const stayExitKinds = { get discharge() { return m.custody_discharge() }, get transfer_out() { return m.custody_transfer_out() } } as const
 
 export const staySchema = z.object({
   id: z.string(),
@@ -40,21 +41,21 @@ export const instrumentSchema = z.object({
 export type Instrument = z.infer<typeof instrumentSchema>
 
 export const instrumentStatusLabels: Record<string, string> = {
-  verified: 'Verified',
-  pending: 'Awaited',
-  rectification_pending: 'Awaiting rectification',
-  superseded: 'Superseded',
+  get verified() { return m.custody_verified() },
+  get pending() { return m.custody_awaited() },
+  get rectification_pending() { return m.custody_awaiting_rectification() },
+  get superseded() { return m.custody_superseded() },
 }
 
 export const instrumentKinds = [
-  { value: 'commitment', label: 'Commitment' },
-  { value: 'remand_warrant', label: 'Remand warrant' },
-  { value: 'order_of_detention', label: 'Order of detention' },
-  { value: 'warrant_of_conviction', label: 'Warrant of conviction / committal' },
-  { value: 'charge_sheet', label: 'Charge sheet' },
-  { value: 'committed_warrant', label: 'Committed warrant' },
-  { value: 'court_order', label: 'Court order' },
-  { value: 'other', label: 'Other' },
+  { value: 'commitment', get label() { return m.custody_commitment() } },
+  { value: 'remand_warrant', get label() { return m.custody_remand_warrant() } },
+  { value: 'order_of_detention', get label() { return m.custody_order_of_detention() } },
+  { value: 'warrant_of_conviction', get label() { return m.custody_warrant_of_conviction_committal() } },
+  { value: 'charge_sheet', get label() { return m.custody_charge_sheet() } },
+  { value: 'committed_warrant', get label() { return m.custody_committed_warrant() } },
+  { value: 'court_order', get label() { return m.custody_court_order() } },
+  { value: 'other', get label() { return m.custody_other() } },
 ] as const
 
 export function instrumentKindLabel(kind: string) {
@@ -78,7 +79,7 @@ export const sentenceSchema = z.object({
 export type Sentence = z.infer<typeof sentenceSchema>
 
 export function sentenceTermText(sentence: Pick<Sentence, 'isLife' | 'termYears' | 'termMonths' | 'termDays'>) {
-  if (sentence.isLife) return 'Life'
+  if (sentence.isLife) return m.custody_life()
   const part = (n: number, unit: string) => (n > 0 ? `${n} ${unit}${n === 1 ? '' : 's'}` : null)
   return [part(sentence.termYears, 'year'), part(sentence.termMonths, 'month'), part(sentence.termDays, 'day')].filter(Boolean).join(', ')
 }

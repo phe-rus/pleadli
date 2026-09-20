@@ -10,21 +10,26 @@ Related: [[product/principles]], [[ARCHITECTURE]], [[UX]], [[LOCALIZATION]], [[A
 
 ---
 
-## Where we actually are
+## Where we actually are (reviewed 2026-09-20)
 
-The 2026-09-18 scope still lists Reports breakdowns, property-at-release, pending instruments, and audit as “planned”. The app already has them in some form (UPS-shaped charts, release gates, documents-pending, hash-chained audit, Today, Legal, reception procedure, prisoner file).
+Method: each line below was checked against `apps/prisons` and `src-tauri` on this date, not against notes. Capability-level truth stays in [[product/status]]; this section is the stage view of it.
 
-Treat those rows as **existing / in progress**, not as the next invention.
+| Stage | State | Evidence |
+|---|---|---|
+| 0 Docs vault | done | this folder, `product/`, `status.md` |
+| 1 Code craft | **routes done, rest open** | every file under `routes/` now exports only `Route` and `RouteComponent` (`__root` also declares its context type); page bodies moved to `features/` (`facilities-page`, `officers-page`, `features/procedures/`, `today/home-page`, and the list and file pages of the other areas). Still open: `features/` is 36 flat folders, not nested by work; `icon: any` remains in 3 places; the `Createpanel` name is unchanged |
+| 2 Interface | **mostly done** | workspace shell: ribbon, sidebar, tabs (five at most), Ctrl K palette, Start as procedures, right pillar with the assistant and the open record's context, printable documents as tabs |
+| 3 Motion and tasks | **partly done** | procedures share `ProcedureShell`. Dirty close still uses `window.confirm` in `add-record-panel.tsx` and `create-panel.tsx`, which the stage says to remove |
+| 4 Languages | **in progress** | Paraglide compiles and about 2,500 messages are extracted. Only `en.json` has content: `sw`, `de`, `fr`, `zh` are empty files and fall back to English |
+| 5 Returns and paper | **mostly done** | the node builds seven report kinds and the UI produces numbered, fingerprinted, printable returns. A monthly return is now checked (adds up, generated after its period closed, the period's records unchanged), attested by the OIC (`report.attest`, final, printed on the sheet), and submitted to Head Office, which acknowledges it and lists what it received, replacing an earlier return for the same period. Still missing: Visiting Justices extract and observations record; property inventory print; the fields of the UPS return the records do not yet hold (staff by rank, escapes, deaths) |
+| 6 Today and IA | **partly done, one deliberate change** | Today leads with what is owed. The plan said analytics leave home; the 2026-09-20 decision is that statistics belong on Today (facility) and Overview (Head Office), below the owed work, and Reports is only the printable returns. Still missing: health and programmes as areas (the nav's Care and contact holds only Visits and Requests), Movements exists |
+| 7 HQ estate | **estate done, Locate open** | Home is now the estate: a needs-attention list (no contact for over a week, never heard from, awaiting verification, return overdue, over capacity, connection requests waiting), then every region with its facilities: contact, people held against capacity, occupancy and the return for the last closed month, each with how old it is and never zero for unknown. Facilities send a small status report (`estate.rs`, sync class `status`) and every authenticated call counts as contact. Pairing tiles are gone from Home. **Not done: Locate.** Head Office holds no names since the X4 change, so it finds nobody by name; the locator (T1) needs its field list confirmed and an event stream that does not exist yet. The oversight inbox is not built. Thresholds (seven days silent, seven days of grace for a return) are provisional |
+| 8 Intelligence seam | **UI only** | the assistant panel and its `askAssistant` seam exist and always answer "not connected". There is no provider setting, no OIC switch, no tools, no thread persistence, and it must not ship a model until those exist ([[AI]]) |
+| 9 Field modules | not started | correct: waits for the field kit |
 
-What is still true:
+**Safety leftovers** (from [[product/status]] section 5): X4 is narrowed, not retired: the legacy push now carries only the columns Head Office's counts read (no name, national ID, reference, location or notes; birth date held to the year) and Head Office scrubs what older builds sent. X9 is fixed at rest: the four network credentials are sealed under a key file beside the database, which defends against a copy of the database alone, not against the whole data folder (D14). X10 database and vault unencrypted; the packaged Tauri app has never been run here. The Cloudflare Tunnel is provisioned from a Head Office route and the `cloudflared` connector is bundled and supervised, but none of that has been run against Cloudflare.
 
-- The **custody spine** (reception, file, clocks, court, transfer two-ended, discharge gates) is the strongest part.
-- **Head Office** can pair and look at copies. It is not yet an estate, oversight, or returns desk.
-- **Sync** still over-discloses full prisoner rows on a legacy path.
-- **Routes** still contain page bodies, helpers, and tables. That is the first code job.
-- **Today / Reports / Start** do not yet match [[product/08-application-structure]].
-- **Count, gate, incidents, discipline** stay provisional until a field week.
-- **AI is not in the app.** We only leave a seam so it can arrive without a rewrite.
+**What to do next, in order:** (1) decide the locator's field list (see stage 7, Locate) before any Head Office search is rebuilt; (2) the provider setting and OIC switch before the assistant is connected to anything; (3) D14 (key in the OS keystore or under a passphrase, database and vault encryption) and retiring the legacy push for the tiered exchange, before a real facility pilot.
 
 ---
 

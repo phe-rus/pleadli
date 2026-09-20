@@ -9,6 +9,7 @@ import { useSetSentence } from './queries'
 import type { Instrument, Sentence } from './schema'
 import { SelectField } from '@/components/form-fields'
 import { instrumentKindLabel } from './schema'
+import { m } from '@/paraglide/messages'
 
 type SentenceFormProps = {
   prisonerId: string
@@ -42,7 +43,7 @@ export function SentenceForm({ prisonerId, current, instruments, onSuccess, onDi
   const submit = async () => {
     const start = fromDateInput(startsOn)
     if (start == null) {
-      t.error('Enter the date the sentence starts')
+      t.error(m.custody_enter_the_date_the_sentence_starts())
       return
     }
     try {
@@ -57,10 +58,10 @@ export function SentenceForm({ prisonerId, current, instruments, onSuccess, onDi
         remissionForfeitedDays: Number(forfeited) || 0,
         reason,
       })
-      t.success('Sentence recorded')
+      t.success(m.custody_sentence_recorded())
       onSuccess?.()
     } catch (error) {
-      t.error('Could not record the sentence', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+      t.error(m.custody_could_not_record_the_sentence(), { description: error instanceof ApiError ? error.message : m.custody_please_try_again() })
     }
   }
 
@@ -68,49 +69,49 @@ export function SentenceForm({ prisonerId, current, instruments, onSuccess, onDi
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={(event) => {
         event.preventDefault()
         void submit()
       }}
     >
-      <SwitchField label="Life sentence" checked={isLife} onChange={change(setIsLife)} />
+      <SwitchField label={m.custody_life_sentence()} checked={isLife} onChange={change(setIsLife)} />
       {!isLife && (
         <div className="grid grid-cols-3 gap-3">
-          <TextField label="Years" type="number" value={years} onChange={change(setYears)} />
-          <TextField label="Months" type="number" value={months} onChange={change(setMonths)} />
-          <TextField label="Days" type="number" value={days} onChange={change(setDays)} />
+          <TextField label={m.custody_years()} type="number" value={years} onChange={change(setYears)} />
+          <TextField label={m.custody_months()} type="number" value={months} onChange={change(setMonths)} />
+          <TextField label={m.custody_days()} type="number" value={days} onChange={change(setDays)} />
         </div>
       )}
       <TextField
-        label="Sentence starts on"
+        label={m.custody_sentence_starts_on()}
         type="date"
         value={startsOn}
         onChange={change(setStartsOn)}
-        description="Check the warrant: the date the sentence runs from, which may be earlier than admission."
+        description={m.custody_check_the_warrant_the_date_the()}
       />
       {current && (
         <TextField
-          label="Remission forfeited (days)"
+          label={m.custody_remission_forfeited_days()}
           type="number"
           value={forfeited}
           onChange={change(setForfeited)}
-          description="Days of remission lost to a disciplinary finding (s.85)."
+          description={m.custody_days_of_remission_lost_to_a()}
         />
       )}
       {usable.length > 0 && (
         <SelectField
-          label="Warrant it comes from"
+          label={m.custody_warrant_it_comes_from()}
           value={instrumentId}
           onChange={change(setInstrumentId)}
-          options={[{ value: '', label: 'Not linked' }, ...usable.map((i) => ({ value: i.id, label: `${instrumentKindLabel(i.kind)}${i.reference ? ` ${i.reference}` : ''}` }))]}
-          placeholder="Choose"
+          options={[{ value: '', label: m.custody_not_linked() }, ...usable.map((i) => ({ value: i.id, label: `${instrumentKindLabel(i.kind)}${i.reference ? ` ${i.reference}` : ''}` }))]}
+          placeholder={m.custody_choose()}
         />
       )}
-      {current && <AreaField label="Reason for the change" value={reason} onChange={change(setReason)} description="Required. The earlier entry is kept, marked superseded." />}
+      {current && <AreaField label={m.custody_reason_for_the_change()} value={reason} onChange={change(setReason)} description={m.custody_required_the_earlier_entry_is_kept()} />}
       <DrawerFooter>
         <Button type="submit" disabled={setSentence.isPending}>
-          Record sentence
+          {m.custody_record_sentence()}
         </Button>
       </DrawerFooter>
     </form>

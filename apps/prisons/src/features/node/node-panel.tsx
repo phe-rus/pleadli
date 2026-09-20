@@ -1,18 +1,22 @@
+import { SettingsCard } from '@/components/settings-card'
+import { SettingsTable, type SettingsRow } from '@/components/settings-table'
 import { ApiError } from '@/lib/api'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
+import { Input } from '@pleadli/ui/input'
 import { Switch } from '@pleadli/ui/switch'
 import { t } from '@pleadli/ui/goey-toaster'
 import { format } from 'date-fns/format'
 import { useState } from 'react'
 import { useCreateEnrolmentCode, useDevices, useEnvironment, useRevokeDevice, useSetNodeMode } from './queries'
+import { m } from '@/paraglide/messages'
 
 /**
  * This machine as the facility's node (docs/prisons/product-map/04 I.3). The
  * node is the one place facility records live; workstations on the LAN use it
  * over TLS. To add a workstation: make an enrolment code here, then on the
- * workstation choose "Workstation of a facility node" and enter this
- * machine's address, the fingerprint below, and the code.
+ * workstation choose "This is another computer in a facility that already has
+ * one" and enter this machine's address, the fingerprint below, and the code.
  */
 export function NodePanel() {
   const { data: environment } = useEnvironment()
@@ -27,109 +31,97 @@ export function NodePanel() {
   const { network } = environment
   const serving = network.mode === 'node'
 
-  return (
-    <div className="flex flex-col gap-6 md:max-w-none">
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">Serve workstations on the facility network</span>
-            <span className="text-xs text-muted-foreground">
-              Other computers in this facility can then use this one’s records. Leave it off if this is the only computer.
-            </span>
-          </div>
-          <Switch
-            checked={serving}
-            disabled={setMode.isPending}
-            onCheckedChange={(serve) =>
-              setMode.mutate(
-                { serve, port: network.lanPort },
-                { onError: (error) => t.error('Could not change that', { description: error instanceof ApiError ? error.message : undefined }) },
-              )
-            }
-          />
-        </div>
+  const serveRows: SettingsRow[] = [
+    {
+      key: 'serve',
+      label: m.node_serve_workstations_on_the_facility_netwo(),
+      description: m.node_other_computers_in_this_facility_can(),
+      control: (
+        <Switch
+          checked={serving}
+          disabled={setMode.isPending}
+          onCheckedChange={(serve) =>
+            setMode.mutate(
+              { serve, port: network.lanPort },
+              { onError: (error) => t.error(m.node_could_not_change_that(), { description: error instanceof ApiError ? error.message : undefined }) },
+            )
+          }
+        />
+      ),
+    },
+  ]
 
-        {serving && (
-          <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Listener</span>
-              {network.listening ? <Badge>Accepting connections</Badge> : <Badge variant="destructive">Not listening yet</Badge>}
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-muted-foreground">Address for workstations</span>
-              <span className="font-mono">{network.addresses.length > 0 ? network.addresses.join('   ') : `this computer's address, port ${network.lanPort}`}</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-muted-foreground">Fingerprint (a workstation must be given this)</span>
-              <span className="break-all font-mono">{network.fingerprint ?? 'not generated yet'}</span>
-            </div>
-          </div>
-        )}
-      </section>
+  const listenerRows: SettingsRow[] = [
+    {
+      key: 'listener',
+      label: m.node_listener(),
+      control: network.listening ? <Badge>{m.node_accepting_connections()}</Badge> : <Badge variant="destructive">{m.node_not_listening_yet()}</Badge>,
+    },
+    {
+      key: 'address',
+      label: m.node_address_for_workstations(),
+      control: null,
+      expanded: <code>{network.addresses.length > 0 ? network.addresses.join('   ') : m.node_this_computer_s_address_port({ lanPort: network.lanPort })}</code>,
+    },
+    {
+      key: 'fingerprint',
+      label: m.node_fingerprint(),
+      description: m.node_a_workstation_must_be_given_this(),
+      control: null,
+      expanded: <code className="break-all">{network.fingerprint ?? m.node_not_generated_yet()}</code>,
+    },
+  ]
+
+  const deviceRows: SettingsRow[] = (devices ?? []).map((device) => ({
+    key: device.id,
+    label: device.label,
+    description: `${m.node_enrolled({ enrolledAt: format(device.enrolledAt, 'PPp') })}${device.lastSeenAt ? m.node_last_seen({ lastSeenAt: format(device.lastSeenAt, 'PPp') }) : ''}`,
+    control: device.revokedAt ? (
+      <Badge variant="secondary">{m.node_revoked()}</Badge>
+    ) : (
+      <Button size="xs" variant="secondary" type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(device.id)}>
+        {m.node_revoke()}
+      </Button>
+    ),
+  }))
+
+  return (
+    <div className="flex flex-col gap-6">
+      <SettingsTable rows={serveRows} />
+      {serving && <SettingsTable rows={listenerRows} />}
 
       {serving && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-medium">Workstations</h2>
-          <form
-            className="flex gap-2"
-            onSubmit={async (event) => {
-              event.preventDefault()
-              if (!label.trim()) return
-              try {
-                const code = await createCode.mutateAsync(label.trim())
-                setIssued({ ...code, label: label.trim() })
-                setLabel('')
-              } catch (error) {
-                t.error('Could not make a code', { description: error instanceof ApiError ? error.message : undefined })
-              }
-            }}
-          >
-            <input
-              value={label}
-              onChange={(event) => setLabel(event.target.value)}
-              placeholder="Name this workstation, e.g. Registry PC"
-              className="h-9 min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 text-sm outline-none focus:border-primary"
-            />
-            <Button type="submit" disabled={!label.trim() || createCode.isPending}>
-              Make enrolment code
+        <SettingsCard
+          title={m.node_workstations()}
+          description={m.node_name_the_computer_make_a_one()}
+          onSubmit={async (event) => {
+            event.preventDefault()
+            if (!label.trim()) return
+            try {
+              const code = await createCode.mutateAsync(label.trim())
+              setIssued({ ...code, label: label.trim() })
+              setLabel('')
+            } catch (error) {
+              t.error(m.node_could_not_make_a_code(), { description: error instanceof ApiError ? error.message : undefined })
+            }
+          }}
+          hint={issued ? m.node_for_works_once_until({ label: issued.label, expiresAt: format(issued.expiresAt, 'p') }) : undefined}
+          action={
+            <Button type="submit" size="sm" disabled={!label.trim() || createCode.isPending}>
+              {m.node_make_enrolment_code()}
             </Button>
-          </form>
-
+          }
+        >
+          <Input value={label} onChange={(event) => setLabel(event.target.value)} placeholder={m.node_name_this_workstation_e_g_registry()} aria-label={m.node_workstation_name()} />
           {issued && (
-            <div className="flex flex-col gap-1 rounded-lg border border-primary/40 bg-primary/5 p-3">
-              <span className="text-xs text-muted-foreground">
-                For {issued.label}. Works once, until {format(issued.expiresAt, 'p')}.
-              </span>
-              <span className="font-mono text-2xl tracking-widest">{issued.code}</span>
-            </div>
+            <h3>
+              <code>{issued.code}</code>
+            </h3>
           )}
-
-          {(devices ?? []).length === 0 ? (
-            <p className="text-xs text-muted-foreground">No workstations enrolled yet.</p>
-          ) : (
-            <div className="flex flex-col divide-y divide-border/60 rounded-lg border border-border">
-              {devices?.map((device) => (
-                <div key={device.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                  <div className="flex min-w-0 flex-col">
-                    <span className="truncate text-xs font-medium">{device.label}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      Enrolled {format(device.enrolledAt, 'PPp')}
-                      {device.lastSeenAt ? ` · last seen ${format(device.lastSeenAt, 'PPp')}` : ''}
-                    </span>
-                  </div>
-                  {device.revokedAt ? (
-                    <Badge variant="secondary">Revoked</Badge>
-                  ) : (
-                    <Button size="xs" variant="secondary" disabled={revoke.isPending} onClick={() => revoke.mutate(device.id)}>
-                      Revoke
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        </SettingsCard>
       )}
+
+      {serving && (deviceRows.length === 0 ? <p>{m.node_no_workstations_enrolled_yet()}</p> : <SettingsTable rows={deviceRows} />)}
     </div>
   )
 }

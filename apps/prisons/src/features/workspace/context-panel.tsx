@@ -11,10 +11,8 @@ import {
   Home01Icon,
   Message01Icon,
   PatientIcon,
-  XIcon,
 } from '@hugeicons/core-free-icons'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { motion } from 'motion/react'
 import { format } from 'date-fns/format'
 import { useMemo } from 'react'
 import { prisonerFileOptions } from '@/features/custody'
@@ -29,7 +27,8 @@ import { propertyRecordsForPrisonerOptions } from '@/features/property-records'
 import { releasesForPrisonerOptions } from '@/features/releases'
 import { attachmentsOptions } from '@/features/attachments'
 import { buildTimeline } from '@/features/prisoners/profile/timeline'
-import { useWorkspace } from './tabs-store'
+import { documentKindLabel, useIssuedDocument } from '@/features/documents'
+import { m } from '@/paraglide/messages'
 
 type Related = {
   icon: typeof CourtHouseIcon
@@ -54,9 +53,27 @@ function RelatedRow({ icon, label, count, detail, open }: Related) {
   )
 }
 
-/** The context of a single open record, read entirely from the query cache
- * (the record's own route loads it); this column never fetches on its own. */
-function PrisonerContext({ prisonerId }: { prisonerId: string }) {
+/** One printable document for this person, with the number it was issued
+ * under once it has been printed. Opens as a tab. */
+function DocumentRow({ kind, recordId, label }: { kind: 'reception_record' | 'discharge_certificate' | 'transfer_dossier'; recordId: string; label?: string }) {
+  const navigate = useNavigate()
+  const { data: issued } = useIssuedDocument(kind, recordId)
+  return (
+    <button
+      type="button"
+      onClick={() => void navigate({ to: '/documents/$kind/$id', params: { kind, id: recordId } })}
+      className="group/row flex items-center gap-2 rounded-md px-1 py-0.5 text-left text-sm hover:bg-secondary"
+    >
+      <HugeiconsIcon icon={File02Icon} className="size-4 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate">{label ?? documentKindLabel[kind]}</span>
+      <span className="shrink-0 text-xs text-muted-foreground">{issued ? issued.number : m.workspace_not_printed()}</span>
+    </button>
+  )
+}
+
+/** The context of a single open record, shown in the right pillar's Record
+ * view. Its queries only run while it is showing. */
+export function PrisonerContext({ prisonerId }: { prisonerId: string }) {
   const navigate = useNavigate()
   const { data: prisoner } = useQuery({ ...prisonerOptions(prisonerId), enabled: true })
   const { data: file } = useQuery({ ...prisonerFileOptions(prisonerId), enabled: true })
@@ -87,40 +104,49 @@ function PrisonerContext({ prisonerId }: { prisonerId: string }) {
   return (
     <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-2.5">
       <div className="flex flex-col gap-0.5 border-b border-border/30 pb-2">
-        <span className="truncate text-sm font-medium">{prisoner ? prisonerFullName(prisoner) : 'Prisoner file'}</span>
+        <span className="truncate text-sm font-medium">{prisoner ? prisonerFullName(prisoner) : m.workspace_prisoner_file()}</span>
         <span className="font-mono text-xs text-muted-foreground">{prisoner?.prisonerNumber ?? prisonerId}</span>
       </div>
 
       <section className="flex flex-col gap-0.5">
-        <h3 className="px-1 pb-0.5 text-xs font-medium tracking-wider text-muted-foreground uppercase">Related records</h3>
-        <RelatedRow icon={CourtHouseIcon} label="Court productions" count={productions?.length ?? 0} detail={productionDetail} open={() => openFacet('legal')} />
-        <RelatedRow icon={ArrowDataTransferHorizontalIcon} label="Transfers" count={transfers?.length ?? 0} open={() => openFacet('legal')} />
-        <RelatedRow icon={HandshakeIcon} label="Visits" count={visits?.length ?? 0} open={() => openFacet('care')} />
-        <RelatedRow icon={Message01Icon} label="Requests" count={requests?.length ?? 0} open={() => openFacet('care')} />
-        <RelatedRow icon={HeartPulseIcon} label="Health events" count={healthEvents?.length ?? 0} open={() => openFacet('care')} />
-        <RelatedRow icon={Car01Icon} label="Property" count={property?.length ?? 0} open={() => openFacet('property')} />
-        <RelatedRow icon={PatientIcon} label="Releases" count={releases?.length ?? 0} open={() => openFacet('history')} />
-        <RelatedRow icon={File02Icon} label="Documents" count={documents?.length ?? 0} open={() => openFacet('property')} />
+        <h6 className="px-1 pb-0.5">{m.workspace_related_records()}</h6>
+        <RelatedRow icon={CourtHouseIcon} label={m.workspace_court_productions()} count={productions?.length ?? 0} detail={productionDetail} open={() => openFacet('legal')} />
+        <RelatedRow icon={ArrowDataTransferHorizontalIcon} label={m.workspace_transfers()} count={transfers?.length ?? 0} open={() => openFacet('legal')} />
+        <RelatedRow icon={HandshakeIcon} label={m.workspace_visits()} count={visits?.length ?? 0} open={() => openFacet('care')} />
+        <RelatedRow icon={Message01Icon} label={m.workspace_requests()} count={requests?.length ?? 0} open={() => openFacet('care')} />
+        <RelatedRow icon={HeartPulseIcon} label={m.workspace_health_events()} count={healthEvents?.length ?? 0} open={() => openFacet('care')} />
+        <RelatedRow icon={Car01Icon} label={m.workspace_property()} count={property?.length ?? 0} open={() => openFacet('property')} />
+        <RelatedRow icon={PatientIcon} label={m.workspace_releases()} count={releases?.length ?? 0} open={() => openFacet('history')} />
+        <RelatedRow icon={File02Icon} label={m.workspace_documents()} count={documents?.length ?? 0} open={() => openFacet('property')} />
       </section>
 
       <section className="flex flex-col gap-0.5">
-        <h3 className="px-1 pb-0.5 text-xs font-medium tracking-wider text-muted-foreground uppercase">Open for this person</h3>
+        <h6 className="px-1 pb-0.5">{m.workspace_documents()}</h6>
+        <DocumentRow kind="reception_record" recordId={prisonerId} />
+        {(releases?.length ?? 0) > 0 && <DocumentRow kind="discharge_certificate" recordId={prisonerId} />}
+        {(transfers ?? []).map((transfer) => (
+          <DocumentRow key={transfer.id} kind="transfer_dossier" recordId={transfer.id} label={transfer.otherPrisonName ? m.workspace_transfer_dossier_to({ prison: transfer.otherPrisonName }) : m.workspace_transfer_dossier()} />
+        ))}
+      </section>
+
+      <section className="flex flex-col gap-0.5">
+        <h6 className="px-1 pb-0.5">{m.workspace_open_for_this_person()}</h6>
         {file && file.obligations.length > 0 ? (
           <button type="button" onClick={() => openFacet('legal')} className="flex items-center gap-2 rounded-md px-1 py-0.5 text-sm text-left hover:bg-secondary">
             <HugeiconsIcon icon={ArrowRight01Icon} className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate">
-              {overdue > 0 ? `${file.obligations.length} open, ${overdue} overdue` : `${file.obligations.length} open`}
+              {overdue > 0 ? m.workspace_open_overdue({ length: file.obligations.length, overdue }) : m.workspace_open({ length: file.obligations.length })}
             </span>
           </button>
         ) : (
-          <p className="px-1 text-xs text-muted-foreground">Nothing is owed right now.</p>
+          <p className="px-1 text-xs text-muted-foreground">{m.workspace_nothing_is_owed_right_now()}</p>
         )}
       </section>
 
       <section className="flex flex-col gap-1">
-        <h3 className="px-1 pb-0.5 text-xs font-medium tracking-wider text-muted-foreground uppercase">Recent activity</h3>
+        <h6 className="px-1 pb-0.5">{m.workspace_recent_activity()}</h6>
         {activity.length === 0 ? (
-          <p className="px-1 text-xs text-muted-foreground">Nothing recorded yet.</p>
+          <p className="px-1 text-xs text-muted-foreground">{m.workspace_nothing_recorded_yet()}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-border/40">
             {activity.map((entry) => (
@@ -135,44 +161,8 @@ function PrisonerContext({ prisonerId }: { prisonerId: string }) {
 
       <Link to="/prisoners" className="flex items-center gap-1 px-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
         <HugeiconsIcon icon={Home01Icon} className="size-3.5" />
-        Back to population
+        {m.workspace_back_to_population()}
       </Link>
     </div>
-  )
-}
-
-/** The right-hand context column, present only while a record is open. The
- * sidebars mirror each other: left explores, right reports on the selected
- * record. Area views hold no context, so the panel slides away to the edge
- * of the window when there is no record to report on. */
-export function ContextPanel({ prisonerId }: { prisonerId: string | null }) {
-  const { contextOpen, setContextOpen } = useWorkspace()
-  if (!contextOpen || !prisonerId) return null
-  return (
-    <motion.aside
-      key="context-panel"
-      initial={{ width: 0, opacity: 0 }}
-      animate={{ width: 240, opacity: 1 }}
-      exit={{ width: 0, opacity: 0 }}
-      transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
-      className="hidden shrink-0 flex-col overflow-hidden border-l border-border/20 bg-background md:flex"
-      aria-label="Context panel"
-    >
-      <div className="flex h-full w-60 min-w-60 flex-col">
-        <div className="flex h-8 shrink-0 items-center justify-between border-b border-border/20 px-2">
-          <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Context</span>
-          <button
-            type="button"
-            aria-label="Close context panel"
-            title="Close context panel"
-            onClick={() => setContextOpen(false)}
-            className="flex size-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-          >
-            <HugeiconsIcon icon={XIcon} className="size-3.5" />
-          </button>
-        </div>
-        <PrisonerContext prisonerId={prisonerId} />
-      </div>
-    </motion.aside>
   )
 }

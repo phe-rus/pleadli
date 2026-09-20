@@ -55,6 +55,8 @@ pub struct Node {
     pub remote: RwLock<Option<Arc<Remote>>>,
     /// Whether the LAN listener is actually accepting connections right now.
     pub lan_listening: AtomicBool,
+    /// Head Office's `cloudflared` process, when there is one.
+    pub connector: crate::domain::tunnel_connector::Connector,
 }
 
 pub type NodeRef = Arc<Node>;
@@ -68,6 +70,7 @@ impl Node {
             limiter: RateLimiter::default(),
             remote: RwLock::new(None),
             lan_listening: AtomicBool::new(false),
+            connector: Default::default(),
         })
     }
 }

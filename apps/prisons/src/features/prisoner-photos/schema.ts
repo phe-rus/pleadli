@@ -1,9 +1,10 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 export const photoViews = ['front', 'left', 'right'] as const
 export type PhotoView = (typeof photoViews)[number]
 
-export const photoViewLabel: Record<PhotoView, string> = { front: 'Front', left: 'Left side', right: 'Right side' }
+export const photoViewLabel: Record<PhotoView, string> = { get front() { return m.prisoner_photos_front() }, get left() { return m.prisoner_photos_left_side() }, get right() { return m.prisoner_photos_right_side() } }
 
 export const prisonerPhotoSchema = z.object({
   view: z.enum(photoViews),

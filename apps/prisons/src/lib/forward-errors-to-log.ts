@@ -17,6 +17,10 @@ export function forwardErrorsToLog() {
   })
 }
 
+export async function logFrontendError(message: string) {
+  await logError(message)
+}
+
 async function logError(message: string) {
   try {
     const { error } = await import('@tauri-apps/plugin-log')

@@ -13,6 +13,7 @@ export async function saveFacilityProfile(input: SaveFacilityProfileInput) {
     location: parsed.location.trim() || null,
     region: parsed.region.trim() || null,
     approvedCapacity: parsed.approvedCapacity ? Number(parsed.approvedCapacity) : null,
+    ...(parsed.language ? { language: parsed.language } : {}),
   }
   return facilityProfileSchema.parse(await api('PUT', '/api/prisons/facility', { body }))
 }

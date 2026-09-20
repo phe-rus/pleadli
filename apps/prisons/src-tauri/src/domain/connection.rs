@@ -335,6 +335,7 @@ pub async fn ingest_roster(pool: &SqlitePool, sync_token: &str, entries: Vec<Ros
         AuditEntry::new("network.roster_ingested", "facility", Some(&facility_id)).after(&serde_json::json!({ "count": stored })),
     )
     .await?;
+    super::estate::touch_contact(&mut *tx, &facility_id).await?;
     tx.commit().await?;
     Ok(stored)
 }

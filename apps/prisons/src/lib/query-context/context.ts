@@ -1,3 +1,4 @@
+import { reportError } from "@/features/diagnostics/error-store"
 import { focusManager, QueryCache, QueryClient } from "@tanstack/react-query"
 
 if (typeof window !== "undefined") {
@@ -23,6 +24,9 @@ export const clientContext = () => {
             onError: (error) => {
                 if (error.name === "AbortError") return
                 console.error(error)
+                // A refused or signed-out call is normal. Anything else counts toward the loop breaker.
+                const status = (error as { status?: number })?.status
+                if (status !== 401 && status !== 403) reportError(error, "query")
             },
         }),
     })

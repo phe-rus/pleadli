@@ -17,12 +17,13 @@ import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 import { useCreateRelease, useDischargeCheck, dischargeCheckOptions } from './queries'
 import { isEntitlementRelease, releaseTypeLabel, releaseTypes, type GateCheck } from './schema'
+import { m } from '@/paraglide/messages'
 
 type StepId = 'authority' | 'gates' | 'exception' | 'confirm'
 
 /** East Africa Time hour (UTC+3, no daylight saving): s.83 discharge is before noon. */
 function eatHour(ms: number) {
-  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Kampala', hour: '2-digit', hourCycle: 'h23' }).formatToParts(ms)
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: m.releases_africa_kampala(), hour: '2-digit', hourCycle: 'h23' }).formatToParts(ms)
   return Number(parts.find((p) => p.type === 'hour')?.value ?? '0')
 }
 
@@ -30,20 +31,20 @@ function errorMessage(error: unknown) {
   if (error instanceof ApiError) {
     switch (error.code) {
       case 'DISCHARGE_GATES_UNMET':
-        return 'A gate is still unmet. Complete it, or record an exception authorised by the Officer in Charge.'
+        return m.releases_a_gate_is_still_unmet_complete()
       case 'EXCEPTION_NEEDS_OIC':
-        return 'Only an Officer in Charge can authorise discharge without a gate being met. Enter their badge number and password.'
+        return m.releases_only_an_officer_in_charge_can()
       case 'EXCEPTION_REASON_REQUIRED':
-        return 'Record the reason for the exception.'
+        return m.releases_record_the_reason_for_the_exception()
       case 'NOT_IN_CUSTODY':
-        return 'This person is not in custody here, so there is no one to discharge.'
+        return m.releases_this_person_is_not_in_custody()
       case 'INVALID_CREDENTIALS':
-        return 'The badge number or password was not accepted.'
+        return m.releases_the_badge_number_or_password_was()
       default:
         return error.message
     }
   }
-  return 'Please try again.'
+  return m.releases_please_try_again()
 }
 
 export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
@@ -75,7 +76,7 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
   if (!prisoner) {
     return (
       <article className="container flex flex-col gap-3 pt-5 pb-20">
-        <p className="text-sm text-muted-foreground">This prisoner could not be found.</p>
+        <p className="text-sm text-muted-foreground">{m.releases_this_prisoner_could_not_be_found()}</p>
       </article>
     )
   }
@@ -83,12 +84,11 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
   if (assessment && !assessment.inCustody) {
     return (
       <article className="container flex flex-col gap-3 pt-5 pb-20">
-        <h1>Discharge</h1>
+        <h1>{m.releases_discharge()}</h1>
         <p className="text-sm text-muted-foreground">
-          {prisonerFullName(prisoner)} is not in custody here, so there is no one to discharge. Their file shows where they are now.
-        </p>
+          {m.releases_is_not_in_custody_here_so({ prisoner: prisonerFullName(prisoner) })}</p>
         <Button variant="secondary" className="w-fit" onClick={() => navigate({ to: '/prisoners/$prisonerId', params: { prisonerId } })}>
-          Back to the prisoner file
+          {m.releases_back_to_the_prisoner_file()}
         </Button>
       </article>
     )
@@ -100,15 +100,15 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
   const exceptionDone = !needsException || (reason.trim() !== '' && (canAuthorise || (badgeNumber.trim() !== '' && password !== '')))
 
   const steps: ProcedureStep[] = [
-    { id: 'authority', label: 'Authority', summary: releaseType ? releaseTypeLabel(releaseType) : null, done: authorityDone },
+    { id: 'authority', label: m.releases_authority(), summary: releaseType ? releaseTypeLabel(releaseType) : null, done: authorityDone },
     {
       id: 'gates',
-      label: 'Gates',
-      summary: assessment ? (needsException ? `${blockingUnmet.length} unmet` : 'All met') : 'Checking',
+      label: m.releases_gates(),
+      summary: assessment ? (needsException ? m.releases_n_unmet({ count: blockingUnmet.length }) : m.releases_all_met()) : m.releases_checking(),
       done: Boolean(assessment) && !needsException,
     },
-    ...(needsException ? [{ id: 'exception', label: 'Exception', summary: exceptionDone ? 'Recorded' : 'Needed', done: exceptionDone }] : []),
-    { id: 'confirm', label: 'Confirm' },
+    ...(needsException ? [{ id: 'exception', label: m.releases_exception(), summary: exceptionDone ? m.releases_recorded() : m.releases_needed(), done: exceptionDone }] : []),
+    { id: 'confirm', label: m.releases_confirm() },
   ]
 
   const stepIds = steps.map((s) => s.id as StepId)
@@ -122,7 +122,7 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
   const submit = async () => {
     setFormError(null)
     if (!readyToSubmit) {
-      setFormError('Complete the authority step' + (needsException ? ' and the exception' : '') + ' first.')
+      setFormError(needsException ? m.releases_complete_authority_and_exception() : m.releases_complete_authority())
       return
     }
     try {
@@ -137,22 +137,22 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
           ? { reason, authoriser: canAuthorise ? null : { badgeNumber: badgeNumber.trim(), password } }
           : null,
       })
-      t.success('Discharge recorded')
+      t.success(m.releases_discharge_recorded())
       navigate({ to: '/prisoners/$prisonerId', params: { prisonerId } })
     } catch (error) {
       const message = errorMessage(error)
       setFormError(message)
-      t.error('Could not record the discharge', { description: message })
+      t.error(m.releases_could_not_record_the_discharge(), { description: message })
       queryClient.invalidateQueries({ queryKey: dischargeCheckOptions(prisonerId).queryKey })
     }
   }
 
   const markReturned = async (id: string) => {
     try {
-      await returnProperty.mutateAsync({ id, input: { returnedAt: Date.now(), returnedNote: 'Handed back at discharge' } })
+      await returnProperty.mutateAsync({ id, input: { returnedAt: Date.now(), returnedNote: m.releases_handed_back_at_discharge() } })
       await queryClient.invalidateQueries({ queryKey: dischargeCheckOptions(prisonerId).queryKey })
     } catch {
-      t.error('Could not mark as returned', { description: 'Please try again.' })
+      t.error(m.releases_could_not_mark_as_returned(), { description: m.releases_please_try_again() })
     }
   }
 
@@ -160,31 +160,31 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
 
   return (
     <ProcedureShell
-      title="Discharge"
-      description="Record the authority, clear the gates, and discharge. If a gate cannot be met in time, the Officer in Charge can authorise an exception."
+      title={m.releases_discharge()}
+      description={m.releases_record_the_authority_clear_the_gates()}
       backTo={`/prisoners/${prisonerId}`}
-      backLabel="Back to the prisoner file"
+      backLabel={m.releases_back_to_the_prisoner_file()}
       steps={steps}
       current={activeId}
       onSelect={(id) => setCurrent(id as StepId)}
       aside={
         <div className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 text-sm">
           <span className="font-medium">{prisonerFullName(prisoner)}</span>
-          <span className="text-xs text-muted-foreground">Admitted {format(prisoner.admittedAt, 'PP')}</span>
+          <span className="text-xs text-muted-foreground">{m.releases_admitted({ admittedAt: format(prisoner.admittedAt, 'PP') })}</span>
           {assessment?.releaseDueOn != null && (
-            <span className="text-xs text-muted-foreground">Computed entitlement: {format(assessment.releaseDueOn, 'PP')}</span>
+            <span className="text-xs text-muted-foreground">{m.releases_computed_entitlement({ releaseDueOn: format(assessment.releaseDueOn, 'PP') })}</span>
           )}
         </div>
       }
     >
       {activeId === 'authority' && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-base font-medium">Authority for the discharge</h2>
+          <h2 className="text-base font-medium">{m.releases_authority_for_the_discharge()}</h2>
           <Field>
-            <FieldLabel>Release type</FieldLabel>
+            <FieldLabel>{m.releases_release_type()}</FieldLabel>
             <Select items={releaseTypes} value={releaseType} onValueChange={(value) => setReleaseType(value ?? releaseType)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select release type" />
+                <SelectValue placeholder={m.releases_select_release_type()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -198,33 +198,31 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
             </Select>
           </Field>
           <Field>
-            <FieldLabel>Basis and authority</FieldLabel>
-            <Input value={basis} onChange={(e) => setBasis(e.target.value)} placeholder="Order, warrant or entitlement relied on, with reference" />
-            <FieldDescription>For example the court order and its reference, or the entitlement date computed from the sentence.</FieldDescription>
+            <FieldLabel>{m.releases_basis_and_authority()}</FieldLabel>
+            <Input value={basis} onChange={(e) => setBasis(e.target.value)} placeholder={m.releases_order_warrant_or_entitlement_relied_on()} />
+            <FieldDescription>{m.releases_for_example_the_court_order_and()}</FieldDescription>
           </Field>
           <div className="grid gap-3 md:grid-cols-2">
             <Field>
-              <FieldLabel>Ordered by (optional)</FieldLabel>
-              <Input value={orderedBy} onChange={(e) => setOrderedBy(e.target.value)} placeholder="Name or court" />
+              <FieldLabel>{m.releases_ordered_by_optional()}</FieldLabel>
+              <Input value={orderedBy} onChange={(e) => setOrderedBy(e.target.value)} placeholder={m.releases_name_or_court()} />
             </Field>
             <Field>
-              <FieldLabel>Released at</FieldLabel>
+              <FieldLabel>{m.releases_released_at()}</FieldLabel>
               <Input type="datetime-local" value={releasedAt} onChange={(e) => setReleasedAt(e.target.value)} />
             </Field>
           </div>
           {assessment?.releaseDueOn != null && (
             <p className="text-xs text-muted-foreground">
-              Computed entitlement date: {format(assessment.releaseDueOn, 'PPP')}. This is calculated from the recorded sentence; check it against the warrant.
-            </p>
+              {m.releases_computed_entitlement_date_this_is_calcul({ releaseDueOn: format(assessment.releaseDueOn, 'PPP') })}</p>
           )}
           {afterNoon && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
-              s.83 requires discharge on entitlement before noon. This time is at or after 12:00 East Africa Time. The discharge can still be recorded, and the late
-              time will be noted.
+              {m.releases_s_83_requires_discharge_on_entitlement()}
             </div>
           )}
           <Field>
-            <FieldLabel>Notes (optional)</FieldLabel>
+            <FieldLabel>{m.releases_notes_optional()}</FieldLabel>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
           </Field>
         </div>
@@ -232,9 +230,9 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
 
       {activeId === 'gates' && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-base font-medium">Gates</h2>
+          <h2 className="text-base font-medium">{m.releases_gates()}</h2>
           {!assessment ? (
-            <p className="text-sm text-muted-foreground">Checking the record.</p>
+            <p className="text-sm text-muted-foreground">{m.releases_checking_the_record()}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {assessment.gates.map((gate) => (
@@ -244,13 +242,13 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
           )}
           {outstanding.length > 0 && (
             <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-medium">Property to hand back</h3>
+              <h3 className="text-sm font-medium">{m.releases_property_to_hand_back()}</h3>
               <ul className="flex flex-col divide-y divide-border/60 rounded-md border border-border/60">
                 {outstanding.map((item) => (
                   <li key={item.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                     <span className="truncate">{item.description}</span>
                     <Button size="sm" variant="secondary" disabled={returnProperty.isPending} onClick={() => markReturned(item.id)}>
-                      Mark returned
+                      {m.releases_mark_returned()}
                     </Button>
                   </li>
                 ))}
@@ -259,7 +257,7 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
           )}
           {needsException && (
             <p className="text-sm text-muted-foreground">
-              A gate that is not met blocks discharge unless the Officer in Charge authorises an exception. That is the next step.
+              {m.releases_a_gate_that_is_not_met()}
             </p>
           )}
         </div>
@@ -267,10 +265,9 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
 
       {activeId === 'exception' && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-base font-medium">Exception authorised by the Officer in Charge</h2>
+          <h2 className="text-base font-medium">{m.releases_exception_authorised_by_the_officer_in()}</h2>
           <p className="text-sm text-muted-foreground">
-            The Officer in Charge is responsible for discharge as soon as someone is entitled to release (s.83), so a gate must never keep a person in custody against a
-            lawful order. The OIC may authorise discharge without these gates being met. The reason is recorded, and each waived gate becomes a task to regularise afterwards.
+            {m.releases_the_officer_in_charge_is_responsible()}
           </p>
           <ul className="flex flex-col gap-2">
             {blockingUnmet.map((gate) => (
@@ -278,21 +275,21 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
             ))}
           </ul>
           <Field>
-            <FieldLabel>Reason for the exception</FieldLabel>
-            <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder="Why the discharge cannot wait for these gates" />
+            <FieldLabel>{m.releases_reason_for_the_exception()}</FieldLabel>
+            <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder={m.releases_why_the_discharge_cannot_wait_for()} />
           </Field>
           {canAuthorise ? (
-            <p className="rounded-md border border-border/60 px-3 py-2 text-sm">You hold the exception authority, so this discharge will be authorised in your name.</p>
+            <p className="rounded-md border border-border/60 px-3 py-2 text-sm">{m.releases_you_hold_the_exception_authority_so()}</p>
           ) : (
             <div className="flex flex-col gap-3 rounded-md border border-border/60 p-3">
-              <p className="text-sm">Your role cannot authorise an exception. The Officer in Charge enters their own badge number and password here.</p>
+              <p className="text-sm">{m.releases_your_role_cannot_authorise_an_exception()}</p>
               <div className="grid gap-3 md:grid-cols-2">
                 <Field>
-                  <FieldLabel>OIC badge number</FieldLabel>
+                  <FieldLabel>{m.releases_oic_badge_number()}</FieldLabel>
                   <Input value={badgeNumber} onChange={(e) => setBadgeNumber(e.target.value)} autoComplete="off" />
                 </Field>
                 <Field>
-                  <FieldLabel>OIC password</FieldLabel>
+                  <FieldLabel>{m.releases_oic_password()}</FieldLabel>
                   <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" />
                 </Field>
               </div>
@@ -303,42 +300,42 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
 
       {activeId === 'confirm' && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-base font-medium">Confirm the discharge</h2>
+          <h2 className="text-base font-medium">{m.releases_confirm_the_discharge()}</h2>
           <dl className="grid gap-x-6 gap-y-2 text-sm md:grid-cols-[160px_1fr]">
-            <dt className="text-muted-foreground">Person</dt>
+            <dt className="text-muted-foreground">{m.releases_person()}</dt>
             <dd>{prisonerFullName(prisoner)}</dd>
-            <dt className="text-muted-foreground">Release type</dt>
-            <dd>{releaseType ? releaseTypeLabel(releaseType) : 'Not chosen'}</dd>
-            <dt className="text-muted-foreground">Basis</dt>
-            <dd>{basis || 'Not entered'}</dd>
-            <dt className="text-muted-foreground">Released at</dt>
-            <dd>{Number.isFinite(releasedAtMs) ? format(releasedAtMs, 'PPp') : 'Not entered'}</dd>
+            <dt className="text-muted-foreground">{m.releases_release_type()}</dt>
+            <dd>{releaseType ? releaseTypeLabel(releaseType) : m.releases_not_chosen()}</dd>
+            <dt className="text-muted-foreground">{m.releases_basis()}</dt>
+            <dd>{basis || m.releases_not_entered()}</dd>
+            <dt className="text-muted-foreground">{m.releases_released_at()}</dt>
+            <dd>{Number.isFinite(releasedAtMs) ? format(releasedAtMs, 'PPp') : m.releases_not_entered()}</dd>
             {orderedBy && (
               <>
-                <dt className="text-muted-foreground">Ordered by</dt>
+                <dt className="text-muted-foreground">{m.releases_ordered_by()}</dt>
                 <dd>{orderedBy}</dd>
               </>
             )}
-            <dt className="text-muted-foreground">Gates</dt>
+            <dt className="text-muted-foreground">{m.releases_gates()}</dt>
             <dd>
               {needsException ? (
                 <span className="flex flex-col gap-1">
                   {blockingUnmet.map((g) => (
-                    <span key={g.key}>Waived by exception: {g.label}</span>
+                    <span key={g.key}>{m.releases_waived_by_exception({ label: g.label })}</span>
                   ))}
-                  <span className="text-muted-foreground">Reason: {reason || 'Not entered'}</span>
+                  <span className="text-muted-foreground">{m.releases_reason_label({ reason: reason || m.releases_not_entered() })}</span>
                 </span>
               ) : (
-                'All met'
+                m.releases_all_met()
               )}
             </dd>
           </dl>
-          {afterNoon && <Badge variant="outline">After noon: will be noted</Badge>}
+          {afterNoon && <Badge variant="outline">{m.releases_after_noon_will_be_noted()}</Badge>}
           {formError && <p className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
-          {!readyToSubmit && <p className="text-sm text-muted-foreground">Some steps are not finished yet. Use the list on the left to complete them.</p>}
+          {!readyToSubmit && <p className="text-sm text-muted-foreground">{m.releases_some_steps_are_not_finished_yet()}</p>}
           <div>
             <Button onClick={submit} disabled={createRelease.isPending || !readyToSubmit}>
-              {createRelease.isPending ? 'Recording' : needsException ? 'Discharge with exception' : 'Record discharge'}
+              {createRelease.isPending ? m.releases_recording() : needsException ? m.releases_discharge_with_exception() : m.releases_record_discharge()}
             </Button>
           </div>
         </div>
@@ -346,11 +343,11 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
 
       <div className="flex items-center justify-between border-t border-border/60 pt-4">
         <Button variant="ghost" disabled={!previous} onClick={() => previous && setCurrent(previous)}>
-          Back
+          {m.releases_back()}
         </Button>
         {next && (
           <Button variant="secondary" onClick={() => setCurrent(next)}>
-            Next
+            {m.releases_next()}
           </Button>
         )}
       </div>
@@ -367,7 +364,7 @@ function GateRow({ gate }: { gate: GateCheck }) {
         {gate.detail && <span className="text-xs text-muted-foreground">{gate.detail}</span>}
       </div>
       <Badge variant={gate.met ? 'outline' : gate.blocking ? 'destructive' : 'secondary'} className={tone}>
-        {gate.met ? 'Met' : gate.blocking ? 'Unmet, blocks' : 'Warning'}
+        {gate.met ? m.releases_met() : gate.blocking ? m.releases_unmet_blocks() : m.releases_warning()}
       </Badge>
     </li>
   )

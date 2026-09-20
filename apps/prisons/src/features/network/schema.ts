@@ -22,4 +22,7 @@ export const saveCloudflareConfigSchema = z.object({
     .regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, and hyphens only.'),
 })
 
+/** What setting up the tunnel answers with: the public address, nothing secret. */
+export const tunnelProvisionedSchema = z.object({ hostname: z.string(), connector: z.enum(['running', 'stopped', 'missing']) })
+
 export type SaveCloudflareConfigInput = z.infer<typeof saveCloudflareConfigSchema>

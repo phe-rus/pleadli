@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { restartApp } from './data'
 import { useBackups, useRestoreBackup, useRunBackup, useSaveBackupConfig, useVerifyBackup } from './queries'
 import { formatBytes, type BackupInfo } from './schema'
+import { m } from '@/paraglide/messages'
 
 type Action = { kind: 'verify' | 'restore'; backup: BackupInfo }
 
@@ -28,17 +29,17 @@ export function BackupsPanel() {
   const { config, backups } = data
 
   return (
-    <div className="flex flex-col gap-6 md:max-w-none">
+    <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
-            <h2 className="text-sm font-medium">Backups</h2>
-            <p className="text-xs text-muted-foreground">
+            <h3>{m.node_backups()}</h3>
+            <p>
               {!config.configured
-                ? 'No backups are being made. Set a recovery passphrase below to start.'
+                ? m.node_no_backups_are_being_made_set()
                 : config.lastBackupAt
-                  ? `Last backup ${format(config.lastBackupAt, 'PPp')}. Every ${config.backupIntervalHours} hours, keeping ${config.backupRetention}.`
-                  : `Backs up every ${config.backupIntervalHours} hours, keeping ${config.backupRetention}. None made yet.`}
+                  ? m.node_last_backup_every_hours_keeping({ lastBackupAt: format(config.lastBackupAt, 'PPp'), backupIntervalHours: config.backupIntervalHours, backupRetention: config.backupRetention })
+                  : m.node_backs_up_every_hours_keeping_none({ backupIntervalHours: config.backupIntervalHours, backupRetention: config.backupRetention })}
             </p>
           </div>
           <Button
@@ -46,43 +47,43 @@ export function BackupsPanel() {
             disabled={!config.configured || runBackup.isPending}
             onClick={() =>
               runBackup.mutate(undefined, {
-                onSuccess: (info) => t.success('Backup written', { description: `${info.fileName} (${formatBytes(info.sizeBytes)})` }),
-                onError: (error) => t.error('Backup failed', { description: error instanceof ApiError ? error.message : 'Please try again.' }),
+                onSuccess: (info) => t.success(m.node_backup_written(), { description: `${info.fileName} (${formatBytes(info.sizeBytes)})` }),
+                onError: (error) => t.error(m.node_backup_failed(), { description: error instanceof ApiError ? error.message : m.node_please_try_again() }),
               })
             }
           >
-            {runBackup.isPending ? 'Backing up…' : 'Back up now'}
+            {runBackup.isPending ? m.node_backing_up() : m.node_back_up_now()}
           </Button>
         </div>
 
         {config.lastBackupStatus === 'error' && (
-          <p className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
-            The last backup failed{config.lastBackupError ? `: ${config.lastBackupError}` : '.'}
+          <p className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-destructive">
+            {config.lastBackupError ? m.node_last_backup_failed_with({ error: config.lastBackupError }) : m.node_last_backup_failed()}
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
-          Folder: <span className="font-mono">{config.effectiveDir}</span>
+        <p>
+          {m.node_folder()} <code>{config.effectiveDir}</code>
           {config.backupDir == null && ' (the default, on this same disk: choose a folder on another drive so a failed disk does not take the backups with it)'}
         </p>
 
         {backups.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No backups in that folder yet.</p>
+          <p>{m.node_no_backups_in_that_folder_yet()}</p>
         ) : (
           <div className="flex flex-col divide-y divide-border/60 rounded-lg border border-border">
             {backups.map((backup) => (
               <div key={backup.path} className="flex items-center justify-between gap-3 px-3 py-2">
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-xs font-medium">{format(backup.createdAt, 'PPp')}</span>
-                  <span className="truncate text-xs text-muted-foreground">
+                  <h4 className="truncate">{format(backup.createdAt, 'PPp')}</h4>
+                  <p className="truncate">
                     {backup.fileName} · {formatBytes(backup.sizeBytes)}
-                  </span>
+                  </p>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
                   <Button size="xs" variant="secondary" onClick={() => setAction({ kind: 'verify', backup })}>
-                    Verify
+                    {m.node_verify()}
                   </Button>
                   <Button size="xs" variant="secondary" onClick={() => setAction({ kind: 'restore', backup })}>
-                    Restore
+                    {m.node_restore()}
                   </Button>
                 </div>
               </div>
@@ -118,9 +119,9 @@ function ConfigForm() {
           passphrase: value.passphrase || null,
         })
         formApi.setFieldValue('passphrase', '')
-        t.success('Backup settings saved')
+        t.success(m.node_backup_settings_saved())
       } catch (error) {
-        t.error('Could not save', { description: error instanceof ApiError ? error.message : 'Check the values and try again.' })
+        t.error(m.node_could_not_save(), { description: error instanceof ApiError ? error.message : m.node_check_the_values_and_try_again() })
       }
     },
   })
@@ -128,8 +129,8 @@ function ConfigForm() {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <h2 className="text-sm font-medium">Backup settings</h2>
-        {config?.configured ? <Badge variant="secondary">Passphrase set</Badge> : <Badge variant="destructive">Not set up</Badge>}
+        <h3>{m.node_backup_settings()}</h3>
+        {config?.configured ? <Badge variant="secondary">{m.node_passphrase_set()}</Badge> : <Badge variant="destructive">{m.node_not_set_up()}</Badge>}
       </div>
       <form
         className="flex flex-col gap-4"
@@ -139,27 +140,26 @@ function ConfigForm() {
         }}
       >
         <form.AppField name="backupDir">
-          {(f) => <f.input label="Backup folder" placeholder="Leave blank for the default. Better: a folder on another drive" />}
+          {(f) => <f.input label={m.node_backup_folder()} placeholder={m.node_leave_blank_for_the_default_better()} />}
         </form.AppField>
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="intervalHours">{(f) => <f.input label="Back up every (hours)" inputMode="numeric" />}</form.AppField>
-          <form.AppField name="retention">{(f) => <f.input label="Keep this many" inputMode="numeric" />}</form.AppField>
+          <form.AppField name="intervalHours">{(f) => <f.input label={m.node_back_up_every_hours()} inputMode="numeric" />}</form.AppField>
+          <form.AppField name="retention">{(f) => <f.input label={m.node_keep_this_many()} inputMode="numeric" />}</form.AppField>
         </div>
         <form.AppField name="passphrase">
           {(f) => (
             <f.input
               type="password"
-              label={config?.configured ? 'New recovery passphrase (optional)' : 'Recovery passphrase'}
-              placeholder="At least 10 characters"
+              label={config?.configured ? m.node_new_recovery_passphrase_optional() : m.node_recovery_passphrase()}
+              placeholder={m.node_at_least_10_characters()}
             />
           )}
         </form.AppField>
-        <p className="text-xs text-muted-foreground">
-          Write the passphrase down and keep it somewhere safe that is not this computer. Without it a backup cannot be restored, and nobody can
-          recover it for you. Changing it only affects backups made afterwards.
+        <p>
+          {m.node_write_the_passphrase_down_and_keep()}
         </p>
         <form.AppForm>
-          <form.submit label="Save backup settings" />
+          <form.submit label={m.node_save_backup_settings()} />
         </form.AppForm>
       </form>
     </section>
@@ -187,18 +187,18 @@ function ActionDialog({ action, onClose }: { action: Action | null; onClose: () 
     <Dialog open={action !== null} onOpenChange={(open) => !open && close()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isRestore ? 'Restore this backup?' : 'Verify this backup'}</DialogTitle>
+          <DialogTitle>{isRestore ? m.node_restore_this_backup() : m.node_verify_this_backup()}</DialogTitle>
           <DialogDescription>
             {isRestore
-              ? 'This replaces the facility’s data with the backup’s. Work done since the backup is moved aside, not deleted. The backup is fully checked first, and the swap happens when the application restarts.'
-              : 'Opens the backup completely and checks every file against its checksum, without changing anything. A backup you have not verified is a guess.'}
+              ? m.node_this_replaces_the_facility_s_data()
+              : m.node_opens_the_backup_completely_and_checks()}
           </DialogDescription>
         </DialogHeader>
 
         {staged ? (
           <div className="flex flex-col gap-3">
-            <p className="text-sm">{result}</p>
-            <Button onClick={() => restartApp()}>Restart now to finish</Button>
+            <p>{result}</p>
+            <Button onClick={() => restartApp()}>{m.node_restart_now_to_finish()}</Button>
           </div>
         ) : (
           <form
@@ -209,31 +209,31 @@ function ActionDialog({ action, onClose }: { action: Action | null; onClose: () 
               try {
                 if (isRestore) {
                   const summary = await restore.mutateAsync({ path: action.backup.path, passphrase })
-                  setResult(`Backup from ${format(summary.createdAt, 'PPp')} is checked and ready. Restart the application to finish.`)
+                  setResult(m.node_backup_from_is_checked_and_ready({ createdAt: format(summary.createdAt, 'PPp') }))
                   setStaged(true)
                 } else {
                   const summary = await verify.mutateAsync({ path: action.backup.path, passphrase })
-                  setResult(`Verified: ${summary.files} files, ${summary.auditEntries} audit entries, made ${format(summary.createdAt, 'PPp')}.`)
+                  setResult(m.node_verified_files_audit_entries_made({ files: summary.files, auditEntries: summary.auditEntries, createdAt: format(summary.createdAt, 'PPp') }))
                 }
               } catch (error) {
                 setResult(null)
-                t.error('That backup did not check out', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+                t.error(m.node_that_backup_did_not_check_out(), { description: error instanceof ApiError ? error.message : m.node_please_try_again() })
               }
             }}
           >
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium">Recovery passphrase</span>
+              <strong>{m.node_recovery_passphrase()}</strong>
               <input
                 type="password"
                 autoFocus
                 value={passphrase}
                 onChange={(event) => setPassphrase(event.target.value)}
-                className="h-9 w-full rounded-md border border-border bg-background px-2.5 text-sm outline-none focus:border-primary"
+                className="h-9 w-full rounded-md border border-border bg-background px-2.5 outline-none focus:border-primary"
               />
             </label>
-            {result && <p className="text-xs text-emerald-700 dark:text-emerald-400">{result}</p>}
+            {result && <p className="text-emerald-700 dark:text-emerald-400">{result}</p>}
             <Button type="submit" disabled={passphrase.length === 0 || busy}>
-              {busy ? 'Checking…' : isRestore ? 'Check and restore' : 'Verify'}
+              {busy ? m.node_checking() : isRestore ? m.node_check_and_restore() : m.node_verify()}
             </Button>
           </form>
         )}

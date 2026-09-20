@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { useConnectFacility, useFacilityLookup, usePairWithHeadOffice, usePairWithHeadOfficeLater } from './queries'
 import { facilityRegions, facilityStatusLabel, type ConnectScope, type FacilityLookup, type RegisterFacilityInput } from './schema'
 import { StepsProgress } from './steps-progress'
+import { m } from '@/paraglide/messages'
 
 const ADDRESS_KEY = 'pleadli:prisons:hq-address'
 
@@ -31,7 +32,7 @@ function rememberAddress(value: string) {
   }
 }
 
-export const connectSteps = ['Head Office', 'Your facility', 'Approval'] as const
+export const connectSteps = () => [m.facilities_connect_step_head_office(), m.facilities_connect_step_your_facility(), m.facilities_connect_step_approval()]
 
 type Requester = { badge: string; name: string }
 
@@ -62,7 +63,7 @@ export function ConnectFlow({ scope, requester, lockRequester = false, onConnect
 
   return (
     <div className="flex flex-col gap-6">
-      <StepsProgress steps={connectSteps} current={step === 'address' ? 0 : 1} />
+      <StepsProgress steps={connectSteps()} current={step === 'address' ? 0 : 1} />
       {step === 'address' && (
         <AddressStep
           value={address}
@@ -105,26 +106,26 @@ function AddressStep({ value, onChange, onNext, onSkip }: { value: string; onCha
       }}
     >
       <Field>
-        <FieldLabel>Head Office address</FieldLabel>
+        <FieldLabel>{m.facilities_head_office_address()}</FieldLabel>
         <Input
           autoFocus
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="https://hq.example.org or a pairing code"
+          placeholder={m.facilities_https_hq_example_org_or_a()}
           autoComplete="url"
           inputMode="url"
           spellCheck={false}
           className="font-mono text-xs"
         />
-        <FieldDescription>The address Head Office gave you, or paste its pairing code. It is remembered for next time.</FieldDescription>
+        <FieldDescription>{m.facilities_the_address_head_office_gave_you()}</FieldDescription>
       </Field>
       <div className="flex flex-col gap-2">
         <Button type="submit" disabled={value.trim().length === 0} className="w-full">
-          Continue
+          {m.facilities_continue()}
         </Button>
         {onSkip && (
           <Button type="button" variant="secondary" className="w-full" onClick={onSkip}>
-            Continue without Head Office
+            {m.facilities_continue_without_head_office()}
           </Button>
         )}
       </div>
@@ -140,16 +141,15 @@ function FacilityCard({ facility }: { facility: FacilityLookup }) {
           <HugeiconsIcon icon={PrisonIcon} size={18} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-medium">{facility.name}</span>
-          <span className="truncate text-xs text-muted-foreground">
-            {facility.location} · {facility.region} region
-          </span>
+          <h4 className="truncate">{facility.name}</h4>
+          <p className="truncate">
+            {m.facilities_region_2({ location: facility.location, region: facility.region })}</p>
         </div>
         <Badge variant={facility.status === 'active' ? 'default' : 'secondary'}>{facilityStatusLabel(facility.status)}</Badge>
       </div>
       {facility.status === 'active' && (
-        <p className="text-xs text-muted-foreground">
-          Another installation is already connected as this facility. If Head Office approves this request, that connection is replaced.
+        <p>
+          {m.facilities_another_installation_is_already_connecte()}
         </p>
       )}
     </div>
@@ -200,7 +200,7 @@ function FacilityStep({
           setSearched(true)
         },
         onError: (error) =>
-          t.error('Could not reach Head Office', { description: error instanceof ApiError ? error.message : 'Check the address and try again.' }),
+          t.error(m.facilities_could_not_reach_head_office(), { description: error instanceof ApiError ? error.message : m.facilities_check_the_address_and_try_again() }),
       },
     )
   }
@@ -211,7 +211,7 @@ function FacilityStep({
       { hqAddress: address, facilityNumber: number.trim(), requesterBadge: badge.trim(), requesterName: name.trim(), activationCode: code.trim() || undefined },
       {
         onSuccess: (result) => (result.state === 'connected' ? onConnected(result.facilityName) : onPending(result.facilityName)),
-        onError: (error) => t.error('Could not connect', { description: error instanceof ApiError ? error.message : 'Please try again.' }),
+        onError: (error) => t.error(m.facilities_could_not_connect(), { description: error instanceof ApiError ? error.message : m.facilities_please_try_again() }),
       },
     )
   }
@@ -237,7 +237,7 @@ function FacilityStep({
         }}
       >
         <Field className="flex-1">
-          <FieldLabel>Facility ID or number</FieldLabel>
+          <FieldLabel>{m.facilities_facility_id_or_number()}</FieldLabel>
           <Input
             autoFocus
             value={number}
@@ -253,16 +253,16 @@ function FacilityStep({
         </Field>
         <Button type="submit" variant="secondary" disabled={!number.trim() || lookup.isPending}>
           <HugeiconsIcon icon={Search01Icon} size={14} />
-          {lookup.isPending ? 'Looking…' : 'Look up'}
+          {lookup.isPending ? m.facilities_looking() : m.facilities_look_up()}
         </Button>
       </form>
 
       {searched && !found && (
-        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
-          <p>Head Office has no facility with that number. Check it, or ask Head Office to add the facility to its roster.</p>
+        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-3">
+          <p>{m.facilities_head_office_has_no_facility_with()}</p>
           {onRegisterNew && (
             <Button type="button" size="xs" variant="secondary" className="w-fit" onClick={onRegisterNew}>
-              Register it with a pairing code instead
+              {m.facilities_register_it_with_a_pairing_code()}
             </Button>
           )}
         </div>
@@ -279,35 +279,35 @@ function FacilityStep({
             }}
           >
             {lockRequester ? (
-              <p className="text-xs text-muted-foreground">
-                Requested by <span className="font-medium text-foreground">{name}</span> ({badge})
+              <p>
+                {m.facilities_requested_by()} <strong className="text-foreground">{name}</strong> ({badge})
               </p>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field>
-                  <FieldLabel>Your badge number</FieldLabel>
+                  <FieldLabel>{m.facilities_your_badge_number()}</FieldLabel>
                   <Input value={badge} onChange={(event) => setBadge(event.target.value)} autoComplete="username" />
                 </Field>
                 <Field>
-                  <FieldLabel>Your full name</FieldLabel>
+                  <FieldLabel>{m.facilities_your_full_name()}</FieldLabel>
                   <Input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" />
                 </Field>
               </div>
             )}
             <Field>
-              <FieldLabel>Activation code (optional)</FieldLabel>
+              <FieldLabel>{m.facilities_activation_code_optional()}</FieldLabel>
               <Input
                 value={code}
                 onChange={(event) => setCode(event.target.value)}
-                placeholder="8 digits from Head Office"
+                placeholder={m.facilities_8_digits_from_head_office()}
                 autoComplete="one-time-code"
                 inputMode="numeric"
                 className="font-mono"
               />
-              <FieldDescription>With a valid code you connect straight away. Without one, Head Office approves the request.</FieldDescription>
+              <FieldDescription>{m.facilities_with_a_valid_code_you_connect()}</FieldDescription>
             </Field>
             <Button type="submit" disabled={!ready || connect.isPending} className="w-full">
-              {connect.isPending ? 'Connecting…' : code.trim() ? 'Connect with code' : 'Request connection'}
+              {connect.isPending ? m.facilities_connecting() : code.trim() ? m.facilities_connect_with_code() : m.facilities_request_connection()}
             </Button>
           </form>
         </>
@@ -348,8 +348,8 @@ function DetailsStep({
         await pair.mutateAsync({ pairingCode, input: value })
         onConnected(value.name)
       } catch (error) {
-        t.error('Head Office could not register this facility', {
-          description: error instanceof ApiError ? error.message : 'The pairing code may have been used or expired. Ask for a new one.',
+        t.error(m.facilities_head_office_could_not_register_this(), {
+          description: error instanceof ApiError ? error.message : m.facilities_the_pairing_code_may_have_been(),
         })
       }
     },
@@ -363,7 +363,7 @@ function DetailsStep({
         className="-ml-1 flex w-fit items-center gap-1 rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
-        Back
+        {m.facilities_back()}
       </button>
       <form
         className="flex flex-col gap-4"
@@ -372,16 +372,16 @@ function DetailsStep({
           form.handleSubmit()
         }}
       >
-        <form.AppField name="name">{(f) => <f.input label="Facility name" autoComplete="organization" autoFocus />}</form.AppField>
-        <form.AppField name="facilityNumber">{(f) => <f.input label="Facility ID or number" autoComplete="off" />}</form.AppField>
-        <form.AppField name="location">{(f) => <f.input label="Location" autoComplete="address-level2" />}</form.AppField>
+        <form.AppField name="name">{(f) => <f.input label={m.facilities_facility_name()} autoComplete="organization" autoFocus />}</form.AppField>
+        <form.AppField name="facilityNumber">{(f) => <f.input label={m.facilities_facility_id_or_number()} autoComplete="off" />}</form.AppField>
+        <form.AppField name="location">{(f) => <f.input label={m.facilities_location()} autoComplete="address-level2" />}</form.AppField>
         <form.AppField name="region">
           {(f) => (
             <Field>
-              <FieldLabel>Region</FieldLabel>
+              <FieldLabel>{m.facilities_region()}</FieldLabel>
               <Select value={f.state.value} onValueChange={(value) => f.handleChange((value as never) ?? f.state.value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select region" />
+                  <SelectValue placeholder={m.facilities_select_region()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -396,10 +396,10 @@ function DetailsStep({
             </Field>
           )}
         </form.AppField>
-        <form.AppField name="headOfficerName">{(f) => <f.input label="Head officer's name" autoComplete="name" />}</form.AppField>
+        <form.AppField name="headOfficerName">{(f) => <f.input label={m.facilities_head_officer_s_name()} autoComplete="name" />}</form.AppField>
         <form.AppForm>
           <div className="*:w-full">
-            <form.submit label={pair.isPending ? 'Registering…' : 'Register with Head Office'} />
+            <form.submit label={pair.isPending ? m.facilities_registering() : m.facilities_register_with_head_office()} />
           </div>
         </form.AppForm>
       </form>
@@ -409,9 +409,8 @@ function DetailsStep({
 
 export function ConnectedNote({ facilityName }: { facilityName: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex items-center gap-2">
       <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-emerald-600" />
-      Connected as {facilityName}
-    </div>
+      {m.facilities_connected_as({ facilityName })}</div>
   )
 }

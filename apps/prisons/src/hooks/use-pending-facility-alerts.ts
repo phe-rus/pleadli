@@ -1,6 +1,7 @@
 import { useFacilities } from '@/features/facilities'
 import { isTauri } from '@tauri-apps/api/core'
 import { useEffect } from 'react'
+import { m } from '@/paraglide/messages'
 
 const NOTIFIED_KEY = 'pleadli:prisons-pending-facility-alerts-notified'
 
@@ -53,8 +54,8 @@ export function usePendingFacilityAlerts() {
         if (facility.status !== 'pending_verification' || alreadyNotified(facility.id)) continue
 
         sendNotification({
-          title: 'Facility pending verification',
-          body: `${facility.name} · ${facility.region} registered and is waiting for approval.`,
+          title: m.hooks_facility_pending_verification(),
+          body: m.hooks_registered_and_is_waiting_for_approval({ name: facility.name, region: facility.region }),
         })
         markNotified(facility.id)
       }

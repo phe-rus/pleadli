@@ -1,0 +1,5 @@
+# Two compile jobs at most: the default is one per core, and the link step of
+# this crate alone can take over a gigabyte. This keeps a rebuild from
+# starving the machine the developer is also running the app on.
+[build]
+jobs = 2

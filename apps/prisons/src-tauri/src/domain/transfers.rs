@@ -292,7 +292,7 @@ fn seal(dossier_json: &[u8], transfer_id: &str, passphrase: &str) -> Result<Vec<
     let key = derive_key(passphrase, &salt)?;
     let cipher = ChaCha20Poly1305::new((&key).into());
     let ciphertext = cipher
-        .encrypt(Nonce::from_slice(&nonce), Payload { msg: dossier_json, aad: transfer_id.as_bytes() })
+        .encrypt(&Nonce::from(nonce), Payload { msg: dossier_json, aad: transfer_id.as_bytes() })
         .map_err(|_| DomainError::rejected("The dossier could not be sealed."))?;
     let envelope = Envelope {
         format: DOSSIER_FORMAT.to_string(),
@@ -311,15 +311,12 @@ fn open_envelope(bytes: &[u8], passphrase: &str) -> Result<(String, Vec<u8>), Do
         return Err(DomainError::rejected("That file is not a Pleadli transfer dossier, or is from an incompatible version."));
     }
     let salt = B64.decode(&envelope.salt).map_err(|_| unreadable())?;
-    let nonce = B64.decode(&envelope.nonce).map_err(|_| unreadable())?;
+    let nonce: [u8; 12] = B64.decode(&envelope.nonce).map_err(|_| unreadable())?.try_into().map_err(|_| unreadable())?;
     let ciphertext = B64.decode(&envelope.ciphertext).map_err(|_| unreadable())?;
-    if nonce.len() != 12 {
-        return Err(unreadable());
-    }
     let key = derive_key(passphrase, &salt)?;
     let cipher = ChaCha20Poly1305::new((&key).into());
     let plain = cipher
-        .decrypt(Nonce::from_slice(&nonce), Payload { msg: &ciphertext, aad: envelope.transfer_id.as_bytes() })
+        .decrypt(&Nonce::from(nonce), Payload { msg: &ciphertext, aad: envelope.transfer_id.as_bytes() })
         .map_err(|_| unreadable())?;
     Ok((envelope.transfer_id, plain))
 }

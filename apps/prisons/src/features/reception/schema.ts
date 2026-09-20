@@ -1,29 +1,30 @@
 import * as z from 'zod'
 import { prisonerSchema } from '@/features/prisoners/schema'
+import { m } from '@/paraglide/messages'
 
 export const receptionDecisions = [
-  { value: 'accept', label: 'Accept', description: 'The instrument is verified. Receive the person.' },
-  { value: 'accept_pending', label: 'Accept, document pending', description: 'Receive the person now. A required document is still to arrive (s.58(4)).' },
-  { value: 'refuse', label: 'Refuse', description: 'Do not receive the person. Record the ground.' },
+  { value: 'accept', get label() { return m.reception_accept() }, get description() { return m.reception_the_instrument_is_verified_receive_the() } },
+  { value: 'accept_pending', get label() { return m.reception_accept_document_pending() }, get description() { return m.reception_receive_the_person_now_a_required() } },
+  { value: 'refuse', get label() { return m.reception_refuse() }, get description() { return m.reception_do_not_receive_the_person_record() } },
 ] as const
 
 export type ReceptionDecision = (typeof receptionDecisions)[number]['value']
 
 export const refusalGrounds = [
-  { value: 'torture_ill_health', label: 'Severely tortured and in bad health (s.58(3))' },
-  { value: 'juvenile', label: 'A juvenile sent to an adult prison (s.58(7))' },
-  { value: 'defective_instrument', label: 'Instrument defective or particulars do not match' },
-  { value: 'other', label: 'Other ground' },
+  { value: 'torture_ill_health', get label() { return m.reception_severely_tortured_and_in_bad_health() } },
+  { value: 'juvenile', get label() { return m.reception_a_juvenile_sent_to_an_adult() } },
+  { value: 'defective_instrument', get label() { return m.reception_instrument_defective_or_particulars_do_n() } },
+  { value: 'other', get label() { return m.reception_other_ground() } },
 ] as const
 
 export const contactRelationships = [
-  { value: 'spouse', label: 'Spouse' },
-  { value: 'parent', label: 'Parent' },
-  { value: 'child', label: 'Child' },
-  { value: 'sibling', label: 'Sibling' },
-  { value: 'relative', label: 'Other relative' },
-  { value: 'friend', label: 'Friend' },
-  { value: 'other', label: 'Other' },
+  { value: 'spouse', get label() { return m.reception_spouse() } },
+  { value: 'parent', get label() { return m.reception_parent() } },
+  { value: 'child', get label() { return m.reception_child() } },
+  { value: 'sibling', get label() { return m.reception_sibling() } },
+  { value: 'relative', get label() { return m.reception_other_relative() } },
+  { value: 'friend', get label() { return m.reception_friend() } },
+  { value: 'other', get label() { return m.reception_other() } },
 ] as const
 
 export type PhotoDrafts = { front: string | null; left: string | null; right: string | null }

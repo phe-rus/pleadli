@@ -1,13 +1,14 @@
 import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
+import { m } from '@/paraglide/messages'
 
 /** Numbered circles joined by lines: the onboarding progress header. Steps
  * before `current` show a tick, the current one is filled, later ones are
  * outlined. */
 export function StepsProgress({ steps, current, className }: { steps: readonly string[]; current: number; className?: string }) {
   return (
-    <ol className={cn('flex items-start', className)} aria-label="Progress">
+    <ol className={cn('flex items-start', className)} aria-label={m.facilities_progress()}>
       {steps.map((label, index) => {
         const done = index < current
         const active = index === current

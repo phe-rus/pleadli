@@ -20,6 +20,7 @@ import {
 } from './reception-steps'
 import { PhotosStep } from './photos-step'
 import type { ReceptionDraft } from './schema'
+import { m } from '@/paraglide/messages'
 
 function initialDraft(): ReceptionDraft {
   const now = Date.now()
@@ -83,16 +84,16 @@ function sentenceEntered(d: ReceptionDraft) {
 /** What still blocks the chosen decision from being recorded. */
 function problemsFor(d: ReceptionDraft): string[] {
   const problems: string[] = []
-  if (!d.firstName.trim() || !d.lastName.trim()) problems.push('Enter the first and last name on the Person step.')
+  if (!d.firstName.trim() || !d.lastName.trim()) problems.push(m.reception_enter_the_first_and_last_name())
   if (d.decision === 'refuse') {
-    if (!d.decisionReason.trim()) problems.push('Record why reception is refused.')
+    if (!d.decisionReason.trim()) problems.push(m.reception_record_why_reception_is_refused())
     return problems
   }
-  if (!d.instrumentKind) problems.push('Choose the instrument the person arrived under.')
+  if (!d.instrumentKind) problems.push(m.reception_choose_the_instrument_the_person_arrived())
   if (d.decision === 'accept' && !d.authenticated) {
-    problems.push('The instrument is not marked as verified. Verify it, or accept with the document pending.')
+    problems.push(m.reception_the_instrument_is_not_marked_as())
   }
-  if (d.decision === 'accept_pending' && !d.pendingDocumentType) problems.push('Say which document is still pending.')
+  if (d.decision === 'accept_pending' && !d.pendingDocumentType) problems.push(m.reception_say_which_document_is_still_pending())
   return problems
 }
 
@@ -115,29 +116,29 @@ export function ReceptionProcedure() {
   const steps: ProcedureStep[] = [
     {
       id: 'instrument',
-      label: 'Instrument',
+      label: m.reception_instrument(),
       done: Boolean(draft.instrumentKind) && draft.authenticated,
       summary: draft.instrumentKind ? `${admissionInstrumentLabel(draft.instrumentKind)}${draft.authenticated ? ', verified' : ', not verified'}` : null,
     },
     {
       id: 'person',
-      label: 'Person',
+      label: m.reception_person(),
       done: Boolean(draft.firstName.trim() && draft.lastName.trim()) && (draft.legalStatus !== 'convicted' || sentenceEntered(draft)),
       summary: name || null,
     },
     {
       id: 'photos',
-      label: 'Photos',
+      label: m.reception_photos(),
       optional: true,
       done: photoCount(draft) === 3,
       summary: photoCount(draft) ? `${photoCount(draft)} of 3 taken` : null,
     },
-    { id: 'search', label: 'Search and condition', done: draft.searchDone, summary: draft.searchDone ? 'Search done' : null },
-    { id: 'property', label: 'Property', optional: true, done: draft.property.some((p) => p.trim()), summary: draft.property.filter((p) => p.trim()).length ? `${draft.property.filter((p) => p.trim()).length} item(s)` : null },
-    { id: 'contacts', label: 'Family and contacts', optional: true, done: draft.contacts.some((c) => c.name.trim()), summary: draft.contacts.filter((c) => c.name.trim()).length ? `${draft.contacts.filter((c) => c.name.trim()).length} contact(s)` : null },
-    { id: 'health', label: 'Health and information', done: draft.rulesInformationGiven, summary: draft.rulesInformationGiven ? 'Information given' : null },
-    { id: 'placement', label: 'Placement', optional: true, done: Boolean(draft.placement.trim()), summary: draft.placement.trim() || null },
-    { id: 'decision', label: 'Decision', done: false },
+    { id: 'search', label: m.reception_search_and_condition(), done: draft.searchDone, summary: draft.searchDone ? m.reception_search_done() : null },
+    { id: 'property', label: m.reception_property(), optional: true, done: draft.property.some((p) => p.trim()), summary: draft.property.filter((p) => p.trim()).length ? `${draft.property.filter((p) => p.trim()).length} item(s)` : null },
+    { id: 'contacts', label: m.reception_family_and_contacts(), optional: true, done: draft.contacts.some((c) => c.name.trim()), summary: draft.contacts.filter((c) => c.name.trim()).length ? `${draft.contacts.filter((c) => c.name.trim()).length} contact(s)` : null },
+    { id: 'health', label: m.reception_health_and_information(), done: draft.rulesInformationGiven, summary: draft.rulesInformationGiven ? m.reception_information_given() : null },
+    { id: 'placement', label: m.reception_placement(), optional: true, done: Boolean(draft.placement.trim()), summary: draft.placement.trim() || null },
+    { id: 'decision', label: m.reception_decision(), done: false },
   ]
 
   const index = STEP_ORDER.indexOf(current)
@@ -148,37 +149,37 @@ export function ReceptionProcedure() {
     try {
       const result = await receive.mutateAsync(draft)
       if (result.prisoner) {
-        t.success('Person received', { description: name })
+        t.success(m.reception_person_received(), { description: name })
         navigate({ to: '/prisoners/$prisonerId', params: { prisonerId: result.prisoner.id } })
       } else {
-        t.success('Refusal recorded', { description: name })
+        t.success(m.reception_refusal_recorded(), { description: name })
         navigate({ to: '/movements' as never })
       }
     } catch (error) {
-      t.error('Could not record reception', {
-        description: error instanceof ApiError ? error.message : 'Please try again.',
+      t.error(m.reception_could_not_record_reception(), {
+        description: error instanceof ApiError ? error.message : m.reception_please_try_again(),
       })
     }
   }
 
-  const submitLabel = draft.decision === 'refuse' ? 'Record refusal' : draft.decision === 'accept_pending' ? 'Accept, document pending' : 'Accept and receive'
+  const submitLabel = draft.decision === 'refuse' ? m.reception_record_refusal() : draft.decision === 'accept_pending' ? m.reception_accept_document_pending() : m.reception_accept_and_receive()
 
   return (
     <ProcedureShell
-      title="Reception"
-      description="Receive a person under a legal instrument. Nothing is recorded until you make the decision on the last step."
+      title={m.reception_reception()}
+      description={m.reception_receive_a_person_under_a_legal()}
       backTo="/movements"
-      backLabel="Back to Movements"
+      backLabel={m.reception_back_to_movements()}
       steps={steps}
       current={current}
       onSelect={(id) => setCurrent(id as StepId)}
       aside={
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border/60 px-3 py-2 text-xs">
-          <span className="text-muted-foreground">Receiving</span>
-          <span className="text-sm font-medium">{name || 'Name not entered yet'}</span>
+          <span className="text-muted-foreground">{m.reception_receiving()}</span>
+          <span className="text-sm font-medium">{name || m.reception_name_not_entered_yet()}</span>
           <div className="flex flex-wrap gap-1.5">
             <Badge variant="secondary">{prisonerStatusLabel(draft.legalStatus)}</Badge>
-            {!draft.authenticated && <Badge variant="destructive">Instrument not verified</Badge>}
+            {!draft.authenticated && <Badge variant="destructive">{m.reception_instrument_not_verified()}</Badge>}
           </div>
         </div>
       }
@@ -195,15 +196,15 @@ export function ReceptionProcedure() {
 
       <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-4">
         <Button type="button" variant="ghost" disabled={index === 0} onClick={() => setCurrent(STEP_ORDER[index - 1])}>
-          Back
+          {m.reception_back()}
         </Button>
         {last ? (
           <Button type="button" disabled={problems.length > 0 || receive.isPending} onClick={submit} variant={draft.decision === 'refuse' ? 'destructive' : 'default'}>
-            {receive.isPending ? 'Recording…' : submitLabel}
+            {receive.isPending ? m.reception_recording() : submitLabel}
           </Button>
         ) : (
           <Button type="button" onClick={() => setCurrent(STEP_ORDER[index + 1])}>
-            Next
+            {m.reception_next()}
           </Button>
         )}
       </div>

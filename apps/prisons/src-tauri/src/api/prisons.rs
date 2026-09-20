@@ -29,6 +29,7 @@ use crate::domain::programmes::{self, CertifyProgrammeParticipationInput, Create
 use crate::domain::property_records::{self, CreatePropertyRecordInput, PropertyRecord, ReturnPropertyRecordInput};
 use crate::domain::releases::{self, Authoriser, CreateReleaseInput, DischargeAssessment, Release};
 use crate::domain::reports::{self, GeneratedReport, ReportDocument, ReportRecord, SummaryStatement};
+use crate::domain::returns::{self, Checks, ReceivedReturn, ReceivedReturnDocument};
 use crate::domain::requests::{self, CreateRequestInput, Request as PrisonRequest, ResolveRequestInput};
 use crate::domain::search::{self, SearchResult};
 use crate::domain::transfers::{self, Checklist, ConfirmArrivalInput, DispatchInput, DispatchResult, DossierPreview, FileExport, PrepareTransferInput, Transfer};
@@ -44,7 +45,8 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/prisons/prisoners", Need::Perm(PRISONER_READ), list_prisoners)
         .get("/api/prisons/today", Need::Perm(PRISONER_READ), get_today)
         .get("/api/prisons/legal", Need::Perm(PRISONER_READ), get_legal)
-        .get("/api/prisons/facility", Need::Perm(PRISONER_READ), get_facility)
+        // Head Office holds no prisoners but has an identity of its own to read and edit.
+        .get("/api/prisons/facility", Need::AnyPerm(&[PRISONER_READ, NODE_MANAGE]), get_facility)
         .put("/api/prisons/facility", Need::Perm(NODE_MANAGE), save_facility)
         .post("/api/prisons/receptions", Need::Perm(CUSTODY_ADMIT), receive)
         .get("/api/prisons/prisoners/{id}/file", Need::Perm(PRISONER_READ), prisoner_file)
@@ -118,6 +120,11 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/prisons/reports", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), list_reports)
         .post("/api/prisons/reports", Need::Perm(REPORT_GENERATE), generate_report)
         .get("/api/prisons/reports/{id}", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), get_report)
+        .get("/api/prisons/reports/{id}/checks", Need::Perm(REPORT_READ), return_checks)
+        .post("/api/prisons/reports/{id}/attest", Need::Perm(REPORT_ATTEST), attest_return)
+        .post("/api/prisons/reports/{id}/submit", Need::Perm(REPORT_ATTEST), submit_return)
+        .get("/api/prisons/returns/received", Need::Perm(HQ_REPORTS), list_received_returns)
+        .get("/api/prisons/returns/received/{id}", Need::Perm(HQ_REPORTS), get_received_return)
         .post("/api/prisons/documents", Need::Perm(DOCUMENT_WRITE), add_document)
         .get("/api/prisons/documents", Need::Perm(DOCUMENT_READ), list_documents)
         .get("/api/prisons/documents/{id}/data-url", Need::Perm(DOCUMENT_READ), document_data_url)
@@ -631,8 +638,54 @@ async fn report_summary(State(node): State<NodeRef>) -> Api<SummaryStatement> {
     Ok(Json(reports::summary(&mut conn).await?))
 }
 
-async fn get_report(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<GeneratedReport> {
+async fn get_report(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<GeneratedReport> {
+    if let Some(report) = reports::get(&node.pool, &id).await? {
+        return Ok(Json(report));
+    }
+    // Head Office reads a return it received on the same page as its own.
+    if actor.can(perm::HQ_REPORTS) {
+        if let Some(received) = returns::get_received(&node.pool, &id).await? {
+            return Ok(Json(received.into_report()));
+        }
+    }
+    Err(ApiError::not_found("That report"))
+}
+
+async fn return_checks(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<Checks> {
+    let mut conn = node.pool.acquire().await?;
+    Ok(Json(returns::checks(&mut conn, &id).await?))
+}
+
+async fn attest_return(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<GeneratedReport> {
+    let report_id = id.clone();
+    write(&node, |c| Box::pin(async move { Ok(returns::attest(c, &actor, &report_id).await.map(|_| ())?) })).await?;
     reports::get(&node.pool, &id).await?.map(Json).ok_or_else(|| ApiError::not_found("That report"))
+}
+
+/// Queues the return, then tries to send it now. Head Office being out of
+/// reach is not a failure: the return stays queued and goes with the next
+/// exchange, which the reply shows as `queued`.
+async fn submit_return(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<GeneratedReport> {
+    let report_id = id.clone();
+    write(&node, |c| Box::pin(async move { Ok(returns::submit(c, &actor, &report_id).await?) })).await?;
+    let pool = node.pool.clone();
+    let attempt = async move {
+        if crate::domain::peer::hq_reachable(&pool).await {
+            if let Err(e) = returns::send_queued(&pool).await {
+                log::info!("return not sent yet: {e}");
+            }
+        }
+    };
+    let _ = tokio::time::timeout(std::time::Duration::from_secs(20), attempt).await;
+    reports::get(&node.pool, &id).await?.map(Json).ok_or_else(|| ApiError::not_found("That report"))
+}
+
+async fn list_received_returns(State(node): State<NodeRef>) -> Api<Vec<ReceivedReturn>> {
+    Ok(Json(returns::list_received(&node.pool).await?))
+}
+
+async fn get_received_return(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<ReceivedReturnDocument> {
+    returns::get_received(&node.pool, &id).await?.map(Json).ok_or_else(|| ApiError::not_found("That return"))
 }
 
 #[derive(Deserialize)]

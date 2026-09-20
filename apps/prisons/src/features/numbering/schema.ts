@@ -1,33 +1,33 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 export const numberingResets = [
-  { value: 'yearly', label: 'Restart every year' },
-  { value: 'never', label: 'Never restart' },
+  { value: 'yearly', get label() { return m.numbering_restart_every_year() } },
+  { value: 'never', get label() { return m.numbering_never_restart() } },
 ] as const
 
 export const numberingTokens = [
-  { token: '{SEQ:4}', meaning: 'Running number, padded to 4 digits' },
-  { token: '{SEQ}', meaning: 'Running number, not padded' },
-  { token: '{YEAR}', meaning: 'Year of admission, for example 2026' },
-  { token: '{YY}', meaning: 'Two-digit year, for example 26' },
-  { token: '{MONTH}', meaning: 'Month of admission, 01 to 12' },
-  { token: '{FAC}', meaning: 'This facility’s number' },
+  { token: '{SEQ:4}', get meaning() { return m.numbering_running_number_padded_to_4_digits() } },
+  { token: '{SEQ}', get meaning() { return m.numbering_running_number_not_padded() } },
+  { token: '{YEAR}', get meaning() { return m.numbering_year_of_admission_for_example_2026() } },
+  { token: '{YY}', get meaning() { return m.numbering_two_digit_year_for_example_26() } },
+  { token: '{MONTH}', get meaning() { return m.numbering_month_of_admission_01_to_12() } },
+  { token: '{FAC}', get meaning() { return m.numbering_this_facility_s_number() } },
 ] as const
 
-export const provisionalNotice =
-  'Provisional default. No official Uganda Prisons Service numbering format could be found in public sources. Set your Service’s own.'
+export const provisionalNotice = () => m.numbering_provisional_notice()
 
 export const uniformPalette = [
-  { value: 'blue', label: 'Blue', dot: 'bg-blue-600' },
-  { value: 'yellow', label: 'Yellow', dot: 'bg-yellow-400' },
-  { value: 'maroon', label: 'Maroon', dot: 'bg-red-900' },
-  { value: 'white', label: 'White', dot: 'bg-white' },
-  { value: 'orange', label: 'Orange', dot: 'bg-orange-500' },
-  { value: 'green', label: 'Green', dot: 'bg-green-600' },
-  { value: 'grey', label: 'Grey', dot: 'bg-gray-400' },
-  { value: 'black', label: 'Black', dot: 'bg-neutral-900 dark:bg-neutral-950' },
-  { value: 'red', label: 'Red', dot: 'bg-red-600' },
-  { value: 'purple', label: 'Purple', dot: 'bg-purple-600' },
+  { value: 'blue', get label() { return m.numbering_blue() }, dot: 'bg-blue-600' },
+  { value: 'yellow', get label() { return m.numbering_yellow() }, dot: 'bg-yellow-400' },
+  { value: 'maroon', get label() { return m.numbering_maroon() }, dot: 'bg-red-900' },
+  { value: 'white', get label() { return m.numbering_white() }, dot: 'bg-white' },
+  { value: 'orange', get label() { return m.numbering_orange() }, dot: 'bg-orange-500' },
+  { value: 'green', get label() { return m.numbering_green() }, dot: 'bg-green-600' },
+  { value: 'grey', get label() { return m.numbering_grey() }, dot: 'bg-gray-400' },
+  { value: 'black', get label() { return m.numbering_black() }, dot: 'bg-neutral-900 dark:bg-neutral-950' },
+  { value: 'red', get label() { return m.numbering_red() }, dot: 'bg-red-600' },
+  { value: 'purple', get label() { return m.numbering_purple() }, dot: 'bg-purple-600' },
 ] as const
 
 export function uniformColour(value: string | null | undefined) {
@@ -98,7 +98,7 @@ export function uniformCategoryLabel(category: string) {
     case 'unconvicted':
       return 'Unconvicted (remand)'
     case 'convicted':
-      return 'Convicted'
+      return m.numbering_convicted()
     case 'civil':
       return 'Civil (debtor)'
     default:
@@ -109,11 +109,11 @@ export function uniformCategoryLabel(category: string) {
 export function numberingSourceLabel(source: string | null) {
   switch (source) {
     case 'head_office':
-      return 'Head Office default'
+      return m.numbering_head_office_default()
     case 'facility':
-      return 'Set here'
+      return m.numbering_set_here()
     default:
-      return 'Provisional default'
+      return m.numbering_provisional_default()
   }
 }
 
@@ -121,8 +121,8 @@ export function numberingSourceLabel(source: string | null) {
  * the pattern is typed. The node still validates on save. */
 export function previewPattern(pattern: string, reset: string, facilityNumber: string | null) {
   const text = pattern.trim()
-  if (!text) return { examples: [] as string[], error: 'Enter a pattern.' }
-  if (text.length > 40) return { examples: [], error: 'The pattern can be at most 40 characters.' }
+  if (!text) return { examples: [] as string[], error: m.numbering_enter_a_pattern() }
+  if (text.length > 40) return { examples: [], error: m.numbering_the_pattern_can_be_at_most() }
   const now = new Date()
   const fac = facilityNumber?.trim() || 'FAC'
   let hasSeq = false
@@ -131,7 +131,7 @@ export function previewPattern(pattern: string, reset: string, facilityNumber: s
   const render = (seq: number) =>
     text.replace(/\{([^{}]*)\}|([^A-Za-z0-9/\-._ ])/g, (whole, token: string | undefined, bad: string | undefined) => {
       if (bad) {
-        error ??= `"${bad}" cannot be used. Letters, digits, / - . _ and spaces only.`
+        error ??= m.numbering_cannot_be_used_letters_digits_and({ bad })
         return ''
       }
       const name = token ?? ''
@@ -154,12 +154,12 @@ export function previewPattern(pattern: string, reset: string, facilityNumber: s
       }
       if (name === 'MONTH') return String(now.getMonth() + 1).padStart(2, '0')
       if (name === 'FAC') return fac
-      error ??= `${whole} is not a known part.`
+      error ??= m.numbering_is_not_a_known_part({ whole })
       return ''
     })
   const examples = [render(1), render(2)]
-  if (/[{}]/.test(examples[0])) error ??= 'A { or } in the pattern is not matched.'
-  if (!error && !hasSeq) error = 'The pattern needs a {SEQ} or {SEQ:4} part, or every person would get the same number.'
-  if (!error && reset === 'yearly' && !hasYear) error = 'A counter that restarts every year needs {YEAR} or {YY} in the pattern.'
+  if (/[{}]/.test(examples[0])) error ??= m.numbering_err_unmatched_brace({ open: '{', close: '}' })
+  if (!error && !hasSeq) error = m.numbering_err_needs_seq({ seq: '{SEQ}', seqPadded: '{SEQ:4}' })
+  if (!error && reset === 'yearly' && !hasYear) error = m.numbering_err_needs_year({ year: '{YEAR}', yy: '{YY}' })
   return { examples: error ? [] : examples, error }
 }

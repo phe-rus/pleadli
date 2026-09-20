@@ -9,9 +9,11 @@ use serde::{Deserialize, Serialize};
 use super::error::ApiError;
 use super::guard::{Need, RouteTable};
 use super::write;
+use crate::domain::audit::{self, AuditEntry};
 use crate::domain::authz::{perm, Actor};
 use crate::domain::cloudflare_tunnel::{self, CloudflareConfig, SaveCloudflareConfigInput};
 use crate::domain::connection::{self, ConnectionRequest, FacilityOfficer};
+use crate::domain::tunnel_connector::ConnectorState;
 use crate::domain::facilities::{self, Facility, PairingPayload, RegisterFacilityInput, FACILITY_REGIONS};
 use crate::node::NodeRef;
 
@@ -19,6 +21,7 @@ pub fn routes(node: NodeRef) -> RouteTable {
     use perm::*;
     RouteTable::new(node)
         .get("/api/hq/facilities", Need::Perm(HQ_ESTATE_READ), list_facilities)
+        .get("/api/hq/estate", Need::Perm(HQ_ESTATE_READ), estate_view)
         .post("/api/hq/facilities", Need::Perm(HQ_NETWORK_MANAGE), create_facility)
         .get("/api/hq/connection-requests", Need::Perm(HQ_NETWORK_MANAGE), list_requests)
         .post("/api/hq/connection-requests/{id}/approve", Need::Perm(HQ_NETWORK_MANAGE), approve_request)
@@ -31,9 +34,14 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .post("/api/hq/facilities/{id}/revoke", Need::Perm(HQ_NETWORK_MANAGE), revoke_facility)
         .get("/api/hq/network/cloudflare", Need::Perm(HQ_NETWORK_MANAGE), get_cloudflare)
         .put("/api/hq/network/cloudflare", Need::Perm(HQ_NETWORK_MANAGE), save_cloudflare)
+        .post("/api/hq/network/cloudflare/provision", Need::Perm(HQ_NETWORK_MANAGE), provision_tunnel)
 }
 
 type Api<T> = Result<Json<T>, ApiError>;
+
+async fn estate_view(State(node): State<NodeRef>) -> Api<crate::domain::estate::Estate> {
+    Ok(Json(crate::domain::estate::estate(&node.pool, crate::domain::time::now_ms()).await?))
+}
 
 async fn list_facilities(State(node): State<NodeRef>) -> Api<Vec<Facility>> {
     Ok(Json(facilities::list_facilities(&node.pool).await?))
@@ -80,6 +88,42 @@ async fn revoke_facility(State(node): State<NodeRef>, Extension(actor): Extensio
 
 async fn get_cloudflare(State(node): State<NodeRef>) -> Api<Option<CloudflareConfig>> {
     Ok(Json(cloudflare_tunnel::get_config(&node.pool).await?))
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TunnelProvisioned {
+    hostname: String,
+    connector: ConnectorState,
+}
+
+/// Creates (or reuses) this Head Office's tunnel from the saved Cloudflare
+/// details and points its hostname at the network listener. Safe to run again.
+/// The Cloudflare calls happen first and outside any database transaction, so
+/// a slow answer never holds the write lock; only the audit entry is written
+/// afterwards. Nothing secret is returned.
+async fn provision_tunnel(State(node): State<NodeRef>, Extension(actor): Extension<Actor>) -> Api<TunnelProvisioned> {
+    let provisioned = cloudflare_tunnel::provision(&node.pool, super::network::PORT).await?;
+    let hostname = provisioned.hostname.clone();
+    write(&node, |c| {
+        Box::pin(async move {
+            audit::record(
+                c,
+                &actor,
+                AuditEntry::new("network.cloudflare_tunnel_provisioned", "cloudflare_tunnel", Some("default")).after(&serde_json::json!({ "hostname": hostname })),
+            )
+            .await?;
+            Ok(())
+        })
+    })
+    .await?;
+    // Only now does the tunnel carry anything: (re)start the connector with the
+    // freshly stored token. A failure here is reported by its state, not as a
+    // failed setup, because the tunnel itself exists either way.
+    if let Err(e) = node.connector.start_provisioned(&node).await {
+        log::warn!("tunnel connector after setup: {e}");
+    }
+    Ok(Json(TunnelProvisioned { hostname: provisioned.hostname, connector: node.connector.state().await }))
 }
 
 async fn save_cloudflare(
@@ -161,6 +205,9 @@ struct CloudflareStatus {
     configured: bool,
     tunnel_provisioned: bool,
     hostname: Option<String>,
+    /// Whether the `cloudflared` process that carries the tunnel is running,
+    /// stopped, or absent from this build.
+    connector: ConnectorState,
     /// `not_configured`, `configured_not_connected` or `connected`. Connected
     /// only when the public hostname answered a health check just now.
     state: &'static str,
@@ -201,7 +248,7 @@ async fn network_status(State(node): State<NodeRef>) -> Api<NetworkStatus> {
     };
     Ok(Json(NetworkStatus {
         local: LocalStatus { listening: super::network::is_listening().await, address: format!("127.0.0.1:{}", super::network::PORT) },
-        cloudflare: CloudflareStatus { configured, tunnel_provisioned: hostname.is_some(), hostname, state },
+        cloudflare: CloudflareStatus { configured, tunnel_provisioned: hostname.is_some(), hostname, connector: node.connector.state().await, state },
         public_base,
         pending_requests: connection::pending_count(&node.pool).await?,
     }))

@@ -1,11 +1,12 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 // Confirmed real alternative to physical transport (docs/prisons/RESEARCH.md
 // §11.2): video-link production from inside the prison, operating at
 // 19-21 prisons as of the Commissioner General's own 2024 account.
 export const productionMethods = [
-  { value: 'physical', label: 'Physical production' },
-  { value: 'virtual', label: 'Virtual (video-link)' },
+  { value: 'physical', get label() { return m.court_productions_physical_production() } },
+  { value: 'virtual', get label() { return m.court_productions_virtual_video_link() } },
 ] as const
 
 export function productionMethodLabel(value: string) {
@@ -51,13 +52,13 @@ export const remandListEntrySchema = z.object({
 export type RemandListEntry = z.infer<typeof remandListEntrySchema>
 
 export const courtOutcomes = [
-  { value: 'remanded', label: 'Remanded', needsDate: true },
-  { value: 'adjourned', label: 'Adjourned', needsDate: true },
-  { value: 'committed_for_trial', label: 'Committed for trial', needsDate: true },
-  { value: 'bail_granted', label: 'Bail granted', needsDate: false },
-  { value: 'acquitted', label: 'Acquitted or discharged', needsDate: false },
-  { value: 'convicted', label: 'Convicted', needsDate: false },
-  { value: 'not_produced', label: 'Not produced', needsDate: false },
+  { value: 'remanded', get label() { return m.court_productions_remanded() }, needsDate: true },
+  { value: 'adjourned', get label() { return m.court_productions_adjourned() }, needsDate: true },
+  { value: 'committed_for_trial', get label() { return m.court_productions_committed_for_trial() }, needsDate: true },
+  { value: 'bail_granted', get label() { return m.court_productions_bail_granted() }, needsDate: false },
+  { value: 'acquitted', get label() { return m.court_productions_acquitted_or_discharged() }, needsDate: false },
+  { value: 'convicted', get label() { return m.court_productions_convicted() }, needsDate: false },
+  { value: 'not_produced', get label() { return m.court_productions_not_produced() }, needsDate: false },
 ] as const
 
 export function courtOutcomeLabel(value: string | null) {

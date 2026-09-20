@@ -12,6 +12,7 @@ import { Input } from '@pleadli/ui/input'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { m } from '@/paraglide/messages'
 
 export type CommandMenuProps = {
   open: boolean
@@ -90,7 +91,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
       {
         id: `context:court:${id}`,
         kind: 'start',
-        label: 'Create a court production',
+        label: m.ui_create_a_court_production(),
         sublabel: activeTab.title,
         icon: CourtHouseIcon,
         run: () => openFacet('legal'),
@@ -98,7 +99,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
       {
         id: `context:documents:${id}`,
         kind: 'go',
-        label: 'Open property and documents',
+        label: m.ui_open_property_and_documents(),
         sublabel: activeTab.title,
         icon: Message01Icon,
         run: () => openFacet('property'),
@@ -106,7 +107,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
       {
         id: `context:care:${id}`,
         kind: 'go',
-        label: 'Open care and contact',
+        label: m.ui_open_care_and_contact(),
         sublabel: activeTab.title,
         icon: UserGroupIcon,
         run: () => openFacet('care'),
@@ -121,16 +122,16 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
       {
         id: 'start:reception',
         kind: 'start',
-        label: 'Receive someone',
-        sublabel: 'Reception under a warrant or order',
+        label: m.ui_receive_someone(),
+        sublabel: m.ui_reception_under_a_warrant_or_order_2(),
         icon: Login02Icon,
         run: () => void navigate({ to: '/procedures/reception' as never }),
       },
       {
         id: 'start:receive-transfer',
         kind: 'start',
-        label: 'Receive a transfer',
-        sublabel: 'Confirm an arrival from another prison',
+        label: m.ui_receive_a_transfer(),
+        sublabel: m.ui_confirm_an_arrival_from_another_prison(),
         icon: ArrowDataTransferHorizontalIcon,
         run: () => void navigate({ to: '/procedures/receive' as never }),
       },
@@ -176,16 +177,16 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg md:max-w-xl" showCloseButton={false}>
-        <DialogTitle className="sr-only">Go to something in Pleadli Prisons</DialogTitle>
+        <DialogTitle className="sr-only">{m.ui_go_to_something_in_pleadli_prisons()}</DialogTitle>
         <DialogDescription className="sr-only">
-          Navigate the prison, start a procedure, or search by name, national ID, reference.
+          {m.ui_navigate_the_prison_start_a_procedure()}
         </DialogDescription>
 
         <Input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, national ID, reference… or jump to an area"
+          placeholder={m.ui_search_by_name_national_id_reference()}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
               e.preventDefault()
@@ -206,20 +207,20 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
               {rows.length > 0 && (
                 <>
                   {procedureRows.length > 0 && (
-                    <p className="px-3 pt-1 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Start a procedure</p>
+                    <p className="px-3 pt-1 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">{m.ui_start_a_procedure()}</p>
                   )}
                   {procedureRows.map((command) => {
                     const index = rows.findIndex((row) => row.command?.id === command.id)
                     return <CommandRowButton key={command.id} command={command} index={index} highlighted={highlighted} onSelect={select} onHover={setHighlighted} />
                   })}
                   {contextRows.length > 0 && (
-                    <p className="px-3 pt-3 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">In context</p>
+                    <p className="px-3 pt-3 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">{m.ui_in_context()}</p>
                   )}
                   {contextRows.map((command) => {
                     const index = rows.findIndex((row) => row.command?.id === command.id)
                     return <CommandRowButton key={command.id} command={command} index={index} highlighted={highlighted} onSelect={select} onHover={setHighlighted} />
                   })}
-                  <p className="px-3 pt-3 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Go to</p>
+                  <p className="px-3 pt-3 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">{m.ui_go_to()}</p>
                   {navRows.map((command) => {
                     const index = rows.findIndex((row) => row.command?.id === command.id)
                     return <CommandRowButton key={command.id} command={command} index={index} highlighted={highlighted} onSelect={select} onHover={setHighlighted} />
@@ -228,17 +229,17 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
               )}
             </>
           ) : rows.length === 0 ? (
-            <p className="p-3 text-xs text-muted-foreground">No matches yet.</p>
+            <p className="p-3 text-xs text-muted-foreground">{m.ui_no_matches_yet()}</p>
           ) : (
             <>
               {commands.length > 0 && (
-                <p className="px-3 pt-1 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Go to</p>
+                <p className="px-3 pt-1 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">{m.ui_go_to()}</p>
               )}
               {commands.map((command, index) => (
                 <CommandRowButton key={command.id} command={command} index={index} highlighted={highlighted} onSelect={select} onHover={setHighlighted} />
               ))}
               {results && results.length > 0 && (
-                <p className="px-3 pt-3 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Search results</p>
+                <p className="px-3 pt-3 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">{m.ui_search_results()}</p>
               )}
               {(results ?? []).map((result, resultIndex) => {
                 const index = commands.length + resultIndex
@@ -305,7 +306,7 @@ function CommandRowButton({
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="text-[0.625rem]!">
-            {command.kind === 'start' ? 'Start' : 'Go'}
+            {command.kind === 'start' ? m.ui_start() : 'Go'}
           </Badge>
           <span className="truncate text-sm">{command.label}</span>
         </div>

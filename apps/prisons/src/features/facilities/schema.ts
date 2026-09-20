@@ -1,40 +1,22 @@
+import { ugRegions } from '@/features/jurisdiction'
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 /** Uganda Prisons Service's real 19 region structure (docs/prisons/
  * RESEARCH.md §1), matching the `CHECK` constraint on the `facilities`
  * table exactly. */
-export const facilityRegions = [
-  'Southern',
-  'Northern',
-  'Kigezi',
-  'Mid Central',
-  'Central',
-  'Kampala Extra',
-  'Eastern',
-  'North Central',
-  'Mid Western',
-  'Mid Northern',
-  'Mid Eastern',
-  'South Western',
-  'East Central',
-  'North Eastern',
-  'Iganga',
-  'Western',
-  'North Western',
-  'Kooki',
-  'South Eastern',
-] as const
+export const facilityRegions = ugRegions
 
 export const facilityStatuses = ['pending_verification', 'active', 'revoked'] as const
 
 export function facilityStatusLabel(status: string) {
   switch (status) {
     case 'pending_verification':
-      return 'Pending verification'
+      return m.facilities_pending_verification()
     case 'active':
-      return 'Active'
+      return m.facilities_active()
     case 'revoked':
-      return 'Revoked'
+      return m.facilities_revoked()
     default:
       return status
   }
@@ -111,7 +93,7 @@ export type PairingPayload = z.infer<typeof pairingPayloadSchema>
  * to show which Head Office the code points at. */
 export function parsePairingCode(pairingCode: string) {
   const sharp = pairingCode.lastIndexOf('#')
-  if (sharp <= 0 || sharp === pairingCode.length - 1) throw new Error('That does not look like a Pleadli pairing code.')
+  if (sharp <= 0 || sharp === pairingCode.length - 1) throw new Error(m.facilities_that_does_not_look_like_a_2())
   return { hostname: pairingCode.slice(0, sharp), secret: pairingCode.slice(sharp + 1) }
 }
 
@@ -134,13 +116,13 @@ export function syncStatusLabel(status: string | null) {
     case 'ok':
       return 'In sync'
     case 'pending_verification':
-      return 'Waiting for Head Office verification'
+      return m.facilities_waiting_for_head_office_verification()
     case 'rejected':
-      return 'Rejected by Head Office'
+      return m.facilities_rejected_by_head_office()
     case 'error':
-      return 'Sync failed'
+      return m.facilities_sync_failed()
     default:
-      return 'Never synced'
+      return m.facilities_never_synced()
   }
 }
 
@@ -213,6 +195,7 @@ export const hqNetworkStatusSchema = z.object({
     configured: z.boolean(),
     tunnelProvisioned: z.boolean(),
     hostname: z.string().nullable(),
+    connector: z.enum(['running', 'stopped', 'missing']),
     state: z.enum(['not_configured', 'configured_not_connected', 'connected']),
   }),
   publicBase: z.string(),

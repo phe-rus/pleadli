@@ -8,11 +8,12 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useState } from 'react'
+import { m } from '@/paraglide/messages'
 
 const DAY_MS = 86_400_000
 
 function dueText(obligation: Obligation, bucket: Bucket, now: number) {
-  if (obligation.dueAt == null) return 'Awaiting'
+  if (obligation.dueAt == null) return m.obligations_awaiting()
   if (bucket === 'overdue') {
     const days = Math.max(1, Math.floor((now - obligation.dueAt) / DAY_MS))
     return `${days} day${days === 1 ? '' : 's'} overdue`
@@ -92,7 +93,7 @@ export function ObligationQueue({ obligations, now, emptyMessage, flat }: Obliga
         open={outcomeFor != null}
         onOpenChange={(open) => !open && setOutcomeFor(null)}
         isDirty={outcomeDirty}
-        headings={{ title: 'Record the court outcome', description: 'What the court decided at this production.' }}
+        headings={{ title: m.obligations_record_the_court_outcome(), description: m.obligations_what_the_court_decided_at_this() }}
       >
         {outcomeFor && <CourtOutcomeForm productionId={outcomeFor} onSuccess={() => setOutcomeFor(null)} onDirtyChange={setOutcomeDirty} />}
       </Createpanel>
@@ -101,7 +102,7 @@ export function ObligationQueue({ obligations, now, emptyMessage, flat }: Obliga
         open={resolving != null}
         onOpenChange={(open) => !open && setResolving(null)}
         isDirty={resolveDirty}
-        headings={{ title: 'Record the action taken', description: 'Closes this item with what was done about it.' }}
+        headings={{ title: m.obligations_record_the_action_taken(), description: m.obligations_closes_this_item_with_what_was() }}
       >
         {resolving && <ResolveObligationForm obligation={resolving} onSuccess={() => setResolving(null)} onDirtyChange={setResolveDirty} />}
       </Createpanel>
@@ -116,7 +117,7 @@ function RowAction({ obligation, onOutcome, onResolve }: { obligation: Obligatio
   if (obligation.resolvable) {
     return (
       <Button size="xs" variant="secondary" onClick={onResolve}>
-        Record action
+        {m.obligations_record_action()}
       </Button>
     )
   }
@@ -126,25 +127,25 @@ function RowAction({ obligation, onOutcome, onResolve }: { obligation: Obligatio
     case 'discharge':
       return p.id ? (
         <Link to="/procedures/discharge/$prisonerId" params={{ prisonerId: p.id }} className={small}>
-          Discharge
+          {m.obligations_discharge()}
         </Link>
       ) : null
     case 'court_outcome':
       return (
         <Button size="xs" variant="secondary" onClick={onOutcome}>
-          Record outcome
+          {m.obligations_record_outcome()}
         </Button>
       )
     case 'transfer_arrival':
       return p.id ? (
         <Link to="/procedures/arrival/$transferId" params={{ transferId: p.id }} className={small}>
-          Confirm arrival
+          {m.obligations_confirm_arrival()}
         </Link>
       ) : null
     case 'transfer_confirm':
       return (
         <Link to="/movements" className={small}>
-          Open movements
+          {m.obligations_open_movements()}
         </Link>
       )
     case 'instrument':
@@ -154,7 +155,7 @@ function RowAction({ obligation, onOutcome, onResolve }: { obligation: Obligatio
     case 'file':
       return p.id ? (
         <Link to="/prisoners/$prisonerId" params={{ prisonerId: p.id }} className={small}>
-          Open file
+          {m.obligations_open_file()}
         </Link>
       ) : null
     default:

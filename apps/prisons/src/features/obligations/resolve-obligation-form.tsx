@@ -6,6 +6,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { useState } from 'react'
 import { useResolveObligation } from './queries'
 import type { Obligation } from './schema'
+import { m } from '@/paraglide/messages'
 
 type ResolveObligationFormProps = {
   obligation: Obligation
@@ -24,15 +25,15 @@ export function ResolveObligationForm({ obligation, onSuccess, onDirtyChange }: 
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="panel-body"
       onSubmit={async (event) => {
         event.preventDefault()
         try {
           await resolve.mutateAsync({ key: obligation.key, kind: obligation.kind, prisonerId: obligation.prisonerId, actionTaken: action })
-          t.success('Action recorded')
+          t.success(m.obligations_action_recorded())
           onSuccess?.()
         } catch (error) {
-          t.error('Could not record the action', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+          t.error(m.obligations_could_not_record_the_action(), { description: error instanceof ApiError ? error.message : m.obligations_please_try_again() })
         }
       }}
     >
@@ -42,17 +43,17 @@ export function ResolveObligationForm({ obligation, onSuccess, onDirtyChange }: 
         {obligation.detail && <span className="text-xs text-muted-foreground">{obligation.detail}</span>}
       </div>
       <AreaField
-        label="Action taken"
+        label={m.obligations_action_taken()}
         value={action}
         onChange={(value) => {
           onDirtyChange?.(true)
           setAction(value)
         }}
-        placeholder="Who was told, what was sent, what was decided"
+        placeholder={m.obligations_who_was_told_what_was_sent()}
       />
       <DrawerFooter>
         <Button type="submit" disabled={!action.trim() || resolve.isPending}>
-          Record action
+          {m.obligations_record_action()}
         </Button>
       </DrawerFooter>
     </form>

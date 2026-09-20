@@ -14,6 +14,7 @@ import { getDossierFile } from './data'
 import { transferErrorText } from './errors'
 import { useCancelTransfer, useImportReceipt, useTransfers } from './queries'
 import { transferStateLabel, type Transfer } from './schema'
+import { m } from '@/paraglide/messages'
 
 type Section = { id: string; title: string; hint: string; rows: Transfer[] }
 
@@ -25,23 +26,23 @@ function sectionsFrom(transfers: Transfer[]): Section[] {
   return [
     {
       id: 'arrived',
-      title: 'Arrived, awaiting confirmation',
-      hint: 'A dossier has been imported. Verify identity and property, then confirm to the sender.',
+      title: m.transfers_arrived_awaiting_confirmation(),
+      hint: m.transfers_a_dossier_has_been_imported_verify(),
       rows: transfers.filter((t) => t.direction === 'in' && t.state === 'arrived'),
     },
     {
       id: 'in_transit',
-      title: 'In transit',
-      hint: 'Still in the custody of the prison officer (s.73(5)). The stay closes when the receiver confirms.',
+      title: m.transfers_in_transit(),
+      hint: m.transfers_still_in_the_custody_of_the(),
       rows: transfers.filter((t) => t.direction === 'out' && t.state === 'in_transit'),
     },
     {
       id: 'preparing',
-      title: 'Preparing',
-      hint: 'Order recorded, checklist and dispatch still to do.',
+      title: m.transfers_preparing(),
+      hint: m.transfers_order_recorded_checklist_and_dispatch_st(),
       rows: transfers.filter((t) => t.direction === 'out' && t.state === 'preparing'),
     },
-    { id: 'recent', title: 'Recently completed', hint: 'The last ten confirmed or cancelled.', rows: recent },
+    { id: 'recent', title: m.transfers_recently_completed(), hint: m.transfers_the_last_ten_confirmed_or_cancelled(), rows: recent },
   ]
 }
 
@@ -56,7 +57,7 @@ export function TransferBoard() {
 
   return (
     <div className="flex flex-col gap-6">
-      {empty && <p className="text-sm text-muted-foreground">No transfers yet. Start one from a prisoner's file, or receive one that arrived by file.</p>}
+      {empty && <p className="text-sm text-muted-foreground">{m.transfers_no_transfers_yet_start_one_from()}</p>}
       {sections
         .filter((s) => s.rows.length > 0)
         .map((section) => (
@@ -89,9 +90,9 @@ function TransferCard({ transfer, onCancel }: { transfer: Transfer; onCancel: ()
     try {
       const file = await getDossierFile(transfer.id)
       const path = await saveExchangeFile(file)
-      if (path) t.success('Sealed dossier saved', { description: path })
+      if (path) t.success(m.transfers_sealed_dossier_saved(), { description: path })
     } catch (error) {
-      t.error('Could not export the dossier', { description: transferErrorText(error, 'Please try again.') })
+      t.error(m.transfers_could_not_export_the_dossier(), { description: transferErrorText(error, m.transfers_please_try_again()) })
     } finally {
       setBusy(false)
     }
@@ -103,15 +104,15 @@ function TransferCard({ transfer, onCancel }: { transfer: Transfer; onCancel: ()
       const file = await openExchangeFile('pleadli-receipt')
       if (!file) return
       await importReceipt.mutateAsync({ contentBase64: file.contentBase64 })
-      t.success('Receipt accepted', { description: 'The transfer is confirmed and this stay is closed.' })
+      t.success(m.transfers_receipt_accepted(), { description: m.transfers_the_transfer_is_confirmed_and_this() })
     } catch (error) {
-      t.error('Could not use that receipt', { description: transferErrorText(error, 'Please try again.') })
+      t.error(m.transfers_could_not_use_that_receipt(), { description: transferErrorText(error, m.transfers_please_try_again()) })
     } finally {
       setBusy(false)
     }
   }
 
-  const name = transfer.personName ?? 'Unnamed'
+  const name = transfer.personName ?? m.transfers_unnamed()
   const when = transfer.dispatchedAt ?? transfer.arrivedAt ?? transfer.plannedAt ?? transfer.transferredAt
 
   return (
@@ -127,7 +128,7 @@ function TransferCard({ transfer, onCancel }: { transfer: Transfer; onCancel: ()
               <span className="truncate text-sm font-medium">{name}</span>
             )}
             <span className="text-xs text-muted-foreground">
-              {out ? 'To' : 'From'} {transfer.otherPrisonName ?? 'another prison'}
+              {out ? 'To' : m.transfers_from()} {transfer.otherPrisonName ?? m.transfers_another_prison()}
             </span>
           </div>
           <Badge variant={transfer.state === 'arrived' ? 'destructive' : 'outline'} className="shrink-0">
@@ -136,10 +137,10 @@ function TransferCard({ transfer, onCancel }: { transfer: Transfer; onCancel: ()
         </div>
 
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-          <Item label={out ? 'Order' : 'Order under'}>{transfer.orderReference ?? transfer.orderingAuthority ?? 'Not recorded'}</Item>
-          <Item label={transfer.state === 'preparing' ? 'Planned' : out ? 'Departed' : 'Arrived'}>{format(when, 'PPp')}</Item>
-          {transfer.escort && <Item label="Escort">{transfer.escort}</Item>}
-          {transfer.confirmedAt && <Item label="Confirmed">{format(transfer.confirmedAt, 'PPp')}</Item>}
+          <Item label={out ? m.transfers_order() : m.transfers_order_under()}>{transfer.orderReference ?? transfer.orderingAuthority ?? m.transfers_not_recorded()}</Item>
+          <Item label={transfer.state === 'preparing' ? m.transfers_planned() : out ? m.transfers_departed() : m.transfers_arrived()}>{format(when, 'PPp')}</Item>
+          {transfer.escort && <Item label={m.transfers_escort()}>{transfer.escort}</Item>}
+          {transfer.confirmedAt && <Item label={m.transfers_confirmed()}>{format(transfer.confirmedAt, 'PPp')}</Item>}
         </dl>
         {transfer.notes && <p className="whitespace-pre-line text-xs text-muted-foreground">{transfer.notes}</p>}
 
@@ -147,26 +148,26 @@ function TransferCard({ transfer, onCancel }: { transfer: Transfer; onCancel: ()
           {out && transfer.state === 'preparing' && transfer.prisonerId && (
             <>
               <Link to="/procedures/transfer/$prisonerId" params={{ prisonerId: transfer.prisonerId }} className={buttonVariants({ size: 'sm' })}>
-                Continue preparing
+                {m.transfers_continue_preparing()}
               </Link>
               <Button size="sm" variant="ghost" onClick={onCancel}>
-                Cancel transfer
+                {m.transfers_cancel_transfer()}
               </Button>
             </>
           )}
           {out && transfer.state === 'in_transit' && (
             <>
               <Button size="sm" onClick={importFromReceiver} disabled={busy}>
-                Import receipt
+                {m.transfers_import_receipt()}
               </Button>
               <Button size="sm" variant="secondary" onClick={reExport} disabled={busy}>
-                Export sealed dossier again
+                {m.transfers_export_sealed_dossier_again()}
               </Button>
             </>
           )}
           {!out && transfer.state === 'arrived' && (
             <Link to="/procedures/arrival/$transferId" params={{ transferId: transfer.id }} className={buttonVariants({ size: 'sm' })}>
-              Open arrival
+              {m.transfers_open_arrival()}
             </Link>
           )}
         </div>
@@ -192,11 +193,11 @@ function CancelDialog({ transfer, onClose }: { transfer: Transfer | null; onClos
     if (!transfer) return
     try {
       await cancel.mutateAsync({ id: transfer.id, reason })
-      t.success('Transfer cancelled')
+      t.success(m.transfers_transfer_cancelled())
       setReason('')
       onClose()
     } catch (error) {
-      t.error('Could not cancel', { description: transferErrorText(error, 'Please try again.') })
+      t.error(m.transfers_could_not_cancel(), { description: transferErrorText(error, m.transfers_please_try_again()) })
     }
   }
 
@@ -204,19 +205,19 @@ function CancelDialog({ transfer, onClose }: { transfer: Transfer | null; onClos
     <Dialog open={transfer !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel this transfer?</DialogTitle>
-          <DialogDescription>Only a transfer still being prepared can be cancelled. The reason is kept in the audit trail.</DialogDescription>
+          <DialogTitle>{m.transfers_cancel_this_transfer()}</DialogTitle>
+          <DialogDescription>{m.transfers_only_a_transfer_still_being_prepared()}</DialogDescription>
         </DialogHeader>
         <Field>
-          <FieldLabel>Reason</FieldLabel>
-          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why is it not going ahead?" autoFocus />
+          <FieldLabel>{m.transfers_reason()}</FieldLabel>
+          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={m.transfers_why_is_it_not_going_ahead()} autoFocus />
         </Field>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Keep it
+            {m.transfers_keep_it()}
           </Button>
           <Button onClick={submit} disabled={!reason.trim() || cancel.isPending}>
-            Cancel transfer
+            {m.transfers_cancel_transfer()}
           </Button>
         </DialogFooter>
       </DialogContent>

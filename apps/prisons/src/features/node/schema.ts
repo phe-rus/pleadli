@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 export const backupInfoSchema = z.object({
   fileName: z.string(),
@@ -109,18 +110,18 @@ export type ConnectToNodeInput = z.infer<typeof connectToNodeSchema>
 export function headOfficeLabel(status: Environment['headOffice']['status']) {
   switch (status) {
     case 'unpaired':
-      return 'Not paired with Head Office'
+      return m.node_not_paired_with_head_office()
     case 'connected':
-      return 'Head Office: connected'
+      return m.node_head_office_connected()
     case 'behind':
-      return 'Head Office: waiting to send'
+      return m.node_head_office_waiting_to_send()
     case 'offline':
-      return 'Head Office: not reachable'
+      return m.node_head_office_not_reachable()
     case 'pending_verification':
-      return 'Head Office: awaiting approval'
+      return m.node_head_office_awaiting_approval()
     case 'rejected':
-      return 'Head Office: rejected this installation'
+      return m.node_head_office_rejected_this_installation()
     case 'degraded':
-      return 'Head Office: last exchange failed'
+      return m.node_head_office_last_exchange_failed()
   }
 }

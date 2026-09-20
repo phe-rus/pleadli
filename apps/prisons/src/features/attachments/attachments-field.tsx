@@ -11,6 +11,7 @@ import { ApiError } from '@/lib/api'
 import { openAttachment, pickFileNative, readBrowserFile } from './data'
 import { useAddAttachment, useAttachments, useVoidAttachment } from './queries'
 import { formatFileSize, type Attachment, type EntityType } from './schema'
+import { m } from '@/paraglide/messages'
 
 export type AttachmentsFieldProps = {
   entityType: EntityType
@@ -18,7 +19,7 @@ export type AttachmentsFieldProps = {
   label?: string
 }
 
-export function AttachmentsField({ entityType, entityId, label = 'Documents' }: AttachmentsFieldProps) {
+export function AttachmentsField({ entityType, entityId, label = m.attachments_documents() }: AttachmentsFieldProps) {
   const id = entityId ?? ''
   const { data: attachments } = useAttachments(entityType, id)
   const addAttachment = useAddAttachment(entityType, id)
@@ -31,7 +32,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
     return (
       <Field>
         <FieldLabel>{label}</FieldLabel>
-        <p className="text-xs text-muted-foreground">Save this record first, then you can attach documents.</p>
+        <p className="text-xs text-muted-foreground">{m.attachments_save_this_record_first_then_you()}</p>
       </Field>
     )
   }
@@ -42,7 +43,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
         const picked = await pickFileNative()
         if (picked) await addAttachment.mutateAsync(picked)
       } catch (error) {
-        t.error('Could not add document', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+        t.error(m.attachments_could_not_add_document(), { description: error instanceof ApiError ? error.message : m.attachments_please_try_again() })
       }
       return
     }
@@ -56,7 +57,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
     try {
       await addAttachment.mutateAsync(await readBrowserFile(file))
     } catch (error) {
-      t.error('Could not add document', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+      t.error(m.attachments_could_not_add_document(), { description: error instanceof ApiError ? error.message : m.attachments_please_try_again() })
     }
   }
 
@@ -66,13 +67,13 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
         <FieldLabel>{label}</FieldLabel>
         <Button type="button" size="sm" variant="secondary" onClick={handlePick} disabled={addAttachment.isPending}>
           <HugeiconsIcon icon={Upload01Icon} />
-          Add document
+          {m.attachments_add_document()}
         </Button>
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileInputChange} />
       </div>
 
       {(attachments ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground">No documents attached.</p>
+        <p className="text-xs text-muted-foreground">{m.attachments_no_documents_attached()}</p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {attachments?.map((attachment) => (
@@ -86,8 +87,8 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
                 type="button"
                 size="icon-xs"
                 variant="ghost"
-                aria-label="Void document"
-                title="Void this document (kept on record, with your reason)"
+                aria-label={m.attachments_void_document()}
+                title={m.attachments_void_this_document_kept_on_record()}
                 onClick={() => {
                   setReason('')
                   setVoiding(attachment)
@@ -103,9 +104,9 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
       <Dialog open={voiding !== null} onOpenChange={(open) => !open && setVoiding(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Void this document?</DialogTitle>
+            <DialogTitle>{m.attachments_void_this_document()}</DialogTitle>
             <DialogDescription>
-              Documents are never deleted. This one stays on record, marked void with your name and the reason below.
+              {m.attachments_documents_are_never_deleted_this_one()}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -117,12 +118,12 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
                 await voidAttachment.mutateAsync({ id: voiding.id, reason: reason.trim() })
                 setVoiding(null)
               } catch (error) {
-                t.error('Could not void document', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+                t.error(m.attachments_could_not_void_document(), { description: error instanceof ApiError ? error.message : m.attachments_please_try_again() })
               }
             }}
           >
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium">Reason</span>
+              <span className="text-xs font-medium">{m.attachments_reason()}</span>
               <input
                 autoFocus
                 value={reason}
@@ -131,7 +132,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
               />
             </label>
             <Button type="submit" disabled={!reason.trim() || voidAttachment.isPending}>
-              Void document
+              {m.attachments_void_document()}
             </Button>
           </form>
         </DialogContent>
