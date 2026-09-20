@@ -53,7 +53,7 @@ function RouteComponent() {
 
   if (!prisoner) {
     return (
-      <article className="container pt-5 pb-20">
+      <article className="page">
         <p className="text-sm text-muted-foreground">This prisoner could not be found.</p>
       </article>
     )

@@ -24,15 +24,17 @@ function RouteComponent() {
   const { can, session } = usePermissions()
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-1">
-        <h1>Accounts</h1>
-        <p className="md:max-w-lg">
-          {config?.isHeadOffice
-            ? 'Every account in Head Office, and the officers of each connected facility. Deleting an account keeps its audit history under the badge number and name.'
-            : 'Officer accounts for this facility. Accounts are deactivated, never deleted, so every record still shows who acted.'}
-        </p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Accounts</h1>
+          <p className="md:max-w-lg">
+            {config?.isHeadOffice
+              ? 'Every account in Head Office, and the officers of each connected facility. Deleting an account keeps its audit history under the badge number and name.'
+              : 'Officer accounts for this facility. Accounts are deactivated, never deleted, so every record still shows who acted.'}
+          </p>
+        </div>
+      </header>
 
       {session &&
         (can('accounts.manage') ? (

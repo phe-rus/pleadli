@@ -1,13 +1,12 @@
 import { Createpanel } from '@/components/create-panel'
 import { courtProductionsForPrisonerOptions } from '@/features/court-productions'
-import { PrisonerFileHeader, prisonerFileOptions } from '@/features/custody'
+import { prisonerFileOptions } from '@/features/custody'
 import { healthEventsForPrisonerOptions } from '@/features/health-events'
 import { EditPrisonerForm, prisonerOptions, usePrisoner } from '@/features/prisoners'
 import { CareTab } from '@/features/prisoners/profile/care-tab'
 import { HistoryTab } from '@/features/prisoners/profile/history-tab'
 import { LegalTab } from '@/features/prisoners/profile/legal-tab'
-import { OverviewTab } from '@/features/prisoners/profile/overview-tab'
-import { ProfileRail } from '@/features/prisoners/profile/profile-rail'
+import { PrisonerDocument } from '@/features/prisoners/profile/prisoner-document'
 import { PropertyTab } from '@/features/prisoners/profile/property-tab'
 import { programmeParticipationsForPrisonerOptions } from '@/features/programme-participations'
 import { propertyRecordsForPrisonerOptions } from '@/features/property-records'
@@ -22,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
-const tabIds = ['overview', 'legal', 'care', 'property', 'history'] as const
+const tabIds = ['legal', 'care', 'property', 'history'] as const
 type TabId = (typeof tabIds)[number]
 
 export const Route = createFileRoute('/_public/prisoners/$prisonerId')({
@@ -46,9 +45,9 @@ export const Route = createFileRoute('/_public/prisoners/$prisonerId')({
 })
 
 /**
- * The prisoner file (docs/prisons/product-map/08 1.4): a profile rail with the
- * person's photo, number and key facts beside tabs that hold the depth, so the
- * page reads as one person and not as a stack of record types.
+ * The prisoner file read as a document (docs/prisons/product-map/08 1.4): the
+ * identity and where they are in the legal machine up front, then the depth
+ * (legal, care, property, history) as tabs below the spine.
  */
 function RouteComponent() {
   const { prisonerId } = Route.useParams()
@@ -60,70 +59,59 @@ function RouteComponent() {
 
   if (!prisoner) {
     return (
-      <article className="container flex flex-col gap-3 pt-5 pb-20">
+      <article className="page">
         <p className="text-sm text-muted-foreground">This prisoner could not be found.</p>
       </article>
     )
   }
 
-  const current: TabId = tab ?? 'overview'
-  const setTab = (value: string) => navigate({ search: { tab: value === 'overview' ? undefined : (value as TabId) }, replace: true })
+  const current: TabId = tab ?? 'legal'
+  const setTab = (value: string) => navigate({ search: { tab: value as TabId }, replace: true })
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <PrisonerFileHeader
-        prisonerId={prisonerId}
-        actions={
-          <Createpanel
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            isDirty={editDirty}
-            trigger={
-              <Button size="sm" variant="secondary">
-                <HugeiconsIcon icon={Edit02Icon} />
-                Edit details
-              </Button>
-            }
-            headings={{ title: 'Edit prisoner details', description: 'Update identity, category, and notes.' }}
-          >
-            <EditPrisonerForm prisoner={prisoner} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
-          </Createpanel>
-        }
-      />
+    <PrisonerDocument
+      prisonerId={prisonerId}
+      onOpenTab={setTab}
+      actions={
+        <Createpanel
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          isDirty={editDirty}
+          trigger={
+            <Button size="sm" variant="ghost">
+              <HugeiconsIcon icon={Edit02Icon} />
+              Edit details
+            </Button>
+          }
+          headings={{ title: 'Edit prisoner details', description: 'Update identity, category, and notes.' }}
+        >
+          <EditPrisonerForm prisoner={prisoner} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
+        </Createpanel>
+      }
+    >
+      <div className="border-t border-border/60 pt-4">
+        <Tabs value={current} onValueChange={(value) => setTab(String(value))}>
+          <TabsList variant="line" className="max-w-full flex-wrap">
+            <TabsTrigger value="legal">Legal</TabsTrigger>
+            <TabsTrigger value="care">Care and contact</TabsTrigger>
+            <TabsTrigger value="property">Property and documents</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
 
-      <div className="flex flex-wrap items-start gap-6">
-        <aside className="w-full md:sticky md:top-4 md:w-72 md:shrink-0">
-          <ProfileRail prisoner={prisoner} />
-        </aside>
-
-        <div className="min-w-0 flex-1 basis-[28rem] md:max-w-4xl">
-          <Tabs value={current} onValueChange={(value) => setTab(String(value))}>
-            <TabsList variant="line" className="max-w-full flex-wrap">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="legal">Legal</TabsTrigger>
-              <TabsTrigger value="care">Care and contact</TabsTrigger>
-              <TabsTrigger value="property">Property and documents</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="pt-4">
-              <OverviewTab prisonerId={prisonerId} onOpenTab={setTab} />
-            </TabsContent>
-            <TabsContent value="legal" className="pt-4">
-              <LegalTab prisonerId={prisonerId} />
-            </TabsContent>
-            <TabsContent value="care" className="pt-4">
-              <CareTab prisonerId={prisonerId} />
-            </TabsContent>
-            <TabsContent value="property" className="pt-4">
-              <PropertyTab prisonerId={prisonerId} />
-            </TabsContent>
-            <TabsContent value="history" className="pt-4">
-              <HistoryTab prisonerId={prisonerId} />
-            </TabsContent>
-          </Tabs>
-        </div>
+          <TabsContent value="legal" className="pt-4">
+            <LegalTab prisonerId={prisonerId} />
+          </TabsContent>
+          <TabsContent value="care" className="pt-4">
+            <CareTab prisonerId={prisonerId} />
+          </TabsContent>
+          <TabsContent value="property" className="pt-4">
+            <PropertyTab prisonerId={prisonerId} />
+          </TabsContent>
+          <TabsContent value="history" className="pt-4">
+            <HistoryTab prisonerId={prisonerId} />
+          </TabsContent>
+        </Tabs>
       </div>
-    </article>
+    </PrisonerDocument>
   )
 }

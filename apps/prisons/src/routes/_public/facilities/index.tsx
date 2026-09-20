@@ -59,36 +59,38 @@ function RouteComponent() {
   const revoked = all.filter((f) => f.status === 'revoked').length
 
   return (
-    <article className="container flex flex-col gap-6 pt-5 pb-20">
-      <section className="flex flex-wrap items-end justify-between gap-3 md:max-w-4xl">
-        <div className="flex flex-col gap-1">
+    <article className="page">
+      <header className="page-header">
+        <div>
           <h1>Facilities</h1>
           <p className="md:max-w-lg">Every prison facility on this Head Office's roster, and whether it is connected.</p>
         </div>
         {manage && (
-          <Createpanel
-            open={registerOpen}
-            onOpenChange={setRegisterOpen}
-            trigger={
-              <Button size="sm">
-                <HugeiconsIcon icon={AddCircleIcon} />
-                Register a facility
-              </Button>
-            }
-            headings={{
-              title: 'Register a facility',
-              description: 'Add a facility to the roster. It then finds itself by number and connects, or uses the activation code.',
-            }}
-          >
-            <RegisterFacilityForm onSuccess={() => setRegisterOpen(false)} />
-          </Createpanel>
+          <div className="page-actions">
+            <Createpanel
+              open={registerOpen}
+              onOpenChange={setRegisterOpen}
+              trigger={
+                <Button size="sm">
+                  <HugeiconsIcon icon={AddCircleIcon} />
+                  Register a facility
+                </Button>
+              }
+              headings={{
+                title: 'Register a facility',
+                description: 'Add a facility to the roster. It then finds itself by number and connects, or uses the activation code.',
+              }}
+            >
+              <RegisterFacilityForm onSuccess={() => setRegisterOpen(false)} />
+            </Createpanel>
+          </div>
         )}
-      </section>
+      </header>
 
       <div className="flex flex-col gap-6 md:max-w-4xl">
         {manage && <ConnectionRequestsSection />}
 
-        <section className="flex flex-col gap-3">
+        <section className="page-section flex flex-col gap-3">
           {all.length === 0 ? (
             <Card className="border-dashed p-0">
               <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
@@ -142,7 +144,7 @@ function ConnectionRequestsSection() {
   const decided = (requests ?? []).filter((r) => r.status !== 'pending').slice(0, 5)
 
   return (
-    <section className="flex flex-col gap-3">
+    <section className="page-section flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <h2 className="text-sm font-medium">Connection requests</h2>
         {waiting.length > 0 && <Badge>{waiting.length} waiting</Badge>}
@@ -354,7 +356,7 @@ function PairingCodeSection() {
   const generate = useGeneratePairingCode()
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="page-section flex flex-col gap-2">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

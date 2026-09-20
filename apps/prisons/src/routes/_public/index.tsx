@@ -44,11 +44,13 @@ function RouteComponent() {
  * view has nothing it may show. */
 function NoRecordAccess({ role }: { role: string }) {
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-1">
-        <h1>Today</h1>
-        <p className="md:max-w-lg">This account can administer the facility but cannot open prisoner records.</p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Today</h1>
+          <p className="md:max-w-lg">This account can administer the facility but cannot open prisoner records.</p>
+        </div>
+      </header>
       <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-16 text-center text-muted-foreground">
         <HugeiconsIcon icon={ShieldKeyIcon} size={20} />
         <p className="max-w-sm text-sm">
@@ -81,8 +83,8 @@ function HqOverview() {
   const revoked = all.filter((f) => f.status === 'revoked')
 
   return (
-    <article className="container flex flex-col gap-6 pt-6 pb-20">
-      <section className="flex items-center justify-between gap-3">
+    <article className="page">
+      <header className="page-header">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
             <HugeiconsIcon icon={NetworkIcon} size={18} />
@@ -92,13 +94,15 @@ function HqOverview() {
             <p className="md:max-w-sm">Every paired facility, at a glance.</p>
           </div>
         </div>
-        <Link to="/facilities" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
-          View Facilities
-          <HugeiconsIcon icon={ArrowRight01Icon} />
-        </Link>
-      </section>
+        <div className="page-actions">
+          <Link to="/facilities" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
+            View Facilities
+            <HugeiconsIcon icon={ArrowRight01Icon} />
+          </Link>
+        </div>
+      </header>
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="page-section grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile
           label="Registered Facilities"
           icon={NetworkIcon}

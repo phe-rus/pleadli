@@ -14,7 +14,8 @@ import { useState } from 'react'
 /**
  * The facility's working home (docs/prisons/product-map/08 1.3): who is held
  * now, what is owed, what is in flight. It answers "what needs doing", not
- * "how are we trending"; analytics live under Returns.
+ * "how are we trending"; analytics live under Returns. Read as a document —
+ * page grammar — not a wall of stat tiles.
  */
 export function TodayView() {
   const { data: today } = useToday()
@@ -30,13 +31,13 @@ export function TodayView() {
   const profileMissing = !facility.name
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
+    <article className="page">
+      <header className="page-header">
+        <div>
           <h1>{facility.name ?? 'Today'}</h1>
-          <p className="md:max-w-md">What is held, what is owed, and what is in flight.</p>
+          <p>What is held, what is owed, and what is in flight.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="page-actions">
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             Desktop alerts
             <Switch
@@ -51,7 +52,7 @@ export function TodayView() {
             Receive someone
           </Link>
         </div>
-      </section>
+      </header>
 
       {profileMissing && (
         <Card className="border-dashed p-0">
@@ -72,67 +73,76 @@ export function TodayView() {
         </Card>
       )}
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-0 lg:col-span-2">
-          <CardContent className="flex flex-col gap-2 py-4">
-            <span className="text-xs tracking-wide text-muted-foreground uppercase">Held now</span>
-            <div className="flex items-end gap-3">
-              <span className="text-4xl leading-none font-semibold tabular-nums">{pop.held}</span>
-              <span className="pb-1 text-sm text-muted-foreground">
-                Convicted {pop.convicted} · Remand {pop.unconvicted} · Civil {pop.civil}
+      <section className="page-section">
+        <div className="section-head">
+          <h2>Who is held</h2>
+          <span className="text-xs text-muted-foreground">
+            {pop.capacity ? (
+              <>
+                Approved capacity {pop.capacity}. Occupancy <strong className="text-foreground">{occupancy}%</strong>.
+              </>
+            ) : (
+              <>Approved capacity not set. {profileMissing ? '' : 'Set it in the facility profile.'}</>
+            )}
+          </span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="p-0 lg:col-span-2">
+            <CardContent className="flex flex-col gap-2 py-4">
+              <span className="text-xs tracking-wide text-muted-foreground uppercase">Held now</span>
+              <div className="flex items-end gap-3">
+                <span className="text-4xl leading-none font-semibold tabular-nums">{pop.held}</span>
+                <span className="pb-1 text-sm text-muted-foreground">
+                  Convicted {pop.convicted} · Remand {pop.unconvicted} · Civil {pop.civil}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="p-0">
+            <CardContent className="flex flex-col gap-2 py-4">
+              <span className="text-xs tracking-wide text-muted-foreground uppercase">Away from the cells</span>
+              <span className="text-sm">
+                <strong className="tabular-nums">{pop.hospitalised}</strong> at hospital
               </span>
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {pop.capacity ? (
-                <>
-                  Approved capacity {pop.capacity}. Occupancy <strong className="text-foreground">{occupancy}%</strong>.
-                </>
-              ) : (
-                <>Approved capacity not set. {profileMissing ? '' : 'Set it in the facility profile.'}</>
-              )}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className="p-0">
-          <CardContent className="flex flex-col gap-2 py-4">
-            <span className="text-xs tracking-wide text-muted-foreground uppercase">Away from the cells</span>
-            <span className="text-sm">
-              <strong className="tabular-nums">{pop.hospitalised}</strong> at hospital
-            </span>
-            <span className="text-sm">
-              <strong className="tabular-nums">{movements.courtToday}</strong> court today
-            </span>
-            <span className="text-sm">
-              <strong className="tabular-nums">{pop.inTransit}</strong> in transit
-            </span>
-          </CardContent>
-        </Card>
-        <Card className="p-0">
-          <CardContent className="flex flex-col gap-2 py-4">
-            <span className="text-xs tracking-wide text-muted-foreground uppercase">Movements</span>
-            <span className="text-sm">
-              <strong className="tabular-nums">{movements.awaitingConfirmation}</strong> arrived, awaiting confirmation
-            </span>
-            <span className="text-sm">
-              <strong className="tabular-nums">{movements.inTransit}</strong> dispatched, not confirmed
-            </span>
-            <Link to="/movements" className="flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline">
-              Open movements
-              <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
-            </Link>
-          </CardContent>
-        </Card>
+              <span className="text-sm">
+                <strong className="tabular-nums">{movements.courtToday}</strong> court today
+              </span>
+              <span className="text-sm">
+                <strong className="tabular-nums">{pop.inTransit}</strong> in transit
+              </span>
+            </CardContent>
+          </Card>
+          <Card className="p-0">
+            <CardContent className="flex flex-col gap-2 py-4">
+              <span className="text-xs tracking-wide text-muted-foreground uppercase">Movements</span>
+              <span className="text-sm">
+                <strong className="tabular-nums">{movements.awaitingConfirmation}</strong> arrived, awaiting confirmation
+              </span>
+              <span className="text-sm">
+                <strong className="tabular-nums">{movements.inTransit}</strong> dispatched, not confirmed
+              </span>
+              <Link to="/movements" className="flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline">
+                Open movements
+                <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section className="flex flex-col gap-3">
-          <h2 className="text-base font-medium">Due now</h2>
+        <section className="page-section">
+          <div className="section-head">
+            <h2>Due now</h2>
+          </div>
           <ObligationQueue obligations={due} now={today.now} emptyMessage="Nothing is due. The queue is clear." />
         </section>
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-medium">Exceptions</h2>
-            {exceptions.length > 0 && <Badge variant="destructive">{exceptions.length}</Badge>}
+        <section className="page-section">
+          <div className="section-head">
+            <div className="flex items-center gap-2">
+              <h2>Exceptions</h2>
+              {exceptions.length > 0 && <Badge variant="destructive">{exceptions.length}</Badge>}
+            </div>
           </div>
           <ObligationQueue obligations={exceptions} now={today.now} flat emptyMessage="No exceptions. Documents, sentences and transfers are in order." />
         </section>

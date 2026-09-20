@@ -649,6 +649,165 @@ pub async fn generate(conn: &mut SqliteConnection, actor: &Actor, kind: Kind, pe
     Ok(GeneratedReport { record, document: value(&document) })
 }
 
+/// The full-screen trend view (docs/prisons/product-map/05 N): every
+/// recorded event, plus the prisoner population profiled the way UPS
+/// publishes national statistics. Derived entirely from existing records,
+/// nothing tracked separately, so this screen can never add a figure the
+/// registers do not already hold.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SummaryStatement {
+    admission_timestamps: Vec<i64>,
+    release_timestamps: Vec<i64>,
+    transfer_timestamps: Vec<i64>,
+    visit_timestamps: Vec<i64>,
+    court_production_timestamps: Vec<i64>,
+    health_event_timestamps: Vec<i64>,
+    prisoner_category_counts: Vec<LabeledCount>,
+    custody_status_counts: Vec<LabeledCount>,
+    release_type_counts: Vec<LabeledCount>,
+    transfer_direction_counts: Vec<LabeledCount>,
+    health_event_type_counts: Vec<LabeledCount>,
+    admission_year_counts: Vec<LabeledCount>,
+    admission_month_counts: Vec<LabeledCount>,
+    prisoner_age_group_counts: Vec<LabeledCount>,
+    prisoner_sex_counts: Vec<LabeledCount>,
+    prisoner_education_counts: Vec<LabeledCount>,
+    prisoner_nationality_counts: Vec<LabeledCount>,
+    prisoner_offence_type_counts: Vec<LabeledCount>,
+    prisoner_sentence_category_counts: Vec<LabeledCount>,
+    facility_population_counts: Vec<LabeledCount>,
+    facility_in_custody_counts: Vec<LabeledCount>,
+}
+
+async fn timestamp_list(conn: &mut SqliteConnection, sql: &'static str) -> Result<Vec<i64>, sqlx::Error> {
+    sqlx::query_scalar(sql).fetch_all(&mut *conn).await
+}
+
+pub async fn summary(conn: &mut SqliteConnection) -> Result<SummaryStatement, sqlx::Error> {
+    let age_groups = counts(
+        conn,
+        "SELECT CASE
+            WHEN date_of_birth IS NULL THEN 'Not recorded'
+            WHEN CAST((julianday('now') - julianday(date(date_of_birth / 1000, 'unixepoch'))) / 365.25 AS INTEGER) <= 17 THEN 'Aged 17 and under'
+            WHEN CAST((julianday('now') - julianday(date(date_of_birth / 1000, 'unixepoch'))) / 365.25 AS INTEGER) <= 36 THEN 'Aged 18 to 36'
+            WHEN CAST((julianday('now') - julianday(date(date_of_birth / 1000, 'unixepoch'))) / 365.25 AS INTEGER) <= 54 THEN 'Aged 37 to 54'
+            ELSE 'Aged 55 and over'
+        END AS label, COUNT(*) AS count FROM prisoners WHERE current_status = 'in_custody' GROUP BY label ORDER BY label",
+    )
+    .await?;
+    let nationality = counts(
+        conn,
+        "SELECT COALESCE(nationality, 'not_recorded') AS label, COUNT(*) AS count FROM prisoners
+         WHERE current_status = 'in_custody' GROUP BY label ORDER BY label",
+    )
+    .await?;
+    let education = counts(
+        conn,
+        "SELECT COALESCE(education_level, 'not_recorded') AS label, COUNT(*) AS count FROM prisoners
+         WHERE current_status = 'in_custody' GROUP BY label ORDER BY label",
+    )
+    .await?;
+    let offence_type = counts(
+        conn,
+        "SELECT CASE
+            WHEN offence IS NULL THEN 'Not recorded'
+            WHEN LOWER(offence) LIKE '%terroris%' THEN 'Terrorism'
+            WHEN LOWER(offence) LIKE '%treason%' THEN 'Treason'
+            WHEN LOWER(offence) LIKE '%murder%' THEN 'Murder'
+            WHEN LOWER(offence) LIKE '%aggravated robbery%' THEN 'Aggravated robbery'
+            WHEN LOWER(offence) LIKE '%rape%' THEN 'Rape'
+            ELSE 'Other'
+        END AS label, COUNT(*) AS count FROM prisoners WHERE current_status = 'in_custody' GROUP BY label ORDER BY label",
+    )
+    .await?;
+    Ok(SummaryStatement {
+        admission_timestamps: timestamp_list(conn, "SELECT admitted_at FROM prisoners ORDER BY admitted_at").await?,
+        release_timestamps: timestamp_list(conn, "SELECT released_at FROM releases ORDER BY released_at").await?,
+        transfer_timestamps: timestamp_list(
+            conn,
+            "SELECT transferred_at FROM transfers WHERE state <> 'cancelled' ORDER BY transferred_at",
+        )
+        .await?,
+        visit_timestamps: timestamp_list(conn, "SELECT visited_at FROM visits ORDER BY visited_at").await?,
+        court_production_timestamps: timestamp_list(conn, "SELECT production_date FROM court_productions ORDER BY production_date").await?,
+        health_event_timestamps: timestamp_list(conn, "SELECT occurred_at FROM health_events ORDER BY occurred_at").await?,
+        prisoner_category_counts: counts(
+            conn,
+            "SELECT status AS label, COUNT(*) AS count FROM prisoners GROUP BY status ORDER BY status",
+        )
+        .await?,
+        custody_status_counts: counts(
+            conn,
+            "SELECT current_status AS label, COUNT(*) AS count FROM prisoners GROUP BY current_status ORDER BY current_status",
+        )
+        .await?,
+        release_type_counts: counts(
+            conn,
+            "SELECT release_type AS label, COUNT(*) AS count FROM releases WHERE release_type <> 'erroneous_release_correction'
+             GROUP BY release_type ORDER BY release_type",
+        )
+        .await?,
+        transfer_direction_counts: counts(
+            conn,
+            "SELECT direction AS label, COUNT(*) AS count FROM transfers WHERE state <> 'cancelled' GROUP BY direction ORDER BY direction",
+        )
+        .await?,
+        health_event_type_counts: counts(
+            conn,
+            "SELECT event_type AS label, COUNT(*) AS count FROM health_events GROUP BY event_type ORDER BY event_type",
+        )
+        .await?,
+        admission_year_counts: counts(
+            conn,
+            "SELECT strftime('%Y', datetime(admitted_at / 1000, 'unixepoch')) AS label, COUNT(*) AS count FROM prisoners
+             GROUP BY label ORDER BY label",
+        )
+        .await?,
+        admission_month_counts: counts(
+            conn,
+            "SELECT strftime('%Y-%m', datetime(admitted_at / 1000, 'unixepoch')) AS label, COUNT(*) AS count FROM prisoners
+             GROUP BY label ORDER BY label",
+        )
+        .await?,
+        prisoner_age_group_counts: age_groups,
+        prisoner_sex_counts: counts(
+            conn,
+            "SELECT COALESCE(sex, 'not_recorded') AS label, COUNT(*) AS count FROM prisoners
+             WHERE current_status = 'in_custody' GROUP BY label ORDER BY label",
+        )
+        .await?,
+        prisoner_education_counts: education,
+        prisoner_nationality_counts: nationality,
+        prisoner_offence_type_counts: offence_type,
+        prisoner_sentence_category_counts: counts(
+            conn,
+            "SELECT CASE status
+                WHEN 'convicted' THEN 'Convicted (Sentenced)'
+                WHEN 'unconvicted' THEN 'Unconvicted (Remand)'
+                WHEN 'civil' THEN 'Civil (debtor)'
+                ELSE status
+            END AS label, COUNT(*) AS count FROM prisoners GROUP BY label ORDER BY label",
+        )
+        .await?,
+        facility_population_counts: counts(
+            conn,
+            "SELECT COALESCE(f.name, 'Not assigned') AS label, COUNT(*) AS count
+             FROM prisoners p LEFT JOIN facilities f ON f.id = p.facility_id
+             GROUP BY COALESCE(f.name, 'Not assigned') ORDER BY label",
+        )
+        .await?,
+        facility_in_custody_counts: counts(
+            conn,
+            "SELECT COALESCE(f.name, 'Not assigned') AS label, COUNT(*) AS count
+             FROM prisoners p LEFT JOIN facilities f ON f.id = p.facility_id
+             WHERE p.current_status = 'in_custody'
+             GROUP BY COALESCE(f.name, 'Not assigned') ORDER BY label",
+        )
+        .await?,
+    })
+}
+
 pub async fn list(pool: &SqlitePool) -> Result<Vec<ReportRecord>, sqlx::Error> {
     sqlx::query_as(select_record!("ORDER BY generated_at DESC LIMIT 200")).fetch_all(pool).await
 }

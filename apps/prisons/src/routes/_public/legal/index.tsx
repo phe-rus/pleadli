@@ -24,14 +24,16 @@ function RouteComponent() {
   const overdueThresholds = legal.thresholds.filter((t) => t.daysRemaining < 0).length
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-1">
-        <h1>Legal</h1>
-        <p className="md:max-w-xl">
-          The court diary, the dates the law sets, and the documents still awaited. Outcomes are applied here: a remand books the next date, a
-          conviction asks for the sentence, bail or acquittal points at discharge.
-        </p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Legal</h1>
+          <p className="md:max-w-xl">
+            The court diary, the dates the law sets, and the documents still awaited. Outcomes are applied here: a remand books the next date, a
+            conviction asks for the sentence, bail or acquittal points at discharge.
+          </p>
+        </div>
+      </header>
 
       <Tabs defaultValue="diary">
         <TabsList variant="line">

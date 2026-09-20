@@ -95,11 +95,15 @@ function RouteComponent() {
 
   if (confirmed) {
     return (
-      <article className="container flex flex-col gap-4 pt-5 pb-20 md:max-w-2xl">
-        <Link to="/movements" className="w-fit text-xs text-muted-foreground underline-offset-4 hover:underline">
-          Back to Movements
-        </Link>
-        <h1>Arrival confirmed</h1>
+      <article className="page page-narrow">
+        <header className="page-header">
+          <div>
+            <Link to="/movements" className="w-fit text-xs text-muted-foreground underline-offset-4 hover:underline">
+              Back to Movements
+            </Link>
+            <h1>Arrival confirmed</h1>
+          </div>
+        </header>
         <p className="text-sm">
           {prisonerFullName({ firstName: p.firstName, lastName: p.lastName, otherNames: p.otherNames })} is now held here. The record moved with them, and this facility owns it from now on.
         </p>

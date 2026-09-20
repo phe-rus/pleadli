@@ -44,14 +44,16 @@ function RouteComponent() {
   }
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-1">
-        <Link to="/movements" className="w-fit text-xs text-muted-foreground underline-offset-4 hover:underline">
-          Back to Movements
-        </Link>
-        <h1>Receive a transfer</h1>
-        <p className="md:max-w-xl">Open the sealed dossier that came with the person. It stays sealed until you enter the passphrase the sending Officer in Charge gave you.</p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <Link to="/movements" className="w-fit text-xs text-muted-foreground underline-offset-4 hover:underline">
+            Back to Movements
+          </Link>
+          <h1>Receive a transfer</h1>
+          <p className="md:max-w-xl">Open the sealed dossier that came with the person. It stays sealed until you enter the passphrase the sending Officer in Charge gave you.</p>
+        </div>
+      </header>
       <Card className="md:max-w-xl">
         <CardContent className="flex flex-col gap-4 py-5">
           <div className="flex flex-col gap-2">

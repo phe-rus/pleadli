@@ -1,12 +1,12 @@
-import { EnvironmentStrip } from '@/features/node'
 import { OfficerAvatar, officerRoleLabel } from '@/features/officers'
 import { useSession, useSignOut } from '@/features/session'
 import { Logout03Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 
-/** Sidebar footer: who is signed in, and a way to sign out. Every
- * installation has a real signed-in officer now, facility or Head Office. */
+/** Sidebar footer: who is signed in, and a way to sign out — one quiet
+ * row, Obsidian-style. Every installation has a real signed-in officer,
+ * facility or Head Office; node and backup state live in the status bar. */
 export function SidebarUserFooter() {
   const { data: session } = useSession()
   const signOut = useSignOut()
@@ -15,8 +15,6 @@ export function SidebarUserFooter() {
   const { officer } = session
 
   return (
-    <div className="flex w-full flex-col gap-2">
-    <EnvironmentStrip />
     <div className="flex w-full items-center justify-between gap-2 px-1 py-0.5">
       <div className="flex min-w-0 items-center gap-2">
         <OfficerAvatar officer={officer} size={32} />
@@ -37,7 +35,6 @@ export function SidebarUserFooter() {
       >
         <HugeiconsIcon icon={Logout03Icon} />
       </Button>
-    </div>
     </div>
   )
 }

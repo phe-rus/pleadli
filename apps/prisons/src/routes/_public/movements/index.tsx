@@ -16,13 +16,13 @@ export const Route = createFileRoute('/_public/movements/')({
  */
 function RouteComponent() {
   return (
-    <article className="container flex flex-col gap-6 pt-5 pb-20">
-      <section className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
+    <article className="page">
+      <header className="page-header">
+        <div>
           <h1>Movements</h1>
           <p className="md:max-w-md">Transfers in and out, from order to confirmation.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="page-actions">
           <Link to="/procedures/reception" className={buttonVariants({ size: 'sm' })}>
             Reception
           </Link>
@@ -30,7 +30,7 @@ function RouteComponent() {
             Receive a transfer
           </Link>
         </div>
-      </section>
+      </header>
       <TransferBoard />
     </article>
   )

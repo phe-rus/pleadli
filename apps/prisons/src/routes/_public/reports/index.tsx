@@ -148,15 +148,17 @@ function RouteComponent() {
   const { data: summary } = useReportsSummary()
 
   return (
-    <article className="container flex flex-col gap-8 pt-5 pb-20">
-      <section className="flex flex-col">
-        <h1>Reports</h1>
-        <p className="md:max-w-lg">
-          How this prison is doing over time. Overview answers what needs attention right now; this answers the trend.
-        </p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Reports</h1>
+          <p className="md:max-w-lg">
+            How this prison is doing over time. Overview answers what needs attention right now; this answers the trend.
+          </p>
+        </div>
+      </header>
 
-      <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <section className="page-section grid grid-cols-1 gap-6 md:grid-cols-2">
         <WeeklyTrend
           title="Admissions"
           description={`Prisoners admitted per week, last ${WEEKS} weeks.`}
@@ -169,7 +171,7 @@ function RouteComponent() {
         />
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section className="page-section flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Admissions over time</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <ChartBlock title="Admissions by year" description="Prisoners admitted per calendar year.">
@@ -190,7 +192,7 @@ function RouteComponent() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section className="page-section flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-muted-foreground">Population profile</h2>
           <div className="print:hidden flex gap-2">
@@ -243,7 +245,7 @@ function RouteComponent() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section className="page-section flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Also tracked</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <MiniTrend title="Releases" timestamps={summary.releaseTimestamps} />
@@ -253,7 +255,7 @@ function RouteComponent() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section className="page-section flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">By facility reach</h2>
         <p className="text-xs text-muted-foreground">
           Snapshot-derived (spec docs/specs/prisons/0001-head-office-peer-sync-network/0003-sync-protocol-and-head-office-
@@ -274,7 +276,7 @@ function RouteComponent() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section className="page-section flex flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">Current breakdown</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <BreakdownBlock

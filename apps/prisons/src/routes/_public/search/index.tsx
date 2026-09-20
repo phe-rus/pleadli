@@ -15,11 +15,13 @@ function RouteComponent() {
   const items = results ?? []
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-1">
-        <h1>Search Pleadli Prisons</h1>
-        <p className="md:max-w-sm">Find anything you're legitimately allowed to find, in one place.</p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Search Pleadli Prisons</h1>
+          <p className="md:max-w-sm">Find anything you're legitimately allowed to find, in one place.</p>
+        </div>
+      </header>
 
       <Input
         autoFocus

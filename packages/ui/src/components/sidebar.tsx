@@ -4,6 +4,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import {
   createContext,
+  Fragment,
   useCallback,
   useContext,
   useEffect,
@@ -23,6 +24,10 @@ export type SidebarNavItem = {
   icon: HugeiconsProps['icon']
   exact?: boolean
   children?: readonly SidebarNavItem[]
+  /** Optional group heading. Items sharing a `section` are rendered under
+   * one heading; the first item in a changed section shows the label.
+   * Leave unset to keep the flat sidebar most apps use today. */
+  section?: string
 }
 
 export type SidebarBrand = {
@@ -50,6 +55,9 @@ export type DashboardProps = PropsWithChildren<{
     enableNavigation?: boolean
     footer?: ReactNode
     banner?: ReactNode
+    /** Shown under the brand, before the nav items: the installation's
+     * identity (which facility / node this is). */
+    identity?: ReactNode
   }
   className?: string
 }>
@@ -159,73 +167,86 @@ export const Dashboard: FC<DashboardProps> = ({
                   </Link>
                 </nav>
 
+                {addOns.identity && (
+                  <div className="px-1">
+                    {addOns.identity}
+                  </div>
+                )}
+
                 <nav className="flex flex-col gap-px">
                   {itemLists.map((item, index) => {
-                    if (item.children) {
-                      return (
-                        <div key={index} className='flex flex-col gap-1'>
-                          <Link to={item.to} className={cn(
-                            'group/icon relative flex items-center gap-2 text-base!',
-                            'transition-colors duration-150 ease-out py-0.5 px-1',
-                            'rounded-md hover:bg-secondary justify-between',
-                          )}>
-                            <div className='flex items-center gap-2'>
-                              {item.icon && <HugeiconsIcon
-                                icon={item.icon}
-                                className="size-5"
-                              />}
-                              {item.label}
-                            </div>
+                    const prevItem = itemLists[index - 1]
+                    const showSection = Boolean(item.section) && item.section !== prevItem?.section
+                    return (
+                      <Fragment key={index}>
+                        {showSection && (
+                          <span className="px-1 pt-3 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            {item.section}
+                          </span>
+                        )}
+                        {item.children ? (
+                          <div className='flex flex-col gap-1'>
+                            <Link to={item.to} className={cn(
+                              'group/icon relative flex items-center gap-2 text-base!',
+                              'transition-colors duration-150 ease-out py-0.5 px-1',
+                              'rounded-md hover:bg-secondary justify-between',
+                            )}>
+                              <div className='flex items-center gap-2'>
+                                {item.icon && <HugeiconsIcon
+                                  icon={item.icon}
+                                  className="size-5"
+                                />}
+                                {item.label}
+                              </div>
 
-                            <HugeiconsIcon
-                              icon={ChevronDownIcon}
-                              className='size-5'
-                            />
-                          </Link>
+                              <HugeiconsIcon
+                                icon={ChevronDownIcon}
+                                className='size-5'
+                              />
+                            </Link>
 
-                          <div className='flex gap-2 pl-3.5 w-full'>
-                            <span className='bg-primary w-px' />
-                            <div className='flex flex-col w-full'>
-                              {item.children.map((child, childIndex) => (
-                                <Link
-                                  key={childIndex}
-                                  to={child.to}
-                                  className={cn(
-                                    'group/icon relative flex items-center gap-2 text-base',
-                                    'transition-colors duration-150 ease-out py-0.5 px-2',
-                                    'rounded-md hover:bg-secondary w-full',
-                                  )}
-                                  activeProps={{ className: 'text-primary font-medium bg-secondary' }}
-                                  activeOptions={{ exact: item.exact }}
-                                >
-                                  {child.icon && <HugeiconsIcon
-                                    icon={child.icon}
-                                    className="size-5"
-                                  />}
-                                  {child.label}
-                                </Link>
-                              ))}
+                            <div className='flex gap-2 pl-3.5 w-full'>
+                              <span className='bg-primary w-px' />
+                              <div className='flex flex-col w-full'>
+                                {item.children.map((child, childIndex) => (
+                                  <Link
+                                    key={childIndex}
+                                    to={child.to}
+                                    className={cn(
+                                      'group/icon relative flex items-center gap-2 text-base',
+                                      'transition-colors duration-150 ease-out py-0.5 px-2',
+                                      'rounded-md hover:bg-secondary w-full',
+                                    )}
+                                    activeProps={{ className: 'text-primary font-medium bg-secondary' }}
+                                    activeOptions={{ exact: item.exact }}
+                                  >
+                                    {child.icon && <HugeiconsIcon
+                                      icon={child.icon}
+                                      className="size-5"
+                                    />}
+                                    {child.label}
+                                  </Link>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )
-                    }
-
-                    return (
-                      <Link
-                        key={index}
-                        to={item.to}
-                        className={cn(
-                          'group/icon relative flex items-center gap-2 text-base',
-                          'transition-colors duration-150 ease-out py-0.5 px-1',
-                          'rounded-md hover:bg-secondary',
+                        ) : (
+                          <Link
+                            key={index}
+                            to={item.to}
+                            className={cn(
+                              'group/icon relative flex items-center gap-2 text-base',
+                              'transition-colors duration-150 ease-out py-0.5 px-1',
+                              'rounded-md hover:bg-secondary',
+                            )}
+                            activeProps={{ className: 'text-primary font-medium bg-secondary' }}
+                            activeOptions={{ exact: item.exact }}
+                          >
+                            {item.icon && <HugeiconsIcon icon={item.icon} className="size-5" />}
+                            {item.label}
+                          </Link>
                         )}
-                        activeProps={{ className: 'text-primary font-medium bg-secondary' }}
-                        activeOptions={{ exact: item.exact }}
-                      >
-                        {item.icon && <HugeiconsIcon icon={item.icon} className="size-5" />}
-                        {item.label}
-                      </Link>
+                      </Fragment>
                     )
                   })}
                 </nav>

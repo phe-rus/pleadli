@@ -83,30 +83,29 @@ function RouteComponent() {
   }, [])
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-5">
-            <h1>Requests &amp; Complaints</h1>
-
-            <Createpanel
-              open={addOpen}
-              onOpenChange={setAddOpen}
-              isDirty={addDirty}
-              trigger={
-                <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
-                  Record complaint
-                </Button>
-              }
-              headings={{ title: 'Record complaint', description: 'Log a complaint raised via the Human Rights Committee ("Mukutano") mechanism.' }}
-            >
-              <RequestForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
-            </Createpanel>
-          </div>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Requests &amp; Complaints</h1>
           <p className="md:max-w-sm">Food, remand overstay, general welfare, and other complaints raised through the facility's grievance mechanism.</p>
         </div>
-      </section>
+        <div className="page-actions">
+          <Createpanel
+            open={addOpen}
+            onOpenChange={setAddOpen}
+            isDirty={addDirty}
+            trigger={
+              <Button size="sm">
+                <HugeiconsIcon icon={AddCircleIcon} />
+                Record complaint
+              </Button>
+            }
+            headings={{ title: 'Record complaint', description: 'Log a complaint raised via the Human Rights Committee ("Mukutano") mechanism.' }}
+          >
+            <RequestForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
+          </Createpanel>
+        </div>
+      </header>
 
       <Createpanel
         open={selected !== null}

@@ -129,20 +129,19 @@ function RouteComponent() {
   }, [])
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-5">
-            <h1>Population</h1>
-
-            <Link to="/procedures/reception" className={buttonVariants({ size: 'sm' })}>
-              <HugeiconsIcon icon={AddCircleIcon} />
-              Receive someone
-            </Link>
-          </div>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Population</h1>
           <p className="md:max-w-md">Everyone this facility holds or has held. Search by name, number, reference or national ID.</p>
         </div>
-      </section>
+        <div className="page-actions">
+          <Link to="/procedures/reception" className={buttonVariants({ size: 'sm' })}>
+            <HugeiconsIcon icon={AddCircleIcon} />
+            Receive someone
+          </Link>
+        </div>
+      </header>
 
       <DataTable
         aria-label="Prisoners"

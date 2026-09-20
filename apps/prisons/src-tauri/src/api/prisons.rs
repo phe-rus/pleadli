@@ -28,7 +28,7 @@ use crate::domain::prisoners::{self, Prisoner, UpdatePrisonerInput};
 use crate::domain::programmes::{self, CertifyProgrammeParticipationInput, CreateProgrammeParticipationInput, ProgrammeParticipation};
 use crate::domain::property_records::{self, CreatePropertyRecordInput, PropertyRecord, ReturnPropertyRecordInput};
 use crate::domain::releases::{self, Authoriser, CreateReleaseInput, DischargeAssessment, Release};
-use crate::domain::reports::{self, GeneratedReport, ReportDocument, ReportRecord};
+use crate::domain::reports::{self, GeneratedReport, ReportDocument, ReportRecord, SummaryStatement};
 use crate::domain::requests::{self, CreateRequestInput, Request as PrisonRequest, ResolveRequestInput};
 use crate::domain::search::{self, SearchResult};
 use crate::domain::transfers::{self, Checklist, ConfirmArrivalInput, DispatchInput, DispatchResult, DossierPreview, FileExport, PrepareTransferInput, Transfer};
@@ -114,6 +114,7 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/prisons/requests", Need::Perm(PRISONER_READ), list_requests)
         .put("/api/prisons/requests/{id}/resolve", Need::Perm(REQUEST_MANAGE), resolve_request)
         .get("/api/prisons/reports/preview", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), report_preview)
+        .get("/api/prisons/reports/summary", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), report_summary)
         .get("/api/prisons/reports", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), list_reports)
         .post("/api/prisons/reports", Need::Perm(REPORT_GENERATE), generate_report)
         .get("/api/prisons/reports/{id}", Need::AnyPerm(&[REPORT_READ, HQ_REPORTS]), get_report)
@@ -623,6 +624,11 @@ async fn generate_report(State(node): State<NodeRef>, Extension(actor): Extensio
 
 async fn list_reports(State(node): State<NodeRef>) -> Api<Vec<ReportRecord>> {
     Ok(Json(reports::list(&node.pool).await?))
+}
+
+async fn report_summary(State(node): State<NodeRef>) -> Api<SummaryStatement> {
+    let mut conn = node.pool.acquire().await?;
+    Ok(Json(reports::summary(&mut conn).await?))
 }
 
 async fn get_report(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<GeneratedReport> {

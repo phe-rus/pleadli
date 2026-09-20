@@ -1,3 +1,4 @@
+import { breadcrumbSegmentLabel } from "@/data/navigationItems"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,10 +26,13 @@ export function Breadcrumbs() {
 
   const crumbs = [
     { label: "Home", to: "/" },
-    ...segments.map((segment, index) => ({
-      label: displaySegment(segment),
-      to: "/" + segments.slice(0, index + 1).join("/"),
-    })),
+    ...segments.map((segment, index) => {
+      const to = "/" + segments.slice(0, index + 1).join("/")
+      return {
+        label: displaySegment(breadcrumbSegmentLabel(to, segment)),
+        to,
+      }
+    }),
   ]
 
   return (

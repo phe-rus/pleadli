@@ -120,17 +120,19 @@ function RouteComponent() {
   )
 
   return (
-    <article className="container flex flex-col gap-6 pt-5 pb-20">
-      <section className="flex flex-col gap-1">
-        <h1>Visits</h1>
-        <p className="md:max-w-lg">Who is expected today, who is at the gate, and every visit at this facility.</p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Visits</h1>
+          <p className="md:max-w-lg">Who is expected today, who is at the gate, and every visit at this facility.</p>
+        </div>
+      </header>
 
       <VisitRulesCard />
       <TodayBoard visits={visits} />
       <UpcomingVisits visits={visits} />
 
-      <section className="flex flex-col gap-3">
+      <section className="page-section flex flex-col gap-3">
         <h2 className="text-sm font-medium">All visits</h2>
         <div className="flex flex-wrap items-center gap-1.5">
           {[{ value: 'all', label: 'All' }, ...visitStatuses].map((s) => (

@@ -36,11 +36,13 @@ function RouteComponent() {
   const { can } = usePermissions()
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex flex-col gap-1">
-        <h1>Settings</h1>
-        <p className="md:max-w-lg">Application, network, and sync configuration for this installation.</p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Settings</h1>
+          <p className="md:max-w-lg">Application, network, and sync configuration for this installation.</p>
+        </div>
+      </header>
 
       <Tabs
         className="md:max-w-3xl"
