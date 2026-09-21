@@ -1,51 +1,31 @@
-import { catalogEntry, reportCatalog } from './report-catalog'
-import { periodPresets, periodRange, periodText, type PeriodPreset } from './period'
-import { useGenerateReport, useReceivedReturns, useReports } from './queries'
-import { type ReportKind, type ReportRecord } from './schema'
+import { Row, RowList } from '@/components/operational-row'
 import { useHqConfig, usePermissions } from '@/features/session'
-import { ApiError } from '@/lib/api'
 import { Badge } from '@pleadli/ui/badge'
-import { Button } from '@pleadli/ui/button'
-import { Card, CardContent } from '@pleadli/ui/card'
-import { t } from '@pleadli/ui/goey-toaster'
-import { Input } from '@pleadli/ui/input'
+import { buttonVariants } from '@pleadli/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@pleadli/ui/table'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
-import { useMemo, useState } from 'react'
+import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
 import { m } from '@/paraglide/messages'
+import { periodText } from './period'
+import { useDrafts, useReceivedReturns, useReports } from './queries'
+import { catalogEntry } from './report-catalog'
+import { type ReportRecord } from './schema'
 
 /**
- * The returns and registers this installation produces, as numbered documents
- * to print. Statistics, the trends and breakdowns, are on Today (a facility)
- * and Overview (Head Office): this page is for what is handed to someone else.
- * Producing one stores it with a reference and a fingerprint of its figures,
- * so the same numbers can be opened, and a printed copy checked, later.
+ * The library: what this installation has written and issued. Reports are
+ * documents only. A draft is a report still being composed; an issued report
+ * is numbered and fingerprinted and does not change. Starting one is under
+ * New report.
  */
 export function ReportsPage() {
   const { data: hqConfig } = useHqConfig()
   const { can } = usePermissions()
-  const navigate = useNavigate()
-  const generate = useGenerateReport()
   const { data: history } = useReports()
+  const { data: drafts } = useDrafts()
   const headOffice = hqConfig?.isHeadOffice ?? false
-  const canGenerate = can('report.generate')
   const { data: received } = useReceivedReturns(headOffice && can('hq.reports'))
-
-  const [preset, setPreset] = useState<PeriodPreset>('last_month')
-  const [customFrom, setCustomFrom] = useState('')
-  const [customTo, setCustomTo] = useState('')
-  const range = useMemo(() => periodRange(preset, customFrom, customTo), [preset, customFrom, customTo])
-
-  const available = reportCatalog.filter((entry) => entry.headOffice === headOffice)
-  const needsPeriod = available.some((entry) => entry.takesPeriod)
-
-  const produce = (kind: ReportKind, takesPeriod: boolean) => {
-    generate.mutate(takesPeriod && range ? { kind, from: range.from, to: range.to } : { kind }, {
-      onSuccess: (report) => void navigate({ to: '/reports/$id', params: { id: report.id } }),
-      onError: (error) => t.error(m.reports_could_not_produce(), { description: error instanceof ApiError ? error.message : m.facilities_please_try_again() }),
-    })
-  }
+  const open = (drafts ?? []).filter((draft) => draft.issuedReportId === null)
 
   return (
     <article className="page">
@@ -54,63 +34,40 @@ export function ReportsPage() {
           <h1>{m.route_reports_reports()}</h1>
           <p className="md:max-w-lg">{m.reports_page_about()}</p>
         </div>
+        {can('report.generate') && (
+          <div className="page-actions">
+            <Link to="/reports/new" className={buttonVariants({ size: 'sm' })}>
+              {m.reports_new_report()}
+            </Link>
+          </div>
+        )}
       </header>
 
-      {needsPeriod && (
+      {open.length > 0 && (
         <section className="page-section">
           <div className="section-head">
-            <h2>{m.reports_period()}</h2>
-            <span className="text-sm text-muted-foreground">{range ? periodText(range.from, range.to) : m.reports_choose_the_days()}</span>
+            <h2>{m.reports_drafts()}</h2>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {periodPresets.map((option) => (
-              <Button key={option.id} size="sm" variant={preset === option.id ? 'default' : 'secondary'} aria-pressed={preset === option.id} onClick={() => setPreset(option.id)}>
-                {option.label()}
-              </Button>
+          <RowList>
+            {open.map((draft) => (
+              <Row
+                key={draft.id}
+                title={draft.title}
+                summary={m.reports_edited_by({ name: draft.updatedByName, when: formatDistanceToNowStrict(draft.updatedAt, { addSuffix: true }) })}
+                trailing={
+                  <Link to="/reports/$report" params={{ report: draft.id }} className={buttonVariants({ size: 'xs', variant: 'secondary' })}>
+                    {m.reports_continue()}
+                  </Link>
+                }
+              />
             ))}
-          </div>
-          {preset === 'custom' && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Input type="date" value={customFrom} max={customTo || undefined} onChange={(event) => setCustomFrom(event.target.value)} aria-label={m.reports_from()} className="w-40" />
-              <span className="text-sm text-muted-foreground">{m.reports_to()}</span>
-              <Input type="date" value={customTo} min={customFrom || undefined} onChange={(event) => setCustomTo(event.target.value)} aria-label={m.reports_to()} className="w-40" />
-            </div>
-          )}
+          </RowList>
         </section>
       )}
 
       <section className="page-section">
         <div className="section-head">
-          <h2>{m.reports_produce_a_return()}</h2>
-        </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {available.map((entry) => {
-            const blocked = entry.takesPeriod && !range
-            const busy = generate.isPending && generate.variables?.kind === entry.kind
-            return (
-              <Card key={entry.kind} className="p-0">
-                <CardContent className="flex h-full flex-col justify-between gap-3 py-4">
-                  <div className="flex flex-col gap-1">
-                    <h3>{entry.title()}</h3>
-                    <p>{entry.about()}</p>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-muted-foreground">{entry.takesPeriod ? (range ? periodText(range.from, range.to) : m.reports_choose_the_days()) : m.reports_as_at_generation()}</span>
-                    <Button size="sm" disabled={!canGenerate || blocked || generate.isPending} onClick={() => produce(entry.kind, entry.takesPeriod)}>
-                      {busy ? m.reports_producing() : m.reports_produce()}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-        {!canGenerate && <p>{m.reports_you_may_read_but_not_produce()}</p>}
-      </section>
-
-      <section className="page-section">
-        <div className="section-head">
-          <h2>{m.reports_produced_so_far()}</h2>
+          <h2>{m.reports_issued()}</h2>
         </div>
         {!history || history.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-10 text-center">
@@ -132,7 +89,7 @@ export function ReportsPage() {
               {history.map((report) => (
                 <TableRow key={report.id}>
                   <TableCell>
-                    <Link to="/reports/$id" params={{ id: report.id }}>
+                    <Link to="/reports/$report" params={{ report: report.id }}>
                       <Badge variant="secondary" className="font-mono">
                         {report.reference}
                       </Badge>
@@ -176,7 +133,7 @@ export function ReportsPage() {
                   <TableRow key={row.id}>
                     <TableCell>{row.facilityName}</TableCell>
                     <TableCell>
-                      <Link to="/reports/$id" params={{ id: row.id }}>
+                      <Link to="/reports/$report" params={{ report: row.id }}>
                         <Badge variant="secondary" className="font-mono">
                           {row.reference}
                         </Badge>

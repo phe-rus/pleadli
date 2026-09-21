@@ -26,6 +26,7 @@ pub mod network;
 pub mod numbering;
 pub mod prisons;
 pub mod recovery;
+pub mod report_drafts;
 pub mod system;
 
 use std::future::Future;
@@ -70,6 +71,7 @@ pub fn route_table(node: NodeRef) -> RouteTable {
         .merge(numbering::routes(node.clone()))
         .merge(capture::routes(node.clone()))
         .merge(documents::routes(node.clone()))
+        .merge(report_drafts::routes(node.clone()))
         .merge(system::routes(node))
 }
 

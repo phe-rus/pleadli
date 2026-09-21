@@ -1,37 +1,25 @@
-import { admissionInstrumentLabel, custodyStatusLabel, prisonerStatusLabel } from '@/features/prisoners'
-import { facilityStatusLabel } from '@/features/facilities'
+import { admissionInstrumentLabel, prisonerStatusLabel } from '@/features/prisoners'
 import { healthEventTypeLabel } from '@/features/health-events'
 import { releaseTypeLabel } from '@/features/releases'
-import { transferDirectionLabel, transferStateLabel } from '@/features/transfers'
 import { visitStatusLabel, visitTypeLabel } from '@/features/visits'
 import { useWorkspace } from '@/features/workspace/tabs-store'
 import { ArrowLeft01Icon, PrinterIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button, buttonVariants } from '@pleadli/ui/button'
 import { Link } from '@tanstack/react-router'
-import { differenceInCalendarDays } from 'date-fns/differenceInCalendarDays'
 import { format } from 'date-fns/format'
 import { useEffect, type ReactNode } from 'react'
 import { periodText } from './period'
 import { catalogEntry } from './report-catalog'
 import { useReport } from './queries'
 import { AttestationBlock, ReturnPanel } from './return-panel'
-import { profileEducationLabel, profileNationalityLabel } from './statistics-board'
-import {
-  admissionRowsSchema,
-  dischargeRowsSchema,
-  monthlyReturnSchema,
-  networkRowsSchema,
-  remandRowsSchema,
-  transferRowsSchema,
-  visitRowsSchema,
-  type GeneratedReport,
-} from './schema'
+import { ComposedBody } from './composed-body'
+import { profileEducationLabel, profileNationalityLabel } from './labels'
+import { isRegisterKind, registerDefs } from './registers'
+import { monthlyReturnSchema, type GeneratedReport } from './schema'
 import { m } from '@/paraglide/messages'
 
 const humanize = (raw: string) => (raw ? raw.charAt(0).toUpperCase() + raw.slice(1).replace(/_/g, ' ') : '')
-const date = (ms: number | null | undefined) => (ms == null ? '' : format(ms, 'd MMM yyyy'))
-const fullName = (first: string, last: string, other?: string | null) => [first, other, last].filter(Boolean).join(' ')
 
 type Column<T> = { header: string; cell: (row: T, index: number) => ReactNode; align?: 'right' }
 
@@ -208,120 +196,10 @@ function MonthlyReturnBody({ body, asAt }: { body: unknown; asAt: number }) {
 }
 
 function RegisterBody({ kind, body, asAt }: { kind: string; body: unknown; asAt: number }) {
-  const unreadable = <p>{m.reports_this_report_could_not_be_read()}</p>
-  switch (kind) {
-    case 'admission_register': {
-      const parsed = admissionRowsSchema.safeParse(body)
-      if (!parsed.success) return unreadable
-      return (
-        <Register
-          rows={parsed.data.rows}
-          columns={[
-            { header: m.reports_column_prisoner_no(), cell: (r) => r.prisonerNumber ?? '' },
-            { header: m.reports_column_name(), cell: (r) => fullName(r.firstName, r.lastName, r.otherNames) },
-            { header: m.reports_column_category(), cell: (r) => prisonerStatusLabel(r.status) },
-            { header: m.reports_column_authority(), cell: (r) => [admissionInstrumentLabel(r.admissionInstrumentType), r.admissionAuthority].filter(Boolean).join(', ') },
-            { header: m.reports_column_offence(), cell: (r) => r.offence ?? '' },
-            { header: m.reports_column_admitted(), cell: (r) => date(r.admittedAt) },
-            { header: m.reports_column_now(), cell: (r) => custodyStatusLabel(r.currentStatus) },
-          ]}
-        />
-      )
-    }
-    case 'discharge_register': {
-      const parsed = dischargeRowsSchema.safeParse(body)
-      if (!parsed.success) return unreadable
-      return (
-        <Register
-          rows={parsed.data.rows}
-          columns={[
-            { header: m.reports_column_prisoner_no(), cell: (r) => r.prisonerNumber ?? '' },
-            { header: m.reports_column_name(), cell: (r) => fullName(r.firstName, r.lastName) },
-            { header: m.reports_column_type(), cell: (r) => releaseTypeLabel(r.releaseType) },
-            { header: m.reports_column_date(), cell: (r) => date(r.releasedAt) },
-            { header: m.reports_column_ordered_by(), cell: (r) => r.orderedBy ?? '' },
-            { header: m.reports_column_authorised_by(), cell: (r) => r.authorisedBy ?? '' },
-          ]}
-        />
-      )
-    }
-    case 'transfer_register': {
-      const parsed = transferRowsSchema.safeParse(body)
-      if (!parsed.success) return unreadable
-      return (
-        <Register
-          rows={parsed.data.rows}
-          columns={[
-            { header: m.reports_column_date(), cell: (r) => date(r.transferredAt) },
-            { header: m.reports_column_direction(), cell: (r) => transferDirectionLabel(r.direction) },
-            { header: m.reports_column_state(), cell: (r) => transferStateLabel(r.direction, r.state) },
-            { header: m.reports_column_person(), cell: (r) => [r.personName, r.prisonerNumber].filter(Boolean).join(' · ') },
-            { header: m.reports_column_other_prison(), cell: (r) => r.otherPrisonName ?? '' },
-            { header: m.reports_column_order(), cell: (r) => [r.orderReference, r.orderingAuthority].filter(Boolean).join(', ') },
-            { header: m.reports_column_reason(), cell: (r) => r.reason ?? '' },
-          ]}
-        />
-      )
-    }
-    case 'visitors_register': {
-      const parsed = visitRowsSchema.safeParse(body)
-      if (!parsed.success) return unreadable
-      return (
-        <Register
-          rows={parsed.data.rows}
-          columns={[
-            { header: m.reports_column_date(), cell: (r) => date(r.visitedAt) },
-            { header: m.reports_column_visitor(), cell: (r) => [r.visitorName, r.relationship].filter(Boolean).join(', ') },
-            { header: m.reports_column_prisoner(), cell: (r) => [fullName(r.prisonerFirstName, r.prisonerLastName), r.prisonerNumber].filter(Boolean).join(' · ') },
-            { header: m.reports_column_type(), cell: (r) => visitTypeLabel(r.visitType) },
-            { header: m.reports_column_outcome(), cell: (r) => visitStatusLabel(r.status) },
-            { header: m.reports_column_party(), cell: (r) => r.partySize, align: 'right' },
-            { header: m.reports_column_time(), cell: (r) => (r.startedAt ? `${format(r.startedAt, 'HH:mm')}${r.endedAt ? ` to ${format(r.endedAt, 'HH:mm')}` : ''}` : '') },
-          ]}
-        />
-      )
-    }
-    case 'remand_list': {
-      const parsed = remandRowsSchema.safeParse(body)
-      if (!parsed.success) return unreadable
-      return (
-        <Register
-          rows={parsed.data.rows}
-          columns={[
-            { header: m.reports_column_prisoner_no(), cell: (r) => r.prisonerNumber ?? '' },
-            { header: m.reports_column_name(), cell: (r) => fullName(r.firstName, r.lastName) },
-            { header: m.reports_column_offence(), cell: (r) => r.offence ?? '' },
-            { header: m.reports_column_remanded_by(), cell: (r) => r.admissionAuthority ?? '' },
-            { header: m.reports_column_admitted(), cell: (r) => date(r.admittedAt) },
-            { header: m.reports_column_days_held(), cell: (r) => differenceInCalendarDays(asAt, r.admittedAt), align: 'right' },
-            { header: m.reports_column_high_court_only(), cell: (r) => (r.highCourtOnlyOffence ? m.reports_yes() : m.reports_no()) },
-            { header: m.reports_column_last_produced(), cell: (r) => date(r.lastProducedAt) },
-          ]}
-        />
-      )
-    }
-    case 'network_register': {
-      const parsed = networkRowsSchema.safeParse(body)
-      if (!parsed.success) return unreadable
-      return (
-        <Register
-          rows={parsed.data.rows}
-          columns={[
-            { header: m.reports_column_facility_no(), cell: (r) => r.facilityNumber },
-            { header: m.reports_column_facility(), cell: (r) => r.name },
-            { header: m.reports_column_region(), cell: (r) => r.region },
-            { header: m.reports_column_location(), cell: (r) => r.location },
-            { header: m.reports_column_status(), cell: (r) => facilityStatusLabel(r.status) },
-            { header: m.reports_column_officers(), cell: (r) => r.officerCount, align: 'right' },
-            { header: m.reports_column_held(), cell: (r) => r.heldAtLastSync, align: 'right' },
-            { header: m.reports_column_last_synced(), cell: (r) => (r.lastSyncedAt ? format(r.lastSyncedAt, 'd MMM yyyy, HH:mm') : m.reports_never()) },
-          ]}
-        />
-      )
-    }
-    default:
-      return unreadable
-  }
+  const def = isRegisterKind(kind) ? registerDefs[kind] : null
+  const rows = def?.rows(body, asAt) ?? null
+  if (!def || !rows) return <p>{m.reports_this_report_could_not_be_read()}</p>
+  return <Register rows={rows} columns={def.columns.map((column) => ({ header: column.header(), cell: (row: Record<string, string>) => row[column.key], align: column.align }))} />
 }
 
 /** One frame for every printed return: who issued it, its reference and date,
@@ -363,7 +241,13 @@ function ReportSheet({ report }: { report: GeneratedReport }) {
           <p>{periodText(document.periodFrom, document.periodTo)}</p>
         </div>
 
-        {report.kind === 'monthly_return' ? <MonthlyReturnBody body={document.body} asAt={document.asAt} /> : <RegisterBody kind={report.kind} body={document.body} asAt={document.asAt} />}
+        {report.kind === 'monthly_return' ? (
+          <MonthlyReturnBody body={document.body} asAt={document.asAt} />
+        ) : report.kind === 'composed' ? (
+          <ComposedBody body={document.body} />
+        ) : (
+          <RegisterBody kind={report.kind} body={document.body} asAt={document.asAt} />
+        )}
         {report.kind === 'monthly_return' && <AttestationBlock report={report} />}
       </div>
 

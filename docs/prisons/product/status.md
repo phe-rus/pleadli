@@ -46,8 +46,8 @@ Facility capabilities, keyed to the F map in `02-capabilities-domains-workflows.
 
 | ID | Capability | State | Layers note |
 |---|---|---|---|
-| F1.1 | Population and occupancy | `implemented` | node: overview derives in-custody/remand/civil; `facility_profile.approved_capacity`; ui: Overview. "Unlock" label and count reconcile are `planned` |
-| F1.2 | Obligation queue | `implemented` | node: `obligations.rs`; ui: Today due queue |
+| F1.1 | Population and occupancy | `implemented` | node: overview derives in-custody/remand/civil; `facility_profile.approved_capacity`; ui: Today, Custody section (held, convicted, remand, civil, occupancy against approved capacity, remand-threshold line). "Unlock" label and count reconcile are `planned` |
+| F1.2 | Obligation queue | `implemented` | node: `obligations.rs`; ui: Today Attention (2026-09-21): one list of obligations grouped by kind, plus the inbox items that still need an officer, the monthly return not yet produced/attested/sent, visit requests awaiting a decision and an unnamed facility; later-dated obligations under "Coming up". Two stores remain underneath (obligations derived, inbox stored); only the presentation is unified. Requests past a threshold are not listed: no threshold is researched |
 | F1.3 | Watch log and shift handover | `research` | PROVISIONAL; needs field (R-03) |
 | F1.4 | Exceptions | `in-progress` | mandatory-bail, documents-pending, hospitalised built; count and capacity exceptions `planned` |
 | F2.1 | Reception | `implemented` | node: procedure above; ui: guided ProcedureShell is stage 2–3 work |
@@ -72,7 +72,7 @@ Facility capabilities, keyed to the F map in `02-capabilities-domains-workflows.
 | F5.3 | Gate register | `research` | PROVISIONAL |
 | F5.4 | Prohibited articles | `research` | list is HQ-owned directive (W15); not built |
 | F6.1 | Instruments (received docs) | `implemented` | shipped inside F2.2 |
-| F6.2 | Generated documents | `in-progress` | reports documents (now with a UI: numbered, printable, listed), transfer dossier + receipt built; admission slip, release order `planned`. The s.118 list is the remand list report |
+| F6.2 | Generated documents | `in-progress` | reports documents (now with a UI: numbered, printable, listed), transfer dossier + receipt built; admission slip, release order `planned`. Composed reports (2026-09-21): drafts of written text (rich or Markdown) and tables filled from the registers, with selectable columns and rows and editable cells that keep the register's value, issued as a numbered, fingerprinted `composed` report; the monthly return stays a fixed, attested form. The s.118 list is the remand list report |
 | F6.3 | Registers as views | `designed` | this vault (`registers.md`) now defines them; no code |
 | F6.4 | Dispatch and receipt | `in-progress` | transfer dossier receipt built; general dispatch tracking `designed` |
 | F6.5 | Prisoner access to own record | `research` | r9 [I]; Uganda position [U] |
@@ -93,7 +93,7 @@ Head Office (keyed to `D.2` in 02):
 | ID | Capability | State | Layers note |
 |---|---|---|---|
 | HA | Network administration | `in-progress` | onboard/verify/revoke/roster built; suspend, decommission, versions, keys `designed` |
-| HB | Estate awareness | `implemented` | `domain/estate.rs`, `GET /api/hq/estate`, the Home page (2026-09-20): contact health, occupancy against reported capacity, last-closed-month return state, attention list. Facilities report counts on the `status` sync class. Tests cover the view against a fixed clock and a real facility to Head Office round trip. Not run in the packaged app. By region only: no unit-level occupancy, no region scoping for commanders (R-23), no map, no oversight items or transfers in the attention list |
+| HB | Estate awareness | `implemented` | `domain/estate.rs`, `GET /api/hq/estate`, the Home page (2026-09-20): contact health, occupancy against reported capacity, last-closed-month return state, attention list. Facilities report counts on the `status` sync class. Tests cover the view against a fixed clock and a real facility to Head Office round trip. Not run in the packaged app. By region only: no unit-level occupancy, no region scoping for commanders (R-23), no map, no oversight items or transfers in the attention list. 2026-09-21: the home is now Estate (network health from last contact, needs attention, facilities by region, recent network events from returns received and connection decisions, what Head Office has to do); no exchange log exists, so no stalled-exchange state, and the legacy population statistics board was removed (Head Office has no chart until it has a meaningful one) |
 | HC | Coordination (transfers, decongestion) | `planned` | W5 HQ side designed |
 | HD | Oversight | `planned` | W14 designed |
 | HE | Decisions register | `planned` | W15 designed |

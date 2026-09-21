@@ -40,7 +40,7 @@ export function identityForPath(pathname: string): TabIdentity | null {
     return { kind: 'document', key: `document:${documentKind}:${recordId}`, documentKind, recordId, to: pathname }
   }
 
-  const reportMatch = /^\/reports\/([^/]+)$/.exec(pathname)
+  const reportMatch = /^\/reports\/(?!new$)([^/]+)$/.exec(pathname)
   if (reportMatch) return { kind: 'report', key: `report:${reportMatch[1]}`, recordId: reportMatch[1], to: pathname }
 
   const procedureMatch = /^\/procedures\/([a-z]+)(?:\/([^/]*))?$/.exec(pathname)

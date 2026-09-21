@@ -38,7 +38,7 @@ export function Ribbon() {
 
   return (
     <nav aria-label={m.shell_ribbon()} className="flex w-11 print:hidden shrink-0 flex-col items-center gap-1 border-r border-border/20 bg-background py-1.5">
-      <RibbonButton icon={Home01Icon} label={hqConfig?.isHeadOffice ? m.shell_overview() : m.shell_today()} active={pathname === '/'} onClick={() => void navigate({ to: '/' })} />
+      <RibbonButton icon={Home01Icon} label={hqConfig?.isHeadOffice ? m.shell_estate() : m.shell_today()} active={pathname === '/'} onClick={() => void navigate({ to: '/' })} />
       {canSearch && <RibbonButton icon={Search01Icon} label={m.shell_search_commands()} onClick={() => setCommandOpen(true)} />}
       <QuickActions />
       <InboxBell />

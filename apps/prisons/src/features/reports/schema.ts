@@ -246,3 +246,60 @@ export const networkRowsSchema = rows(
     heldAtLastSync: z.number(),
   }),
 )
+
+// ---------------------------------------------------------------------
+// Composed reports: a document of written text and tables, saved as a draft
+// and issued once. The node keeps the blocks as sent; these describe what
+// the editor puts in them.
+// ---------------------------------------------------------------------
+
+/** Written text. `doc` is the editor's own document as JSON, the same form
+ * every rich-text field in the app keeps; Markdown is a way to write and read
+ * it, never a second copy. */
+export const textBlockSchema = z.object({ id: z.string(), type: z.literal('text'), doc: z.string() })
+
+/** A table of text cells. It holds the rows as they were when loaded from a
+ * register, plus what the officer did to them: which columns show, which rows
+ * are in, and any cell they typed over. A row that was edited keeps the
+ * register's own values in `original`, so an issued report can say how much of
+ * it was changed by hand. */
+export const tableBlockSchema = z.object({
+  id: z.string(),
+  type: z.literal('table'),
+  caption: z.string(),
+  source: z.object({ kind: z.string(), from: z.number().nullable(), to: z.number().nullable(), loadedAt: z.number() }).nullable(),
+  columns: z.array(z.object({ key: z.string(), label: z.string(), align: z.enum(['left', 'right']), visible: z.boolean() })),
+  rows: z.array(
+    z.object({
+      id: z.string(),
+      included: z.boolean(),
+      cells: z.record(z.string(), z.string()),
+      original: z.record(z.string(), z.string()).optional(),
+    }),
+  ),
+})
+
+export const blockSchema = z.discriminatedUnion('type', [textBlockSchema, tableBlockSchema])
+export type Block = z.infer<typeof blockSchema>
+export type TextBlock = z.infer<typeof textBlockSchema>
+export type TableBlock = z.infer<typeof tableBlockSchema>
+
+export const draftSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  createdByName: z.string(),
+  updatedByName: z.string(),
+  updatedAt: z.number(),
+  /** Set once issued: the draft is then read-only and the report is opened instead. */
+  issuedReportId: z.string().nullable(),
+})
+export type DraftSummary = z.infer<typeof draftSummarySchema>
+
+export const draftSchema = draftSummarySchema.extend({ blocks: z.array(blockSchema) })
+export type Draft = z.infer<typeof draftSchema>
+
+export const composedBodySchema = z.object({ blocks: z.array(blockSchema) })
+
+/** Drafts are named with this prefix by the node, so a report's address says
+ * which of the two it is without asking. */
+export const isDraftId = (id: string) => id.startsWith('draft-')

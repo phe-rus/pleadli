@@ -31,6 +31,7 @@ pub mod prisoner_photos;
 pub mod prisoners;
 pub mod programmes;
 pub mod property_records;
+pub mod report_drafts;
 pub mod reports;
 pub mod releases;
 pub mod requests;

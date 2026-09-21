@@ -67,7 +67,7 @@ export const prisonsNav: readonly SidebarNavItem[] = [
   },
   {
     icon: DashboardBrowsingIcon,
-    get label() { return m.nav_overview() },
+    get label() { return m.nav_estate() },
     to: '/',
     exact: true,
     hqOnly: true,
@@ -116,9 +116,11 @@ export const prisonsNav: readonly SidebarNavItem[] = [
   {
     icon: FileEditIcon,
     get label() { return m.nav_reports() },
-    to: '/reports',
-    requires: ['report.read', 'hq.reports'],
     get section() { return m.nav_institution() },
+    children: [
+      { icon: FileEditIcon, get label() { return m.nav_reports_library() }, to: '/reports', exact: true, requires: ['report.read', 'hq.reports'] },
+      { icon: FileEditIcon, get label() { return m.nav_reports_new() }, to: '/reports/new', requires: ['report.generate'] },
+    ],
   },
   {
     icon: NetworkIcon,
@@ -170,7 +172,7 @@ export function visibleNav(isHeadOffice: boolean, permissions: readonly string[]
     .filter((item) => (isHeadOffice ? !item.facilityOnly : !item.hqOnly))
     .map((item) => ({
       ...item,
-      section: isHeadOffice && item.to ? (sectionOverride[item.to] ?? item.section) : item.section,
+      section: isHeadOffice ? (sectionOverride[item.to ?? item.children?.[0]?.to ?? ''] ?? item.section) : item.section,
       ...(item.children ? { children: item.children.filter(allowed) } : {}),
     }))
     .filter((item) => allowed(item) && (!item.children || item.children.length > 0))
@@ -189,7 +191,7 @@ export function permissionsForPath(pathname: string): readonly string[] | undefi
 }
 
 /** The nav entry an area pathname belongs to, for tab titles and icons. `/`
- * is Today for a facility and Overview for Head Office; every other area has
+ * is Today for a facility and Estate for Head Office; every other area has
  * one label regardless of role. Unknown paths are not areas. */
 export function areaMeta(pathname: string, isHeadOffice = false): { label: string; icon: any } | undefined {
   const path = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname

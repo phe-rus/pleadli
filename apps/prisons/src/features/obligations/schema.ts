@@ -31,7 +31,62 @@ export const movementCountsSchema = z.object({
   preparing: z.number(),
   inTransit: z.number(),
   awaitingConfirmation: z.number(),
+  /** Productions dated today that are still scheduled, with no outcome yet. */
   courtToday: z.number(),
+  /** Productions dated today whose outcome has been recorded. */
+  courtDoneToday: z.number(),
+})
+
+/** What has happened so far today. A person who arrives by transfer is a
+ * transfer, not also an admission. */
+export const dayCountsSchema = z.object({
+  admitted: z.number(),
+  discharged: z.number(),
+  transferredOut: z.number(),
+  transferredIn: z.number(),
+})
+
+/** One thing that happened, taken from a real record. `detail` is that
+ * record's own type or state (a release type, the other prison, a court state,
+ * a visit type, a request category, a health event type). */
+export const recentEventSchema = z.object({
+  at: z.number(),
+  kind: z.enum(['admitted', 'discharged', 'transfer_out', 'transfer_in', 'court', 'visit', 'request_raised', 'request_resolved', 'health']),
+  prisonerId: z.string().nullable(),
+  prisonerName: z.string().nullable(),
+  detail: z.string().nullable(),
+})
+export type RecentEvent = z.infer<typeof recentEventSchema>
+
+export const recentSchema = z.object({
+  admitted: z.number(),
+  discharged: z.number(),
+  transferredOut: z.number(),
+  transferredIn: z.number(),
+  events: z.array(recentEventSchema),
+  weeks: z.array(z.object({ startsAt: z.number(), admitted: z.number(), discharged: z.number() })),
+})
+
+export const remandSchema = z.object({
+  pastThreshold: z.number(),
+  within14Days: z.number(),
+  longestHeldDays: z.number().nullable(),
+})
+
+export const courtActivitySchema = z.object({
+  next7Days: z.number(),
+  /** Scheduled productions from before today that have no outcome yet. */
+  awaitingOutcome: z.number(),
+})
+
+export const careSchema = z.object({
+  visitsToday: z.number(),
+  visitsCompletedToday: z.number(),
+  /** Visit requests still waiting for a decision, whatever day they are for. */
+  visitsAwaitingDecision: z.number(),
+  healthEvents30Days: z.number(),
+  openRequests: z.number(),
+  oldestOpenRequestAt: z.number().nullable(),
 })
 
 export const todayViewSchema = z.object({
@@ -39,6 +94,11 @@ export const todayViewSchema = z.object({
   facility: facilityProfileSchema,
   population: populationSchema,
   movements: movementCountsSchema,
+  day: dayCountsSchema,
+  recent: recentSchema,
+  remand: remandSchema,
+  court: courtActivitySchema,
+  care: careSchema,
   obligations: z.array(obligationSchema),
 })
 

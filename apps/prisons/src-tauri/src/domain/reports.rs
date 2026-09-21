@@ -629,11 +629,18 @@ macro_rules! select_record {
 
 pub async fn generate(conn: &mut SqliteConnection, actor: &Actor, kind: Kind, period: Option<Period>) -> Result<GeneratedReport, DomainError> {
     let document = build(conn, kind, period).await?;
-    let content = serde_json::to_string(&document).map_err(|e| DomainError::rejected(e.to_string()))?;
+    store(conn, actor, kind.prefix(), &document).await
+}
+
+/// Numbers, fingerprints and stores a finished document, and audits it. Every
+/// report that is issued, whether the node built it or an officer composed it,
+/// goes through here, so a reference and a hash mean the same thing for all.
+pub(super) async fn store(conn: &mut SqliteConnection, actor: &Actor, prefix: &str, document: &ReportDocument) -> Result<GeneratedReport, DomainError> {
+    let content = serde_json::to_string(document).map_err(|e| DomainError::rejected(e.to_string()))?;
     let content_hash = format!("{:x}", Sha256::digest(content.as_bytes()));
 
     let year = eat_datetime(document.as_at).year();
-    let stem = format!("{}-{}-", kind.prefix(), year);
+    let stem = format!("{prefix}-{year}-");
     let taken: i64 =
         sqlx::query_scalar("SELECT COUNT(*) FROM generated_reports WHERE reference LIKE ?").bind(format!("{stem}%")).fetch_one(&mut *conn).await?;
     let reference = format!("{stem}{:04}", taken + 1);
@@ -662,7 +669,7 @@ pub async fn generate(conn: &mut SqliteConnection, actor: &Actor, kind: Kind, pe
     let record: ReportRecord =
         sqlx::query_as(select_record!("WHERE g.id = ?")).bind(&id).fetch_one(&mut *conn).await?;
     audit::record(conn, actor, AuditEntry::new("report.generate", "report", Some(&id)).after(&record)).await?;
-    Ok(GeneratedReport { record, document: value(&document) })
+    Ok(GeneratedReport { record, document: value(document) })
 }
 
 /// The full-screen trend view (docs/prisons/product-map/05 N): every

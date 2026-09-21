@@ -30,7 +30,7 @@ function markNotified(facilityId: string) {
  * `pending_verification`, so a Head Office officer doesn't have to keep
  * the Facilities page open to notice a new registration (spec: docs/specs/
  * prisons/0001-head-office-peer-sync-network/0002-peer-registration-and-
- * pairing.md). Head Office only — wired into `HqOverview`, mirroring how
+ * pairing.md). Head Office only — wired into `EstateHome`, mirroring how
  * the facility side's own mandatory-bail/hospitalised alerts are wired
  * into `FacilityOverview`.
  */

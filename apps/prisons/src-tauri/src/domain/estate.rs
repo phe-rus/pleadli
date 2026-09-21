@@ -1,4 +1,4 @@
-//! The Head Office estate view (docs/prisons/product-map/08 2.2): how recently
+//! The Head Office estate view (docs/prisons/product/08 2.2): how recently
 //! each facility was heard from, how full it is, whether its return is in, and
 //! which need attention. Head Office holds no prisoner rows for this. A
 //! connected facility sends a small status report of counts (tier T2), and
@@ -275,6 +275,25 @@ pub struct Attention {
     pub figure: Option<i64>,
 }
 
+/// Something that reached Head Office or was decided here, taken from the
+/// records themselves: a return received, a connection asked for, approved or
+/// refused. Nothing is inferred, so a network that has done none of these has
+/// no events.
+#[derive(Debug, Clone, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkEvent {
+    pub at: i64,
+    /// return_received | connection_requested | connection_approved | connection_rejected
+    pub kind: String,
+    pub facility_id: String,
+    pub facility_name: String,
+    /// The return's reference, or the person who asked or decided.
+    pub detail: Option<String>,
+}
+
+/// How many network events the estate view carries.
+const EVENT_LIMIT: i64 = 8;
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Estate {
@@ -285,6 +304,35 @@ pub struct Estate {
     pub regions: Vec<EstateRegion>,
     pub attention: Vec<Attention>,
     pub connection_requests_waiting: i64,
+    /// Facilities whose connection has been revoked. They are left out of
+    /// `regions`, so this is the only place they are counted.
+    pub revoked: i64,
+    pub events: Vec<NetworkEvent>,
+}
+
+async fn network_events(pool: &SqlitePool) -> Result<Vec<NetworkEvent>, sqlx::Error> {
+    sqlx::query_as::<_, NetworkEvent>(
+        "SELECT at, kind, facility_id, facility_name, detail FROM (
+           SELECT r.received_at AS at, 'return_received' AS kind, r.facility_id AS facility_id, f.name AS facility_name, r.reference AS detail
+             FROM received_returns r JOIN facilities f ON f.id = r.facility_id
+           UNION ALL
+           SELECT q.created_at, 'connection_requested', q.facility_id, f.name, q.requested_by_name
+             FROM facility_connection_requests q JOIN facilities f ON f.id = q.facility_id
+           UNION ALL
+           SELECT q.decided_at, 'connection_approved', q.facility_id, f.name, q.decided_by_name
+             FROM facility_connection_requests q JOIN facilities f ON f.id = q.facility_id
+             WHERE q.status = 'approved' AND q.decided_at IS NOT NULL
+           UNION ALL
+           SELECT q.decided_at, 'connection_rejected', q.facility_id, f.name, q.decided_by_name
+             FROM facility_connection_requests q JOIN facilities f ON f.id = q.facility_id
+             WHERE q.status = 'rejected' AND q.decided_at IS NOT NULL
+         )
+         ORDER BY at DESC
+         LIMIT ?",
+    )
+    .bind(EVENT_LIMIT)
+    .fetch_all(pool)
+    .await
 }
 
 #[derive(Debug, FromRow)]
@@ -347,6 +395,8 @@ pub async fn estate(pool: &SqlitePool, now: i64) -> Result<Estate, sqlx::Error> 
             .fetch_all(pool)
             .await?;
     let waiting: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM facility_connection_requests WHERE status = 'pending'").fetch_one(pool).await?;
+    let revoked: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM facilities WHERE status = 'revoked'").fetch_one(pool).await?;
+    let events = network_events(pool).await?;
 
     let (month_from, month_to) = last_closed_month(now);
     let overdue_after = month_to + RETURN_GRACE_DAYS * DAY_MS;
@@ -459,7 +509,7 @@ pub async fn estate(pool: &SqlitePool, now: i64) -> Result<Estate, sqlx::Error> 
     };
     attention.sort_by(|a, b| rank(&a.kind).cmp(&rank(&b.kind)).then_with(|| a.facility_name.cmp(&b.facility_name)));
 
-    Ok(Estate { as_of: now, return_period_from: month_from, return_period_to: month_to, regions, attention, connection_requests_waiting: waiting })
+    Ok(Estate { as_of: now, return_period_from: month_from, return_period_to: month_to, regions, attention, connection_requests_waiting: waiting, revoked, events })
 }
 
 #[cfg(test)]
@@ -617,6 +667,52 @@ mod tests {
             ]
         );
         assert_eq!(view.attention.last().unwrap().figure, Some(120));
+        assert_eq!(view.revoked, 1, "a revoked facility is left out of the regions but still counted");
+    }
+
+    #[tokio::test]
+    async fn network_events_are_only_what_the_records_hold() {
+        let pool = pool().await;
+        let now = ms(2026, 3, 20);
+        assert!(estate(&pool, now).await.unwrap().events.is_empty(), "a network that has done nothing has no events");
+
+        add(&pool, Seed { id: "a", region: "Central", status: "active", contact: Some(now), held: None, capacity: None }).await;
+        add(&pool, Seed { id: "b", region: "Central", status: "active", contact: Some(now), held: None, capacity: None }).await;
+        for (n, (id, facility, status, decided)) in [("q1", "a", "approved", Some(ms(2026, 3, 2))), ("q2", "b", "rejected", Some(ms(2026, 3, 4))), ("q3", "b", "pending", None)].into_iter().enumerate() {
+            sqlx::query(
+                "INSERT INTO facility_connection_requests (id, facility_id, token_hash, requested_by_badge, requested_by_name, status, decided_by_name, decided_at, created_at)
+                 VALUES (?, ?, 'h', 'B1', 'Asked By', ?, 'Decided By', ?, ?)",
+            )
+            .bind(id)
+            .bind(facility)
+            .bind(status)
+            .bind(decided)
+            .bind(ms(2026, 3, 1) + n as i64)
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
+        sqlx::query(
+            "INSERT INTO received_returns (id, facility_id, reference, kind, title, period_from, period_to, template_version, content_json, content_hash, statement, attested_by_name, attested_at, received_at)
+             VALUES ('r1', 'a', 'MR-2026-0001', 'monthly_return', 'Monthly return', ?, ?, 1, '{}', 'h', 's', 'OIC', ?, ?)",
+        )
+        .bind(ms(2026, 2, 1))
+        .bind(ms(2026, 3, 1))
+        .bind(ms(2026, 3, 3))
+        .bind(ms(2026, 3, 3))
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let events = estate(&pool, now).await.unwrap().events;
+        let seen: Vec<(&str, &str)> = events.iter().map(|e| (e.kind.as_str(), e.facility_id.as_str())).collect();
+        assert_eq!(
+            seen,
+            [("connection_rejected", "b"), ("return_received", "a"), ("connection_approved", "a"), ("connection_requested", "b"), ("connection_requested", "b"), ("connection_requested", "a")],
+            "newest first, one row per thing that happened, and a request still pending is only ever a request"
+        );
+        assert_eq!(events[1].detail.as_deref(), Some("MR-2026-0001"));
+        assert_eq!(events[0].detail.as_deref(), Some("Decided By"));
     }
 
     #[tokio::test]

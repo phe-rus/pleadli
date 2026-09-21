@@ -53,6 +53,21 @@ export const attentionSchema = z.object({
 })
 export type Attention = z.infer<typeof attentionSchema>
 
+export const networkEventKindSchema = z.enum(['return_received', 'connection_requested', 'connection_approved', 'connection_rejected'])
+export type NetworkEventKind = z.infer<typeof networkEventKindSchema>
+
+/** Something that reached Head Office or was decided here, from the records
+ * themselves. Nothing is inferred, so a quiet network has no events. */
+export const networkEventSchema = z.object({
+  at: z.number(),
+  kind: networkEventKindSchema,
+  facilityId: z.string(),
+  facilityName: z.string(),
+  /** The return's reference, or the person who asked or decided. */
+  detail: z.string().nullable(),
+})
+export type NetworkEvent = z.infer<typeof networkEventSchema>
+
 export const estateSchema = z.object({
   asOf: z.number(),
   returnPeriodFrom: z.number(),
@@ -60,5 +75,8 @@ export const estateSchema = z.object({
   regions: z.array(estateRegionSchema),
   attention: z.array(attentionSchema),
   connectionRequestsWaiting: z.number(),
+  /** Facilities whose connection was revoked. They are left out of `regions`. */
+  revoked: z.number(),
+  events: z.array(networkEventSchema),
 })
 export type Estate = z.infer<typeof estateSchema>
