@@ -9,6 +9,14 @@
 //! carries the salt, so a brand new machine can restore with the passphrase
 //! alone. Nothing is ever deleted by a restore: the database being replaced is
 //! moved aside, and vault files are only added.
+//!
+//! The database and the vault are encrypted at rest under keys that belong to
+//! one machine (`keys.rs`). A backup has to open on a different machine, so
+//! inside the archive the database is a plain SQLite file and each document is
+//! its plain bytes; the archive's own passphrase encryption is what protects
+//! them. A restore unpacks them as plaintext, and the next start encrypts the
+//! database and seals the documents under the new machine's keys (`db.rs`,
+//! `vault.rs`) before destroying the plaintext.
 
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter, Read, Write};
@@ -421,6 +429,69 @@ pub struct BackupInfo {
     pub created_at: i64,
 }
 
+/// Writes a plain (unencrypted) SQLite copy of `sealed` at `plain`, for the
+/// archive. `sealed` is a `VACUUM INTO` copy of the live database, so it is
+/// under this node's key, unless the node runs unkeyed (tests), in which case it
+/// is already plain and is just moved.
+async fn export_plain(sealed: &Path, plain: &Path) -> Result<(), BackupError> {
+    use sqlx::Connection;
+    if crate::db::is_plaintext(sealed) {
+        fs::rename(sealed, plain).or_else(|_| fs::copy(sealed, plain).map(|_| ()))?;
+        return Ok(());
+    }
+    let _ = fs::remove_file(plain);
+    let mut conn = SqliteConnection::connect_with(&crate::db::keyed_options(sealed, super::keys::current())).await?;
+    let version: i64 = sqlx::query_scalar("PRAGMA user_version").fetch_one(&mut conn).await?;
+    sqlx::query("ATTACH DATABASE ?1 AS plain KEY ''").bind(plain.to_string_lossy().to_string()).execute(&mut conn).await?;
+    sqlx::query("SELECT sqlcipher_export('plain')").execute(&mut conn).await?;
+    sqlx::query(sqlx::AssertSqlSafe(format!("PRAGMA plain.user_version = {version}"))).execute(&mut conn).await?;
+    sqlx::query("DETACH DATABASE plain").execute(&mut conn).await?;
+    conn.close().await?;
+    Ok(())
+}
+
+/// Writes one archive: the manifest, then each file in `files`.
+fn write_archive(
+    files: &[(String, PathBuf)],
+    partial: &Path,
+    key: &[u8; 32],
+    salt: &[u8; SALT_LEN],
+    created_at: i64,
+    schema_version: i64,
+    chain: &audit::ChainStatus,
+) -> Result<u64, BackupError> {
+        let mut manifest_files = Vec::with_capacity(files.len());
+        for (name, path) in files {
+            let (sha256, size) = sha256_file(path)?;
+            manifest_files.push(ManifestFile { path: name.clone(), size, sha256 });
+        }
+        let manifest = Manifest {
+            format: 1,
+            app_version: env!("CARGO_PKG_VERSION").to_string(),
+            created_at,
+            schema_version,
+            audit_entries: chain.checked,
+            audit_head: chain.head_hash.clone(),
+            files: manifest_files,
+        };
+        let manifest_bytes = serde_json::to_vec(&manifest).map_err(|e| BackupError::Io(io::Error::other(e)))?;
+
+        let file = File::create(partial)?;
+        let mut writer = ChunkWriter::new(BufWriter::new(file), key, salt)?;
+        write_entry(&mut writer, "manifest.json", &mut &manifest_bytes[..], manifest_bytes.len() as u64)?;
+        for ((name, path), listed) in files.iter().zip(&manifest.files) {
+            let mut source = File::open(path)?;
+            write_entry(&mut writer, name, &mut source, listed.size)?;
+        }
+        // End-of-archive marker: a zero-length name.
+        writer.write_all(&0u16.to_be_bytes())?;
+        let mut inner = writer.finish()?;
+        inner.flush()?;
+        let file = inner.into_inner().map_err(|e| BackupError::Io(e.into_error()))?;
+        file.sync_all()?;
+        Ok(fs::metadata(partial)?.len())
+}
+
 /// Snapshots the database and writes one encrypted backup file into `dir`.
 /// Safe while the node is serving requests.
 pub async fn create_backup(
@@ -440,7 +511,13 @@ pub async fn create_backup(
     fs::create_dir_all(dir)?;
     let snapshot = tmp_dir.join(format!("db-{}.sqlite", uuid::Uuid::new_v4()));
 
-    sqlx::query("VACUUM INTO ?1").bind(snapshot.to_string_lossy().to_string()).execute(pool).await?;
+    // `VACUUM INTO` is consistent while the node serves requests, and writes the
+    // copy under the same key. The archive needs a portable, plain one.
+    let sealed_snapshot = tmp_dir.join(format!("db-{}.sealed", uuid::Uuid::new_v4()));
+    sqlx::query("VACUUM INTO ?1").bind(sealed_snapshot.to_string_lossy().to_string()).execute(pool).await?;
+    let exported = export_plain(&sealed_snapshot, &snapshot).await;
+    let _ = crate::domain::vault::shred_file(&sealed_snapshot);
+    exported?;
 
     let schema_version: i64 = sqlx::query_scalar("SELECT COALESCE(MAX(version), 0) FROM _sqlx_migrations").fetch_one(pool).await?;
     let chain = audit::verify_chain(pool).await?;
@@ -454,48 +531,49 @@ pub async fn create_backup(
     let snapshot_for_task = snapshot.clone();
     let partial_for_task = partial_path.clone();
 
+    let scratch_dir = tmp_dir.clone();
     let outcome = tokio::task::spawn_blocking(move || -> Result<u64, BackupError> {
         let mut files: Vec<(String, PathBuf)> = vec![("db.sqlite".to_string(), snapshot_for_task.clone())];
-        for path in walk_files(&vault_root)? {
-            let relative = path.strip_prefix(&vault_root).map_err(|_| BackupError::Unreadable)?;
-            files.push((format!("vault/{}", relative.to_string_lossy().replace('\\', "/")), path));
+        let mut plain_copies: Vec<PathBuf> = Vec::new();
+        let listed = (|| -> Result<(), BackupError> {
+            for path in walk_files(&vault_root)? {
+                let relative = path.strip_prefix(&vault_root).map_err(|_| BackupError::Unreadable)?;
+                let name = relative.to_string_lossy().replace('\\', "/");
+                if name.ends_with(".partial") {
+                    continue;
+                }
+                match name.strip_suffix(".enc") {
+                    // A sealed document goes into the archive as its plain bytes.
+                    Some(plain_name) => {
+                        let id = path.file_name().and_then(|n| n.to_str()).and_then(|n| n.split('.').next()).unwrap_or_default().to_string();
+                        let bytes = crate::domain::vault::open_bytes(&id, &fs::read(&path)?).map_err(|_| BackupError::Inconsistent(format!("{name} could not be opened from the vault")))?;
+                        let copy = scratch_dir.join(format!("vault-{}", uuid::Uuid::new_v4()));
+                        fs::write(&copy, bytes)?;
+                        plain_copies.push(copy.clone());
+                        files.push((format!("vault/{plain_name}"), copy));
+                    }
+                    // Anything else is an older plaintext file not yet sealed: keep it.
+                    None => files.push((format!("vault/{name}"), path)),
+                }
+            }
+            Ok(())
+        })();
+        if let Err(e) = listed {
+            for copy in &plain_copies {
+                let _ = crate::domain::vault::shred_file(copy);
+            }
+            return Err(e);
         }
-
-        let mut manifest_files = Vec::with_capacity(files.len());
-        for (name, path) in &files {
-            let (sha256, size) = sha256_file(path)?;
-            manifest_files.push(ManifestFile { path: name.clone(), size, sha256 });
+        let result = write_archive(&files, &partial_for_task, &key, &salt, created_at, schema_version, &chain);
+        for copy in &plain_copies {
+            let _ = crate::domain::vault::shred_file(copy);
         }
-        let manifest = Manifest {
-            format: 1,
-            app_version: env!("CARGO_PKG_VERSION").to_string(),
-            created_at,
-            schema_version,
-            audit_entries: chain.checked,
-            audit_head: chain.head_hash.clone(),
-            files: manifest_files,
-        };
-        let manifest_bytes = serde_json::to_vec(&manifest).map_err(|e| BackupError::Io(io::Error::other(e)))?;
-
-        let file = File::create(&partial_for_task)?;
-        let mut writer = ChunkWriter::new(BufWriter::new(file), &key, &salt)?;
-        write_entry(&mut writer, "manifest.json", &mut &manifest_bytes[..], manifest_bytes.len() as u64)?;
-        for ((name, path), listed) in files.iter().zip(&manifest.files) {
-            let mut source = File::open(path)?;
-            write_entry(&mut writer, name, &mut source, listed.size)?;
-        }
-        // End-of-archive marker: a zero-length name.
-        writer.write_all(&0u16.to_be_bytes())?;
-        let mut inner = writer.finish()?;
-        inner.flush()?;
-        let file = inner.into_inner().map_err(|e| BackupError::Io(e.into_error()))?;
-        file.sync_all()?;
-        Ok(fs::metadata(&partial_for_task)?.len())
+        result
     })
     .await
     .map_err(|e| BackupError::Io(io::Error::other(e)))?;
 
-    let _ = fs::remove_file(&snapshot);
+    let _ = crate::domain::vault::shred_file(&snapshot);
     let size = match outcome {
         Ok(size) => size,
         Err(e) => {
@@ -647,10 +725,21 @@ async fn quick_check(db_file: &Path) -> Result<bool, sqlx::Error> {
     Ok(rows.len() == 1 && rows[0] == "ok")
 }
 
+/// Removes a scratch directory, overwriting the files in it first: what an
+/// archive unpacks into is plaintext.
+fn shred_dir(dir: &Path) {
+    if let Ok(files) = walk_files(dir) {
+        for file in files {
+            let _ = crate::domain::vault::shred_file(&file);
+        }
+    }
+    let _ = fs::remove_dir_all(dir);
+}
+
 fn scratch(data_dir: &Path, name: &str) -> io::Result<PathBuf> {
     let dir = data_dir.join(name);
     if dir.exists() {
-        fs::remove_dir_all(&dir)?;
+        shred_dir(&dir);
     }
     fs::create_dir_all(&dir)?;
     Ok(dir)
@@ -678,7 +767,7 @@ pub async fn verify_backup(data_dir: &Path, path: &Path, passphrase: &str) -> Re
         }
         Err(e) => Err(e),
     };
-    let _ = fs::remove_dir_all(&dir);
+    shred_dir(&dir);
     result
 }
 
@@ -702,12 +791,12 @@ pub async fn stage_restore(data_dir: &Path, path: &Path, passphrase: &str) -> Re
     let manifest = match manifest {
         Ok(m) => m,
         Err(e) => {
-            let _ = fs::remove_dir_all(&staging);
+            shred_dir(&staging);
             return Err(e);
         }
     };
     if !quick_check(&staging.join("db.sqlite")).await.unwrap_or(false) {
-        let _ = fs::remove_dir_all(&staging);
+        shred_dir(&staging);
         return Err(BackupError::Inconsistent("the database inside failed its integrity check".into()));
     }
     let pending = PendingRestore { source: path.to_string_lossy().to_string(), staged_at: now_ms() };
@@ -739,8 +828,9 @@ fn move_aside(from: &Path, into: &Path) -> io::Result<()> {
 
 /// Called at startup, before the database is opened. If a restore was staged,
 /// moves the current database (and its WAL files) aside, puts the restored one
-/// in its place, and adds the restored vault files. Nothing is deleted.
-pub fn apply_pending_restore(data_dir: &Path, db_path: &Path, vault_root: &Path) -> io::Result<Option<RestoreApplied>> {
+/// in its place, and unpacks the restored documents into `incoming` as plaintext
+/// for `vault::adopt` to seal under this machine's key. Nothing is deleted.
+pub fn apply_pending_restore(data_dir: &Path, db_path: &Path, incoming: &Path) -> io::Result<Option<RestoreApplied>> {
     let marker = data_dir.join(PENDING_FILE);
     if !marker.exists() {
         return Ok(None);
@@ -767,7 +857,7 @@ pub fn apply_pending_restore(data_dir: &Path, db_path: &Path, vault_root: &Path)
     let staged_vault = staging.join("vault");
     for file in walk_files(&staged_vault)? {
         let relative = file.strip_prefix(&staged_vault).map_err(io::Error::other)?;
-        let destination = vault_root.join(relative);
+        let destination = incoming.join(relative);
         if destination.exists() {
             continue;
         }
@@ -779,7 +869,7 @@ pub fn apply_pending_restore(data_dir: &Path, db_path: &Path, vault_root: &Path)
         }
     }
 
-    let _ = fs::remove_dir_all(&staging);
+    shred_dir(&staging);
     fs::remove_file(&marker)?;
     let applied = RestoreApplied {
         source: pending.source,
@@ -900,9 +990,9 @@ mod tests {
     #[tokio::test]
     async fn a_backup_round_trips_and_verifies() {
         let (node, dir) = node_with_backup_key().await;
-        fs::write(dir.join("vault/prisoners/REF-1/warrant.txt"), b"remand warrant").unwrap();
+        crate::domain::vault::write(&node.vault_root, "doc-warrant", b"remand warrant").unwrap();
         let big: Vec<u8> = (0..(CHUNK * 3 + 17)).map(|i| (i % 251) as u8).collect();
-        fs::write(dir.join("vault/prisoners/REF-1/scan.bin"), &big).unwrap();
+        crate::domain::vault::write(&node.vault_root, "doc-scan", &big).unwrap();
 
         let info = run_and_record(&node.pool, &node.data_dir, &node.vault_root, &Actor::system("test")).await.unwrap();
         assert!(Path::new(&info.path).exists());
@@ -943,9 +1033,11 @@ mod tests {
         node.pool.close().await;
 
         let db_path = dir.join("prisons.db");
-        let applied = apply_pending_restore(&dir, &db_path, &dir.join("vault")).unwrap().expect("a restore was staged");
+        let incoming = dir.join(crate::domain::vault::INCOMING_DIR);
+        let applied = apply_pending_restore(&dir, &db_path, &incoming).unwrap().expect("a restore was staged");
         assert!(Path::new(&applied.previous_database_moved_to).join("prisons.db").exists(), "the replaced database is kept");
         assert!(dir.join("restore-log.jsonl").exists());
+        assert_eq!(fs::read(incoming.join("prisoners/REF-1/a.txt")).unwrap(), b"a", "restored documents wait as plaintext to be sealed");
 
         let pool = sqlx::sqlite::SqlitePoolOptions::new().connect_with(crate::db::connect_options(&db_path)).await.unwrap();
         let actions: Vec<String> = sqlx::query_scalar("SELECT action FROM audit_log ORDER BY seq").fetch_all(&pool).await.unwrap();
@@ -955,12 +1047,44 @@ mod tests {
         assert!(audit::verify_chain(&pool).await.unwrap().ok, "the restored audit chain is intact and continues");
     }
 
+    /// The whole point of a portable backup: a document sealed on one machine is
+    /// recovered, from the archive alone, as a sealed document on a machine that
+    /// has none of the original vault.
+    #[tokio::test]
+    async fn a_restored_document_is_sealed_again_and_reads_back() {
+        use crate::domain::{attachments, vault};
+        let (node, dir) = node_with_backup_key().await;
+        let mut tx = crate::db::begin_write(&node.pool).await.unwrap();
+        let added = attachments::add_attachment_bytes(&mut tx, &Actor::system("test"), &node.vault_root, "prisoner", "p-1", "warrant.txt", b"remand warrant, Buganda Road")
+            .await
+            .unwrap();
+        tx.commit().await.unwrap();
+        assert!(vault::is_relative(&sqlx::query_scalar::<_, String>("SELECT stored_path FROM attachments").fetch_one(&node.pool).await.unwrap()));
+        let info = run_and_record(&node.pool, &node.data_dir, &node.vault_root, &Actor::system("test")).await.unwrap();
+
+        // A machine with no vault at all.
+        stage_restore(&dir, Path::new(&info.path), "a long recovery passphrase").await.unwrap();
+        node.pool.close().await;
+        fs::remove_dir_all(&node.vault_root).unwrap();
+        let db_path = dir.join("prisons.db");
+        let incoming = dir.join(vault::INCOMING_DIR);
+        apply_pending_restore(&dir, &db_path, &incoming).unwrap().expect("staged");
+
+        let pool = sqlx::sqlite::SqlitePoolOptions::new().connect_with(crate::db::connect_options(&db_path)).await.unwrap();
+        let adopted = vault::adopt(&pool, &node.vault_root, &[], &incoming).await.unwrap();
+        assert_eq!(adopted.sealed, 1);
+        assert!(vault::walk(&incoming).unwrap().is_empty(), "no plaintext is left behind");
+        let attachment = attachments::get_attachment(&pool, &added.id).await.unwrap().unwrap();
+        assert_eq!(attachments::read_bytes(&node.vault_root, &attachment).unwrap(), b"remand warrant, Buganda Road");
+    }
+
     #[test]
     fn archive_names_cannot_escape_the_target() {
         for bad in ["", "/etc/passwd", "../x", "a/../../x", "a//b", "C:\\x", "a\\b", "./x"] {
             assert!(safe_relative(bad).is_none(), "{bad:?} must be refused");
         }
         assert_eq!(safe_relative("vault/prisoners/REF-1/a.txt").unwrap(), PathBuf::from("vault/prisoners/REF-1/a.txt"));
+        assert_eq!(safe_relative("vault/attachments/doc-1").unwrap(), PathBuf::from("vault/attachments/doc-1"));
     }
 
     #[tokio::test]

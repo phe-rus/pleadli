@@ -10,6 +10,7 @@ export const statementSchema = z.object({
   personOtherNames: z.string().nullable(),
   caseId: z.string().nullable(),
   caseReference: z.string().nullable(),
+  officerId: z.string().nullable(),
   officerName: z.string().nullable(),
   givenAt: z.number(),
   createdAt: z.number(),
@@ -21,6 +22,7 @@ export const createStatementSchema = z.object({
   content: z.string().refine((value) => !isRichTextEmpty(value), 'Statement content is required.'),
   personId: z.string().min(1, 'Person is required.'),
   caseId: z.string().nullable(),
+  officerId: z.string().nullable(),
   officerName: z.string(),
   givenAt: z.number(),
 })

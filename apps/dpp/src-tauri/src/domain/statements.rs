@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 use uuid::Uuid;
 
+use super::error::{check_timestamp, invalid, DomainError};
+
 /// Police Material (received) — Statements (docs/dpp/PRODUCT.md). DPP's own
 /// record of a statement legitimately provided with the referral — see
 /// migration 0006 for why this isn't a live link into Police's own table.
@@ -32,7 +34,11 @@ pub struct CreateStatementInput {
     pub source_note: Option<String>,
 }
 
-pub async fn create_statement(pool: &SqlitePool, input: CreateStatementInput) -> Result<Statement, sqlx::Error> {
+pub async fn create_statement(pool: &SqlitePool, input: CreateStatementInput) -> Result<Statement, DomainError> {
+    if !["witness", "accused", "arresting_officer", "investigating_officer", "complainant"].contains(&input.statement_role.as_str()) {
+        return invalid("That is not a kind of statement.");
+    }
+    check_timestamp(input.given_at, "The date of the statement")?;
     let id = Uuid::new_v4().to_string();
     sqlx::query(
         "INSERT INTO statements (id, prosecution_file_id, person_id, statement_role, content, given_at, source_note)
@@ -48,7 +54,7 @@ pub async fn create_statement(pool: &SqlitePool, input: CreateStatementInput) ->
     .execute(pool)
     .await?;
 
-    get_statement(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)
+    Ok(get_statement(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?)
 }
 
 pub async fn get_statement(pool: &SqlitePool, id: &str) -> Result<Option<Statement>, sqlx::Error> {

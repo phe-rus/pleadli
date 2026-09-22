@@ -20,6 +20,7 @@ pub struct Statement {
     pub person_other_names: Option<String>,
     pub case_id: Option<String>,
     pub case_reference: Option<String>,
+    pub officer_id: Option<String>,
     pub officer_name: Option<String>,
     pub given_at: i64,
     pub created_at: i64,
@@ -31,6 +32,8 @@ pub struct CreateStatementInput {
     pub content: String,
     pub person_id: String,
     pub case_id: Option<String>,
+    #[serde(default)]
+    pub officer_id: Option<String>,
     pub officer_name: Option<String>,
     pub given_at: i64,
 }
@@ -60,6 +63,7 @@ pub async fn create_statement(pool: &SqlitePool, vault_root: &Path, input: Creat
     .execute(pool)
     .await?;
 
+    super::officers::link_record(pool, "statements", &id, &input.officer_id, false).await?;
     let record = get_statement(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_statement_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -85,6 +89,7 @@ pub async fn update_statement(
     .execute(pool)
     .await?;
 
+    super::officers::link_record(pool, "statements", id, &input.officer_id, false).await?;
     let record = get_statement(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_statement_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -96,7 +101,7 @@ pub async fn list_statements(pool: &SqlitePool, query: &str) -> Result<Vec<State
     if trimmed.is_empty() {
         return sqlx::query_as::<_, Statement>(
             "SELECT
-                s.id, s.content, s.person_id, s.case_id, s.officer_name, s.given_at, s.created_at,
+                s.id, s.content, s.person_id, s.case_id, s.officer_id, s.officer_name, s.given_at, s.created_at,
                 p.first_name AS person_first_name,
                 p.last_name AS person_last_name,
                 p.other_names AS person_other_names,
@@ -113,7 +118,7 @@ pub async fn list_statements(pool: &SqlitePool, query: &str) -> Result<Vec<State
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, Statement>(
         "SELECT
-            s.id, s.content, s.person_id, s.case_id, s.officer_name, s.given_at, s.created_at,
+            s.id, s.content, s.person_id, s.case_id, s.officer_id, s.officer_name, s.given_at, s.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -133,7 +138,7 @@ pub async fn list_statements(pool: &SqlitePool, query: &str) -> Result<Vec<State
 pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Statement>, sqlx::Error> {
     sqlx::query_as::<_, Statement>(
         "SELECT
-            s.id, s.content, s.person_id, s.case_id, s.officer_name, s.given_at, s.created_at,
+            s.id, s.content, s.person_id, s.case_id, s.officer_id, s.officer_name, s.given_at, s.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -150,7 +155,7 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Statement>, sqlx::Error> 
 pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<Statement>, sqlx::Error> {
     sqlx::query_as::<_, Statement>(
         "SELECT
-            s.id, s.content, s.person_id, s.case_id, s.officer_name, s.given_at, s.created_at,
+            s.id, s.content, s.person_id, s.case_id, s.officer_id, s.officer_name, s.given_at, s.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -169,7 +174,7 @@ pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<S
 pub async fn list_for_case(pool: &SqlitePool, case_id: &str) -> Result<Vec<Statement>, sqlx::Error> {
     sqlx::query_as::<_, Statement>(
         "SELECT
-            s.id, s.content, s.person_id, s.case_id, s.officer_name, s.given_at, s.created_at,
+            s.id, s.content, s.person_id, s.case_id, s.officer_id, s.officer_name, s.given_at, s.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -188,7 +193,7 @@ pub async fn list_for_case(pool: &SqlitePool, case_id: &str) -> Result<Vec<State
 pub async fn get_statement(pool: &SqlitePool, id: &str) -> Result<Option<Statement>, sqlx::Error> {
     sqlx::query_as::<_, Statement>(
         "SELECT
-            s.id, s.content, s.person_id, s.case_id, s.officer_name, s.given_at, s.created_at,
+            s.id, s.content, s.person_id, s.case_id, s.officer_id, s.officer_name, s.given_at, s.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -225,6 +230,7 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
         pool,
         vault_root,
         CreateStatementInput {
+            officer_id: None,
             content: super::seed_support::plain_text_to_rich_text_json(
                 "I was at the shop when I heard glass breaking around 2am. I called the police immediately.",
             ),

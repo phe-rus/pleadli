@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 use uuid::Uuid;
 
+use super::error::{invalid, DomainError};
+
 /// Police Material (received) — the proposed charge(s) (docs/dpp/
 /// PRODUCT.md). See migration 0008: same structured shape as Police's own
 /// charge_sheets, since DPP is reviewing a proposed charge, not inventing
@@ -28,7 +30,10 @@ pub struct CreateChargeInput {
     pub particulars: Option<String>,
 }
 
-pub async fn create_charge(pool: &SqlitePool, input: CreateChargeInput) -> Result<Charge, sqlx::Error> {
+pub async fn create_charge(pool: &SqlitePool, input: CreateChargeInput) -> Result<Charge, DomainError> {
+    if input.offence.trim().is_empty() {
+        return invalid("A charge needs an offence.");
+    }
     let id = Uuid::new_v4().to_string();
     sqlx::query(
         "INSERT INTO charges (id, prosecution_file_id, accused_person_id, offence, statutory_section, particulars)
@@ -43,7 +48,7 @@ pub async fn create_charge(pool: &SqlitePool, input: CreateChargeInput) -> Resul
     .execute(pool)
     .await?;
 
-    sqlx::query_as::<_, Charge>("SELECT * FROM charges WHERE id = ?").bind(&id).fetch_one(pool).await
+    Ok(sqlx::query_as::<_, Charge>("SELECT * FROM charges WHERE id = ?").bind(&id).fetch_one(pool).await?)
 }
 
 pub async fn list_for_file(pool: &SqlitePool, prosecution_file_id: &str) -> Result<Vec<Charge>, sqlx::Error> {

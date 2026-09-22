@@ -202,6 +202,20 @@ impl From<PairError> for ApiError {
             PairError::Rejected => {
                 ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "PAIRING_REJECTED", "Head Office did not accept that pairing code. It may be used or expired.")
             }
+            PairError::Untrusted => ApiError::new(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "CERTIFICATE_NOT_CONFIRMED",
+                "Head Office's certificate has not been confirmed. Check its fingerprint against the one Head Office shows, then continue.",
+            ),
+            PairError::NotHeadOffice => ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "NOT_HEAD_OFFICE", "Something answered at that address, but it is not a Pleadli Prisons Head Office."),
+            PairError::Unreachable(detail) if detail.contains("fingerprint") => {
+                log::warn!("pairing: {detail}");
+                ApiError::new(
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    "CERTIFICATE_CHANGED",
+                    "The certificate at that address is not the one that was confirmed. Nothing was sent. Confirm Head Office again.",
+                )
+            }
             PairError::Unreachable(detail) => {
                 log::warn!("pairing: {detail}");
                 ApiError::new(StatusCode::BAD_GATEWAY, "HEAD_OFFICE_UNREACHABLE", "Head Office could not be reached.")

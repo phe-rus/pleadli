@@ -84,7 +84,7 @@ Facility capabilities, keyed to the F map in `02-capabilities-domains-workflows.
 | F8.2 | Staff and posts | `planned` | D7: staff vs accounts separation designed, not built |
 | F8.3 | Accounts, roles, devices | `implemented` | Argon2, sessions, roles, device enrolment |
 | F8.4 | Node operations | `implemented` | backup/restore/scheduler/health |
-| F8.5 | Connectivity centre | `in-progress` | status + manual sync + Cloudflare config; transports and queue `designed` |
+| F8.5 | Connectivity centre | `implemented` | 2026-09-21: link state and exchange state explicit, persisted saved connection tried after start, certificate pinned after a person confirms it, discovery suggest-only, every round recorded. LAN transport verified on one machine over a real interface, **not between two machines**. Cloudflare is the same exchange over another client (`peer::hq_client`) and was not exercised. Transport list and file carrier `designed` |
 | F8.6 | Directives inbox | `planned` | no HQ→facility channel yet |
 | F8.7 | Stores, vehicles, farm | `planned` | DEFERRED |
 
@@ -93,7 +93,7 @@ Head Office (keyed to `D.2` in 02):
 | ID | Capability | State | Layers note |
 |---|---|---|---|
 | HA | Network administration | `in-progress` | onboard/verify/revoke/roster built; suspend, decommission, versions, keys `designed` |
-| HB | Estate awareness | `implemented` | `domain/estate.rs`, `GET /api/hq/estate`, the Home page (2026-09-20): contact health, occupancy against reported capacity, last-closed-month return state, attention list. Facilities report counts on the `status` sync class. Tests cover the view against a fixed clock and a real facility to Head Office round trip. Not run in the packaged app. By region only: no unit-level occupancy, no region scoping for commanders (R-23), no map, no oversight items or transfers in the attention list. 2026-09-21: the home is now Estate (network health from last contact, needs attention, facilities by region, recent network events from returns received and connection decisions, what Head Office has to do); no exchange log exists, so no stalled-exchange state, and the legacy population statistics board was removed (Head Office has no chart until it has a meaningful one) |
+| HB | Estate awareness | `implemented` | 2026-09-21: Head Office also keeps an exchange log (per facility: what arrived, when, over which transport, taken or refused) and reads each facility's exchange from it and from what the facility reports; shown in Settings > Network. The estate view and its attention list are unchanged.  `domain/estate.rs`, `GET /api/hq/estate`, the Home page (2026-09-20): contact health, occupancy against reported capacity, last-closed-month return state, attention list. Facilities report counts on the `status` sync class. Tests cover the view against a fixed clock and a real facility to Head Office round trip. Not run in the packaged app. By region only: no unit-level occupancy, no region scoping for commanders (R-23), no map, no oversight items or transfers in the attention list. 2026-09-21: the home is now Estate (network health from last contact, needs attention, facilities by region, recent network events from returns received and connection decisions, what Head Office has to do); no exchange log exists, so no stalled-exchange state, and the legacy population statistics board was removed (Head Office has no chart until it has a meaningful one) |
 | HC | Coordination (transfers, decongestion) | `planned` | W5 HQ side designed |
 | HD | Oversight | `planned` | W14 designed |
 | HE | Decisions register | `planned` | W15 designed |
@@ -109,10 +109,10 @@ Shared infrastructure (`D.3`):
 |---|---|---|---|
 | S1 | Identity and access | `implemented` | enforced at the node |
 | S2 | Audit | `implemented` | hash chain, before/after, verify; sensitive-read log `planned` |
-| S3 | Vault and documents | `in-progress` | attachments vault; at-rest encryption `designed` (D14) |
+| S3 | Vault and documents | `implemented` | 2026-09-21 (D14): sealed files under the data folder, named by id, relative path and content hash recorded; plaintext documents from older builds adopted once; a document is opened by writing a short-lived plain copy that is removed at start and exit. Content-addressed deduplication is not done. Plain temp copies while a document is open are the known exposure |
 | S4 | Obligation engine | `implemented` | typed keys, due rules, resolutions |
-| S5 | Event log and outbox | `designed` | ownership model (03) specifies; legacy snapshot retained |
-| S6 | Exchange and transports | `in-progress` | LAN listener/TLS, pairing, dev-loopback debug; Cloudflare provisioning route, Settings button and a supervised bundled `cloudflared` connector `implemented` 2026-09-20 (never run against Cloudflare); file carrier `designed` |
+| S5 | Event log and outbox | `in-progress` | the legacy snapshot is gone (2026-09-21). What exists: the roster outbox, attested returns queue, status report, and the per-round log (`exchange_rounds`) and Head Office event log (`exchange_events`). The tiered T1 to T4 event stream and signed packages are `designed` |
+| S6 | Exchange and transports | `in-progress` | 2026-09-21: Head Office LAN exchange listener over TLS (47924) with pinned certificate, UDP discovery, identity probe, one client factory for every outbound call; workstation LAN listener/TLS, pairing, dev-loopback debug; Cloudflare provisioning route, Settings button and a supervised bundled `cloudflared` connector `implemented` 2026-09-20 (never run against Cloudflare); file carrier `designed` |
 | S7 | Print and export | `in-progress` | browser print of reports, registers and named documents (landscape for registers); the population-profile CSV export moved with the statistics to Today/Overview. PDF/letterhead `planned` |
 | S8 | Search | `implemented` | node: nine entity types; HQ locate blocked (see HH) |
 | S9 | Config and templates | `in-progress` | visit rules, facility profile, numbering; directives `planned` |
@@ -133,14 +133,14 @@ Shared infrastructure (`D.3`):
 |---|---|---|
 | X1, X2 | Unauthenticated dev API in release builds; duplicate API surface | **Fixed** — single authenticated `/api/**`; no per-domain commands |
 | X3 | Two frontend clients | **Fixed** — one `api.ts` client |
-| X4 | Snapshot sync over-discloses full `prisoners` rows (notes, national ID, DOB) | **Narrowed 2026-09-20**, legacy path still live: `SnapshotRow` carries only what HQ's counts read; HQ ignores anything else a sender includes and migration 0140 scrubs rows already held. Retire fully with tiered exchange (S5/S6) |
+| X4 | Snapshot sync over-discloses full `prisoners` rows (notes, national ID, DOB) | **Retired 2026-09-21**: the snapshot push, its endpoint, class and triggers are removed and migration 0190 deletes the copies Head Office held. Head Office holds counts, the roster and returns only |
 | X5 | HQ listener starts only at launch | **Fixed** |
 | X8 | Legacy `register_facility_self` | **Fixed** |
-| X9 | `sync_token`, `cloudflare_config.api_token`, `remote_device_token`, tunnel `run_token` in plaintext | **Fixed at rest 2026-09-20**: `domain/secrets.rs`, sealed under `secrets.key` in the data folder. A DB copy alone is safe; the whole data folder is not (D14). A database restored from another machine cannot open them and must be paired again |
-| X10 | Database and vault plaintext; absolute `stored_path` in vault | **Open** — D14 designed |
+| X9 | `sync_token`, `cloudflare_config.api_token`, `remote_device_token`, tunnel `run_token` in plaintext | **Fixed 2026-09-20 and strengthened 2026-09-21**: still sealed under `secrets.key`, and now inside a database that is itself encrypted under a key held by the OS keystore, so the key file beside the data no longer opens them on its own. A database restored from another machine cannot open them and must be paired again |
+| X10 | Database and vault plaintext; absolute `stored_path` in vault | **Fixed 2026-09-21 (D14)**, with the limits stated in [[SECURITY]]: key in the OS keystore where there is one, else an owner-only key file (protects a copy of the database or documents alone, not the whole data folder); shredding of plaintext is best effort on flash storage; not verified on Windows or macOS |
 | X14 | Hard release gates | **Fixed** — OIC-authorized exception (D13) in `releases.rs` |
 | X15 | Contradictory docs | Addressed by this restructure |
-| — | Packaged Tauri app never run in this environment | **Open** — stage 2 verify |
+| — | Packaged Tauri app never run in this environment | **Open**: prepared 2026-09-21 (version aligned, updater artifacts off, capabilities tightened, release-profile compile check); not built or run. See [[PACKAGING]] |
 | — | Cloudflare Tunnel never provisioned (`provision()` has no caller) | **Wired 2026-09-20**: `POST /api/hq/network/cloudflare/provision`, `domain/tunnel_connector.rs`. Not run against Cloudflare; X9 now also covers the run token |
 
 See `SECURITY.md` for the two blockers that gate any real facility use.

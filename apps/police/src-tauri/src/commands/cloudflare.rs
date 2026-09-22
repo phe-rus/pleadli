@@ -7,17 +7,17 @@ use crate::transport::remote_server;
 use crate::CloudflaredSidecar;
 
 #[tauri::command]
-pub async fn save_cloudflare_config(state: State<'_, Db>, input: SaveCloudflareConfigInput) -> Result<(), String> {
+pub async fn save_cloudflare_config(_who: super::api::AdminSignedIn, state: State<'_, Db>, input: SaveCloudflareConfigInput) -> Result<(), String> {
     cloudflare_tunnel::save_config(&state.pool, input).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn get_cloudflare_config(state: State<'_, Db>) -> Result<Option<CloudflareConfig>, String> {
+pub async fn get_cloudflare_config(_who: super::api::SignedIn, state: State<'_, Db>) -> Result<Option<CloudflareConfig>, String> {
     cloudflare_tunnel::get_config(&state.pool).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn get_cloudflare_tunnel_state(state: State<'_, Db>) -> Result<Option<TunnelState>, String> {
+pub async fn get_cloudflare_tunnel_state(_who: super::api::SignedIn, state: State<'_, Db>) -> Result<Option<TunnelState>, String> {
     cloudflare_tunnel::get_tunnel_state(&state.pool).await.map_err(|e| e.to_string())
 }
 

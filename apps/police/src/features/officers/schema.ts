@@ -9,37 +9,70 @@ export function officerRoleLabel(role: string) {
   return officerRoles.find((r) => r.value === role)?.label ?? role
 }
 
+/** Suggestions for a standing post, never enforced: a station can have any
+ * number of officers in any posts. These are the verified sub-county staffing
+ * roles (docs/police/PRODUCT.md). */
+export const officerPostSuggestions = [
+  'OC Station',
+  'OC CID',
+  'Crime Intelligence Officer',
+  'Child & Family Protection Officer',
+  'Community Liaison Officer',
+  'General Officer',
+] as const
+
 export const officerSchema = z.object({
   id: z.string(),
-  badgeNumber: z.string(),
+  badgeNumber: z.string().nullable(),
   name: z.string(),
+  rank: z.string().nullable(),
+  post: z.string().nullable(),
   role: z.string(),
   active: z.boolean(),
   personId: z.string().nullable(),
+  notes: z.string().nullable(),
+  hasSignIn: z.boolean(),
   createdAt: z.number(),
 })
 
 export type Officer = z.infer<typeof officerSchema>
 
-export const createOfficerSchema = z.object({
-  badgeNumber: z.string().min(1, 'Badge number is required.'),
+const officerFields = {
+  badgeNumber: z.string(),
   name: z.string().min(1, 'Name is required.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
+  rank: z.string(),
+  post: z.string(),
   role: z.string().min(1, 'Role is required.'),
+  notes: z.string(),
   personId: z.string().nullable(),
-})
+}
+
+const passwordRule = z.string().min(8, 'Password must be at least 8 characters.')
+
+export const createOfficerSchema = z
+  .object({ ...officerFields, password: z.string() })
+  .refine((v) => !v.password.trim() || v.badgeNumber.trim(), { message: 'A badge number is needed to sign in.', path: ['badgeNumber'] })
+  .refine((v) => !v.password.trim() || passwordRule.safeParse(v.password).success, {
+    message: 'Password must be at least 8 characters.',
+    path: ['password'],
+  })
 
 export type CreateOfficerInput = z.infer<typeof createOfficerSchema>
 
-export const updateOfficerSchema = z.object({
-  name: z.string().min(1, 'Name is required.'),
-  role: z.string().min(1, 'Role is required.'),
-  active: z.boolean(),
-  password: z.string().min(8, 'Password must be at least 8 characters.').nullable(),
-  personId: z.string().nullable(),
-})
+export const updateOfficerSchema = z
+  .object({ ...officerFields, active: z.boolean(), password: z.string().nullable() })
+  .refine((v) => !v.password || v.badgeNumber.trim(), { message: 'A badge number is needed to sign in.', path: ['badgeNumber'] })
+  .refine((v) => !v.password || passwordRule.safeParse(v.password).success, {
+    message: 'Password must be at least 8 characters.',
+    path: ['password'],
+  })
 
 export type UpdateOfficerInput = z.infer<typeof updateOfficerSchema>
+
+/** The name an officer is shown by: rank and name, as on a roster. */
+export function officerDisplay(officer: Pick<Officer, 'name' | 'rank'>) {
+  return [officer.rank, officer.name].filter(Boolean).join(' ')
+}
 
 export const remoteAccessLogEntrySchema = z.object({
   id: z.string(),

@@ -55,6 +55,10 @@ pub struct Node {
     pub remote: RwLock<Option<Arc<Remote>>>,
     /// Whether the LAN listener is actually accepting connections right now.
     pub lan_listening: AtomicBool,
+    /// Whether this Head Office is accepting facilities on its local network
+    /// (the TLS exchange listener), and answering discovery probes.
+    pub network_lan_listening: AtomicBool,
+    pub discovery_listening: AtomicBool,
     /// Head Office's `cloudflared` process, when there is one.
     pub connector: crate::domain::tunnel_connector::Connector,
 }
@@ -70,6 +74,8 @@ impl Node {
             limiter: RateLimiter::default(),
             remote: RwLock::new(None),
             lan_listening: AtomicBool::new(false),
+            network_lan_listening: AtomicBool::new(false),
+            discovery_listening: AtomicBool::new(false),
             connector: Default::default(),
         })
     }

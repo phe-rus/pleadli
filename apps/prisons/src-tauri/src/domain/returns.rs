@@ -13,7 +13,6 @@
 //! Population is stated as at generation, not at period end, so the checks
 //! require generation after the period closes to keep the two close.
 
-use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -27,7 +26,7 @@ use super::error::DomainError;
 use super::facilities;
 use super::inbox;
 use super::reports::{self, Kind, Period, ReportDocument};
-use super::sync::IngestError;
+use super::exchange::IngestError;
 use super::time::now_ms;
 
 /// What the OIC affirms. Stored with each attestation, so a later change of
@@ -334,7 +333,7 @@ async fn record_attempt(pool: &SqlitePool, report_id: &str, error: Option<&str>)
 /// Sends every queued return, oldest first. A return Head Office did not
 /// acknowledge stays queued with the reason; an unreachable Head Office is not
 /// an error the officer has to act on. Returns how many were acknowledged.
-pub async fn send_queued(pool: &SqlitePool) -> Result<usize, String> {
+pub async fn send_queued(pool: &SqlitePool) -> Result<(usize, Option<String>), String> {
     let ctx = facilities::get_peer_sync_context(pool)
         .await
         .map_err(|e| e.to_string())?
@@ -344,12 +343,16 @@ pub async fn send_queued(pool: &SqlitePool) -> Result<usize, String> {
         .await
         .map_err(|e| e.to_string())?;
     if waiting.is_empty() {
-        return Ok(0);
+        return Ok((0, None));
     }
-    let client = reqwest::Client::builder().timeout(Duration::from_secs(30)).build().map_err(|e| e.to_string())?;
+    let client = super::peer::hq_client(pool, 30).await?;
     let url = format!("{}/api/network/v1/returns", ctx.hostname.trim_end_matches('/'));
 
+    // A return Head Office does not take is not a quiet success: it is reported
+    // back so the round is recorded as not having gone through, and it stays
+    // queued to be tried again.
     let mut acknowledged = 0;
+    let mut failure: Option<String> = None;
     for report_id in waiting {
         let package = package(pool, &report_id).await.map_err(|e| e.to_string())?;
         let response = match client.post(&url).bearer_auth(&ctx.sync_token).json(&package).send().await {
@@ -361,11 +364,15 @@ pub async fn send_queued(pool: &SqlitePool) -> Result<usize, String> {
         };
         let status = response.status();
         if status == reqwest::StatusCode::UNAUTHORIZED {
-            record_attempt(pool, &report_id, Some("Head Office did not accept this return. The connection may have been revoked, or the return is not valid.")).await;
+            let message = "Head Office did not accept this return. The connection may have been revoked, or the return is not valid.";
+            record_attempt(pool, &report_id, Some(message)).await;
+            failure.get_or_insert_with(|| format!("{message} (401)"));
             continue;
         }
         if !status.is_success() {
-            record_attempt(pool, &report_id, Some(&format!("Head Office responded {status}."))).await;
+            let message = format!("Head Office responded {status}.");
+            record_attempt(pool, &report_id, Some(&message)).await;
+            failure.get_or_insert(message);
             continue;
         }
         let body: Value = response.json().await.map_err(|e| e.to_string())?;
@@ -386,10 +393,14 @@ pub async fn send_queued(pool: &SqlitePool) -> Result<usize, String> {
                 acknowledged += 1;
             }
             // Valid, but this facility is not yet verified by Head Office.
-            _ => record_attempt(pool, &report_id, Some("Head Office has not yet verified this facility.")).await,
+            _ => {
+                let message = "Head Office has not yet verified this facility.";
+                record_attempt(pool, &report_id, Some(message)).await;
+                failure.get_or_insert_with(|| message.to_string());
+            }
         }
     }
-    Ok(acknowledged)
+    Ok((acknowledged, failure))
 }
 
 /// Head Office side: accept one attested return from a facility. The facility
@@ -832,11 +843,11 @@ mod tests {
 
         // Then it is reachable: the return goes and Head Office acknowledges it.
         connect(&facility, &format!("http://{address}"), "tok").await;
-        assert_eq!(send_queued(&facility).await.unwrap(), 1);
+        assert_eq!(send_queued(&facility).await.unwrap(), (1, None));
         let sent = &reports::list(&facility).await.unwrap()[0];
         assert_eq!(sent.submission.as_deref(), Some("acknowledged"));
         assert!(sent.acknowledged_at.is_some() && sent.submission_error.is_none());
-        assert_eq!(send_queued(&facility).await.unwrap(), 0, "an acknowledged return is not sent again");
+        assert_eq!(send_queued(&facility).await.unwrap(), (0, None), "an acknowledged return is not sent again");
 
         let received = list_received(&hq_pool).await.unwrap();
         assert_eq!((received.len(), received[0].facility_name.as_str(), received[0].attested_by_name.as_str()), (1, "Luzira", "Okello"));

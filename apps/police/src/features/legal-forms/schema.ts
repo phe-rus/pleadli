@@ -17,6 +17,7 @@ export const chargeSheetSchema = z.object({
   statutorySection: z.string(),
   particulars: z.string(),
   chargedAt: z.number(),
+  officerId: z.string().nullable(),
   officerName: z.string().nullable(),
   stationName: z.string().nullable(),
   createdAt: z.number(),
@@ -31,6 +32,7 @@ export const createChargeSheetSchema = z.object({
   statutorySection: z.string().min(1, 'The statutory section is required.'),
   particulars: z.string().min(1, 'Particulars are required.'),
   chargedAt: z.number(),
+  officerId: z.string().nullable(),
   officerName: z.string(),
   stationName: z.string(),
 })

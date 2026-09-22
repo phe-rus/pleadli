@@ -286,7 +286,9 @@ struct NetworkRow {
     status: String,
     last_synced_at: Option<i64>,
     officer_count: i64,
-    held_at_last_sync: i64,
+    /// The last count the facility reported, or `None` if it never has: an
+    /// unknown figure is not a zero.
+    held_at_last_sync: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -539,7 +541,7 @@ async fn network_register(conn: &mut SqliteConnection) -> Result<Vec<NetworkRow>
     sqlx::query_as(
         "SELECT f.id, f.name, f.facility_number, f.region, f.location, f.status, f.last_synced_at,
                 (SELECT COUNT(*) FROM facility_officers o WHERE o.facility_id = f.id) AS officer_count,
-                (SELECT COUNT(*) FROM prisoners p WHERE p.facility_id = f.id AND p.current_status = 'in_custody') AS held_at_last_sync
+                f.reported_held AS held_at_last_sync
          FROM facilities f ORDER BY f.region, f.name",
     )
     .fetch_all(&mut *conn)

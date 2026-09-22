@@ -1,0 +1,28 @@
+[package]
+name = "pleadli-node-core"
+version = "0.1.0"
+edition = "2021"
+description = "Encryption keys and the sealed document vault shared by every Pleadli node application."
+
+[features]
+# A fixed key for tests that call domain code without a startup. Enabled only
+# from an application's [dev-dependencies], never in a shipped build.
+test-keys = []
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+uuid = { version = "1", features = ["v4"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+chacha20poly1305 = { version = "0.10", features = ["stream"] }
+sqlx = { version = "0.9", default-features = false, features = ["sqlite", "runtime-tokio", "migrate", "derive"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+log = "0.4"
+# The database is encrypted at rest: this swaps sqlx's bundled SQLite for SQLCipher
+# (with OpenSSL built in, so the installer needs nothing on the target machine).
+libsqlite3-sys = { version = "0.37", features = ["bundled-sqlcipher-vendored-openssl"] }
+# The master key lives in the operating system's keystore where there is one.
+keyring = { version = "3", default-features = false, features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

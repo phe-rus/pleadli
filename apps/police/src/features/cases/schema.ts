@@ -66,7 +66,8 @@ export const casePersonInputSchema = z.object({
 })
 
 export const createCaseSchema = z.object({
-  reference: z.string().min(1, 'Reference is required.'),
+  // Blank on a new case means: number it in the Crime Record Book.
+  reference: z.string(),
   summary: z.string().min(1, 'Summary is required.'),
   status: z.string().min(1, 'Status is required.'),
   incidentId: z.string().nullable(),

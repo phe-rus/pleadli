@@ -12,7 +12,7 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use base64::Engine as _;
@@ -131,6 +131,51 @@ impl ServerCertVerifier for Pinned {
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
         self.provider.signature_verification_algorithms.supported_schemes()
     }
+}
+
+/// Sees which certificate a server presents and accepts it, so a person can be
+/// shown its fingerprint and decide. It proves nothing about the server and is
+/// used for exactly one thing: the identity probe. Nothing a node must keep
+/// secret is ever sent through a client built on it.
+#[derive(Debug)]
+struct Capture {
+    seen: Arc<Mutex<Option<String>>>,
+    provider: Arc<CryptoProvider>,
+}
+
+impl ServerCertVerifier for Capture {
+    fn verify_server_cert(&self, end_entity: &CertificateDer<'_>, _: &[CertificateDer<'_>], _: &ServerName<'_>, _: &[u8], _: UnixTime) -> Result<ServerCertVerified, rustls::Error> {
+        *self.seen.lock().unwrap() = Some(fingerprint_of(end_entity.as_ref()));
+        Ok(ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(&self, message: &[u8], cert: &CertificateDer<'_>, dss: &DigitallySignedStruct) -> Result<HandshakeSignatureValid, rustls::Error> {
+        verify_tls12_signature(message, cert, dss, &self.provider.signature_verification_algorithms)
+    }
+
+    fn verify_tls13_signature(&self, message: &[u8], cert: &CertificateDer<'_>, dss: &DigitallySignedStruct) -> Result<HandshakeSignatureValid, rustls::Error> {
+        verify_tls13_signature(message, cert, dss, &self.provider.signature_verification_algorithms)
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        self.provider.signature_verification_algorithms.supported_schemes()
+    }
+}
+
+/// A client that records the certificate the server presents. Read the
+/// fingerprint from the returned cell after a request has completed.
+pub fn capture_client(timeout: Duration) -> Result<(reqwest::Client, Arc<Mutex<Option<String>>>), String> {
+    install_crypto_provider();
+    let seen = Arc::new(Mutex::new(None));
+    let provider = Arc::new(rustls::crypto::ring::default_provider());
+    let config = rustls::ClientConfig::builder_with_provider(provider.clone())
+        .with_safe_default_protocol_versions()
+        .map_err(|e| e.to_string())?
+        .dangerous()
+        .with_custom_certificate_verifier(Arc::new(Capture { seen: seen.clone(), provider }))
+        .with_no_client_auth();
+    let client = reqwest::Client::builder().use_preconfigured_tls(config).timeout(timeout).build().map_err(|e| e.to_string())?;
+    Ok((client, seen))
 }
 
 /// An HTTP client that talks to one node and trusts only its pinned

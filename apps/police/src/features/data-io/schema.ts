@@ -16,7 +16,7 @@ export const importableEntityTypes = [
   { value: 'station_diary_entry', label: 'Station diary entry' },
   { value: 'duty_assignment', label: 'Duty assignment' },
   { value: 'station_asset', label: 'Station asset' },
-  { value: 'station_establishment_member', label: 'Station establishment' },
+  { value: 'officer', label: 'Officers' },
   { value: 'vehicle', label: 'Vehicle' },
 ] as const
 

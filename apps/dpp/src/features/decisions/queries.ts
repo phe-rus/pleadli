@@ -1,5 +1,5 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createDecision, listDecisionsForFile } from './data'
+import { createDecision, listDecisions, listDecisionsForFile } from './data'
 import type { CreateDecisionInput } from './schema'
 
 export const decisionsForFileOptions = (prosecutionFileId: string) =>
@@ -10,6 +10,12 @@ export const decisionsForFileOptions = (prosecutionFileId: string) =>
 
 export function useDecisionsForFile(prosecutionFileId: string) {
   return useSuspenseQuery(decisionsForFileOptions(prosecutionFileId))
+}
+
+export const decisionsOptions = () => queryOptions({ queryKey: ['decisions', 'all'] as const, queryFn: listDecisions })
+
+export function useDecisions() {
+  return useSuspenseQuery(decisionsOptions())
 }
 
 export function useCreateDecision() {

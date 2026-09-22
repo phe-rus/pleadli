@@ -1,6 +1,8 @@
 import { Loaders } from '@/components/loaders'
+import { ThemeProvider } from '@/components/theme-provider'
+import { SessionGate } from '@/features/session'
 import { Queryprovider, queryContext } from '@/lib/query-context'
-import "@pleadli/ui/globals.css"
+import "@/styles/globals.css"
 import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import ReactDOM from 'react-dom/client'
@@ -47,9 +49,23 @@ if (!rootElement) {
 
 if (!rootElement.innerHTML) {
     const root = ReactDOM.createRoot(rootElement)
+    const router = getRouter()
+    // The gate stands outside the router, so first-launch setup or a missing
+    // sign-in is decided before any route loads and its loaders are refused.
     root.render(
-        <RouterProvider
-            router={getRouter()}
-        />
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            enableColorScheme
+            storageKey="pleadli:themer"
+            disableTransitionOnChange
+        >
+            <Queryprovider query={queryContext()}>
+                <SessionGate onChange={() => void router.invalidate()}>
+                    <RouterProvider router={router} />
+                </SessionGate>
+            </Queryprovider>
+        </ThemeProvider>
     )
 }

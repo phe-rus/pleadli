@@ -38,6 +38,7 @@ export const referralSchema = z.object({
   destinationName: z.string().nullable(),
   referredAt: z.number(),
   status: z.string(),
+  officerId: z.string().nullable(),
   officerName: z.string().nullable(),
   notes: z.string().nullable(),
   createdAt: z.number(),
@@ -51,6 +52,7 @@ export const createReferralSchema = z.object({
   destinationName: z.string(),
   referredAt: z.number(),
   status: z.string().min(1, 'Status is required.'),
+  officerId: z.string().nullable(),
   officerName: z.string(),
   notes: z.string(),
 })

@@ -9,8 +9,8 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useState } from 'react'
-import { useConnectFacility, useFacilityLookup, usePairWithHeadOffice, usePairWithHeadOfficeLater } from './queries'
-import { facilityRegions, facilityStatusLabel, type ConnectScope, type FacilityLookup, type RegisterFacilityInput } from './schema'
+import { useConnectFacility, useDiscoverHeadOffice, useFacilityLookup, usePairWithHeadOffice, usePairWithHeadOfficeLater, useProbeHeadOffice } from './queries'
+import { facilityRegions, facilityStatusLabel, type ConnectScope, type DiscoveredHq, type FacilityLookup, type HqIdentity, type RegisterFacilityInput } from './schema'
 import { StepsProgress } from './steps-progress'
 import { m } from '@/paraglide/messages'
 
@@ -47,7 +47,7 @@ type ConnectFlowProps = {
   onSkip?: () => void
 }
 
-type Step = 'address' | 'facility' | 'details'
+type Step = 'address' | 'confirm' | 'facility' | 'details'
 
 /**
  * Connect this installation to a facility Head Office already knows: give
@@ -60,25 +60,52 @@ export function ConnectFlow({ scope, requester, lockRequester = false, onConnect
   const [step, setStep] = useState<Step>('address')
   const [address, setAddress] = useState(readAddress)
   const [number, setNumber] = useState('')
+  // What the address turned out to be, once looked at. `fingerprint` is set only
+  // for a local-network address, and only after a person confirmed it.
+  const [identity, setIdentity] = useState<HqIdentity | null>(null)
+  const [fingerprint, setFingerprint] = useState<string | undefined>(undefined)
 
   return (
     <div className="flex flex-col gap-6">
-      <StepsProgress steps={connectSteps()} current={step === 'address' ? 0 : 1} />
+      <StepsProgress steps={connectSteps()} current={step === 'address' || step === 'confirm' ? 0 : 1} />
       {step === 'address' && (
         <AddressStep
+          scope={scope}
           value={address}
-          onChange={setAddress}
-          onNext={() => {
-            rememberAddress(address.trim())
-            setStep('facility')
+          onChange={(value) => {
+            setAddress(value)
+            setFingerprint(undefined)
+          }}
+          onIdentified={(found) => {
+            rememberAddress(found.address)
+            // A pasted pairing code carries its secret after a '#': keep it.
+            setAddress(address.includes('#') ? found.address + address.slice(address.lastIndexOf('#')) : found.address)
+            setIdentity(found)
+            if (found.fingerprint) {
+              setStep('confirm')
+            } else {
+              setFingerprint(undefined)
+              setStep('facility')
+            }
           }}
           onSkip={onSkip}
+        />
+      )}
+      {step === 'confirm' && identity && (
+        <ConfirmStep
+          identity={identity}
+          onBack={() => setStep('address')}
+          onConfirmed={() => {
+            setFingerprint(identity.fingerprint ?? undefined)
+            setStep('facility')
+          }}
         />
       )}
       {step === 'facility' && (
         <FacilityStep
           scope={scope}
           address={address.trim()}
+          fingerprint={fingerprint}
           number={number}
           onNumberChange={setNumber}
           requester={requester}
@@ -90,19 +117,44 @@ export function ConnectFlow({ scope, requester, lockRequester = false, onConnect
         />
       )}
       {step === 'details' && (
-        <DetailsStep scope={scope} pairingCode={address.trim()} facilityNumber={number} onBack={() => setStep('facility')} onConnected={onConnected} />
+        <DetailsStep scope={scope} pairingCode={address.trim()} fingerprint={fingerprint} facilityNumber={number} onBack={() => setStep('facility')} onConnected={onConnected} />
       )}
     </div>
   )
 }
 
-function AddressStep({ value, onChange, onNext, onSkip }: { value: string; onChange: (value: string) => void; onNext: () => void; onSkip?: () => void }) {
+/** The address of Head Office: typed, or picked from what a search of the local
+ * network found. Either way it is only looked at (who answers, and which
+ * certificate it presents); nothing is trusted or sent until a person confirms. */
+function AddressStep({
+  scope,
+  value,
+  onChange,
+  onIdentified,
+  onSkip,
+}: {
+  scope: ConnectScope
+  value: string
+  onChange: (value: string) => void
+  onIdentified: (identity: HqIdentity) => void
+  onSkip?: () => void
+}) {
+  const discover = useDiscoverHeadOffice(scope)
+  const probe = useProbeHeadOffice(scope)
+  const [found, setFound] = useState<DiscoveredHq[] | null>(null)
+
+  const look = (address: string) =>
+    probe.mutate(address.trim(), {
+      onSuccess: onIdentified,
+      onError: (error) => t.error(m.facilities_could_not_reach_head_office(), { description: error instanceof ApiError ? error.message : m.facilities_check_the_address_and_try_again() }),
+    })
+
   return (
     <form
       className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault()
-        onNext()
+        look(value)
       }}
     >
       <Field>
@@ -119,9 +171,32 @@ function AddressStep({ value, onChange, onNext, onSkip }: { value: string; onCha
         />
         <FieldDescription>{m.facilities_the_address_head_office_gave_you()}</FieldDescription>
       </Field>
+
       <div className="flex flex-col gap-2">
-        <Button type="submit" disabled={value.trim().length === 0} className="w-full">
-          {m.facilities_continue()}
+        <Button type="button" variant="secondary" className="w-full" disabled={discover.isPending} onClick={() => discover.mutate(undefined, { onSuccess: setFound })}>
+          <HugeiconsIcon icon={Search01Icon} size={14} />
+          {discover.isPending ? m.facilities_searching_the_network() : m.facilities_find_head_office_on_this_network()}
+        </Button>
+        {found?.length === 0 && <p>{m.facilities_no_head_office_answered()}</p>}
+        {found?.map((candidate) => (
+          <button
+            key={candidate.address}
+            type="button"
+            onClick={() => {
+              onChange(candidate.address)
+              look(candidate.address)
+            }}
+            className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-left transition-colors hover:bg-secondary/60"
+          >
+            <span className="truncate">{candidate.name}</span>
+            <code className="shrink-0">{candidate.address}</code>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Button type="submit" disabled={value.trim().length === 0 || probe.isPending} className="w-full">
+          {probe.isPending ? m.facilities_checking_the_address() : m.facilities_continue()}
         </Button>
         {onSkip && (
           <Button type="button" variant="secondary" className="w-full" onClick={onSkip}>
@@ -130,6 +205,35 @@ function AddressStep({ value, onChange, onNext, onSkip }: { value: string; onCha
         )}
       </div>
     </form>
+  )
+}
+
+/** The moment trust is decided: the certificate the address presented, for a
+ * person to compare with the one Head Office shows on its own screen. */
+function ConfirmStep({ identity, onBack, onConfirmed }: { identity: HqIdentity; onBack: () => void; onConfirmed: () => void }) {
+  const groups = (identity.fingerprint ?? '').split(':')
+  return (
+    <div className="flex flex-col gap-4">
+      <button type="button" onClick={onBack} className="-ml-1 flex w-fit items-center gap-1 rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground">
+        <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+        {m.facilities_back()}
+      </button>
+      <div className="flex flex-col gap-1">
+        <h4>{m.facilities_confirm_head_office()}</h4>
+        <p>{m.facilities_confirm_head_office_body({ name: identity.name, address: identity.address.replace('https://', '') })}</p>
+      </div>
+      <Field>
+        <FieldLabel>{m.facilities_certificate_fingerprint()}</FieldLabel>
+        <code className="grid grid-cols-8 gap-x-2 gap-y-1 rounded-lg border border-border bg-card p-3 text-xs" aria-label={identity.fingerprint ?? ''}>
+          {groups.map((group, index) => (
+            <span key={index}>{group}</span>
+          ))}
+        </code>
+      </Field>
+      <Button type="button" className="w-full" onClick={onConfirmed}>
+        {m.facilities_it_matches_continue()}
+      </Button>
+    </div>
   )
 }
 
@@ -159,6 +263,7 @@ function FacilityCard({ facility }: { facility: FacilityLookup }) {
 function FacilityStep({
   scope,
   address,
+  fingerprint,
   number,
   onNumberChange,
   requester,
@@ -170,6 +275,7 @@ function FacilityStep({
 }: {
   scope: ConnectScope
   address: string
+  fingerprint?: string
   number: string
   onNumberChange: (value: string) => void
   requester?: Requester
@@ -193,7 +299,7 @@ function FacilityStep({
     setFound(null)
     setSearched(false)
     lookup.mutate(
-      { hqAddress: address, facilityNumber: wanted },
+      { hqAddress: address, facilityNumber: wanted, hqFingerprint: fingerprint },
       {
         onSuccess: (result) => {
           setFound(result)
@@ -208,7 +314,7 @@ function FacilityStep({
   const submit = () => {
     if (!found) return
     connect.mutate(
-      { hqAddress: address, facilityNumber: number.trim(), requesterBadge: badge.trim(), requesterName: name.trim(), activationCode: code.trim() || undefined },
+      { hqAddress: address, facilityNumber: number.trim(), requesterBadge: badge.trim(), requesterName: name.trim(), activationCode: code.trim() || undefined, hqFingerprint: fingerprint },
       {
         onSuccess: (result) => (result.state === 'connected' ? onConnected(result.facilityName) : onPending(result.facilityName)),
         onError: (error) => t.error(m.facilities_could_not_connect(), { description: error instanceof ApiError ? error.message : m.facilities_please_try_again() }),
@@ -321,12 +427,14 @@ function FacilityStep({
 function DetailsStep({
   scope,
   pairingCode,
+  fingerprint,
   facilityNumber,
   onBack,
   onConnected,
 }: {
   scope: ConnectScope
   pairingCode: string
+  fingerprint?: string
   facilityNumber: string
   onBack: () => void
   onConnected: (facilityName: string) => void
@@ -345,7 +453,7 @@ function DetailsStep({
     } as RegisterFacilityInput,
     onSubmit: async ({ value }) => {
       try {
-        await pair.mutateAsync({ pairingCode, input: value })
+        await pair.mutateAsync({ pairingCode, input: value, hqFingerprint: fingerprint })
         onConnected(value.name)
       } catch (error) {
         t.error(m.facilities_head_office_could_not_register_this(), {

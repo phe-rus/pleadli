@@ -45,7 +45,7 @@ function OfficerCombobox({
   const filtered = officers.filter((o) => {
     const q = query.trim().toLowerCase()
     if (!q) return true
-    return o.name.toLowerCase().includes(q) || o.badgeNumber.toLowerCase().includes(q)
+    return o.name.toLowerCase().includes(q) || (o.badgeNumber ?? '').toLowerCase().includes(q)
   })
 
   return (
@@ -55,7 +55,7 @@ function OfficerCombobox({
           <ComboboxList>
             {filtered.map((officer) => (
               <ComboboxItem key={officer.id} value={officer.id}>
-                {officer.name} ({officer.badgeNumber})
+                {officer.name}{officer.badgeNumber ? ` (${officer.badgeNumber})` : ''}
               </ComboboxItem>
             ))}
             <ComboboxEmpty>No matching officers</ComboboxEmpty>

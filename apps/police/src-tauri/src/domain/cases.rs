@@ -9,6 +9,7 @@ use super::charge_sheets::ChargeSheet;
 use super::custody::CustodyRecord;
 use super::exhibits::Exhibit;
 use super::referrals::Referral;
+use super::registers;
 use super::statements::Statement;
 use super::{attachments, bonds, charge_sheets, custody, exhibits, markdown, referrals, statements};
 
@@ -95,12 +96,28 @@ pub async fn create_case(pool: &SqlitePool, vault_root: &Path, input: CreateCase
     let id = Uuid::new_v4().to_string();
     let mut tx = pool.begin().await?;
 
-    sqlx::query("INSERT INTO cases (id, reference, summary, status, incident_id) VALUES (?, ?, ?, ?, ?)")
+    // A case opened without a reference is numbered by the Crime Record Book:
+    // the next number of the year, cited the way the register cites it. A
+    // reference typed by hand is kept exactly as written and takes no number.
+    let (reference, crb_year, crb_number) = if input.reference.trim().is_empty() {
+        let (number, year) = registers::take_next(&mut tx, registers::CRB).await?;
+        let station: Option<String> = sqlx::query_scalar("SELECT name FROM station_profile WHERE id = 'default'")
+            .fetch_optional(&mut *tx)
+            .await?
+            .flatten();
+        (registers::citation(registers::CRB, number, year, station.as_deref()), Some(year), Some(number))
+    } else {
+        (input.reference.trim().to_string(), None, None)
+    };
+
+    sqlx::query("INSERT INTO cases (id, reference, summary, status, incident_id, crb_year, crb_number) VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(&id)
-        .bind(&input.reference)
+        .bind(&reference)
         .bind(&input.summary)
         .bind(&input.status)
         .bind(&input.incident_id)
+        .bind(crb_year)
+        .bind(crb_number)
         .execute(&mut *tx)
         .await?;
 
@@ -113,6 +130,7 @@ pub async fn create_case(pool: &SqlitePool, vault_root: &Path, input: CreateCase
 }
 
 pub async fn update_case(pool: &SqlitePool, vault_root: &Path, id: &str, input: CreateCaseInput) -> Result<Case, sqlx::Error> {
+    let old_reference: Option<String> = sqlx::query_scalar("SELECT reference FROM cases WHERE id = ?").bind(id).fetch_optional(pool).await?;
     let mut tx = pool.begin().await?;
 
     sqlx::query("UPDATE cases SET reference = ?, summary = ?, status = ?, incident_id = ? WHERE id = ?")
@@ -128,6 +146,18 @@ pub async fn update_case(pool: &SqlitePool, vault_root: &Path, id: &str, input: 
     tx.commit().await?;
 
     let record = get_case(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
+
+    // A new reference is a new folder name. The case's folder and everything
+    // in it moves with it, so its files are never split across the old name
+    // and the new one.
+    if let Some(old_reference) = old_reference.filter(|old| *old != record.reference) {
+        if let Err(e) = attachments::rename_case_folder(pool, vault_root, &old_reference, &record.reference).await {
+            log::warn!("could not rename the vault folder for case {id}: {e}");
+        }
+        if let Err(e) = attachments::settle_case(pool, vault_root, id).await {
+            log::warn!("could not settle the files of case {id}: {e}");
+        }
+    }
     write_case_markdown(pool, vault_root, &record).await;
     Ok(record)
 }

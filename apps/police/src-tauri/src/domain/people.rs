@@ -203,7 +203,7 @@ pub async fn set_photo(
     bytes: &[u8],
 ) -> Result<Attachment, attachments::AttachmentError> {
     if let Some(existing_id) = existing_photo_attachment_id(pool, person_id, angle).await? {
-        attachments::delete_attachment(pool, &existing_id).await?;
+        attachments::delete_attachment(pool, vault_root, &existing_id).await?;
     }
 
     let attachment =
@@ -227,9 +227,9 @@ pub async fn set_photo(
 /// Empties one of a person's angle-photo slots. Clearing the front slot
 /// also clears the single-headshot pointer, same as `set_photo` keeps it
 /// in sync when that slot is filled.
-pub async fn clear_photo(pool: &SqlitePool, person_id: &str, angle: &str) -> Result<(), attachments::AttachmentError> {
+pub async fn clear_photo(pool: &SqlitePool, vault_root: &Path, person_id: &str, angle: &str) -> Result<(), attachments::AttachmentError> {
     if let Some(existing_id) = existing_photo_attachment_id(pool, person_id, angle).await? {
-        attachments::delete_attachment(pool, &existing_id).await?;
+        attachments::delete_attachment(pool, vault_root, &existing_id).await?;
     }
     if angle == "front" {
         clear_headshot(pool, person_id).await?;

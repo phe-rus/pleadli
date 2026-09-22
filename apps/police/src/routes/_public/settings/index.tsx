@@ -21,6 +21,9 @@ import { Button, buttonVariants } from '@pleadli/ui/button'
 import { FieldDescription, FieldGroup } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Switch } from '@pleadli/ui/switch'
+import { ConnectionSettings } from '@/features/command-link'
+import { ListenerCard } from '@/features/command'
+import { DevModeSwitch, SignInSettings, useInstallation } from '@/features/session'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
@@ -86,6 +89,16 @@ function GeneralTab() {
         />
       ),
     },
+    ...(import.meta.env.DEV
+      ? [
+          {
+            key: 'dev-mode',
+            label: 'Station or Command',
+            description: 'Dev builds only. Flips this installation to try both. A Command signs in with a password, so your account needs one first.',
+            control: <DevModeSwitch />,
+          },
+        ]
+      : []),
   ]
 
   return <SettingsTable rows={rows} className="md:max-w-lg" />
@@ -235,8 +248,8 @@ function AboutTab() {
     <div className="flex flex-col gap-1">
       <p>Pleadli Police is an offline-first desktop app for station operations, custody compliance, and case work.</p>
       <p className="text-xs text-muted-foreground">
-        All data is stored locally on this device by default. Station identity and establishment are configured
-        under Station Admin. Officer logins exist only for remote access, configured under the Network tab.
+        All data is stored locally on this device by default. Station identity and officers are configured
+        under Station administration. An officer's remote sign-in is optional and is set on the Officers page; remote access itself is turned on under the Network tab.
       </p>
       {info && (
         <p className="text-xs text-muted-foreground">
@@ -250,9 +263,11 @@ function AboutTab() {
 function RouteComponent() {
   const { tab } = Route.useSearch()
   const navigate = Route.useNavigate()
+  const { data: installation } = useInstallation()
+  const command = installation?.mode === 'command'
 
   return (
-    <article className="container flex flex-col gap-6 pt-5 pb-20">
+    <article className="page">
       <section className="flex flex-col">
         <h1>Settings</h1>
         <p>Preferences for this device. Nothing here is shared or synced.</p>
@@ -264,13 +279,24 @@ function RouteComponent() {
       >
         <TabsList variant="line">
           <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="network">Network</TabsTrigger>
-          <TabsTrigger value="data">Data</TabsTrigger>
+          <TabsTrigger value="sign-in">Sign-in</TabsTrigger>
+          {command ? <TabsTrigger value="command">Stations</TabsTrigger> : <TabsTrigger value="connection">Command</TabsTrigger>}
+          {!command && <TabsTrigger value="network">Network</TabsTrigger>}
+          {!command && <TabsTrigger value="data">Data</TabsTrigger>}
           <TabsTrigger value="about">About</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="pt-4">
           <GeneralTab />
+        </TabsContent>
+        <TabsContent value="sign-in" className="pt-4 md:max-w-xl">
+          <SignInSettings />
+        </TabsContent>
+        <TabsContent value="connection" className="pt-4 md:max-w-xl">
+          <ConnectionSettings />
+        </TabsContent>
+        <TabsContent value="command" className="pt-4 md:max-w-xl">
+          <ListenerCard />
         </TabsContent>
         <TabsContent value="network" className="pt-4">
           <NetworkTab />

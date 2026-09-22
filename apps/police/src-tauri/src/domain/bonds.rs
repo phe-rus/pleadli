@@ -26,6 +26,7 @@ pub struct Bond {
     pub surety_name: Option<String>,
     pub surety_contact: Option<String>,
     pub reporting_schedule: Option<String>,
+    pub officer_id: Option<String>,
     pub officer_name: Option<String>,
     pub officer_rank: Option<String>,
     pub status: String,
@@ -45,6 +46,8 @@ pub struct CreateBondInput {
     pub surety_name: Option<String>,
     pub surety_contact: Option<String>,
     pub reporting_schedule: Option<String>,
+    #[serde(default)]
+    pub officer_id: Option<String>,
     pub officer_name: Option<String>,
     pub officer_rank: Option<String>,
     pub status: String,
@@ -88,6 +91,7 @@ pub async fn create_bond(pool: &SqlitePool, vault_root: &Path, input: CreateBond
     .execute(pool)
     .await?;
 
+    super::officers::link_record(pool, "bonds", &id, &input.officer_id, true).await?;
     let record = get_bond(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_bond_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -118,6 +122,7 @@ pub async fn update_bond(pool: &SqlitePool, vault_root: &Path, id: &str, input: 
     .execute(pool)
     .await?;
 
+    super::officers::link_record(pool, "bonds", id, &input.officer_id, true).await?;
     let record = get_bond(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_bond_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -130,7 +135,7 @@ pub async fn list_bonds(pool: &SqlitePool, query: &str) -> Result<Vec<Bond>, sql
         return sqlx::query_as::<_, Bond>(
             "SELECT
                 b.id, b.person_id, b.custody_id, b.case_id, b.lock_up_serial_number, b.with_surety,
-                b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_name, b.officer_rank,
+                b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_id, b.officer_name, b.officer_rank,
                 b.status, b.granted_at, b.notes, b.created_at,
                 p.first_name AS person_first_name,
                 p.last_name AS person_last_name,
@@ -149,7 +154,7 @@ pub async fn list_bonds(pool: &SqlitePool, query: &str) -> Result<Vec<Bond>, sql
     sqlx::query_as::<_, Bond>(
         "SELECT
             b.id, b.person_id, b.custody_id, b.case_id, b.lock_up_serial_number, b.with_surety,
-            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_name, b.officer_rank,
+            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_id, b.officer_name, b.officer_rank,
             b.status, b.granted_at, b.notes, b.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
@@ -171,7 +176,7 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Bond>, sqlx::Error> {
     sqlx::query_as::<_, Bond>(
         "SELECT
             b.id, b.person_id, b.custody_id, b.case_id, b.lock_up_serial_number, b.with_surety,
-            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_name, b.officer_rank,
+            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_id, b.officer_name, b.officer_rank,
             b.status, b.granted_at, b.notes, b.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
@@ -190,7 +195,7 @@ pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<B
     sqlx::query_as::<_, Bond>(
         "SELECT
             b.id, b.person_id, b.custody_id, b.case_id, b.lock_up_serial_number, b.with_surety,
-            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_name, b.officer_rank,
+            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_id, b.officer_name, b.officer_rank,
             b.status, b.granted_at, b.notes, b.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
@@ -211,7 +216,7 @@ pub async fn list_for_case(pool: &SqlitePool, case_id: &str) -> Result<Vec<Bond>
     sqlx::query_as::<_, Bond>(
         "SELECT
             b.id, b.person_id, b.custody_id, b.case_id, b.lock_up_serial_number, b.with_surety,
-            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_name, b.officer_rank,
+            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_id, b.officer_name, b.officer_rank,
             b.status, b.granted_at, b.notes, b.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
@@ -232,7 +237,7 @@ pub async fn get_bond(pool: &SqlitePool, id: &str) -> Result<Option<Bond>, sqlx:
     sqlx::query_as::<_, Bond>(
         "SELECT
             b.id, b.person_id, b.custody_id, b.case_id, b.lock_up_serial_number, b.with_surety,
-            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_name, b.officer_rank,
+            b.surety_name, b.surety_contact, b.reporting_schedule, b.officer_id, b.officer_name, b.officer_rank,
             b.status, b.granted_at, b.notes, b.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
@@ -264,6 +269,7 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
         pool,
         vault_root,
         CreateBondInput {
+            officer_id: None,
             person_id,
             custody_id: None,
             case_id: None,

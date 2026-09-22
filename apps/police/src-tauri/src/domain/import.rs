@@ -16,7 +16,7 @@ use std::path::Path;
 
 use super::people::Person;
 use super::{
-    bonds, cases, charge_sheets, custody, duty, exhibits, people, referrals, station_admin, station_assets,
+    bonds, cases, charge_sheets, custody, duty, exhibits, officers, people, referrals, station_assets,
     station_diary, statements, vehicles,
 };
 
@@ -156,13 +156,13 @@ pub fn import_fields(entity_type: &str) -> Option<Vec<ImportField>> {
             field("personNationalId", "Person: national ID", false),
             field("notes", "Notes", false),
         ],
-        "station_establishment_member" => vec![
+        "officer" => vec![
             field("personFirstName", "Person: first name", true),
             field("personLastName", "Person: last name", true),
             field("personNationalId", "Person: national ID", false),
+            field("badgeNumber", "Badge number", false),
             field("post", "Post", false),
             field("rank", "Rank", false),
-            field("active", "Active (yes/no)", true),
             field("notes", "Notes", false),
         ],
         "vehicle" => vec![
@@ -504,6 +504,7 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
         "statement" => {
             let content = require(row, "content", "Statement content")?;
             let input = statements::CreateStatementInput {
+                officer_id: None,
                 content: plain_text_to_rich_text(&content),
                 person_id: require(row, "personId", "Person")?,
                 case_id: get_owned(row, "caseId"),
@@ -529,6 +530,7 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
         }
         "bond" => {
             let input = bonds::CreateBondInput {
+                officer_id: None,
                 person_id: require(row, "personId", "Person")?,
                 custody_id: None,
                 case_id: get_owned(row, "caseId"),
@@ -565,6 +567,7 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
         }
         "charge_sheet" => {
             let input = charge_sheets::CreateChargeSheetInput {
+                officer_id: None,
                 case_id: require(row, "caseId", "Case")?,
                 accused_person_id: get_owned(row, "personId"),
                 offence: require(row, "offence", "Offence")?,
@@ -578,6 +581,7 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
         }
         "referral" => {
             let input = referrals::CreateReferralInput {
+                officer_id: None,
                 case_id: require(row, "caseId", "Case")?,
                 destination_type: require(row, "destinationType", "Destination type")?,
                 destination_name: get_owned(row, "destinationName"),
@@ -599,6 +603,7 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
         }
         "duty_assignment" => {
             let input = duty::CreateDutyAssignmentInput {
+                officer_id: None,
                 officer_name: require(row, "officerName", "Officer name")?,
                 officer_rank: get_owned(row, "officerRank"),
                 unit: get_owned(row, "unit"),
@@ -620,15 +625,20 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
             };
             station_assets::create_asset(pool, vault_root, input).await.map(|_| ()).map_err(|e| e.to_string())
         }
-        "station_establishment_member" => {
-            let input = station_admin::CreateStationEstablishmentMemberInput {
-                person_id: require(row, "personId", "Person")?,
-                post: get_owned(row, "post"),
+        "officer" => {
+            let first = require(row, "personFirstName", "Person: first name")?;
+            let last = require(row, "personLastName", "Person: last name")?;
+            let input = officers::CreateOfficerInput {
+                badge_number: get_owned(row, "badgeNumber"),
+                name: format!("{first} {last}"),
                 rank: get_owned(row, "rank"),
-                active: get_bool(row, "active"),
+                post: get_owned(row, "post"),
+                role: "officer".to_string(),
                 notes: get_owned(row, "notes"),
+                person_id: get_owned(row, "personId"),
+                password: None,
             };
-            station_admin::create_establishment_member(pool, vault_root, input).await.map(|_| ()).map_err(|e| e.to_string())
+            officers::create_officer(pool, input).await.map(|_| ()).map_err(|e| e.to_string())
         }
         "vehicle" => {
             let input = vehicles::CreateVehicleInput {

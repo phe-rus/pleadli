@@ -1,3 +1,4 @@
+import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
@@ -40,6 +41,7 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
       statutorySection: chargeSheet?.statutorySection ?? '',
       particulars: chargeSheet?.particulars ?? '',
       chargedAt: chargeSheet ? toDatetimeLocal(chargeSheet.chargedAt) : toDatetimeLocal(Date.now()),
+      officerId: chargeSheet?.officerId ?? (null as string | null),
       officerName: chargeSheet?.officerName ?? '',
       // Prefilled from the canonical Station Profile so the officer isn't
       // retyping it on every charge sheet — still a plain editable field,
@@ -154,9 +156,18 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
               </Field>
             )}
           </form.AppField>
-          <form.AppField name="officerName">
-            {(f) => <f.input label="Preferring officer" />}
+          <form.AppField name="officerId">
+            {(f) => <OfficerPicker label="Preferring officer" value={f.state.value} onValueChange={f.handleChange} />}
           </form.AppField>
+          <form.Subscribe selector={(state) => state.values.officerId}>
+            {(officerId) =>
+              officerId ? null : (
+                <>
+                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
+                </>
+              )
+            }
+          </form.Subscribe>
         </div>
 
         <form.AppField name="stationName">

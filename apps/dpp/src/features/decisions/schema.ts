@@ -1,12 +1,11 @@
 import * as z from 'zod'
 
 // The confirmed decision-type set from docs/dpp/PRODUCT.md §Decisions &
-// Reviews (RESEARCH.md §4). `delegable: false` is informational only — no
-// local auth/permission system exists yet to actually enforce that
-// discontinuance and nolle prosequi are DPP-exclusive (Constitution Art.
-// 120(3)(d)/(4); Trial on Indictments Act §135) — it's surfaced in the UI
-// as a plain notice, never silently enforced as if a real permission check
-// happened.
+// Reviews (RESEARCH.md §4). `delegable: false` marks discontinuance and
+// nolle prosequi, which are the Director of Public Prosecutions' alone
+// (Constitution Art. 120(3)(d)/(4); Trial on Indictments Act §135). The
+// server refuses them unless the installation's prosecutor is marked as the
+// DPP (`domain/decisions.rs`); the UI only explains that ahead of time.
 export const decisionTypes = [
   { value: 'sanction', label: 'Sanction (decide to prosecute)', delegable: true },
   { value: 'threshold_charge', label: 'Threshold Test charge', delegable: true },
@@ -29,17 +28,6 @@ export function decisionTypeDelegable(type: string) {
   return decisionTypes.find((d) => d.value === type)?.delegable ?? true
 }
 
-// Decision types whose real institutional output is a sanctioned Charge
-// Sheet (RESEARCH.md §3: "sanction the charges by appending his or her
-// signature, date, and stamp on the Charge Sheet") — a decline decision's
-// output is a written, privileged reasons record instead, not this
-// document.
-const chargeSheetDecisionTypes = new Set(['sanction', 'threshold_charge', 'amend_charge'])
-
-export function decisionProducesChargeSheet(type: string) {
-  return chargeSheetDecisionTypes.has(type)
-}
-
 export const decisionSchema = z.object({
   id: z.string(),
   prosecutionFileId: z.string(),
@@ -48,9 +36,22 @@ export const decisionSchema = z.object({
   decidedAt: z.number(),
   reasons: z.string().nullable(),
   createdAt: z.number(),
+  /** The count decided, or null for the whole file. */
+  chargeId: z.string().nullable(),
+  reviewId: z.string().nullable(),
+  /** The earlier decision this one corrects. */
+  correctsDecisionId: z.string().nullable(),
 })
 
 export type Decision = z.infer<typeof decisionSchema>
+
+/** A decision in the log across all files. */
+export const decisionRowSchema = decisionSchema.extend({
+  fileTitle: z.string(),
+  fileReference: z.string().nullable(),
+})
+
+export type DecisionRow = z.infer<typeof decisionRowSchema>
 
 export const createDecisionSchema = z.object({
   prosecutionFileId: z.string().min(1),
@@ -58,6 +59,24 @@ export const createDecisionSchema = z.object({
   decidedBy: z.string(),
   decidedAt: z.number(),
   reasons: z.string(),
+  /** Empty means the whole file. */
+  chargeIds: z.array(z.string()),
+  reviewId: z.string().nullable(),
+  correctsDecisionId: z.string().nullable(),
+  concludeReview: z.boolean(),
+  directions: z.array(z.object({ kind: z.string(), instruction: z.string().min(1, 'Every direction needs its instruction written out.'), personId: z.string().nullable() })),
 })
 
 export type CreateDecisionInput = z.infer<typeof createDecisionSchema>
+
+/** Decisions recorded together (one row per count, same review and type)
+ * are one act. The list of decisions shows every row; a document is made
+ * once per act. */
+export function decisionActs<T extends Decision>(decisions: readonly T[]): { key: string; decisions: T[] }[] {
+  const acts = new Map<string, T[]>()
+  for (const decision of decisions) {
+    const key = decision.reviewId ? `${decision.reviewId}:${decision.decisionType}` : decision.id
+    acts.set(key, [...(acts.get(key) ?? []), decision])
+  }
+  return [...acts.entries()].map(([key, rows]) => ({ key, decisions: rows }))
+}

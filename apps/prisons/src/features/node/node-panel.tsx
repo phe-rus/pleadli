@@ -51,6 +51,20 @@ export function NodePanel() {
     },
   ]
 
+  const atRestRows: SettingsRow[] = [
+    {
+      key: 'at-rest',
+      label: m.node_data_at_rest(),
+      description:
+        environment.atRest.keyHeldIn === 'keystore'
+          ? m.node_data_at_rest_keystore()
+          : environment.atRest.keyHeldIn === 'key_file'
+            ? m.node_data_at_rest_key_file()
+            : m.node_data_at_rest_unknown(),
+      control: <Badge variant={environment.atRest.keyHeldIn === 'keystore' ? 'default' : 'secondary'}>{environment.atRest.encrypted ? 'Encrypted' : 'Not encrypted'}</Badge>,
+    },
+  ]
+
   const listenerRows: SettingsRow[] = [
     {
       key: 'listener',
@@ -87,6 +101,7 @@ export function NodePanel() {
 
   return (
     <div className="flex flex-col gap-6">
+      <SettingsTable rows={atRestRows} />
       <SettingsTable rows={serveRows} />
       {serving && <SettingsTable rows={listenerRows} />}
 

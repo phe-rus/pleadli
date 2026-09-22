@@ -68,7 +68,7 @@ function RouteComponent() {
   const items = results ?? []
 
   return (
-    <article className="container flex flex-col gap-6 pt-5 pb-20">
+    <article className="page">
       <section className="flex flex-col gap-2">
         <h1>Search Pleadli Police</h1>
         <Combobox

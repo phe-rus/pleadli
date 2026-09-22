@@ -42,13 +42,16 @@ export async function getAttachmentDataUrl(id: string) {
 }
 
 export async function openAttachment(attachment: Attachment) {
+  const url = await getAttachmentDataUrl(attachment.id)
+  if (!url) return
   if (isTauri()) {
-    // Only valid while the node runs on this machine; the document reader
-    // in the documents slice replaces this for workstations.
-    const { openPath } = await import('@tauri-apps/plugin-opener')
-    await openPath(attachment.storedPath)
+    // Documents are sealed in the vault, so no other program can open them
+    // there. The desktop app asks the system to open a short-lived plain copy,
+    // removed when the app starts or exits. The same route serves a
+    // workstation, whose documents live on the node, not on this machine.
+    const contentBase64 = url.slice(url.indexOf(',') + 1)
+    await invoke('open_document', { fileName: attachment.fileName, contentBase64 })
     return
   }
-  const url = await getAttachmentDataUrl(attachment.id)
-  if (url) window.open(url, '_blank')
+  window.open(url, '_blank')
 }

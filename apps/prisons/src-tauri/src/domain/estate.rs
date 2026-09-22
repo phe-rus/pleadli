@@ -13,15 +13,14 @@
 //! gives seven days of silence as its example and names no return deadline, so
 //! both are constants to be confirmed with the Prison Service.
 
-use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use sqlx::{FromRow, Sqlite, SqlitePool};
 
+use super::exchange::{self, IngestError};
 use super::facilities;
 use super::facility_profile;
-use super::sync::IngestError;
 use super::time::{add_calendar, eat_datetime, now_ms, DAY_MS};
 use chrono::Datelike;
 
@@ -56,7 +55,24 @@ pub struct StatusReport {
     pub app_version: String,
     /// The facility's clock when it counted.
     pub as_at: i64,
+    /// How the facility says its own exchange with Head Office is going. Absent
+    /// from older builds.
+    #[serde(default)]
+    pub exchange: Option<ExchangeReport>,
 }
+
+/// The facility's own account of its exchange: a state word, how much is
+/// waiting, and the last thing that went wrong. No records, no names.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExchangeReport {
+    pub state: String,
+    pub pending: i64,
+    pub last_success_at: Option<i64>,
+    pub last_error: Option<String>,
+}
+
+const REPORTABLE_STATES: [&str; 7] = ["idle", "pending", "in_progress", "completed", "failed", "stalled", "offline"];
 
 pub async fn build_report(pool: &SqlitePool) -> Result<StatusReport, sqlx::Error> {
     let (held, convicted, unconvicted, civil): (i64, i64, i64, i64) = sqlx::query_as(
@@ -70,12 +86,29 @@ pub async fn build_report(pool: &SqlitePool) -> Result<StatusReport, sqlx::Error
     .await?;
     let in_transit: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM prisoners WHERE current_status = 'in_transit' AND facility_id IS NULL").fetch_one(pool).await?;
     let capacity = facility_profile::get(pool).await?.approved_capacity;
-    Ok(StatusReport { held, convicted, unconvicted, civil, in_transit, capacity, app_version: env!("CARGO_PKG_VERSION").to_string(), as_at: now_ms() })
+    let waiting = super::connectivity::pending(pool).await?.total;
+    let finished = exchange::status_finished(pool, waiting).await?;
+    let last_error = if matches!(finished.state.as_str(), "failed" | "stalled") {
+        finished.recent.iter().find(|r| matches!(r.outcome.as_deref(), Some("failed" | "refused"))).and_then(|r| r.error.clone())
+    } else {
+        None
+    };
+    let exchange = Some(ExchangeReport { state: finished.state, pending: waiting, last_success_at: finished.last_success_at, last_error });
+    Ok(StatusReport { held, convicted, unconvicted, civil, in_transit, capacity, app_version: env!("CARGO_PKG_VERSION").to_string(), as_at: now_ms(), exchange })
 }
 
 /// The report without its clock, so an unchanged facility hashes the same.
 fn digest(report: &StatusReport) -> String {
-    let stable = (report.held, report.convicted, report.unconvicted, report.civil, report.in_transit, report.capacity, &report.app_version);
+    let stable = (
+        report.held,
+        report.convicted,
+        report.unconvicted,
+        report.civil,
+        report.in_transit,
+        report.capacity,
+        &report.app_version,
+        report.exchange.as_ref().map(|e| (e.state.clone(), e.pending)),
+    );
     format!("{:x}", Sha256::digest(serde_json::to_string(&stable).unwrap_or_default().as_bytes()))
 }
 
@@ -96,8 +129,8 @@ pub async fn push_status(pool: &SqlitePool) -> Result<bool, String> {
         return Ok(false);
     }
 
-    let client = reqwest::Client::builder().timeout(Duration::from_secs(20)).build().map_err(|e| e.to_string())?;
-    let response = client
+    let response = super::peer::hq_client(pool, 20)
+        .await?
         .post(format!("{}/api/network/v1/status", ctx.hostname.trim_end_matches('/')))
         .bearer_auth(&ctx.sync_token)
         .json(&report)
@@ -136,6 +169,7 @@ fn plausible(report: &StatusReport) -> bool {
         && report.capacity.is_none_or(|c| (0..=MAX_COUNT).contains(&c))
         && report.convicted + report.unconvicted + report.civil <= report.held
         && report.app_version.len() <= 32
+        && report.exchange.as_ref().is_none_or(|e| REPORTABLE_STATES.contains(&e.state.as_str()) && (0..=MAX_COUNT).contains(&e.pending))
 }
 
 /// Head Office side of `/api/network/v1/status`. The facility is resolved from
@@ -156,7 +190,8 @@ pub async fn receive_status(pool: &SqlitePool, sync_token: &str, report: StatusR
     }
     sqlx::query(
         "UPDATE facilities SET last_contact_at = ?, reported_held = ?, reported_convicted = ?, reported_unconvicted = ?, reported_civil = ?,
-                reported_in_transit = ?, reported_capacity = ?, status_reported_at = ?, app_version = ?
+                reported_in_transit = ?, reported_capacity = ?, status_reported_at = ?, app_version = ?,
+                reported_exchange_state = ?, reported_pending = ?, reported_last_success_at = ?, reported_last_error = ?
          WHERE id = ?",
     )
     .bind(now_ms())
@@ -168,6 +203,10 @@ pub async fn receive_status(pool: &SqlitePool, sync_token: &str, report: StatusR
     .bind(report.capacity)
     .bind(report.as_at)
     .bind(&report.app_version)
+    .bind(report.exchange.as_ref().map(|e| e.state.clone()))
+    .bind(report.exchange.as_ref().map(|e| e.pending))
+    .bind(report.exchange.as_ref().and_then(|e| e.last_success_at))
+    .bind(report.exchange.as_ref().and_then(|e| e.last_error.as_ref().map(|m| m.chars().take(200).collect::<String>())))
     .bind(&facility_id)
     .execute(pool)
     .await?;
@@ -556,7 +595,7 @@ mod tests {
     }
 
     fn report(held: i64) -> StatusReport {
-        StatusReport { held, convicted: 1, unconvicted: held - 1, civil: 0, in_transit: 0, capacity: Some(100), app_version: "0.1.0".into(), as_at: 5 }
+        StatusReport { held, convicted: 1, unconvicted: held - 1, civil: 0, in_transit: 0, capacity: Some(100), app_version: "0.1.0".into(), as_at: 5, exchange: None }
     }
 
     #[test]

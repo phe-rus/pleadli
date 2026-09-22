@@ -243,7 +243,7 @@ export const networkRowsSchema = rows(
     status: z.string(),
     lastSyncedAt: z.number().nullable(),
     officerCount: z.number(),
-    heldAtLastSync: z.number(),
+    heldAtLastSync: z.number().nullable(),
   }),
 )
 

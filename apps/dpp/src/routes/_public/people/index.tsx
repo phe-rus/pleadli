@@ -57,30 +57,29 @@ function RouteComponent() {
   }, [])
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-5">
-            <h1>People</h1>
-
-            <Createpanel
-              open={addOpen}
-              onOpenChange={setAddOpen}
-              isDirty={addDirty}
-              trigger={
-                <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
-                  Add person
-                </Button>
-              }
-              headings={{ title: 'Add person', description: "Record someone who isn't already known to the system." }}
-            >
-              <PersonForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
-            </Createpanel>
-          </div>
-          <p className="md:max-w-sm">Accused, complainants, and witnesses referenced across ODPP's own files.</p>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>People</h1>
+          <p>Accused, complainants and witnesses referenced across the files.</p>
         </div>
-      </section>
+        <div className="page-actions">
+          <Createpanel
+            open={addOpen}
+            onOpenChange={setAddOpen}
+            isDirty={addDirty}
+            trigger={
+              <Button size="sm">
+                <HugeiconsIcon icon={AddCircleIcon} />
+                Add a person
+              </Button>
+            }
+            headings={{ title: 'Add a person', description: "Record someone who isn't already known to the system." }}
+          >
+            <PersonForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
+          </Createpanel>
+        </div>
+      </header>
 
       <Createpanel
         open={editingPerson !== null}

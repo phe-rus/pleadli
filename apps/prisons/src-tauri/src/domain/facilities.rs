@@ -265,9 +265,11 @@ pub(crate) async fn hq_register_base(conn: &mut SqliteConnection) -> String {
         .await
         .ok()
         .flatten();
-    match tunnel {
-        Some(hostname) => format!("https://{hostname}"),
-        None => format!("http://127.0.0.1:{}", crate::api::network::PORT),
+    match (tunnel, super::nodeconfig::private_ipv4_addresses().first()) {
+        (Some(hostname), _) => format!("https://{hostname}"),
+        // A Head Office on a network is reached at its LAN address, over TLS.
+        (None, Some(ip)) => format!("https://{ip}:{}", crate::api::network::LAN_PORT),
+        (None, None) => format!("http://127.0.0.1:{}", crate::api::network::PORT),
     }
 }
 
@@ -475,7 +477,7 @@ pub async fn save_peer_credentials(
 }
 
 /// Everything this installation needs to push a snapshot (child 3) — read
-/// by `sync::push_snapshot`, never exposed to the frontend.
+/// by the exchange, never exposed to the frontend.
 #[derive(Debug, Clone)]
 pub struct PeerSyncContext {
     pub hostname: String,

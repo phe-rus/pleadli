@@ -92,7 +92,7 @@ export const registerDefs: Record<RegisterKind, RegisterDef> = {
     { key: 'location', header: () => m.reports_column_location(), cell: (r) => r.location },
     { key: 'status', header: () => m.reports_column_status(), cell: (r) => facilityStatusLabel(r.status) },
     { key: 'officers', header: () => m.reports_column_officers(), cell: (r) => r.officerCount, align: 'right' },
-    { key: 'held', header: () => m.reports_column_held(), cell: (r) => r.heldAtLastSync, align: 'right' },
+    { key: 'held', header: () => m.reports_column_held(), cell: (r) => r.heldAtLastSync ?? m.reports_not_reported(), align: 'right' },
     { key: 'lastSynced', header: () => m.reports_column_last_synced(), cell: (r) => (r.lastSyncedAt ? format(r.lastSyncedAt, 'd MMM yyyy, HH:mm') : m.reports_never()) },
   ]),
 }

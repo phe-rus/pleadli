@@ -3,6 +3,9 @@ import { api } from '@/lib/api'
 import {
   connectResultSchema,
   connectionRequestSchema,
+  discoveredHqSchema,
+  exchangeOverviewSchema,
+  hqIdentitySchema,
   facilityLookupSchema,
   facilityOfficerSchema,
   facilitySchema,
@@ -46,15 +49,15 @@ export async function revokeFacility(facilityId: string) {
 
 /** First-launch pairing. The node, not the webview, makes the outbound call
  * to Head Office and stores the credentials it issues. */
-export async function pairWithHeadOffice(pairingCode: string, input: RegisterFacilityInput) {
+export async function pairWithHeadOffice(pairingCode: string, input: RegisterFacilityInput, hqFingerprint?: string) {
   const details = registerFacilityInputSchema.parse(input)
-  await api('POST', '/api/system/onboarding/pair', { body: { pairingCode, ...details } })
+  await api('POST', '/api/system/onboarding/pair', { body: { pairingCode, ...details, hqFingerprint } })
 }
 
 /** Pairing after first launch, for a facility that started on its own. */
-export async function pairWithHeadOfficeLater(pairingCode: string, input: RegisterFacilityInput) {
+export async function pairWithHeadOfficeLater(pairingCode: string, input: RegisterFacilityInput, hqFingerprint?: string) {
   const details = registerFacilityInputSchema.parse(input)
-  await api('POST', '/api/system/network/pair', { body: { pairingCode, ...details } })
+  await api('POST', '/api/system/network/pair', { body: { pairingCode, ...details, hqFingerprint } })
 }
 
 export async function syncNow() {
@@ -83,9 +86,31 @@ export async function getHqNetworkStatus() {
 }
 
 /** The node looks the facility up on Head Office; the webview never calls it. */
-export async function lookupFacility(scope: ConnectScope, hqAddress: string, facilityNumber: string) {
+export async function lookupFacility(scope: ConnectScope, hqAddress: string, facilityNumber: string, hqFingerprint?: string) {
   const path = scope === 'onboarding' ? '/api/system/onboarding/facility-lookup' : '/api/system/network/facility-lookup'
-  return facilityLookupSchema.nullable().parse(await api('POST', path, { body: { hqAddress, facilityNumber } }))
+  return facilityLookupSchema.nullable().parse(await api('POST', path, { body: { hqAddress, facilityNumber, hqFingerprint } }))
+}
+
+/** Head Offices that answered a search of the local network. Suggestions only:
+ * nothing is trusted, or sent anything, until a person confirms one. */
+export async function discoverHeadOffice(scope: ConnectScope) {
+  const path = scope === 'onboarding' ? '/api/system/onboarding/hq-discover' : '/api/system/network/hq-discover'
+  return z.array(discoveredHqSchema).parse(await api('POST', path))
+}
+
+/** Who is at an address and the certificate it presents, without sending it anything. */
+export async function probeHeadOffice(scope: ConnectScope, address: string) {
+  const path = scope === 'onboarding' ? '/api/system/onboarding/hq-identity' : '/api/system/network/hq-identity'
+  return hqIdentitySchema.parse(await api('POST', path, { body: { address } }))
+}
+
+export async function setHqLan(enabled: boolean) {
+  await api('PUT', '/api/hq/network/lan', { body: { enabled } })
+}
+
+/** Head Office: what each facility has sent and whether it was taken. */
+export async function getExchangeOverview() {
+  return exchangeOverviewSchema.parse(await api('GET', '/api/hq/network/exchanges'))
 }
 
 export async function connectFacility(scope: ConnectScope, input: ConnectFacilityInput) {

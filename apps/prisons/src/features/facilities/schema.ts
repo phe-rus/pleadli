@@ -56,7 +56,7 @@ export type RegisterFacilityInput = z.infer<typeof registerFacilityInputSchema>
 /** A peer's own local sync status (`peer_sync_config`), read by Settings'
  * Network & Sync section on a facility installation. Meaningless (all
  * null) on Head Office, which never registers with anyone. */
-export const connectionStates = ['none', 'pending', 'connected', 'rejected'] as const
+export const connectionStates = ['none', 'pending', 'connected', 'rejected', 'revoked'] as const
 
 export const peerSyncConfigSchema = z.object({
   hqHostname: z.string().nullable(),
@@ -152,7 +152,17 @@ export type ConnectFacilityInput = {
   requesterBadge: string
   requesterName: string
   activationCode?: string
+  /** The certificate fingerprint a person confirmed, for a local-network address. */
+  hqFingerprint?: string
 }
+
+/** Who answered at an address, and the certificate it presented. */
+export const hqIdentitySchema = z.object({ address: z.string(), name: z.string(), fingerprint: z.string().nullable() })
+export type HqIdentity = z.infer<typeof hqIdentitySchema>
+
+/** A Head Office that answered a search of the local network. A suggestion only. */
+export const discoveredHqSchema = z.object({ address: z.string(), name: z.string() })
+export type DiscoveredHq = z.infer<typeof discoveredHqSchema>
 
 /** Where a connect call goes: before any account exists it is an onboarding
  * route, afterwards a permission-checked network route. */
@@ -191,6 +201,13 @@ export type FacilityOfficer = z.infer<typeof facilityOfficerSchema>
 
 export const hqNetworkStatusSchema = z.object({
   local: z.object({ listening: z.boolean(), address: z.string() }),
+  lan: z.object({
+    enabled: z.boolean(),
+    listening: z.boolean(),
+    discoverable: z.boolean(),
+    addresses: z.array(z.string()),
+    fingerprint: z.string().nullable(),
+  }),
   cloudflare: z.object({
     configured: z.boolean(),
     tunnelProvisioned: z.boolean(),
@@ -203,6 +220,42 @@ export const hqNetworkStatusSchema = z.object({
 })
 
 export type HqNetworkStatus = z.infer<typeof hqNetworkStatusSchema>
+
+export const exchangeViews = ['not_active', 'never', 'current', 'stale', 'silent', 'stalled'] as const
+
+export const facilityExchangeSchema = z.object({
+  facilityId: z.string(),
+  name: z.string(),
+  facilityNumber: z.string(),
+  region: z.string(),
+  standing: z.string(),
+  view: z.enum(exchangeViews),
+  lastContactAt: z.number().nullable(),
+  lastSuccessAt: z.number().nullable(),
+  lastVia: z.string().nullable(),
+  reportedState: z.string().nullable(),
+  reportedPending: z.number().nullable(),
+  reportedLastError: z.string().nullable(),
+  refusedLastDay: z.number(),
+})
+
+export const exchangeEventSchema = z.object({
+  id: z.string(),
+  facilityId: z.string(),
+  facilityName: z.string(),
+  at: z.number(),
+  kind: z.string(),
+  result: z.string(),
+  detail: z.string().nullable(),
+  via: z.string(),
+})
+
+export const exchangeOverviewSchema = z.object({
+  facilities: z.array(facilityExchangeSchema),
+  events: z.array(exchangeEventSchema),
+})
+
+export type ExchangeOverview = z.infer<typeof exchangeOverviewSchema>
 
 export const reachabilitySchema = z.object({ reachable: z.boolean(), checkedAt: z.number() })
 

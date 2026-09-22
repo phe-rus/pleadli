@@ -43,6 +43,40 @@ pub async fn get(pool: &SqlitePool) -> Result<NodeConfig, sqlx::Error> {
     Ok(config)
 }
 
+/// This machine's private IPv4 addresses (the ones a facility LAN uses), in the
+/// order the operating system lists them.
+pub fn private_ipv4_addresses() -> Vec<String> {
+    local_ip_address::list_afinet_netifas()
+        .map(|interfaces| {
+            interfaces
+                .into_iter()
+                .filter_map(|(_, ip)| match ip {
+                    std::net::IpAddr::V4(v4) if v4.is_private() || (v4.octets()[0] == 100 && (64..=127).contains(&v4.octets()[1])) => Some(v4),
+                    _ => None,
+                })
+                .map(|v4| v4.to_string())
+                .collect::<Vec<_>>()
+        })
+        .map(|mut addresses| {
+            // A facility LAN is usually 192.168/16 or 10/8; 172.16/12 is what
+            // container bridges use, so it goes last.
+            addresses.sort_by_key(|a| if a.starts_with("192.168.") { 0 } else if a.starts_with("10.") { 1 } else if a.starts_with("172.") { 3 } else { 2 });
+            addresses
+        })
+        .unwrap_or_default()
+}
+
+/// Whether this Head Office accepts facilities on its local network. On unless
+/// it was switched off.
+pub async fn network_lan_enabled(pool: &SqlitePool) -> bool {
+    sqlx::query_scalar::<_, bool>("SELECT network_lan FROM node_config WHERE id = 'default'").fetch_one(pool).await.unwrap_or(true)
+}
+
+pub async fn set_network_lan(conn: &mut SqliteConnection, actor: &Actor, enabled: bool) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE node_config SET network_lan = ? WHERE id = 'default'").bind(enabled).execute(&mut *conn).await?;
+    audit::record(conn, actor, AuditEntry::new("network.lan_changed", "node_config", Some("default")).after(&serde_json::json!({ "enabled": enabled }))).await
+}
+
 /// Serving workstations is switched on and off here. Becoming a workstation
 /// happens only through `connect_as_workstation`.
 pub async fn set_serving(conn: &mut SqliteConnection, actor: &Actor, serve: bool, port: Option<i64>) -> Result<(), sqlx::Error> {
@@ -247,12 +281,25 @@ pub struct BackupState {
     pub overdue: bool,
 }
 
+/// How this node's records and documents are protected on disk (D14). Says
+/// where the key is, because that is the difference between a copied database
+/// being useless and a copied data folder being enough.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AtRestState {
+    /// The database is SQLCipher and documents are sealed files.
+    pub encrypted: bool,
+    /// `keystore` or `key_file`. `None` only before the node has started.
+    pub key_held_in: Option<super::keys::Protection>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Environment {
     pub network: NetworkState,
     pub head_office: HeadOfficeState,
     pub backup: BackupState,
+    pub at_rest: AtRestState,
 }
 
 /// Head Office contact is fresh when the last successful exchange was within
@@ -317,6 +364,7 @@ pub async fn environment(node: &NodeRef) -> Result<Environment, sqlx::Error> {
         },
         head_office,
         backup: BackupState { configured: backup_config.configured, last_backup_at: backup_config.last_backup_at, overdue },
+        at_rest: AtRestState { encrypted: super::keys::protection().is_some(), key_held_in: super::keys::protection() },
     })
 }
 

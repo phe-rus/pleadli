@@ -1,36 +1,19 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
+import { api, orNull, seg } from '@/lib/api'
 import { createEvidenceItemSchema, evidenceItemSchema, type CreateEvidenceItemInput } from './schema'
-
-const DEV_SERVER_URL = 'http://127.0.0.1:47921'
-
-async function devFetch(path: string, init?: RequestInit) {
-  const response = await fetch(`${DEV_SERVER_URL}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  if (!response.ok) throw new Error(await response.text())
-  return response.status === 204 ? null : response.json()
-}
 
 export async function createEvidenceItem(input: CreateEvidenceItemInput) {
   const parsed = createEvidenceItemSchema.parse(input)
-  const rustInput = {
+  const body = {
     ...parsed,
-    description: parsed.description || null,
-    identificationMark: parsed.identificationMark || null,
-    recoveredFromLocation: parsed.recoveredFromLocation || null,
-    sourceNote: parsed.sourceNote || null,
+    description: orNull(parsed.description),
+    identificationMark: orNull(parsed.identificationMark),
+    recoveredFromLocation: orNull(parsed.recoveredFromLocation),
+    sourceNote: orNull(parsed.sourceNote),
   }
-  const item = isTauri()
-    ? await invoke('create_evidence_item', { input: rustInput })
-    : await devFetch('/evidence-items', { method: 'POST', body: JSON.stringify(rustInput) })
-  return evidenceItemSchema.parse(item)
+  return evidenceItemSchema.parse(await api('POST', '/api/evidence-items', { body }))
 }
 
 export async function listEvidenceForFile(prosecutionFileId: string) {
-  const items = isTauri()
-    ? await invoke('list_evidence_for_file', { prosecutionFileId })
-    : await devFetch(`/prosecution-files/${encodeURIComponent(prosecutionFileId)}/evidence-items`)
-  return z.array(evidenceItemSchema).parse(items)
+  return z.array(evidenceItemSchema).parse(await api('GET', `/api/prosecution-files/${seg(prosecutionFileId)}/evidence-items`))
 }

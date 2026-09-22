@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 use uuid::Uuid;
 
+use super::error::{invalid, DomainError};
+
 /// Police Material (received) — Evidence/Exhibits (docs/dpp/PRODUCT.md).
 /// See migration 0007: DPP records what Police says exists, never
 /// independent physical chain-of-custody.
@@ -29,7 +31,10 @@ pub struct CreateEvidenceItemInput {
     pub source_note: Option<String>,
 }
 
-pub async fn create_evidence_item(pool: &SqlitePool, input: CreateEvidenceItemInput) -> Result<EvidenceItem, sqlx::Error> {
+pub async fn create_evidence_item(pool: &SqlitePool, input: CreateEvidenceItemInput) -> Result<EvidenceItem, DomainError> {
+    if !["exhibit", "digital", "documentary", "expert"].contains(&input.category.as_str()) {
+        return invalid("That is not a category of evidence.");
+    }
     let id = Uuid::new_v4().to_string();
     sqlx::query(
         "INSERT INTO evidence_items (id, prosecution_file_id, category, description, identification_mark, recovered_from_location, source_note)
@@ -45,7 +50,7 @@ pub async fn create_evidence_item(pool: &SqlitePool, input: CreateEvidenceItemIn
     .execute(pool)
     .await?;
 
-    sqlx::query_as::<_, EvidenceItem>("SELECT * FROM evidence_items WHERE id = ?").bind(&id).fetch_one(pool).await
+    Ok(sqlx::query_as::<_, EvidenceItem>("SELECT * FROM evidence_items WHERE id = ?").bind(&id).fetch_one(pool).await?)
 }
 
 pub async fn list_for_file(pool: &SqlitePool, prosecution_file_id: &str) -> Result<Vec<EvidenceItem>, sqlx::Error> {

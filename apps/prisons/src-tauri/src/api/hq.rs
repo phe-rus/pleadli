@@ -28,6 +28,8 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .post("/api/hq/connection-requests/{id}/reject", Need::Perm(HQ_NETWORK_MANAGE), reject_request)
         .get("/api/hq/facility-officers", Need::Perm(HQ_ESTATE_READ), list_facility_officers)
         .get("/api/hq/network/status", Need::Perm(HQ_NETWORK_MANAGE), network_status)
+        .put("/api/hq/network/lan", Need::Perm(HQ_NETWORK_MANAGE), set_lan)
+        .get("/api/hq/network/exchanges", Need::Perm(HQ_NETWORK_MANAGE), exchange_overview)
         .post("/api/hq/facilities/pairing-code", Need::Perm(HQ_NETWORK_MANAGE), generate_pairing_code)
         .post("/api/hq/facilities/{id}/verify", Need::Perm(HQ_NETWORK_MANAGE), verify_facility)
         .post("/api/hq/facilities/{id}/resend-code", Need::Perm(HQ_NETWORK_MANAGE), resend_code)
@@ -195,8 +197,26 @@ async fn list_facility_officers(State(node): State<NodeRef>) -> Api<Vec<Facility
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct LocalStatus {
+    /// The loopback listener the tunnel points at.
     listening: bool,
     address: String,
+}
+
+/// Head Office on its own network: what a facility on the same LAN connects to.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LanStatus {
+    /// Whether Head Office is set to accept facilities on its local network.
+    enabled: bool,
+    /// Whether the TLS listener is accepting connections right now.
+    listening: bool,
+    /// Whether it is answering discovery probes right now.
+    discoverable: bool,
+    /// The addresses a facility can use, most likely first.
+    addresses: Vec<String>,
+    /// This Head Office's certificate fingerprint, for a facility's officer to
+    /// compare against the one their screen shows before confirming.
+    fingerprint: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -217,6 +237,7 @@ struct CloudflareStatus {
 #[serde(rename_all = "camelCase")]
 struct NetworkStatus {
     local: LocalStatus,
+    lan: LanStatus,
     cloudflare: CloudflareStatus,
     public_base: String,
     pending_requests: i64,
@@ -246,10 +267,36 @@ async fn network_status(State(node): State<NodeRef>) -> Api<NetworkStatus> {
         let mut conn = node.pool.acquire().await?;
         facilities::hq_register_base(&mut conn).await
     };
+    let lan = LanStatus {
+        enabled: crate::domain::nodeconfig::network_lan_enabled(&node.pool).await,
+        listening: node.network_lan_listening.load(std::sync::atomic::Ordering::Relaxed),
+        discoverable: node.discovery_listening.load(std::sync::atomic::Ordering::Relaxed),
+        addresses: crate::domain::nodeconfig::private_ipv4_addresses().into_iter().map(|ip| format!("{ip}:{}", super::network::LAN_PORT)).collect(),
+        fingerprint: crate::domain::tls::load_or_create(&node.data_dir).ok().map(|cert| cert.fingerprint),
+    };
     Ok(Json(NetworkStatus {
         local: LocalStatus { listening: super::network::is_listening().await, address: format!("127.0.0.1:{}", super::network::PORT) },
+        lan,
         cloudflare: CloudflareStatus { configured, tunnel_provisioned: hostname.is_some(), hostname, connector: node.connector.state().await, state },
         public_base,
         pending_requests: connection::pending_count(&node.pool).await?,
     }))
+}
+
+#[derive(Deserialize)]
+struct LanBody {
+    enabled: bool,
+}
+
+/// Turns acceptance of facilities on the local network on or off. The listener
+/// and the discovery responder follow within a few seconds.
+async fn set_lan(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Json(body): Json<LanBody>) -> Api<serde_json::Value> {
+    write(&node, |c| Box::pin(async move { Ok(crate::domain::nodeconfig::set_network_lan(c, &actor, body.enabled).await?) })).await?;
+    Ok(Json(serde_json::json!({ "enabled": body.enabled })))
+}
+
+/// What each facility has done to this Head Office and how it reads. Metadata
+/// only: which facility, when, what kind, taken or refused.
+async fn exchange_overview(State(node): State<NodeRef>) -> Api<crate::domain::exchange::ExchangeOverview> {
+    Ok(Json(crate::domain::exchange::overview(&node.pool, 60).await?))
 }

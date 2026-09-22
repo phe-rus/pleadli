@@ -1,3 +1,4 @@
+import { api } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import {
   cloudflareConfigSchema,
@@ -8,22 +9,11 @@ import {
   type SaveCloudflareConfigInput,
 } from './schema'
 
-const DEV_SERVER_URL = 'http://127.0.0.1:47821'
-
-async function devFetch(path: string, init?: RequestInit) {
-  const response = await fetch(`${DEV_SERVER_URL}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  if (!response.ok) throw new Error(await response.text())
-  return response.status === 204 ? null : response.json()
-}
-
 export async function getRemoteAccessStatus() {
   if (isTauri()) {
     return remoteAccessStatusSchema.parse(await invoke('get_remote_access_status'))
   }
-  const settings = await devFetch('/remote-access/settings')
+  const settings = await api('/remote-access/settings')
   return remoteAccessStatusSchema.parse({ enabled: settings.enabled, hostname: null })
 }
 
@@ -38,12 +28,12 @@ export async function setRemoteAccessEnabled(enabled: boolean) {
   if (isTauri()) {
     return remoteAccessStatusSchema.parse(await invoke('set_remote_access_enabled', { enabled }))
   }
-  const settings = await devFetch('/remote-access/settings', { method: 'PUT', body: JSON.stringify({ enabled }) })
+  const settings = await api('/remote-access/settings', { method: 'PUT', body: JSON.stringify({ enabled }) })
   return remoteAccessStatusSchema.parse({ enabled: settings.enabled, hostname: null })
 }
 
 export async function getLocalNetworkInfo() {
-  const info = isTauri() ? await invoke('get_local_network_info') : await devFetch('/local-network')
+  const info = isTauri() ? await invoke('get_local_network_info') : await api('/local-network')
   return localNetworkInfoSchema.parse(info)
 }
 
@@ -54,7 +44,7 @@ export async function getLocalPairingQr() {
 }
 
 export async function getCloudflareConfig() {
-  const config = isTauri() ? await invoke('get_cloudflare_config') : await devFetch('/cloudflare/config')
+  const config = isTauri() ? await invoke('get_cloudflare_config') : await api('/cloudflare/config')
   return cloudflareConfigSchema.nullable().parse(config)
 }
 
@@ -64,12 +54,12 @@ export async function saveCloudflareConfig(input: SaveCloudflareConfigInput) {
     await invoke('save_cloudflare_config', { input: parsed })
     return
   }
-  await devFetch('/cloudflare/config', { method: 'PUT', body: JSON.stringify(parsed) })
+  await api('/cloudflare/config', { method: 'PUT', body: JSON.stringify(parsed) })
 }
 
 export async function getCloudflareTunnelState() {
   const state = isTauri()
     ? await invoke('get_cloudflare_tunnel_state')
-    : await devFetch('/cloudflare/tunnel-state')
+    : await api('/cloudflare/tunnel-state')
   return tunnelStateSchema.nullable().parse(state)
 }

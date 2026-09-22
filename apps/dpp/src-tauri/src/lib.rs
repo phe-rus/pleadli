@@ -1,11 +1,24 @@
+mod api;
 mod commands;
 mod db;
 mod domain;
-mod transport;
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
+
+/// Development only: the API without a window, for driving the real frontend
+/// from a browser or a script. Same router, same migrations, same seed.
+#[cfg(debug_assertions)]
+pub async fn run_headless(data_dir: std::path::PathBuf) -> Result<(), String> {
+    let router = match db::startup(&data_dir, None).await {
+        Ok(db) => api::router(api::AppState { pool: db.pool, vault_root: db.vault_root, data_dir: db.data_dir, security: db.security }),
+        Err(db::StartupError::Recovery(reason)) => api::recovery_router(data_dir, reason),
+        Err(db::StartupError::Fatal(reason)) => return Err(reason),
+    };
+    api::serve_dev(router).await;
+    Ok(())
+}
 
 pub fn run() {
     tauri::Builder::default()
@@ -37,31 +50,41 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
-            let db_path = data_dir.join("dpp.db");
+            app.manage(commands::backup::DataDir(data_dir.clone()));
 
-            // The structured database stays in the app's own managed data
-            // directory; the DPP Vault (attached documents) belongs where a
-            // prosecutor would actually go looking for it — the OS's real
-            // Documents directory. Same fallback chain as Police, for the
-            // same reason: `document_dir()` fails with `UnknownPath` on a
-            // bare Linux setup with no `xdg-user-dirs-update` ever run.
-            let vault_root = app
+            // Where older builds kept plain documents, in the user's own
+            // Documents folder. Read only to move what is there into the sealed
+            // vault. Same fallback chain as before: `document_dir()` fails with
+            // `UnknownPath` on a bare Linux setup.
+            let legacy_vault = app
                 .path()
                 .document_dir()
                 .or_else(|_| app.path().home_dir().map(|home| home.join("Documents")))
-                .unwrap_or_else(|_| data_dir.join("vault"))
-                .join("Pleadli DPP");
+                .ok()
+                .map(|dir| dir.join("Pleadli DPP"));
 
-            let db = tauri::async_runtime::block_on(db::connect(db_path, vault_root))?;
-
+            let router = match tauri::async_runtime::block_on(db::startup(&data_dir, legacy_vault.as_deref())) {
+                Ok(db) => {
+                    let router = api::router(api::AppState {
+                        pool: db.pool.clone(),
+                        vault_root: db.vault_root.clone(),
+                        data_dir: db.data_dir.clone(),
+                        security: db.security.clone(),
+                    });
+                    app.manage(db);
+                    router
+                }
+                // The data cannot be opened. Start anyway, in recovery: the
+                // window explains and offers a restore from a backup.
+                Err(db::StartupError::Recovery(reason)) => {
+                    log::error!("starting in recovery mode: {reason}");
+                    api::recovery_router(data_dir.clone(), reason)
+                }
+                Err(db::StartupError::Fatal(reason)) => return Err(reason.into()),
+            };
             #[cfg(debug_assertions)]
-            {
-                let pool = db.pool.clone();
-                let vault_root = db.vault_root.clone();
-                tauri::async_runtime::spawn(transport::dev_server::serve(pool, vault_root));
-            }
-
-            app.manage(db);
+            tauri::async_runtime::spawn(api::serve_dev(router.clone()));
+            app.manage(commands::api::LocalApi(router));
 
             // Custom window chrome (decorations off) means a native OS menu
             // bar would sit awkwardly on top of it — the tray is
@@ -106,40 +129,27 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::people::create_person,
-            commands::people::update_person,
-            commands::people::search_people,
-            commands::people::get_person,
-            commands::prosecution_files::create_prosecution_file,
-            commands::prosecution_files::update_prosecution_file,
-            commands::prosecution_files::list_prosecution_files,
-            commands::prosecution_files::list_intake_queue,
-            commands::prosecution_files::get_prosecution_file,
-            commands::prosecution_files::link_person_to_file,
-            commands::prosecution_files::unlink_person_from_file,
-            commands::prosecution_files::list_file_people,
-            commands::referrals::create_resubmission,
-            commands::referrals::list_referrals_for_file,
-            commands::decisions::create_decision,
-            commands::decisions::list_decisions_for_file,
-            commands::search::search,
+            commands::api::api_request,
             commands::attachments::add_attachment,
-            commands::attachments::list_attachments,
-            commands::attachments::delete_attachment,
             commands::attachments::get_attachment_data_url,
-            commands::statements::create_statement,
-            commands::statements::list_statements_for_file,
-            commands::evidence::create_evidence_item,
-            commands::evidence::list_evidence_for_file,
-            commands::charges::create_charge,
-            commands::charges::list_charges_for_file,
-            commands::review_notes::create_review_note,
-            commands::review_notes::list_review_notes_for_file,
-            commands::comments::create_comment,
-            commands::comments::list_comments_for_entity,
-            commands::prosecutor_profile::get_prosecutor_profile,
-            commands::prosecutor_profile::save_prosecutor_profile,
+            commands::attachments::open_attachment,
+            commands::documents::save_document_export,
+            commands::documents::document_export_name,
+            commands::backup::create_backup,
+            commands::backup::stage_restore,
+            commands::backup::restart_app,
+            commands::interchange::import_interchange_file,
+            commands::interchange::save_interchange_file,
+            commands::interchange::interchange_file_name,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // A readable copy made to view a document does not outlive the app.
+            if let tauri::RunEvent::Exit = event {
+                if let Ok(dir) = app.path().app_data_dir() {
+                    domain::attachments::clear_opened(&dir.join("opened"));
+                }
+            }
+        });
 }

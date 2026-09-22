@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { custodyRecordsOptions } from './queries'
-import { custodyCompliance, custodyPersonName, type CustodyRecord } from './schema'
+import { custodyBasisLabel, custodyCompliance, custodyPersonName, type CustodyRecord } from './schema'
 
 const RECHECK_MS = 60_000
 
@@ -73,7 +73,7 @@ export function CustodyAttentionDialog() {
                 ? `${Math.abs(compliance.hoursRemaining).toFixed(1)}h overdue`
                 : `${compliance.hoursRemaining.toFixed(1)}h remaining`}
               {' · '}
-              {compliance.basis}
+              {custodyBasisLabel(compliance.basis)}
             </p>
 
             <DialogFooter>

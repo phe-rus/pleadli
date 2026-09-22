@@ -11,7 +11,6 @@ export const attachmentSchema = z.object({
   entityType: z.string(),
   entityId: z.string(),
   fileName: z.string(),
-  storedPath: z.string(),
   mimeType: z.string(),
   sizeBytes: z.number(),
   createdAt: z.number(),

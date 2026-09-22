@@ -4,6 +4,7 @@ import {
   custodyPersonName,
   custodyRecordsOptions,
   custodyStatusLabel,
+  CustodyBoard,
   CustodyRecordForm,
   useCustodyRecords,
   type CustodyRecord,
@@ -128,31 +129,33 @@ function RouteComponent() {
   }, [])
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-5">
-            <h1>Cell lock-up &amp; 48h custody</h1>
-
-            <Createpanel
-              open={addOpen}
-              onOpenChange={setAddOpen}
-              isDirty={addDirty}
-              trigger={
-                <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
-                  New custody record
-                </Button>
-              }
-              headings={{ title: 'New custody record', description: 'Log an arrest and start the 48-hour clock.' }}
-            >
-              <CustodyRecordForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
-            </Createpanel>
-          </div>
-          <p className="md:max-w-sm">
-            The 48-hour status is computed live from the arrest time, never stored, so it can't drift out of date.
-          </p>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Custody</h1>
+          <p>Who is in the cells, soonest limit first. Each limit is worked out from the arrest time when this page is drawn, never stored, so it cannot drift out of date.</p>
         </div>
+        <div className="page-actions">
+          <Createpanel
+            open={addOpen}
+            onOpenChange={setAddOpen}
+            isDirty={addDirty}
+            trigger={
+              <Button size="sm">
+                <HugeiconsIcon icon={AddCircleIcon} />
+                New custody record
+              </Button>
+            }
+            headings={{ title: 'New custody record', description: 'Log an arrest and start the 48-hour clock.' }}
+          >
+            <CustodyRecordForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
+          </Createpanel>
+        </div>
+      </header>
+
+      <section aria-labelledby="in-cells" className="page-section">
+        <h2 id="in-cells">In the cells now</h2>
+        <CustodyBoard records={records} onOpen={setEditing} />
       </section>
 
       <Createpanel
@@ -173,14 +176,17 @@ function RouteComponent() {
         )}
       </Createpanel>
 
+      <section aria-labelledby="all-records" className="page-section">
+        <h2 id="all-records">All custody records</h2>
       <DataTable
         aria-label="Custody records"
         data={records}
         columns={columns}
         getRowId={(row) => row.id}
         emptyMessage="No custody records yet."
-        searchPlaceholder="Search custody records…"
+        searchPlaceholder="Search custody records"
       />
+      </section>
     </article>
   )
 }

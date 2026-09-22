@@ -1,31 +1,19 @@
-use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePool, SqlitePoolOptions, SqliteSynchronous};
-use sqlx::{Sqlite, Transaction};
+//! Opening the node's database: the full start of a node's data, in the order
+//! that keeps it safe. The steps that do not depend on the application live in
+//! `packages/node-core` (`db`); this file keeps the order and what is Prisons'
+//! own (its restore, its sealed credentials, its migrations, its seed data).
+
+use sqlx::sqlite::SqlitePool;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+
+use pleadli_node_core::db as core;
+pub use pleadli_node_core::db::{begin_write, is_plaintext, keyed_options, StartupError};
+#[cfg(test)]
+pub use pleadli_node_core::db::connect_options;
 
 use crate::domain::backup::{self, RestoreApplied};
-
-/// Opens the node's database with durability settings chosen for a machine
-/// that can lose power: WAL for concurrent readers, `synchronous = FULL` so a
-/// committed change survives a power cut, foreign keys enforced, and a busy
-/// timeout so a second writer waits instead of failing.
-pub fn connect_options(db_path: &Path) -> SqliteConnectOptions {
-    SqliteConnectOptions::new()
-        .filename(db_path)
-        .create_if_missing(true)
-        .journal_mode(SqliteJournalMode::Wal)
-        .synchronous(SqliteSynchronous::Full)
-        .foreign_keys(true)
-        .busy_timeout(Duration::from_secs(10))
-}
-
-/// Every state-changing operation runs in one of these. `BEGIN IMMEDIATE`
-/// takes the write lock up front, so a read-then-write inside the
-/// transaction (the audit chain's "read the last hash, append the next")
-/// can never be interleaved with another writer.
-pub async fn begin_write(pool: &SqlitePool) -> Result<Transaction<'static, Sqlite>, sqlx::Error> {
-    pool.begin_with("BEGIN IMMEDIATE").await
-}
+use crate::domain::keys;
+use crate::domain::vault;
 
 pub struct Startup {
     pub pool: SqlitePool,
@@ -37,57 +25,32 @@ pub struct Startup {
     pub pre_migration_snapshot: Option<PathBuf>,
 }
 
-pub enum StartupError {
-    /// The database cannot be trusted. The node starts in recovery mode:
-    /// nothing else runs until a backup is restored.
-    Recovery(String),
-    Fatal(String),
-}
-
-const KEEP_PRE_MIGRATION_SNAPSHOTS: usize = 3;
-
 /// The full start of a node's database, in the order that keeps data safe:
-/// apply a staged restore, check integrity, snapshot before migrating,
-/// migrate. A database that fails its integrity check is never opened for
-/// normal work.
-pub async fn startup(data_dir: &Path, vault_root: &Path) -> Result<Startup, StartupError> {
+/// apply a staged restore, find (or make) the key, encrypt a database that is
+/// still plaintext, check integrity, snapshot before migrating, migrate, then
+/// bring every document into the sealed vault. A database that fails its
+/// integrity check is never opened for normal work.
+///
+/// `legacy_vault` is where older builds kept plaintext documents; it is read
+/// only to move what is there into the sealed vault.
+pub async fn startup(data_dir: &Path, vault_root: &Path, legacy_vault: Option<&Path>) -> Result<Startup, StartupError> {
     let db_path = data_dir.join("prisons.db");
+    let incoming = data_dir.join(vault::INCOMING_DIR);
 
-    let restored = backup::apply_pending_restore(data_dir, &db_path, vault_root).map_err(|e| StartupError::Fatal(format!("could not apply the staged restore: {e}")))?;
-    let existed = db_path.exists();
+    core::finish_interrupted_encryption(&db_path);
+    let restored = backup::apply_pending_restore(data_dir, &db_path, &incoming).map_err(|e| StartupError::Fatal(format!("could not apply the staged restore: {e}")))?;
 
+    let (db_keys, state) = core::open_keys(keys::SERVICE, data_dir, &db_path)?;
     crate::domain::secrets::init(data_dir).map_err(|e| StartupError::Fatal(e.to_string()))?;
-
-    let pool = SqlitePoolOptions::new()
-        .max_connections(8)
-        .connect_with(connect_options(&db_path))
-        .await
-        .map_err(|e| StartupError::Recovery(format!("the database could not be opened: {e}")))?;
-
-    if existed {
-        let check: Result<Vec<String>, _> = sqlx::query_scalar("PRAGMA quick_check").fetch_all(&pool).await;
-        match check {
-            Ok(rows) if rows.len() == 1 && rows[0] == "ok" => {}
-            Ok(rows) => return Err(StartupError::Recovery(format!("the database failed its integrity check: {}", rows.join("; ")))),
-            Err(e) => return Err(StartupError::Recovery(format!("the database could not be checked: {e}"))),
-        }
-    }
+    let opened = core::open_pool(&db_path, data_dir, &db_keys, state, 8).await?;
+    let pool = opened.pool;
 
     // Before the pre-migration snapshot below, which would otherwise copy any
     // credential still stored as plaintext into a second file.
     crate::domain::secrets::seal_existing(&pool).await.map_err(|e| StartupError::Fatal(format!("could not seal stored credentials: {e}")))?;
 
     let migrator = sqlx::migrate!("./migrations");
-    let mut pre_migration_snapshot = None;
-    if existed {
-        let applied: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM _sqlx_migrations")
-            .fetch_one(&pool)
-            .await
-            .unwrap_or(0);
-        if applied > 0 && (applied as usize) < migrator.iter().count() {
-            pre_migration_snapshot = snapshot_before_migration(&pool, data_dir).await;
-        }
-    }
+    let pre_migration_snapshot = core::snapshot_if_migrating(&pool, &migrator, data_dir, opened.existed, "prisons").await;
 
     migrator.run(&pool).await.map_err(|e| StartupError::Fatal(format!("migration failed: {e}")))?;
     crate::domain::secrets::seal_existing(&pool).await.map_err(|e| StartupError::Fatal(format!("could not seal stored credentials: {e}")))?;
@@ -95,6 +58,8 @@ pub async fn startup(data_dir: &Path, vault_root: &Path) -> Result<Startup, Star
     if let Some(applied) = &restored {
         backup::record_restore(&pool, applied).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
     }
+
+    core::adopt_documents(&pool, vault_root, legacy_vault, &incoming).await?;
 
     #[cfg(debug_assertions)]
     {
@@ -104,27 +69,12 @@ pub async fn startup(data_dir: &Path, vault_root: &Path) -> Result<Startup, Star
     Ok(Startup { pool, restored, pre_migration_snapshot })
 }
 
-/// A plain copy of the database made just before an update changes its
-/// schema, so a failed update can always be undone by restoring it. It is no
-/// more exposed than the live database next to it.
-async fn snapshot_before_migration(pool: &SqlitePool, data_dir: &Path) -> Option<PathBuf> {
-    let dir = data_dir.join("pre-migration");
-    std::fs::create_dir_all(&dir).ok()?;
-    let target = dir.join(format!("prisons-{}.db", chrono::Utc::now().format("%Y%m%d-%H%M%S")));
-    sqlx::query("VACUUM INTO ?1").bind(target.to_string_lossy().to_string()).execute(pool).await.ok()?;
-
-    let mut snapshots: Vec<_> = std::fs::read_dir(&dir).ok()?.filter_map(|e| e.ok()).map(|e| e.path()).collect();
-    snapshots.sort();
-    while snapshots.len() > KEEP_PRE_MIGRATION_SNAPSHOTS {
-        let oldest = snapshots.remove(0);
-        let _ = std::fs::remove_file(oldest);
-    }
-    Some(target)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pleadli_node_core::db::{detect, sibling, DbFile};
+    use sqlx::sqlite::SqlitePoolOptions;
+    use sqlx::{Connection, SqliteConnection};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use tower::ServiceExt;
@@ -138,7 +88,7 @@ mod tests {
     #[tokio::test]
     async fn starting_creates_the_key_and_seals_a_credential_left_as_plaintext() {
         let dir = temp_dir();
-        let first = match startup(&dir, &dir.join("vault")).await {
+        let first = match startup(&dir, &dir.join("vault"), None).await {
             Ok(started) => started,
             Err(_) => panic!("a fresh start must succeed"),
         };
@@ -147,7 +97,7 @@ mod tests {
         first.pool.close().await;
 
         // An install from before secrets were sealed comes up sealed.
-        let second = match startup(&dir, &dir.join("vault")).await {
+        let second = match startup(&dir, &dir.join("vault"), None).await {
             Ok(started) => started,
             Err(_) => panic!("a restart must succeed"),
         };
@@ -160,7 +110,7 @@ mod tests {
     async fn a_corrupt_database_is_never_opened_for_work() {
         let dir = temp_dir();
         std::fs::write(dir.join("prisons.db"), vec![0xAB; 8192]).unwrap();
-        match startup(&dir, &dir.join("vault")).await {
+        match startup(&dir, &dir.join("vault"), None).await {
             Err(StartupError::Recovery(reason)) => assert!(!reason.is_empty()),
             Err(StartupError::Fatal(reason)) => panic!("should be recoverable, got fatal: {reason}"),
             Ok(_) => panic!("a corrupt database must not start normally"),
@@ -179,9 +129,14 @@ mod tests {
             .unwrap();
         old.close().await;
 
-        let started = startup(&dir, &dir.join("vault")).await.ok().expect("startup migrates");
+        let started = startup(&dir, &dir.join("vault"), None).await.ok().expect("startup migrates");
         let snapshot = started.pre_migration_snapshot.expect("a snapshot is taken before migrating");
         assert!(snapshot.exists());
+        assert_eq!(detect(&snapshot), DbFile::Encrypted, "the snapshot is no more readable than the database");
+        assert_eq!(detect(&dir.join("prisons.db")), DbFile::Encrypted, "the older plaintext database was encrypted in place");
+        assert!(!sibling(&dir.join("prisons.db"), ".plain-old").exists() && !sibling(&dir.join("prisons.db"), ".encrypting").exists());
+        let raw = std::fs::read(dir.join("prisons.db")).unwrap();
+        assert!(!raw.windows(9).any(|w| w == b"Old Admin"), "no record is readable in the file");
 
         // The old admin survived the officers-table rebuild with its role mapped.
         let (role, is_admin): (String, bool) =
@@ -192,7 +147,7 @@ mod tests {
     #[tokio::test]
     async fn a_fresh_database_takes_no_snapshot() {
         let dir = temp_dir();
-        let started = startup(&dir, &dir.join("vault")).await.ok().expect("fresh start");
+        let started = startup(&dir, &dir.join("vault"), None).await.ok().expect("fresh start");
         assert!(started.pre_migration_snapshot.is_none());
         assert!(started.restored.is_none());
     }
@@ -226,5 +181,37 @@ mod tests {
             .unwrap();
         req.extensions_mut().insert(crate::api::guard::Ingress::Lan);
         assert_eq!(router.clone().oneshot(req).await.unwrap().status(), StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn an_encrypted_database_needs_its_key_and_is_never_re_keyed() {
+        let dir = temp_dir();
+        let first = startup(&dir, &dir.join("vault"), None).await.ok().expect("fresh start");
+        first.pool.close().await;
+        assert_eq!(detect(&dir.join("prisons.db")), DbFile::Encrypted);
+
+        // The data folder is copied without its key.
+        std::fs::remove_file(dir.join("node.key")).unwrap();
+        match startup(&dir, &dir.join("vault"), None).await {
+            Err(StartupError::Recovery(reason)) => assert!(reason.contains("key"), "{reason}"),
+            _ => panic!("a database without its key must go to recovery"),
+        }
+        assert!(!dir.join("node.key").exists(), "no new key was invented for it");
+    }
+
+    #[tokio::test]
+    async fn an_encrypted_database_opens_only_with_the_right_key() {
+        let dir = temp_dir();
+        let started = startup(&dir, &dir.join("vault"), None).await.ok().expect("fresh start");
+        started.pool.close().await;
+        let path = dir.join("prisons.db");
+        let wrong = pleadli_node_core::keys::open(crate::domain::keys::SERVICE, &temp_dir(), true, false).unwrap();
+        assert!(SqliteConnection::connect_with(&keyed_options(&path, &wrong)).await.is_err(), "another key reads nothing");
+        let none = SqliteConnection::connect_with(&connect_options(&path)).await;
+        let unreadable = match none {
+            Err(_) => true,
+            Ok(mut conn) => sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM sqlite_master").fetch_one(&mut conn).await.is_err(),
+        };
+        assert!(unreadable, "no key reads nothing");
     }
 }

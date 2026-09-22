@@ -17,6 +17,7 @@ pub struct Referral {
     pub destination_name: Option<String>,
     pub referred_at: i64,
     pub status: String,
+    pub officer_id: Option<String>,
     pub officer_name: Option<String>,
     pub notes: Option<String>,
     pub created_at: i64,
@@ -30,6 +31,8 @@ pub struct CreateReferralInput {
     pub destination_name: Option<String>,
     pub referred_at: i64,
     pub status: String,
+    #[serde(default)]
+    pub officer_id: Option<String>,
     pub officer_name: Option<String>,
     pub notes: Option<String>,
 }
@@ -62,6 +65,7 @@ pub async fn create_referral(pool: &SqlitePool, vault_root: &Path, input: Create
     .execute(pool)
     .await?;
 
+    super::officers::link_record(pool, "referrals", &id, &input.officer_id, false).await?;
     let record = get_referral(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_referral_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -85,6 +89,7 @@ pub async fn update_referral(pool: &SqlitePool, vault_root: &Path, id: &str, inp
     .execute(pool)
     .await?;
 
+    super::officers::link_record(pool, "referrals", id, &input.officer_id, false).await?;
     let record = get_referral(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_referral_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -97,7 +102,7 @@ pub async fn list_referrals(pool: &SqlitePool, query: &str) -> Result<Vec<Referr
         return sqlx::query_as::<_, Referral>(
             "SELECT
                 r.id, r.case_id, r.destination_type, r.destination_name, r.referred_at, r.status,
-                r.officer_name, r.notes, r.created_at,
+                r.officer_id, r.officer_name, r.notes, r.created_at,
                 c.reference AS case_reference
              FROM referrals r
              JOIN cases c ON c.id = r.case_id
@@ -111,7 +116,7 @@ pub async fn list_referrals(pool: &SqlitePool, query: &str) -> Result<Vec<Referr
     sqlx::query_as::<_, Referral>(
         "SELECT
             r.id, r.case_id, r.destination_type, r.destination_name, r.referred_at, r.status,
-            r.officer_name, r.notes, r.created_at,
+            r.officer_id, r.officer_name, r.notes, r.created_at,
             c.reference AS case_reference
          FROM referrals r
          JOIN cases c ON c.id = r.case_id
@@ -128,7 +133,7 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Referral>, sqlx::Error> {
     sqlx::query_as::<_, Referral>(
         "SELECT
             r.id, r.case_id, r.destination_type, r.destination_name, r.referred_at, r.status,
-            r.officer_name, r.notes, r.created_at,
+            r.officer_id, r.officer_name, r.notes, r.created_at,
             c.reference AS case_reference
          FROM referrals r
          JOIN cases c ON c.id = r.case_id
@@ -142,7 +147,7 @@ pub async fn get_referral(pool: &SqlitePool, id: &str) -> Result<Option<Referral
     sqlx::query_as::<_, Referral>(
         "SELECT
             r.id, r.case_id, r.destination_type, r.destination_name, r.referred_at, r.status,
-            r.officer_name, r.notes, r.created_at,
+            r.officer_id, r.officer_name, r.notes, r.created_at,
             c.reference AS case_reference
          FROM referrals r
          JOIN cases c ON c.id = r.case_id
@@ -157,7 +162,7 @@ pub async fn list_for_case(pool: &SqlitePool, case_id: &str) -> Result<Vec<Refer
     sqlx::query_as::<_, Referral>(
         "SELECT
             r.id, r.case_id, r.destination_type, r.destination_name, r.referred_at, r.status,
-            r.officer_name, r.notes, r.created_at,
+            r.officer_id, r.officer_name, r.notes, r.created_at,
             c.reference AS case_reference
          FROM referrals r
          JOIN cases c ON c.id = r.case_id
@@ -185,6 +190,7 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
         pool,
         vault_root,
         CreateReferralInput {
+            officer_id: None,
             case_id,
             destination_type: "dpp".to_string(),
             destination_name: Some("Resident State Attorney, Buganda Road".to_string()),

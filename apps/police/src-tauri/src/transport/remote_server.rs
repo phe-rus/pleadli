@@ -333,7 +333,7 @@ async fn photo_handler(
         .map_err(internal_error)?
         .ok_or((StatusCode::NOT_FOUND, "attachment not found".to_string()))?;
 
-    let bytes = tokio::fs::read(&attachment.stored_path)
+    let bytes = tokio::fs::read(attachments::absolute_path(&state.vault_root, &attachment.stored_path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -416,10 +416,13 @@ mod tests {
         officers::create_officer(
             &pool,
             CreateOfficerInput {
-                badge_number: "T-100".into(),
+                badge_number: Some("T-100".into()),
                 name: "Test Officer".into(),
-                password: "correct-password".into(),
+                rank: None,
+                post: None,
+                password: Some("correct-password".into()),
                 role: "officer".into(),
+                notes: None,
                 person_id: None,
             },
         )
@@ -449,6 +452,7 @@ mod tests {
             &pool,
             &vault_root,
             crate::domain::duty::CreateDutyAssignmentInput {
+                officer_id: None,
                 officer_name: "Zzzqx Dutyofficer".into(),
                 officer_rank: None,
                 unit: None,

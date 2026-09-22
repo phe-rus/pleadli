@@ -24,7 +24,8 @@ use crate::domain::nodeconfig::{self, Environment};
 use crate::domain::connection::FacilityLookup;
 use crate::domain::peer::{self, ConnectFacilityInput, ConnectResult, PairError, PairInput, PairResult};
 use crate::domain::session::{self, HqConfig};
-use crate::domain::sync::SyncRunResult;
+use crate::domain::exchange::SyncRunResult;
+use crate::transport::discovery;
 use crate::node::NodeRef;
 
 /// Bumped when the shape of the node API changes incompatibly, so a
@@ -44,11 +45,15 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .post("/api/system/onboarding/activate", Need::Onboarding, activate)
         .post("/api/system/onboarding/pair", Need::Onboarding, pair_first_launch)
         .get("/api/system/network/peer", Need::Session, get_peer)
+        .post("/api/system/onboarding/hq-discover", Need::Onboarding, discover_first_launch)
+        .post("/api/system/onboarding/hq-identity", Need::Onboarding, identity_first_launch)
         .post("/api/system/onboarding/facility-lookup", Need::Onboarding, lookup_first_launch)
         .post("/api/system/onboarding/connect-facility", Need::Onboarding, connect_first_launch)
         .post("/api/system/onboarding/connection/refresh", Need::Onboarding, refresh_first_launch)
         .post("/api/system/onboarding/connection/cancel", Need::Onboarding, cancel_first_launch)
         .post("/api/system/network/pair", Need::Perm(perm::NODE_MANAGE), pair_later)
+        .post("/api/system/network/hq-discover", Need::Perm(perm::NODE_MANAGE), discover_later)
+        .post("/api/system/network/hq-identity", Need::Perm(perm::NODE_MANAGE), identity_later)
         .post("/api/system/network/facility-lookup", Need::Perm(perm::NODE_MANAGE), lookup_later)
         .post("/api/system/network/connect-facility", Need::Perm(perm::NODE_MANAGE), connect_later)
         .post("/api/system/network/connection/refresh", Need::Perm(perm::NODE_MANAGE), refresh_later)
@@ -310,10 +315,47 @@ fn connect_error(err: PairError) -> ApiError {
 struct LookupBody {
     hq_address: String,
     facility_number: String,
+    /// The certificate fingerprint a person confirmed, for a local-network address.
+    #[serde(default)]
+    hq_fingerprint: Option<String>,
 }
 
 async fn lookup(body: LookupBody) -> Result<Json<Option<FacilityLookup>>, ApiError> {
-    Ok(Json(peer::lookup_facility(&body.hq_address, &body.facility_number).await.map_err(connect_error)?))
+    Ok(Json(peer::lookup_facility(&body.hq_address, body.hq_fingerprint.as_deref(), &body.facility_number).await.map_err(connect_error)?))
+}
+
+#[derive(Deserialize)]
+struct IdentityBody {
+    address: String,
+}
+
+/// Who is at an address, and the certificate it presents, for a person to
+/// confirm. Sends nothing and trusts nothing.
+async fn identity(body: IdentityBody) -> Result<Json<peer::HqIdentity>, ApiError> {
+    Ok(Json(peer::probe_identity(&body.address).await.map_err(connect_error)?))
+}
+
+async fn identity_first_launch(State(node): State<NodeRef>, Json(body): Json<IdentityBody>) -> Result<Json<peer::HqIdentity>, ApiError> {
+    require_bootstrap(&node).await?;
+    identity(body).await
+}
+
+async fn identity_later(Json(body): Json<IdentityBody>) -> Result<Json<peer::HqIdentity>, ApiError> {
+    identity(body).await
+}
+
+/// Head Offices that answered a probe on this network. Suggestions only.
+async fn discover() -> Json<Vec<discovery::Found>> {
+    Json(discovery::probe(&discovery::broadcast_targets(), std::time::Duration::from_millis(1500)).await)
+}
+
+async fn discover_first_launch(State(node): State<NodeRef>) -> Result<Json<Vec<discovery::Found>>, ApiError> {
+    require_bootstrap(&node).await?;
+    Ok(discover().await)
+}
+
+async fn discover_later() -> Json<Vec<discovery::Found>> {
+    discover().await
 }
 
 async fn require_bootstrap(node: &NodeRef) -> Result<(), ApiError> {

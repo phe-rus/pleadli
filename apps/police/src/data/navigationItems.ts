@@ -9,7 +9,6 @@ import {
   CellsIcon,
   DashboardBrowsingIcon,
   File02Icon,
-  FileIcon,
   FingerPrintCheckIcon,
   FolderViewIcon,
   GunIcon,
@@ -17,6 +16,7 @@ import {
   Mic01Icon,
   Notebook01Icon,
   Search01Icon,
+  Settings01Icon,
   Share08Icon,
   ShieldKeyIcon,
   SirenIcon,
@@ -24,62 +24,95 @@ import {
   UserIcon,
 } from '@hugeicons/core-free-icons'
 
-export const stationNav = [
-  { icon: DashboardBrowsingIcon, label: 'Overview', to: '/', exact: true },
-  // Quick Global Search
-  {
-    icon: Search01Icon,
-    label: 'Search',
-    to: '/search',
-    children: [
-      { icon: UserGroupIcon, label: 'People', to: '/search/people' },
-      { icon: FileIcon, label: 'Files', to: '/search/files' },
-      // Custody & Legal Compliance
-      { icon: CellsIcon, label: 'Cell Lock-up & 48h', to: '/search/custody' },
-      { icon: AlarmClock, label: 'Bonds & Sureties', to: '/search/bonds' },
-    ]
-  },
-  // Counter & Initial Intake
-  { icon: Notebook01Icon, label: 'Station Diary (SD)', to: '/sd-log' },
-  { icon: SirenIcon, label: 'Incidents', to: '/incidents' },
-  { icon: FolderViewIcon, label: 'Case Intake', to: '/intake' },
-  // CID & Investigations Pipeline
-  { icon: BinocularsIcon, label: 'Investigations', to: '/investigations' },
-  { icon: Mic01Icon, label: 'Statements', to: '/statements' },
-  { icon: FingerPrintCheckIcon, label: 'Evidence & Exhibits', to: '/evidence' },
-  { icon: File02Icon, label: 'Charge Sheets & Forms', to: '/legal-forms' },
-  // Stores, Armory & Assets
-  {
-    icon: ArchiveIcon,
-    label: 'Stores & Armory',
-    to: '/stores',
-    children: [
-      { icon: GunIcon, label: 'Armory Register', to: '/stores/armory' },
-      { icon: ArchiveIcon, label: 'Impounded Assets', to: '/stores/impounded' },
-    ]
-  },
-  { icon: Car01Icon, label: 'Vehicles', to: '/vehicles' },
-  // Operational Support & Station Admin
-  { icon: Share08Icon, label: 'Referrals & Dispatches', to: '/referrals' },
-  { icon: UserIcon, label: 'Duty Roster', to: '/roster' },
-  { icon: BarChartIcon, label: 'Reports & Analytics', to: '/reports' },
-  {
-    icon: Building06Icon,
-    label: 'Station Admin',
-    to: '/station',
-    children: [
-      { icon: Building06Icon, label: 'Profile', to: '/station/profile' },
-      { icon: UserGroupIcon, label: 'Establishment', to: '/station/establishment' },
-      { icon: ShieldKeyIcon, label: 'Officers', to: '/station/officers' },
-    ]
-  },
-  {
-    icon: ListViewIcon,
-    label: 'Logs',
-    to: '/logs',
-    children: [
-      { icon: AlertCircleIcon, label: 'Backup Requests', to: '/logs/backup-alerts' },
-      { icon: ListViewIcon, label: 'Remote Access Activity', to: '/logs/remote-access' },
-    ]
-  },
+export type NavIcon = typeof DashboardBrowsingIcon
+
+/** Which figure from the station's records an item carries beside its name. */
+export type NavCount = 'inCells' | 'custodyDue' | 'openCases' | 'referralsPending' | 'stationsAttention'
+
+export type NavItem = {
+  label: string
+  icon: NavIcon
+  to: string
+  exact?: boolean
+  count?: NavCount
+  /** Sidebar group. Overview and Search have no group: they are on the ribbon. */
+  section?: NavSection
+}
+
+export type NavSection = 'desk' | 'cells' | 'investigations' | 'station' | 'office' | 'command'
+
+export const navSections: readonly { id: NavSection; label: string }[] = [
+  { id: 'desk', label: 'Front desk' },
+  { id: 'cells', label: 'Cells and custody' },
+  { id: 'investigations', label: 'Investigations' },
+  { id: 'station', label: 'Station' },
+  { id: 'office', label: 'Administration' },
+]
+
+/** What a Command shows. It holds no case, person or custody records, so none
+ * of those areas are here: only the stations under it and its own officers. */
+export const commandSections: readonly { id: NavSection; label: string }[] = [{ id: 'command', label: 'Command' }]
+
+export const commandNav: readonly NavItem[] = [
+  { label: 'Overview', icon: DashboardBrowsingIcon, to: '/', exact: true },
+  { label: 'Stations', icon: Building06Icon, to: '/stations', count: 'stationsAttention', section: 'command' },
+  { label: 'Officers', icon: ShieldKeyIcon, to: '/station/officers', section: 'command' },
+  { label: 'Command profile', icon: Building06Icon, to: '/station/profile', section: 'command' },
+  { label: 'Settings', icon: Settings01Icon, to: '/settings', exact: true },
 ] as const
+
+/** The information architecture, in the order work happens at a station rather
+ * than the order of the paper registers: what arrives at the desk, who is in
+ * the cells, what is being investigated, what the station holds and who works
+ * in it, then administration. The routes are unchanged; only the grouping is
+ * new. */
+export const policeNav: readonly NavItem[] = [
+  { label: 'Overview', icon: DashboardBrowsingIcon, to: '/', exact: true },
+  { label: 'Search', icon: Search01Icon, to: '/search', exact: true },
+  { label: 'Case files', icon: FolderViewIcon, to: '/search/files' },
+
+  { label: 'Station diary', icon: Notebook01Icon, to: '/sd-log', section: 'desk' },
+  { label: 'Incidents', icon: SirenIcon, to: '/incidents', section: 'desk' },
+  { label: 'Case intake', icon: FolderViewIcon, to: '/intake', section: 'desk' },
+
+  { label: 'Custody', icon: CellsIcon, to: '/search/custody', count: 'inCells', section: 'cells' },
+  { label: 'Bonds and sureties', icon: AlarmClock, to: '/search/bonds', section: 'cells' },
+
+  { label: 'Investigations', icon: BinocularsIcon, to: '/investigations', count: 'openCases', section: 'investigations' },
+  { label: 'Statements', icon: Mic01Icon, to: '/statements', section: 'investigations' },
+  { label: 'Evidence and exhibits', icon: FingerPrintCheckIcon, to: '/evidence', section: 'investigations' },
+  { label: 'Charge sheets and forms', icon: File02Icon, to: '/legal-forms', section: 'investigations' },
+  { label: 'Referrals', icon: Share08Icon, to: '/referrals', count: 'referralsPending', section: 'investigations' },
+
+  { label: 'Duty roster', icon: UserIcon, to: '/roster', section: 'station' },
+  { label: 'People', icon: UserGroupIcon, to: '/search/people', section: 'station' },
+  { label: 'Vehicles', icon: Car01Icon, to: '/vehicles', section: 'station' },
+  { label: 'Armory', icon: GunIcon, to: '/stores/armory', section: 'station' },
+  { label: 'Impounded assets', icon: ArchiveIcon, to: '/stores/impounded', section: 'station' },
+
+  { label: 'Reports', icon: BarChartIcon, to: '/reports', section: 'office' },
+  { label: 'Station profile', icon: Building06Icon, to: '/station/profile', section: 'office' },
+  { label: 'Officers', icon: ShieldKeyIcon, to: '/station/officers', section: 'office' },
+  { label: 'Backup requests', icon: AlertCircleIcon, to: '/logs/backup-alerts', section: 'office' },
+  { label: 'Remote access', icon: ListViewIcon, to: '/logs/remote-access', section: 'office' },
+
+  { label: 'Settings', icon: Settings01Icon, to: '/settings', exact: true },
+  { label: 'Stores and armory', icon: ArchiveIcon, to: '/stores', exact: true },
+  { label: 'Station administration', icon: Building06Icon, to: '/station', exact: true },
+  { label: 'Logs', icon: ListViewIcon, to: '/logs', exact: true },
+] as const
+
+/** The nav entry a location belongs to, for tab titles and icons. */
+export function areaMeta(pathname: string): NavItem | undefined {
+  const path = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname
+  return policeNav.find((item) => item.to === path) ?? commandNav.find((item) => item.to === path)
+}
+
+export const navFor = (mode: 'station' | 'command' | null | undefined) => (mode === 'command' ? commandNav : policeNav)
+export const sectionsFor = (mode: 'station' | 'command' | null | undefined) => (mode === 'command' ? commandSections : navSections)
+
+/** Whether an item is the one in view. */
+export function isNavActive(item: NavItem, pathname: string) {
+  if (item.exact) return pathname === item.to
+  return pathname === item.to || pathname.startsWith(`${item.to}/`)
+}

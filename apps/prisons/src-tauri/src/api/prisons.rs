@@ -348,7 +348,8 @@ async fn dispatch_transfer(
     Path(id): Path<String>,
     Json(input): Json<DispatchInput>,
 ) -> Api<DispatchResult> {
-    Ok(Json(write(&node, |c| Box::pin(async move { Ok(transfers::dispatch(c, &actor, &id, input).await?) })).await?))
+    let vault_root = node.vault_root.clone();
+    Ok(Json(write(&node, |c| Box::pin(async move { Ok(transfers::dispatch(c, &actor, &vault_root, &id, input).await?) })).await?))
 }
 
 #[derive(Deserialize)]
@@ -724,7 +725,7 @@ async fn list_documents(State(node): State<NodeRef>, Query(q): Query<DocumentQue
 }
 
 async fn document_data_url(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<Option<String>> {
-    Ok(Json(attachments::get_attachment_data_url(&node.pool, &id).await?))
+    Ok(Json(attachments::get_attachment_data_url(&node.pool, &node.vault_root, &id).await?))
 }
 
 #[derive(Deserialize)]

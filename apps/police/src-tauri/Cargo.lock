@@ -4102,6 +4102,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
  "tokio",
+ "tower",
  "tower-http",
  "uuid",
  "zip 8.6.0",

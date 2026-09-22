@@ -1,5 +1,6 @@
 export * from './backup-dispatch-indicator'
 export * from './data'
 export * from './officer-form'
+export * from './officer-picker'
 export * from './queries'
 export * from './schema'

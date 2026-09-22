@@ -16,7 +16,7 @@ function RouteComponent() {
   const { data: cases } = useCases('')
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
+    <article className="page">
       <section className="flex flex-col">
         <h1>Investigations</h1>
         <p className="md:max-w-sm">

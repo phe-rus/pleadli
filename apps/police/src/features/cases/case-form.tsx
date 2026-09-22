@@ -1,3 +1,4 @@
+import { useNextRegisterNumber } from '@/features/registers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { incidentsOptions, type Incident } from '@/features/incidents'
@@ -7,7 +8,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Button } from '@pleadli/ui/button'
 import { DrawerFooter } from '@pleadli/ui/drawer'
-import { Field, FieldGroup, FieldLabel } from '@pleadli/ui/field'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useStore } from '@tanstack/react-form'
@@ -46,6 +47,8 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
   const [newPersonId, setNewPersonId] = useState<string | null>(null)
   const [newRole, setNewRole] = useState<string>(caseRoles[0].value)
 
+  const { data: nextNumber } = useNextRegisterNumber('crb')
+
   const form = useAppForm({
     defaultValues: {
       reference: existingCase?.reference ?? '',
@@ -55,7 +58,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
     },
     validators: {
       onSubmit: ({ value }) => {
-        if (!value.reference.trim()) return 'Reference is required.'
+        if (existingCase && !value.reference.trim()) return 'Reference is required.'
         if (!value.summary.trim()) return 'Summary is required.'
         return undefined
       },
@@ -95,12 +98,19 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
       <FieldGroup>
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="reference">
-            {(f) => <f.input label="Reference" placeholder="e.g. JINJA CRB 314/2019" />}
+            {(f) => (
+              <f.input
+                label="Reference"
+                placeholder={existingCase ? 'e.g. JINJA CRB 314/2019' : (nextNumber?.reference ?? 'Numbered when saved')}
+              />
+            )}
           </form.AppField>
           <form.AppField name="status">
             {(f) => <f.select label="Status" options={[...caseStatuses]} />}
           </form.AppField>
         </div>
+
+        {!existingCase && <FieldDescription>Leave the reference blank to take the next number in the Crime Record Book.</FieldDescription>}
 
         <form.AppField name="summary">{(f) => <f.textarea label="Summary" />}</form.AppField>
 

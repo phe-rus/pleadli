@@ -5,7 +5,6 @@
 
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::time::Duration;
 
 use super::audit::{self, AuditEntry};
 use super::authz::Actor;
@@ -76,8 +75,8 @@ pub async fn pull_policy(pool: &SqlitePool) -> Result<PolicyPullResult, String> 
     let config = numbering::get_config(pool).await.map_err(|e| e.to_string())?;
     let admitted = numbering::admitted_count(pool).await.map_err(|e| e.to_string())?;
 
-    let client = reqwest::Client::builder().timeout(Duration::from_secs(20)).build().map_err(|e| e.to_string())?;
-    let response = client
+    let response = super::peer::hq_client(pool, 20)
+        .await?
         .get(format!("{}/api/network/v1/policy", ctx.hostname.trim_end_matches('/')))
         .bearer_auth(&ctx.sync_token)
         .query(&[("pattern", config.pattern.as_str()), ("source", config.source.as_str()), ("locked", if admitted > 0 { "true" } else { "false" })])

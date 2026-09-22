@@ -1,8 +1,9 @@
+import { DEV_API_URL, api } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
 import { attachmentSchema, bulkAttachResultSchema, type Attachment, type PersonPhotoAngle } from './schema'
 
-const DEV_SERVER_URL = 'http://127.0.0.1:47821'
+const DEV_SERVER_URL = DEV_API_URL
 
 export async function listAttachments(entityType: string, entityId: string) {
   const attachments = isTauri()
@@ -94,15 +95,7 @@ export async function setPersonPhoto(id: string, angle: PersonPhotoAngle, input:
 }
 
 export async function clearPersonPhoto(id: string, angle: PersonPhotoAngle) {
-  if (isTauri()) {
-    await invoke('clear_person_photo', { id, angle })
-    return
-  }
-  const response = await fetch(
-    `${DEV_SERVER_URL}/people/${encodeURIComponent(id)}/photos/${encodeURIComponent(angle)}`,
-    { method: 'DELETE' },
-  )
-  if (!response.ok) throw new Error(await response.text())
+  await api(`/people/${encodeURIComponent(id)}/photos/${encodeURIComponent(angle)}`, { method: 'DELETE' })
 }
 
 /**
@@ -130,8 +123,8 @@ export async function bulkAttachFiles(entityType: string, entityId: string, inpu
 
 export async function openAttachment(attachment: Attachment) {
   if (isTauri()) {
-    const { openPath } = await import('@tauri-apps/plugin-opener')
-    await openPath(attachment.storedPath)
+    // The window names the attachment; the app works out where it is on disk.
+    await invoke('open_attachment', { id: attachment.id })
     return
   }
   window.open(attachmentFileUrl(attachment.id), '_blank')

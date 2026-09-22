@@ -347,7 +347,7 @@ pub struct DispatchResult {
     pub file: FileExport,
 }
 
-pub async fn dispatch(conn: &mut SqliteConnection, actor: &Actor, id: &str, input: DispatchInput) -> Result<DispatchResult, DomainError> {
+pub async fn dispatch(conn: &mut SqliteConnection, actor: &Actor, vault_root: &Path, id: &str, input: DispatchInput) -> Result<DispatchResult, DomainError> {
     if input.passphrase.chars().count() < MIN_PASSPHRASE_CHARS {
         return Err(DomainError::rejected(format!("The dossier passphrase must be at least {MIN_PASSPHRASE_CHARS} characters.")));
     }
@@ -397,7 +397,7 @@ pub async fn dispatch(conn: &mut SqliteConnection, actor: &Actor, id: &str, inpu
         .fetch_all(&mut *conn)
         .await?;
         for doc in docs {
-            let bytes = std::fs::read(&doc.stored_path).map_err(|_| DomainError::rejected(format!("The file {} could not be read from the document store.", doc.file_name)))?;
+            let bytes = attachments::read_bytes(vault_root, &doc).map_err(|_| DomainError::rejected(format!("The file {} could not be read from the document store.", doc.file_name)))?;
             files.push(DossierFile { instrument_id: instrument.id.clone(), file_name: doc.file_name, content_base64: B64.encode(bytes) });
         }
     }

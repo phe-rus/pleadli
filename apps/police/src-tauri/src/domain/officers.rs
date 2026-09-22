@@ -1,9 +1,12 @@
 use argon2::password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use argon2::Argon2;
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
+use sqlx::{AssertSqlSafe, FromRow, SqlitePool};
 use std::fmt;
+use std::path::Path;
 use uuid::Uuid;
+
+use super::{attachments, markdown};
 
 const SESSION_TTL_MS: i64 = 7 * 24 * 60 * 60 * 1000;
 
@@ -11,6 +14,8 @@ const SESSION_TTL_MS: i64 = 7 * 24 * 60 * 60 * 1000;
 pub enum OfficerError {
     Db(sqlx::Error),
     Hash(String),
+    /// The request itself is wrong (a sign-in without a badge number).
+    Invalid(String),
 }
 
 impl fmt::Display for OfficerError {
@@ -18,6 +23,7 @@ impl fmt::Display for OfficerError {
         match self {
             OfficerError::Db(e) => write!(f, "{e}"),
             OfficerError::Hash(e) => write!(f, "{e}"),
+            OfficerError::Invalid(e) => write!(f, "{e}"),
         }
     }
 }
@@ -28,41 +34,68 @@ impl From<sqlx::Error> for OfficerError {
     }
 }
 
+/// The one officer record: someone who works at this station. A badge number
+/// and a way to sign in over remote access are both optional; most officers
+/// have neither and are simply on the station's books.
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Officer {
     pub id: String,
-    pub badge_number: String,
+    pub badge_number: Option<String>,
     pub name: String,
+    pub rank: Option<String>,
+    /// A standing post at the station (OC Station, OC CID). Free text: the
+    /// verified roles are suggestions in the UI, never enforced.
+    pub post: Option<String>,
     pub role: String,
     pub active: bool,
-    /// An officer's own Person record — where their phone/address/
-    /// national ID actually live, rather than duplicating those fields
-    /// here. Nullable: an officer account can exist unlinked.
+    /// An officer's own Person record, where their phone, address and
+    /// national ID live rather than being copied here. Nullable.
     pub person_id: Option<String>,
+    pub notes: Option<String>,
+    /// Whether this officer can sign in over remote access. The password
+    /// itself is never read back out.
+    pub has_sign_in: bool,
     pub created_at: i64,
 }
 
-#[derive(Debug, Deserialize)]
+const OFFICER_COLUMNS: &str =
+    "id, badge_number, name, rank, post, role, active, person_id, notes, password_hash IS NOT NULL AS has_sign_in, created_at";
+
+/// Not `Debug`: the password must never reach a log line.
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateOfficerInput {
-    pub badge_number: String,
+    pub badge_number: Option<String>,
     pub name: String,
-    pub password: String,
+    pub rank: Option<String>,
+    pub post: Option<String>,
     pub role: String,
+    pub notes: Option<String>,
     pub person_id: Option<String>,
+    /// Gives the officer a remote sign-in (which needs a badge number).
+    pub password: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+/// Not `Debug`, for the same reason.
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateOfficerInput {
+    pub badge_number: Option<String>,
     pub name: String,
+    pub rank: Option<String>,
+    pub post: Option<String>,
     pub role: String,
     pub active: bool,
+    pub notes: Option<String>,
     pub person_id: Option<String>,
-    /// Only set on an actual password change — the update form otherwise
-    /// just edits name/role/active without touching credentials.
+    /// Only set on an actual password change: the form otherwise edits the
+    /// officer without touching credentials.
     pub password: Option<String>,
+}
+
+fn blank_to_none(value: &Option<String>) -> Option<String> {
+    value.as_ref().map(|v| v.trim().to_string()).filter(|v| !v.is_empty())
 }
 
 fn hash_password(password: &str) -> Result<String, OfficerError> {
@@ -73,7 +106,7 @@ fn hash_password(password: &str) -> Result<String, OfficerError> {
         .map_err(|e| OfficerError::Hash(e.to_string()))
 }
 
-fn verify_password(password: &str, hash: &str) -> bool {
+pub(crate) fn verify_password(password: &str, hash: &str) -> bool {
     let Ok(parsed) = PasswordHash::new(hash) else {
         return false;
     };
@@ -82,17 +115,26 @@ fn verify_password(password: &str, hash: &str) -> bool {
 
 pub async fn create_officer(pool: &SqlitePool, input: CreateOfficerInput) -> Result<Officer, OfficerError> {
     let id = Uuid::new_v4().to_string();
-    let password_hash = hash_password(&input.password)?;
+    let badge = blank_to_none(&input.badge_number);
+    let password = blank_to_none(&input.password);
+    if password.is_some() && badge.is_none() {
+        return Err(OfficerError::Invalid("An officer needs a badge number to sign in.".to_string()));
+    }
+    let password_hash = password.as_deref().map(hash_password).transpose()?;
 
     sqlx::query(
-        "INSERT INTO officers (id, badge_number, name, password_hash, role, person_id) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO officers (id, badge_number, name, rank, post, role, person_id, notes, password_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
-    .bind(&input.badge_number)
-    .bind(&input.name)
-    .bind(&password_hash)
+    .bind(&badge)
+    .bind(input.name.trim())
+    .bind(blank_to_none(&input.rank))
+    .bind(blank_to_none(&input.post))
     .bind(&input.role)
     .bind(&input.person_id)
+    .bind(blank_to_none(&input.notes))
+    .bind(&password_hash)
     .execute(pool)
     .await?;
 
@@ -100,38 +142,93 @@ pub async fn create_officer(pool: &SqlitePool, input: CreateOfficerInput) -> Res
 }
 
 pub async fn update_officer(pool: &SqlitePool, id: &str, input: UpdateOfficerInput) -> Result<Officer, OfficerError> {
-    match &input.password {
-        Some(password) => {
-            let password_hash = hash_password(password)?;
-            sqlx::query("UPDATE officers SET name = ?, role = ?, active = ?, person_id = ?, password_hash = ? WHERE id = ?")
-                .bind(&input.name)
-                .bind(&input.role)
-                .bind(input.active)
-                .bind(&input.person_id)
-                .bind(&password_hash)
-                .bind(id)
-                .execute(pool)
-                .await?;
+    let badge = blank_to_none(&input.badge_number);
+    let password = blank_to_none(&input.password);
+    if let Some(password) = &password {
+        if badge.is_none() {
+            return Err(OfficerError::Invalid("An officer needs a badge number to sign in.".to_string()));
         }
-        None => {
-            sqlx::query("UPDATE officers SET name = ?, role = ?, active = ?, person_id = ? WHERE id = ?")
-                .bind(&input.name)
-                .bind(&input.role)
-                .bind(input.active)
-                .bind(&input.person_id)
-                .bind(id)
-                .execute(pool)
-                .await?;
-        }
+        let password_hash = hash_password(password)?;
+        sqlx::query("UPDATE officers SET password_hash = ? WHERE id = ?").bind(&password_hash).bind(id).execute(pool).await?;
+    }
+
+    sqlx::query(
+        "UPDATE officers SET badge_number = ?, name = ?, rank = ?, post = ?, role = ?, active = ?, person_id = ?, notes = ? WHERE id = ?",
+    )
+    .bind(&badge)
+    .bind(input.name.trim())
+    .bind(blank_to_none(&input.rank))
+    .bind(blank_to_none(&input.post))
+    .bind(&input.role)
+    .bind(input.active)
+    .bind(&input.person_id)
+    .bind(blank_to_none(&input.notes))
+    .bind(id)
+    .execute(pool)
+    .await?;
+
+    // Someone who has left, or whose password was just changed, is signed out
+    // everywhere.
+    if !input.active || password.is_some() {
+        super::sessions::end_all_for(pool, id).await?;
     }
 
     get_officer(pool, id).await?.ok_or_else(|| OfficerError::Db(sqlx::Error::RowNotFound))
 }
 
+/// Records that name an officer (statements, bonds, charge sheets, referrals).
+/// With an officer chosen, the record's name (and rank, where the record has
+/// one) is taken from the officer's record; with none, the record keeps the
+/// name that was typed and is not linked. `table` is one of a fixed set.
+pub(crate) async fn link_record(
+    pool: &SqlitePool,
+    table: &'static str,
+    id: &str,
+    officer_id: &Option<String>,
+    with_rank: bool,
+) -> Result<(), sqlx::Error> {
+    debug_assert!(matches!(table, "statements" | "bonds" | "charge_sheets" | "referrals"));
+    let Some(officer_id) = officer_id else {
+        sqlx::query(AssertSqlSafe(format!("UPDATE {table} SET officer_id = NULL WHERE id = ?"))).bind(id).execute(pool).await?;
+        return Ok(());
+    };
+    let rank = if with_rank { ", officer_rank = (SELECT rank FROM officers WHERE id = ?1)" } else { "" };
+    let result = sqlx::query(AssertSqlSafe(format!(
+        "UPDATE {table} SET officer_id = ?1, officer_name = (SELECT name FROM officers WHERE id = ?1){rank} WHERE id = ?2"
+    )))
+    .bind(officer_id)
+    .bind(id)
+    .execute(pool)
+    .await?;
+    if result.rows_affected() == 0 {
+        return Err(sqlx::Error::RowNotFound);
+    }
+    Ok(())
+}
+
+pub(crate) async fn write_officer_markdown(pool: &SqlitePool, vault_root: &Path, record: &Officer) {
+    if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "officer", &record.id).await {
+        let title = format!("Officer: {}", record.name);
+        if let Err(e) = markdown::write_record(&dir, &format!("officer-{}", record.id), &title, record) {
+            log::warn!("failed to write officer markdown: {e}");
+        }
+    }
+}
+
+/// Whether an officer has a password at all.
+pub async fn has_password(pool: &SqlitePool, officer_id: &str) -> Result<bool, sqlx::Error> {
+    let hash: Option<Option<String>> = sqlx::query_scalar("SELECT password_hash FROM officers WHERE id = ?").bind(officer_id).fetch_optional(pool).await?;
+    Ok(hash.flatten().is_some())
+}
+
+/// Whether a password is the officer's. False when they have none.
+pub async fn password_matches(pool: &SqlitePool, officer_id: &str, password: &str) -> Result<bool, sqlx::Error> {
+    let hash: Option<Option<String>> = sqlx::query_scalar("SELECT password_hash FROM officers WHERE id = ?").bind(officer_id).fetch_optional(pool).await?;
+    Ok(hash.flatten().is_some_and(|h| verify_password(password, &h)))
+}
+
 pub async fn get_officer(pool: &SqlitePool, id: &str) -> Result<Option<Officer>, sqlx::Error> {
-    sqlx::query_as::<_, Officer>(
-        "SELECT id, badge_number, name, role, active, person_id, created_at FROM officers WHERE id = ?",
-    )
+    sqlx::query_as::<_, Officer>(AssertSqlSafe(format!("SELECT {OFFICER_COLUMNS} FROM officers WHERE id = ?")))
     .bind(id)
     .fetch_optional(pool)
     .await
@@ -141,18 +238,14 @@ pub async fn get_officer(pool: &SqlitePool, id: &str) -> Result<Option<Officer>,
 /// check-in, where whoever's at the desk is identifying who just arrived,
 /// not authenticating them (that already happened when they were hired).
 pub async fn get_officer_by_badge(pool: &SqlitePool, badge_number: &str) -> Result<Option<Officer>, sqlx::Error> {
-    sqlx::query_as::<_, Officer>(
-        "SELECT id, badge_number, name, role, active, person_id, created_at FROM officers WHERE badge_number = ?",
-    )
+    sqlx::query_as::<_, Officer>(AssertSqlSafe(format!("SELECT {OFFICER_COLUMNS} FROM officers WHERE lower(badge_number) = lower(?)")))
     .bind(badge_number)
     .fetch_optional(pool)
     .await
 }
 
 pub async fn list_officers(pool: &SqlitePool) -> Result<Vec<Officer>, sqlx::Error> {
-    sqlx::query_as::<_, Officer>(
-        "SELECT id, badge_number, name, role, active, person_id, created_at FROM officers ORDER BY name",
-    )
+    sqlx::query_as::<_, Officer>(AssertSqlSafe(format!("SELECT {OFFICER_COLUMNS} FROM officers ORDER BY active DESC, name")))
     .fetch_all(pool)
     .await
 }
@@ -160,7 +253,7 @@ pub async fn list_officers(pool: &SqlitePool) -> Result<Vec<Officer>, sqlx::Erro
 #[derive(Debug, FromRow)]
 struct OfficerWithHash {
     id: String,
-    password_hash: String,
+    password_hash: Option<String>,
     active: bool,
 }
 
@@ -177,7 +270,9 @@ pub async fn login(pool: &SqlitePool, badge_number: &str, password: &str) -> Res
     .await?;
 
     let Some(row) = row else { return Ok(None) };
-    if !row.active || !verify_password(password, &row.password_hash) {
+    // No stored hash means this officer has no sign-in at all.
+    let Some(hash) = &row.password_hash else { return Ok(None) };
+    if !row.active || !verify_password(password, hash) {
         return Ok(None);
     }
 
@@ -197,7 +292,8 @@ pub async fn login(pool: &SqlitePool, badge_number: &str, password: &str) -> Res
 pub async fn validate_session(pool: &SqlitePool, token: &str) -> Result<Option<Officer>, sqlx::Error> {
     let now = chrono::Utc::now().timestamp_millis();
     sqlx::query_as::<_, Officer>(
-        "SELECT o.id, o.badge_number, o.name, o.role, o.active, o.person_id, o.created_at
+        "SELECT o.id, o.badge_number, o.name, o.rank, o.post, o.role, o.active, o.person_id, o.notes,
+                o.password_hash IS NOT NULL AS has_sign_in, o.created_at
          FROM officers o
          JOIN remote_sessions s ON s.officer_id = o.id
          WHERE s.token = ? AND s.expires_at > ? AND o.active = 1",

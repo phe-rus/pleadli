@@ -51,6 +51,10 @@ pub async fn connect(db_path: PathBuf, vault_root: PathBuf) -> Result<Db, sqlx::
 
     std::fs::create_dir_all(&vault_root).expect("create Police Vault root");
 
+    // Older rows stored where a file is as an absolute path; the vault's own
+    // files are now recorded relative to the vault root.
+    crate::domain::attachments::normalise_stored_paths(&pool, &vault_root).await?;
+
     #[cfg(debug_assertions)]
     {
         people::seed_if_empty(&pool, &vault_root).await?;

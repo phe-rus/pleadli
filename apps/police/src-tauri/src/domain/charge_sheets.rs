@@ -24,6 +24,7 @@ pub struct ChargeSheet {
     pub statutory_section: String,
     pub particulars: String,
     pub charged_at: i64,
+    pub officer_id: Option<String>,
     pub officer_name: Option<String>,
     pub station_name: Option<String>,
     pub created_at: i64,
@@ -38,6 +39,8 @@ pub struct CreateChargeSheetInput {
     pub statutory_section: String,
     pub particulars: String,
     pub charged_at: i64,
+    #[serde(default)]
+    pub officer_id: Option<String>,
     pub officer_name: Option<String>,
     pub station_name: Option<String>,
 }
@@ -71,6 +74,7 @@ pub async fn create_charge_sheet(pool: &SqlitePool, vault_root: &Path, input: Cr
     .execute(pool)
     .await?;
 
+    super::officers::link_record(pool, "charge_sheets", &id, &input.officer_id, false).await?;
     let record = get_charge_sheet(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_charge_sheet_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -100,6 +104,7 @@ pub async fn update_charge_sheet(
     .execute(pool)
     .await?;
 
+    super::officers::link_record(pool, "charge_sheets", id, &input.officer_id, false).await?;
     let record = get_charge_sheet(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_charge_sheet_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -112,7 +117,7 @@ pub async fn list_charge_sheets(pool: &SqlitePool, query: &str) -> Result<Vec<Ch
         return sqlx::query_as::<_, ChargeSheet>(
             "SELECT
                 cs.id, cs.case_id, cs.accused_person_id, cs.offence, cs.statutory_section, cs.particulars,
-                cs.charged_at, cs.officer_name, cs.station_name, cs.created_at,
+                cs.charged_at, cs.officer_id, cs.officer_name, cs.station_name, cs.created_at,
                 c.reference AS case_reference,
                 c.summary AS case_summary,
                 p.first_name AS accused_first_name,
@@ -131,7 +136,7 @@ pub async fn list_charge_sheets(pool: &SqlitePool, query: &str) -> Result<Vec<Ch
     sqlx::query_as::<_, ChargeSheet>(
         "SELECT
             cs.id, cs.case_id, cs.accused_person_id, cs.offence, cs.statutory_section, cs.particulars,
-            cs.charged_at, cs.officer_name, cs.station_name, cs.created_at,
+            cs.charged_at, cs.officer_id, cs.officer_name, cs.station_name, cs.created_at,
             c.reference AS case_reference,
             c.summary AS case_summary,
             p.first_name AS accused_first_name,
@@ -153,7 +158,7 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<ChargeSheet>, sqlx::Error
     sqlx::query_as::<_, ChargeSheet>(
         "SELECT
             cs.id, cs.case_id, cs.accused_person_id, cs.offence, cs.statutory_section, cs.particulars,
-            cs.charged_at, cs.officer_name, cs.station_name, cs.created_at,
+            cs.charged_at, cs.officer_id, cs.officer_name, cs.station_name, cs.created_at,
             c.reference AS case_reference,
             c.summary AS case_summary,
             p.first_name AS accused_first_name,
@@ -172,7 +177,7 @@ pub async fn get_charge_sheet(pool: &SqlitePool, id: &str) -> Result<Option<Char
     sqlx::query_as::<_, ChargeSheet>(
         "SELECT
             cs.id, cs.case_id, cs.accused_person_id, cs.offence, cs.statutory_section, cs.particulars,
-            cs.charged_at, cs.officer_name, cs.station_name, cs.created_at,
+            cs.charged_at, cs.officer_id, cs.officer_name, cs.station_name, cs.created_at,
             c.reference AS case_reference,
             c.summary AS case_summary,
             p.first_name AS accused_first_name,
@@ -192,7 +197,7 @@ pub async fn list_for_case(pool: &SqlitePool, case_id: &str) -> Result<Vec<Charg
     sqlx::query_as::<_, ChargeSheet>(
         "SELECT
             cs.id, cs.case_id, cs.accused_person_id, cs.offence, cs.statutory_section, cs.particulars,
-            cs.charged_at, cs.officer_name, cs.station_name, cs.created_at,
+            cs.charged_at, cs.officer_id, cs.officer_name, cs.station_name, cs.created_at,
             c.reference AS case_reference,
             c.summary AS case_summary,
             p.first_name AS accused_first_name,
@@ -213,7 +218,7 @@ pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<C
     sqlx::query_as::<_, ChargeSheet>(
         "SELECT
             cs.id, cs.case_id, cs.accused_person_id, cs.offence, cs.statutory_section, cs.particulars,
-            cs.charged_at, cs.officer_name, cs.station_name, cs.created_at,
+            cs.charged_at, cs.officer_id, cs.officer_name, cs.station_name, cs.created_at,
             c.reference AS case_reference,
             c.summary AS case_summary,
             p.first_name AS accused_first_name,
@@ -253,6 +258,7 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
         pool,
         vault_root,
         CreateChargeSheetInput {
+            officer_id: None,
             case_id,
             accused_person_id,
             offence: "Theft".to_string(),

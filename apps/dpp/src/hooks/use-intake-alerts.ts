@@ -1,4 +1,5 @@
-import { useIntakeQueue } from '@/features/prosecution-files'
+import { filesOptions } from '@/features/prosecution-files'
+import { useQuery } from '@tanstack/react-query'
 import { isTauri } from '@tauri-apps/api/core'
 import { useEffect } from 'react'
 
@@ -51,10 +52,12 @@ function markNotified(fileId: string) {
  */
 export function useIntakeAlerts() {
   const enabled = isIntakeAlertsEnabled() && isTauri()
-  const { data: files } = useIntakeQueue()
+  // Not a suspense read: the alerts live in the shell and must never hold it up.
+  const { data: files } = useQuery(filesOptions('awaiting'))
 
   useEffect(() => {
     if (!enabled || !files) return
+    const queue = files
 
     let cancelled = false
     async function check() {
@@ -65,7 +68,7 @@ export function useIntakeAlerts() {
       if (!granted) granted = (await requestPermission()) === 'granted'
       if (!granted || cancelled) return
 
-      for (const file of files) {
+      for (const file of queue) {
         if (alreadyNotified(file.id)) continue
 
         sendNotification({

@@ -1,4 +1,4 @@
-import { focusManager, QueryCache, QueryClient } from "@tanstack/react-query"
+import { focusManager, MutationCache, QueryCache, QueryClient } from "@tanstack/react-query"
 
 if (typeof window !== "undefined") {
     focusManager.setEventListener((setFocused) => {
@@ -9,7 +9,10 @@ if (typeof window !== "undefined") {
 
 let cachedClient: QueryClient | undefined
 export const clientContext = () => {
-    return new QueryClient({
+    // One person, one machine: after any successful write, every read model
+    // (queues, counts, chronology) is stale, so all of them refresh. Cheaper
+    // than every mutation naming the reads it touches, and never wrong.
+    const client: QueryClient = new QueryClient({
         defaultOptions: {
             queries: {
                 staleTime: 60_000,
@@ -25,7 +28,13 @@ export const clientContext = () => {
                 console.error(error)
             },
         }),
+        mutationCache: new MutationCache({
+            onSuccess: () => {
+                void client.invalidateQueries()
+            },
+        }),
     })
+    return client
 }
 
 export function queryContext() {

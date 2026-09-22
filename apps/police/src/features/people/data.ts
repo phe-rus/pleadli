@@ -1,3 +1,4 @@
+import { api, DEV_API_URL } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
 import {
@@ -11,30 +12,17 @@ import {
 // Only reachable in a dev build (see src-tauri/src/server.rs) — lets the
 // plain browser dev server (no Tauri IPC bridge) exercise the same data
 // layer against the real local database during development.
-const DEV_SERVER_URL = 'http://127.0.0.1:47821'
-
-async function devFetch(path: string, init?: RequestInit) {
-  const response = await fetch(`${DEV_SERVER_URL}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  if (!response.ok) throw new Error(await response.text())
-  return response.status === 204 ? null : response.json()
-}
+const DEV_SERVER_URL = DEV_API_URL
 
 export async function createPerson(input: CreatePersonInput) {
   const parsed = createPersonSchema.parse(input)
-  const person = isTauri()
-    ? await invoke('create_person', { input: parsed })
-    : await devFetch('/people', { method: 'POST', body: JSON.stringify(parsed) })
+  const person = await api('/people', { method: 'POST', body: JSON.stringify(parsed) })
   return personSchema.parse(person)
 }
 
 export async function updatePerson(id: string, input: CreatePersonInput) {
   const parsed = createPersonSchema.parse(input)
-  const person = isTauri()
-    ? await invoke('update_person', { id, input: parsed })
-    : await devFetch(`/people/${encodeURIComponent(id)}`, {
+  const person = await api(`/people/${encodeURIComponent(id)}`, {
         method: 'PUT',
         body: JSON.stringify(parsed),
       })
@@ -42,23 +30,17 @@ export async function updatePerson(id: string, input: CreatePersonInput) {
 }
 
 export async function searchPeople(query: string) {
-  const people = isTauri()
-    ? await invoke('search_people', { query })
-    : await devFetch(`/people?query=${encodeURIComponent(query)}`)
+  const people = await api(`/people?query=${encodeURIComponent(query)}`)
   return z.array(personSchema).parse(people)
 }
 
 export async function getPerson(id: string) {
-  const person = isTauri()
-    ? await invoke('get_person', { id })
-    : await devFetch(`/people/${encodeURIComponent(id)}`)
+  const person = await api(`/people/${encodeURIComponent(id)}`)
   return personSchema.nullable().parse(person)
 }
 
 export async function getPersonProfile(id: string) {
-  const profile = isTauri()
-    ? await invoke('get_person_profile', { id })
-    : await devFetch(`/people/${encodeURIComponent(id)}/profile`)
+  const profile = await api(`/people/${encodeURIComponent(id)}/profile`)
   return personProfileSchema.nullable().parse(profile)
 }
 

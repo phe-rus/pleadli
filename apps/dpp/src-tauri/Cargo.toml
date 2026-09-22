@@ -1,9 +1,10 @@
 [package]
 name = "dpp"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Pleadli DPP: prosecution review and charging decisions"
+authors = ["Pleadli"]
 edition = "2021"
+default-run = "dpp"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -38,6 +39,20 @@ base64 = "0.22"
 tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "macros", "rt-multi-thread"] }
 axum = { version = "0.8", features = ["multipart"] }
 tower-http = { version = "0.6", features = ["cors"] }
+tower = { version = "0.5", features = ["util"] }
+sha2 = "0.10"
+# The key lives in the operating system's keystore where there is one.
+keyring = { version = "3", default-features = false, features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
+argon2 = "0.5"
+chacha20poly1305 = { version = "0.10", features = ["stream"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+docx-rs = "0.4.22"
+pleadli-interchange = { path = "../../../packages/interchange" }
+pleadli-node-core = { path = "../../../packages/node-core" }
+
+[dev-dependencies]
+# A fixed key for tests that run domain code without a startup.
+pleadli-node-core = { path = "../../../packages/node-core", features = ["test-keys"] }
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

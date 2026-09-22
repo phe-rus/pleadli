@@ -12,6 +12,9 @@ export type RichTextInputProps = {
   onChange: (json: string) => void
   placeholder?: string
   className?: string
+  /** The editing area's own classes. Defaults to a short, scrolling box; a
+   * long document (a judgment) passes a taller one. */
+  editorClassName?: string
 }
 
 // Tiptap's Placeholder extension renders the hint as a `::before` on the
@@ -21,13 +24,13 @@ export type RichTextInputProps = {
 const placeholderOverlayClassName =
   "[&_p.is-editor-empty:first-child]:before:pointer-events-none [&_p.is-editor-empty:first-child]:before:float-left [&_p.is-editor-empty:first-child]:before:h-0 [&_p.is-editor-empty:first-child]:before:text-muted-foreground [&_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]"
 
-export function RichTextInput({ value, onChange, placeholder = 'Write here…', className }: RichTextInputProps) {
+export function RichTextInput({ value, onChange, placeholder = 'Write here…', className, editorClassName = 'max-h-64' }: RichTextInputProps) {
   const editor = useEditor({
     extensions: [...richTextExtensions, Placeholder.configure({ placeholder })],
     content: safeParseRichTextDoc(value),
     editorProps: {
       attributes: {
-        class: 'typeset min-h-24 max-h-64 overflow-y-auto px-3 py-2 outline-none',
+        class: cn('typeset min-h-24 overflow-y-auto px-3 py-2 outline-none', editorClassName),
       },
     },
     onUpdate: ({ editor }) => onChange(JSON.stringify(editor.getJSON())),

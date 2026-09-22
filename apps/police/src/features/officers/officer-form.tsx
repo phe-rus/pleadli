@@ -1,28 +1,36 @@
 import { PersonPicker } from '@/components/person-picker'
+import { useReportDirty } from '@/hooks/use-report-dirty'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
-import { Field, FieldLabel } from '@pleadli/ui/field'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Switch } from '@pleadli/ui/switch'
 import { useCreateOfficer, useUpdateOfficer } from './queries'
-import { officerRoles, type Officer } from './schema'
+import { officerPostSuggestions, officerRoles, type Officer } from './schema'
 
 export type OfficerFormProps = {
   officer?: Officer
   onSuccess?: (officer: Officer) => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export function OfficerForm({ officer, onSuccess }: OfficerFormProps) {
+/** One officer: who they are and what they hold here. A badge number and a
+ * password are both optional; an officer with neither is simply on the
+ * station's books, which is what a roster and a case record need. */
+export function OfficerForm({ officer, onSuccess, onDirtyChange }: OfficerFormProps) {
   const createOfficer = useCreateOfficer()
   const updateOfficer = useUpdateOfficer()
 
   const form = useAppForm({
     defaultValues: {
-      badgeNumber: officer?.badgeNumber ?? '',
       name: officer?.name ?? '',
+      rank: officer?.rank ?? '',
+      post: officer?.post ?? '',
+      badgeNumber: officer?.badgeNumber ?? '',
       role: officer?.role ?? 'officer',
       active: officer?.active ?? true,
-      personId: officer?.personId ?? null,
+      personId: officer?.personId ?? (null as string | null),
+      notes: officer?.notes ?? '',
       password: '',
     },
     onSubmit: async ({ value }) => {
@@ -30,30 +38,29 @@ export function OfficerForm({ officer, onSuccess }: OfficerFormProps) {
         const result = officer
           ? await updateOfficer.mutateAsync({
               id: officer.id,
-              input: {
-                name: value.name,
-                role: value.role,
-                active: value.active,
-                personId: value.personId,
-                password: value.password.trim() ? value.password : null,
-              },
+              input: { ...value, password: value.password.trim() ? value.password : null },
             })
           : await createOfficer.mutateAsync({
-              badgeNumber: value.badgeNumber,
               name: value.name,
+              rank: value.rank,
+              post: value.post,
+              badgeNumber: value.badgeNumber,
               role: value.role,
-              password: value.password,
+              notes: value.notes,
               personId: value.personId,
+              password: value.password,
             })
         t.success(officer ? 'Officer updated' : 'Officer added')
         onSuccess?.(result)
-      } catch {
+      } catch (error) {
         t.error(officer ? 'Could not update officer' : 'Could not add officer', {
-          description: 'Please try again.',
+          description: error instanceof Error && error.message ? error.message : 'Please try again.',
         })
       }
     },
   })
+
+  useReportDirty(form, onDirtyChange)
 
   return (
     <form
@@ -63,50 +70,54 @@ export function OfficerForm({ officer, onSuccess }: OfficerFormProps) {
         form.handleSubmit()
       }}
     >
-      <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="badgeNumber">
-          {(f) => <f.input label="Badge number" disabled={Boolean(officer)} />}
-        </form.AppField>
-        <form.AppField name="role">
-          {(f) => <f.select label="Role" options={[...officerRoles]} />}
-        </form.AppField>
-      </div>
+      <FieldGroup>
+        <form.AppField name="name">{(f) => <f.input label="Full name" />}</form.AppField>
 
-      <form.AppField name="name">{(f) => <f.input label="Full name" />}</form.AppField>
+        <div className="grid grid-cols-2 gap-3">
+          <form.AppField name="rank">{(f) => <f.input label="Rank" />}</form.AppField>
+          <form.AppField name="post">
+            {(f) => <f.input label="Standing post" placeholder={`e.g. ${officerPostSuggestions.slice(0, 2).join(', ')}`} />}
+          </form.AppField>
+        </div>
 
-      <form.AppField name="personId">
-        {(f) => (
-          <Field>
-            <FieldLabel>Linked person</FieldLabel>
-            <PersonPicker
-              value={f.state.value}
-              onValueChange={f.handleChange}
-              placeholder="Link this officer's own person record…"
-            />
-          </Field>
-        )}
-      </form.AppField>
+        <div className="grid grid-cols-2 gap-3">
+          <form.AppField name="badgeNumber">{(f) => <f.input label="Badge number" placeholder="Optional" />}</form.AppField>
+          <form.AppField name="role">{(f) => <f.select label="Role" options={[...officerRoles]} />}</form.AppField>
+        </div>
 
-      <form.AppField name="password">
-        {(f) => (
-          <f.input
-            type="password"
-            label={officer ? 'New password' : 'Password'}
-            placeholder={officer ? 'Leave blank to keep the current password' : undefined}
-          />
-        )}
-      </form.AppField>
-
-      {officer && (
-        <form.AppField name="active">
+        <form.AppField name="personId">
           {(f) => (
-            <Field orientation="horizontal">
-              <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-              <FieldLabel>Active: can log in remotely</FieldLabel>
+            <Field>
+              <FieldLabel>Linked person</FieldLabel>
+              <PersonPicker value={f.state.value} onValueChange={f.handleChange} placeholder="Link this officer's own person record" />
             </Field>
           )}
         </form.AppField>
-      )}
+
+        <form.AppField name="notes">{(f) => <f.textarea label="Notes" />}</form.AppField>
+
+        <form.AppField name="password">
+          {(f) => (
+            <f.input
+              type="password"
+              label={officer?.hasSignIn ? 'New password' : 'Remote sign-in password'}
+              placeholder={officer?.hasSignIn ? 'Leave blank to keep the current password' : 'Optional'}
+            />
+          )}
+        </form.AppField>
+        <FieldDescription>A password lets this officer sign in over remote access from a phone. It needs a badge number. Leave it blank for an officer who only appears on the books.</FieldDescription>
+
+        {officer && (
+          <form.AppField name="active">
+            {(f) => (
+              <Field orientation="horizontal">
+                <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
+                <FieldLabel>Currently at this station (off for an officer who has left)</FieldLabel>
+              </Field>
+            )}
+          </form.AppField>
+        )}
+      </FieldGroup>
 
       <DrawerFooter>
         <form.AppForm>

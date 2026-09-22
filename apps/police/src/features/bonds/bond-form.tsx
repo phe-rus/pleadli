@@ -1,3 +1,4 @@
+import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
@@ -43,6 +44,7 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
       suretyName: bond?.suretyName ?? '',
       suretyContact: bond?.suretyContact ?? '',
       reportingSchedule: bond?.reportingSchedule ?? '',
+      officerId: bond?.officerId ?? (null as string | null),
       officerName: bond?.officerName ?? '',
       officerRank: bond?.officerRank ?? '',
       status: bond?.status ?? 'active',
@@ -147,12 +149,19 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
         </form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="officerName">
-            {(f) => <f.input label="Granting officer name" />}
+          <form.AppField name="officerId">
+            {(f) => <OfficerPicker label="Granting officer" value={f.state.value} onValueChange={f.handleChange} />}
           </form.AppField>
-          <form.AppField name="officerRank">
-            {(f) => <f.input label="Granting officer rank" />}
-          </form.AppField>
+          <form.Subscribe selector={(state) => state.values.officerId}>
+            {(officerId) =>
+              officerId ? null : (
+                <>
+                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
+                <form.AppField name="officerRank">{(f) => <f.input label="Rank" />}</form.AppField>
+                </>
+              )
+            }
+          </form.Subscribe>
         </div>
 
         <form.AppField name="status">

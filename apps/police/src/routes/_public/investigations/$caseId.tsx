@@ -118,7 +118,7 @@ function RouteComponent() {
   ].sort((a, b) => b.at - a.at)
 
   return (
-    <article className="container flex flex-col gap-6 pt-5 pb-20">
+    <article className="page">
       <Link
         to="/investigations"
         className="inline-flex w-fit items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"

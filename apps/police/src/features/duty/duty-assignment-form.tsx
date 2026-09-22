@@ -1,4 +1,5 @@
 import { AttachmentsField, entityTypes } from '@/features/attachments'
+import { OfficerPicker } from '@/features/officers'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
 import { Field, FieldGroup, FieldLabel } from '@pleadli/ui/field'
@@ -24,6 +25,7 @@ export function DutyAssignmentForm({ assignment, onSuccess }: DutyAssignmentForm
 
   const form = useAppForm({
     defaultValues: {
+      officerId: assignment?.officerId ?? (null as string | null),
       officerName: assignment?.officerName ?? '',
       officerRank: assignment?.officerRank ?? '',
       unit: assignment?.unit ?? '',
@@ -71,14 +73,20 @@ export function DutyAssignmentForm({ assignment, onSuccess }: DutyAssignmentForm
       }}
     >
       <FieldGroup>
-        <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="officerName">
-            {(f) => <f.input label="Officer name" />}
-          </form.AppField>
-          <form.AppField name="officerRank">
-            {(f) => <f.input label="Rank" />}
-          </form.AppField>
-        </div>
+        <form.AppField name="officerId">
+          {(f) => <OfficerPicker value={f.state.value} onValueChange={f.handleChange} />}
+        </form.AppField>
+
+        <form.Subscribe selector={(state) => state.values.officerId}>
+          {(officerId) =>
+            officerId ? null : (
+              <div className="grid grid-cols-2 gap-3">
+                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
+                <form.AppField name="officerRank">{(f) => <f.input label="Rank" />}</form.AppField>
+              </div>
+            )
+          }
+        </form.Subscribe>
 
         <form.AppField name="unit">{(f) => <f.input label="Unit" />}</form.AppField>
 

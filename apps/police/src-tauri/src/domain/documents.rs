@@ -16,7 +16,7 @@ use std::io::Write as _;
 use std::path::Path;
 
 use super::{
-    attachments, bonds, cases, charge_sheets, custody, duty, exhibits, incidents, markdown, people, referrals,
+    attachments, bonds, cases, charge_sheets, custody, duty, exhibits, incidents, markdown, officers, people, referrals,
     shift_log, station_admin, station_assets, station_diary, statements, vehicles,
 };
 
@@ -416,24 +416,15 @@ pub async fn regenerate_all_markdown(pool: &SqlitePool, vault_root: &Path) -> Re
     sections.push(("shift-handovers", "Shift Handovers", handovers_index.len()));
     write_index_file(vault_root, "shift-handovers", "Shift Handovers", &handovers_index)?;
 
-    let mut establishment_index = Vec::new();
-    for record in station_admin::list_all_establishment(pool).await? {
-        station_admin::write_establishment_member_markdown(pool, vault_root, &record).await;
-        if let Some(e) = index_entry(
-            pool,
-            vault_root,
-            "station_establishment_member",
-            &record.id,
-            &format!("station_establishment_member-{}", record.id),
-            &format!("{} {}", record.person_first_name, record.person_last_name),
-        )
-        .await
-        {
-            establishment_index.push(e);
+    let mut officers_index = Vec::new();
+    for record in officers::list_officers(pool).await? {
+        officers::write_officer_markdown(pool, vault_root, &record).await;
+        if let Some(e) = index_entry(pool, vault_root, "officer", &record.id, &format!("officer-{}", record.id), &record.name).await {
+            officers_index.push(e);
         }
     }
-    sections.push(("establishment", "Station Establishment", establishment_index.len()));
-    write_index_file(vault_root, "establishment", "Station Establishment", &establishment_index)?;
+    sections.push(("officers", "Officers", officers_index.len()));
+    write_index_file(vault_root, "officers", "Officers", &officers_index)?;
 
     if let Some(profile) = station_admin::get_station_profile(pool).await? {
         if let Ok(dir) = attachments::resolve_vault_dir(pool, vault_root, "station_profile", "profile").await {
@@ -544,7 +535,7 @@ pub async fn export_all_xlsx(pool: &SqlitePool, destination: &Path) -> Result<()
     write_sheet(&mut workbook, "Vehicles", &vehicles::list_all(pool).await?)?;
     write_sheet(&mut workbook, "Check-ins", &shift_log::list_all_check_ins(pool).await?)?;
     write_sheet(&mut workbook, "Shift Handovers", &shift_log::list_all_handovers(pool).await?)?;
-    write_sheet(&mut workbook, "Establishment", &station_admin::list_all_establishment(pool).await?)?;
+    write_sheet(&mut workbook, "Officers", &officers::list_officers(pool).await?)?;
 
     workbook.save(destination)?;
     Ok(())
@@ -662,9 +653,9 @@ fn scaled_photo_box(width_px: u32, height_px: u32) -> (u32, u32) {
 /// print size) before either renderer ever sees the bytes. A format the
 /// `image` crate can't decode (HEIC, notably) is silently skipped rather
 /// than failing the whole export; the rest of the document still prints.
-async fn person_photo(pool: &SqlitePool, headshot_attachment_id: Option<&str>) -> Option<DocImage> {
+async fn person_photo(pool: &SqlitePool, vault_root: &Path, headshot_attachment_id: Option<&str>) -> Option<DocImage> {
     let attachment = attachments::get_attachment(pool, headshot_attachment_id?).await.ok().flatten()?;
-    let bytes = std::fs::read(&attachment.stored_path).ok()?;
+    let bytes = std::fs::read(attachments::absolute_path(vault_root, &attachment.stored_path).ok()?).ok()?;
     let decoded = image::load_from_memory(&bytes).ok()?;
     use image::GenericImageView;
     let (width_px, height_px) = decoded.dimensions();
@@ -846,7 +837,7 @@ async fn build_bulk_export_document(pool: &SqlitePool) -> Result<Doc, DocumentEr
         doc_table_section("Vehicles", &vehicles::list_all(pool).await?),
         doc_table_section("Check-ins", &shift_log::list_all_check_ins(pool).await?),
         doc_table_section("Shift Handovers", &shift_log::list_all_handovers(pool).await?),
-        doc_table_section("Establishment", &station_admin::list_all_establishment(pool).await?),
+        doc_table_section("Officers", &officers::list_officers(pool).await?),
     ];
 
     Ok(Doc {
@@ -867,7 +858,7 @@ pub async fn export_all_docx(pool: &SqlitePool, destination: &Path) -> Result<()
     write_doc(&doc, DocumentFormat::Docx, destination).await
 }
 
-async fn build_person_document(pool: &SqlitePool, id: &str) -> Result<Option<Doc>, DocumentError> {
+async fn build_person_document(pool: &SqlitePool, vault_root: &Path, id: &str) -> Result<Option<Doc>, DocumentError> {
     let Some(profile) = people::get_person_profile(pool, id).await? else {
         return Ok(None);
     };
@@ -887,7 +878,7 @@ async fn build_person_document(pool: &SqlitePool, id: &str) -> Result<Option<Doc
         tables: Vec::new(),
     };
 
-    let photo = person_photo(pool, person.headshot_attachment_id.as_deref()).await;
+    let photo = person_photo(pool, vault_root, person.headshot_attachment_id.as_deref()).await;
 
     let sections = vec![
         identity,
@@ -912,11 +903,12 @@ async fn build_person_document(pool: &SqlitePool, id: &str) -> Result<Option<Doc
 
 pub async fn export_person_document(
     pool: &SqlitePool,
+    vault_root: &Path,
     id: &str,
     format: DocumentFormat,
     destination: &Path,
 ) -> Result<bool, DocumentError> {
-    let Some(doc) = build_person_document(pool, id).await? else {
+    let Some(doc) = build_person_document(pool, vault_root, id).await? else {
         return Ok(false);
     };
     write_doc(&doc, format, destination).await?;

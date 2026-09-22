@@ -1,3 +1,4 @@
+import { OfficerPicker } from '@/features/officers'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
 import { useReportDirty } from '@/hooks/use-report-dirty'
@@ -36,6 +37,7 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
       destinationName: referral?.destinationName ?? '',
       referredAt: referral ? toDatetimeLocal(referral.referredAt) : toDatetimeLocal(Date.now()),
       status: referral?.status ?? 'pending',
+      officerId: referral?.officerId ?? (null as string | null),
       officerName: referral?.officerName ?? '',
       notes: referral?.notes ?? '',
     },
@@ -129,9 +131,18 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
           </form.AppField>
         </div>
 
-        <form.AppField name="officerName">
-          {(f) => <f.input label="Referring officer" />}
-        </form.AppField>
+        <form.AppField name="officerId">
+            {(f) => <OfficerPicker label="Referring officer" value={f.state.value} onValueChange={f.handleChange} />}
+          </form.AppField>
+          <form.Subscribe selector={(state) => state.values.officerId}>
+            {(officerId) =>
+              officerId ? null : (
+                <>
+                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
+                </>
+              )
+            }
+          </form.Subscribe>
 
         <form.AppField name="notes">
           {(f) => (

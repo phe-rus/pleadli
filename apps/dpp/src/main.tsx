@@ -1,6 +1,8 @@
 import { Loaders } from '@/components/loaders'
+import { ThemeProvider } from '@/components/theme-provider'
+import { SecurityGate } from '@/features/security'
 import { Queryprovider, queryContext } from '@/lib/query-context'
-import "@pleadli/ui/globals.css"
+import "@/styles/globals.css"
 import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import ReactDOM from 'react-dom/client'
@@ -47,9 +49,23 @@ if (!rootElement) {
 
 if (!rootElement.innerHTML) {
     const root = ReactDOM.createRoot(rootElement)
+    const router = getRouter()
+    // The gate sits outside the router, so a locked app (or data that could not
+    // be opened) is decided before any route loads and its loaders fail.
     root.render(
-        <RouterProvider
-            router={getRouter()}
-        />
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            enableColorScheme
+            storageKey="pleadli:themer"
+            disableTransitionOnChange
+        >
+            <Queryprovider query={queryContext()}>
+                <SecurityGate onUnlocked={() => void router.invalidate()}>
+                    <RouterProvider router={router} />
+                </SecurityGate>
+            </Queryprovider>
+        </ThemeProvider>
     )
 }

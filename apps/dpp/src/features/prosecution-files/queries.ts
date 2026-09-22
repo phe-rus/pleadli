@@ -4,31 +4,20 @@ import {
   getProsecutionFile,
   linkPersonToFile,
   listFilePeople,
-  listIntakeQueue,
-  listProsecutionFiles,
+  listFiles,
   unlinkPersonFromFile,
   updateProsecutionFile,
 } from './data'
-import type { CreateProsecutionFileInput, UpdateProsecutionFileInput } from './schema'
+import type { CreateProsecutionFileInput, FileViewId, UpdateProsecutionFileInput } from './schema'
 
-export const prosecutionFilesOptions = (query: string) =>
+export const filesOptions = (view: FileViewId | 'awaiting', query = '') =>
   queryOptions({
-    queryKey: ['prosecution-files', 'list', query] as const,
-    queryFn: () => listProsecutionFiles(query),
+    queryKey: ['prosecution-files', 'list', view, query] as const,
+    queryFn: () => listFiles(view, query),
   })
 
-export function useProsecutionFiles(query: string) {
-  return useSuspenseQuery(prosecutionFilesOptions(query))
-}
-
-export const intakeQueueOptions = () =>
-  queryOptions({
-    queryKey: ['prosecution-files', 'intake'] as const,
-    queryFn: () => listIntakeQueue(),
-  })
-
-export function useIntakeQueue() {
-  return useSuspenseQuery(intakeQueueOptions())
+export function useFiles(view: FileViewId | 'awaiting', query = '') {
+  return useSuspenseQuery(filesOptions(view, query))
 }
 
 export const prosecutionFileOptions = (id: string) =>

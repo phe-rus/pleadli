@@ -13,14 +13,43 @@ Canonical security stance for Pleadli Prisons. Deep detail: `product/03` (owners
 
 `local` (dev machine), `development`, `test`, `staging`, `pilot`, `production`. The first real-world deployment is a **pilot**, not production. A thing that is only exercised in `local`/`test` is never claimed safe in `pilot`.
 
-## Two open blockers (gate any real facility use)
+## Data at rest (D14, decided and built 2026-09-21)
 
-| # | Finding | Consequence |
+Decision: SQLCipher for the database and a sealed vault for documents, with the key in the operating system's keystore where there is one. Verified full-disk encryption was the alternative; it is a shared-machine prison workstation, so the application protects its own data.
+
+| Layer | What protects it | Where the key is |
 |---|---|---|
-| X4 | Legacy snapshot sync used to push the full `prisoners` row (free-text `notes`, `national_id`, `date_of_birth`) to HQ over `/api/network/v1/legacy/snapshot`. **Narrowed 2026-09-20**: it now sends `SnapshotRow` only (status, sex, year of birth, nationality, education, offence, custody status, dates), HQ stores nothing else and scrubs rows already held (migration 0140). | Remaining exposure: `offence` is free text and is still sent, and a facility's people are still individually listed at HQ. Retire with tiered exchange. |
-| X9 | `sync_token`, `cloudflare_config.api_token`, tunnel `run_token`, `remote_device_token` were stored plaintext. **Fixed at rest 2026-09-20**: ChaCha20-Poly1305 under a 32-byte key in `secrets.key` beside the database (owner-only on Unix), each value bound to its column. | The key sits next to the data, so taking the whole data folder still exposes the credentials, and `pre-migration/` snapshots from earlier builds still hold plaintext. Key in the OS keystore or under a passphrase is D14. |
+| Database (`prisons.db`, its WAL, pre-migration snapshots, databases a restore moved aside) | SQLCipher, raw 256-bit key | derived from the installation master key |
+| Documents (`vault/attachments/<id>.enc`) | ChaCha20-Poly1305 STREAM, the attachment id bound into every chunk | derived from the same master key, by a different label |
+| Network credentials inside the database | additionally sealed under `secrets.key` | key file beside the database |
+| Backups (`.pbk`) | ChaCha20-Poly1305 under a key from the recovery passphrase (Argon2) | the passphrase the OIC keeps offline |
 
-**Carried from the 2026-09-18 ledger:** X1/X2 (unauthenticated dev API) fixed; X3 (two clients) fixed; X10 database/vault plaintext — designed under D14 (SQLCipher / encrypted vault vs verified OS-level encryption); Cloudflare Tunnel never provisioned (`cloudflare_tunnel::provision` has no caller) — a production path only exists against loopback today. Full ledger in `product/status.md` §5.
+The master key is 32 random bytes. It is held in **the OS keystore** (Windows Credential Manager, macOS Keychain, Linux Secret Service) under a name that carries this installation's id, so copying the whole data folder to another machine copies nothing that opens it. Where there is no keystore (a headless server, a Linux session without a Secret Service, or `PLEADLI_KEY_FILE_ONLY=1`) it is an owner-only key file, `node.key`, in the data folder. Settings says which one is in force.
+
+What this defends against, and what it does not:
+
+- A copy of the database, of a snapshot or of the vault on its own: defended in both modes.
+- A copy of the **whole data folder**: defended only when the key is in the keystore. With the key-file fallback the folder contains the key, so it is not defended. That is the honest weaker mode, not a bug.
+- Someone signed in to the operating system as the same user on the same machine: not defended. The keystore releases the key to that user's processes.
+- A key that is lost (keystore wiped, profile replaced, disk cloned) makes the database unreadable. The node then starts in recovery mode and never invents a new key; recovery is restoring a backup with its passphrase.
+- Plaintext removal is best effort: files are overwritten and removed, which on flash storage or a journalling file system does not guarantee the old blocks are gone.
+- While an officer views a document it exists as a plain file in a private folder, removed when the app next starts or exits.
+- Memory, the OS swap file and crash dumps are not covered. SQLite temporary files were not separately verified.
+- Not verified on Windows or macOS (only the Linux Secret Service was exercised).
+
+## Blockers and carried findings
+
+| # | Finding | State |
+|---|---|---|
+| X4 | Legacy snapshot sync pushed prisoner rows to Head Office. | **Retired 2026-09-21.** Head Office holds counts, the roster and returns only, and migration 0190 deleted the copies it held. |
+| X9 | Network credentials were plaintext. | Fixed 2026-09-20 (sealed under `secrets.key`); strengthened by D14, since they now sit inside an encrypted database. |
+| X10 | Database and vault plaintext. | **Fixed 2026-09-21 (D14)** with the limits above. |
+
+Still open before any real facility use: the packaged app has never been built or run here; the LAN exchange has not been run between two physical machines; the Cloudflare Tunnel has never been run against Cloudflare; the webview has no Content-Security-Policy (`csp: null`) because one cannot be validated without a packaged run. X1/X2/X3 were fixed earlier. Full ledger in `product/status.md` §5.
+
+## Transport trust between a facility and Head Office
+
+Head Office serves `/api/network/v1/**` only, never the domain, on two listeners: the loopback one (plain HTTP, the tunnel's origin, forwarded-address headers believed) and the LAN one (TLS with the node's own certificate, forwarded-address headers ignored so a peer on the network cannot spoof another address). A facility on a local network reaches Head Office over HTTPS and **pins** the certificate a person confirmed by fingerprint; it will not send to a local address it has not pinned, and will not send to a different certificate later. Discovery only suggests. Trust in a facility is Head Office's to give: a request waits for a Head Office officer, and Head Office records every exchange as metadata.
 
 ## What is deliberately not in scope of this file
 

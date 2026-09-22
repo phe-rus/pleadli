@@ -1,11 +1,5 @@
 import { Createpanel } from '@/components/create-panel'
-import {
-  officerRoleLabel,
-  officersOptions,
-  OfficerForm,
-  useOfficers,
-  type Officer,
-} from '@/features/officers'
+import { officerRoleLabel, officersOptions, OfficerForm, useOfficers, type Officer } from '@/features/officers'
 import { AddCircleIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
@@ -25,8 +19,11 @@ export const Route = createFileRoute('/_public/station/officers')({
 
 function RouteComponent() {
   const [addOpen, setAddOpen] = useState(false)
+  const [addDirty, setAddDirty] = useState(false)
   const [editing, setEditing] = useState<Officer | null>(null)
+  const [editDirty, setEditDirty] = useState(false)
   const { data: officers } = useOfficers()
+  const here = officers.filter((o) => o.active).length
 
   const columns: DataTableColumnDef<Officer>[] = useMemo(() => {
     return [
@@ -35,30 +32,32 @@ function RouteComponent() {
         accessorKey: 'id',
         header: 'ID',
         cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setEditing(row.original)}
-          >
+          <span className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')} onClick={() => setEditing(row.original)}>
             {row.original.id}
           </span>
         ),
       },
-      { accessorKey: 'badgeNumber', header: 'Badge number' },
       { accessorKey: 'name', header: 'Name' },
+      { accessorKey: 'rank', header: 'Rank', cell: ({ row }) => row.original.rank ?? '·' },
+      { accessorKey: 'post', header: 'Standing post', cell: ({ row }) => row.original.post ?? '·' },
+      { accessorKey: 'badgeNumber', header: 'Badge number', cell: ({ row }) => row.original.badgeNumber ?? '·' },
       {
         accessorKey: 'role',
         header: 'Role',
         cell: ({ row }) => <Badge variant="secondary">{officerRoleLabel(row.original.role)}</Badge>,
       },
       {
+        accessorKey: 'hasSignIn',
+        header: 'Remote sign-in',
+        cell: ({ row }) => (row.original.hasSignIn ? 'Yes' : 'No'),
+      },
+      {
         accessorKey: 'active',
         header: 'Status',
-        cell: ({ row }) => (
-          <Badge variant={row.original.active ? 'default' : 'secondary'}>
-            {row.original.active ? 'Active' : 'Disabled'}
-          </Badge>
-        ),
+        cell: ({ row }) => <Badge variant={row.original.active ? 'default' : 'secondary'}>{row.original.active ? 'At the station' : 'Left'}</Badge>,
       },
+      { accessorKey: 'personId', header: 'Person ID', cell: ({ row }) => row.original.personId ?? '·' },
+      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
       {
         accessorKey: 'createdAt',
         header: 'Added',
@@ -68,38 +67,41 @@ function RouteComponent() {
   }, [])
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
+    <article className="page">
+      <header className="page-header">
+        <div>
           <h1>Officers</h1>
-          <p className="md:max-w-lg">
-            Login credentials for remote access. Not the same as Establishment, which is a roster, not accounts.
+          <p>
+            Everyone who works at this station: {here} at the station, {officers.length - here} left. The roster, statements and charge sheets choose from this list. A remote sign-in is optional.
           </p>
         </div>
-
-        <Createpanel
-          open={addOpen}
-          onOpenChange={setAddOpen}
-          trigger={
-            <Button size="sm">
-              <HugeiconsIcon icon={AddCircleIcon} />
-              Add officer
-            </Button>
-          }
-          headings={{ title: 'Add officer', description: 'Grants this officer remote-access login credentials.' }}
-        >
-          <OfficerForm onSuccess={() => setAddOpen(false)} />
-        </Createpanel>
-      </section>
+        <div className="page-actions">
+          <Createpanel
+            open={addOpen}
+            onOpenChange={setAddOpen}
+            isDirty={addDirty}
+            trigger={
+              <Button size="sm">
+                <HugeiconsIcon icon={AddCircleIcon} />
+                Add officer
+              </Button>
+            }
+            headings={{ title: 'Add officer', description: 'Someone who works at this station.' }}
+          >
+            <OfficerForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
+          </Createpanel>
+        </div>
+      </header>
 
       <Createpanel
         open={editing !== null}
         onOpenChange={(open) => {
           if (!open) setEditing(null)
         }}
-        headings={{ title: 'Edit officer', description: 'Update this login.' }}
+        isDirty={editDirty}
+        headings={{ title: 'Edit officer', description: 'Update this officer.' }}
       >
-        {editing && <OfficerForm key={editing.id} officer={editing} onSuccess={() => setEditing(null)} />}
+        {editing && <OfficerForm key={editing.id} officer={editing} onSuccess={() => setEditing(null)} onDirtyChange={setEditDirty} />}
       </Createpanel>
 
       <DataTable
@@ -108,7 +110,7 @@ function RouteComponent() {
         columns={columns}
         getRowId={(row) => row.id}
         emptyMessage="No officers added yet."
-        searchPlaceholder="Search by name or badge number…"
+        searchPlaceholder="Search by name, rank, post or badge number"
       />
     </article>
   )

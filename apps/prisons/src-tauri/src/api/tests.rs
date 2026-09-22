@@ -149,6 +149,8 @@ const OPEN_BY_DESIGN: &[&str] = &[
     "/api/system/onboarding/connection/refresh",
     "/api/system/onboarding/facility",
     "/api/system/onboarding/head-office",
+    "/api/system/onboarding/hq-discover",
+    "/api/system/onboarding/hq-identity",
     "/api/system/onboarding/numbering-preview",
     "/api/system/onboarding/connection/cancel",
     "/api/system/onboarding/connect-facility",
@@ -644,15 +646,17 @@ async fn the_connection_status_disconnect_and_class_switches_behave_for_an_uncon
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(body["state"], "not_connected");
     assert_eq!(body["pending"]["total"], 0);
-    assert_eq!(body["classes"].as_array().unwrap().len(), 5);
+    assert_eq!(body["classes"].as_array().unwrap().len(), 4, "the legacy snapshot is not a class any more");
+    assert!(!body["classes"].as_array().unwrap().iter().any(|c| c["class"] == "legacy_snapshot"));
+    assert_eq!(body["exchange"]["state"], "idle");
     assert!(body["classes"].as_array().unwrap().iter().any(|c| c["class"] == "returns" && c["direction"] == "up" && c["label"] == "Attested returns"));
 
     let (status, body) = send(&h.router, Call::new(Method::POST, "/api/system/network/disconnect").token(&admin)).await;
     assert_eq!(status, StatusCode::CONFLICT, "{body}");
 
-    let (status, body) = send(&h.router, Call::new(Method::PUT, "/api/system/network/sync-classes/legacy_snapshot").token(&admin).body(json!({ "enabled": false }))).await;
+    let (status, body) = send(&h.router, Call::new(Method::PUT, "/api/system/network/sync-classes/roster").token(&admin).body(json!({ "enabled": false }))).await;
     assert_eq!(status, StatusCode::OK, "{body}");
-    let off = body["classes"].as_array().unwrap().iter().find(|c| c["class"] == "legacy_snapshot").unwrap().clone();
+    let off = body["classes"].as_array().unwrap().iter().find(|c| c["class"] == "roster").unwrap().clone();
     assert_eq!(off["enabled"], false);
     let (status, _) = send(&h.router, Call::new(Method::PUT, "/api/system/network/sync-classes/nonsense").token(&admin).body(json!({ "enabled": false }))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);

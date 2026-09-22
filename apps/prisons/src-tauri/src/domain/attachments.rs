@@ -4,7 +4,8 @@ use std::fmt;
 
 use super::audit::{self, AuditEntry};
 use super::authz::Actor;
-use std::path::{Path, PathBuf};
+use super::vault;
+use std::path::Path;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -14,6 +15,10 @@ pub struct Attachment {
     pub entity_type: String,
     pub entity_id: String,
     pub file_name: String,
+    /// Relative to the vault, and never sent to a client: where a document sits
+    /// on disk is not something a screen needs, and it named a real folder on the
+    /// machine before the vault was sealed.
+    #[serde(default, skip_serializing)]
     pub stored_path: String,
     pub mime_type: String,
     pub size_bytes: i64,
@@ -51,18 +56,6 @@ impl From<sqlx::Error> for AttachmentError {
     }
 }
 
-/// Folder and file names come from user input, so only a plain, safe
-/// character set survives, and a name can never begin with a dot (which
-/// would make `..` a path traversal).
-fn sanitize_folder_name(input: &str) -> String {
-    let cleaned: String = input
-        .chars()
-        .map(|c| if c.is_alphanumeric() || matches!(c, ' ' | '-' | '_' | '.') { c } else { '-' })
-        .collect();
-    let trimmed = cleaned.trim().trim_start_matches('.').to_string();
-    if trimmed.is_empty() { "unnamed".to_string() } else { trimmed }
-}
-
 /// The entity types a document may belong to. Anything else is refused,
 /// which also keeps a caller-supplied value out of the vault path.
 pub const ENTITY_TYPES: &[&str] = &[
@@ -79,37 +72,6 @@ pub const ENTITY_TYPES: &[&str] = &[
 ];
 
 pub const MAX_ATTACHMENT_BYTES: usize = 25 * 1024 * 1024;
-
-/// A prisoner's documents (admission warrant, production orders, reception/
-/// transfer letters) live under a folder named by their reference when
-/// known, else their full name, else their id.
-pub async fn resolve_vault_dir(
-    conn: &mut SqliteConnection,
-    vault_root: &Path,
-    entity_type: &str,
-    entity_id: &str,
-) -> Result<PathBuf, AttachmentError> {
-    let dir = match entity_type {
-        "prisoner" => {
-            let row: Option<(Option<String>, String, String)> =
-                sqlx::query_as("SELECT reference, first_name, last_name FROM prisoners WHERE id = ?")
-                    .bind(entity_id)
-                    .fetch_optional(&mut *conn)
-                    .await?;
-            match row {
-                Some((Some(reference), _, _)) if !reference.trim().is_empty() => {
-                    vault_root.join("prisoners").join(sanitize_folder_name(&reference))
-                }
-                Some((_, first, last)) => vault_root.join("prisoners").join(sanitize_folder_name(&format!("{last}-{first}"))),
-                None => vault_root.join("prisoners").join(sanitize_folder_name(entity_id)),
-            }
-        }
-        other => vault_root.join(sanitize_folder_name(other)),
-    };
-
-    std::fs::create_dir_all(&dir)?;
-    Ok(dir)
-}
 
 fn guess_mime(extension: &str) -> &'static str {
     match extension.to_lowercase().as_str() {
@@ -146,9 +108,7 @@ pub async fn add_attachment_bytes(
     }
 
     // Only the final path component is ever used as the display name.
-    let file_name = Path::new(file_name).file_name().and_then(|n| n.to_str()).unwrap_or("attachment").to_string();
-    let target_dir = resolve_vault_dir(conn, vault_root, entity_type, entity_id).await?;
-
+    let file_name = Path::new(&file_name).file_name().and_then(|n| n.to_str()).unwrap_or("attachment").to_string();
     let extension: String = Path::new(&file_name)
         .extension()
         .and_then(|e| e.to_str())
@@ -158,24 +118,24 @@ pub async fn add_attachment_bytes(
         .take(8)
         .collect();
     let id = Uuid::new_v4().to_string();
-    let stored_file_name = if extension.is_empty() { id.clone() } else { format!("{id}.{extension}") };
-    let stored_path = target_dir.join(&stored_file_name);
-    std::fs::write(&stored_path, bytes)?;
+
+    // The file is sealed and on disk before the row that points at it exists.
+    let stored_path = vault::write(vault_root, &id, bytes).map_err(vault_error)?;
 
     let mime_type = guess_mime(&extension);
     let size_bytes = bytes.len() as i64;
-    let stored_path_str = stored_path.to_string_lossy().to_string();
 
     sqlx::query(
-        "INSERT INTO attachments (id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO attachments (id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, content_sha256) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(entity_type)
     .bind(entity_id)
     .bind(&file_name)
-    .bind(&stored_path_str)
+    .bind(&stored_path)
     .bind(mime_type)
     .bind(size_bytes)
+    .bind(vault::sha256_hex(bytes))
     .execute(&mut *conn)
     .await?;
 
@@ -215,11 +175,23 @@ pub async fn list_attachments(pool: &SqlitePool, entity_type: &str, entity_id: &
     .await
 }
 
-pub async fn get_attachment_data_url(pool: &SqlitePool, id: &str) -> Result<Option<String>, AttachmentError> {
+/// The document's plain bytes, opened from the sealed vault.
+pub fn read_bytes(vault_root: &Path, attachment: &Attachment) -> Result<Vec<u8>, AttachmentError> {
+    vault::read(vault_root, &attachment.stored_path, &attachment.id).map_err(vault_error)
+}
+
+fn vault_error(e: vault::VaultError) -> AttachmentError {
+    match e {
+        vault::VaultError::Io(e) => AttachmentError::Io(e),
+        other => AttachmentError::Io(std::io::Error::other(other.to_string())),
+    }
+}
+
+pub async fn get_attachment_data_url(pool: &SqlitePool, vault_root: &Path, id: &str) -> Result<Option<String>, AttachmentError> {
     let Some(attachment) = get_attachment(pool, id).await? else {
         return Ok(None);
     };
-    let bytes = std::fs::read(&attachment.stored_path)?;
+    let bytes = read_bytes(vault_root, &attachment)?;
     use base64::Engine;
     let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
     Ok(Some(format!("data:{};base64,{}", attachment.mime_type, encoded)))

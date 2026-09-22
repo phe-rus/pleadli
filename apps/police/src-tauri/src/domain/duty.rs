@@ -5,15 +5,15 @@ use uuid::Uuid;
 
 use super::{attachments, markdown};
 
-/// Officer identity here is deliberately just a name/rank on the assignment
-/// itself, not a normalized Officer entity — there's no auth yet, and
-/// nothing today needs cross-assignment officer history. Revisit if/when
-/// that becomes a real requirement, per the same reasoning already applied
-/// to Incidents not getting a multi-person role table.
+/// A shift. `officer_id` points at the officer on the station's books; the
+/// name and rank are kept on the shift as they were when it was made, so an
+/// old roster still reads correctly after an officer is renamed or promoted. A
+/// shift for someone not on the books has no `officer_id` and just the name.
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct DutyAssignment {
     pub id: String,
+    pub officer_id: Option<String>,
     pub officer_name: String,
     pub officer_rank: Option<String>,
     pub unit: Option<String>,
@@ -26,12 +26,27 @@ pub struct DutyAssignment {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateDutyAssignmentInput {
+    #[serde(default)]
+    pub officer_id: Option<String>,
     pub officer_name: String,
     pub officer_rank: Option<String>,
     pub unit: Option<String>,
     pub shift_start: i64,
     pub shift_end: i64,
     pub notes: Option<String>,
+}
+
+/// With an officer chosen, the name and rank on the shift come from the
+/// officer's record, whatever the caller sent.
+async fn resolve_officer(pool: &SqlitePool, input: &CreateDutyAssignmentInput) -> Result<(String, Option<String>), sqlx::Error> {
+    if let Some(officer_id) = &input.officer_id {
+        let row: Option<(String, Option<String>)> = sqlx::query_as("SELECT name, rank FROM officers WHERE id = ?")
+            .bind(officer_id)
+            .fetch_optional(pool)
+            .await?;
+        return row.ok_or(sqlx::Error::RowNotFound);
+    }
+    Ok((input.officer_name.trim().to_string(), input.officer_rank.clone()))
 }
 
 pub(crate) async fn write_assignment_markdown(pool: &SqlitePool, vault_root: &Path, record: &DutyAssignment) {
@@ -49,14 +64,16 @@ pub async fn create_assignment(
     input: CreateDutyAssignmentInput,
 ) -> Result<DutyAssignment, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
+    let (officer_name, officer_rank) = resolve_officer(pool, &input).await?;
 
     sqlx::query(
-        "INSERT INTO duty_assignments (id, officer_name, officer_rank, unit, shift_start, shift_end, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO duty_assignments (id, officer_id, officer_name, officer_rank, unit, shift_start, shift_end, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
-    .bind(&input.officer_name)
-    .bind(&input.officer_rank)
+    .bind(&input.officer_id)
+    .bind(&officer_name)
+    .bind(&officer_rank)
     .bind(&input.unit)
     .bind(input.shift_start)
     .bind(input.shift_end)
@@ -75,13 +92,15 @@ pub async fn update_assignment(
     id: &str,
     input: CreateDutyAssignmentInput,
 ) -> Result<DutyAssignment, sqlx::Error> {
+    let (officer_name, officer_rank) = resolve_officer(pool, &input).await?;
     sqlx::query(
         "UPDATE duty_assignments
-         SET officer_name = ?, officer_rank = ?, unit = ?, shift_start = ?, shift_end = ?, notes = ?
+         SET officer_id = ?, officer_name = ?, officer_rank = ?, unit = ?, shift_start = ?, shift_end = ?, notes = ?
          WHERE id = ?",
     )
-    .bind(&input.officer_name)
-    .bind(&input.officer_rank)
+    .bind(&input.officer_id)
+    .bind(&officer_name)
+    .bind(&officer_rank)
     .bind(&input.unit)
     .bind(input.shift_start)
     .bind(input.shift_end)
@@ -155,6 +174,7 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
             pool,
             vault_root,
             CreateDutyAssignmentInput {
+                officer_id: None,
                 officer_name: officer_name.to_string(),
                 officer_rank: officer_rank.map(str::to_string),
                 unit: unit.map(str::to_string),

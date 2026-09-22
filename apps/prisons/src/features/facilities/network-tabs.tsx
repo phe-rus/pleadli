@@ -1,12 +1,13 @@
 import { SettingsTable, type SettingsRow } from '@/components/settings-table'
 import { ApiError } from '@/lib/api'
-import { DisconnectFromHeadOffice, SharedWithHeadOffice, stateCopy, transportLabel, useConnectivityStatus } from '@/features/connectivity'
+import { DisconnectFromHeadOffice, SharedWithHeadOffice, exchangeCopy, stateCopy, transportLabel, useConnectivityStatus } from '@/features/connectivity'
 import { useCloudflareConfig, useProvisionCloudflareTunnel, useSaveCloudflareConfig } from '@/features/network'
 import { useHqConfig, usePermissions } from '@/features/session'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card, CardContent } from '@pleadli/ui/card'
+import { Switch } from '@pleadli/ui/switch'
 import { FieldDescription, FieldGroup } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useQueryClient } from '@tanstack/react-query'
@@ -14,7 +15,8 @@ import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useEffect } from 'react'
 import { ConnectFlow } from './connect-flow'
-import { useCancelConnection, useHqNetworkStatus, useHqReachability, usePeerSyncConfig, useRefreshConnection, useSyncNow } from './queries'
+import { ExchangePanel } from './exchange-panel'
+import { useCancelConnection, useHqNetworkStatus, useHqReachability, usePeerSyncConfig, useRefreshConnection, useSetHqLan, useSyncNow } from './queries'
 import { m } from '@/paraglide/messages'
 
 /** Settings > Network and sync. What it shows depends on what this
@@ -48,7 +50,9 @@ function FacilityNetworkTab() {
 
   const statusBadge =
     connection === 'connected' ? (
-      <Badge variant={config?.lastSyncStatus === 'rejected' || config?.lastSyncStatus === 'error' ? 'destructive' : 'default'}>{m.facilities_connected()}</Badge>
+      <Badge variant={link && ['stalled', 'needs_attention', 'offline'].includes(link.state) ? 'destructive' : 'default'}>{link ? stateCopy[link.state].label : m.facilities_connected()}</Badge>
+    ) : connection === 'revoked' ? (
+      <Badge variant="destructive">{m.connectivity_revoked()}</Badge>
     ) : connection === 'pending' ? (
       <Badge variant="secondary">{m.facilities_waiting_for_approval()}</Badge>
     ) : connection === 'rejected' ? (
@@ -70,7 +74,7 @@ function FacilityNetworkTab() {
         ? config?.requestedByName
           ? m.facilities_request_made_by({ name: config.requestedByName, badge: config.requestedByBadge ?? '' })
           : m.facilities_request_pending()
-        : connection === 'rejected'
+        : connection === 'rejected' || connection === 'revoked'
           ? (config?.lastError ?? m.facilities_head_office_did_not_approve_the())
           : link?.state === 'disconnected' && link.disconnectedAt
             ? m.facilities_disconnected_from_head_office_on_local({ disconnectedAt: format(link.disconnectedAt, 'PPp') })
@@ -127,6 +131,14 @@ function FacilityNetworkTab() {
         </Button>
       ) : null,
     })
+    if (link) {
+      rows.push({
+        key: 'exchange-state',
+        label: m.facilities_exchange_state(),
+        description: [exchangeCopy[link.exchange.state], link.certificatePinned ? m.facilities_certificate_pinned() : null].filter(Boolean).join('. '),
+        control: null,
+      })
+    }
     rows.push({
       key: 'roster',
       label: m.facilities_accounts_shared_with_head_office(),
@@ -137,7 +149,7 @@ function FacilityNetworkTab() {
     })
   }
 
-  if (config?.lastError && connection !== 'rejected') {
+  if (config?.lastError && connection !== 'rejected' && connection !== 'revoked') {
     rows.push({ key: 'last-error', label: m.facilities_last_error(), description: config.lastError, control: null })
   }
 
@@ -173,7 +185,7 @@ function FacilityNetworkTab() {
     })
   }
 
-  if (connection === 'rejected' && canManage) {
+  if ((connection === 'rejected' || connection === 'revoked') && canManage) {
     rows.push({
       key: 'rejected-actions',
       label: m.facilities_try_again(),
@@ -231,6 +243,7 @@ function FacilityNetworkTab() {
 
 function HqNetworkTab() {
   const { data: status } = useHqNetworkStatus()
+  const setLan = useSetHqLan()
   const cloudflareState = status?.cloudflare.state ?? 'not_configured'
   const provision = useProvisionCloudflareTunnel()
   const setUpTunnel = () =>
@@ -240,10 +253,38 @@ function HqNetworkTab() {
       onError: (error) => t.error(m.facilities_could_not_set_up_the_tunnel(), { description: error instanceof ApiError ? error.message : m.facilities_please_try_again() }),
     })
 
+  const lanRows: SettingsRow[] = status
+    ? [
+        {
+          key: 'lan',
+          label: m.facilities_accept_facilities_on_this_network(),
+          description: !status.lan.enabled
+            ? m.facilities_lan_off_description()
+            : status.lan.addresses.length === 0
+              ? m.facilities_lan_no_address()
+              : m.facilities_lan_reach_at({ addresses: status.lan.addresses.join(', ') }),
+          control: (
+            <Switch
+              checked={status.lan.enabled}
+              disabled={setLan.isPending}
+              onCheckedChange={(enabled) => setLan.mutate(enabled, { onError: () => t.error(m.node_could_not_change_that()) })}
+            />
+          ),
+        },
+        {
+          key: 'fingerprint',
+          label: m.facilities_this_head_office_s_fingerprint(),
+          description: m.facilities_fingerprint_help(),
+          control: null,
+          expanded: <code className="break-all">{status.lan.fingerprint ?? m.node_not_generated_yet()}</code>,
+        },
+      ]
+    : []
+
   const rows: SettingsRow[] = [
     {
       key: 'local',
-      label: m.facilities_local_network(),
+      label: m.facilities_tunnel_origin(),
       description: status
         ? status.local.listening
           ? m.facilities_local_listening({ address: status.local.address })
@@ -302,7 +343,9 @@ function HqNetworkTab() {
 
   return (
     <div className="flex flex-col gap-8">
+      {lanRows.length > 0 && <SettingsTable rows={lanRows} />}
       <SettingsTable rows={rows} />
+      <ExchangePanel />
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h3>{m.facilities_cloudflare_tunnel()}</h3>

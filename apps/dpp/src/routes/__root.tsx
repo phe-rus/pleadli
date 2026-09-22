@@ -1,9 +1,8 @@
 import { Notfound } from '@/components/notfound'
 import { SplashScreen } from '@/components/splash-screen'
-import { ThemeProvider } from '@/components/theme-provider'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
 import { forwardErrorsToLog } from '@/lib/forward-errors-to-log'
-import tailwindcss from '@pleadli/ui/globals.css?url'
+import tailwindcss from '@/styles/globals.css?url'
 import { GooeyToaster } from "@pleadli/ui/goey-toaster"
 import { cn } from '@pleadli/ui/lib/utils'
 import { TooltipProvider } from '@pleadli/ui/tooltip'
@@ -45,14 +44,6 @@ function RootComponent() {
         'print:h-auto print:overflow-visible print:rounded-none print:border-none print:shadow-none',
       )}>
         <WindowResizeHandles />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          enableColorScheme
-          storageKey="pleadli:themer"
-          disableTransitionOnChange
-        >
           <div className={cn(
             'relative isolate transition-colors wrap-anywhere',
             'selection:bg-primary/15'
@@ -64,7 +55,6 @@ function RootComponent() {
             </TooltipProvider>
             <GooeyToaster richColors />
           </div>
-        </ThemeProvider>
       </main>
       <Scripts />
     </>

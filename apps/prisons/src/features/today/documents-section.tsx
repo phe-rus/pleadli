@@ -13,7 +13,7 @@ import { m } from '@/paraglide/messages'
 /** How many recently produced documents to list. */
 const RECENT = 3
 
-const UNLINKED = ['not_connected', 'awaiting_approval', 'rejected', 'disconnected']
+const UNLINKED = ['not_connected', 'awaiting_approval', 'rejected', 'revoked', 'disconnected']
 
 const openLink = 'inline-flex items-center gap-1 text-muted-foreground transition-colors duration-100 hover:text-foreground motion-reduce:transition-none'
 

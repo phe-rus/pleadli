@@ -34,7 +34,7 @@ function RouteComponent() {
   }
 
   return (
-    <article className="container flex flex-col gap-6 pt-5 pb-20">
+    <article className="page">
       <div className="flex items-center justify-between gap-4">
         <Link
           to="/legal-forms"

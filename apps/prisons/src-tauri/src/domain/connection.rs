@@ -180,6 +180,11 @@ pub struct ConnectionStatus {
     pub status: String,
     pub facility_id: String,
     pub facility_name: String,
+    /// The facility's standing with Head Office (`active`, `pending_verification`
+    /// or `revoked`), so a facility that is being refused can tell revocation
+    /// from any other reason. Only ever answered for a valid connection token.
+    #[serde(default)]
+    pub facility_status: String,
 }
 
 /// What became of the request a facility made, found by the hash of the
@@ -187,7 +192,7 @@ pub struct ConnectionStatus {
 /// another installation's approval reads as `superseded`.
 pub async fn request_status(pool: &SqlitePool, token_hash: &str) -> Result<Option<ConnectionStatus>, sqlx::Error> {
     sqlx::query_as::<_, ConnectionStatus>(
-        "SELECT r.status AS status, f.id AS facility_id, f.name AS facility_name
+        "SELECT r.status AS status, f.id AS facility_id, f.name AS facility_name, f.status AS facility_status
          FROM facility_connection_requests r JOIN facilities f ON f.id = r.facility_id
          WHERE r.token_hash = ? ORDER BY r.created_at DESC LIMIT 1",
     )

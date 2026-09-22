@@ -116,7 +116,7 @@ function RouteComponent() {
   const { data: summary } = useReportsSummary()
 
   return (
-    <article className="container flex flex-col gap-8 pt-5 pb-20">
+    <article className="page">
       <section className="flex flex-col">
         <h1>Reports &amp; Analytics</h1>
         <p className="md:max-w-lg">

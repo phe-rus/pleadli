@@ -17,19 +17,20 @@ use tauri::Manager;
 pub fn run_headless(data_dir: std::path::PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(&data_dir)?;
     let vault_root = data_dir.join("vault");
-    std::fs::create_dir_all(&vault_root)?;
     let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(async move {
-        match db::startup(&data_dir, &vault_root).await {
+        match db::startup(&data_dir, &vault_root, None).await {
             Ok(started) => {
                 let node = node::Node::new(started.pool, vault_root, data_dir);
                 tokio::spawn(api::network::supervise(node.clone()));
+                tokio::spawn(api::network::supervise_lan(node.clone()));
+                tokio::spawn(transport::discovery::supervise(node.clone()));
                 tokio::spawn(domain::tunnel_connector::supervise(node.clone()));
                 domain::nodeconfig::load_remote(&node).await;
                 tokio::spawn(transport::lan::supervise(node.clone()));
                 tokio::spawn(domain::backup::scheduler(node.clone()));
                 // A headless node is a real facility node: it exchanges with Head Office too.
-                tokio::spawn(domain::sync::background_loop(node.pool.clone()));
+                tokio::spawn(domain::exchange::background_loop(node.pool.clone()));
                 #[cfg(debug_assertions)]
                 tokio::spawn(transport::dev_loopback::serve(node.clone()));
                 log::info!("node running; press Ctrl+C to stop");
@@ -75,19 +76,26 @@ pub fn run() {
             watchdog::start(app.handle().clone());
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
+            // Documents opened to be viewed last session were plain copies.
+            commands::files::clear_opened(&data_dir);
 
-            let vault_root = app
+            // The authoritative vault is sealed and lives with the database.
+            // `Documents/Pleadli Prisons` is where older builds kept plaintext
+            // documents: it is read once to move them in, and is otherwise the
+            // place for what an officer exports or backs up by choice.
+            let vault_root = data_dir.join("vault");
+            let legacy_vault = app
                 .path()
                 .document_dir()
                 .or_else(|_| app.path().home_dir().map(|home| home.join("Documents")))
-                .unwrap_or_else(|_| data_dir.join("vault"))
-                .join("Pleadli Prisons");
-            std::fs::create_dir_all(&vault_root)?;
+                .ok()
+                .map(|documents| documents.join("Pleadli Prisons"));
 
-            // Integrity check, staged restore, snapshot-before-migration, then
-            // migrate. A database that cannot be trusted is never opened for
-            // work: the node serves only the recovery router instead.
-            match tauri::async_runtime::block_on(db::startup(&data_dir, &vault_root)) {
+            // Staged restore, key, encryption of an older plaintext database,
+            // integrity check, snapshot-before-migration, migrate, then the
+            // sealed vault. A database that cannot be trusted is never opened
+            // for work: the node serves only the recovery router instead.
+            match tauri::async_runtime::block_on(db::startup(&data_dir, &vault_root, legacy_vault.as_deref())) {
                 Ok(started) => {
                     if let Some(snapshot) = &started.pre_migration_snapshot {
                         log::info!("snapshot before migration: {}", snapshot.display());
@@ -101,13 +109,15 @@ pub fn run() {
                     // The network surface, on its own listener. Started when (and
                     // only when) this installation is Head Office.
                     tauri::async_runtime::spawn(api::network::supervise(node.clone()));
+                    tauri::async_runtime::spawn(api::network::supervise_lan(node.clone()));
+                    tauri::async_runtime::spawn(transport::discovery::supervise(node.clone()));
                     tauri::async_runtime::spawn(domain::tunnel_connector::supervise(node.clone()));
                     tauri::async_runtime::spawn(transport::lan::supervise(node.clone()));
                     tauri::async_runtime::spawn(domain::backup::scheduler(node.clone()));
                     // Browser development only; compiled out of release builds.
                     #[cfg(debug_assertions)]
                     tauri::async_runtime::spawn(transport::dev_loopback::serve(node.clone()));
-                    tauri::async_runtime::spawn(domain::sync::background_loop(node.pool.clone()));
+                    tauri::async_runtime::spawn(domain::exchange::background_loop(node.pool.clone()));
 
                     app.manage(node);
                 }
@@ -159,13 +169,17 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::api::pick_file, commands::api::restart_app,
             commands::files::export_file,
-            commands::files::import_file
+            commands::files::import_file,
+            commands::files::open_document
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
             // The tunnel's connector is a child process: stop it with the app.
             if let tauri::RunEvent::Exit = event {
+                if let Ok(data_dir) = app.path().app_data_dir() {
+                    commands::files::clear_opened(&data_dir);
+                }
                 if let Some(node) = app.try_state::<commands::api::LocalApi>().and_then(|api| api.node.clone()) {
                     tauri::async_runtime::block_on(node.connector.stop());
                 }

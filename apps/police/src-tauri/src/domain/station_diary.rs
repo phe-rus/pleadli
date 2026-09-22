@@ -3,7 +3,7 @@ use sqlx::{FromRow, SqlitePool};
 use std::path::Path;
 use uuid::Uuid;
 
-use super::{attachments, markdown};
+use super::{attachments, markdown, registers};
 
 #[cfg(debug_assertions)]
 use super::seed_support::plain_text_to_rich_text_json;
@@ -20,6 +20,10 @@ pub struct StationDiaryEntry {
     pub person_first_name: Option<String>,
     pub person_last_name: Option<String>,
     pub person_other_names: Option<String>,
+    /// Its place in the station's diary for the year: `entry_number` of
+    /// `entry_year`, counted from 1 each year.
+    pub entry_year: Option<i64>,
+    pub entry_number: Option<i64>,
     pub created_at: i64,
 }
 
@@ -47,15 +51,22 @@ pub async fn create_entry(
 ) -> Result<StationDiaryEntry, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
 
+    // The number is taken in the same transaction that writes the entry, so
+    // a failed write gives it back.
+    let mut tx = pool.begin().await?;
+    let (number, year) = registers::take_next(&mut tx, registers::SD).await?;
     sqlx::query(
-        "INSERT INTO station_diary_entries (id, category, content, person_id) VALUES (?, ?, ?, ?)",
+        "INSERT INTO station_diary_entries (id, category, content, person_id, entry_year, entry_number) VALUES (?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(&input.category)
     .bind(&input.content)
     .bind(&input.person_id)
-    .execute(pool)
+    .bind(year)
+    .bind(number)
+    .execute(&mut *tx)
     .await?;
+    tx.commit().await?;
 
     let record = get_entry(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_entry_markdown(pool, vault_root, &record).await;
@@ -87,7 +98,7 @@ pub async fn list_entries(pool: &SqlitePool, query: &str) -> Result<Vec<StationD
     if trimmed.is_empty() {
         return sqlx::query_as::<_, StationDiaryEntry>(
             "SELECT
-                sd.id, sd.category, sd.content, sd.person_id, sd.created_at,
+                sd.id, sd.category, sd.content, sd.person_id, sd.created_at, sd.entry_year, sd.entry_number,
                 p.first_name AS person_first_name,
                 p.last_name AS person_last_name,
                 p.other_names AS person_other_names
@@ -102,7 +113,7 @@ pub async fn list_entries(pool: &SqlitePool, query: &str) -> Result<Vec<StationD
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, StationDiaryEntry>(
         "SELECT
-            sd.id, sd.category, sd.content, sd.person_id, sd.created_at,
+            sd.id, sd.category, sd.content, sd.person_id, sd.created_at, sd.entry_year, sd.entry_number,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names
@@ -121,7 +132,7 @@ pub async fn list_entries(pool: &SqlitePool, query: &str) -> Result<Vec<StationD
 pub async fn list_all(pool: &SqlitePool) -> Result<Vec<StationDiaryEntry>, sqlx::Error> {
     sqlx::query_as::<_, StationDiaryEntry>(
         "SELECT
-            sd.id, sd.category, sd.content, sd.person_id, sd.created_at,
+            sd.id, sd.category, sd.content, sd.person_id, sd.created_at, sd.entry_year, sd.entry_number,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names
@@ -136,7 +147,7 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<StationDiaryEntry>, sqlx:
 pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<StationDiaryEntry>, sqlx::Error> {
     sqlx::query_as::<_, StationDiaryEntry>(
         "SELECT
-            sd.id, sd.category, sd.content, sd.person_id, sd.created_at,
+            sd.id, sd.category, sd.content, sd.person_id, sd.created_at, sd.entry_year, sd.entry_number,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names
@@ -153,7 +164,7 @@ pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<S
 pub async fn get_entry(pool: &SqlitePool, id: &str) -> Result<Option<StationDiaryEntry>, sqlx::Error> {
     sqlx::query_as::<_, StationDiaryEntry>(
         "SELECT
-            sd.id, sd.category, sd.content, sd.person_id, sd.created_at,
+            sd.id, sd.category, sd.content, sd.person_id, sd.created_at, sd.entry_year, sd.entry_number,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names

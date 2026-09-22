@@ -17,7 +17,7 @@ import { m } from '@/paraglide/messages'
 import { obligationEntries, systemEntries, type ObligationEntry, type SystemEntry } from './attention'
 
 /** Not paired with any Head Office: a return has nobody to be sent to. */
-const UNLINKED = ['not_connected', 'awaiting_approval', 'rejected', 'disconnected']
+const UNLINKED = ['not_connected', 'awaiting_approval', 'rejected', 'revoked', 'disconnected']
 
 const toggleClass =
   'inline-flex cursor-pointer items-center gap-1 rounded-sm px-1.5 py-0.5 tabular-nums text-muted-foreground transition-colors duration-100 outline-none hover:bg-secondary/70 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none'

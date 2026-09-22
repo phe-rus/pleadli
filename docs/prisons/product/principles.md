@@ -100,6 +100,8 @@ Recommendations are defaults; nothing proceeds on them without your approval.
 | D13 | Release gates | Replace hard blocks (property outstanding, documents pending) with a gate that requires completion **or** an OIC-authorised exception with a recorded reason. s.83 makes the OIC responsible for discharge on entitlement; a hard block can cause unlawful detention. This revisits a decision in spec 0002 | Keep hard blocks |
 | D14 | Encryption at rest | SQLCipher for the node database with an encrypted vault | Verified OS full-disk encryption only |
 
+**D14 accepted and built 2026-09-21** (SQLCipher, sealed vault, key in the OS keystore with an owner-only key file fallback). Limits are stated in `SECURITY.md`.
+
 ## Supersession
 
 `PRODUCT.md`, `navigation.md` (now `../ux/navigation.md`), `domain-workflow-model.md`, `capabilities-facility.md` and `capabilities-head-office.md` (now `../research/`) each carry a pointer to this folder. Their research findings, statutory citations and evidence labels remain valid and are reused here. Their build-or-never-build verdicts for daily operations, their flat navigation and their single-installation topology are superseded. `responsibility-matrix.md` remains the base for the ownership map in 03, extended with disclosure tiers.

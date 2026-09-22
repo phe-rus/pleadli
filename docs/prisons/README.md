@@ -26,6 +26,7 @@ docs/prisons/
   LOCALIZATION.md           Paraglide languages
   AI.md                     AI seam and boundaries
   SECURITY.md               threat model and blockers
+  PACKAGING.md              what a build needs, where things live, what is verified
   JURISDICTIONS.md          core vs jurisdiction packs
   product/                  operating model (canonical): principles, capability map,
                             custody spine, status, registers, documents, 01–09

@@ -104,7 +104,7 @@ function RouteComponent() {
   }, [])
 
   return (
-    <article className="container flex flex-col gap-5 pt-5 pb-20">
+    <article className="page">
       <section className="flex items-center gap-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-5">

@@ -20,6 +20,7 @@ Only `/api/network/v1/**` is ever behind the tunnel; the rest of the API is on t
 
 ## Not done
 
-- The run token and API token are sealed at rest under the node's `secrets.key` (status X9). That protects a copy of the database, not the whole data folder, so keep the folder private until D14 moves the key into the OS keystore.
+- The run token and API token are sealed under the node's `secrets.key` (status X9) and now also sit inside a database encrypted under a key held by the OS keystore (D14, 2026-09-21; see `SECURITY.md`).
+- The Cloudflare Tunnel is one transport for the exchange. On a local network a facility reaches Head Office directly over TLS on port 47924 with a pinned certificate (`product/04` J.6), and that path does not need Cloudflare. The tunnel has still not been run against Cloudflare.
 - Nothing yet shows the connector's own log in the app; it goes to the node log at debug level (errors at warn).
 - Whether Cloudflare's release binaries may be redistributed inside a government product is unchecked (same open question as Police).

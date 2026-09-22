@@ -103,3 +103,12 @@ export function custodyCompliance(record: Pick<CustodyRecord, 'arrestedAt' | 'cr
   const hoursRemaining = (deadline - Date.now()) / HOUR_MS
   return { deadline, basis, hoursRemaining, isOverdue: hoursRemaining < 0 }
 }
+
+/** The basis of a deadline in words, for people. */
+export function custodyBasisLabel(basis: CustodyCompliance['basis']) {
+  return {
+    'arrest+48h': '48 hours from the arrest',
+    'transfer-window+7d': 'the 7 day transfer window from the arrest',
+    'post-transfer+48h (inferred)': '48 hours from the transfer (inferred, not confirmed)',
+  }[basis]
+}

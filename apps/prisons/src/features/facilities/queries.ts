@@ -4,6 +4,10 @@ import {
   connectFacility,
   createFacility,
   decideConnectionRequest,
+  discoverHeadOffice,
+  getExchangeOverview,
+  probeHeadOffice,
+  setHqLan,
   generatePairingCode,
   getHqNetworkStatus,
   getReachability,
@@ -83,8 +87,8 @@ export function useRevokeFacility() {
 export function usePairWithHeadOffice() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ pairingCode, input }: { pairingCode: string; input: RegisterFacilityInput }) =>
-      pairWithHeadOffice(pairingCode, input),
+    mutationFn: ({ pairingCode, input, hqFingerprint }: { pairingCode: string; input: RegisterFacilityInput; hqFingerprint?: string }) =>
+      pairWithHeadOffice(pairingCode, input, hqFingerprint),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['systemState'] })
       queryClient.invalidateQueries({ queryKey: ['peerSyncConfig'] })
@@ -95,8 +99,8 @@ export function usePairWithHeadOffice() {
 export function usePairWithHeadOfficeLater() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ pairingCode, input }: { pairingCode: string; input: RegisterFacilityInput }) =>
-      pairWithHeadOfficeLater(pairingCode, input),
+    mutationFn: ({ pairingCode, input, hqFingerprint }: { pairingCode: string; input: RegisterFacilityInput; hqFingerprint?: string }) =>
+      pairWithHeadOfficeLater(pairingCode, input, hqFingerprint),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['systemState'] })
       queryClient.invalidateQueries({ queryKey: ['peerSyncConfig'] })
@@ -156,9 +160,30 @@ export function useHqNetworkStatus(enabled = true) {
 
 export function useFacilityLookup(scope: ConnectScope) {
   return useMutation({
-    mutationFn: ({ hqAddress, facilityNumber }: { hqAddress: string; facilityNumber: string }) =>
-      lookupFacility(scope, hqAddress, facilityNumber),
+    mutationFn: ({ hqAddress, facilityNumber, hqFingerprint }: { hqAddress: string; facilityNumber: string; hqFingerprint?: string }) =>
+      lookupFacility(scope, hqAddress, facilityNumber, hqFingerprint),
   })
+}
+
+export function useDiscoverHeadOffice(scope: ConnectScope) {
+  return useMutation({ mutationFn: () => discoverHeadOffice(scope) })
+}
+
+export function useProbeHeadOffice(scope: ConnectScope) {
+  return useMutation({ mutationFn: (address: string) => probeHeadOffice(scope, address) })
+}
+
+export function useSetHqLan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (enabled: boolean) => setHqLan(enabled),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hqNetworkStatus'] }),
+  })
+}
+
+/** Head Office. Polls, so a facility going quiet or stalling shows by itself. */
+export function useExchangeOverview(enabled = true) {
+  return useQuery({ queryKey: ['exchangeOverview'] as const, queryFn: () => getExchangeOverview(), enabled, refetchInterval: 15000 })
 }
 
 /** Does not invalidate the system state: the caller decides when the screen

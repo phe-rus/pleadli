@@ -12,17 +12,16 @@ use sqlx::{FromRow, SqliteConnection, SqlitePool};
 use super::audit::{self, AuditEntry};
 use super::authz::Actor;
 use super::error::DomainError;
+use super::exchange::{self, Counts, ExchangeStatus, Outcome, SyncRunResult, Trigger};
 use super::facilities::{self, PeerSyncConfig};
-use super::sync::SyncRunResult;
 use super::time::now_ms;
-use super::{estate, facility_profile, inbox, peer, policy_sync, returns, sync};
+use super::{estate, facility_profile, inbox, peer, policy_sync, returns};
 
 #[derive(Debug, Clone, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Pending {
     pub total: i64,
     pub roster: i64,
-    pub records: i64,
     /// Attested returns submitted and not yet acknowledged by Head Office.
     pub returns: i64,
 }
@@ -44,9 +43,16 @@ pub struct SyncClass {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectivityStatus {
-    /// `not_connected`, `awaiting_approval`, `rejected`, `connected`,
-    /// `offline`, `needs_attention` or `disconnected`.
+    /// Where this facility stands with Head Office: `not_connected`,
+    /// `awaiting_approval`, `rejected`, `revoked`, `paired` (approved, nothing
+    /// exchanged yet), `connected`, `offline`, `needs_attention` (the last
+    /// exchange failed), `stalled` (the link is up and nothing is being
+    /// delivered) or `disconnected`.
     pub state: String,
+    /// How the exchange itself is going, separately from whether a link exists.
+    pub exchange: ExchangeStatus,
+    /// Whether the certificate of a local-network Head Office is pinned.
+    pub certificate_pinned: bool,
     pub head_office_address: Option<String>,
     pub facility_reference: Option<String>,
     pub last_exchange_at: Option<i64>,
@@ -62,10 +68,6 @@ pub struct ConnectivityStatus {
 fn describe(class: &str) -> (&'static str, &'static str) {
     match class {
         "roster" => ("Officer roster", "Names, badge numbers, roles and whether an account is active. Never passwords or PINs."),
-        "legacy_snapshot" => (
-            "Prisoner counts (first generation)",
-            "One line per person held here for Head Office's population figures: status, sex, year of birth, nationality, education, offence and where held. No name, national ID, file reference, location or notes. It is being replaced by a narrower exchange.",
-        ),
         "status" => ("Population and capacity", "How many people are held here and the approved capacity, with the time it was counted. Counts only, no names."),
         "returns" => ("Attested returns", "A monthly return the officer in charge has attested, when the officer submits it. Counts only, no prisoner records."),
         "policy" => ("Head Office defaults", "Numbering and uniform defaults Head Office sets for its facilities. Received here, never sent."),
@@ -76,28 +78,28 @@ fn describe(class: &str) -> (&'static str, &'static str) {
 fn transport_of(address: &str) -> &'static str {
     let host = address.trim_start_matches("https://").trim_start_matches("http://");
     let host = host.split([':', '/']).next().unwrap_or(host);
-    let private = host == "localhost"
-        || host.ends_with(".local")
-        || host.starts_with("127.")
-        || host.starts_with("10.")
-        || host.starts_with("192.168.")
-        || host.split('.').next() == Some("172") && host.split('.').nth(1).and_then(|n| n.parse::<u8>().ok()).is_some_and(|n| (16..=31).contains(&n));
-    if private {
+    if host == "localhost" || host.starts_with("127.") || peer::is_private_host(host) {
         "local_network"
     } else {
         "internet"
     }
 }
 
-fn state_of(config: &PeerSyncConfig, disconnected: bool) -> &'static str {
+/// Reads the link state from the saved connection and how the exchange is going.
+fn state_of(config: &PeerSyncConfig, disconnected: bool, exchange: &ExchangeStatus) -> &'static str {
     match config.connection_state.as_str() {
         "pending" => "awaiting_approval",
         "rejected" => "rejected",
+        "revoked" => "revoked",
         "connected" => match config.last_sync_status.as_deref() {
-            Some("offline") => "offline",
-            Some("error") | Some("rejected") => "needs_attention",
             Some("pending_verification") => "awaiting_approval",
-            _ => "connected",
+            _ => match exchange.state.as_str() {
+                "offline" => "offline",
+                "stalled" => "stalled",
+                "failed" => "needs_attention",
+                _ if exchange.last_success_at.is_none() => "paired",
+                _ => "connected",
+            },
         },
         _ if disconnected => "disconnected",
         _ => "not_connected",
@@ -114,14 +116,13 @@ pub async fn pending(pool: &SqlitePool) -> Result<Pending, sqlx::Error> {
     for (class, count) in rows {
         match class.as_str() {
             "roster" => pending.roster = count,
-            "legacy_snapshot" => pending.records = count,
             _ => {}
         }
     }
     if class_enabled(pool, "returns").await {
         pending.returns = sqlx::query_scalar("SELECT COUNT(*) FROM return_submissions WHERE acknowledged_at IS NULL").fetch_one(pool).await?;
     }
-    pending.total = pending.roster + pending.records + pending.returns;
+    pending.total = pending.roster + pending.returns;
     Ok(pending)
 }
 
@@ -136,15 +137,18 @@ pub async fn status(pool: &SqlitePool) -> Result<ConnectivityStatus, sqlx::Error
         class.description = description.to_string();
         class.pending = match class.class.as_str() {
             "roster" => pending.roster,
-            "legacy_snapshot" => pending.records,
             "returns" => pending.returns,
             _ => 0,
         };
     }
-    let state = state_of(&config, disconnected_at.is_some() && config.hq_hostname.is_none());
+    let exchange = exchange::status(pool, pending.total).await?;
+    let state = state_of(&config, disconnected_at.is_some() && config.hq_hostname.is_none(), &exchange);
     let address = config.hq_hostname.clone();
+    let pinned: Option<String> = sqlx::query_scalar("SELECT hq_fingerprint FROM peer_sync_config WHERE id = 'default'").fetch_one(pool).await?;
     Ok(ConnectivityStatus {
         state: state.to_string(),
+        exchange,
+        certificate_pinned: pinned.is_some(),
         transport: address.as_deref().map_or("none", transport_of).to_string(),
         head_office_address: address,
         facility_reference: facility_profile::get(pool).await?.facility_number,
@@ -187,7 +191,7 @@ pub async fn disconnect(conn: &mut SqliteConnection, actor: &Actor) -> Result<()
     }
     sqlx::query(
         "UPDATE peer_sync_config
-         SET hq_hostname = NULL, facility_id = NULL, sync_token = NULL, connection_state = 'none', connection_request_id = NULL,
+         SET hq_hostname = NULL, hq_fingerprint = NULL, facility_id = NULL, sync_token = NULL, connection_state = 'none', connection_request_id = NULL,
              last_sync_status = NULL, last_error = NULL, facility_display_name = NULL, requested_by_badge = NULL, requested_by_name = NULL,
              roster_pushed_at = NULL, roster_count = NULL, disconnected_at = ?
          WHERE id = 'default'",
@@ -196,6 +200,7 @@ pub async fn disconnect(conn: &mut SqliteConnection, actor: &Actor) -> Result<()
     .execute(&mut *conn)
     .await?;
     sqlx::query("DELETE FROM sync_outbox").execute(&mut *conn).await?;
+    sqlx::query("DELETE FROM exchange_rounds").execute(&mut *conn).await?;
     audit::record(conn, actor, AuditEntry::new("peer.disconnected", "peer_sync_config", Some("default"))).await?;
     inbox::notify(
         conn,
@@ -213,48 +218,101 @@ pub async fn disconnect(conn: &mut SqliteConnection, actor: &Actor) -> Result<()
     Ok(())
 }
 
-/// One round with Head Office: reach it, send what is due and enabled, take
-/// what it has for us. Sends only when something changed or the last exchange
-/// did not succeed, so an idle facility costs Head Office nothing.
-/// `force` sends regardless (the officer asked).
+/// One round with Head Office, started by the officer or by the schedule. See
+/// `exchange_with`.
 pub async fn exchange(pool: &SqlitePool, force: bool) -> Result<SyncRunResult, String> {
+    exchange_with(pool, force, if force { Trigger::Manual } else { Trigger::Scheduled }).await
+}
+
+/// One round with Head Office: reach it, send what is due and enabled, take
+/// what it has for us, and record how it ended. Sends only when something
+/// changed or the last exchange did not succeed, so an idle facility costs Head
+/// Office nothing. `force` sends regardless (the officer asked).
+///
+/// The round is recorded whatever happens, and its outcome is what the
+/// facility shows: reaching Head Office is not the same as being taken.
+pub async fn exchange_with(pool: &SqlitePool, force: bool, trigger: Trigger) -> Result<SyncRunResult, String> {
     facilities::get_peer_sync_context(pool).await.map_err(|e| e.to_string())?.ok_or_else(|| "This installation is not connected to a Head Office.".to_string())?;
 
+    let round = exchange::begin_round(pool, trigger).await.map_err(|e| e.to_string())?;
+    let (outcome, counts, error) = run_round(pool, force).await;
+    exchange::finish_round(pool, &round, outcome, counts, error.as_deref()).await.map_err(|e| e.to_string())?;
+
+    match outcome {
+        Outcome::Completed | Outcome::NothingToSend => {
+            exchange::set_peer_status(pool, "ok", Some(now_ms()), None).await.map_err(|e| e.to_string())?;
+            Ok(SyncRunResult { status: "ok".to_string(), count: Some(counts.total()) })
+        }
+        Outcome::AwaitingApproval => Ok(SyncRunResult { status: "pending_verification".to_string(), count: None }),
+        Outcome::Unreachable => {
+            exchange::set_peer_status(pool, "offline", None, error.clone()).await.map_err(|e| e.to_string())?;
+            Err(error.unwrap_or_default())
+        }
+        Outcome::Refused | Outcome::Failed => {
+            exchange::set_peer_status(pool, if outcome == Outcome::Refused { "rejected" } else { "error" }, None, error.clone()).await.map_err(|e| e.to_string())?;
+            Err(error.unwrap_or_default())
+        }
+    }
+}
+
+/// Whether an error from Head Office means it did not accept this facility's
+/// credential, as opposed to failing to carry the request out.
+fn is_refusal(error: &str) -> bool {
+    error.contains("401") || error.contains("did not accept")
+}
+
+async fn run_round(pool: &SqlitePool, force: bool) -> (Outcome, Counts, Option<String>) {
+    let mut counts = Counts::default();
     if !peer::hq_reachable(pool).await {
-        let message = "Head Office cannot be reached. Work here carries on and the changes will be sent when it can.";
-        sync::set_peer_status(pool, "offline", None, Some(message.to_string())).await.map_err(|e| e.to_string())?;
-        return Err(message.to_string());
+        return (Outcome::Unreachable, counts, Some("Head Office cannot be reached. Work here carries on and the changes will be sent when it can.".to_string()));
     }
 
-    let config = facilities::get_peer_sync_config(pool).await.map_err(|e| e.to_string())?;
-    let waiting = pending(pool).await.map_err(|e| e.to_string())?;
+    let (config, waiting) = match (facilities::get_peer_sync_config(pool).await, pending(pool).await) {
+        (Ok(config), Ok(waiting)) => (config, waiting),
+        (Err(e), _) | (_, Err(e)) => return (Outcome::Failed, counts, Some(e.to_string())),
+    };
     let due = force || config.last_synced_at.is_none() || config.last_sync_status.as_deref() != Some("ok");
 
-    let mut result = SyncRunResult { status: "unchanged".to_string(), count: None };
-    if class_enabled(pool, "legacy_snapshot").await && (due || waiting.records > 0) {
-        result = sync::push_snapshot(pool).await?;
-    } else if class_enabled(pool, "roster").await && (due || waiting.roster > 0) {
-        peer::push_roster(pool).await?;
-        result.status = "ok".to_string();
+    let mut errors: Vec<String> = Vec::new();
+    fn note(result: Result<i64, String>, slot: &mut i64, errors: &mut Vec<String>) {
+        match result {
+            Ok(n) => *slot = n,
+            Err(e) => errors.push(e),
+        }
+    }
+
+    if class_enabled(pool, "roster").await && (due || waiting.roster > 0) {
+        note(peer::push_roster(pool).await.map(|n| n as i64), &mut counts.roster, &mut errors);
     }
     if class_enabled(pool, "status").await {
-        if let Err(e) = estate::push_status(pool).await {
-            log::info!("status not sent: {e}");
-        }
+        note(estate::push_status(pool).await.map(i64::from), &mut counts.status, &mut errors);
     }
     if class_enabled(pool, "returns").await && waiting.returns > 0 {
         match returns::send_queued(pool).await {
-            Ok(sent) if sent > 0 => result.status = "ok".to_string(),
-            Ok(_) => {}
-            Err(e) => log::info!("returns not sent: {e}"),
+            Ok((acknowledged, failure)) => {
+                counts.returns = acknowledged as i64;
+                if let Some(failure) = failure {
+                    errors.push(failure);
+                }
+            }
+            Err(e) => errors.push(e),
         }
     }
     if class_enabled(pool, "policy").await {
-        if let Err(e) = policy_sync::pull_policy(pool).await {
-            log::info!("policy pull skipped: {e}");
-        }
+        note(policy_sync::pull_policy(pool).await.map(|r| i64::from(r.numbering_applied) + r.uniforms_applied as i64), &mut counts.policy, &mut errors);
     }
-    Ok(result)
+
+    let Some(first) = errors.first().cloned() else {
+        return (if counts.total() > 0 { Outcome::Completed } else { Outcome::NothingToSend }, counts, None);
+    };
+    if errors.iter().any(|e| is_refusal(e)) {
+        return match peer::check_standing(pool).await.as_deref() {
+            // Registered, and Head Office has not yet verified it: not a refusal.
+            Some("pending_verification") => (Outcome::AwaitingApproval, counts, None),
+            _ => (Outcome::Refused, counts, Some(first)),
+        };
+    }
+    (Outcome::Failed, counts, Some(first))
 }
 
 #[cfg(test)]
@@ -292,13 +350,33 @@ mod tests {
         assert_eq!(status(&pool).await.unwrap().state, "not_connected");
 
         pair(&pool, "https://hq.example.org").await;
-        let connected = status(&pool).await.unwrap();
-        assert_eq!((connected.state.as_str(), connected.transport.as_str(), connected.never_synced), ("connected", "internet", true));
+        let paired = status(&pool).await.unwrap();
+        assert_eq!((paired.state.as_str(), paired.transport.as_str(), paired.never_synced), ("paired", "internet", true), "approved, but nothing has been exchanged");
 
-        sqlx::query("UPDATE peer_sync_config SET last_sync_status = 'offline', last_error = 'no route' WHERE id = 'default'").execute(&pool).await.unwrap();
+        async fn round(pool: &SqlitePool, outcome: &'static str, at: i64) {
+            sqlx::query("INSERT INTO exchange_rounds (id, started_at, finished_at, trigger, outcome) VALUES (?, ?, ?, 'scheduled', ?)")
+                .bind(uuid::Uuid::new_v4().to_string())
+                .bind(at)
+                .bind(at + 1)
+                .bind(outcome)
+                .execute(pool)
+                .await
+                .unwrap();
+        }
+        let now = now_ms();
+        round(&pool, "completed", now - 40_000).await;
+        assert_eq!(status(&pool).await.unwrap().state, "connected");
+        round(&pool, "unreachable", now - 30_000).await;
         assert_eq!(status(&pool).await.unwrap().state, "offline");
-        sqlx::query("UPDATE peer_sync_config SET last_sync_status = 'error' WHERE id = 'default'").execute(&pool).await.unwrap();
-        assert_eq!(status(&pool).await.unwrap().state, "needs_attention");
+        round(&pool, "failed", now - 20_000).await;
+        assert_eq!(status(&pool).await.unwrap().state, "needs_attention", "reachable, and the last round did not go through");
+        round(&pool, "refused", now - 10_000).await;
+        round(&pool, "failed", now - 5_000).await;
+        let stalled = status(&pool).await.unwrap();
+        assert_eq!((stalled.state.as_str(), stalled.exchange.state.as_str()), ("stalled", "stalled"), "the link is up and nothing is delivered");
+
+        sqlx::query("UPDATE peer_sync_config SET connection_state = 'revoked' WHERE id = 'default'").execute(&pool).await.unwrap();
+        assert_eq!(status(&pool).await.unwrap().state, "revoked");
         sqlx::query("UPDATE peer_sync_config SET connection_state = 'pending', facility_id = NULL WHERE id = 'default'").execute(&pool).await.unwrap();
         assert_eq!(status(&pool).await.unwrap().state, "awaiting_approval");
     }
@@ -310,6 +388,8 @@ mod tests {
         assert_eq!(transport_of("http://192.168.1.20:47923"), "local_network");
         assert_eq!(transport_of("http://172.20.0.5"), "local_network");
         assert_eq!(transport_of("http://172.32.0.5"), "internet");
+        assert_eq!(transport_of("https://100.115.92.26:47924"), "local_network", "carrier-grade NAT space is not public");
+        assert_eq!(transport_of("https://100.128.0.1"), "internet");
         assert_eq!(transport_of("http://hq.local:1"), "local_network");
     }
 

@@ -10,7 +10,6 @@ export const vaultEntrySchema = z.object({
   entityType: z.string().nullable(),
   entityId: z.string().nullable(),
   mimeType: z.string().nullable(),
-  absolutePath: z.string(),
 })
 
 export type VaultEntry = z.infer<typeof vaultEntrySchema>

@@ -20,6 +20,8 @@ export const stationDiaryEntrySchema = z.object({
   personFirstName: z.string().nullable(),
   personLastName: z.string().nullable(),
   personOtherNames: z.string().nullable(),
+  entryYear: z.number().nullable(),
+  entryNumber: z.number().nullable(),
   createdAt: z.number(),
 })
 

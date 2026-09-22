@@ -1,3 +1,4 @@
+import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
@@ -35,6 +36,7 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
       content: statement?.content ?? '',
       personId: statement?.personId ?? '',
       caseId: statement?.caseId ?? (null as string | null),
+      officerId: statement?.officerId ?? (null as string | null),
       officerName: statement?.officerName ?? '',
       givenAt: statement ? toDatetimeLocal(statement.givenAt) : toDatetimeLocal(Date.now()),
     },
@@ -94,9 +96,18 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
         </form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="officerName">
-            {(f) => <f.input label="Taken by (officer)" />}
+          <form.AppField name="officerId">
+            {(f) => <OfficerPicker label="Taken by (officer)" value={f.state.value} onValueChange={f.handleChange} />}
           </form.AppField>
+          <form.Subscribe selector={(state) => state.values.officerId}>
+            {(officerId) =>
+              officerId ? null : (
+                <>
+                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
+                </>
+              )
+            }
+          </form.Subscribe>
           <form.AppField name="givenAt">
             {(f) => (
               <Field>

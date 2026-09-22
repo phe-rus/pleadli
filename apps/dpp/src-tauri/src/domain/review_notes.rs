@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 use uuid::Uuid;
 
+use super::error::{invalid, DomainError};
+
 /// Review & Legal Observations (docs/dpp/PRODUCT.md) — the reviewing work
 /// itself, distinct from a formal Decision. Never changes the file's
 /// status; only a real Decision does that.
@@ -27,7 +29,10 @@ pub struct CreateReviewNoteInput {
     pub note: Option<String>,
 }
 
-pub async fn create_review_note(pool: &SqlitePool, input: CreateReviewNoteInput) -> Result<ReviewNote, sqlx::Error> {
+pub async fn create_review_note(pool: &SqlitePool, input: CreateReviewNoteInput) -> Result<ReviewNote, DomainError> {
+    if input.note.as_deref().map_or(true, |n| n.trim().is_empty()) {
+        return invalid("A review note cannot be empty.");
+    }
     let id = Uuid::new_v4().to_string();
     sqlx::query(
         "INSERT INTO review_notes (id, prosecution_file_id, statement_id, evidence_item_id, author, note)
@@ -42,7 +47,7 @@ pub async fn create_review_note(pool: &SqlitePool, input: CreateReviewNoteInput)
     .execute(pool)
     .await?;
 
-    sqlx::query_as::<_, ReviewNote>("SELECT * FROM review_notes WHERE id = ?").bind(&id).fetch_one(pool).await
+    Ok(sqlx::query_as::<_, ReviewNote>("SELECT * FROM review_notes WHERE id = ?").bind(&id).fetch_one(pool).await?)
 }
 
 pub async fn list_for_file(pool: &SqlitePool, prosecution_file_id: &str) -> Result<Vec<ReviewNote>, sqlx::Error> {

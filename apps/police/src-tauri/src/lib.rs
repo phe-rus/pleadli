@@ -1,3 +1,4 @@
+mod api;
 mod commands;
 mod db;
 mod domain;
@@ -9,11 +10,6 @@ pub struct CloudflaredSidecar(pub tokio::sync::Mutex<Option<tauri_plugin_shell::
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
-
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 pub fn run() {
     tauri::Builder::default()
@@ -72,12 +68,16 @@ pub fn run() {
 
             let db = tauri::async_runtime::block_on(db::connect(db_path, vault_root))?;
 
+            let router = api::router(db.pool.clone(), db.vault_root.clone());
             #[cfg(debug_assertions)]
-            {
-                let pool = db.pool.clone();
-                let vault_root = db.vault_root.clone();
-                tauri::async_runtime::spawn(transport::dev_server::serve(pool, vault_root));
-            }
+            tauri::async_runtime::spawn(api::serve_dev(router.clone()));
+            app.manage(commands::api::LocalApi(router));
+            app.manage(commands::api::LocalSession::default());
+
+            // Both sides of the connection run for the life of the application and
+            // do nothing unless this installation is that side.
+            tauri::async_runtime::spawn(transport::command_server::run(db.pool.clone()));
+            tauri::async_runtime::spawn(domain::command_link::run(db.pool.clone()));
 
             // Remote access, if this station already had it turned on
             // (the setting persists across restarts). Off by default
@@ -163,61 +163,10 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            greet,
-            commands::people::create_person,
-            commands::people::search_people,
-            commands::people::get_person,
-            commands::people::get_person_profile,
-            commands::people::update_person,
-            commands::people::set_person_headshot,
-            commands::people::clear_person_headshot,
+            commands::api::api_request,
             commands::people::set_person_photo_from_path,
-            commands::people::clear_person_photo,
-            commands::station_diary::create_station_diary_entry,
-            commands::station_diary::list_station_diary_entries,
-            commands::station_diary::update_station_diary_entry,
-            commands::incidents::create_incident,
-            commands::incidents::list_incidents,
-            commands::incidents::update_incident,
-            commands::duty::create_duty_assignment,
-            commands::duty::list_duty_assignments,
-            commands::duty::update_duty_assignment,
-            commands::station_assets::create_station_asset,
-            commands::station_assets::list_station_assets,
-            commands::station_assets::update_station_asset,
-            commands::vehicles::create_vehicle,
-            commands::vehicles::list_vehicles,
-            commands::vehicles::update_vehicle,
-            commands::cases::create_case,
-            commands::cases::list_cases,
-            commands::cases::update_case,
-            commands::cases::list_case_people,
-            commands::cases::get_case_workspace,
-            commands::statements::create_statement,
-            commands::statements::list_statements,
-            commands::statements::update_statement,
-            commands::custody::create_custody_record,
-            commands::custody::list_custody_records,
-            commands::custody::update_custody_record,
-            commands::bonds::create_bond,
-            commands::bonds::list_bonds,
-            commands::bonds::update_bond,
-            commands::station_admin::get_station_profile,
-            commands::station_admin::save_station_profile,
-            commands::station_admin::create_station_establishment_member,
-            commands::station_admin::update_station_establishment_member,
-            commands::station_admin::list_station_establishment,
-            commands::referrals::create_referral,
-            commands::referrals::list_referrals,
-            commands::referrals::update_referral,
-            commands::charge_sheets::create_charge_sheet,
-            commands::charge_sheets::list_charge_sheets,
-            commands::charge_sheets::update_charge_sheet,
-            commands::exhibits::create_exhibit,
-            commands::exhibits::list_exhibits,
-            commands::exhibits::update_exhibit,
-            commands::exhibits::create_exhibit_movement,
-            commands::exhibits::list_exhibit_movements,
+            commands::officers::respond_to_backup_alert,
+            commands::officers::end_backup_alert,
             commands::attachments::add_attachment,
             commands::attachments::bulk_attach_files,
             commands::attachments::list_attachments,
@@ -226,16 +175,9 @@ pub fn run() {
             commands::attachments::get_attachment_route,
             commands::attachments::list_vault_directory,
             commands::attachments::get_attachment_data_url,
-            commands::officers::create_officer,
-            commands::officers::update_officer,
-            commands::officers::list_officers,
-            commands::officers::list_remote_access_log,
-            commands::officers::get_remote_access_settings,
-            commands::officers::list_backup_alerts,
-            commands::officers::acknowledge_backup_alert,
-            commands::officers::list_active_backup_alerts,
-            commands::officers::respond_to_backup_alert,
-            commands::officers::end_backup_alert,
+            commands::attachments::open_attachment,
+            commands::attachments::open_vault_path,
+            commands::attachments::reveal_vault_path,
             commands::network::get_remote_access_status,
             commands::network::set_remote_access_enabled,
             commands::network::get_local_network_info,
@@ -243,13 +185,6 @@ pub fn run() {
             commands::cloudflare::save_cloudflare_config,
             commands::cloudflare::get_cloudflare_config,
             commands::cloudflare::get_cloudflare_tunnel_state,
-            commands::search::search,
-            commands::activity::list_recent_activity,
-            commands::shift_log::check_in_officer_by_badge,
-            commands::shift_log::list_check_ins,
-            commands::shift_log::create_shift_handover,
-            commands::shift_log::list_shift_handovers,
-            commands::reports::get_reports_summary,
             commands::documents::export_all_markdown,
             commands::documents::export_all_xlsx,
             commands::documents::export_all_pdf,

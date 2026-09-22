@@ -1,3 +1,4 @@
+import { DEV_API_URL } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
 import {
@@ -8,7 +9,7 @@ import {
   personResolutionSchema,
 } from './schema'
 
-const DEV_SERVER_URL = 'http://127.0.0.1:47821'
+const DEV_SERVER_URL = DEV_API_URL
 
 /**
  * Regenerates every record's Markdown fresh, adds an index/README on top,

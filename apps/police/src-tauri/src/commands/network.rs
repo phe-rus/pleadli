@@ -30,7 +30,7 @@ async fn current_status(pool: &sqlx::SqlitePool) -> Result<RemoteAccessStatus, S
 }
 
 #[tauri::command]
-pub async fn get_remote_access_status(state: State<'_, Db>) -> Result<RemoteAccessStatus, String> {
+pub async fn get_remote_access_status(_who: super::api::SignedIn, state: State<'_, Db>) -> Result<RemoteAccessStatus, String> {
     current_status(&state.pool).await
 }
 
@@ -39,7 +39,7 @@ pub async fn get_remote_access_status(state: State<'_, Db>) -> Result<RemoteAcce
 /// been configured — also provisions/starts or stops the tunnel that
 /// makes it reachable from anywhere.
 #[tauri::command]
-pub async fn set_remote_access_enabled(
+pub async fn set_remote_access_enabled(_who: super::api::AdminSignedIn,
     app: AppHandle,
     db: State<'_, Db>,
     remote: State<'_, RemoteServer>,
@@ -82,7 +82,7 @@ pub struct LocalNetworkInfo {
 }
 
 #[tauri::command]
-pub fn get_local_network_info() -> LocalNetworkInfo {
+pub fn get_local_network_info(_who: super::api::SignedIn) -> LocalNetworkInfo {
     LocalNetworkInfo {
         address: local_ip_address::local_ip().ok().map(|ip| ip.to_string()),
         port: remote_server::DEFAULT_PORT,
@@ -92,8 +92,8 @@ pub fn get_local_network_info() -> LocalNetworkInfo {
 /// An SVG QR code encoding this station's local login URL — so pairing
 /// a phone on the same network is "scan this", never "type an IP".
 #[tauri::command]
-pub fn get_local_pairing_qr() -> Result<String, String> {
-    let info = get_local_network_info();
+pub fn get_local_pairing_qr(who: super::api::SignedIn) -> Result<String, String> {
+    let info = get_local_network_info(who);
     let address = info.address.ok_or_else(|| "no local network address found".to_string())?;
     let url = format!("http://{address}:{}/", info.port);
     let code = QrCode::new(url.as_bytes()).map_err(|e| e.to_string())?;

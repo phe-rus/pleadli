@@ -78,6 +78,10 @@ export const environmentSchema = z.object({
     lastBackupAt: z.number().nullable(),
     overdue: z.boolean(),
   }),
+  atRest: z.object({
+    encrypted: z.boolean(),
+    keyHeldIn: z.enum(['keystore', 'key_file']).nullable(),
+  }),
 })
 export type Environment = z.infer<typeof environmentSchema>
 

@@ -1,66 +1,47 @@
 import { officersOptions, useOfficers } from '@/features/officers'
-import { establishmentOptions, stationProfileOptions, useEstablishment, useStationProfile } from '@/features/station-admin'
-import { Building06Icon, ShieldKeyIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
+import { stationProfileOptions, useStationProfile } from '@/features/station-admin'
+import { Building06Icon, ShieldKeyIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/station/')({
   loader: async ({ context }) => {
-    await context.queryClient.query({ ...stationProfileOptions(), staleTime: 'static' })
-    await context.queryClient.query({ ...establishmentOptions(''), staleTime: 'static' })
-    await context.queryClient.query({ ...officersOptions(), staleTime: 'static' })
+    await Promise.all([
+      context.queryClient.query({ ...stationProfileOptions(), staleTime: 'static' }),
+      context.queryClient.query({ ...officersOptions(), staleTime: 'static' }),
+    ])
   },
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const { data: profile } = useStationProfile()
-  const { data: establishment } = useEstablishment('')
   const { data: officers } = useOfficers()
-  const activeCount = establishment.filter((m) => m.active).length
+  const here = officers.filter((o) => o.active).length
 
   return (
-    <article className="container flex flex-col gap-6 pt-5 pb-20">
-      <section className="flex flex-col">
-        <h1>Station Admin</h1>
-        <p className="md:max-w-lg">
-          What station is this, and who is currently posted here. Not shift scheduling (Duty Roster) and not
-          equipment (Stores &amp; Armory).
-        </p>
-      </section>
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>Station administration</h1>
+          <p>What station this is, and who works here. Not shift scheduling (Duty roster) and not equipment (Armory, Impounded assets).</p>
+        </div>
+      </header>
 
-      <section className="grid grid-cols-2 gap-3 md:max-w-xl md:grid-cols-3">
-        <Link
-          to="/station/profile"
-          className="flex flex-col gap-1 rounded-md border border-border/40 p-3 transition-colors hover:bg-muted/60"
-        >
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:max-w-xl">
+        <Link to="/station/profile" className="flex flex-col gap-1 rounded-md border border-border/40 p-3 transition-colors hover:bg-muted/60">
           <div className="flex items-center gap-2">
             <HugeiconsIcon icon={Building06Icon} className="size-4" />
-            <h3 className="text-sm">Profile</h3>
+            <h3>Profile</h3>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {profile?.name || 'Not yet configured'}
-          </p>
+          <p>{profile?.name || 'Not yet configured'}</p>
         </Link>
-        <Link
-          to="/station/establishment"
-          className="flex flex-col gap-1 rounded-md border border-border/40 p-3 transition-colors hover:bg-muted/60"
-        >
-          <div className="flex items-center gap-2">
-            <HugeiconsIcon icon={UserGroupIcon} className="size-4" />
-            <h3 className="text-sm">Establishment</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">{activeCount} currently posted</p>
-        </Link>
-        <Link
-          to="/station/officers"
-          className="flex flex-col gap-1 rounded-md border border-border/40 p-3 transition-colors hover:bg-muted/60"
-        >
+        <Link to="/station/officers" className="flex flex-col gap-1 rounded-md border border-border/40 p-3 transition-colors hover:bg-muted/60">
           <div className="flex items-center gap-2">
             <HugeiconsIcon icon={ShieldKeyIcon} className="size-4" />
-            <h3 className="text-sm">Officers</h3>
+            <h3>Officers</h3>
           </div>
-          <p className="text-xs text-muted-foreground">{officers.length} with login credentials</p>
+          <p>{here === 1 ? '1 officer at the station' : `${here} officers at the station`}</p>
         </Link>
       </section>
     </article>

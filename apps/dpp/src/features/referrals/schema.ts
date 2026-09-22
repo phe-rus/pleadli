@@ -10,6 +10,8 @@ export const referralSchema = z.object({
   isResubmission: z.boolean(),
   notes: z.string().nullable(),
   createdAt: z.number(),
+  /** The return this resubmission answers. */
+  answersDecisionId: z.string().nullable(),
 })
 
 export type Referral = z.infer<typeof referralSchema>

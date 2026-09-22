@@ -79,7 +79,7 @@ Why not multiple writable databases replicated between machines: it forces confl
 | How are permissions enforced? | On the node, per request, from the officer's session role and the device's enrolment. The UI is not the enforcement point. |
 | How is audit maintained? | The node writes audit in the same transaction as the change (05). |
 
-**Enrolment and transport security on the LAN.** The node holds a self-issued certificate. A workstation enrols with a one-time code and pins the certificate fingerprint (shown on the node as text and QR). No mDNS or auto-discovery; the code carries the node address. Plain HTTP is not used. This follows the existing pairing pattern (Police's `get_local_pairing_qr`) and its finding that discovery protocols are unreliable.
+**Enrolment and transport security on the LAN.** The node holds a self-issued certificate. A workstation enrols with a one-time code and pins the certificate fingerprint (shown on the node as text and QR). No mDNS. The code carries the node address. (Facility-to-Head-Office discovery, added 2026-09-21, is a separate, suggest-only UDP probe; see J.6.) Plain HTTP is not used. This follows the existing pairing pattern (Police's `get_local_pairing_qr`) and its finding that discovery protocols are unreliable.
 
 **Workstation client (D11).** The node serves the same single-page application over HTTPS. A workstation can run the Tauri shell (preferred: native printing, notifications, file dialogs) or simply open a browser, which removes an install step on each machine. This works because the frontend already has a dual-transport layer (`isTauri() ? invoke : fetch`, 70 call sites); the recommendation collapses it to one `/api/**` client with a base URL.
 
@@ -144,6 +144,14 @@ Each facility holds an **Ed25519 node key** generated at initialisation, registe
 ### J.4 File transport format
 
 A package file is a self-describing container: header (kind, from, to, sequence, schema version), payload (encrypted to the recipient for T3 and T4), signature. Import verifies signature, sequence and destination and shows a receipt to be carried or sent back. Used for: facilities with no connectivity, transfer dossiers between offline facilities, and HQ instructions to them. Named package kinds are in 03 K.2.
+
+### J.6 The LAN transport and discovery (built 2026-09-21)
+
+Head Office listens for facilities on the same network on TLS port 47924 (the exchange API only), on its own certificate. The loopback listener on 47923 stays plain HTTP and is what a tunnel points at. Head Office also answers a UDP probe on 47924 with its name and port.
+
+A facility never trusts an address because it was typed or found. It connects to look (who answers, and which certificate it presents), shows the fingerprint, and a person compares it with the one Head Office shows in Settings > Network. Only a confirmed fingerprint is pinned, and only then is anything sent; the request then waits for a Head Office officer. Discovery is a convenience: it is never required, and UDP broadcast often does not cross routers or managed Wi-Fi, so typing the address is always possible.
+
+Every outbound call a facility makes to Head Office goes through one client (`peer::hq_client`): pinned for a local address, ordinary certificate checking for a public host. That is what makes the Cloudflare Tunnel "another transport": the exchange itself does not change.
 
 ### J.5 Scale
 

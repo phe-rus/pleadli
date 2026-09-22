@@ -23,6 +23,9 @@ pub struct PairInput {
     pub location: String,
     pub region: String,
     pub head_officer_name: String,
+    /// The certificate fingerprint a person confirmed for a local-network address.
+    #[serde(default)]
+    pub hq_fingerprint: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -41,6 +44,11 @@ pub enum PairError {
     Unreachable(String),
     /// Head Office answered but refused (bad, used or expired code).
     Rejected,
+    /// The address is on a local network, so its certificate must be confirmed by
+    /// a person and pinned before anything is sent to it.
+    Untrusted,
+    /// Something answered, but it is not a Pleadli Prisons Head Office.
+    NotHeadOffice,
     Db(sqlx::Error),
 }
 
@@ -84,8 +92,9 @@ pub async fn pair_with_head_office(pool: &SqlitePool, actor: &Actor, input: Pair
     }
 
     let (host, secret) = parse_pairing_code(&input.pairing_code)?;
+    let fingerprint = pin_for(&host, input.hq_fingerprint.as_deref())?;
 
-    let client = reqwest::Client::builder().timeout(Duration::from_secs(20)).build().map_err(|e| PairError::Unreachable(e.to_string()))?;
+    let client = client_for(fingerprint.as_deref(), 20)?;
     let response = client
         .post(format!("{host}/api/network/v1/pairing/register"))
         .json(&serde_json::json!({
@@ -98,7 +107,7 @@ pub async fn pair_with_head_office(pool: &SqlitePool, actor: &Actor, input: Pair
         }))
         .send()
         .await
-        .map_err(|e| PairError::Unreachable(e.to_string()))?;
+        .map_err(net_err)?;
 
     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
         return Err(PairError::Rejected);
@@ -110,44 +119,181 @@ pub async fn pair_with_head_office(pool: &SqlitePool, actor: &Actor, input: Pair
 
     let mut tx = crate::db::begin_write(pool).await?;
     facilities::save_peer_credentials(&mut tx, actor, &host, &registered.facility_id, &registered.sync_token).await?;
+    sqlx::query("UPDATE peer_sync_config SET hq_fingerprint = ? WHERE id = 'default'").bind(&fingerprint).execute(&mut *tx).await?;
     tx.commit().await?;
 
     Ok(PairResult { facility_id: registered.facility_id })
 }
 
-/// Accepts an address as typed (`https://hq.example.org`, `127.0.0.1:47923`)
-/// or a whole pairing code (`host#secret`), and returns the origin.
+/// 100.64.0.0/10: carrier-grade NAT, and the range container hosts, VPN meshes
+/// and some ISPs use. Not a public address, so it has no public certificate.
+fn is_shared_address_space(host: &str) -> bool {
+    let mut parts = host.split('.');
+    parts.next() == Some("100") && parts.next().and_then(|n| n.parse::<u8>().ok()).is_some_and(|n| (64..=127).contains(&n))
+}
+
+/// Whether a host is on this machine.
+fn is_loopback_host(host: &str) -> bool {
+    host == "localhost" || host.starts_with("127.") || host == "[::1]"
+}
+
+/// Whether a host is on a private or local network: an address a facility LAN
+/// would use, or a `.local` name. Such a host has no public certificate, so it
+/// is reached over a pinned one.
+pub fn is_private_host(host: &str) -> bool {
+    let host = host.trim_start_matches("https://").trim_start_matches("http://");
+    let host = host.split(['/', '?']).next().unwrap_or(host);
+    let host = if host.starts_with('[') { host.split(']').next().unwrap_or(host) } else { host.split(':').next().unwrap_or(host) };
+    host.ends_with(".local")
+        || host.starts_with("10.")
+        || host.starts_with("192.168.")
+        || host.starts_with("169.254.")
+        || is_shared_address_space(host)
+        || (host.split('.').next() == Some("172") && host.split('.').nth(1).and_then(|n| n.parse::<u8>().ok()).is_some_and(|n| (16..=31).contains(&n)))
+}
+
+/// Accepts an address as typed (`https://hq.example.org`, `192.168.1.20`,
+/// `192.168.1.20:47924`, `127.0.0.1:47923`) or a whole pairing code
+/// (`host#secret`), and returns the origin.
+///
+/// Plain HTTP is accepted only for this machine (development, and the tunnel's
+/// own origin). A local-network address is always HTTPS, on the LAN port when
+/// none is given.
 pub fn parse_hq_address(input: &str) -> Result<String, PairError> {
     let text = input.trim();
     let host = text.rfind('#').map(|i| &text[..i]).unwrap_or(text).trim().trim_end_matches('/');
     if host.is_empty() || host.contains(char::is_whitespace) {
         return Err(PairError::Malformed);
     }
-    if host.starts_with("https://") || host.starts_with("http://") {
-        return Ok(host.to_string());
+    if let Some(rest) = host.strip_prefix("https://") {
+        return if rest.is_empty() || rest.contains('/') { Err(PairError::Malformed) } else { Ok(host.to_string()) };
     }
-    if host.contains("://") {
+    if let Some(rest) = host.strip_prefix("http://") {
+        let bare = rest.split(':').next().unwrap_or(rest);
+        return if is_loopback_host(bare) && !rest.contains('/') { Ok(host.to_string()) } else { Err(PairError::Malformed) };
+    }
+    if host.contains("://") || host.contains('/') {
         return Err(PairError::Malformed);
     }
     let bare = host.split(':').next().unwrap_or(host);
-    let local = bare == "localhost" || bare.starts_with("127.") || bare.starts_with("10.") || bare.starts_with("192.168.");
-    Ok(format!("{}://{host}", if local { "http" } else { "https" }))
+    if is_loopback_host(bare) {
+        return Ok(format!("http://{host}"));
+    }
+    if is_private_host(bare) && !host.contains(':') {
+        return Ok(format!("https://{host}:{}", crate::api::network::LAN_PORT));
+    }
+    Ok(format!("https://{host}"))
+}
+
+/// The pin to use for `host`: the one a person confirmed, and required for a
+/// local-network address. `None` for an address checked in the ordinary way.
+fn pin_for(host: &str, confirmed: Option<&str>) -> Result<Option<String>, PairError> {
+    let needs_pin = host.starts_with("https://") && is_private_host(host);
+    match confirmed.map(super::tls::normalise_fingerprint).filter(|f| !f.is_empty()) {
+        Some(fingerprint) if fingerprint.len() == 64 => Ok(Some(fingerprint)),
+        Some(_) => Err(PairError::Malformed),
+        None if needs_pin => Err(PairError::Untrusted),
+        None => Ok(None),
+    }
+}
+
+/// A client for one Head Office: pinned to a confirmed certificate when there is
+/// one, otherwise an ordinary verifying client.
+/// A transport failure with its whole cause chain, so a refused certificate
+/// reads as one and not as "error sending request".
+fn net_err(e: reqwest::Error) -> PairError {
+    let mut text = e.to_string();
+    let mut source = std::error::Error::source(&e);
+    while let Some(cause) = source {
+        text.push_str(": ");
+        text.push_str(&cause.to_string());
+        source = cause.source();
+    }
+    PairError::Unreachable(text)
+}
+
+fn client_for(fingerprint: Option<&str>, seconds: u64) -> Result<reqwest::Client, PairError> {
+    match fingerprint {
+        Some(fingerprint) => super::tls::pinned_client(fingerprint, Duration::from_secs(seconds)).map_err(PairError::Unreachable),
+        None => client(seconds),
+    }
 }
 
 fn client(seconds: u64) -> Result<reqwest::Client, PairError> {
     reqwest::Client::builder().timeout(Duration::from_secs(seconds)).build().map_err(|e| PairError::Unreachable(e.to_string()))
 }
 
+/// The client for this installation's own Head Office, from what was saved when
+/// it connected. Every call the facility makes to Head Office goes through it,
+/// so which transport is in use is decided in one place.
+pub(crate) async fn hq_client(pool: &SqlitePool, seconds: u64) -> Result<reqwest::Client, String> {
+    let fingerprint: Option<String> = sqlx::query_scalar("SELECT hq_fingerprint FROM peer_sync_config WHERE id = 'default'").fetch_one(pool).await.map_err(|e| e.to_string())?;
+    client_for(fingerprint.as_deref(), seconds).map_err(|e| match e {
+        PairError::Unreachable(reason) => reason,
+        _ => "could not prepare the connection".to_string(),
+    })
+}
+
+/// What answered at an address, and the certificate it presented.
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct HqIdentity {
+    /// The origin that will be used, with the scheme and port made explicit.
+    pub address: String,
+    pub name: String,
+    /// The SHA-256 fingerprint of the certificate the address presented, for a
+    /// person to compare with the one Head Office shows. `None` for an address
+    /// checked in the ordinary way (a public host).
+    pub fingerprint: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct IdentityBody {
+    product: String,
+    role: String,
+    name: String,
+}
+
+/// Connects to `address` to learn who is there, without trusting it and without
+/// sending it anything. For a local-network address this is the moment the
+/// certificate is seen; the caller shows the fingerprint to a person, and only a
+/// confirmed one is ever pinned.
+pub async fn probe_identity(address: &str) -> Result<HqIdentity, PairError> {
+    let host = parse_hq_address(address)?;
+    let needs_pin = host.starts_with("https://") && is_private_host(&host);
+    let (probe_client, seen) = if needs_pin {
+        let (client, seen) = super::tls::capture_client(Duration::from_secs(8)).map_err(PairError::Unreachable)?;
+        (client, Some(seen))
+    } else {
+        (client(8)?, None)
+    };
+    let response = probe_client.get(format!("{host}/api/network/v1/identity")).send().await.map_err(net_err)?;
+    if !response.status().is_success() {
+        return Err(PairError::NotHeadOffice);
+    }
+    let body: IdentityBody = response.json().await.map_err(|_| PairError::NotHeadOffice)?;
+    if body.product != "pleadli-prisons" || body.role != "head_office" {
+        return Err(PairError::NotHeadOffice);
+    }
+    let fingerprint = seen.and_then(|cell| cell.lock().unwrap().clone());
+    if needs_pin && fingerprint.is_none() {
+        return Err(PairError::Untrusted);
+    }
+    let name: String = body.name.chars().filter(|c| !c.is_control()).take(80).collect();
+    Ok(HqIdentity { address: host, name, fingerprint })
+}
+
 /// Looks a facility up on Head Office by its number, for the confirm card.
 /// `None` means Head Office answered but does not know it.
-pub async fn lookup_facility(hq_address: &str, number: &str) -> Result<Option<FacilityLookup>, PairError> {
+pub async fn lookup_facility(hq_address: &str, fingerprint: Option<&str>, number: &str) -> Result<Option<FacilityLookup>, PairError> {
     let host = parse_hq_address(hq_address)?;
-    let response = client(10)?
+    let pin = pin_for(&host, fingerprint)?;
+    let response = client_for(pin.as_deref(), 10)?
         .get(format!("{host}/api/network/v1/facilities/lookup"))
         .query(&[("number", number.trim())])
         .send()
         .await
-        .map_err(|e| PairError::Unreachable(e.to_string()))?;
+        .map_err(net_err)?;
     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
         return Ok(None);
     }
@@ -165,6 +311,9 @@ pub struct ConnectFacilityInput {
     pub requester_badge: String,
     pub requester_name: String,
     pub activation_code: Option<String>,
+    /// The certificate fingerprint a person confirmed for a local-network address.
+    #[serde(default)]
+    pub hq_fingerprint: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -194,6 +343,7 @@ pub async fn connect_facility(pool: &SqlitePool, actor: &Actor, input: ConnectFa
         return Err(PairError::AlreadyPaired);
     }
     let host = parse_hq_address(&input.hq_address)?;
+    let pin = pin_for(&host, input.hq_fingerprint.as_deref())?;
     let badge = input.requester_badge.trim().to_string();
     let name = input.requester_name.trim().to_string();
     if badge.is_empty() || name.is_empty() || input.facility_number.trim().is_empty() {
@@ -201,7 +351,7 @@ pub async fn connect_facility(pool: &SqlitePool, actor: &Actor, input: ConnectFa
     }
 
     let token = random_secret(32);
-    let response = client(20)?
+    let response = client_for(pin.as_deref(), 20)?
         .post(format!("{host}/api/network/v1/connection/request"))
         .json(&serde_json::json!({
             "facilityNumber": input.facility_number.trim(),
@@ -212,7 +362,7 @@ pub async fn connect_facility(pool: &SqlitePool, actor: &Actor, input: ConnectFa
         }))
         .send()
         .await
-        .map_err(|e| PairError::Unreachable(e.to_string()))?;
+        .map_err(net_err)?;
     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
         return Err(PairError::Rejected);
     }
@@ -225,12 +375,13 @@ pub async fn connect_facility(pool: &SqlitePool, actor: &Actor, input: ConnectFa
     let mut tx = crate::db::begin_write(pool).await?;
     sqlx::query(
         "UPDATE peer_sync_config
-         SET hq_hostname = ?, sync_token = ?, facility_id = ?, connection_state = ?, connection_request_id = ?,
+         SET hq_hostname = ?, hq_fingerprint = ?, sync_token = ?, facility_id = ?, connection_state = ?, connection_request_id = ?,
              requested_by_badge = ?, requested_by_name = ?, facility_display_name = ?,
              last_sync_status = NULL, last_error = NULL
          WHERE id = 'default'",
     )
     .bind(&host)
+    .bind(&pin)
     .bind(super::secrets::seal(super::secrets::PEER_SYNC_TOKEN, &token)?)
     .bind(if connected { Some(outcome.facility_id.clone()) } else { None })
     .bind(if connected { "connected" } else { "pending" })
@@ -266,13 +417,13 @@ pub async fn refresh_connection(pool: &SqlitePool) -> Result<(), PairError> {
         return Ok(());
     };
     let token = super::secrets::open(super::secrets::PEER_SYNC_TOKEN, &token)?;
-    let response = client(10)?
+    let response = hq_client(pool, 10).await.map_err(PairError::Unreachable)?
         .post(format!("{host}/api/network/v1/connection/status"))
         .bearer_auth(&token)
         .json(&serde_json::json!({}))
         .send()
         .await
-        .map_err(|e| PairError::Unreachable(e.to_string()))?;
+        .map_err(net_err)?;
     let actor = Actor::system("network connection");
 
     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
@@ -335,6 +486,30 @@ async fn set_rejected(pool: &SqlitePool, actor: &Actor, message: &str) -> Result
     Ok(())
 }
 
+/// Called when Head Office refused this facility's credential. Asks (with the
+/// connection token, which Head Office answers only for a token it issued)
+/// where the facility stands: `active`, `pending_verification` or `revoked`. A
+/// revocation is recorded, so the facility says "revoked" instead of a vague
+/// failure. `None` when Head Office could not say.
+pub(crate) async fn check_standing(pool: &SqlitePool) -> Option<String> {
+    let Ok((Some(host), Some(token), _, Some(_))) = own_connection(pool).await else { return None };
+    let token = super::secrets::open(super::secrets::PEER_SYNC_TOKEN, &token).ok()?;
+    let client = hq_client(pool, 10).await.ok()?;
+    let response = client.post(format!("{host}/api/network/v1/connection/status")).bearer_auth(&token).json(&serde_json::json!({})).send().await.ok()?;
+    if !response.status().is_success() {
+        return None;
+    }
+    let status = response.json::<ConnectionStatus>().await.ok()?;
+    if status.facility_status == "revoked" {
+        let message = "Head Office has revoked this facility's connection. Local work is unchanged; ask Head Office to reconnect it.";
+        let mut tx = crate::db::begin_write(pool).await.ok()?;
+        let _ = sqlx::query("UPDATE peer_sync_config SET connection_state = 'revoked', last_error = ? WHERE id = 'default'").bind(message).execute(&mut *tx).await;
+        let _ = audit::record(&mut tx, &Actor::system("network connection"), AuditEntry::new("peer.revoked", "peer_sync_config", Some("default")).reason(message)).await;
+        let _ = tx.commit().await;
+    }
+    Some(status.facility_status)
+}
+
 /// Drops a waiting or rejected request so the facility can start again.
 pub async fn cancel_connection(pool: &SqlitePool, actor: &Actor) -> Result<(), PairError> {
     let (_, _, _, state) = own_connection(pool).await?;
@@ -344,7 +519,7 @@ pub async fn cancel_connection(pool: &SqlitePool, actor: &Actor) -> Result<(), P
     let mut tx = crate::db::begin_write(pool).await?;
     sqlx::query(
         "UPDATE peer_sync_config
-         SET hq_hostname = NULL, sync_token = NULL, facility_id = NULL, connection_state = NULL, connection_request_id = NULL,
+         SET hq_hostname = NULL, hq_fingerprint = NULL, sync_token = NULL, facility_id = NULL, connection_state = NULL, connection_request_id = NULL,
              requested_by_badge = NULL, requested_by_name = NULL, facility_display_name = NULL,
              last_sync_status = NULL, last_error = NULL
          WHERE id = 'default'",
@@ -373,8 +548,8 @@ pub async fn push_roster(pool: &SqlitePool) -> Result<usize, String> {
         .into_iter()
         .map(|(badge_number, name, role, is_admin, active)| RosterEntry { badge_number, name, role, is_admin, active })
         .collect();
-    let response = client(30)
-        .map_err(|_| "Could not start the request.".to_string())?
+    let response = hq_client(pool, 30)
+        .await?
         .post(format!("{}/api/network/v1/roster", ctx.hostname.trim_end_matches('/')))
         .bearer_auth(&ctx.sync_token)
         .json(&serde_json::json!({ "officers": officers }))
@@ -399,7 +574,7 @@ pub async fn hq_reachable(pool: &SqlitePool) -> bool {
     let Ok((Some(host), _, _, _)) = own_connection(pool).await else {
         return false;
     };
-    let Ok(client) = client(5) else {
+    let Ok(client) = hq_client(pool, 5).await else {
         return false;
     };
     client.get(format!("{host}/api/network/v1/health")).send().await.map(|r| r.status().is_success()).unwrap_or(false)
@@ -423,6 +598,29 @@ mod tests {
         assert_eq!(parse_hq_address("127.0.0.1:47923").unwrap(), "http://127.0.0.1:47923");
         assert_eq!(parse_hq_address("hq.example.org").unwrap(), "https://hq.example.org");
         assert!(parse_hq_address("ftp://x").is_err());
+    }
+
+    #[test]
+    fn a_local_network_address_is_always_https_on_the_lan_port() {
+        assert_eq!(parse_hq_address("192.168.1.20").unwrap(), "https://192.168.1.20:47924");
+        assert_eq!(parse_hq_address("192.168.1.20:50000").unwrap(), "https://192.168.1.20:50000");
+        assert_eq!(parse_hq_address("10.0.0.7").unwrap(), "https://10.0.0.7:47924");
+        assert_eq!(parse_hq_address("hq.local").unwrap(), "https://hq.local:47924");
+        assert_eq!(parse_hq_address("https://192.168.1.20:47924/").unwrap(), "https://192.168.1.20:47924");
+        // Plain HTTP over a network is never accepted; only this machine may use it.
+        assert!(parse_hq_address("http://192.168.1.20:47923").is_err());
+        assert!(parse_hq_address("http://hq.example.org").is_err());
+        assert!(parse_hq_address("http://127.0.0.1:47923").is_ok());
+    }
+
+    #[test]
+    fn a_local_network_address_cannot_be_used_until_its_certificate_is_confirmed() {
+        assert!(matches!(pin_for("https://192.168.1.20:47924", None), Err(PairError::Untrusted)));
+        assert!(matches!(pin_for("https://192.168.1.20:47924", Some("abcd")), Err(PairError::Malformed)));
+        assert_eq!(pin_for("https://192.168.1.20:47924", Some(&"ab".repeat(32))).unwrap().as_deref(), Some("AB".repeat(32).as_str()));
+        // A public host is checked in the ordinary way and needs no pin.
+        assert_eq!(pin_for("https://hq.example.org", None).unwrap(), None);
+        assert_eq!(pin_for("http://127.0.0.1:47923", None).unwrap(), None);
     }
 
     #[test]
