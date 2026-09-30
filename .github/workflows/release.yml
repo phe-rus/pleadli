@@ -76,17 +76,19 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: apps/${{ matrix.app }}/src-tauri -> target
+          # Keep what compiled even when a later step fails, so a re-run is quick.
+          cache-on-failure: true
 
       - name: Install dependencies
         run: bun install
 
-      # Police carries Cloudflare's tunnel program beside it (remote access).
+      # Police and Prisons carry Cloudflare's tunnel program beside them (remote access).
       - name: Fetch cloudflared for Windows
-        if: matrix.app == 'police'
+        if: matrix.app == 'police' || matrix.app == 'prisons'
         shell: bash
         run: |
-          mkdir -p apps/police/src-tauri/binaries
-          curl -fsSL -o apps/police/src-tauri/binaries/cloudflared-x86_64-pc-windows-msvc.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
+          mkdir -p apps/${{ matrix.app }}/src-tauri/binaries
+          curl -fsSL -o apps/${{ matrix.app }}/src-tauri/binaries/cloudflared-x86_64-pc-windows-msvc.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
 
       - name: Read version
         id: version
