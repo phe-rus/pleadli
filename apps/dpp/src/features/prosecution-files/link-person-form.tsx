@@ -6,6 +6,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useLinkPersonToFile } from './queries'
 import { filePersonRoles, type ProsecutionFilePerson } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type LinkPersonFormProps = {
   prosecutionFileId: string
@@ -24,11 +25,11 @@ export function LinkPersonForm({ prosecutionFileId, onSuccess }: LinkPersonFormP
       if (!value.personId) return
       try {
         const result = await linkPerson.mutateAsync({ prosecutionFileId, personId: value.personId, role: value.role })
-        t.success('Person linked to file')
+        t.success(m["file.link.linked"]())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not link person', { description: 'Please try again.' })
+        t.error(m["file.link.link_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -44,7 +45,7 @@ export function LinkPersonForm({ prosecutionFileId, onSuccess }: LinkPersonFormP
       <form.AppField name="personId">
         {(f) => (
           <Field>
-            <FieldLabel>Person</FieldLabel>
+            <FieldLabel>{m["file.link.person"]()}</FieldLabel>
             <PersonPicker value={f.state.value || null} onValueChange={(id) => f.handleChange(id ?? '')} />
           </Field>
         )}
@@ -53,10 +54,10 @@ export function LinkPersonForm({ prosecutionFileId, onSuccess }: LinkPersonFormP
       <form.AppField name="role">
         {(f) => (
           <Field>
-            <FieldLabel>Role on this file</FieldLabel>
+            <FieldLabel>{m["file.link.role"]()}</FieldLabel>
             <Select items={filePersonRoles} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select role" />
+                <SelectValue placeholder={m["file.link.role_placeholder"]()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -74,7 +75,7 @@ export function LinkPersonForm({ prosecutionFileId, onSuccess }: LinkPersonFormP
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Link person" />
+          <form.submit label={m["file.link.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

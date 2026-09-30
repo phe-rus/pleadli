@@ -67,7 +67,7 @@ export function VisitsPage() {
       {
         accessorKey: 'privileged',
         header: m.route_visits_privileged(),
-        cell: ({ getValue }) => (getValue<boolean>() ? <Badge variant="secondary">{m.route_visits_privileged()}</Badge> : 'No'),
+        cell: ({ getValue }) => (getValue<boolean>() ? <Badge variant="secondary">{m.route_visits_privileged()}</Badge> : m.common_no()),
       },
       { accessorKey: 'partySize', header: m.route_visits_visitors() },
       {
@@ -79,8 +79,8 @@ export function VisitsPage() {
       { accessorKey: 'durationMinutes', header: m.route_visits_planned_min() },
       { accessorKey: 'checkedInAt', header: m.route_visits_checked_in(), cell: ({ getValue }) => time(getValue<number | null>()) },
       { accessorKey: 'checkedInBy', header: m.route_visits_checked_in_by(), cell: ({ getValue }) => getValue<string | null>() ?? '·' },
-      { accessorKey: 'idVerified', header: m.route_visits_id_checked(), cell: ({ getValue }) => (getValue<boolean>() ? m.route_visits_yes() : 'No') },
-      { accessorKey: 'searchDone', header: m.route_visits_searched(), cell: ({ getValue }) => (getValue<boolean>() ? m.route_visits_yes() : 'No') },
+      { accessorKey: 'idVerified', header: m.route_visits_id_checked(), cell: ({ getValue }) => (getValue<boolean>() ? m.route_visits_yes() : m.common_no()) },
+      { accessorKey: 'searchDone', header: m.route_visits_searched(), cell: ({ getValue }) => (getValue<boolean>() ? m.route_visits_yes() : m.common_no()) },
       { accessorKey: 'startedAt', header: m.route_visits_started(), cell: ({ getValue }) => time(getValue<number | null>()) },
       { accessorKey: 'endedAt', header: m.route_visits_ended(), cell: ({ getValue }) => time(getValue<number | null>()) },
       { accessorKey: 'supervisingOfficer', header: m.route_visits_supervising_officer(), cell: ({ getValue }) => getValue<string | null>() ?? '·' },

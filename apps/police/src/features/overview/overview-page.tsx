@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Sparkline } from '@/components/charts/sparkline'
 import { Createpanel } from '@/components/create-panel'
 import { AttentionItem, type AttentionItemData } from '@/components/list-cards/attention-item'
@@ -32,6 +33,7 @@ import { Card, CardContent } from '@pleadli/ui/card'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
+import { format } from '@/lib/date'
 import { NeedsAttention } from './needs-attention'
 
 function isSameCalendarDay(a: number, b: number) {
@@ -43,9 +45,9 @@ function isSameCalendarDay(a: number, b: number) {
 function relativeTime(ms: number) {
   const diff = Date.now() - ms
   const hours = Math.floor(diff / (60 * 60 * 1000))
-  if (hours < 1) return 'just now'
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
+  if (hours < 1) return m["common.just_now"]()
+  if (hours < 24) return m["common.hours_ago_short"]({ count: hours })
+  return m["common.days_ago_short"]({ count: Math.floor(hours / 24) })
 }
 
 function caseStatusLabel(status: string) {
@@ -102,7 +104,7 @@ export function OverviewPage() {
           title: c.summary,
           status: c.status,
           statusLabel: caseStatusLabel(c.status),
-          subtitle: `${c.peopleCount} ${c.peopleCount === 1 ? 'person' : 'people'} · opened ${relativeTime(c.createdAt)}`,
+          subtitle: c.peopleCount === 1 ? m["overview.person_one"]({ when: relativeTime(c.createdAt) }) : m["overview.people_n"]({ count: c.peopleCount, when: relativeTime(c.createdAt) }),
         })),
     [openCases],
   )
@@ -112,7 +114,7 @@ export function OverviewPage() {
       (activityItems ?? []).slice(0, 8).map((item) => ({
         item: {
           label: item.title,
-          detail: item.subtitle || 'No detail',
+          detail: item.subtitle || m["common.no_detail"](),
           time: relativeTime(item.occurredAt),
           severity: activitySeverity(item),
         } satisfies AttentionItemData,
@@ -145,16 +147,15 @@ export function OverviewPage() {
                 "flex flex-col sm:flex-row md:items-center",
                 'md:gap-3'
               )}>
-                <h3>Backup Requested</h3>
+                <h3>{m["overview.backup_title"]()}</h3>
                 <span className="hidden md:block">•</span>
                 <p>
-                  {activeBackupAlerts.length} {activeBackupAlerts.length === 1 ? 'officer needs' : 'officers need'}{' '}
-                  backup right now.
+                  {activeBackupAlerts.length === 1 ? m["overview.backup_one"]() : m["overview.backup_n"]({ count: activeBackupAlerts.length })}
                 </p>
               </div>
             </div>
             <Link to="/logs/backup-alerts" className={buttonVariants({ size: 'xs', variant: 'destructive' })}>
-              Respond
+              {m["common.respond"]()}
             </Link>
           </CardContent>
         </Card>
@@ -179,16 +180,16 @@ export function OverviewPage() {
                 'md:gap-3'
               )}>
                 <h3>
-                  48h Custody Alert
+                  {m["overview.custody_alert"]()}
                 </h3>
                 <span className="hidden md:block">•</span>
                 <p>
-                  {nearOrOverLimit.length} {nearOrOverLimit.length === 1 ? 'suspect is' : 'suspects are'} at or near the 48-hour constitutional limit.
+                  {nearOrOverLimit.length === 1 ? m["overview.suspect_one"]() : m["overview.suspect_n"]({ count: nearOrOverLimit.length })}
                 </p>
               </div>
             </div>
             <Link to="/search/custody" className={buttonVariants({ size: 'xs' })}>
-              Review Cell Log
+              {m["overview.review_cells"]()}
             </Link>
           </CardContent>
         </Card>
@@ -200,20 +201,20 @@ export function OverviewPage() {
             <HugeiconsIcon icon={Building06Icon} className="size-4" />
             <div className='flex flex-wrap items-center text-xs gap-5'>
               <span className='truncate'>
-                {[stationProfile?.name, stationProfile?.address].filter(Boolean).join(' · ') || 'Station not yet configured'}
+                {[stationProfile?.name, stationProfile?.address].filter(Boolean).join(' · ') || m["overview.not_configured"]()}
               </span>
               <span>•</span>
-              <span className='truncate'>{new Date(now).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+              <span className='truncate'>{format(now, 'EEE p')}</span>
             </div>
           </div>
-          <h1>Station Overview</h1>
+          <h1>{m["overview.title"]()}</h1>
         </div>
 
         <div className="flex items-center gap-1 col-span-6">
           <Link to="/roster" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
             <HugeiconsIcon icon={UserGroupIcon} />
             <strong>{onDutyNow}</strong>
-            / {rosterSize} Officers on Duty
+            {m["overview.on_duty"]({ total: rosterSize })}
           </Link>
 
           <Createpanel
@@ -222,35 +223,35 @@ export function OverviewPage() {
             trigger={
               <Button size="sm">
                 <HugeiconsIcon icon={Add01Icon} />
-                New SD Entry
+                {m["overview.new_sd"]()}
               </Button>
             }
-            headings={{ title: 'New station diary entry', description: 'Log counter or shift activity.' }}
+            headings={{ title: m["overview.new_sd_title"](), description: m["overview.new_sd_desc"]() }}
           >
             <StationDiaryEntryForm onSuccess={() => setSdOpen(false)} />
           </Createpanel>
         </div>
       </section>
 
-      <section aria-label="Figures" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section aria-label={m["command.figures"]()} className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatTile
-          label="Cell lock-up"
+          label={m["overview.cell_lockup"]()}
           icon={CellsIcon}
           tint="primary"
           value={inCustody.length}
-          meta={<Badge variant="secondary">{over24h.length} over 24h</Badge>}
-          caption={`${custodyRecords.length} custody records logged`}
+          meta={<Badge variant="secondary">{m["overview.over_24h"]({ count: over24h.length })}</Badge>}
+          caption={m["overview.custody_logged"]({ count: custodyRecords.length })}
         />
         <StatTile
-          label="Near the 48h limit"
+          label={m["overview.near_48"]()}
           icon={AlarmClockIcon}
           tint={nearOrOverLimit.length > 0 ? 'rose' : 'emerald'}
           value={nearOrOverLimit.length}
-          meta={<Badge variant={nearOrOverLimit.length > 0 ? 'destructive' : 'secondary'}>{nearOrOverLimit.length > 0 ? 'Action needed' : 'Clear'}</Badge>}
-          caption="Approaching or past the limit"
+          meta={<Badge variant={nearOrOverLimit.length > 0 ? 'destructive' : 'secondary'}>{nearOrOverLimit.length > 0 ? m["overview.action_needed"]() : m["overview.clear"]()}</Badge>}
+          caption={m["overview.approaching"]()}
         />
         <StatTile
-          label="Diary entries today"
+          label={m["overview.diary_today"]()}
           icon={Notebook01Icon}
           tint="amber"
           value={sdToday.length}
@@ -262,23 +263,23 @@ export function OverviewPage() {
               </span>
             )
           }
-          caption={`vs ${sdYesterday.length} yesterday`}
+          caption={m["overview.vs_yesterday"]({ count: sdYesterday.length })}
         />
         <StatTile
-          label="Open cases"
+          label={m["common.open_cases"]()}
           icon={File02Icon}
           tint="primary"
           value={openCases.length}
-          meta={<Badge variant="outline">{closedCasesCount} closed</Badge>}
-          caption={`${statements.length} statements recorded`}
+          meta={<Badge variant="outline">{m["overview.closed_count"]({ count: closedCasesCount })}</Badge>}
+          caption={m["overview.statements_recorded"]({ count: statements.length })}
         />
         <StatTile
-          label="Backup requests"
+          label={m["overview.backup_requests"]()}
           icon={AlertCircleIcon}
           tint={activeBackupAlerts.length > 0 ? 'rose' : 'emerald'}
           value={activeBackupAlerts.length}
-          meta={<Badge variant={activeBackupAlerts.length > 0 ? 'destructive' : 'secondary'}>{activeBackupAlerts.length > 0 ? 'Respond' : 'None active'}</Badge>}
-          caption={`${backupAlerts.length} total, over remote access`}
+          meta={<Badge variant={activeBackupAlerts.length > 0 ? 'destructive' : 'secondary'}>{activeBackupAlerts.length > 0 ? m["common.respond"]() : m["overview.none_active"]()}</Badge>}
+          caption={m["overview.backup_total"]({ count: backupAlerts.length })}
         />
       </section>
 
@@ -288,14 +289,14 @@ export function OverviewPage() {
         <div className="flex flex-col gap-4 col-span-12 lg:col-span-7">
           <div className="flex justify-between">
             <div className='flex flex-col'>
-              <h2>Recent Activity</h2>
-              <p>What's happening across the station</p>
+              <h2>{m["overview.recent_activity"]()}</h2>
+              <p>{m["overview.recent_activity_desc"]()}</p>
             </div>
           </div>
 
           <Card className='p-0'>
             <CardContent className="p-0 divide-y divide-border/60">
-              {activityRows.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">Nothing recorded yet.</p>}
+              {activityRows.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">{m["common.nothing_recorded"]()}</p>}
               {activityRows.map((row) => (
                 <Link
                   key={row.id}
@@ -313,18 +314,18 @@ export function OverviewPage() {
           <div className="flex flex-col gap-4">
             <div className="flex justify-between">
               <div className='flex flex-col'>
-                <h2>My Investigation Files</h2>
-                <p>Open cases</p>
+                <h2>{m["overview.my_files"]()}</h2>
+                <p>{m["overview.open_cases_short"]()}</p>
               </div>
               <Link to="/intake" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
-                View All
+                {m["common.view_all"]()}
                 <HugeiconsIcon icon={ArrowRight01Icon} />
               </Link>
             </div>
 
             <Card className='p-0'>
               <CardContent className="p-0 divide-y divide-border/60">
-                {caseRows.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">No open cases.</p>}
+                {caseRows.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">{m["overview.no_open_cases"]()}</p>}
                 {caseRows.map((row) => (
                   <CaseRow key={row.reference} row={row} />
                 ))}
@@ -335,8 +336,8 @@ export function OverviewPage() {
           <Card className="p-0">
             <CardContent className='p-0'>
               <div className="flex justify-between p-5">
-                <h2>8-Week Case Intake Trend</h2>
-                <p className="tabular-nums">Peak: {flowPeak} cases/wk</p>
+                <h2>{m["overview.trend"]()}</h2>
+                <p className="tabular-nums">{m["overview.peak"]({ count: flowPeak })}</p>
               </div>
               <Sparkline data={flowBuckets} />
             </CardContent>

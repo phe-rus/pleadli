@@ -1,5 +1,6 @@
-import { Planned } from '@/components/planned'
-import { DocumentLibrary, documentKinds, documentsOptions } from '@/features/documents'
+import * as m from '@/paraglide/messages'
+import { VerifyDocument } from '@/features/documents/seals'
+import { DocumentLibrary, documentsOptions } from '@/features/documents'
 import { decisionsOptions } from '@/features/decisions'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -22,19 +23,14 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Documents</h1>
-          <p>Prepared from a decision, read first, then issued. An issued document is frozen and carries its reference.</p>
+          <h1>{m["nav.item.documents"]()}</h1>
+          <p>{m["page.documents.about"]()}</p>
         </div>
       </header>
 
       <DocumentLibrary />
 
-      <Planned title="Kinds of document" covers={documentKinds.map((k) => `${k.label}: ${k.about}`)}>
-        These are the documents the product documentation names.
-      </Planned>
-      <Planned title="Not yet" covers={['Legal opinion', 'Indictment', 'Case summary', 'Decision notice', 'Court-related documents']}>
-        No template for these is fixed by the research yet, so none is invented.
-      </Planned>
+      <VerifyDocument />
     </article>
   )
 }

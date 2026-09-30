@@ -3,6 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useEffect, useRef, useState } from 'react'
 import { useTabActions } from './tab-actions'
+import { tabLabel } from './tab-identity'
 import { tabIcon } from './tab-icon'
 import { useWorkspace, type WorkspaceTab } from './tabs-store'
 
@@ -59,13 +60,13 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <HugeiconsIcon icon={tabIcon(tab)} className="size-4 shrink-0" />
-        <span className="truncate">{tab.title}</span>
+        <span className="truncate">{tabLabel(tab)}</span>
       </button>
       {!fixed && (
         <>
           <button
             type="button"
-            aria-label={pinned ? `Unpin ${tab.title}` : `Pin ${tab.title}`}
+            aria-label={pinned ? `Unpin ${tabLabel(tab)}` : `Pin ${tabLabel(tab)}`}
             title={pinned ? 'Unpin' : 'Pin'}
             onClick={() => togglePinned(tab.key)}
             className={cn(iconButton, !pinned && 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100')}
@@ -75,7 +76,7 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
           {!pinned && (
             <button
               type="button"
-              aria-label={`Close ${tab.title}`}
+              aria-label={`Close ${tabLabel(tab)}`}
               title="Close (Ctrl W)"
               onClick={() => close(tab.key)}
               className={cn(iconButton, 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100', active && 'opacity-70')}

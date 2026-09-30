@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { entityTypeLabel, useSearch, type SearchResult } from '@/features/search'
 import { parseSearchRoute } from '@/lib/parse-search-route'
 import {
@@ -27,16 +28,18 @@ export const Route = createFileRoute('/_public/search/')({
   component: RouteComponent,
 })
 
-const quickLinks = [
-  { icon: UserIcon, label: 'People', to: '/search/people', description: 'Everyone known to this station' },
-  { icon: CellsIcon, label: 'Cell lock-up & 48h', to: '/search/custody', description: 'Custody records, live 48h status' },
-  { icon: File02Icon, label: 'Bonds & sureties', to: '/search/bonds', description: 'Police bonds granted' },
-  { icon: FolderViewIcon, label: 'Case intake', to: '/intake', description: 'Opened cases' },
-  { icon: SirenIcon, label: 'Incidents', to: '/incidents', description: 'Logged incidents' },
-  { icon: Notebook01Icon, label: 'Station diary', to: '/sd-log', description: 'Counter and shift activity' },
-  { icon: Mic01Icon, label: 'Statements', to: '/statements', description: 'Recorded statements' },
-  { icon: ArchiveIcon, label: 'Stores & armory', to: '/stores/armory', description: 'Armory register and impounded assets' },
-] as const
+// A function, not a table, so the words are read in the current language.
+const quickLinks = () =>
+  [
+    { icon: UserIcon, label: m["nav.people"](), to: '/search/people', description: m["search_page.people_desc"]() },
+    { icon: CellsIcon, label: m["search_page.cells"](), to: '/search/custody', description: m["search_page.cells_desc"]() },
+    { icon: File02Icon, label: m["nav.bonds_and_sureties"](), to: '/search/bonds', description: m["search_page.bonds_desc"]() },
+    { icon: FolderViewIcon, label: m["nav.case_intake"](), to: '/intake', description: m["search_page.intake_desc"]() },
+    { icon: SirenIcon, label: m["nav.incidents"](), to: '/incidents', description: m["search_page.incidents_desc"]() },
+    { icon: Notebook01Icon, label: m["nav.station_diary"](), to: '/sd-log', description: m["search_page.diary_desc"]() },
+    { icon: Mic01Icon, label: m["nav.statements"](), to: '/statements', description: m["search_page.statements_desc"]() },
+    { icon: ArchiveIcon, label: m["search_page.stores"](), to: '/stores/armory', description: m["search_page.stores_desc"]() },
+  ] as const
 
 function ResultRow({ result }: { result: SearchResult }) {
   return (
@@ -70,7 +73,7 @@ function RouteComponent() {
   return (
     <article className="page">
       <section className="flex flex-col gap-2">
-        <h1>Search Pleadli Police</h1>
+        <h1>{m["command_menu.title"]()}</h1>
         <Combobox
           inputValue={inputValue}
           onInputValueChange={setInputValue}
@@ -81,7 +84,7 @@ function RouteComponent() {
         >
           <ComboboxInput
             className="md:max-w-lg rounded!"
-            placeholder="Search by name, NIN, phone, case number, reference…"
+            placeholder={m["command_menu.placeholder"]()}
             showClear
           >
             <ComboboxContent>
@@ -91,7 +94,7 @@ function RouteComponent() {
                     <ResultRow result={result} />
                   </ComboboxItem>
                 ))}
-                {enabled && items.length === 0 && <ComboboxEmpty>No matches yet</ComboboxEmpty>}
+                {enabled && items.length === 0 && <ComboboxEmpty>{m["search_page.no_matches"]()}</ComboboxEmpty>}
               </ComboboxList>
             </ComboboxContent>
           </ComboboxInput>
@@ -100,7 +103,7 @@ function RouteComponent() {
 
       {!enabled && (
         <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          {quickLinks.map((link) => (
+          {quickLinks().map((link) => (
             <Link
               key={link.to}
               to={link.to}

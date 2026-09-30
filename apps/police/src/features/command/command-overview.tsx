@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { EmptyNote } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { StatTile } from '@/components/stat-tile'
@@ -5,7 +6,7 @@ import { Tag } from '@/components/status-tag'
 import { useInstallation } from '@/features/session'
 import { AlarmClockIcon, Building06Icon, CellsIcon, File02Icon, Share08Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import { Link } from '@tanstack/react-router'
-import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
+import { formatDistanceToNowStrict } from '@/lib/date'
 import { useOverview, usePendingRequests, useStations } from './queries'
 
 const openLink = 'text-primary'
@@ -28,41 +29,41 @@ export function CommandOverview() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{installation?.name ?? 'Command'}</h1>
-          <p>What the stations under this command last reported. Figures and rosters only: no case, person or custody record ever reaches this command.</p>
+          <h1>{installation?.name ?? m["command.fallback_name"]()}</h1>
+          <p>{m["command.overview_lead"]()}</p>
         </div>
       </header>
 
-      <section aria-label="Figures" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <StatTile label="Stations reporting" icon={Building06Icon} tint="primary" value={overview?.reporting ?? 0} caption={`${overview?.stations ?? 0} registered, ${overview?.silent ?? 0} silent, ${overview?.requested ?? 0} waiting`} />
-        <StatTile label="In custody" icon={CellsIcon} tint="amber" value={overview?.inCustody ?? 0} caption="Across the stations reporting now" />
+      <section aria-label={m["command.figures"]()} className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <StatTile label={m["command.stations_reporting"]()} icon={Building06Icon} tint="primary" value={overview?.reporting ?? 0} caption={m["command.stations_reporting_caption"]({ registered: overview?.stations ?? 0, silent: overview?.silent ?? 0, waiting: overview?.requested ?? 0 })} />
+        <StatTile label={m["common.in_custody"]()} icon={CellsIcon} tint="amber" value={overview?.inCustody ?? 0} caption={m["command.custody_caption"]()} />
         <StatTile
-          label="Near or past the limit"
+          label={m["command.near_or_past"]()}
           icon={AlarmClockIcon}
           tint={(overview?.nearLimit ?? 0) + (overview?.pastLimit ?? 0) > 0 ? 'rose' : 'emerald'}
           value={(overview?.nearLimit ?? 0) + (overview?.pastLimit ?? 0)}
-          caption={`${overview?.pastLimit ?? 0} past it, ${overview?.nearLimit ?? 0} within hours of it`}
+          caption={m["command.near_or_past_caption"]({ past: overview?.pastLimit ?? 0, near: overview?.nearLimit ?? 0 })}
         />
-        <StatTile label="Open cases" icon={File02Icon} tint="primary" value={overview?.openCases ?? 0} caption="Reported by stations" />
-        <StatTile label="Referrals without an outcome" icon={Share08Icon} tint="amber" value={overview?.referralsPending ?? 0} caption="Reported by stations" />
-        <StatTile label="Officers" icon={UserGroupIcon} tint="emerald" value={overview?.officers ?? 0} caption="On the rosters reported" />
+        <StatTile label={m["common.open_cases"]()} icon={File02Icon} tint="primary" value={overview?.openCases ?? 0} caption={m["command.reported_by_stations"]()} />
+        <StatTile label={m["command.referrals_pending"]()} icon={Share08Icon} tint="amber" value={overview?.referralsPending ?? 0} caption={m["command.reported_by_stations"]()} />
+        <StatTile label={m["common.officers"]()} icon={UserGroupIcon} tint="emerald" value={overview?.officers ?? 0} caption={m["command.officers_caption"]()} />
       </section>
 
       <section aria-labelledby="attention" className="page-section">
         <div className="section-head">
-          <h2 id="attention">Needs attention</h2>
-          {attention > 0 && <Tag tone="open">{attention === 1 ? '1 item' : `${attention} items`}</Tag>}
+          <h2 id="attention">{m["common.needs_attention"]()}</h2>
+          {attention > 0 && <Tag tone="open">{attention === 1 ? m["common.item_one"]() : m["common.item_count"]({ count: attention })}</Tag>}
         </div>
         {attention === 0 ? (
-          <EmptyNote>{stations.length === 0 ? 'No station is registered yet. Register one under Stations.' : 'Nothing needs attention. Every connected station is reporting and no one is past the custody limit.'}</EmptyNote>
+          <EmptyNote>{stations.length === 0 ? m["command.empty_no_stations"]() : m["command.empty_all_good"]()}</EmptyNote>
         ) : (
           <RowList>
             {requests.length > 0 && (
               <Row
                 marker="open"
-                title={requests.length === 1 ? 'A station is waiting to be approved' : `${requests.length} stations are waiting to be approved`}
-                summary="Check who asked before approving."
-                trailing={<Link to="/stations" className={openLink}>Stations</Link>}
+                title={requests.length === 1 ? m["command.one_waiting"]() : m["command.many_waiting"]({ count: requests.length })}
+                summary={m["command.check_who_asked"]()}
+                trailing={<Link to="/stations" className={openLink}>{m["common.stations"]()}</Link>}
               />
             )}
             {pastLimit.map((station) => (
@@ -70,11 +71,11 @@ export function CommandOverview() {
                 key={station.id}
                 marker="urgent"
                 title={station.name}
-                summary={`${station.figures?.pastLimit} in custody past the limit, reported ${station.reportedAt ? formatDistanceToNowStrict(station.reportedAt, { addSuffix: true }) : ''}. Call the station.`}
+                summary={m["command.past_limit_summary"]({ count: station.figures?.pastLimit ?? 0, when: station.reportedAt ? formatDistanceToNowStrict(station.reportedAt, { addSuffix: true }) : '' })}
                 trailing={
                   <>
-                    <Tag tone="urgent">Past the limit</Tag>
-                    <Link to="/stations" className={openLink}>Stations</Link>
+                    <Tag tone="urgent">{m["common.past_the_limit"]()}</Tag>
+                    <Link to="/stations" className={openLink}>{m["common.stations"]()}</Link>
                   </>
                 }
               />
@@ -84,11 +85,11 @@ export function CommandOverview() {
                 key={station.id}
                 marker="open"
                 title={station.name}
-                summary={`No report for ${station.lastReportAt ? formatDistanceToNowStrict(station.lastReportAt) : 'a while'}. The figures below for this station are not current, so they are left out of the totals.`}
+                summary={m["command.silent_summary"]({ duration: station.lastReportAt ? formatDistanceToNowStrict(station.lastReportAt) : m["command.a_while"]() })}
                 trailing={
                   <>
-                    <Tag tone="urgent">Silent</Tag>
-                    <Link to="/stations" className={openLink}>Stations</Link>
+                    <Tag tone="urgent">{m["command.silent"]()}</Tag>
+                    <Link to="/stations" className={openLink}>{m["common.stations"]()}</Link>
                   </>
                 }
               />

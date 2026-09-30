@@ -2,6 +2,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/settings/')({
   beforeLoad: () => {
-    throw redirect({ to: '/settings/$section', params: { section: 'prosecutor' }, replace: true })
+    throw redirect({ to: '/settings/$section', params: { section: 'you' }, replace: true })
   },
 })

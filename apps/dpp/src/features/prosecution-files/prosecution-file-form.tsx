@@ -1,4 +1,5 @@
 import { useReportDirty } from '@/hooks/use-report-dirty'
+import { referenceExample, referenceLabel } from '@/lib/jurisdiction'
 import { RichTextInput } from '@pleadli/rich-text'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -7,6 +8,7 @@ import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useCreateProsecutionFile } from './queries'
 import { createProsecutionFileSchema, type ProsecutionFile } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type ProsecutionFileFormProps = {
   onSuccess?: (file: ProsecutionFile) => void
@@ -50,11 +52,11 @@ export function ProsecutionFileForm({ onSuccess, onDirtyChange }: ProsecutionFil
       try {
         const input = { ...value, receivedAt: new Date(value.receivedAt).getTime() }
         const result = await createFile.mutateAsync(input)
-        t.success('File opened')
+        t.success(m["file.form.opened"]())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not open file', { description: 'Please try again.' })
+        t.error(m["file.form.open_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -70,23 +72,23 @@ export function ProsecutionFileForm({ onSuccess, onDirtyChange }: ProsecutionFil
       }}
     >
       <form.AppField name="title">
-        {(f) => <f.input label="Title" placeholder="e.g. State vs. Okello, theft of motor vehicle" />}
+        {(f) => <f.input label={m["file.form.title"]()} placeholder={m["file.form.title_placeholder"]()} />}
       </form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
         <form.AppField name="odppRegistrationNumber">
           {(f) => (
             <Field>
-              <FieldLabel>ODPP registration number (optional)</FieldLabel>
-              <Input value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} placeholder="Assign when known" />
-              <FieldDescription>No standard format was confirmed in research. Enter as recorded.</FieldDescription>
+              <FieldLabel>{referenceLabel('prosecution', m["file.form.odpp_number"])}</FieldLabel>
+              <Input value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} placeholder={m["file.form.odpp_number_placeholder"]()} />
+              <FieldDescription>{m["file.form.odpp_number_hint"]()}</FieldDescription>
             </Field>
           )}
         </form.AppField>
         <form.AppField name="receivedAt">
           {(f) => (
             <Field>
-              <FieldLabel>Received</FieldLabel>
+              <FieldLabel>{m["file.form.received"]()}</FieldLabel>
               <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
             </Field>
           )}
@@ -94,13 +96,13 @@ export function ProsecutionFileForm({ onSuccess, onDirtyChange }: ProsecutionFil
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="policeStation">{(f) => <f.input label="Police station (optional)" placeholder="e.g. Jinja Police Station" />}</form.AppField>
+        <form.AppField name="policeStation">{(f) => <f.input label={m["file.form.police_station_optional"]()} placeholder={m["file.form.police_station_placeholder"]()} />}</form.AppField>
         <form.AppField name="policeReference">
           {(f) => (
             <Field>
-              <FieldLabel>Police reference (optional)</FieldLabel>
-              <Input value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} placeholder="e.g. JINJA CRB 314/2019" />
-              <FieldDescription>Real UPF citation format: full station name + CRB + number/year.</FieldDescription>
+              <FieldLabel>{referenceLabel('police', m["file.form.police_reference"])}</FieldLabel>
+              <Input value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} placeholder={referenceExample('police', m["file.form.police_reference_placeholder"])} />
+              <FieldDescription>{m["file.form.police_reference_hint"]()}</FieldDescription>
             </Field>
           )}
         </form.AppField>
@@ -109,11 +111,11 @@ export function ProsecutionFileForm({ onSuccess, onDirtyChange }: ProsecutionFil
       <form.AppField name="materialSummary">
         {(f) => (
           <Field>
-            <FieldLabel>What accompanied the file (optional)</FieldLabel>
+            <FieldLabel>{m["file.form.material_optional"]()}</FieldLabel>
             <RichTextInput
               value={f.state.value}
               onChange={f.handleChange}
-              placeholder="e.g. Charge sheet (draft), witness statements, arresting officer statement, exhibit photos"
+              placeholder={m["file.form.material_placeholder"]()}
             />
           </Field>
         )}
@@ -122,15 +124,15 @@ export function ProsecutionFileForm({ onSuccess, onDirtyChange }: ProsecutionFil
       <form.AppField name="notes">
         {(f) => (
           <Field>
-            <FieldLabel>Notes (optional)</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Notes…" />
+            <FieldLabel>{m["common.notes_optional"]()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["common.notes_placeholder"]()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Open file" />
+          <form.submit label={m["file.form.submit_open"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

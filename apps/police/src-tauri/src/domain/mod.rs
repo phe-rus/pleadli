@@ -15,6 +15,7 @@ pub mod exhibits;
 pub mod import;
 pub mod installation;
 pub mod incidents;
+pub mod keys;
 pub mod markdown;
 pub mod officers;
 pub mod people;

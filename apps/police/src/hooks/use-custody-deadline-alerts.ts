@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { useCustodyRecords } from '@/features/custody'
 import { custodyCompliance, custodyPersonName } from '@/features/custody/schema'
 import { isTauri } from '@tauri-apps/api/core'
@@ -76,12 +77,14 @@ export function useCustodyDeadlineAlerts() {
         if (!stage || alreadyNotified(record.id, stage)) continue
 
         sendNotification({
-          title: stage === 'overdue' ? 'Custody deadline passed' : 'Custody deadline approaching',
-          body: `${custodyPersonName(record)}: ${
-            stage === 'overdue'
-              ? `${Math.abs(compliance.hoursRemaining).toFixed(1)}h overdue`
-              : `${compliance.hoursRemaining.toFixed(1)}h remaining`
-          }`,
+          title: stage === 'overdue' ? m["custody.notify_passed"]() : m["custody.notify_approaching"](),
+          body: m["custody.notify_body"]({
+            name: custodyPersonName(record),
+            status:
+              stage === 'overdue'
+                ? m["common.hours_overdue"]({ hours: Math.abs(compliance.hoursRemaining).toFixed(1) })
+                : m["common.hours_remaining"]({ hours: compliance.hoursRemaining.toFixed(1) }),
+          }),
         })
         markNotified(record.id, stage)
       }

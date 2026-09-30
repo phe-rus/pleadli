@@ -1390,7 +1390,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pleadli-api-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
-        let db = crate::db::connect(dir.join("test.db"), vault_root.clone()).await.unwrap();
+        let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
         let app = routes(db.pool.clone(), vault_root);
 
         // Nothing is served outside /api.
@@ -1434,6 +1434,7 @@ mod tests {
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM police_units").fetch_one(&db.pool).await.unwrap();
         assert_eq!(count, 3, "the old levels are removed, not left behind");
 
+        db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -1446,7 +1447,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pleadli-officer-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
-        let db = crate::db::connect(dir.join("test.db"), vault_root.clone()).await.unwrap();
+        let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
         let app = routes(db.pool.clone(), vault_root);
 
         let plain = json!({ "name": "Ada Okello", "rank": "Inspector", "post": "OC CID", "role": "officer", "badgeNumber": "", "password": "", "personId": null, "notes": null });
@@ -1488,6 +1489,7 @@ mod tests {
         assert_eq!(typed["officerName"], "Sgt Someone");
         assert!(typed["officerId"].is_null());
 
+        db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -1507,7 +1509,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pleadli-auth-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
-        let db = crate::db::connect(dir.join("test.db"), vault_root.clone()).await.unwrap();
+        let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
         (router(db.pool.clone(), vault_root), db, dir)
     }
 
@@ -1577,6 +1579,7 @@ mod tests {
             assert!(actions.contains(&expected), "the trail has {expected}: {actions:?}");
         }
 
+        _db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -1659,6 +1662,7 @@ mod tests {
         assert_eq!(call_as(&app, Some(&token), Method::POST, &format!("/api/hq/stations/{}/revoke", one["id"].as_str().unwrap()), None).await.0, StatusCode::NO_CONTENT);
         assert!(command::receive_report(&db.pool, alpha_token, report(1, 0)).await.is_err());
 
+        db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);
     }
 }

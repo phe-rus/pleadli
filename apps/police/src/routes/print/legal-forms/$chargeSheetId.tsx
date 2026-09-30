@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { usePrintOnMount } from '@/hooks/use-print-on-mount'
 import { ChargeSheetPrintable, chargeSheetsOptions, useChargeSheets } from '@/features/legal-forms'
 import { createFileRoute, notFound } from '@tanstack/react-router'
@@ -24,7 +25,7 @@ function RouteComponent() {
   return (
     <article className="container flex flex-col gap-6 pt-5 pb-20">
       <button type="button" onClick={() => window.history.back()} className="w-fit text-xs text-muted-foreground print:hidden">
-        ← Back
+        {m["print.back"]()}
       </button>
       <ChargeSheetPrintable chargeSheet={cs} />
     </article>

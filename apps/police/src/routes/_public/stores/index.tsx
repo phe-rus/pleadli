@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import {
   stationAssetCategories,
   stationAssetPersonName,
@@ -11,7 +12,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/stores/')({
@@ -35,56 +36,56 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["col.id"](),
         cell: ({ row }) => <span className="rounded-md bg-primary/15 px-3 py-1 text-xs">{row.original.id}</span>,
       },
       {
         accessorKey: 'category',
-        header: 'Category',
+        header: m["col.category"](),
         cell: ({ row }) => <Badge variant="secondary">{categoryLabel(row.original.category)}</Badge>,
       },
-      { accessorKey: 'description', header: 'Description' },
+      { accessorKey: 'description', header: m["col.description"]() },
       {
         accessorKey: 'itemIdentifier',
-        header: 'Identifier',
+        header: m["col.identifier"](),
         cell: ({ row }) => row.original.itemIdentifier ?? '·',
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: m["col.status"](),
         cell: ({ getValue }) => stationAssetStatusLabel(getValue<string>()),
       },
       {
         accessorKey: 'holderName',
-        header: 'Held by',
+        header: m["col.held_by"](),
         cell: ({ row }) => row.original.holderName ?? '·',
       },
-      { accessorKey: 'personId', header: 'Person ID', cell: ({ row }) => row.original.personId ?? '·' },
+      { accessorKey: 'personId', header: m["col.person_id"](), cell: ({ row }) => row.original.personId ?? '·' },
       {
         id: 'relatedPerson',
         accessorFn: (row) => stationAssetPersonName(row) ?? '',
-        header: 'Related person',
+        header: m["col.related_person"](),
         cell: ({ getValue }) => getValue<string>() || '·',
       },
       {
         accessorKey: 'personFirstName',
-        header: 'Person first name',
+        header: m["col.person_first_name"](),
         cell: ({ row }) => row.original.personFirstName ?? '·',
       },
       {
         accessorKey: 'personLastName',
-        header: 'Person last name',
+        header: m["col.person_last_name"](),
         cell: ({ row }) => row.original.personLastName ?? '·',
       },
       {
         accessorKey: 'personOtherNames',
-        header: 'Person other names',
+        header: m["col.person_other_names"](),
         cell: ({ row }) => row.original.personOtherNames ?? '·',
       },
-      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
       {
         accessorKey: 'createdAt',
-        header: 'Added',
+        header: m["col.added"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
@@ -93,10 +94,9 @@ function RouteComponent() {
   return (
     <article className="page">
       <section className="flex flex-col">
-        <h1>Stores &amp; Armory</h1>
+        <h1>{m["stores.title"]()}</h1>
         <p className="md:max-w-lg">
-          Everything the station holds: weapons and equipment, and property impounded from the public. Sort or
-          filter here, or go to a specific register below.
+          {m["stores.lead"]()}
         </p>
       </section>
 
@@ -107,9 +107,9 @@ function RouteComponent() {
         >
           <div className="flex items-center gap-2">
             <HugeiconsIcon icon={GunIcon} className="size-4" />
-            <h3 className="text-sm">Armory Register</h3>
+            <h3 className="text-sm">{m["stores.armory"]()}</h3>
           </div>
-          <p className="text-xs text-muted-foreground">{armoryCount} items</p>
+          <p className="text-xs text-muted-foreground">{m["stores.items"]({ count: armoryCount })}</p>
         </Link>
         <Link
           to="/stores/impounded"
@@ -117,19 +117,19 @@ function RouteComponent() {
         >
           <div className="flex items-center gap-2">
             <HugeiconsIcon icon={ArchiveIcon} className="size-4" />
-            <h3 className="text-sm">Impounded Assets</h3>
+            <h3 className="text-sm">{m["stores.impounded"]()}</h3>
           </div>
-          <p className="text-xs text-muted-foreground">{impoundedCount} items</p>
+          <p className="text-xs text-muted-foreground">{m["stores.items"]({ count: impoundedCount })}</p>
         </Link>
       </section>
 
       <DataTable
-        aria-label="All station assets"
+        aria-label={m["stores.table"]()}
         data={assets}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="Nothing recorded yet."
-        searchPlaceholder="Search across armory and impounded assets…"
+        emptyMessage={m["common.nothing_recorded"]()}
+        searchPlaceholder={m["stores.search"]()}
       />
     </article>
   )

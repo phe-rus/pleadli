@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
@@ -63,12 +64,12 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
         const result = chargeSheet
           ? await updateChargeSheet.mutateAsync({ id: chargeSheet.id, input })
           : await createChargeSheet.mutateAsync(input)
-        t.success(chargeSheet ? 'Charge sheet updated' : 'Charge sheet drawn')
+        t.success(chargeSheet ? m["charge_sheet.updated"]() : m["charge_sheet.drawn"]())
         if (!chargeSheet) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(chargeSheet ? 'Could not update charge sheet' : 'Could not draw up charge sheet', {
-          description: 'Please try again.',
+        t.error(chargeSheet ? m["charge_sheet.update_failed"]() : m["charge_sheet.draw_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -88,14 +89,14 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
         <form.AppField name="caseId">
           {(f) => (
             <Field>
-              <FieldLabel>Case</FieldLabel>
+              <FieldLabel>{m["common.case"]()}</FieldLabel>
               <Select
                 items={cases.map((c: Case) => ({ value: c.id, label: `${c.reference}: ${c.summary}` }))}
                 value={f.state.value}
                 onValueChange={(value) => f.handleChange(value ?? f.state.value)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select case" />
+                  <SelectValue placeholder={m["common.select_case"]()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -114,7 +115,7 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
         <form.AppField name="accusedPersonId">
           {(f) => (
             <Field>
-              <FieldLabel>Accused</FieldLabel>
+              <FieldLabel>{m["common.accused"]()}</FieldLabel>
               <PersonPicker value={f.state.value} onValueChange={f.handleChange} />
             </Field>
           )}
@@ -122,22 +123,22 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="offence">
-            {(f) => <f.input label="Statement of the offence" placeholder="e.g. Theft" />}
+            {(f) => <f.input label={m["charge_sheet.offence"]()} placeholder={m["charge_sheet.offence_placeholder"]()} />}
           </form.AppField>
           <form.AppField name="statutorySection">
-            {(f) => <f.input label="Statutory section" placeholder="e.g. s.254, Penal Code Act" />}
+            {(f) => <f.input label={m["charge_sheet.section"]()} placeholder={m["charge_sheet.section_placeholder"]()} />}
           </form.AppField>
         </div>
 
         <form.AppField name="particulars">
           {(f) => (
             <Field>
-              <FieldLabel>Particulars of the offence</FieldLabel>
+              <FieldLabel>{m["charge_sheet.particulars"]()}</FieldLabel>
               <Textarea
                 value={f.state.value}
                 onChange={(e) => f.handleChange(e.target.value)}
                 rows={4}
-                placeholder="Time, place, conduct, and subject matter. Only what's necessary to give the accused reasonable notice of the charge."
+                placeholder={m["charge_sheet.particulars_placeholder"]()}
               />
             </Field>
           )}
@@ -147,7 +148,7 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
           <form.AppField name="chargedAt">
             {(f) => (
               <Field>
-                <FieldLabel>Date charge preferred</FieldLabel>
+                <FieldLabel>{m["charge_sheet.charged_at"]()}</FieldLabel>
                 <Input
                   type="datetime-local"
                   value={f.state.value}
@@ -157,13 +158,13 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
             )}
           </form.AppField>
           <form.AppField name="officerId">
-            {(f) => <OfficerPicker label="Preferring officer" value={f.state.value} onValueChange={f.handleChange} />}
+            {(f) => <OfficerPicker label={m["charge_sheet.preferring_officer"]()} value={f.state.value} onValueChange={f.handleChange} />}
           </form.AppField>
           <form.Subscribe selector={(state) => state.values.officerId}>
             {(officerId) =>
               officerId ? null : (
                 <>
-                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
+                <form.AppField name="officerName">{(f) => <f.input label={m["common.name"]()} />}</form.AppField>
                 </>
               )
             }
@@ -171,7 +172,7 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
         </div>
 
         <form.AppField name="stationName">
-          {(f) => <f.input label="Station" placeholder="e.g. Central Police Station" />}
+          {(f) => <f.input label={m["common.station"]()} placeholder={m["charge_sheet.station_placeholder"]()} />}
         </form.AppField>
 
         <AttachmentsField entityType={entityTypes.chargeSheet} entityId={chargeSheet?.id} />
@@ -179,7 +180,7 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={chargeSheet ? 'Save changes' : 'Draw up charge sheet'} />
+          <form.submit label={chargeSheet ? m["common.save_changes"]() : m["charge_sheet.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

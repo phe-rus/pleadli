@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { stationAssetsOptions, StationAssetsPage } from '@/features/station-assets'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -14,9 +15,9 @@ function RouteComponent() {
   return (
     <StationAssetsPage
       category="armory"
-      title="Armory Register"
-      description="Weapons and equipment held by the station."
-      addLabel="Add armory item"
+      title={m["stores.armory"]()}
+      description={m["stores.armory_desc"]()}
+      addLabel={m["stores.armory_add"]()}
     />
   )
 }

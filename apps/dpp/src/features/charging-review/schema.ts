@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import * as m from '@/paraglide/messages'
 
 export type Standard = 'two_stage' | 'threshold'
 export type Test = 'evidential' | 'public_interest' | 'threshold'
@@ -6,13 +7,13 @@ export type Test = 'evidential' | 'public_interest' | 'threshold'
 export const standards = [
   {
     id: 'two_stage',
-    label: 'Two-Stage Test',
-    about: 'The default. The Evidential Test first, then the Public Interest Test only if the first is passed.',
+    get label() { return m["review.standard.two_stage.label"]() },
+    get about() { return m["review.standard.two_stage.about"]() },
   },
   {
     id: 'threshold',
-    label: 'Threshold Test',
-    about: 'A narrower test for rare, very serious cases where the investigation is incomplete but charging now is justified. All five requirements must be met, and the decision must be reviewed within 14 days.',
+    get label() { return m["review.standard.threshold.label"]() },
+    get about() { return m["review.standard.threshold.about"]() },
   },
 ] as const
 
@@ -27,39 +28,39 @@ export type Criterion = { id: string; label: string; about: string }
 // other.
 export const criteria: Record<Test, { label: string; about: string; items: readonly Criterion[] }> = {
   evidential: {
-    label: 'Evidential Test',
-    about: 'Is there a realistic prospect of conviction?',
+    get label() { return m["review.test.evidential.label"]() },
+    get about() { return m["review.test.evidential.about"]() },
     items: [
-      { id: 'relevance', label: 'Relevance', about: 'Is the evidence relevant to what has to be proved?' },
-      { id: 'admissibility', label: 'Admissibility', about: 'Can it be put before the court?' },
-      { id: 'reliability', label: 'Reliability', about: 'Can the evidence be relied on?' },
-      { id: 'credibility', label: 'Credibility', about: 'Are the witnesses credible?' },
-      { id: 'availability', label: 'Availability', about: 'Is the evidence available, and will it stay so?' },
-      { id: 'defence', label: 'Defence raised', about: 'Is a defence raised, and how does the evidence meet it?' },
+      { id: 'relevance', get label() { return m["review.criterion.relevance.label"]() }, get about() { return m["review.criterion.relevance.about"]() } },
+      { id: 'admissibility', get label() { return m["review.criterion.admissibility.label"]() }, get about() { return m["review.criterion.admissibility.about"]() } },
+      { id: 'reliability', get label() { return m["review.criterion.reliability.label"]() }, get about() { return m["review.criterion.reliability.about"]() } },
+      { id: 'credibility', get label() { return m["review.criterion.credibility.label"]() }, get about() { return m["review.criterion.credibility.about"]() } },
+      { id: 'availability', get label() { return m["review.criterion.availability.label"]() }, get about() { return m["review.criterion.availability.about"]() } },
+      { id: 'defence', get label() { return m["review.criterion.defence.label"]() }, get about() { return m["review.criterion.defence.about"]() } },
     ],
   },
   public_interest: {
-    label: 'Public Interest Test',
-    about: 'Is prosecution in the public interest? Applied only once the Evidential Test is passed.',
+    get label() { return m["review.test.public_interest.label"]() },
+    get about() { return m["review.test.public_interest.about"]() },
     items: [
-      { id: 'seriousness', label: 'Seriousness', about: 'How serious is the offence?' },
-      { id: 'culpability', label: 'Culpability', about: 'How culpable is the suspect?' },
-      { id: 'harm', label: 'Harm', about: 'The harm to the victim and to the community.' },
-      { id: 'age', label: 'Age', about: 'The age of the suspect.' },
-      { id: 'proportionality', label: 'Proportionality', about: 'Is prosecution a proportionate response?' },
-      { id: 'out_of_court_disposal', label: 'Out-of-court disposal', about: 'Is an alternative to prosecution available?' },
-      { id: 'sensitive_information', label: 'Sensitive information', about: 'Does protecting sensitive information weigh against prosecuting?' },
+      { id: 'seriousness', get label() { return m["review.criterion.seriousness.label"]() }, get about() { return m["review.criterion.seriousness.about"]() } },
+      { id: 'culpability', get label() { return m["review.criterion.culpability.label"]() }, get about() { return m["review.criterion.culpability.about"]() } },
+      { id: 'harm', get label() { return m["review.criterion.harm.label"]() }, get about() { return m["review.criterion.harm.about"]() } },
+      { id: 'age', get label() { return m["review.criterion.age.label"]() }, get about() { return m["review.criterion.age.about"]() } },
+      { id: 'proportionality', get label() { return m["review.criterion.proportionality.label"]() }, get about() { return m["review.criterion.proportionality.about"]() } },
+      { id: 'out_of_court_disposal', get label() { return m["review.criterion.out_of_court_disposal.label"]() }, get about() { return m["review.criterion.out_of_court_disposal.about"]() } },
+      { id: 'sensitive_information', get label() { return m["review.criterion.sensitive_information.label"]() }, get about() { return m["review.criterion.sensitive_information.about"]() } },
     ],
   },
   threshold: {
-    label: 'Threshold Test',
-    about: 'All five requirements must be met.',
+    get label() { return m["review.test.threshold.label"]() },
+    get about() { return m["review.test.threshold.about"]() },
     items: [
-      { id: 'threshold_guilt', label: 'Reasonable grounds to believe guilt', about: 'The key evidence gives reasonable grounds to believe the suspect committed the offence.' },
-      { id: 'threshold_further_evidence', label: 'Further evidence is expected', about: 'There are reasonable grounds to believe further evidence will emerge, with timelines for what is outstanding.' },
-      { id: 'threshold_seriousness', label: 'Seriousness justifies charging now', about: 'A summary of the facts explaining why the seriousness justifies an immediate charge.' },
-      { id: 'threshold_bail', label: 'Substantial grounds to object to bail', about: 'For example, the risk that the suspect will abscond.' },
-      { id: 'threshold_public_interest', label: 'Public interest in charging', about: 'Charging now is in the public interest.' },
+      { id: 'threshold_guilt', get label() { return m["review.criterion.threshold_guilt.label"]() }, get about() { return m["review.criterion.threshold_guilt.about"]() } },
+      { id: 'threshold_further_evidence', get label() { return m["review.criterion.threshold_further_evidence.label"]() }, get about() { return m["review.criterion.threshold_further_evidence.about"]() } },
+      { id: 'threshold_seriousness', get label() { return m["review.criterion.threshold_seriousness.label"]() }, get about() { return m["review.criterion.threshold_seriousness.about"]() } },
+      { id: 'threshold_bail', get label() { return m["review.criterion.threshold_bail.label"]() }, get about() { return m["review.criterion.threshold_bail.about"]() } },
+      { id: 'threshold_public_interest', get label() { return m["review.criterion.threshold_public_interest.label"]() }, get about() { return m["review.criterion.threshold_public_interest.about"]() } },
     ],
   },
 }
@@ -67,9 +68,9 @@ export const criteria: Record<Test, { label: string; about: string; items: reado
 export const testsFor = (standard: string): Test[] => (standard === 'threshold' ? ['threshold'] : ['evidential', 'public_interest'])
 
 export const findings = [
-  { id: 'favours', label: 'Favours charging' },
-  { id: 'against', label: 'Against charging' },
-  { id: 'unresolved', label: 'Unresolved' },
+  { id: 'favours', get label() { return m["review.finding.favours"]() } },
+  { id: 'against', get label() { return m["review.finding.against"]() } },
+  { id: 'unresolved', get label() { return m["review.finding.unresolved"]() } },
 ] as const
 
 export type Finding = (typeof findings)[number]['id']
@@ -125,7 +126,12 @@ export const chargingDecisionTypes = ['sanction', 'threshold_charge', 'decline',
 /** Decisions that need written reasons. */
 export const reasonedDecisionTypes = ['decline']
 
-export const outcomeLabels: Record<string, string> = { passed: 'Passed', failed: 'Failed', met: 'Met', not_met: 'Not met' }
+export const outcomeLabels: Record<string, string> = {
+  get passed() { return m["review.outcome.passed"]() },
+  get failed() { return m["review.outcome.failed"]() },
+  get met() { return m["review.outcome.met"]() },
+  get not_met() { return m["review.outcome.not_met"]() },
+}
 
 export function findingCounts(review: ChargingReview, test: Test) {
   const items = criteria[test].items

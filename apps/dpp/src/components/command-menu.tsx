@@ -1,4 +1,5 @@
 import { entityTypeLabel, useSearch, type SearchResult } from '@/features/search'
+import { productName, serviceNames } from '@/lib/jurisdiction'
 import { parseSearchRoute } from '@/lib/parse-search-route'
 import { Badge } from '@pleadli/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@pleadli/ui/dialog'
@@ -6,6 +7,7 @@ import { Input } from '@pleadli/ui/input'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
+import * as m from '@/paraglide/messages'
 
 export type CommandMenuProps = {
   open: boolean
@@ -40,16 +42,16 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg md:max-w-xl" showCloseButton={false}>
-        <DialogTitle className="sr-only">Search Pleadli DPP</DialogTitle>
+        <DialogTitle className="sr-only">{m["command_menu.title"]({ product: productName() })}</DialogTitle>
         <DialogDescription className="sr-only">
-          Search people, files, and everything else across ODPP.
+          {m["command_menu.description"]({ office: serviceNames().short })}
         </DialogDescription>
 
         <Input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, NIN, registration number, reference…"
+          placeholder={m["command_menu.placeholder"]()}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
               e.preventDefault()
@@ -67,9 +69,9 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
 
         <div className="max-h-96 overflow-y-auto">
           {query.trim().length === 0 ? (
-            <p className="p-3 text-xs text-muted-foreground">Type to search across ODPP.</p>
+            <p className="p-3 text-xs text-muted-foreground">{m["command_menu.type_to_search"]({ office: serviceNames().short })}</p>
           ) : items.length === 0 ? (
-            <p className="p-3 text-xs text-muted-foreground">No matches yet.</p>
+            <p className="p-3 text-xs text-muted-foreground">{m["command_menu.no_matches"]()}</p>
           ) : (
             items.map((result, index) => (
               <button

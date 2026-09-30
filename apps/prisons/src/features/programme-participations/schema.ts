@@ -43,9 +43,9 @@ export type ProgrammeParticipation = z.infer<typeof programmeParticipationSchema
 
 export const createProgrammeParticipationSchema = z.object({
   prisonerId: z.string().min(1),
-  category: z.string().min(1, 'Category is required.'),
-  programmeName: z.string().min(1, 'Programme name is required.'),
-  status: z.string().min(1, 'Status is required.'),
+  category: z.string().min(1, { error: () => m.validation_category_required() }),
+  programmeName: z.string().min(1, { error: () => m.validation_programme_name_required() }),
+  status: z.string().min(1, { error: () => m.validation_status_required() }),
   startedAt: z.number(),
   notes: z.string(),
 })

@@ -8,13 +8,15 @@ pub enum DomainError {
     /// The request is well formed but breaks a rule (422).
     Invalid(String),
     NotFound(String),
+    /// The person acting may not do this (403), whatever the request says.
+    Forbidden(String),
     Db(sqlx::Error),
 }
 
 impl fmt::Display for DomainError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DomainError::Invalid(m) | DomainError::NotFound(m) => write!(f, "{m}"),
+            DomainError::Invalid(m) | DomainError::NotFound(m) | DomainError::Forbidden(m) => write!(f, "{m}"),
             DomainError::Db(e) => write!(f, "{e}"),
         }
     }

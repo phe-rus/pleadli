@@ -401,7 +401,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pleadli-remote-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
-        let db = crate::db::connect(dir.join("test.db"), vault_root.clone()).await.unwrap();
+        let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
         (db.pool, vault_root)
     }
 
@@ -465,6 +465,7 @@ mod tests {
         .unwrap();
 
         let port = 47850;
+        let pool_for_close = pool.clone();
         let handle = start_with_state(RemoteState { pool, vault_root, app: None }, port)
             .await
             .expect("start remote server");
@@ -530,5 +531,6 @@ mod tests {
         assert_eq!(after_logout.status(), StatusCode::UNAUTHORIZED, "token must be dead after logout");
 
         handle.stop();
+        pool_for_close.close().await;
     }
 }

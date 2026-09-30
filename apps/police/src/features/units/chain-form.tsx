@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { useReportDirty } from '@/hooks/use-report-dirty'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -23,10 +24,10 @@ export function ChainForm({ onSuccess, onDirtyChange }: ChainFormProps) {
     onSubmit: async ({ value }) => {
       try {
         await save.mutateAsync(value)
-        t.success('Command structure saved')
+        t.success(m["units.saved"]())
         onSuccess?.()
       } catch {
-        t.error('Could not save the command structure', { description: 'Please try again.' })
+        t.error(m["units.save_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -42,15 +43,15 @@ export function ChainForm({ onSuccess, onDirtyChange }: ChainFormProps) {
       }}
     >
       <FieldGroup>
-        <form.AppField name="region">{(f) => <f.input label="Region" placeholder="e.g. Kampala Metropolitan North" />}</form.AppField>
-        <form.AppField name="district">{(f) => <f.input label="District" />}</form.AppField>
-        <form.AppField name="division">{(f) => <f.input label="Division" />}</form.AppField>
-        <FieldDescription>Leave a level blank if it does not apply to this station.</FieldDescription>
+        <form.AppField name="region">{(f) => <f.input label={m["common.region"]()} placeholder={m["units.region_placeholder"]()} />}</form.AppField>
+        <form.AppField name="district">{(f) => <f.input label={m["common.district"]()} />}</form.AppField>
+        <form.AppField name="division">{(f) => <f.input label={m["onboarding.division"]()} />}</form.AppField>
+        <FieldDescription>{m["units.blank_hint"]()}</FieldDescription>
       </FieldGroup>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Save command structure" />
+          <form.submit label={m["units.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

@@ -1,15 +1,16 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const stationAssetCategories = [
-  { value: 'armory', label: 'Armory' },
-  { value: 'impounded', label: 'Impounded' },
+  { value: 'armory', get label() { return m["assets.category.armory"]() } },
+  { value: 'impounded', get label() { return m["assets.category.impounded"]() } },
 ] as const
 
 export const stationAssetStatuses = [
-  { value: 'in_store', label: 'In store' },
-  { value: 'issued', label: 'Issued' },
-  { value: 'released', label: 'Released' },
-  { value: 'disposed', label: 'Disposed' },
+  { value: 'in_store', get label() { return m["assets.status.in_store"]() } },
+  { value: 'issued', get label() { return m["assets.status.issued"]() } },
+  { value: 'released', get label() { return m["assets.status.released"]() } },
+  { value: 'disposed', get label() { return m["assets.status.disposed"]() } },
 ] as const
 
 export function stationAssetStatusLabel(status: string) {
@@ -34,10 +35,10 @@ export const stationAssetSchema = z.object({
 export type StationAsset = z.infer<typeof stationAssetSchema>
 
 export const createStationAssetSchema = z.object({
-  category: z.string().min(1, 'Category is required.'),
-  description: z.string().min(1, 'Description is required.'),
+  category: z.string().min(1, { error: () => m["validation.category_is_required"]() }),
+  description: z.string().min(1, { error: () => m["validation.description_is_required"]() }),
   itemIdentifier: z.string(),
-  status: z.string().min(1, 'Status is required.'),
+  status: z.string().min(1, { error: () => m["validation.status_is_required"]() }),
   holderName: z.string(),
   personId: z.string().nullable(),
   notes: z.string(),

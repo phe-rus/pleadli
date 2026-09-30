@@ -1,5 +1,8 @@
+import * as m from '@/paraglide/messages'
 import { SettingsTable, type SettingsRow } from '@/components/settings-table'
 import { Toggletheme } from '@/components/toggle-theme'
+import { LogoCard, type LogoCardLabels } from '@/features/brand'
+import { changeLocale, localeNames, selectableLocales, useLocale } from '@/features/i18n'
 import { isCustodyAlertsEnabled, setCustodyAlertsEnabled } from '@/hooks/use-custody-deadline-alerts'
 import { BulkFileIntake, ExportPanel, ImportWizard } from '@/features/data-io'
 import { remoteAccessLogOptions, useRemoteAccessLog } from '@/features/officers'
@@ -20,6 +23,7 @@ import { Badge } from '@pleadli/ui/badge'
 import { Button, buttonVariants } from '@pleadli/ui/button'
 import { FieldDescription, FieldGroup } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { Switch } from '@pleadli/ui/switch'
 import { ConnectionSettings } from '@/features/command-link'
 import { ListenerCard } from '@/features/command'
@@ -28,7 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/_public/settings/')({
@@ -64,20 +68,64 @@ function useAppInfo() {
   return info
 }
 
+/** The logo card's words, in the current language. */
+function logoCardLabels(): LogoCardLabels {
+  return {
+    title: m["brand.title"](),
+    description: m["brand.description"](),
+    hint: m["brand.hint"](),
+    upload: m["brand.upload"](),
+    reset: m["brand.reset"](),
+    saved: m["brand.saved"](),
+    failed: m["brand.failed"](),
+    isDefault: m["brand.is_default"](),
+    isCustom: m["brand.is_custom"](),
+  }
+}
+
+/** Language names are shown in their own language, so each one reads the same
+ * whatever language is chosen now. */
+function LanguageSelectField() {
+  const locale = useLocale()
+  const languageOptions = selectableLocales.map((value) => ({ value, label: localeNames[value] }))
+  return (
+    <Select items={languageOptions} value={locale} onValueChange={(value) => value && changeLocale(String(value))}>
+      <SelectTrigger size="sm" className="max-w-xs">
+        <SelectValue placeholder={localeNames[locale]} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {languageOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  )
+}
+
 function GeneralTab() {
   const [alertsEnabled, setAlertsEnabled] = useState(isCustodyAlertsEnabled)
 
   const rows: SettingsRow[] = [
     {
+      key: 'language',
+      label: m["settings.language"](),
+      description: m["settings.language_desc"](),
+      control: <LanguageSelectField />,
+    },
+    {
       key: 'appearance',
-      label: 'Appearance',
-      description: 'Light, dark, or match the system.',
+      label: m["settings.appearance"](),
+      description: m["settings.appearance_desc"](),
       control: <Toggletheme />,
     },
     {
       key: 'custody-alerts',
-      label: 'Custody deadline alerts',
-      description: 'A native notification when an in-custody record approaches or passes its 48h/7d deadline.',
+      label: m["settings.custody_alerts"](),
+      description: m["settings.custody_alerts_desc"](),
       control: (
         <Switch
           checked={alertsEnabled}
@@ -93,15 +141,20 @@ function GeneralTab() {
       ? [
           {
             key: 'dev-mode',
-            label: 'Station or Command',
-            description: 'Dev builds only. Flips this installation to try both. A Command signs in with a password, so your account needs one first.',
+            label: m["settings.dev_mode"](),
+            description: m["settings.dev_mode_desc"](),
             control: <DevModeSwitch />,
           },
         ]
       : []),
   ]
 
-  return <SettingsTable rows={rows} className="md:max-w-lg" />
+  return (
+    <div className="flex flex-col gap-6 md:max-w-lg">
+      <LogoCard labels={logoCardLabels()} />
+      <SettingsTable rows={rows} />
+    </div>
+  )
 }
 
 function CloudflareForm() {
@@ -118,9 +171,9 @@ function CloudflareForm() {
     onSubmit: async ({ value }) => {
       try {
         await saveConfig.mutateAsync(value)
-        t.success('Cloudflare configuration saved')
+        t.success(m["settings.cf_saved"]())
       } catch {
-        t.error('Could not save Cloudflare configuration', { description: 'Please try again.' })
+        t.error(m["settings.cf_save_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -138,26 +191,26 @@ function CloudflareForm() {
           {(f) => (
             <f.input
               type="password"
-              label="API token"
-              placeholder={config ? 'Leave blank to keep the current token' : undefined}
+              label={m["settings.api_token"]()}
+              placeholder={config ? m["settings.keep_token"]() : undefined}
             />
           )}
         </form.AppField>
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="accountId">{(f) => <f.input label="Account ID" />}</form.AppField>
-          <form.AppField name="domain">{(f) => <f.input label="Domain" placeholder="e.g. pleadli.com" />}</form.AppField>
+          <form.AppField name="accountId">{(f) => <f.input label={m["settings.account_id"]()} />}</form.AppField>
+          <form.AppField name="domain">{(f) => <f.input label={m["settings.domain"]()} placeholder={m["settings.domain_placeholder"]()} />}</form.AppField>
         </div>
-        <form.AppField name="stationName">{(f) => <f.input label="Station name" placeholder="e.g. station-42" />}</form.AppField>
+        <form.AppField name="stationName">{(f) => <f.input label={m["command.station_name"]()} placeholder={m["settings.cf_station_placeholder"]()} />}</form.AppField>
 
         <form.Subscribe selector={(state) => [state.values.stationName, state.values.domain] as const}>
           {([stationName, domain]) => (
-            <FieldDescription>Becomes {stationName || 'station-name'}.{domain || 'pleadli.com'}</FieldDescription>
+            <FieldDescription>{m["settings.becomes"]({ host: `${stationName || 'station-name'}.${domain || 'pleadli.com'}` })}</FieldDescription>
           )}
         </form.Subscribe>
       </FieldGroup>
 
       <form.AppForm>
-        <form.submit label="Save Cloudflare configuration" />
+        <form.submit label={m["settings.cf_submit"]()} />
       </form.AppForm>
     </form>
   )
@@ -175,12 +228,12 @@ function NetworkTab() {
   const rows: SettingsRow[] = [
     {
       key: 'remote-access',
-      label: 'Remote access',
+      label: m["nav.remote_access"](),
       description: status.enabled
         ? status.hostname
-          ? `Live at ${status.hostname}, and reachable on this station's local network.`
-          : "On for this station's local network. Configure Cloudflare below for access from anywhere."
-        : 'Off. Nothing outside this desktop app can reach station data.',
+          ? m["settings.remote_live"]({ host: status.hostname })
+          : m["settings.remote_local"]()
+        : m["settings.remote_off"](),
       control: (
         <Switch
           checked={status.enabled}
@@ -194,13 +247,13 @@ function NetworkTab() {
   if (status.enabled) {
     rows.push({
       key: 'local-network',
-      label: "This station's local network",
+      label: m["settings.local_network"](),
       description: info.address
-        ? `Reachable at ${info.address}:${info.port} on this network. Same QR an officer scans to check in.`
-        : 'No local network address found.',
+        ? m["settings.reachable_at"]({ address: `${info.address}:${info.port}` })
+        : m["settings.no_address"](),
       control: info.address ? (
         <Button type="button" size="sm" variant="secondary" onClick={() => setShowQr((v) => !v)}>
-          {showQr ? 'Hide pairing QR' : 'Show pairing QR'}
+          {showQr ? m["settings.hide_qr"]() : m["settings.show_qr"]()}
         </Button>
       ) : null,
       expanded: showQr && qr ? <div className="w-40 [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: qr }} /> : undefined,
@@ -213,19 +266,19 @@ function NetworkTab() {
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Cloudflare Tunnel</h2>
-          {tunnel && <Badge variant="secondary">Active at {tunnel.hostname}</Badge>}
+          <h2 className="text-sm font-medium text-muted-foreground">{m["settings.tunnel"]()}</h2>
+          {tunnel && <Badge variant="secondary">{m["settings.tunnel_active"]({ host: tunnel.hostname })}</Badge>}
         </div>
         <p className="text-xs text-muted-foreground md:max-w-lg">
-          Makes this station reachable from anywhere, not just its own network.
+          {m["settings.tunnel_desc"]()}
         </p>
         <CloudflareForm />
       </div>
 
       <div className="flex items-center justify-between md:max-w-lg">
-        <p className="text-xs text-muted-foreground">{log.length} remote actions logged.</p>
+        <p className="text-xs text-muted-foreground">{m["settings.remote_logged"]({ count: log.length })}</p>
         <Link to="/logs/remote-access" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
-          View logs
+          {m["settings.view_logs"]()}
         </Link>
       </div>
     </div>
@@ -246,14 +299,13 @@ function AboutTab() {
   const info = useAppInfo()
   return (
     <div className="flex flex-col gap-1">
-      <p>Pleadli Police is an offline-first desktop app for station operations, custody compliance, and case work.</p>
+      <p>{m["settings.about_lead"]()}</p>
       <p className="text-xs text-muted-foreground">
-        All data is stored locally on this device by default. Station identity and officers are configured
-        under Station administration. An officer's remote sign-in is optional and is set on the Officers page; remote access itself is turned on under the Network tab.
+        {m["settings.about_body"]()}
       </p>
       {info && (
         <p className="text-xs text-muted-foreground">
-          Version {info.version} on {info.platform} ({info.arch}) · {format(Date.now(), 'PPP')}
+          {m["settings.version"]({ version: info.version, platform: info.platform, arch: info.arch, date: format(Date.now(), 'PPP') })}
         </p>
       )}
     </div>
@@ -269,8 +321,8 @@ function RouteComponent() {
   return (
     <article className="page">
       <section className="flex flex-col">
-        <h1>Settings</h1>
-        <p>Preferences for this device. Nothing here is shared or synced.</p>
+        <h1>{m["nav.settings"]()}</h1>
+        <p>{m["settings.lead"]()}</p>
       </section>
 
       <Tabs
@@ -278,12 +330,12 @@ function RouteComponent() {
         onValueChange={(value) => navigate({ search: { tab: value === 'general' ? undefined : String(value) } })}
       >
         <TabsList variant="line">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="sign-in">Sign-in</TabsTrigger>
-          {command ? <TabsTrigger value="command">Stations</TabsTrigger> : <TabsTrigger value="connection">Command</TabsTrigger>}
-          {!command && <TabsTrigger value="network">Network</TabsTrigger>}
-          {!command && <TabsTrigger value="data">Data</TabsTrigger>}
-          <TabsTrigger value="about">About</TabsTrigger>
+          <TabsTrigger value="general">{m["settings.tab_general"]()}</TabsTrigger>
+          <TabsTrigger value="sign-in">{m["settings.tab_sign_in"]()}</TabsTrigger>
+          {command ? <TabsTrigger value="command">{m["settings.tab_stations"]()}</TabsTrigger> : <TabsTrigger value="connection">{m["settings.tab_command"]()}</TabsTrigger>}
+          {!command && <TabsTrigger value="network">{m["settings.tab_network"]()}</TabsTrigger>}
+          {!command && <TabsTrigger value="data">{m["settings.tab_data"]()}</TabsTrigger>}
+          <TabsTrigger value="about">{m["settings.tab_about"]()}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="pt-4">

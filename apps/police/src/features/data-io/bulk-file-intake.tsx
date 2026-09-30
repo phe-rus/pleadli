@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { CasePicker } from '@/components/case-picker'
 import { PersonPicker } from '@/components/person-picker'
 import { entityTypes, formatFileSize, useBulkAttachFiles, type BulkAttachResult } from '@/features/attachments'
@@ -75,23 +76,22 @@ export function BulkFileIntake() {
       setResult(outcome)
       setSelected(null)
       if (outcome.failed.length === 0) {
-        t.success(`${outcome.attached.length} file${outcome.attached.length === 1 ? '' : 's'} attached`)
+        t.success(outcome.attached.length === 1 ? m["data_io.files_attached_one"]() : m["data_io.files_attached"]({ count: outcome.attached.length }))
       } else {
-        t.error(`${outcome.attached.length} attached, ${outcome.failed.length} failed`, {
-          description: 'See the details below.',
+        t.error(m["data_io.attached_failed"]({ attached: outcome.attached.length, failed: outcome.failed.length }), {
+          description: m["data_io.see_details"](),
         })
       }
     } catch {
-      t.error('Could not attach the files', { description: 'Please try again.' })
+      t.error(m["data_io.attach_failed"](), { description: m["common.try_again"]() })
     }
   }
 
   return (
     <Field>
-      <FieldLabel>Bulk file intake</FieldLabel>
+      <FieldLabel>{m["data_io.bulk_title"]()}</FieldLabel>
       <FieldDescription>
-        Bring in an existing stack of paperwork for one person or case at once: scanned files, old register photos,
-        typed reports. Everything lands in the same Vault folder a single attachment for that record already would.
+        {m["data_io.bulk_desc"]()}
       </FieldDescription>
 
       <div className="flex flex-col gap-3 pt-1 md:max-w-lg">
@@ -102,7 +102,7 @@ export function BulkFileIntake() {
             variant={targetType === 'person' ? 'default' : 'secondary'}
             onClick={() => handleTargetTypeChange('person')}
           >
-            Person
+            {m["common.person"]()}
           </Button>
           <Button
             type="button"
@@ -110,25 +110,25 @@ export function BulkFileIntake() {
             variant={targetType === 'case' ? 'default' : 'secondary'}
             onClick={() => handleTargetTypeChange('case')}
           >
-            Case
+            {m["common.case"]()}
           </Button>
         </div>
 
         {targetType === 'person' ? (
-          <PersonPicker value={targetId} onValueChange={setTargetId} placeholder="Search for the person…" />
+          <PersonPicker value={targetId} onValueChange={setTargetId} placeholder={m["data_io.search_person"]()} />
         ) : (
-          <CasePicker value={targetId} onValueChange={setTargetId} placeholder="Search for the case…" />
+          <CasePicker value={targetId} onValueChange={setTargetId} placeholder={m["data_io.search_case"]()} />
         )}
 
         <div className="flex items-center gap-2">
           <Button type="button" size="sm" variant="secondary" onClick={handlePickFiles} disabled={!targetId}>
             <HugeiconsIcon icon={FolderAddIcon} />
-            Choose files…
+            {m["data_io.choose_files"]()}
           </Button>
           <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileInputChange} />
           {selected && (
             <span className="text-xs text-muted-foreground">
-              {selected.items.length} file{selected.items.length === 1 ? '' : 's'} selected
+              {selected.items.length === 1 ? m["data_io.selected_one"]() : m["data_io.selected"]({ count: selected.items.length })}
             </span>
           )}
         </div>
@@ -156,7 +156,7 @@ export function BulkFileIntake() {
           onClick={handleAttach}
           disabled={!targetId || !selected || selected.items.length === 0 || bulkAttach.isPending}
         >
-          Attach {selected ? selected.items.length : ''} file{selected?.items.length === 1 ? '' : 's'}
+          {!selected ? m["data_io.attach_files"]() : selected.items.length === 1 ? m["data_io.attach_one"]() : m["data_io.attach_n"]({ count: selected.items.length })}
         </Button>
 
         {result && result.failed.length > 0 && (

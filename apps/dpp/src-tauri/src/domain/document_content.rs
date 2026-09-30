@@ -31,13 +31,30 @@ pub enum Block {
     Note { text: String },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DocumentContent {
     /// The issuing office, shown above the title.
     pub office: String,
     pub title: String,
     pub blocks: Vec<Block>,
+    /// The country's heading lines above the office ("THE REPUBLIC OF UGANDA",
+    /// "RÉPUBLIQUE DÉMOCRATIQUE DU CONGO", "MINISTÈRE DE LA JUSTICE").
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub letterhead: Vec<String>,
+    /// The language the document is written in (en, fr, sw, de).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lang: Option<String>,
+    /// Set when issued: the signer's signature, the office stamp, and the
+    /// code (and its QR) that lets anyone confirm the paper matches the record.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signature_image: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stamp_image: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verify_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verify_qr: Option<String>,
 }
 
 pub const OFFICE: &str = "Office of the Director of Public Prosecutions";

@@ -36,8 +36,8 @@ export function StatTile({ label, icon, tint, value, meta, caption }: StatTilePr
           <h3 className="text-sm font-medium text-muted-foreground">{label}</h3>
         </div>
         <div className="flex flex-1 flex-col justify-end gap-1">
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-semibold tabular-nums text-foreground">{value}</span>
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="whitespace-nowrap text-4xl font-semibold tabular-nums text-foreground">{value}</span>
             {meta}
           </div>
           <p className="text-xs text-muted-foreground">{caption}</p>

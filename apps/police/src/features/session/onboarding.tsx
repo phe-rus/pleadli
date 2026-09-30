@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { ArrowLeft01Icon, ArrowRight01Icon, LockKeyholeIcon, NetworkIcon, PoliceBadgeIcon, UserAdd01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
@@ -42,21 +43,21 @@ export function Onboarding({ installation, onDone }: { installation: Installatio
   return (
     <PreAuthLayout>
       <motion.div {...screenTransition} className="flex w-full max-w-sm flex-col gap-7">
-        <ScreenHeader icon={PoliceBadgeIcon} title="Set up this installation" description="Choose what this computer is. This is decided once and cannot be changed later." />
+        <ScreenHeader icon={PoliceBadgeIcon} title={m["onboarding.title"]()} description={m["onboarding.desc"]()} />
         <div className="flex flex-col gap-2.5">
           <Option
             icon={PoliceBadgeIcon}
             iconTint="text-primary"
-            title="A police station"
-            description="Every record for one station. Officers sign in with a badge number."
+            title={m["onboarding.station_title"]()}
+            description={m["onboarding.station_desc"]()}
             onClick={() => setChoice('station')}
             delay={0.1}
           />
           <Option
             icon={NetworkIcon}
             iconTint="text-amber-600 dark:text-amber-400"
-            title="A command (HQ)"
-            description="A district, region or headquarters. Only what its stations report. Badge and password."
+            title={m["onboarding.command_title"]()}
+            description={m["onboarding.command_desc"]()}
             onClick={() => setChoice('command')}
             delay={0.16}
           />
@@ -125,7 +126,7 @@ function SetupScreen({
       >
         <button type="button" onClick={onBack} className="-ml-1 flex w-fit cursor-pointer items-center gap-1 rounded-sm text-muted-foreground transition-colors hover:text-foreground">
           <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
-          Back
+          {m["common.back"]()}
         </button>
         <ScreenHeader icon={icon} title={title} description={description} />
         <FieldGroup>{children}</FieldGroup>
@@ -159,9 +160,9 @@ function AdministratorFields({ installation, value, onChange, withPassword, erro
     <>
       {existing.length > 0 && (
         <Field>
-          <FieldLabel>Administrator</FieldLabel>
+          <FieldLabel>{m["onboarding.administrator"]()}</FieldLabel>
           <Select
-            items={[{ value: '', label: 'Someone new' }, ...existing.map((o) => ({ value: o.id, label: label(o) }))]}
+            items={[{ value: '', label: m["onboarding.someone_new"]() }, ...existing.map((o) => ({ value: o.id, label: label(o) }))]}
             value={value.existingOfficerId ?? ''}
             onValueChange={(id) => {
               const picked = existing.find((o) => o.id === id)
@@ -169,10 +170,10 @@ function AdministratorFields({ installation, value, onChange, withPassword, erro
             }}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose an officer" />
+              <SelectValue placeholder={m["onboarding.choose_officer"]()} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Someone new</SelectItem>
+              <SelectItem value="">{m["onboarding.someone_new"]()}</SelectItem>
               {existing.map((o) => (
                 <SelectItem key={o.id} value={o.id}>
                   {label(o)}
@@ -180,20 +181,20 @@ function AdministratorFields({ installation, value, onChange, withPassword, erro
               ))}
             </SelectContent>
           </Select>
-          <FieldDescription>The officers already recorded here. The administrator changes settings and adds officers.</FieldDescription>
+          <FieldDescription>{m["onboarding.existing_hint"]()}</FieldDescription>
         </Field>
       )}
       {!value.existingOfficerId && (
         <div className="grid grid-cols-2 gap-3">
-          <LabelledInput label="Full name" autoFocus autoComplete="name" error={errors.name} value={value.name} onChange={(e) => set({ name: e.target.value })} />
-          <LabelledInput label="Rank" value={value.rank} onChange={(e) => set({ rank: e.target.value })} />
+          <LabelledInput label={m["common.full_name"]()} autoFocus autoComplete="name" error={errors.name} value={value.name} onChange={(e) => set({ name: e.target.value })} />
+          <LabelledInput label={m["common.rank"]()} value={value.rank} onChange={(e) => set({ rank: e.target.value })} />
         </div>
       )}
-      <LabelledInput label="Badge number" autoComplete="username" error={errors.badge} value={value.badgeNumber} onChange={(e) => set({ badgeNumber: e.target.value })} />
+      <LabelledInput label={m["common.badge_number"]()} autoComplete="username" error={errors.badge} value={value.badgeNumber} onChange={(e) => set({ badgeNumber: e.target.value })} />
       {withPassword && (
         <>
-          <LabelledInput label="Password" type="password" autoComplete="new-password" hint="At least 8 characters." error={errors.password} value={value.password} onChange={(e) => set({ password: e.target.value })} />
-          <LabelledInput label="Password again" type="password" autoComplete="new-password" error={errors.passwordAgain} value={value.passwordAgain} onChange={(e) => set({ passwordAgain: e.target.value })} />
+          <LabelledInput label={m["common.password"]()} type="password" autoComplete="new-password" hint={m["onboarding.password_hint"]()} error={errors.password} value={value.password} onChange={(e) => set({ password: e.target.value })} />
+          <LabelledInput label={m["onboarding.password_again"]()} type="password" autoComplete="new-password" error={errors.passwordAgain} value={value.passwordAgain} onChange={(e) => set({ passwordAgain: e.target.value })} />
         </>
       )}
     </>
@@ -202,17 +203,17 @@ function AdministratorFields({ installation, value, onChange, withPassword, erro
 
 function administratorErrors(value: Administrator, withPassword: boolean): Errors {
   const errors: Errors = {}
-  if (!value.existingOfficerId && !value.name.trim()) errors.name = 'The administrator needs a name.'
-  if (!value.badgeNumber.trim()) errors.badge = 'The administrator needs a badge number.'
+  if (!value.existingOfficerId && !value.name.trim()) errors.name = m["onboarding.err_name"]()
+  if (!value.badgeNumber.trim()) errors.badge = m["onboarding.err_badge"]()
   if (withPassword) {
-    if (value.password.length < 8) errors.password = 'Use at least 8 characters.'
-    else if (value.password !== value.passwordAgain) errors.passwordAgain = 'The two passwords are different.'
+    if (value.password.length < 8) errors.password = m["onboarding.err_password"]()
+    else if (value.password !== value.passwordAgain) errors.passwordAgain = m["onboarding.err_mismatch"]()
   }
   return errors
 }
 
 function messageOf(e: unknown) {
-  return e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'Setup did not finish.'
+  return e instanceof ApiError ? e.message : e instanceof Error ? e.message : m["onboarding.err_setup"]()
 }
 
 /** Both sides are two screens: the place, then who runs it. Nothing is saved
@@ -272,7 +273,7 @@ function SetupWizard({
     }
   }
 
-  if (busy) return <SetupProgress mode={mode} title={mode === 'command' ? 'Setting up the command' : 'Setting up the station'} />
+  if (busy) return <SetupProgress mode={mode} title={mode === 'command' ? m["onboarding.setting_up_command"]() : m["onboarding.setting_up_station"]()} />
 
   return (
     <PreAuthLayout mode={mode}>
@@ -287,7 +288,7 @@ function SetupWizard({
             onBack={() => (index === 0 ? onBack() : setIndex(index - 1))}
             error={error}
             action={{
-              label: 'Continue',
+              label: m["onboarding.continue"](),
               busy: false,
               onSubmit: () => {
                 const problem = validate()
@@ -302,8 +303,8 @@ function SetupWizard({
           <SetupScreen
             stepId="administrator"
             icon={withPassword ? LockKeyholeIcon : UserAdd01Icon}
-            title="Who runs it"
-            description={withPassword ? 'The first administrator. Everyone here signs in with a badge number and a password.' : 'The first administrator. Officers sign in with a badge number; an administrator can require passwords later, in Settings.'}
+            title={m["onboarding.who_runs"]()}
+            description={withPassword ? m["onboarding.who_runs_password"]() : m["onboarding.who_runs_badge"]()}
             onBack={() => setIndex(index - 1)}
             error={error}
             action={{ label: submitLabel, busy, onSubmit: () => void finish() }}
@@ -330,24 +331,24 @@ function StationSetup({ installation, onBack, onDone }: { installation: Installa
       administrator={administrator}
       setAdministrator={setAdministrator}
       withPassword={false}
-      validate={() => (stationName.trim() ? null : 'The station needs a name.')}
+      validate={() => (stationName.trim() ? null : m["onboarding.err_station_name"]())}
       submit={() => setupStation({ stationName, region, district, division, administrator })}
-      submitLabel="Set up the station"
+      submitLabel={m["onboarding.submit_station"]()}
       onBack={onBack}
       onDone={onDone}
       steps={[
         {
           id: 'station',
           icon: PoliceBadgeIcon,
-          title: 'Name the station',
-          description: 'This is printed on every register, statement and charge sheet. Where it sits in the force is optional.',
+          title: m["onboarding.name_station"](),
+          description: m["onboarding.name_station_desc"](),
           body: (
             <>
-              <LabelledInput label="Station name" autoFocus placeholder="e.g. Central Police Station" value={stationName} onChange={(e) => setStationName(e.target.value)} />
+              <LabelledInput label={m["command.station_name"]()} autoFocus placeholder={m["charge_sheet.station_placeholder"]()} value={stationName} onChange={(e) => setStationName(e.target.value)} />
               <div className="grid grid-cols-3 gap-3">
-                <LabelledInput label="Region" value={region} onChange={(e) => setRegion(e.target.value)} />
-                <LabelledInput label="District" value={district} onChange={(e) => setDistrict(e.target.value)} />
-                <LabelledInput label="Division" value={division} onChange={(e) => setDivision(e.target.value)} />
+                <LabelledInput label={m["common.region"]()} value={region} onChange={(e) => setRegion(e.target.value)} />
+                <LabelledInput label={m["common.district"]()} value={district} onChange={(e) => setDistrict(e.target.value)} />
+                <LabelledInput label={m["onboarding.division"]()} value={division} onChange={(e) => setDivision(e.target.value)} />
               </div>
             </>
           ),
@@ -369,22 +370,22 @@ function CommandSetup({ installation, onBack, onDone }: { installation: Installa
       administrator={administrator}
       setAdministrator={setAdministrator}
       withPassword
-      validate={() => (commandName.trim() ? null : 'The command needs a name.')}
+      validate={() => (commandName.trim() ? null : m["onboarding.err_command_name"]())}
       submit={() => setupCommand({ commandName, level, administrator })}
-      submitLabel="Set up the command"
+      submitLabel={m["onboarding.submit_command"]()}
       onBack={onBack}
       onDone={onDone}
       steps={[
         {
           id: 'command',
           icon: NetworkIcon,
-          title: 'Name the command',
-          description: 'The district, region or headquarters this computer serves.',
+          title: m["onboarding.name_command"](),
+          description: m["onboarding.name_command_desc"](),
           body: (
             <>
-              <LabelledInput label="Command name" autoFocus placeholder="e.g. Kampala Metropolitan North Region" value={commandName} onChange={(e) => setCommandName(e.target.value)} />
+              <LabelledInput label={m["onboarding.command_name"]()} autoFocus placeholder={m["onboarding.command_placeholder"]()} value={commandName} onChange={(e) => setCommandName(e.target.value)} />
               <Field>
-                <FieldLabel>Level</FieldLabel>
+                <FieldLabel>{m["onboarding.level"]()}</FieldLabel>
                 <Select items={[...commandLevels]} value={level} onValueChange={(v) => setLevel(String(v))}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -397,7 +398,7 @@ function CommandSetup({ installation, onBack, onDone }: { installation: Installa
                     ))}
                   </SelectContent>
                 </Select>
-                <FieldDescription>A suggestion for how this command is described. It changes nothing else.</FieldDescription>
+                <FieldDescription>{m["onboarding.level_hint"]()}</FieldDescription>
               </Field>
             </>
           ),

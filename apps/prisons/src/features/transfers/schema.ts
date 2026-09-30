@@ -84,7 +84,7 @@ export function parseChecklist(json: string | null): Checklist {
 
 export const prepareTransferSchema = z.object({
   prisonerId: z.string().min(1),
-  destinationName: z.string().min(1, 'Name the prison the person is going to.'),
+  destinationName: z.string().min(1, { error: () => m.validation_destination_required() }),
   orderReference: z.string(),
   orderingAuthority: z.string(),
   reason: z.string(),
@@ -98,7 +98,7 @@ export const dispatchTransferSchema = z.object({
   departedAt: z.number(),
   escort: z.string(),
   transport: z.string(),
-  passphrase: z.string().min(8, 'The passphrase must be at least 8 characters.'),
+  passphrase: z.string().min(8, { error: () => m.validation_passphrase_min_8() }),
 })
 
 export type DispatchTransferInput = z.infer<typeof dispatchTransferSchema>

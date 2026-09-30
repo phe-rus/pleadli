@@ -38,10 +38,14 @@ function RouteComponent() {
       <div className="flex flex-col gap-2">
         <h2 className="text-xl!">Current scope</h2>
         <p>
-          Pleadli Cloud and the first two applications, Pleadli Police and Pleadli DPP, are being
-          built now. Pleadli Courts, Pleadli Lawyers, and Pleadli Prisons are designed but not yet
-          built, not queued behind Police and DPP so much as awaiting their own product
-          requirements.
+          All five applications, Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers, and
+          Pleadli Prisons, have real code today, at different levels of maturity. Pleadli Prisons
+          has the most complete security and localization model; Pleadli Courts and Pleadli
+          Lawyers are the newest and least field-tested. See{' '}
+          <Link to="/products" className="font-medium text-foreground underline underline-offset-2">
+            the products page
+          </Link>{' '}
+          for an honest, per-application breakdown.
         </p>
       </div>
 

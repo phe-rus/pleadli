@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { casesOptions, CaseForm } from '@/features/cases'
 import { AddCircleIcon } from '@hugeicons/core-free-icons'
@@ -21,7 +22,7 @@ export type CasePickerProps = {
 }
 
 /** Search-and-pick a case, mirroring `PersonPicker`. */
-export function CasePicker({ value, onValueChange, placeholder = 'Search for a case…' }: CasePickerProps) {
+export function CasePicker({ value, onValueChange, placeholder = m["pickers.case_placeholder"]() }: CasePickerProps) {
   const [query, setQuery] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const { data: cases } = useQuery(casesOptions(query))
@@ -37,7 +38,7 @@ export function CasePicker({ value, onValueChange, placeholder = 'Search for a c
                   {c.reference} · {c.summary}
                 </ComboboxItem>
               ))}
-              <ComboboxEmpty>No matching cases</ComboboxEmpty>
+              <ComboboxEmpty>{m["pickers.case_empty"]()}</ComboboxEmpty>
             </ComboboxList>
           </ComboboxContent>
         </ComboboxInput>
@@ -47,11 +48,11 @@ export function CasePicker({ value, onValueChange, placeholder = 'Search for a c
         open={addOpen}
         onOpenChange={setAddOpen}
         trigger={
-          <Button type="button" size="icon-sm" variant="secondary" aria-label="Add new case">
+          <Button type="button" size="icon-sm" variant="secondary" aria-label={m["pickers.case_add_aria"]()}>
             <HugeiconsIcon icon={AddCircleIcon} />
           </Button>
         }
-        headings={{ title: 'Add case', description: "Record a case that isn't already known to the system." }}
+        headings={{ title: m["pickers.case_add_title"](), description: m["pickers.case_add_description"]() }}
       >
         <CaseForm
           onSuccess={(kase) => {

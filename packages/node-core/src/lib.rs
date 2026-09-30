@@ -4,7 +4,11 @@
 //! trail (`audit`). Each application decides its own name in the keystore and its own
 //! database; nothing here knows about a court, a prison or a police station.
 
+#[cfg(feature = "ai")]
+pub mod ai;
 pub mod audit;
 pub mod db;
 pub mod keys;
+#[cfg(feature = "lan")]
+pub mod lan;
 pub mod vault;

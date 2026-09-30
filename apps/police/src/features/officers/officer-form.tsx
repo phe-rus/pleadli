@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
 import { useReportDirty } from '@/hooks/use-report-dirty'
 import { useAppForm } from '@pleadli/forms-tables/forms'
@@ -50,11 +51,11 @@ export function OfficerForm({ officer, onSuccess, onDirtyChange }: OfficerFormPr
               personId: value.personId,
               password: value.password,
             })
-        t.success(officer ? 'Officer updated' : 'Officer added')
+        t.success(officer ? m["officers.updated"]() : m["officers.added"]())
         onSuccess?.(result)
       } catch (error) {
-        t.error(officer ? 'Could not update officer' : 'Could not add officer', {
-          description: error instanceof Error && error.message ? error.message : 'Please try again.',
+        t.error(officer ? m["officers.update_failed"]() : m["officers.add_failed"](), {
+          description: error instanceof Error && error.message ? error.message : m["common.try_again"](),
         })
       }
     },
@@ -71,48 +72,48 @@ export function OfficerForm({ officer, onSuccess, onDirtyChange }: OfficerFormPr
       }}
     >
       <FieldGroup>
-        <form.AppField name="name">{(f) => <f.input label="Full name" />}</form.AppField>
+        <form.AppField name="name">{(f) => <f.input label={m["common.full_name"]()} />}</form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="rank">{(f) => <f.input label="Rank" />}</form.AppField>
+          <form.AppField name="rank">{(f) => <f.input label={m["common.rank"]()} />}</form.AppField>
           <form.AppField name="post">
-            {(f) => <f.input label="Standing post" placeholder={`e.g. ${officerPostSuggestions.slice(0, 2).join(', ')}`} />}
+            {(f) => <f.input label={m["officers.post"]()} placeholder={m["common.eg"]({ examples: officerPostSuggestions.slice(0, 2).join(', ') })} />}
           </form.AppField>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="badgeNumber">{(f) => <f.input label="Badge number" placeholder="Optional" />}</form.AppField>
-          <form.AppField name="role">{(f) => <f.select label="Role" options={[...officerRoles]} />}</form.AppField>
+          <form.AppField name="badgeNumber">{(f) => <f.input label={m["officers.badge_number"]()} placeholder={m["common.optional"]()} />}</form.AppField>
+          <form.AppField name="role">{(f) => <f.select label={m["common.role"]()} options={[...officerRoles]} />}</form.AppField>
         </div>
 
         <form.AppField name="personId">
           {(f) => (
             <Field>
-              <FieldLabel>Linked person</FieldLabel>
-              <PersonPicker value={f.state.value} onValueChange={f.handleChange} placeholder="Link this officer's own person record" />
+              <FieldLabel>{m["officers.linked_person"]()}</FieldLabel>
+              <PersonPicker value={f.state.value} onValueChange={f.handleChange} placeholder={m["officers.link_placeholder"]()} />
             </Field>
           )}
         </form.AppField>
 
-        <form.AppField name="notes">{(f) => <f.textarea label="Notes" />}</form.AppField>
+        <form.AppField name="notes">{(f) => <f.textarea label={m["common.notes"]()} />}</form.AppField>
 
         <form.AppField name="password">
           {(f) => (
             <f.input
               type="password"
-              label={officer?.hasSignIn ? 'New password' : 'Remote sign-in password'}
-              placeholder={officer?.hasSignIn ? 'Leave blank to keep the current password' : 'Optional'}
+              label={officer?.hasSignIn ? m["officers.new_password"]() : m["officers.remote_password"]()}
+              placeholder={officer?.hasSignIn ? m["officers.keep_password"]() : m["common.optional"]()}
             />
           )}
         </form.AppField>
-        <FieldDescription>A password lets this officer sign in over remote access from a phone. It needs a badge number. Leave it blank for an officer who only appears on the books.</FieldDescription>
+        <FieldDescription>{m["officers.password_hint"]()}</FieldDescription>
 
         {officer && (
           <form.AppField name="active">
             {(f) => (
               <Field orientation="horizontal">
                 <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-                <FieldLabel>Currently at this station (off for an officer who has left)</FieldLabel>
+                <FieldLabel>{m["officers.active"]()}</FieldLabel>
               </Field>
             )}
           </form.AppField>
@@ -121,7 +122,7 @@ export function OfficerForm({ officer, onSuccess, onDirtyChange }: OfficerFormPr
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={officer ? 'Save changes' : 'Add officer'} />
+          <form.submit label={officer ? m["common.save_changes"]() : m["officers.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

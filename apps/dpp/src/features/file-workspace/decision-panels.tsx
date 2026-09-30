@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/dates'
 import { EmptyNote, Planned } from '@/components/planned'
 import { PanelButton } from '@/components/add-panel'
 import { Tag } from '@/components/status-tag'
@@ -12,14 +13,15 @@ import { EditProsecutionFileForm, useFilePeople, useProsecutionFile } from '@/fe
 import { ResubmissionForm, useReferralsForFile } from '@/features/referrals'
 import { describeEvent, useChronology } from '@/features/workload'
 import { RichTextPreview } from '@pleadli/rich-text'
-import { format } from 'date-fns/format'
+import * as m from '@/paraglide/messages'
+import { NewDocumentButton } from '@/features/templates/new-document'
 
 /** What has happened on this file, in order, read straight from the records
  * that hold it. There is no separate log to disagree with them. */
 export function ChronologyPanel({ fileId }: { fileId: string }) {
   const { data: events } = useChronology(fileId)
 
-  if (events.length === 0) return <EmptyNote>Nothing has been recorded on this file.</EmptyNote>
+  if (events.length === 0) return <EmptyNote>{m["file_ws.chronology_empty"]()}</EmptyNote>
 
   return (
     <ol className="flex flex-col">
@@ -28,9 +30,9 @@ export function ChronologyPanel({ fileId }: { fileId: string }) {
         return (
           <li key={`${event.kind}:${event.id}`} className="grid grid-cols-[7rem_1rem_1fr] gap-x-3 sm:grid-cols-[9rem_1rem_1fr]">
             <time dateTime={new Date(event.at).toISOString()} className="pt-0.5 text-right text-muted-foreground tabular-nums">
-              {format(event.at, 'd MMM yyyy')}
+              {formatDate(event.at)}
               <br />
-              <span className="text-xs">{format(event.at, 'p')}</span>
+              <span className="text-xs">{formatDate(event.at, 'time')}</span>
             </time>
             <span aria-hidden className="relative flex justify-center">
               <span className="mt-2 size-2 rounded-full bg-primary" />
@@ -54,20 +56,20 @@ export function DecisionsPanel({ fileId }: { fileId: string }) {
   const { data: charges } = useChargesForFile(fileId)
   const { data: documents } = useDocuments(fileId)
   const { data: file } = useProsecutionFile(fileId)
-  const countOf = (chargeId: string | null) => (chargeId ? (charges.find((c) => c.id === chargeId)?.offence ?? 'A count') : 'Whole file')
+  const countOf = (chargeId: string | null) => (chargeId ? (charges.find((c) => c.id === chargeId)?.offence ?? m["file_ws.a_count"]()) : m["file_ws.whole_file"]())
 
   return (
     <div className="flex flex-col gap-8">
       <section className="page-section">
         <div className="section-head">
-          <h2>Decisions</h2>
-          <PanelButton label="Record a decision" title="Record a decision" description="Sanction, decline, divert, threshold charge and return follow a charging review. The others are recorded here." variant="default">
+          <h2>{m["nav.item.decisions"]()}</h2>
+          <PanelButton label={m["file_ws.record_decision"]()} title={m["file_ws.record_decision"]()} description={m["file_ws.record_decision_description"]()} variant="default">
             {({ close, setDirty }) => <DecisionForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>
-        <p>Decisions are never edited or removed. A correction is a new decision that says why. The file's status follows its counts.</p>
+        <p>{m["file_ws.decisions_hint"]()}</p>
         {decisions.length === 0 ? (
-          <EmptyNote>No decisions recorded yet.</EmptyNote>
+          <EmptyNote>{m["file_ws.no_decisions"]()}</EmptyNote>
         ) : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {decisions.map((decision) => {
@@ -78,10 +80,10 @@ export function DecisionsPanel({ fileId }: { fileId: string }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <Tag tone={correctedBy ? 'stopped' : 'done'}>{decisionTypeLabel(decision.decisionType)}</Tag>
                     <Tag tone="neutral">{countOf(decision.chargeId)}</Tag>
-                    {correctedBy && <Tag tone="open">Corrected {format(correctedBy.decidedAt, 'PP')}</Tag>}
-                    {corrects && <Tag tone="planned">Corrects {decisionTypeLabel(corrects.decisionType)} of {format(corrects.decidedAt, 'PP')}</Tag>}
+                    {correctedBy && <Tag tone="open">{m["file_ws.corrected"]({ date: formatDate(correctedBy.decidedAt) })}</Tag>}
+                    {corrects && <Tag tone="planned">{m["file_ws.corrects"]({ decision: decisionTypeLabel(corrects.decisionType), date: formatDate(corrects.decidedAt) })}</Tag>}
                     <span className="text-muted-foreground">
-                      {format(decision.decidedAt, 'PPp')}
+                      {formatDate(decision.decidedAt, 'datetime')}
                       {decision.decidedBy ? `, ${decision.decidedBy}` : ''}
                     </span>
                     {decisionDocumentKind(decision.decisionType) && (
@@ -97,7 +99,7 @@ export function DecisionsPanel({ fileId }: { fileId: string }) {
                       <NotifyPoliceButton decisionId={decision.id} />
                     )}
                     {!correctedBy && !chargingDecisionTypes.includes(decision.decisionType) && (
-                      <PanelButton label="Correct" title="Correct this decision" description="Record a decision that replaces this one. The earlier one stays on the record." variant="ghost" icon={false}>
+                      <PanelButton label={m["file_ws.correct"]()} title={m["file_ws.correct_title"]()} description={m["file_ws.correct_description"]()} variant="ghost" icon={false}>
                         {({ close, setDirty }) => <DecisionForm prosecutionFileId={fileId} corrects={decision} onSuccess={close} onDirtyChange={setDirty} />}
                       </PanelButton>
                     )}
@@ -126,21 +128,21 @@ export function CourtPanel({ fileId }: { fileId: string }) {
     <div className="flex flex-col gap-6">
       <section className="page-section">
         <div className="section-head">
-          <h2>Court reference</h2>
-          <PanelButton label="Edit details" title="Edit file details" description="Update registration, reference and court numbers." icon={false}>
+          <h2>{m["file_ws.court_reference"]()}</h2>
+          <PanelButton label={m["file_ws.edit"]()} title={m["file_ws.edit_title"]()} description={m["file_ws.edit_description"]()} icon={false}>
             {({ close, setDirty }) => <EditProsecutionFileForm file={file} onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>
         {file.courtCaseNumber ? (
           <p>
-            Court case number <strong>{file.courtCaseNumber}</strong>. Recorded by the prosecutor; the court's own record is the authority.
+            {m["file_ws.court_number_label"]()} <strong>{file.courtCaseNumber}</strong>. {m["file_ws.court_number_hint"]()}
           </p>
         ) : (
-          <EmptyNote>No court case number recorded. It is assigned once the charge sheet is filed.</EmptyNote>
+          <EmptyNote>{m["file_ws.no_court_number"]()}</EmptyNote>
         )}
       </section>
-      <Planned title="Trial dates and adjournments" covers={['Hearing dates and what each hearing was for.', 'Adjournments, and the three consecutive adjournments review trigger.', 'Notices to the prosecutor.']}>
-        Court matters stay DPP-owned until a Courts application exists to connect to.
+      <Planned title={m["file_ws.planned_title"]()} covers={[m["file_ws.planned_hearings"](), m["file_ws.planned_adjournments"](), m["file_ws.planned_notices"]()]}>
+        {m["file_ws.planned_body"]()}
       </Planned>
     </div>
   )
@@ -149,7 +151,16 @@ export function CourtPanel({ fileId }: { fileId: string }) {
 /** The documents of this file: prepared drafts and issued documents, and what
  * its decisions could still produce. */
 export function DocumentsPanel({ fileId }: { fileId: string }) {
-  return <DocumentLibrary fileId={fileId} />
+  const { data: decisions } = useDecisionsForFile(fileId)
+  const latest = [...decisions].sort((a, b) => b.decidedAt - a.decidedAt)[0]
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <NewDocumentButton fileId={fileId} decisionId={latest?.id ?? null} decisionKind={latest?.decisionType ?? null} />
+      </div>
+      <DocumentLibrary fileId={fileId} />
+    </div>
+  )
 }
 
 /** The loop with Police: each return, the directions it carried, when the file
@@ -169,15 +180,15 @@ function ReturnsSection({ fileId }: { fileId: string }) {
   return (
     <section className="page-section">
       <div className="section-head">
-        <h2>Return and resubmission</h2>
+        <h2>{m["file_ws.returns"]()}</h2>
         {file?.currentStatus === 'returned_for_investigation' && (
-          <PanelButton label="Log a resubmission" title="Log a resubmission" description="Record the file coming back from Police." variant="default">
+          <PanelButton label={m["file_ws.log_resubmission"]()} title={m["file_ws.log_resubmission"]()} description={m["file_ws.log_resubmission_description"]()} variant="default">
             {({ close, setDirty }) => <ResubmissionForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         )}
       </div>
       {allReturns.length === 0 ? (
-        <EmptyNote>This file has not been returned to Police.</EmptyNote>
+        <EmptyNote>{m["file_ws.not_returned"]()}</EmptyNote>
       ) : (
         allReturns.map((ret) => {
           const items = directions.filter((d) => d.decisionId === ret.id)
@@ -185,8 +196,8 @@ function ReturnsSection({ fileId }: { fileId: string }) {
           return (
             <div key={ret.id} className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <strong>Returned {format(ret.decidedAt, 'PP')}</strong>
-                {answered ? <Tag tone="done">Resubmitted {format(answered.receivedAt, 'PP')}</Tag> : <Tag tone="waiting">With Police</Tag>}
+                <strong>{m["file_ws.returned_on"]({ date: formatDate(ret.decidedAt) })}</strong>
+                {answered ? <Tag tone="done">{m["file_ws.resubmitted_on"]({ date: formatDate(answered.receivedAt) })}</Tag> : <Tag tone="waiting">{m["file_ws.with_police"]()}</Tag>}
                 {items.length > 0 && (
                   <span className="ml-auto">
                     <DecisionDocumentAction actDecisionIds={[ret.id]} documents={documents} kind="directions_to_police" />
@@ -194,13 +205,13 @@ function ReturnsSection({ fileId }: { fileId: string }) {
                 )}
               </div>
               {items.length === 0 ? (
-                <p>No directions were recorded with this return.</p>
+                <p>{m["file_ws.no_directions"]()}</p>
               ) : (
                 <DirectionsList directions={items} canRecord={Boolean(answered)} personNames={personNames} />
               )}
               {answered?.materialSummary && (
                 <div className="flex flex-col gap-1">
-                  <h3>What came back</h3>
+                  <h3>{m["file_ws.came_back"]()}</h3>
                   <RichTextPreview value={answered.materialSummary} />
                 </div>
               )}

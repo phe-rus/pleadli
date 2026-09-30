@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
 import { t } from '@pleadli/ui/goey-toaster'
@@ -26,11 +27,11 @@ export function CheckInDialog({ open, onOpenChange }: CheckInDialogProps) {
     if (!badgeNumber.trim()) return
     try {
       const result = await checkIn.mutateAsync(badgeNumber.trim())
-      t.success(`${result.officerName} checked in`)
+      t.success(m["shift_log.checked_in"]({ name: result.officerName }))
       setBadgeNumber('')
       onOpenChange(false)
     } catch {
-      t.error('Could not check in', { description: 'No officer with that badge number.' })
+      t.error(m["shift_log.check_in_failed"](), { description: m["shift_log.no_officer"]() })
     }
   }
 
@@ -38,17 +39,16 @@ export function CheckInDialog({ open, onOpenChange }: CheckInDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Check in</DialogTitle>
+          <DialogTitle>{m["shift_log.check_in"]()}</DialogTitle>
           <DialogDescription>
-            Type a badge number, or an officer can check in themselves from the remote app (Settings &gt; Remote
-            Access has the QR).
+            {m["shift_log.check_in_desc"]()}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex items-end gap-2">
           <div className="flex flex-1 flex-col gap-1.5">
             <label htmlFor="check-in-badge" className="text-xs text-muted-foreground">
-              Badge number
+              {m["common.badge_number"]()}
             </label>
             <Input
               id="check-in-badge"
@@ -58,13 +58,13 @@ export function CheckInDialog({ open, onOpenChange }: CheckInDialogProps) {
             />
           </div>
           <Button type="submit" size="sm" disabled={!badgeNumber.trim() || checkIn.isPending}>
-            Check in
+            {m["shift_log.check_in"]()}
           </Button>
         </form>
 
         <DialogFooter>
           <Button type="button" size="sm" variant="secondary" onClick={() => onOpenChange(false)}>
-            Close
+            {m["common.close"]()}
           </Button>
         </DialogFooter>
       </DialogContent>

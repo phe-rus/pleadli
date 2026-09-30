@@ -24,7 +24,7 @@ export type WorkspaceTab = {
   lastActiveAt?: number
 }
 export type RecentItem = { key: string; kind: TabKind; title: string; to: string }
-export type SectionId = 'pinned' | 'recent' | 'files' | 'work' | 'office'
+export type SectionId = 'pinned' | 'recent' | 'files' | 'work' | 'office' | 'more'
 
 /** At most this many tabs are open, Overview included. Opening one more
  * replaces the tab worked on longest ago. */
@@ -32,7 +32,9 @@ const MAX_TABS = 5
 /** The sidebar's Recent list never shows more than this. */
 export const MAX_RECENTS = 3
 
-const OVERVIEW_TAB: WorkspaceTab = { key: 'overview', kind: 'overview', title: 'Overview', to: '/', pinned: true }
+/** `title` stays empty: Overview's name is display text, derived at render
+ * time by `tabTitle` so it follows the current language. */
+const OVERVIEW_TAB: WorkspaceTab = { key: 'overview', kind: 'overview', title: '', to: '/', pinned: true }
 
 type Persisted = {
   tabs: WorkspaceTab[]
@@ -46,7 +48,7 @@ const INITIAL: Persisted = {
   tabs: [OVERVIEW_TAB],
   recents: [],
   leftOpen: true,
-  sections: { pinned: true, recent: true, files: true, work: true, office: true },
+  sections: { pinned: true, recent: true, files: true, work: true, office: true, more: false },
 }
 
 const isTab = (value: unknown): value is WorkspaceTab => {

@@ -6,6 +6,7 @@ import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import ReactDOM from 'react-dom/client'
 import { routeTree } from './routeTree.gen'
+import { startUpdateChecks } from '@/lib/updater'
 
 const getRouter = () => {
     const queryClient = queryContext()
@@ -48,6 +49,7 @@ if (!rootElement) {
 }
 
 if (!rootElement.innerHTML) {
+    startUpdateChecks()
     const root = ReactDOM.createRoot(rootElement)
     root.render(
         <RouterProvider

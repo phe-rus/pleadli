@@ -1,5 +1,4 @@
 import { Notfound } from '@/components/notfound'
-import { SplashScreen } from '@/components/splash-screen'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
 import { forwardErrorsToLog } from '@/lib/forward-errors-to-log'
 import tailwindcss from '@/styles/globals.css?url'
@@ -22,7 +21,6 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { charSet: "utf-8" },
       { name: "theme-color", content: "oklch(0.9904 0.0148 94.1935)" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: 'Pleadli Lawyers' },
     ],
     scripts: [
       { href: tailwindcss, rel: "stylesheet" }
@@ -49,9 +47,7 @@ function RootComponent() {
             'selection:bg-primary/15'
           )}>
             <TooltipProvider>
-              <SplashScreen>
-                <Outlet />
-              </SplashScreen>
+              <Outlet />
             </TooltipProvider>
             <GooeyToaster richColors />
           </div>

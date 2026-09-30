@@ -67,7 +67,8 @@ pub async fn overview(pool: &SqlitePool, from: i64, to: i64, now: i64) -> Result
          UNION ALL
          SELECT 'no_hearing', m.id, m.title, m.court_number, (SELECT MAX(h.at) FROM hearings h WHERE h.matter_id = m.id), NULL, NULL
            FROM matters m
-          WHERE m.status = 'open' AND NOT EXISTS (SELECT 1 FROM hearings h WHERE h.matter_id = m.id AND h.status = 'scheduled')
+          WHERE m.status = 'open' AND m.matter_type NOT IN ('land_transaction', 'company_matter', 'advice')
+            AND NOT EXISTS (SELECT 1 FROM hearings h WHERE h.matter_id = m.id AND h.status = 'scheduled')
          UNION ALL
          SELECT CASE WHEN t.due_on < ?1 THEN 'task_overdue' ELSE 'task_soon' END, t.matter_id, m.title, m.court_number, t.due_on, t.title, t.id
            FROM tasks t LEFT JOIN matters m ON m.id = t.matter_id

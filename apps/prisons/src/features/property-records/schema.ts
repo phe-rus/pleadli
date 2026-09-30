@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 export const propertyRecordSchema = z.object({
   id: z.string(),
@@ -14,7 +15,7 @@ export type PropertyRecord = z.infer<typeof propertyRecordSchema>
 
 export const createPropertyRecordSchema = z.object({
   prisonerId: z.string().min(1),
-  description: z.string().min(1, 'A description of the property is required.'),
+  description: z.string().min(1, { error: () => m.validation_property_description_required() }),
   recordedAt: z.number(),
 })
 

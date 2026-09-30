@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { officersOptions, useOfficers } from '@/features/officers'
 import { stationProfileOptions, useStationProfile } from '@/features/station-admin'
 import { Building06Icon, ShieldKeyIcon } from '@hugeicons/core-free-icons'
@@ -23,8 +24,8 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Station administration</h1>
-          <p>What station this is, and who works here. Not shift scheduling (Duty roster) and not equipment (Armory, Impounded assets).</p>
+          <h1>{m["station_page.title"]()}</h1>
+          <p>{m["station_page.lead"]()}</p>
         </div>
       </header>
 
@@ -32,16 +33,16 @@ function RouteComponent() {
         <Link to="/station/profile" className="flex flex-col gap-1 rounded-md border border-border/40 p-3 transition-colors hover:bg-muted/60">
           <div className="flex items-center gap-2">
             <HugeiconsIcon icon={Building06Icon} className="size-4" />
-            <h3>Profile</h3>
+            <h3>{m["station_page.profile"]()}</h3>
           </div>
-          <p>{profile?.name || 'Not yet configured'}</p>
+          <p>{profile?.name || m["station_page.not_configured"]()}</p>
         </Link>
         <Link to="/station/officers" className="flex flex-col gap-1 rounded-md border border-border/40 p-3 transition-colors hover:bg-muted/60">
           <div className="flex items-center gap-2">
             <HugeiconsIcon icon={ShieldKeyIcon} className="size-4" />
-            <h3>Officers</h3>
+            <h3>{m["common.officers"]()}</h3>
           </div>
-          <p>{here === 1 ? '1 officer at the station' : `${here} officers at the station`}</p>
+          <p>{here === 1 ? m["station_page.officer_one"]() : m["station_page.officers_n"]({ count: here })}</p>
         </Link>
       </section>
     </article>

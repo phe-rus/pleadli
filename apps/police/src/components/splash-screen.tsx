@@ -1,4 +1,6 @@
-import { LoaderCircleIcon, PoliceBadgeIcon } from '@hugeicons/core-free-icons'
+import * as m from '@/paraglide/messages'
+import { LoaderCircleIcon } from '@hugeicons/core-free-icons'
+import { BrandLogo } from '@/features/brand'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useRouterState } from '@tanstack/react-router'
 import { FC, PropsWithChildren, useLayoutEffect, useState } from 'react'
@@ -22,14 +24,11 @@ export const SplashScreen: FC<splashScreenProps> = ({
     return (
       <article className='flex h-svh w-full flex-col items-center justify-center gap-4 bg-background'>
         <div>
-          <HugeiconsIcon
-            icon={PoliceBadgeIcon}
-            className="size-18"
-          />
+          <BrandLogo className="size-24" />
         </div>
         <section className="flex flex-col items-center gap-1">
-          <h1 className="text-2xl">Pleadli Police</h1>
-          <p className="text-sm text-muted-foreground">Loading your station…</p>
+          <h1 className="text-2xl">{m["splash.title"]()}</h1>
+          <p className="text-sm text-muted-foreground">{m["splash.loading"]()}</p>
         </section>
         <HugeiconsIcon
           icon={LoaderCircleIcon}

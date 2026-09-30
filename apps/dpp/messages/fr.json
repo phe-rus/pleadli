@@ -1,0 +1,1917 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "age": {
+    "days": "{count} jours",
+    "one_day": "1 jour",
+    "today": "Aujourd'hui",
+    "weeks": "{count} semaines"
+  },
+  "attachments": {
+    "add": "Ajouter un document",
+    "add_failed": "Impossible d'ajouter le document",
+    "label": "Documents",
+    "none": "Aucun document joint.",
+    "remove": "Retirer le document",
+    "save_first": "Enregistrez d'abord cette fiche, puis vous pourrez joindre des documents.",
+    "upload_failed": "Le téléversement a échoué."
+  },
+  "capacity": {
+    "age": "Ancienneté du travail en attente",
+    "age_band": {
+      "one_to_two": "Une à deux semaines",
+      "over_four": "Plus de quatre semaines",
+      "two_to_four": "Deux à quatre semaines",
+      "under_week": "Moins d'une semaine"
+    },
+    "age_hint": "Depuis combien de temps les dossiers attendent une décision, depuis la transmission ou la dernière retransmission.",
+    "by_offence": "Où il se concentre : infraction",
+    "by_offence_empty": "Aucun chef proposé sur les dossiers actifs.",
+    "by_offence_hint": "Chefs proposés sur les dossiers actifs, par infraction.",
+    "by_prosecutor": "Par personne",
+    "by_prosecutor_hint": "Les décisions et documents portent le nom de la personne qui les a pris.",
+    "by_station": "Où il se concentre : poste",
+    "by_station_hint": "Dossiers actifs (en attente de décision ou chez la police) par poste de police transmetteur.",
+    "days": "{days} jours",
+    "decisions": "Décisions sur la période",
+    "decisions_empty": "Aucune décision sur la période.",
+    "decisions_hint": "Par type. Plusieurs chefs décidés ensemble comptent une fois.",
+    "directions": "Instructions à la police",
+    "directions_empty": "Aucune instruction n'a été donnée.",
+    "directions_rate": "{percent} % de celles ayant reçu une réponse ont été exécutées.",
+    "directions_summary": "Sur {directions} données : {met} exécutées, {not_met} non exécutées et {open} encore ouvertes.",
+    "how_long": "Délais",
+    "longest_waiting": "Plus longue attente de décision",
+    "longest_with_police": "Plus longtemps chez la police",
+    "months": "{count} mois",
+    "moved": "Évolution du travail",
+    "moved_hint": "Par mois civil. Une décision portant sur plusieurs chefs compte une fois. La dernière colonne est le mois en cours.",
+    "no_active": "Aucun dossier actif.",
+    "none_with_police": "Aucun dossier n'est chez la police.",
+    "none_yet": "aucun pour l'instant",
+    "not_measured": "Non mesuré",
+    "not_measured_body": "Cette vue sert à voir combien de travail il y a et où, pour pouvoir s'organiser.",
+    "not_measured_court": "Délais côté tribunal, tant que les affaires judiciaires ne sont pas enregistrées.",
+    "not_measured_target": "Comparaison entre personnes ou avec un objectif : aucune n'est définie, et aucune n'est sous-entendue.",
+    "nothing_to_measure": "Rien à mesurer pour cette période.",
+    "period": "Période",
+    "queue": {
+      "concluded": "La décision de poursuite a été prise",
+      "concluded_label": "Clôturés",
+      "documents": "Préparés et pas encore émis",
+      "documents_label": "Documents en attente",
+      "in_review": "En attente d'une décision, examen en cours ou retransmis",
+      "in_review_label": "En examen",
+      "intake": "Reçus, sans examen enregistré",
+      "reopened": "Décisions clôturées soumises à nouvel examen",
+      "returned": "Chez la police pour complément d'enquête"
+    },
+    "queues": "Files d'attente",
+    "replay_hint": "Les dossiers en attente à chaque fin de mois sont comptés à partir de l'historique de chaque dossier.",
+    "returned_on": "Renvoyé le {date}.",
+    "row": {
+      "decided": "Dossiers décidés",
+      "issued": "Documents émis",
+      "police_end": "Chez la police, en fin de mois",
+      "received": "Dossiers reçus",
+      "waiting_end": "En attente de décision, en fin de mois"
+    },
+    "set_prosecutor": "Ajoutez des personnes dans les Réglages pour que chaque décision porte le bon nom.",
+    "spread": "en valeur médiane, sur {across}. Moyenne {average}, maximum {longest}.",
+    "subtitle": "Le volume de travail de ce bureau, son évolution et où il se concentre. On mesure le travail, pas les personnes.",
+    "turnaround": {
+      "document": "Du document à son émission",
+      "document_about": "De la préparation d'un document à son émission.",
+      "police": "Temps chez la police",
+      "police_about": "D'un renvoi à la retransmission qui y répond.",
+      "referral": "De la transmission à la première décision",
+      "referral_about": "De la transmission à la première décision de poursuite, pour les dossiers décidés sur la période."
+    },
+    "turnaround_band": {
+      "four_weeks": "Jusqu'à quatre semaines",
+      "longer": "Plus longtemps",
+      "two_weeks": "Jusqu'à deux semaines",
+      "week": "Jusqu'à une semaine"
+    },
+    "waiting_since": "En attente depuis le {date}."
+  },
+  "charge": {
+    "form": {
+      "accused_optional": "Accusé (facultatif)",
+      "offence": "Infraction",
+      "offence_placeholder": "p. ex. vol de véhicule",
+      "offence_required": "L'infraction est requise.",
+      "particulars_optional": "Précisions (facultatif)",
+      "particulars_placeholder": "Précisions sur l'infraction…",
+      "record_failed": "Impossible d'enregistrer le chef",
+      "recorded": "Chef enregistré",
+      "section_optional": "Article de loi (facultatif)",
+      "submit": "Ajouter le chef"
+    }
+  },
+  "command_menu": {
+    "description": "Recherchez des personnes, des dossiers et tout le reste dans le {office}.",
+    "no_matches": "Aucun résultat pour l'instant.",
+    "placeholder": "Rechercher par nom, NIN, numéro d'enregistrement, référence…",
+    "title": "Rechercher dans {product}",
+    "type_to_search": "Tapez pour rechercher dans le {office}."
+  },
+  "comments": {
+    "add": "Ajouter un commentaire",
+    "failed": "Impossible de publier le commentaire",
+    "label": "Commentaires",
+    "placeholder": "Écrire un commentaire…",
+    "post": "Publier",
+    "unnamed": "Sans nom"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "could_not_record": "Enregistrement impossible",
+    "discard_unsaved": "Vous avez des modifications non enregistrées. Les abandonner ?",
+    "none": "Aucun.",
+    "not_recorded": "Non enregistré",
+    "notes": "Notes",
+    "notes_optional": "Notes (facultatif)",
+    "notes_placeholder": "Notes…",
+    "open": "Ouvrir",
+    "planned": "Prévu",
+    "remove": "Retirer",
+    "request_failed": "La demande a échoué.",
+    "review": "Examiner",
+    "save_changes": "Enregistrer les modifications",
+    "source_note_optional": "Source (facultatif)",
+    "try_again": "Veuillez réessayer."
+  },
+  "count": {
+    "active_file": {
+      "many": "{count} dossiers actifs",
+      "one": "{count} dossier actif"
+    },
+    "awaiting_file": {
+      "many": "{count} dossiers en attente de décision",
+      "one": "{count} dossier en attente de décision"
+    },
+    "charged_file": {
+      "many": "{count} dossiers poursuivis",
+      "one": "{count} dossier poursuivi"
+    },
+    "day": {
+      "many": "{count} jours",
+      "one": "{count} jour"
+    },
+    "direction": {
+      "many": "{count} instructions",
+      "one": "{count} instruction"
+    },
+    "document": {
+      "many": "{count} documents",
+      "one": "{count} document"
+    },
+    "file": {
+      "many": "{count} dossiers",
+      "one": "{count} dossier"
+    },
+    "item": {
+      "many": "{count} éléments",
+      "one": "{count} élément"
+    },
+    "proposed_charge": {
+      "many": "{count} chefs proposés",
+      "one": "{count} chef proposé"
+    },
+    "receipt_or_notice": {
+      "many": "{count} accusés ou avis",
+      "one": "{count} accusé ou avis"
+    },
+    "referral": {
+      "many": "{count} transmissions",
+      "one": "{count} transmission"
+    },
+    "return": {
+      "many": "{count} renvois",
+      "one": "{count} renvoi"
+    },
+    "review_note": {
+      "many": "{count} notes d'examen",
+      "one": "{count} note d'examen"
+    },
+    "statement": {
+      "many": "{count} déclarations",
+      "one": "{count} déclaration"
+    }
+  },
+  "decision": {
+    "form": {
+      "all_counts": "tous les chefs",
+      "applies_to": "Porte sur",
+      "completes_review": "Cette décision clôture l'examen",
+      "completes_review_hint": "Laissez décoché si d'autres chefs restent à décider à partir des mêmes constats. Un examen clôturé ne peut plus être modifié.",
+      "correcting_after": "du {date}. La décision antérieure reste au dossier. Expliquez la correction ci-dessous.",
+      "correcting_before": "Correction de la décision de",
+      "counts_hint": "Choisissez les chefs concernés par cette décision, ou tout le dossier. Le statut du dossier suit ses chefs.",
+      "covering_note_optional": "Note d'accompagnement (facultatif)",
+      "decided_at": "Décidé le",
+      "decided_by_optional": "Décidé par (facultatif)",
+      "decision": "Décision",
+      "decision_placeholder": "Choisir une décision",
+      "direction_instruction_required": "Chaque instruction doit être rédigée.",
+      "dpp_only": "Réservé : {head}",
+      "needs_review": "exige un examen",
+      "needs_review_hint": "Autoriser, classer, orienter, poursuivre selon le seuil et renvoyer suivent un examen. Commencez-en un depuis l'onglet Examen.",
+      "no_accused": "Aucun accusé nommé",
+      "not_delegable": "Non délégable : exercé personnellement par le {head}.",
+      "not_dpp_refuse": "Vous n'êtes pas indiqué comme Directeur : cette décision sera refusée.",
+      "privileged_hint": "Confidentiel entre le {office} et le service enquêteur, jamais communiqué à des personnes non autorisées.",
+      "reasons_optional": "Motifs (facultatif)",
+      "reasons_placeholder": "Motifs…",
+      "reasons_required": "Motifs (obligatoire)",
+      "record_failed": "Impossible d'enregistrer la décision",
+      "recorded": "Décision enregistrée",
+      "recorded_many": "{count} décisions enregistrées",
+      "review_not_support": "l'examen ne le permet pas",
+      "review_outcome": "Issue de l'examen selon le {standard} commencé le {date}. Les décisions qu'il permet sont indiquées ci-dessous.",
+      "submit": "Enregistrer la décision",
+      "type_required": "Le type de décision est requis.",
+      "whole_file": "Tout le dossier"
+    },
+    "type": {
+      "amend_charge": "Modifier / retenir un autre chef",
+      "committal_venue_high_court": "Renvoi / choix de juridiction (Haute Cour)",
+      "decline": "Ne pas poursuivre",
+      "discontinue": "Abandonner les poursuites",
+      "divert": "Orienter (alternative aux poursuites)",
+      "nolle_prosequi": "Nolle prosequi",
+      "plea_bargain_accepted": "Accord de plaidoyer accepté",
+      "return_for_investigation": "Renvoyer pour complément d'enquête",
+      "sanction": "Autoriser (décider de poursuivre)",
+      "take_over": "Reprendre les poursuites",
+      "threshold_charge": "Poursuite selon le critère du seuil"
+    }
+  },
+  "direction": {
+    "editor": {
+      "add": "Ajouter une instruction",
+      "description": "Indiquez ce que la police doit faire. Au retour du dossier, vous noterez si chaque instruction a été exécutée.",
+      "from_unnamed": "Personne non précisée",
+      "instruction_aria": "Instruction {number}",
+      "kind_aria": "Type d'instruction {number}",
+      "label": "Instructions à la police (au moins une)",
+      "statement_from_aria": "Déclaration à recueillir auprès de"
+    },
+    "kind": {
+      "clarification": {
+        "hint": "Un point du dossier obscur ou contradictoire.",
+        "label": "Éclaircissement"
+      },
+      "evidence": {
+        "hint": "Une preuve à obtenir ou à produire.",
+        "label": "Preuve complémentaire"
+      },
+      "investigation": {
+        "hint": "Une démarche que la police doit accomplir.",
+        "label": "Acte d'enquête requis"
+      },
+      "missing_material": {
+        "hint": "Des éléments que le dossier aurait dû contenir.",
+        "label": "Ce qui manque"
+      },
+      "other": {
+        "hint": "Toute autre instruction documentée.",
+        "label": "Autre instruction"
+      },
+      "procedural": {
+        "hint": "Une formalité de procédure à respecter.",
+        "label": "Exigence de procédure"
+      },
+      "statement": {
+        "hint": "Une déclaration à recueillir, et auprès de qui.",
+        "label": "Déclaration complémentaire"
+      }
+    },
+    "list": {
+      "from": "De {name}",
+      "recorded_on": "Enregistrée le {date}",
+      "reopen": "Rouvrir",
+      "what_came_back": "Ce qui est revenu",
+      "what_came_back_placeholder": "Ce qui est revenu (facultatif)"
+    },
+    "response": {
+      "met": "Exécutée",
+      "not_met": "Non exécutée",
+      "open": "Ouverte"
+    }
+  },
+  "doc": {
+    "a_decision": "Une décision de ce dossier",
+    "actions": "Actions sur le document",
+    "add_item": "+ Ajouter une ligne",
+    "add_paragraph": "Ajouter un paragraphe dessous",
+    "all_documents": "Actes",
+    "altered": "Modifié",
+    "altered_long": "Le contenu enregistré a changé depuis son émission",
+    "assist_failed": "L'assistant n'a pas pu rédiger ce paragraphe",
+    "author": "Auteur",
+    "custody_document": "Acte",
+    "discard": "Supprimer le projet",
+    "discard_confirm": "Supprimer ce projet ? La décision d'origine n'est pas affectée.",
+    "discard_failed": "Suppression impossible",
+    "done_editing": "Terminé",
+    "download_docx": "Télécharger en DOCX",
+    "download_md": "Télécharger en Markdown",
+    "draft": "Projet",
+    "draft_banner": "PROJET, NON ÉMIS",
+    "draft_hint": "Un projet suit le dossier lorsqu'il est actualisé. Une fois émis, son contenu est figé avec sa référence et ne peut plus changer.",
+    "draft_hint_template": "Ceci est un projet tiré du modèle de votre pays. Cliquez sur Modifier pour changer une ligne sur la page, ou demandez à l'assistant d'écrire un paragraphe. L'émission ajoute votre signature, le cachet du bureau et un code de vérification, et fige l'acte.",
+    "edit": "Modifier",
+    "export_failed": "L'export a échoué.",
+    "for_custody": "Pour la détention et les délais",
+    "for_decision": "Pour la décision sur ce dossier",
+    "from_decision": "À partir de la décision : {decision}, {date}",
+    "from_template": "Un modèle",
+    "issue": "Émettre",
+    "issue_confirm": "Émettre ce document ? Il reçoit sa référence et ne peut plus être modifié.",
+    "issue_failed": "Émission impossible",
+    "issue_now": "Émettre",
+    "issue_sure": "L'émettre ? Il sera signé, cacheté et ne pourra plus changer.",
+    "issued": "Émis",
+    "issued_on": "Émis le {date}",
+    "kind": {
+      "charge_sheet": "Acte d'accusation",
+      "charge_sheet_about": "L'acte d'accusation autorisé, issu d'une décision d'autoriser, de poursuivre selon le seuil ou de modifier les chefs.",
+      "decline_reasons": "Motifs écrits du classement",
+      "decline_reasons_about": "Les motifs écrits, confidentiels, d'une décision de ne pas poursuivre.",
+      "directions_about": "Les instructions accompagnant un renvoi pour complément d'enquête."
+    },
+    "last_prepared": "Dernière préparation",
+    "new": "Nouvel acte",
+    "new_lead": "Actes tirés des modèles utilisés en {country}. Chacun s'ouvre en projet à relire et modifier.",
+    "new_title": "Préparer un acte",
+    "next": "Document suivant",
+    "none_prepared": "Aucun préparé pour l'instant.",
+    "not_issued": "Pas encore émis.",
+    "other_documents": "Autres actes",
+    "pdf_hint": "Ouvre la fenêtre d'impression. Choisissez « Enregistrer au format PDF » comme imprimante.",
+    "pdf_toast": "Choisissez « Enregistrer au format PDF » comme imprimante",
+    "prepare": "Préparer",
+    "prepare_failed": "Impossible de préparer le document",
+    "prepared_from": "Préparé à partir de",
+    "previous": "Document précédent",
+    "print": "Imprimer",
+    "ready": "Prêts à préparer",
+    "ready_empty": "Chaque décision qui produit un document en a un de préparé.",
+    "refresh": "Actualiser depuis le dossier",
+    "refresh_failed": "Actualisation impossible",
+    "remove_block": "Retirer",
+    "save_failed": "Impossible d'enregistrer le fichier",
+    "save_pdf": "Enregistrer en PDF",
+    "saved": "Enregistré",
+    "set_when_issued": "Fixé à l'émission",
+    "sha": "Code de contrôle (prouve que l'impression n'a pas été modifiée)",
+    "taken_when_issued": "Calculé à l'émission",
+    "type_here": "Saisissez ici",
+    "verify_label": "Vérifiable auprès du parquet émetteur",
+    "write_with_assist": "Rédiger ce paragraphe avec l'assistant"
+  },
+  "event": {
+    "attachment": "Document joint : {what}",
+    "by": "Par {name}",
+    "charge": "Chef proposé enregistré : {what}",
+    "decision_corrected": "Décision corrigée : {what}",
+    "decision_recorded": "Décision enregistrée : {what}",
+    "direction_met": "Instruction exécutée : {kind}",
+    "direction_not_met": "Instruction non exécutée : {kind}",
+    "document_issued": "Document émis : {what}",
+    "evidence": "Preuve enregistrée : {what}",
+    "referral": "Transmission de la police reçue",
+    "resubmission": "Retransmission de la police reçue",
+    "review_note": "Note d'examen ajoutée",
+    "review_reopened": "Décision rouverte pour examen : {test}",
+    "review_started": "Examen commencé : {test}",
+    "statement": "Déclaration enregistrée : {what}"
+  },
+  "evidence": {
+    "category": {
+      "digital": "Preuve numérique",
+      "documentary": "Preuve documentaire",
+      "exhibit": "Pièce à conviction",
+      "expert": "Expertise"
+    },
+    "form": {
+      "category": "Catégorie",
+      "category_placeholder": "Choisir une catégorie",
+      "category_required": "La catégorie est requise.",
+      "description": "Description",
+      "description_placeholder": "De quoi il s'agit…",
+      "mark_optional": "Marque d'identification (facultatif)",
+      "record_failed": "Impossible d'enregistrer l'élément de preuve",
+      "recorded": "Élément de preuve enregistré",
+      "recovered_optional": "Découvert à (facultatif)",
+      "source_placeholder": "p. ex. tel qu'inscrit au registre des scellés de la police",
+      "submit": "Ajouter l'élément de preuve"
+    }
+  },
+  "file": {
+    "form": {
+      "court_case_number": "Numéro de l'affaire au tribunal",
+      "material_optional": "Ce qui accompagnait le dossier (facultatif)",
+      "material_placeholder": "p. ex. projet d'acte d'accusation, déclarations de témoins, déclaration de l'agent interpellateur, photos des pièces",
+      "odpp_number": "N° d'enregistrement du parquet",
+      "odpp_number_hint": "Tel qu'inscrit sur le dossier.",
+      "odpp_number_optional": "N° d'enregistrement du parquet (facultatif)",
+      "odpp_number_placeholder": "À attribuer quand il est connu",
+      "open_failed": "Impossible d'ouvrir le dossier",
+      "opened": "Dossier ouvert",
+      "police_reference": "Référence de la police",
+      "police_reference_hint": "Comme sur le dossier de police : poste, CRB, numéro et année.",
+      "police_reference_optional": "Référence de la police (facultatif)",
+      "police_reference_placeholder": "p. ex. JINJA CRB 314/2019",
+      "police_station": "Poste de police",
+      "police_station_optional": "Poste de police (facultatif)",
+      "police_station_placeholder": "p. ex. commissariat de Jinja",
+      "received": "Reçu le",
+      "submit_open": "Ouvrir le dossier",
+      "title": "Intitulé",
+      "title_placeholder": "p. ex. Ministère public c. Okello, vol de véhicule",
+      "title_required": "Un court intitulé du dossier est requis.",
+      "update_failed": "Impossible de mettre à jour le dossier",
+      "updated": "Informations du dossier mises à jour"
+    },
+    "link": {
+      "link_failed": "Impossible de lier la personne",
+      "linked": "Personne liée au dossier",
+      "person": "Personne",
+      "role": "Rôle dans ce dossier",
+      "role_placeholder": "Choisir un rôle",
+      "submit": "Lier la personne"
+    },
+    "role": {
+      "accused": "Accusé",
+      "complainant": "Plaignant / victime",
+      "witness": "Témoin"
+    },
+    "status": {
+      "declined": "Classé sans suite",
+      "discontinued": "Poursuites abandonnées",
+      "diverted": "Orienté vers une alternative",
+      "plea_bargained": "Accord de plaidoyer",
+      "resubmitted": "Retransmis par la police",
+      "returned_for_investigation": "Renvoyé pour complément d'enquête",
+      "sanctioned": "Poursuites autorisées",
+      "taken_over": "Repris",
+      "under_review": "En attente de décision"
+    },
+    "view": {
+      "active": {
+        "about": "En attente d'une décision de poursuite, avec un examen en cours ou retransmis par la police.",
+        "label": "Examens en cours"
+      },
+      "all": {
+        "about": "Tous les dossiers du registre.",
+        "label": "Tous les dossiers"
+      },
+      "closed": {
+        "about": "La décision de poursuite a été prise.",
+        "label": "Clôturés"
+      },
+      "intake": {
+        "about": "Reçus, sans examen enregistré.",
+        "label": "Arrivées"
+      },
+      "reopened": {
+        "about": "Dossiers clôturés soumis à nouvel examen, avec le motif de chaque réouverture.",
+        "label": "Examens rouverts"
+      },
+      "returned": {
+        "about": "Chez la police pour complément d'enquête.",
+        "label": "Renvoyés à la police"
+      }
+    }
+  },
+  "file_tab": {
+    "chronology": "Chronologie",
+    "court": "Tribunal",
+    "file": "Dossier",
+    "index": "Le dossier",
+    "details": "Détails",
+    "case": "Affaire",
+    "activity": "Historique"
+  },
+  "file_ws": {
+    "a_count": "Un chef",
+    "attachments": "Pièces jointes",
+    "back": "Retour à tous les dossiers",
+    "came_back": "Ce qui est revenu",
+    "chronology_empty": "Rien n'a encore été enregistré dans ce dossier.",
+    "correct": "Corriger",
+    "correct_description": "Enregistrer une décision qui remplace celle-ci. L'ancienne reste au dossier.",
+    "correct_title": "Corriger cette décision",
+    "corrected": "Corrigée le {date}",
+    "corrects": "Corrige {decision} du {date}",
+    "court_no": "N° de l'affaire au tribunal",
+    "court_number_hint": "Saisi par le parquet ; le registre du tribunal fait foi.",
+    "court_number_label": "Numéro de l'affaire au tribunal",
+    "court_reference": "Référence du tribunal",
+    "decisions_hint": "Les décisions ne sont jamais modifiées ni supprimées. Une correction est une nouvelle décision motivée. Le statut du dossier suit ses chefs.",
+    "edit": "Modifier les informations",
+    "edit_description": "Mettre à jour les numéros d'enregistrement, de référence et du tribunal.",
+    "edit_title": "Modifier les informations du dossier",
+    "link_person": "Lier une personne",
+    "link_person_description": "Ajouter un accusé, un plaignant ou un témoin à ce dossier.",
+    "log_resubmission": "Enregistrer une retransmission",
+    "log_resubmission_description": "Enregistrer le retour du dossier depuis la police.",
+    "no_court_number": "Aucun numéro d'affaire enregistré. Il est attribué une fois l'acte d'accusation déposé.",
+    "no_decisions": "Aucune décision enregistrée.",
+    "no_directions": "Aucune instruction n'accompagnait ce renvoi.",
+    "no_people": "Personne n'est encore lié à ce dossier.",
+    "not_found": "Dossier introuvable",
+    "not_found_body": "Ce dossier n'est pas au registre. Il a peut-être été ouvert sur une autre installation.",
+    "not_returned": "Ce dossier n'a pas été renvoyé à la police.",
+    "odpp_no": "N° d'enregistrement du parquet",
+    "planned_adjournments": "Renvois, et le réexamen déclenché après trois renvois consécutifs.",
+    "planned_body": "Les dates d'audience et les renvois sont tenus ici par le parquet jusqu'à ce que l'application des tribunaux puisse être reliée.",
+    "planned_hearings": "Dates d'audience et objet de chaque audience.",
+    "planned_notices": "Avis adressés au parquet.",
+    "planned_title": "Dates de procès et renvois",
+    "police_ref": "Référence de la police",
+    "police_station": "Poste de police",
+    "received": "Reçu le {date}.",
+    "record_decision": "Enregistrer une décision",
+    "record_decision_description": "Autoriser, classer, orienter, poursuivre selon le seuil ou renvoyer suivent un examen. Les autres décisions s'enregistrent ici.",
+    "references": "Références",
+    "remove_person": "Retirer {name} de ce dossier",
+    "resubmitted_on": "Retransmis le {date}",
+    "returned_on": "Renvoyé le {date}",
+    "returns": "Renvoi et retransmission",
+    "sections": "Sections du dossier",
+    "stands": "Où en est ce dossier",
+    "threshold_due": "Le réexamen à 14 jours de la poursuite selon le critère du seuil est dû le {date}.",
+    "threshold_overdue": "Le réexamen à 14 jours de la poursuite selon le critère du seuil était dû le {date}. Il est levé dès qu'une décision ultérieure est enregistrée.",
+    "threshold_review": "Réexamen du critère du seuil",
+    "via_connection": "Transmis par la connexion avec {station}.",
+    "whole_file": "Tout le dossier",
+    "with_police": "Chez la police",
+    "tasks": "Tâches"
+  },
+  "intake_alerts": {
+    "title": "En attente d'une décision de poursuite"
+  },
+  "interchange": {
+    "a_station": "un poste",
+    "conn": {
+      "answered": "a répondu. Ce n'est pas encore approuvé : n'importe qui aurait pu répondre. Appelez ou rencontrez le poste et faites-lui lire son code d'identité. Saisissez ce qu'il lit. Il doit correspondre à celui-ci :",
+      "area": "Ressort",
+      "area_placeholder": "Le ressort couvert (facultatif)",
+      "create_identity": "Créer l'identité",
+      "decline": "Refuser",
+      "decline_failed": "Refus impossible",
+      "decline_placeholder": "Ce n'est pas lui ? Dites pourquoi (facultatif)",
+      "decline_reason": "Motif du refus",
+      "empty": "Aucun poste n'a été invité. Invitez les postes relevant de ce bureau.",
+      "end": "Mettre fin à la connexion",
+      "end_failed": "Impossible d'y mettre fin",
+      "end_placeholder": "Pour mettre fin à cette connexion, indiquez pourquoi",
+      "end_reason": "Motif de fin de connexion",
+      "ended": "Connexion terminée",
+      "fingerprint_hint": "Un poste demande ce code lorsqu'il confirme ce bureau. Lisez-le-lui ; ne l'envoyez pas dans le même message que l'invitation.",
+      "fingerprint_label": "Code d'identité de ce bureau",
+      "fingerprint_placeholder": "Saisissez ce que le poste lit",
+      "fingerprint_read": "Code lu par le poste",
+      "handles": "Compétence : {area}.",
+      "identify": "Identifier ce bureau",
+      "identify_description": "Nommez le bureau comme les postes qui lui transmettent le connaissent. Il reçoit des clés qui ne quittent jamais cet ordinateur. Le nom ne peut plus être modifié ensuite, car chaque poste le confirme.",
+      "identify_first": "Identifiez d'abord ce bureau.",
+      "identity_created": "Ce bureau a désormais une identité",
+      "identity_failed": "Configuration impossible",
+      "identity_set": "Identité définie",
+      "import_answer": "Recevoir la réponse d'un poste",
+      "invite_description": "Un poste ne peut transmettre ici que si ce bureau l'invite. L'invitation vaut pour ce poste, une seule fois, et expire. Remettez le fichier au poste par tout moyen : clé USB, courriel, téléchargement.",
+      "invite_failed": "Impossible de créer l'invitation",
+      "invite_hint": "Recevez ensuite la réponse que le poste renvoie.",
+      "invite_title": "Inviter un poste",
+      "invited": "Invitation créée",
+      "invited_on": "Invité le {date}",
+      "known_as": "C'est sous ce nom que les postes qui transmettent ici connaissent ce bureau.",
+      "make_invite": "Créer l'invitation",
+      "office_name": "Nom du bureau",
+      "office_placeholder": "p. ex. {office} de Matete",
+      "officer_in_charge": "responsable {name}",
+      "open_for": "Valable",
+      "save_again": "Enregistrer à nouveau l'invitation",
+      "save_invite_failed": "Impossible d'enregistrer l'invitation",
+      "station": "Poste",
+      "station_placeholder": "Le poste, p. ex. commissariat de Wandegeya",
+      "stations": "Postes",
+      "subtitle": "Les postes de police autorisés à transmettre des dossiers à ce bureau. Un poste ne transmet ici que si ce bureau l'a invité et qu'une personne d'ici a confirmé son identité.",
+      "trust": "Il correspond : approuver ce poste",
+      "trusted_detail": "Code {fingerprint}. Confirmé le {date}{by}. Dernier envoi reçu : n° {seq}.",
+      "trusted_toast": "Poste approuvé. Envoyez-lui la confirmation.",
+      "waiting": "{count} en attente",
+      "waiting_answer": "En attente de la réponse de {station}. Valable jusqu'au {date}."
+    },
+    "file_failed": "Le fichier n'a pas pu être créé.",
+    "import": "Recevoir un dossier d'un poste",
+    "import_failed": "Le fichier n'a pas été reçu",
+    "in": {
+      "decided": "Décidé",
+      "empty": "Rien n'est en attente. Recevez un fichier envoyé par un poste.",
+      "from": "De {station}.",
+      "from_received": "De {station}. Reçu le {date}.",
+      "nothing_prepared": "Rien n'a été préparé. Un accusé de réception est préparé lorsque vous acceptez ou rejetez une transmission ; un avis de décision se prépare depuis l'onglet Décisions du dossier.",
+      "subtitle": "Les transmissions des postes que ce bureau approuve. Elles attendent ici, à l'écart des dossiers, jusqu'à ce que vous les lisiez et les acceptiez.",
+      "to_send": "À renvoyer",
+      "to_send_hint": "Accusés de réception, avis de décision et confirmations de connexion. Seul le poste peut les ouvrir. Enregistrez le fichier et remettez-le par tout moyen."
+    },
+    "kind": {
+      "decision_notice": "Avis de décision",
+      "pairing_confirmation": "Connexion",
+      "receipt": "Accusé de réception"
+    },
+    "notice": {
+      "button": "Informer le poste",
+      "drafts": "Avis préparé. {count} projets de documents n'y figurent pas : émettez-les d'abord s'ils doivent y être.",
+      "failed": "Impossible de préparer l'avis",
+      "prepared": "Avis préparé. Enregistrez le fichier pour l'envoyer."
+    },
+    "open_file": "Ouvrir le dossier",
+    "out": {
+      "not_sent": "Pas encore envoyé",
+      "prepared": "Préparé le {date}",
+      "save": "Enregistrer le fichier",
+      "save_again": "Enregistrer à nouveau",
+      "save_failed": "Enregistrement impossible",
+      "saved": "Enregistré. Remettez le fichier au poste.",
+      "saved_on": "Enregistré le {date}",
+      "saved_to_send": "Enregistré pour envoi",
+      "to": "À {station}"
+    },
+    "package_file": "Fichier du poste",
+    "package_filter": "Fichier Pleadli",
+    "read": "Lire",
+    "referral": "Transmission",
+    "resubmission": "Nouvelle transmission",
+    "review": {
+      "accept": "Accepter et ouvrir le dossier",
+      "accept_failed": "Impossible de l'accepter",
+      "add_new": "Ajouter comme nouvelle personne",
+      "already_here": "Déjà enregistré",
+      "answers": "À quoi cela répond",
+      "charges": "Chefs d'accusation proposés",
+      "creates_file": "Accepter crée en une fois un dossier de poursuite : {people} personnes, {statements} déclarations, {exhibits} pièces à conviction, {charges} chefs proposés et {files} fichiers. Un accusé de réception est ensuite prêt pour le poste.",
+      "creates_material": "Accepter ajoute en une fois les nouveaux éléments au dossier : {people} personnes, {statements} déclarations, {exhibits} pièces à conviction, {charges} chefs proposés et {files} fichiers. Un accusé de réception est ensuite prêt pour le poste.",
+      "decide": "Décider",
+      "exhibits": "Pièces à conviction",
+      "files": "Pièces jointes",
+      "files_hint": "Les pièces jointes ont été vérifiées et n'ont pas été modifiées. Elles rejoignent le dossier seulement quand vous l'acceptez.",
+      "fingerprint": "Code d'identité du poste",
+      "gap": "Manquant",
+      "gap_many": "{count} envois antérieurs de ce poste n'ont pas été reçus ici.",
+      "gap_one": "Un envoi antérieur de ce poste n'a pas été reçu ici.",
+      "name_differs": "Nom différent",
+      "name_differs_body": "La transmission nomme le poste « {named} », mais la connexion a été confirmée sous le nom « {confirmed} ».",
+      "nin": "NIN {nin}",
+      "no_files": "Aucun fichier n'accompagnait cette transmission.",
+      "not_trusted": "Non fiable",
+      "not_trusted_body": "La connexion avec ce poste n'est plus approuvée ; cet envoi ne peut donc pas être accepté.",
+      "not_with_station": "Le dossier n'est pas chez le poste ({status}) ; cet envoi ne peut donc pas être accepté.",
+      "opened": "Dossier ouvert. Un accusé de réception est prêt à être envoyé.",
+      "opened_failed": "Dossier ouvert. {count} documents n'ont pas pu être joints.",
+      "or_reject": "Ou le rejeter",
+      "origin": "Provenance",
+      "referred_by": "Transmis par {station}. Reçu le {date}.",
+      "registration": "N° d'enregistrement du parquet",
+      "registration_placeholder": "S'il en a un (facultatif)",
+      "reject": "Rejeter la transmission",
+      "reject_failed": "Impossible de le rejeter",
+      "reject_placeholder": "Pourquoi il est rejeté. Le poste en est informé.",
+      "reject_reason": "Motif du rejet",
+      "rejected_toast": "Rejeté. Un accusé de réception avec votre motif est prêt à être envoyé.",
+      "resubmission_of": "Nouvelle transmission de",
+      "same_nin": "{name} a le même numéro d'identité national.",
+      "sent": "Envoyé",
+      "sent_value": "{date}, envoi n° {seq}",
+      "sha": "Code de contrôle",
+      "signature_checked": "Vérifié : cela vient bien de ce poste, seul ce bureau peut l'ouvrir et rien n'a été modifié en route. Le contenu reste la version du poste.",
+      "signed_by": "Envoyé par",
+      "statements": "Déclarations",
+      "summary": "Résumé du poste",
+      "taken_by": "recueillie par {name}",
+      "title": "Intitulé du dossier",
+      "title_placeholder": "Laisser vide pour utiliser l'intitulé proposé",
+      "unknown": "Inconnu",
+      "unknown_file": "Dossier inconnu",
+      "unknown_file_body": "Il désigne un dossier que ce poste n'a pas transmis ; il ne peut donc pas être accepté.",
+      "use_existing": "Utiliser {name}",
+      "who": "Qui l'affirme",
+      "with_station": "Le dossier est chez le poste. Accepter ajoute ces éléments à ce dossier, sans en ouvrir un nouveau."
+    },
+    "role": {
+      "accused": "Accusé",
+      "arresting_officer": "Agent ayant procédé à l'arrestation",
+      "complainant": "Plaignant",
+      "investigating_officer": "Enquêteur",
+      "witness": "Témoin"
+    },
+    "state": {
+      "awaiting_confirmation": "A répondu : confirmez le code",
+      "declined": "Refusé",
+      "expired": "Invitation expirée",
+      "invited": "Invité, pas encore de réponse",
+      "revoked": "Révoqué",
+      "trusted": "Approuvé"
+    },
+    "status": {
+      "accepted": "Accepté",
+      "rejected": "Rejeté",
+      "waiting": "En attente de lecture"
+    }
+  },
+  "material": {
+    "add_charge": "Ajouter un chef",
+    "add_charge_description": "Enregistrer un chef proposé par la police dans ce dossier.",
+    "add_evidence": "Ajouter une preuve",
+    "add_evidence_description": "Enregistrer une pièce à conviction ou une autre preuve signalée par la police.",
+    "add_observation": "Ajouter une observation",
+    "add_observation_description": "Noter une question, une lacune ou un problème pendant l'examen. Ce n'est pas une décision.",
+    "add_statement": "Ajouter une déclaration",
+    "add_statement_description": "Enregistrer une déclaration jointe à la transmission de la police.",
+    "evidence": "Preuves",
+    "no_charges": "Aucun chef enregistré.",
+    "no_evidence": "Aucune preuve enregistrée.",
+    "no_observations": "Aucune observation enregistrée.",
+    "no_statements": "Aucune déclaration reçue.",
+    "observations": "Observations",
+    "photos": "Photographies et pièces jointes",
+    "review_stands": "Où en est l'examen",
+    "scanned": "Copie numérisée et pièces jointes"
+  },
+  "nav": {
+    "item": {
+      "active_reviews": "Examens en cours",
+      "capacity": "Charge de travail",
+      "charging_review": "Examen des poursuites",
+      "closed": "Clôturés",
+      "court_matters": "Affaires au tribunal",
+      "decisions": "Décisions",
+      "documents": "Documents",
+      "incoming": "Arrivées de la police",
+      "intake": "Nouveaux dossiers",
+      "overview": "Aujourd'hui",
+      "people": "Personnes",
+      "police_connections": "Connexions avec la police",
+      "police_material": "Éléments de la police",
+      "reopened": "Examens rouverts",
+      "reports": "Rapports",
+      "returned": "Renvoyés à la police",
+      "search": "Rechercher",
+      "settings": "Réglages",
+      "today": "Aujourd'hui",
+      "files": "Dossiers",
+      "board": "Tableau",
+      "calendar": "Calendrier",
+      "statistics": "Statistiques",
+      "cases": "Affaires",
+      "tasks": "Tâches"
+    },
+    "section": {
+      "files": "Dossiers",
+      "office": "Bureau",
+      "work": "Travail du parquet"
+    }
+  },
+  "next": {
+    "charged": "Poursuivi. Aucun numéro d'affaire enregistré.",
+    "charged_case": "Poursuivi. Affaire n° {number}.",
+    "charged_next": "Enregistrez le numéro d'affaire une fois l'acte d'accusation déposé.",
+    "concluded": "La décision de poursuite a été prise et le dossier est clôturé.",
+    "continue_review": "Poursuivre l'examen",
+    "go_directions": "Passer les instructions en revue",
+    "material": "Éléments enregistrés. L'examen n'a pas commencé.",
+    "material_next": "Lisez les éléments et notez vos observations.",
+    "no_further": "Aucune autre suite enregistrée.",
+    "observations": "Observations enregistrées. Aucun examen commencé.",
+    "observations_next": "Commencez l'examen quand vous êtes prêt à appliquer le critère.",
+    "open_court": "Ouvrir le tribunal",
+    "open_decisions": "Ouvrir les décisions",
+    "received": "Reçu de la police. Aucun élément enregistré.",
+    "received_next": "Enregistrez les déclarations, preuves et chefs proposés joints à la transmission.",
+    "record_case": "Enregistrer le numéro d'affaire",
+    "record_material": "Enregistrer les éléments",
+    "record_new_material": "Enregistrer les nouveaux éléments",
+    "reopened": "Rouvert pour examen.",
+    "reopened_next": "Appliquez le critère, enregistrez les constats, puis la décision qui corrige l'ancienne.",
+    "reopened_reason": "Rouvert pour examen : {reason}",
+    "resubmitted": "La police a retransmis ce dossier après complément d'enquête.",
+    "resubmitted_next": "Notez ce qui est revenu, examinez-le et décidez.",
+    "resubmitted_open": "La police a retransmis ce dossier. {open} instructions sur {total} restent ouvertes.",
+    "resubmitted_open_next": "Passez les instructions en revue, notez ce qui est revenu, puis examinez et décidez.",
+    "start_review": "Commencer l'examen",
+    "under_way": "Examen selon le {test} en cours.",
+    "under_way_next": "Enregistrez les constats et la conclusion de chaque critère, puis la décision qu'ils permettent.",
+    "with_police": "Chez la police pour complément d'enquête.",
+    "with_police_directions": "Chez la police pour complément d'enquête, avec {directions}.",
+    "with_police_next": "Enregistrez la retransmission au retour du dossier.",
+    "papers": "Le dossier de police est arrivé : {count} pièces.",
+    "papers_next": "Lisez-le, puis commencez l'examen. L'assistant peut d'abord préparer une synthèse."
+  },
+  "not_found": {
+    "back": "Revenir à la page précédente",
+    "body": "La page que vous cherchez n'existe pas.",
+    "page_title": "Page introuvable",
+    "refresh": "Actualiser la page",
+    "route_title": "Page introuvable"
+  },
+  "overview": {
+    "activity": "Activité récente",
+    "activity_empty": "Rien n'a encore été enregistré.",
+    "attention": {
+      "directions_given": "{directions} données.",
+      "directions_open": "{open} instructions sur {total} encore ouvertes.",
+      "drafts_summary": "Un projet suit le dossier jusqu'à son émission. Relisez-le, puis émettez-le.",
+      "drafts_title": "{documents} préparés mais non émis",
+      "empty": "Rien à traiter. Aucun dossier n'attend de décision, aucun n'est chez la police et aucun réexamen n'est dû.",
+      "incoming_summary": "Tenues à l'écart des dossiers jusqu'à ce que vous les lisiez et les acceptiez.",
+      "incoming_title": "{referrals} de la police en attente de lecture",
+      "no_court_ref_summary": "Enregistrez la référence du tribunal une fois l'acte d'accusation déposé.",
+      "no_court_ref_title": "{files} sans numéro d'affaire au tribunal",
+      "no_review": "Aucun examen enregistré.",
+      "outgoing_summary": "Enregistrez chaque fichier et remettez-le au poste.",
+      "outgoing_title": "{items} préparés pour la police, pas encore envoyés",
+      "reopened": "{reference}. Une décision clôturée a été rouverte et est en cours d'examen.",
+      "resubmitted": "{reference}. Retransmis par la police, en attente depuis {age}, à examiner.",
+      "returned": "{reference}. Chez la police pour complément d'enquête. En attente de retransmission.",
+      "returned_since": "{reference}. Chez la police pour complément d'enquête depuis le {date}. En attente de retransmission.",
+      "review_due": "Réexamen à faire",
+      "review_overdue": "Réexamen en retard",
+      "threshold_due": "Réexamen selon le critère du seuil dû le {date} (reste {left}).",
+      "threshold_overdue": "Le réexamen selon le critère du seuil était dû le {date}. Il est levé dès qu'une décision ultérieure est enregistrée.",
+      "title": "À traiter"
+    },
+    "figure": {
+      "active_files": "Dossiers actifs",
+      "awaiting_decision": "En attente de décision",
+      "decisions_recorded": "Décisions enregistrées",
+      "reopened": "Rouverts",
+      "resubmitted": "Retransmis",
+      "with_court_reference": "Avec une référence du tribunal"
+    },
+    "subtitle": "{date}. Ce qui demande votre attention, et ce qu'il y a sur votre bureau.",
+    "waiting": "En attente depuis {age}.",
+    "workload": "Charge actuelle"
+  },
+  "page": {
+    "court": {
+      "about": "Les dossiers poursuivis et la référence du tribunal pour chacun. Le registre du tribunal fait foi.",
+      "case": "{reference}. Affaire n° {number}.",
+      "charged_on": "{reference}. Poursuivi le {date}. Enregistrez le numéro d'affaire une fois l'acte déposé.",
+      "with": "Avec un numéro d'affaire",
+      "with_empty": "Aucun numéro d'affaire enregistré.",
+      "without": "Poursuivi, sans numéro d'affaire",
+      "without_empty": "Chaque dossier poursuivi a un numéro d'affaire."
+    },
+    "decisions": {
+      "about": "Ce qui a été décidé, par qui et quand. Les décisions ne sont jamais modifiées ni supprimées."
+    },
+    "documents": {
+      "about": "Préparé à partir d'une décision, relu, puis émis. Un document émis est définitif et porte sa référence.",
+      "coming": "À venir",
+      "coming_1": "Avis juridique",
+      "coming_2": "Acte d'accusation (Haute Cour)",
+      "coming_3": "Résumé de l'affaire",
+      "coming_4": "Avis de décision au poste",
+      "coming_body": "Chacun ressemblera au vrai document : en-tête, signature et cachet."
+    },
+    "files": {
+      "col": {
+        "accused": "Accusé",
+        "court": "N° d'affaire",
+        "id": "ID",
+        "received": "Reçu",
+        "recorded": "Enregistré",
+        "reference": "Référence",
+        "station": "Poste de police",
+        "status": "Statut",
+        "title": "Intitulé",
+        "waiting": "En attente",
+        "with_police": "Chez la police"
+      },
+      "empty": "Aucun dossier ici.",
+      "empty_active": "Aucun dossier n'est en cours d'examen.",
+      "empty_all": "Aucun dossier n'a encore été ouvert.",
+      "empty_closed": "Aucune décision de poursuite n'a encore été prise.",
+      "empty_intake": "Rien n'est arrivé qui attende encore un premier examen.",
+      "empty_reopened": "Aucune décision n'est rouverte.",
+      "empty_returned": "Aucun dossier n'est chez la police.",
+      "oldest_first": "Les plus anciens d'abord",
+      "search_list": "Rechercher dans cette liste",
+      "views": "Vues du registre"
+    },
+    "material": {
+      "charges": "Chefs d'accusation",
+      "charges_about": "Les chefs proposés par la police, tous dossiers confondus.",
+      "empty": "Rien d'enregistré pour l'instant. Les éléments s'enregistrent dans chaque dossier.",
+      "evidence": "Preuves",
+      "evidence_about": "Toutes les pièces et preuves signalées par la police, tous dossiers confondus.",
+      "kinds": "Types d'éléments",
+      "statements": "Déclarations",
+      "statements_about": "Toutes les déclarations reçues de la police, tous dossiers confondus."
+    },
+    "reports": {
+      "about": "Des réponses sur une période, imprimables et exportables.",
+      "body": "Chaque rapport lit les mêmes dossiers que le reste de l'application : les chiffres concordent toujours.",
+      "coming": "Rapports à venir",
+      "r1": "Dossiers reçus, par période et par poste",
+      "r2": "Décisions de poursuite, par type et dans le temps",
+      "r3": "Dossiers renvoyés à la police, et durée d'absence",
+      "r4": "Examens en attente, et depuis combien de temps",
+      "r5": "Charge de travail",
+      "r6": "Affaires au tribunal"
+    },
+    "search": {
+      "about": "Trouver un dossier ou une personne par nom, numéro d'identité, numéro d'enregistrement ou référence.",
+      "none": "Aucune personne ni aucun dossier ne correspond.",
+      "placeholder": "Nom, NIN, numéro d'enregistrement, référence",
+      "planned_1": "Déclarations, preuves et chefs proposés",
+      "planned_2": "Décisions et notes d'examen",
+      "planned_3": "Documents",
+      "planned_4": "Numéros d'affaire au tribunal",
+      "planned_body": "La recherche trouve aujourd'hui les personnes et les dossiers. Ceux-ci suivront.",
+      "planned_title": "Recherche dans les éléments",
+      "type": "Tapez pour rechercher."
+    },
+    "board": {
+      "about": "Tout ce que le bureau a à faire, selon l'avancement. Faites glisser une carte pour la déplacer."
+    },
+    "calendar": {
+      "about": "Audiences, échéances des tâches et dates de réexamen, sur un seul calendrier."
+    },
+    "cases": {
+      "about": "Chaque affaire en cours, à son étape. Ouvrez une carte pour lire ce que l'assistant a préparé et l'accepter ; faites-la glisser pour la déplacer."
+    }
+  },
+  "person": {
+    "form": {
+      "add": "Ajouter la personne",
+      "add_failed": "Impossible d'ajouter la personne",
+      "added": "Personne ajoutée",
+      "address_optional": "Adresse (facultatif)",
+      "first_name": "Prénom",
+      "first_name_required": "Le prénom est requis.",
+      "last_name": "Nom",
+      "last_name_required": "Le nom est requis.",
+      "national_id_optional": "Numéro d'identité national (facultatif)",
+      "other_names_optional": "Autres noms (facultatif)",
+      "phone_optional": "Téléphone (facultatif)",
+      "update_failed": "Impossible de mettre à jour la personne",
+      "updated": "Personne mise à jour"
+    }
+  },
+  "person_picker": {
+    "add_aria": "Ajouter une nouvelle personne",
+    "add_description": "Enregistrer une personne qui n'est pas encore connue.",
+    "add_title": "Ajouter une personne",
+    "empty": "Aucune personne correspondante",
+    "placeholder": "Rechercher une personne…"
+  },
+  "protection": {
+    "basic": "Code PIN pour chacun",
+    "basic_about": "Chaque personne se connecte avec son propre code PIN à 6 chiffres.",
+    "change": "Modifier",
+    "change_hint": "Le changement déconnecte toutes les autres personnes.",
+    "changed": "Protection désormais : {level}",
+    "full": "Protection complète",
+    "full_about": "Un mot de passe et un code du téléphone. Pour les bureaux de plusieurs personnes.",
+    "full_next_sign_in": "Vous relierez votre téléphone à la prochaine connexion. Les autres devront recevoir de vous un nouveau mot de passe dans Personnes.",
+    "idle": "Déconnexion après inactivité",
+    "idle_description": "Après cette durée sans utilisation, l'application déconnecte la personne.",
+    "none": "Sans connexion",
+    "none_about": "L'application s'ouvre directement. Pour une seule personne sur son propre ordinateur.",
+    "others_need_new": "Les autres devront recevoir de vous un nouveau code PIN dans Personnes avant de se connecter.",
+    "title": "Connexion",
+    "your_new_password": "Votre nouveau mot de passe",
+    "your_new_pin": "Votre nouveau code PIN"
+  },
+  "referral": {
+    "resubmission": {
+      "log_failed": "Impossible d'enregistrer la retransmission",
+      "logged": "Retransmission enregistrée",
+      "provided_optional": "Ce qui a été fourni (facultatif)",
+      "provided_placeholder": "Ce qui a été fourni…",
+      "submit": "Enregistrer la retransmission"
+    }
+  },
+  "review": {
+    "criterion": {
+      "admissibility": {
+        "about": "Peut-elle être produite devant le tribunal ?",
+        "label": "Recevabilité"
+      },
+      "age": {
+        "about": "L'âge du suspect.",
+        "label": "Âge"
+      },
+      "availability": {
+        "about": "La preuve est-elle disponible, et le restera-t-elle ?",
+        "label": "Disponibilité"
+      },
+      "credibility": {
+        "about": "Les témoins sont-ils crédibles ?",
+        "label": "Crédibilité"
+      },
+      "culpability": {
+        "about": "Quel est le degré de culpabilité du suspect ?",
+        "label": "Culpabilité"
+      },
+      "defence": {
+        "about": "Une défense est-elle invoquée, et comment la preuve y répond-elle ?",
+        "label": "Défense invoquée"
+      },
+      "harm": {
+        "about": "Le préjudice pour la victime et pour la collectivité.",
+        "label": "Préjudice"
+      },
+      "out_of_court_disposal": {
+        "about": "Une alternative aux poursuites est-elle possible ?",
+        "label": "Alternative aux poursuites"
+      },
+      "proportionality": {
+        "about": "Les poursuites sont-elles une réponse proportionnée ?",
+        "label": "Proportionnalité"
+      },
+      "relevance": {
+        "about": "La preuve est-elle pertinente pour ce qui doit être prouvé ?",
+        "label": "Pertinence"
+      },
+      "reliability": {
+        "about": "Peut-on se fier à la preuve ?",
+        "label": "Fiabilité"
+      },
+      "sensitive_information": {
+        "about": "La protection d'informations sensibles pèse-t-elle contre les poursuites ?",
+        "label": "Informations sensibles"
+      },
+      "seriousness": {
+        "about": "Quelle est la gravité de l'infraction ?",
+        "label": "Gravité"
+      },
+      "threshold_bail": {
+        "about": "Par exemple, le risque que le suspect prenne la fuite.",
+        "label": "Motifs sérieux de s'opposer à la liberté sous caution"
+      },
+      "threshold_further_evidence": {
+        "about": "Il existe des motifs raisonnables de croire que d'autres preuves apparaîtront, avec un calendrier pour ce qui reste à obtenir.",
+        "label": "D'autres preuves sont attendues"
+      },
+      "threshold_guilt": {
+        "about": "Les preuves essentielles donnent des motifs raisonnables de croire que le suspect a commis l'infraction.",
+        "label": "Motifs raisonnables de croire à la culpabilité"
+      },
+      "threshold_public_interest": {
+        "about": "Poursuivre maintenant est dans l'intérêt public.",
+        "label": "Intérêt public à poursuivre"
+      },
+      "threshold_seriousness": {
+        "about": "Un résumé des faits expliquant pourquoi la gravité justifie une poursuite immédiate.",
+        "label": "La gravité justifie de poursuivre maintenant"
+      }
+    },
+    "finding": {
+      "against": "Contre la poursuite",
+      "favours": "En faveur de la poursuite",
+      "unresolved": "Non tranché"
+    },
+    "outcome": {
+      "failed": "Non satisfait",
+      "met": "Rempli",
+      "not_met": "Non rempli",
+      "passed": "Satisfait"
+    },
+    "panel": {
+      "add_note": "Ajouter une note",
+      "change_until_concluded": "Vous pouvez modifier vos constats et conclusions jusqu'à ce que la décision clôture l'examen. Pour apprécier différemment certains chefs, clôturez cet examen et commencez-en un autre.",
+      "choose_test": "Choisissez le critère à appliquer. Rien n'est enregistré avant que vous commenciez.",
+      "concluded_reviews": "Examens clôturés",
+      "date_range": "Du {from} au {to}",
+      "decision_made": "La décision sur les poursuites a été prise. Pour la reconsidérer, rouvrez la décision.",
+      "decision_option": "{decision}, {date}",
+      "decision_to_reopen": "Décision à rouvrir",
+      "finding_failed": "Impossible d'enregistrer le constat",
+      "finding_on": "Constat sur : {criterion}",
+      "findings_support": "Ce que les constats permettent : {decisions}.",
+      "note_on": "Note sur : {criterion}",
+      "note_placeholder": "Note sur ce constat (facultatif)",
+      "outcome_failed": "Impossible d'enregistrer le résultat",
+      "pi_locked": "Appliqué seulement une fois le critère de la preuve satisfait.",
+      "reason_placeholder": "Le motif, pour le dossier",
+      "record_decision": "Enregistrer la décision",
+      "record_decision_description": "L'issue de cet examen.",
+      "recorded_of": "{recorded} sur {total} enregistrés",
+      "reopen_decision": "Rouvrir une décision",
+      "reopen_decision_description": "Soumettre à nouveau une décision clôturée à l'examen.",
+      "reopen_explainer": "Une décision clôturée peut être reconsidérée si elle était erronée, si des preuves nouvelles ou importantes sont apparues, ou si une enquête judiciaire a recommandé des poursuites. La réouverture est un examen à part entière ; la décision qui en résulte corrige l'ancienne, qui reste au dossier.",
+      "reopen_failed": "Réouverture impossible",
+      "reopen_submit": "Rouvrir pour examen",
+      "reopened_because": "Rouvert parce que : {reason}",
+      "review_title": "Examen selon le {standard}",
+      "review_title_reopened": "Examen selon le {standard} (rouvert)",
+      "section_title": "Examen de la décision de poursuivre",
+      "standard_reopened": "{standard}, rouvert",
+      "start_failed": "Impossible de commencer l'examen",
+      "start_named": "Commencer un examen selon le {standard}",
+      "started": "Commencé le {date}.",
+      "started_by": "Commencé le {date} par {name}.",
+      "test_outcome": "{test} : {outcome}",
+      "test_result": "{test} {outcome}",
+      "test_to_apply": "Critère à appliquer",
+      "threshold_hint": "Rempli exige que les cinq conditions soient marquées en faveur.",
+      "why_reopened": "Pourquoi il est rouvert",
+      "with_police": "Ce dossier est chez la police. Un nouvel examen commence à son retour.",
+      "withdraw": "Retirer",
+      "your_conclusion": "Votre conclusion"
+    },
+    "standard": {
+      "threshold": {
+        "about": "Un critère plus étroit pour les rares affaires très graves où l'enquête est incomplète mais où poursuivre maintenant se justifie. Les cinq conditions doivent être remplies et la décision réexaminée dans les 14 jours.",
+        "label": "Critère du seuil"
+      },
+      "two_stage": {
+        "about": "Le critère par défaut. D'abord le critère de la preuve, puis celui de l'intérêt public seulement si le premier est satisfait.",
+        "label": "Critère en deux étapes"
+      }
+    },
+    "test": {
+      "evidential": {
+        "about": "Existe-t-il une perspective réaliste de condamnation ?",
+        "label": "Critère de la preuve"
+      },
+      "public_interest": {
+        "about": "Les poursuites servent-elles l'intérêt public ? Appliqué seulement une fois le critère de la preuve satisfait.",
+        "label": "Critère de l'intérêt public"
+      },
+      "threshold": {
+        "about": "Les cinq conditions doivent être remplies.",
+        "label": "Critère du seuil"
+      }
+    }
+  },
+  "review_note": {
+    "form": {
+      "author_optional": "Auteur (facultatif)",
+      "author_placeholder": "Nom",
+      "observation": "Observation",
+      "observation_placeholder": "Qu'avez-vous remarqué en examinant ce dossier ?",
+      "record_failed": "Impossible d'enregistrer l'observation",
+      "recorded": "Observation enregistrée",
+      "submit": "Ajouter l'observation"
+    }
+  },
+  "review_page": {
+    "empty": "Aucun dossier n'attend de décision de poursuite.",
+    "empty_any": "Aucun dossier n'attend de décision.",
+    "reopened": "{reference}. Une décision clôturée est en cours de réexamen.",
+    "subtitle": "Les dossiers en attente d'une décision de poursuite, les plus anciens d'abord. L'examen se fait dans chaque dossier.",
+    "the_review": "L'examen",
+    "the_review_hint": "Les examens sont enregistrés dans chaque dossier. Un renvoi pour complément d'enquête comporte des instructions à la police.",
+    "threshold_is_due": "Poursuivi selon le critère du seuil le {charged}. Le réexamen à 14 jours est dû le {due}.",
+    "threshold_reviews": "Réexamens selon le critère du seuil",
+    "threshold_under_way": "Réexamen selon le seuil en cours",
+    "threshold_was_due": "Poursuivi selon le critère du seuil le {charged}. Le réexamen à 14 jours était dû le {due}.",
+    "under_way": "Examen en cours",
+    "waiting": "En attente de décision"
+  },
+  "security": {
+    "audit": {
+      "broken": "La chaîne est rompue à l'entrée {entry}.",
+      "description": "Un registre, auquel on ne peut qu'ajouter, des décisions, examens, documents émis, pièces jointes, connexions et sauvegardes. Chaque entrée est liée à la précédente : toute entrée modifiée ou supprimée se voit.",
+      "intact": "Vérifié : {entries} entrées, chaîne intacte.",
+      "title": "Journal des opérations",
+      "verify": "Vérifier la chaîne",
+      "verify_failed": "Vérification impossible"
+    },
+    "audit_action": {
+      "app_locked": "Application verrouillée",
+      "app_unlocked": "Application déverrouillée",
+      "attachment_added": "Document joint",
+      "attachment_removed": "Pièce jointe retirée",
+      "backup_created": "Sauvegarde effectuée",
+      "backup_restored": "Sauvegarde restaurée",
+      "decision_corrected": "Décision corrigée",
+      "decision_recorded": "Décision enregistrée",
+      "document_discarded": "Projet de document supprimé",
+      "document_issued": "Document émis",
+      "installation_changed": "Informations du bureau modifiées",
+      "lock_enabled": "Verrouillage activé",
+      "lock_passphrase_changed": "Phrase secrète modifiée",
+      "lock_removed": "Verrouillage désactivé",
+      "protection_changed": "Protection modifiée",
+      "review_reopened": "Décision rouverte pour examen",
+      "review_started": "Examen de la décision de poursuivre commencé",
+      "second_factor_linked": "Téléphone relié",
+      "second_factor_reset": "Lien du téléphone réinitialisé",
+      "setup_completed": "Installation configurée",
+      "sign_in_failed": "Code PIN ou mot de passe erroné",
+      "signed_in": "Connexion",
+      "signed_out": "Déconnexion",
+      "staff_added": "Personne ajoutée",
+      "staff_changed": "Personne modifiée",
+      "staff_secret_set": "Code PIN ou mot de passe défini",
+      "unlock_failed": "Phrase secrète erronée"
+    },
+    "backup": {
+      "confirm": "Confirmer la phrase secrète de la sauvegarde",
+      "description": "Un seul fichier chiffré contenant tous les dossiers et documents. Seule la phrase secrète ci-dessous l'ouvre, et elle n'est conservée nulle part : si elle est perdue, la sauvegarde ne peut pas être ouverte.",
+      "failed": "Impossible de faire la sauvegarde",
+      "hint": "Conservez le fichier ailleurs que sur cet ordinateur, et la phrase secrète ailleurs qu'avec le fichier.",
+      "last": "Dernière : {date}",
+      "never": "Jamais sauvegardé",
+      "passphrase": "Phrase secrète de la sauvegarde",
+      "passphrase_placeholder": "Phrase secrète de la sauvegarde (au moins 10 caractères)",
+      "saved": "Sauvegarde enregistrée",
+      "title": "Faire une sauvegarde"
+    },
+    "confirm_placeholder": "Confirmez la phrase secrète",
+    "gate": {
+      "backup_open_failed": "La sauvegarde n'a pas pu être ouverte.",
+      "backup_ready": "Une sauvegarde est prête à être restaurée.",
+      "choose_restore": "Choisir une sauvegarde et restaurer",
+      "enter": "Saisissez la phrase secrète pour continuer.",
+      "explainer": "Le verrouillage protège l'écran. Les dossiers de cet ordinateur sont chiffrés dans tous les cas.",
+      "locked_title": "{product} est verrouillé",
+      "passphrase": "Phrase secrète",
+      "recovery_body": "Rien n'a été modifié ni supprimé. La restauration d'une sauvegarde rétablit les dossiers ; les données actuelles sont mises de côté.",
+      "recovery_reason": "{product} n'a pas pu ouvrir ses données.",
+      "recovery_title": "Les données n'ont pas pu être ouvertes",
+      "restart_to_finish": "Redémarrez pour terminer.",
+      "restore_this": "Restaurer cette sauvegarde",
+      "retry": "Trop de tentatives erronées. Réessayez dans {seconds} secondes.",
+      "unlock": "Déverrouiller",
+      "unlock_failed": "Déverrouillage impossible."
+    },
+    "idle": {
+      "hour": "1 heure",
+      "minutes": "{count} minutes",
+      "never": "Jamais"
+    },
+    "passphrase_mismatch": "Les deux phrases secrètes ne sont pas identiques",
+    "protection": {
+      "database": "Dossiers et enregistrements",
+      "database_summary": "Verrouillés sur cet ordinateur.",
+      "description": "Chaque dossier et document est chiffré sur cet ordinateur, quelle que soit la personne connectée.",
+      "documents_summary": "Chaque pièce jointe est verrouillée séparément.",
+      "encrypted": "Verrouillé",
+      "key_file": "Protégés",
+      "key_file_hint": "Cet ordinateur n'a pas de coffre à clés intégré : la clé est conservée à côté des données. Demandez à votre service informatique de protéger tout le dossier de données.",
+      "keystore": "Entièrement protégés",
+      "keystore_hint": "Une personne qui copie les données sur un autre ordinateur ne peut pas les ouvrir.",
+      "sealed": "Verrouillé",
+      "title": "Vos dossiers sont verrouillés"
+    },
+    "restore": {
+      "choose": "Choisir une sauvegarde",
+      "description": "Remplace les dossiers et documents par ceux d'une sauvegarde. Les actuels sont mis de côté, pas supprimés. Rien ne change avant le redémarrage de l'application.",
+      "file": "Fichier de sauvegarde",
+      "open": "Ouvrir la sauvegarde",
+      "open_failed": "Cette sauvegarde n'a pas pu être ouverte",
+      "ready": "Prêt à restaurer",
+      "restart": "Redémarrer et restaurer",
+      "restart_to_finish": "Redémarrez l'application pour terminer.",
+      "staged": "Une sauvegarde du {date} avec {documents} documents est prête.",
+      "title": "Restaurer une sauvegarde"
+    }
+  },
+  "settings": {
+    "about": {
+      "appearance": "L'aspect de l'espace de travail et la langue, sur cet ordinateur.",
+      "backup": "Conserver ailleurs une copie chiffrée des dossiers, et la restaurer.",
+      "licence": "La licence acceptée par votre institution lors de la configuration.",
+      "notifications": "Quand l'ordinateur vous signale l'arrivée de travail.",
+      "office": "Le nom, l'emblème et la couleur du bureau. Tout le bureau voit la même chose.",
+      "people": "Qui peut utiliser cette installation, et ce que chacun peut faire.",
+      "protection": "Comment les personnes se connectent, comment les dossiers sont protégés, et le journal de ce qui a été fait.",
+      "you": "Votre nom et votre grade figurent sur vos décisions et sur les documents que vous signez.",
+      "assist": "Si l'assistant IA est utilisé ici, et où il envoie les dossiers à lire."
+    },
+    "admin_only": "Seul un administrateur peut modifier ceci.",
+    "alerts": {
+      "description": "Une notification lorsqu'un dossier arrive en attente d'une décision de poursuite. Elle signale l'arrivée, ce n'est pas un délai.",
+      "hint": "Uniquement dans l'application de bureau.",
+      "title": "Alertes du bureau",
+      "toggle": "M'alerter à l'arrivée d'un dossier"
+    },
+    "group": {
+      "about": "À propos",
+      "computer": "Cet ordinateur",
+      "office": "Ce bureau",
+      "you": "Vous"
+    },
+    "language": {
+      "description": "La langue de l'application, pour vous sur cet ordinateur. Elle change immédiatement.",
+      "label": "Langue"
+    },
+    "licence": {
+      "accepted": "Acceptée",
+      "accepted_line": "Version {version}, acceptée le {date} par {name}."
+    },
+    "nav": {
+      "appearance": "Apparence et langue",
+      "backup": "Sauvegarde",
+      "licence": "Licence",
+      "notifications": "Notifications",
+      "office": "Bureau et apparence",
+      "people": "Personnes",
+      "protection": "Protection",
+      "you": "Vos informations",
+      "assist": "Assistant"
+    },
+    "office": {
+      "colour": "Couleur",
+      "country": "Pays",
+      "country_hint": "Choisi lors de la configuration. Il fixe les références, l'organisation des dossiers et les lois.",
+      "everyone_sees": "Tout le bureau voit ceci, sur chaque ordinateur.",
+      "headquarters": "Siège",
+      "hq_description": "Le siège supervise les bureaux qui s'y relient.",
+      "language": "Langue du bureau",
+      "language_hint": "La langue d'ouverture d'un nouvel ordinateur. Chacun peut toujours choisir la sienne.",
+      "logo": "Emblème ou logo",
+      "logo_default": "Utiliser l'emblème par défaut",
+      "logo_failed": "Cette image ne peut pas être utilisée.",
+      "logo_hint": "Sur chaque écran et sur les documents imprimés. PNG, JPG, SVG ou WebP, jusqu'à 1 Mo.",
+      "logo_upload": "Choisir une image",
+      "name": "Nom du bureau",
+      "office": "Bureau",
+      "office_description": "Ce bureau fonctionne seul. Il pourra se relier au siège plus tard.",
+      "title": "Le bureau",
+      "country_dev_hint": "Version de développement uniquement : changez de pays pour essayer sa numérotation, l'ordre du dossier et ses termes. Un vrai bureau garde le pays choisi à l'installation.",
+      "country_changed": "Pays changé : {country}"
+    },
+    "owner": {
+      "office": "Administrateur",
+      "read_only": "À lire",
+      "this_machine": "Cet ordinateur",
+      "you": "À vous"
+    },
+    "save": "Enregistrer",
+    "save_failed": "Enregistrement impossible",
+    "saved": "Enregistré",
+    "subtitle": "Vous, ce bureau et cet ordinateur.",
+    "theme": {
+      "description": "Clair, sombre, ou comme cet ordinateur.",
+      "title": "Thème"
+    },
+    "title": "Réglages",
+    "you": {
+      "change": "Modifier",
+      "identity": "Nom et fonction",
+      "identity_description": "Affichées sur vos décisions, sur les documents que vous préparez et dans le journal.",
+      "password": "Votre mot de passe",
+      "password_description": "Choisissez un nouveau mot de passe d'au moins 12 caractères.",
+      "pin": "Votre code PIN",
+      "pin_description": "Choisissez un nouveau code PIN à 6 chiffres. Gardez-le pour vous."
+    }
+  },
+  "staff": {
+    "active": "Peut utiliser l'application",
+    "add": "Ajouter une personne",
+    "add_full_hint": "Donnez-lui un premier mot de passe. Il reliera son téléphone à sa première connexion.",
+    "add_hint": "Donnez-lui un premier code PIN. Il pourra le changer après s'être connecté.",
+    "added": "{name} ajouté",
+    "description": "Toutes les personnes autorisées à utiliser cette installation.",
+    "edit": "Modifier",
+    "first_password": "Premier mot de passe",
+    "first_pin": "Premier code PIN",
+    "flag": {
+      "admin_only": "Seul un administrateur peut indiquer qui est le Directeur.",
+      "is_dpp": "{head}",
+      "is_dpp_hint": "Certaines décisions, comme l'abandon des poursuites, relèvent du seul {head}. Elles sont refusées à toute personne non indiquée ici."
+    },
+    "inactive": "Plus en poste",
+    "name": "Nom complet",
+    "new_password": "Définir un nouveau mot de passe",
+    "new_pin": "Définir un nouveau code PIN",
+    "no_secret": "Ne peut pas encore se connecter",
+    "none_level_hint": "Sans connexion, seul l'administrateur utilise cet ordinateur. Renforcez la protection pour ajouter des personnes.",
+    "password_placeholder": "Au moins 12 caractères",
+    "phone_pending": "Téléphone non relié",
+    "phone_reset": "Téléphone perdu : en relier un nouveau",
+    "phone_reset_done": "Un nouveau téléphone sera relié à la prochaine connexion.",
+    "pin_placeholder": "6 chiffres",
+    "rank": "Grade ou fonction",
+    "rank_placeholder": "Par exemple, {rank}",
+    "role": {
+      "administrator": "Administrateur",
+      "clerk": "Greffier",
+      "prosecutor": "Procureur"
+    },
+    "role_label": "Rôle",
+    "set": "Définir",
+    "title": "Personnes"
+  },
+  "stage": {
+    "action": "Suite donnée",
+    "action_about": "Le document produit par la décision : acte d'accusation, instructions ou motifs écrits.",
+    "assessment": "Appréciation",
+    "assessment_about": "Choisir le critère : en deux étapes ou du seuil.",
+    "decision_about": "La décision que les constats permettent.",
+    "findings": "Constats",
+    "findings_about": "Le constat sur chaque élément, et la conclusion de chaque critère.",
+    "reasons": "Motifs",
+    "reasons_about": "Pourquoi, enregistré avec la décision.",
+    "review": "Lecture",
+    "review_about": "Lire les éléments et noter des observations.",
+    "state": {
+      "available": "Enregistré dans un dossier",
+      "done": "Enregistré",
+      "todo": "Pas encore"
+    },
+    "pipe": {
+      "receive": "Réception",
+      "review": "Examen",
+      "decide": "Décision",
+      "prepare": "Préparation",
+      "handover": "Transmission",
+      "follow_up": "Suivi",
+      "concluded": "Clôturé",
+      "receive_about": "Le dossier de police arrive et est mis en ordre : chaque pièce à sa place, les personnes et la prévention proposée relevées.",
+      "review_about": "Les preuves sont pesées : d'abord le critère de la preuve, puis celui de l'intérêt public, critère par critère.",
+      "decide_about": "La décision que la loi permet au vu de l'examen, motivée.",
+      "prepare_about": "Les actes que la décision exige, rédigés à partir du dossier, à relire et signer.",
+      "handover_about": "Le dossier ou les actes partent : vers la police, le tribunal ou d'autres, par l'échange, courriel, impression ou retrait.",
+      "follow_up_about": "Audiences, réponses de la police, relances : jusqu'à ce que plus rien ne soit attendu.",
+      "concluded_about": "L'issue est enregistrée et le dossier est clôturé."
+    }
+  },
+  "statement": {
+    "form": {
+      "content": "Contenu de la déclaration",
+      "content_placeholder": "Ce que dit la déclaration…",
+      "given_at": "Recueillie le",
+      "person_required": "La personne est requise.",
+      "record_failed": "Impossible d'enregistrer la déclaration",
+      "recorded": "Déclaration enregistrée",
+      "role": "Type de déclaration",
+      "role_required": "Le type de déclaration est requis.",
+      "source_placeholder": "p. ex. telle que reçue dans le dossier de police",
+      "submit": "Ajouter la déclaration"
+    },
+    "role": {
+      "accused": "Déclaration de l'accusé",
+      "arresting_officer": "Agent ayant procédé à l'arrestation",
+      "complainant": "Plaignant",
+      "investigating_officer": "Enquêteur",
+      "witness": "Témoin"
+    }
+  },
+  "tabs": {
+    "document": "Document",
+    "file": "Dossier",
+    "files": "Dossiers",
+    "overview": "Aujourd'hui"
+  },
+  "theme": {
+    "dark": "Sombre",
+    "light": "Clair",
+    "placeholder": "Thème",
+    "system": "Système"
+  },
+  "window": {
+    "close": "Fermer",
+    "maximize": "Agrandir",
+    "minimize": "Réduire"
+  },
+  "workspace": {
+    "hide_sidebar": "Masquer la barre latérale",
+    "pinned": "Épinglés",
+    "profile": {
+      "dpp": "{head}",
+      "none_title": "Personne n'est connecté"
+    },
+    "quick": {
+      "add_person": "Ajouter une personne",
+      "add_person_description": "Une personne qui figure dans un dossier : accusé, plaignant ou témoin.",
+      "find": "Trouver",
+      "label": "Actions rapides",
+      "open_file": "Ouvrir un dossier",
+      "open_file_description": "Enregistrer une affaire transmise par la police.",
+      "start": "Commencer"
+    },
+    "recent": "Récents",
+    "ribbon": "Ruban",
+    "search_prompt": "Rechercher dossiers, personnes, références",
+    "search_shortcut": "Rechercher (Ctrl K)",
+    "show_sidebar": "Afficher la barre latérale",
+    "sidebar": "Barre latérale",
+    "sign_out": "Se déconnecter",
+    "tab": {
+      "close_named": "Fermer {title}",
+      "close_shortcut": "Fermer (Ctrl W)",
+      "next": "Onglet suivant",
+      "next_shortcut": "Onglet suivant (Ctrl Tab)",
+      "open_tabs": "Onglets ouverts",
+      "pin": "Épingler",
+      "pin_named": "Épingler {title}",
+      "previous": "Onglet précédent",
+      "previous_shortcut": "Onglet précédent (Ctrl Maj Tab)",
+      "unpin": "Désépingler",
+      "unpin_named": "Désépingler {title}"
+    },
+    "tagline": "Espace de travail du parquet",
+    "window": "Fenêtre",
+    "more": "Plus",
+    "places": "Espaces"
+  },
+  "assist": {
+    "title": "Assistant",
+    "add_to_board": "Ajouter au tableau",
+    "on_board": "Sur le tableau",
+    "for": "Pour :",
+    "against": "Contre :",
+    "check_law": "Vérifiez chaque infraction et chaque article dans le texte de loi avant de vous y fier.",
+    "contradictions": "Contradictions dans le dossier",
+    "draft_label": "Brouillon de l'assistant, non vérifié. Préparé le {date} avec {model}. C'est vous qui décidez.",
+    "missing": "Ce qui manque au dossier",
+    "next_steps": "Prochaines étapes",
+    "off_title": "L'assistant n'est pas activé",
+    "off_body": "Un administrateur active l'assistant dans les réglages et confirme où le dossier est envoyé pour être lu.",
+    "offences": "Infractions que les faits suggèrent",
+    "open_settings": "Ouvrir les réglages de l'assistant",
+    "options": "Options de décision",
+    "people": "Les personnes et ce qu'elles disent",
+    "prepare": "Lire ce dossier",
+    "refresh": "Relire",
+    "reading_file": "Lecture du dossier",
+    "reading_body": "Cela prend en général moins d'une minute.",
+    "suggested": "Suggéré",
+    "summary": "Les faits",
+    "what_it_does": "L'assistant lit tout le dossier et vous remet une courte synthèse : les faits, ce qui manque, les contradictions, les options de décision motivées et les prochaines étapes à mettre au tableau. Il ne décide jamais.",
+    "you_decide": "Ce sont des options, pas une décision. Enregistrez votre décision sous Décisions.",
+    "settings": {
+      "title": "Assistant",
+      "description": "Lit un dossier et prépare une synthèse, et classe les pièces importées dans le dossier. Il ne décide jamais.",
+      "use": "Utiliser l'assistant dans ce bureau",
+      "ready": "Prêt",
+      "needs": "À configurer",
+      "off": "Désactivé",
+      "turned_on": "L'assistant est activé",
+      "turned_off": "L'assistant est désactivé",
+      "where_title": "Où va le dossier",
+      "where_body": "Avant toute utilisation, un administrateur le confirme.",
+      "point_sent": "Le texte du dossier et les scans que vous lui demandez de lire sont envoyés au fournisseur (Google Gemini). Rien d'autre ne quitte cet ordinateur.",
+      "point_free": "Avec une clé gratuite, le fournisseur peut conserver ce qu'il reçoit et son personnel peut le lire. Utilisez un compte payant ou gouvernemental pour de vrais dossiers.",
+      "point_logged": "Chaque demande est enregistrée : qui l'a faite, pour quel dossier et quand.",
+      "point_decide": "Ce que l'assistant écrit est un brouillon. Un magistrat décide et signe.",
+      "agree": "Je comprends, et ce bureau peut envoyer des dossiers au fournisseur.",
+      "confirm": "Confirmer et activer",
+      "confirmed": "Confirmé",
+      "not_confirmed": "Non confirmé",
+      "confirmed_by": "Confirmé par {name} le {date}.",
+      "key_title": "Clé du fournisseur",
+      "key_body": "La clé du compte Google AI Studio du bureau. Elle est gardée chiffrée sur cet ordinateur et n'est plus jamais affichée.",
+      "key": "Nouvelle clé",
+      "key_placeholder": "Collez la clé",
+      "key_set": "Clé {hint}",
+      "key_env": "Clé de développement {hint}",
+      "key_missing": "Aucune clé",
+      "key_removed": "Clé supprimée",
+      "remove_key": "Supprimer la clé",
+      "model": "Modèle",
+      "point_sent_any": "Le texte du dossier et les scans lus partent chez le fournisseur choisi ci-dessous. Rien d'autre ne quitte cet ordinateur.",
+      "provider_title": "Fournisseur",
+      "provider_body": "Choisissez-en un et collez sa clé. Les clés sont gardées chiffrées sur cet ordinateur et jamais réaffichées.",
+      "provider_changed": "L'assistant utilise désormais {name}",
+      "base_url": "Adresse du serveur",
+      "key_where": "Obtenez une clé sur {url}",
+      "model_title": "Modèle",
+      "model_body": "Automatique choisit le meilleur modèle général actuel dans la liste du fournisseur, et passe au suivant s'il est occupé.",
+      "auto_model": "Choisir le modèle automatiquement",
+      "show_models": "Voir les modèles du fournisseur",
+      "loading_models": "Interrogation du fournisseur...",
+      "model_fixed": "L'assistant utilisera toujours {model}",
+      "auto_first": "Automatique : premier",
+      "auto_backup": "Automatique : secours {n}",
+      "in_use": "Utilisé"
+    },
+    "ask": {
+      "missing": "Que manque-t-il à ce dossier ?",
+      "decide": "Que dois-je décider, et pourquoi ?",
+      "law": "Quel texte s'applique ici ?",
+      "next": "Quelle est la prochaine étape ?",
+      "today": "Qu'est-ce qui m'attend aujourd'hui ?",
+      "how_stage": "Comment fonctionnent les étapes d'un dossier ?",
+      "limits": "Quels délais s'appliquent dans ce pays ?"
+    },
+    "dock": {
+      "file_intro": "Posez vos questions sur ce dossier. L'assistant l'a lu, avec les textes du bureau et la façon dont des affaires semblables ont été traitées ici.",
+      "office_intro": "Posez vos questions sur votre travail, les étapes d'un dossier ou le droit de ce pays. Ouvrez un dossier pour en parler.",
+      "model": "Réponse de {model}",
+      "clear": "Nouvelle conversation",
+      "ask_file": "Question sur ce dossier",
+      "ask_office": "Demander à l'assistant",
+      "send": "Envoyer",
+      "footer": "Des brouillons, pas des décisions. Vérifiez avant de vous y fier.",
+      "on_file": "ce dossier",
+      "on_office": "le bureau"
+    },
+    "thinking": "Lecture...",
+    "provider": {
+      "gemini": "Les modèles de Google. Une clé gratuite suffit pour essayer.",
+      "openrouter": "Une clé, des centaines de modèles ; il choisit pour vous.",
+      "anthropic": "Claude, d'Anthropic. Solide pour la lecture juridique longue.",
+      "other_label": "Serveur propre",
+      "other": "Un modèle sur cet ordinateur (Ollama) ou un serveur de l'État."
+    }
+  },
+  "board": {
+    "add_placeholder": "Ajouter une tâche",
+    "close": "Fermer",
+    "col": {
+      "todo": "À faire",
+      "doing": "En cours",
+      "waiting_police": "En attente de la police",
+      "waiting_court": "En attente du tribunal",
+      "done": "Terminé"
+    },
+    "delete": "Supprimer",
+    "dismiss": "Écarter",
+    "done_count": "Terminées : {count}",
+    "due": "Échéance {date}",
+    "due_label": "Échéance",
+    "empty_column": "Rien ici",
+    "keep": "Garder",
+    "mark_done": "Marquer comme terminée",
+    "note_placeholder": "Ajouter une note",
+    "reopen": "Rouvrir",
+    "suggested": "Suggéré par l'assistant"
+  },
+  "calendar": {
+    "coming_up": "À venir",
+    "legend": {
+      "hearing": "Audience",
+      "review": "Réexamen (seuil)",
+      "task": "Tâche à échéance"
+    },
+    "more": "{count} de plus",
+    "next": "Mois suivant",
+    "nothing": "Rien ce jour-là.",
+    "previous": "Mois précédent",
+    "threshold_review": "Réexamen du critère de seuil",
+    "today": "Aujourd'hui"
+  },
+  "court": {
+    "add_filing": "Enregistrer un dépôt",
+    "add_hearing": "Ajouter une audience",
+    "court": "Juridiction",
+    "date": "Date",
+    "time": "Heure",
+    "what": "Objet",
+    "filed_on": "Déposé le",
+    "filed_what": "Pièce déposée",
+    "filed_what_placeholder": "p. ex. réquisitoire, note de synthèse",
+    "filings": "Dépôts",
+    "hearings": "Audiences",
+    "kind": {
+      "mention": "Appel de la cause",
+      "plea": "Plaidoyer",
+      "bail": "Liberté provisoire",
+      "hearing": "Audience",
+      "trial": "Procès",
+      "ruling": "Décision avant dire droit",
+      "judgment": "Jugement",
+      "sentence": "Peine",
+      "other": "Autre"
+    },
+    "no_filings": "Aucun dépôt pour l'instant.",
+    "no_hearings": "Aucune audience. Ajoutez la première date dès que le tribunal la fixe.",
+    "note_placeholder": "Note (facultatif)",
+    "outcome_placeholder": "Résultat (renvoi, plaidoyer, décision...)",
+    "receipt": "Récépissé",
+    "receipt_placeholder": "Cachet ou numéro de récépissé",
+    "remove": "Retirer"
+  },
+  "cover": {
+    "accused": "Prévenu",
+    "offence": "Infraction",
+    "no_charge": "Aucune prévention rédigée",
+    "next_date": "Prochaine date",
+    "no_date": "Aucune"
+  },
+  "import": {
+    "button": "Importer des pièces",
+    "title": "Importer des pièces dans ce dossier",
+    "lead_assist": "Ajoutez un PDF scanné ou des photos des pages. L'assistant les lit, les sépare en pièces et place chacune à sa place dans le dossier. Vous vérifiez ensuite.",
+    "lead_plain": "Ajoutez un PDF scanné ou des photos des pages. Chacun entre dans le dossier comme une pièce à classer. Activez l'assistant dans les réglages pour qu'il les lise et les classe.",
+    "drop": "Déposez les scans ici, ou choisissez-les",
+    "kinds": "PDF, JPG, PNG ou photos de téléphone. Plusieurs à la fois.",
+    "remove": "Retirer",
+    "add": "Ajouter au dossier",
+    "without_assist": "Ajouter sans lire",
+    "read_and_arrange": "Lire et classer",
+    "storing": "Enregistrement des scans, {done} sur {total}",
+    "reading": "Lecture des pages",
+    "reading_body": "Écriture manuscrite et cachets compris. Un gros dossier peut prendre une à deux minutes.",
+    "done": "{count} pièces placées dans le dossier",
+    "done_body": "Vérifiez où chacune a été placée, déplacez celles qui sont mal classées, puis confirmez.",
+    "see_file": "Voir le dossier",
+    "failed": "Les scans n'ont pas pu être lus",
+    "failed_body": "Les scans ajoutés restent dans le dossier, sous Détails. Vous pouvez réessayer ou les classer vous-même.",
+    "try_again": "Réessayer",
+    "found_title": "Également trouvé dans les pièces",
+    "found_body": "Ajoutez les personnes et la prévention proposée au dossier, pour que sa couverture et la prochaine étape se remplissent. Décochez ce qui est faux.",
+    "proposed_charge": "Prévention proposée",
+    "add_found": "Ajouter au dossier",
+    "not_now": "Pas maintenant"
+  },
+  "index": {
+    "add_to_file": "Ajouter au dossier",
+    "check_title": "L'assistant a placé {count} pièces. Vérifiez-les.",
+    "check_body": "Ouvrez une pièce pour la lire ou la déplacer. Confirmez quand le dossier est en ordre.",
+    "confirm": "Confirmer",
+    "confirm_all": "Tout confirmer",
+    "count": "{count} pièces, {sheets} feuillets.",
+    "date": "Date",
+    "empty": "Le dossier est encore vide.",
+    "empty_body": "Importez le dossier de police en scans ou en photos, ou saisissez directement une pièce : une déclaration, une minute, la note d'un appel.",
+    "kind": "Nature de la pièce",
+    "no_text": "Pas de texte pour cette pièce.",
+    "nothing_yet": "Rien pour l'instant",
+    "open_scan": "Ouvrir le scan",
+    "order_provisional": "L'ordre des sections est provisoire pour ce pays.",
+    "pages": "pages {from} à {to}",
+    "people_named": "Personnes citées",
+    "placed_by_assist": "Placée par l'assistant, pas encore vérifiée",
+    "remove": "Retirer du dossier",
+    "sheet": "F. {n}",
+    "sheets": "F. {from} à {to}",
+    "text": "Texte",
+    "text_placeholder": "Saisissez ou collez le contenu de la pièce",
+    "title": "Intitulé",
+    "title_placeholder": "p. ex. Déclaration de Grace Namutebi",
+    "type_document": "Saisir une pièce",
+    "unsorted": "Pas encore classées",
+    "view_scan": "Scan",
+    "view_text": "Texte"
+  },
+  "timeline": {
+    "label": "Avancement du dossier",
+    "received": "Reçu",
+    "reviewed": "Examiné",
+    "decided": "Décidé",
+    "in_court": "Au tribunal",
+    "closed": "Clôturé"
+  },
+  "outcome": {
+    "convicted": "Condamné",
+    "acquitted": "Acquitté",
+    "withdrawn": "Retiré",
+    "declined": "Non poursuivi",
+    "diverted": "Mesure alternative",
+    "returned_not_resubmitted": "Renvoyé, jamais retransmis",
+    "other": "Autre"
+  },
+  "handover": {
+    "method": {
+      "connection": "Poste connecté",
+      "email": "Courriel",
+      "print": "Imprimé",
+      "collection": "Retiré en personne",
+      "download": "Copie enregistrée",
+      "other": "Autre"
+    },
+    "printed": "Copie imprimée",
+    "saved_copy": "Copie du dossier enregistrée",
+    "by_email": "Envoyé par courriel",
+    "email_body": "Veuillez trouver ci-joint le dossier : {title}.",
+    "email_attach": "Le dossier est enregistré. Joignez-le au courriel qui s'est ouvert.",
+    "saved": "Dossier enregistré",
+    "failed": "Le dossier n'a pas pu être produit",
+    "building": "Assemblage...",
+    "download": "Enregistrer tout le dossier (PDF)",
+    "print": "Imprimer",
+    "email": "Courriel"
+  },
+  "pipe": {
+    "receive_body": "{documents} pièces au dossier ({unchecked} non vérifiées), {people} personnes et {charges} préventions proposées enregistrées.",
+    "prepare_no_decision": "Aucune décision n'est encore enregistrée : décidez d'abord.",
+    "prepare_body": "Préparer {document} pour la décision : {decision}.",
+    "prepare_nothing": "La décision ({decision}) n'exige pas d'acte propre. Acceptez pour passer à la transmission.",
+    "decision": "Décision",
+    "reasons": "Motifs",
+    "directions": "Instructions à la police",
+    "add_direction": "Ajouter une instruction",
+    "recipient": "Destinataire",
+    "method": "Comment",
+    "covering_note": "Lettre d'accompagnement",
+    "reply_days": "Relancer après (jours, 0 pour aucun)",
+    "in_days": "dans {days} jours",
+    "ready_to_conclude": "L'assistant estime que plus rien n'est attendu : accepter fait passer le dossier en Clôturé.",
+    "outcome": "Issue",
+    "closing_note": "Note de clôture",
+    "diy_receive": "Importez les pièces ou saisissez-les, dans",
+    "accepted": "Accepté. Le dossier est maintenant à l'étape : {stage}",
+    "accept_failed": "Impossible d'accepter",
+    "stage_past": "Étape passée",
+    "stage_future": "À venir",
+    "concluded_as": "Clôturé : {outcome}, {date}.",
+    "from_record": "D'après ce que contient déjà le dossier",
+    "proposed_by": "Préparé par l'assistant ({model}), {date}. Lisez, modifiez si besoin, puis acceptez.",
+    "reject_why": "Pourquoi ? (aide l'assistant la prochaine fois)",
+    "reject": "Rejeter",
+    "ask_again": "Redemander",
+    "accept": "Accepter et continuer",
+    "accept_conclude": "Accepter et clôturer le dossier",
+    "propose_failed": "L'assistant n'a pas pu préparer cette étape",
+    "preparing": "Préparation...",
+    "prepare_with_assist": "Préparer avec l'assistant",
+    "check": "Vérifier cette étape",
+    "assist_off": "L'assistant est désactivé : faites cette étape vous-même ci-dessous, ou activez-le dans les réglages.",
+    "answered": "{status} par {who}, {date}",
+    "status": {
+      "accepted": "Accepté",
+      "edited": "Accepté avec modifications",
+      "rejected": "Rejeté"
+    },
+    "do_it_yourself": "Faire cette étape vous-même",
+    "skip_to": "Passer à : {stage}",
+    "procedure": "Garde à vue, détention et droits"
+  },
+  "cases": {
+    "proposal_ready": "Prêt à relire",
+    "hearing": "Audience {date}",
+    "days_here": "{days} j ici",
+    "tasks": "{count} tâches",
+    "as_list": "Voir en liste"
+  },
+  "export": {
+    "scan_missing": "Le scan de cette pièce n'a pas pu être inséré. Son texte tel que lu :",
+    "index": "Inventaire des pièces",
+    "sheet_column": "Feuillets",
+    "sheet": "Feuillet {n}",
+    "case_file": "Dossier",
+    "received": "Reçu le",
+    "contents": "Contenu",
+    "contents_value": "{documents} pièces, {sheets} feuillets",
+    "prepared": "Établi le"
+  },
+  "viewer": {
+    "cannot_show": "Cette pièce ne peut pas être affichée ici.",
+    "open_outside": "Ouvrir dans un autre programme",
+    "full": "Plein écran",
+    "exit_full": "Quitter le plein écran"
+  },
+  "laws": {
+    "title": "Textes de loi",
+    "count": "{count} textes",
+    "body": "Les textes que l'assistant peut citer pour {country}, chacun avec sa date de mise à jour. L'assistant le signale quand un texte manque.",
+    "as_at": "Texte à jour au {date} · {source}",
+    "api_body": "Tient les textes du pays à jour, avec leur date. Le bureau a besoin de son propre jeton laws.africa.",
+    "token_placeholder": "Jeton Laws.Africa",
+    "sync": "Mettre les textes à jour",
+    "syncing": "Mise à jour...",
+    "synced": "{updated} textes mis à jour",
+    "not_found": "Introuvables : {titles}",
+    "sync_failed": "Les textes n'ont pas pu être mis à jour",
+    "add_by_hand": "Ajouter un texte à la main",
+    "manual_title": "Intitulé, p. ex. Code pénal congolais",
+    "manual_cite": "Référence (facultatif)",
+    "manual_as_at": "À jour au (date)",
+    "manual_body": "Collez le texte intégral",
+    "manual_add": "Ajouter aux textes"
+  },
+  "clock": {
+    "title": "Délais légaux",
+    "none": "Aucune arrestation ni détention enregistrée : aucun délai ne court.",
+    "add_event": "Enregistrer arrestation ou détention",
+    "person": "Qui (si plusieurs prévenus)",
+    "save": "Enregistrer",
+    "overdue": "Délai dépassé {when} ({date}). Rien d'enregistré n'y met fin.",
+    "running": "Expire {when} ({date}).",
+    "late": "Terminé en retard, le {date}.",
+    "met": "Respecté : terminé le {date}.",
+    "basis": "{hours} à compter du {from} · {basis}",
+    "days": "{n} jours",
+    "hours": "{n} heures",
+    "secondary": "(sources secondaires : à vérifier dans le texte)",
+    "today_title": "Délais à traiter maintenant : {count}"
+  },
+  "seal": {
+    "hint": "Un PNG ou JPEG de moins de 400 Ko, sur fond blanc ou transparent. Il est copié sur chaque acte au moment de l'émission.",
+    "none": "Non défini",
+    "nothing": "Aucun",
+    "remove": "Retirer",
+    "set": "Défini",
+    "signature_body": "Apposée sur les actes que vous émettez, au-dessus de votre nom.",
+    "signature_title": "Votre signature",
+    "stamp_body": "Le cachet du bureau, apposé sur chaque acte émis ici.",
+    "stamp_title": "Cachet du bureau",
+    "too_big": "L'image dépasse 400 Ko.",
+    "upload": "Choisir une image",
+    "wrong_type": "Utilisez une image PNG ou JPEG."
+  },
+  "verify": {
+    "check": "Vérifier",
+    "code": "Code",
+    "genuine": "Authentique : {title}, {file}, émis par {author} le {date}. Le dossier n'a pas changé depuis.",
+    "lead": "Saisissez la référence et le code imprimés à côté du QR d'un acte papier pour confirmer qu'il a été émis ici et n'a pas été modifié.",
+    "mismatch": "Un acte porte cette référence, mais le code ne correspond pas ou l'enregistrement a été modifié. Considérez le papier comme non authentique.",
+    "not_found": "Aucun acte portant cette référence n'a été émis ici.",
+    "reference": "Référence, p. ex. PARQUET-2026-0001",
+    "title": "Vérifier un acte"
+  }
+}

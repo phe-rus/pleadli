@@ -1,12 +1,28 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const documentKinds = [
-  { id: 'bail_application', label: 'Application for bail' },
-  { id: 'submissions', label: 'Submissions' },
-  { id: 'list_of_authorities', label: 'List of authorities' },
-  { id: 'letter', label: 'Letter' },
-  { id: 'advice', label: 'Advice' },
-  { id: 'general', label: 'Other document' },
+  { id: 'plaint', get label() { return m["document.kind.plaint"]() } },
+  { id: 'written_statement_of_defence', get label() { return m["document.kind.written_statement_of_defence"]() } },
+  { id: 'reply', get label() { return m["document.kind.reply"]() } },
+  { id: 'affidavit', get label() { return m["document.kind.affidavit"]() } },
+  { id: 'affidavit_of_service', get label() { return m["document.kind.affidavit_of_service"]() } },
+  { id: 'notice_of_motion', get label() { return m["document.kind.notice_of_motion"]() } },
+  { id: 'notice_of_appeal', get label() { return m["document.kind.notice_of_appeal"]() } },
+  { id: 'memorandum_of_appeal', get label() { return m["document.kind.memorandum_of_appeal"]() } },
+  { id: 'bail_application', get label() { return m["document.kind.bail_application"]() } },
+  { id: 'submissions', get label() { return m["document.kind.submissions"]() } },
+  { id: 'mitigation', get label() { return m["document.kind.mitigation"]() } },
+  { id: 'list_of_authorities', get label() { return m["document.kind.list_of_authorities"]() } },
+  { id: 'demand_letter', get label() { return m["document.kind.demand_letter"]() } },
+  { id: 'government_notice', get label() { return m["document.kind.government_notice"]() } },
+  { id: 'sale_agreement', get label() { return m["document.kind.sale_agreement"]() } },
+  { id: 'petition', get label() { return m["document.kind.petition"]() } },
+  { id: 'legal_opinion', get label() { return m["document.kind.legal_opinion"]() } },
+  { id: 'referral_letter', get label() { return m["document.kind.referral_letter"]() } },
+  { id: 'letter', get label() { return m["document.kind.letter"]() } },
+  { id: 'advice', get label() { return m["document.kind.advice"]() } },
+  { id: 'general', get label() { return m["document.kind.general"]() } },
 ] as const
 export const documentKindLabel = (id: string) => documentKinds.find((k) => k.id === id)?.label ?? id
 
@@ -21,6 +37,15 @@ export const documentContentSchema = z.object({
   filedWith: z.string().nullable(),
   body: z.string(),
   filedOn: z.string(),
+  firmAddress: z.string().nullish(),
+  firmPhone: z.string().nullish(),
+  firmEmail: z.string().nullish(),
+  practisingNumber: z.string().nullish(),
+  drawnBy: z.string().nullish(),
+  signatureImage: z.string().nullish(),
+  stampImage: z.string().nullish(),
+  verifyCode: z.string().nullish(),
+  verifyQr: z.string().nullish(),
 })
 export type DocumentContent = z.infer<typeof documentContentSchema>
 
@@ -60,5 +85,14 @@ export const documentSchema = z.object({
 })
 export type LawyerDocument = z.infer<typeof documentSchema>
 
-export type CreateDocumentInput = { matterId: string; kind: string; title: string }
+export type CreateDocumentInput = { matterId: string; kind: string; title: string; body?: string }
 export type UpdateDocumentInput = { title: string; body: string }
+
+export const verificationSchema = z.object({
+  result: z.enum(['genuine', 'mismatch', 'changed', 'not_found']),
+  reference: z.string(),
+  title: z.string().nullable(),
+  filedOn: z.number().nullable(),
+  filedBy: z.string().nullable(),
+})
+export type DocumentVerification = z.infer<typeof verificationSchema>

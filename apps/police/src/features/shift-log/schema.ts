@@ -1,12 +1,13 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const checkInMethods = [
-  { value: 'badge_entry', label: 'Badge entry' },
-  { value: 'remote_scan', label: 'Remote scan' },
+  { value: 'badge_entry', get label() { return m["shift_log.method.badge_entry"]() } },
+  { value: 'remote_scan', get label() { return m["shift_log.method.remote_scan"]() } },
 ] as const
 
 export function checkInMethodLabel(method: string) {
-  return checkInMethods.find((m) => m.value === method)?.label ?? method
+  return checkInMethods.find((x) => x.value === method)?.label ?? method
 }
 
 export const officerCheckInSchema = z.object({
@@ -36,7 +37,7 @@ export type ShiftHandover = z.infer<typeof shiftHandoverSchema>
 
 export const createShiftHandoverSchema = z.object({
   outgoingOfficerId: z.string().nullable(),
-  incomingOfficerId: z.string().min(1, 'Incoming officer is required.'),
+  incomingOfficerId: z.string().min(1, { error: () => m["validation.incoming_officer_is_required"]() }),
   unit: z.string(),
   notes: z.string(),
   handedOverAt: z.number(),

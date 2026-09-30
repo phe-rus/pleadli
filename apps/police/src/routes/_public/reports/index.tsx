@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { ChartBlock } from '@/components/charts/chart-block'
 import { HorizontalBars, type BarDatum, type BarTone } from '@/components/charts/horizontal-bars'
 import { Sparkline } from '@/components/charts/sparkline'
@@ -10,7 +11,7 @@ import { referralDestinationTypeLabel, referralStatusLabel } from '@/features/re
 import { reportsSummaryOptions, useReportsSummary } from '@/features/reports'
 import { weekBucketStarts, weeklyBuckets } from '@/lib/weekly-buckets'
 import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/reports/')({
@@ -65,7 +66,7 @@ function MiniTrend({ title, timestamps }: { title: string; timestamps: number[] 
         <span className="text-lg font-semibold tabular-nums">{thisWeek}</span>
       </div>
       <Sparkline data={buckets} />
-      <span className="text-[0.625rem] text-muted-foreground">this week, of {WEEKS} weeks shown</span>
+      <span className="text-[0.625rem] text-muted-foreground">{m["reports.this_week"]({ weeks: WEEKS })}</span>
     </div>
   )
 }
@@ -101,7 +102,7 @@ function BreakdownBlock({
   if (rows.length === 0) {
     return (
       <ChartBlock title={title} description={description}>
-        <p className="text-xs text-muted-foreground">Nothing recorded yet.</p>
+        <p className="text-xs text-muted-foreground">{m["common.nothing_recorded"]()}</p>
       </ChartBlock>
     )
   }
@@ -118,93 +119,92 @@ function RouteComponent() {
   return (
     <article className="page">
       <section className="flex flex-col">
-        <h1>Reports &amp; Analytics</h1>
+        <h1>{m["reports.title"]()}</h1>
         <p className="md:max-w-lg">
-          How the station is doing over time. Derived entirely from existing records, nothing tracked
-          separately. Overview answers what needs attention right now; this answers the trend.
+          {m["reports.lead"]()}
         </p>
       </section>
 
       <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <WeeklyTrend
-          title="Station Diary activity"
-          description={`Entries logged per week, last ${WEEKS} weeks.`}
+          title={m["reports.diary"]()}
+          description={m["reports.diary_desc"]({ weeks: WEEKS })}
           timestamps={summary.stationDiaryTimestamps}
         />
         <WeeklyTrend
-          title="Case intake"
-          description={`Cases opened per week, last ${WEEKS} weeks.`}
+          title={m["reports.intake"]()}
+          description={m["reports.intake_desc"]({ weeks: WEEKS })}
           timestamps={summary.caseTimestamps}
         />
         <WeeklyTrend
-          title="Custody"
-          description={`Arrests logged per week, last ${WEEKS} weeks.`}
+          title={m["common.custody"]()}
+          description={m["reports.custody_desc"]({ weeks: WEEKS })}
           timestamps={summary.custodyTimestamps}
         />
         <WeeklyTrend
-          title="Statements"
-          description={`Statements taken per week, last ${WEEKS} weeks.`}
+          title={m["nav.statements"]()}
+          description={m["reports.statements_desc"]({ weeks: WEEKS })}
           timestamps={summary.statementTimestamps}
         />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Also tracked</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">{m["reports.also"]()}</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          <MiniTrend title="Incidents" timestamps={summary.incidentTimestamps} />
-          <MiniTrend title="Bonds granted" timestamps={summary.bondTimestamps} />
-          <MiniTrend title="Evidence recovered" timestamps={summary.exhibitTimestamps} />
-          <MiniTrend title="Charge sheets" timestamps={summary.chargeSheetTimestamps} />
-          <MiniTrend title="Referrals" timestamps={summary.referralTimestamps} />
+          <MiniTrend title={m["nav.incidents"]()} timestamps={summary.incidentTimestamps} />
+          <MiniTrend title={m["reports.bonds_granted"]()} timestamps={summary.bondTimestamps} />
+          <MiniTrend title={m["reports.evidence_recovered"]()} timestamps={summary.exhibitTimestamps} />
+          <MiniTrend title={m["investigation.charge_sheets"]()} timestamps={summary.chargeSheetTimestamps} />
+          <MiniTrend title={m["common.referrals"]()} timestamps={summary.referralTimestamps} />
         </div>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Current breakdown</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">{m["reports.breakdown"]()}</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <BreakdownBlock
-            title="Cases by status"
-            description="All cases, current status."
+            title={m["reports.cases_status"]()}
+            description={m["reports.cases_status_desc"]()}
             counts={summary.caseStatusCounts}
             labelFn={caseStatusLabel}
             toneFn={caseTone}
           />
           <BreakdownBlock
-            title="Custody by status"
-            description="All custody records, current status."
+            title={m["reports.custody_status"]()}
+            description={m["reports.custody_status_desc"]()}
             counts={summary.custodyStatusCounts}
             labelFn={custodyStatusLabel}
             toneFn={custodyTone}
           />
           <BreakdownBlock
-            title="Bonds by status"
-            description="All bonds granted, current status."
+            title={m["reports.bonds_status"]()}
+            description={m["reports.bonds_status_desc"]()}
             counts={summary.bondStatusCounts}
             labelFn={bondStatusLabel}
             toneFn={bondTone}
           />
           <BreakdownBlock
-            title="Evidence by status"
-            description="All exhibits logged, current status."
+            title={m["reports.evidence_status"]()}
+            description={m["reports.evidence_status_desc"]()}
             counts={summary.exhibitStatusCounts}
             labelFn={exhibitStatusLabel}
           />
           <BreakdownBlock
-            title="Referrals by status"
-            description="All referrals, current outcome."
+            title={m["reports.referrals_status"]()}
+            description={m["reports.referrals_status_desc"]()}
             counts={summary.referralStatusCounts}
             labelFn={referralStatusLabel}
             toneFn={referralStatusTone}
           />
           <BreakdownBlock
-            title="Referrals by destination"
-            description="Where cases have been referred."
+            title={m["reports.referrals_dest"]()}
+            description={m["reports.referrals_dest_desc"]()}
             counts={summary.referralDestinationCounts}
             labelFn={referralDestinationTypeLabel}
           />
           <BreakdownBlock
-            title="Top offences charged"
-            description="Most common offences on charge sheets."
+            title={m["reports.top_offences"]()}
+            description={m["reports.top_offences_desc"]()}
             counts={summary.topOffences}
           />
         </div>

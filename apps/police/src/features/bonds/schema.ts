@@ -1,9 +1,10 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const bondStatuses = [
-  { value: 'active', label: 'Active' },
-  { value: 'discharged', label: 'Discharged' },
-  { value: 'forfeited', label: 'Forfeited' },
+  { value: 'active', get label() { return m["bonds.status.active"]() } },
+  { value: 'discharged', get label() { return m["bonds.status.discharged"]() } },
+  { value: 'forfeited', get label() { return m["bonds.status.forfeited"]() } },
 ] as const
 
 export function bondStatusLabel(status: string) {
@@ -36,7 +37,7 @@ export const bondSchema = z.object({
 export type Bond = z.infer<typeof bondSchema>
 
 export const createBondSchema = z.object({
-  personId: z.string().min(1, 'Person is required.'),
+  personId: z.string().min(1, { error: () => m["validation.person_is_required"]() }),
   custodyId: z.string().nullable(),
   caseId: z.string().nullable(),
   lockUpSerialNumber: z.string(),
@@ -47,7 +48,7 @@ export const createBondSchema = z.object({
   officerId: z.string().nullable(),
   officerName: z.string(),
   officerRank: z.string(),
-  status: z.string().min(1, 'Status is required.'),
+  status: z.string().min(1, { error: () => m["validation.status_is_required"]() }),
   grantedAt: z.number(),
   notes: z.string(),
 })

@@ -1,5 +1,5 @@
 {
-	"name": "www",
+	"name": "pleadli",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -13,8 +13,8 @@
 		"auth:gen": "bunx @better-auth/cli generate --config=./src/auth/index.ts --output=./src/db/auth-schema.ts --yes",
 		"db:gen": "bunx drizzle-kit generate --config=drizzle.config.ts",
 		"db:studio": "bunx drizzle-kit studio --config=drizzle.config.ts",
-		"db:local": "bunx wrangler d1 migrations apply pleadli-www --local",
-		"db:remote": "bunx wrangler d1 migrations apply pleadli-www --remote",
+		"db:local": "bunx wrangler d1 migrations apply pleadli --local",
+		"db:remote": "bunx wrangler d1 migrations apply pleadli --remote",
 		"local": "bun run db:gen && bun run db:local",
 		"remote": "bun run local && bun run db:remote"
 	},
@@ -42,7 +42,7 @@
 		"clsx": "^2.1.1",
 		"cn": "^0.2.6",
 		"date-fns": "^4.4.0",
-		"drizzle-orm": "^1.0.0-rc.4",
+		"drizzle-orm": "^0.45.3",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
 		"shadcn": "^4.21.0",
@@ -61,7 +61,7 @@
 		"@types/react": "^19.2.0",
 		"@types/react-dom": "^19.2.0",
 		"@vitejs/plugin-react": "^6.0.1",
-		"drizzle-kit": "^1.0.0-rc.4",
+		"drizzle-kit": "^0.31.11",
 		"oxc-transform-react": "^0.148.0",
 		"typescript": "^6.0.2",
 		"vite": "^8.0.0",

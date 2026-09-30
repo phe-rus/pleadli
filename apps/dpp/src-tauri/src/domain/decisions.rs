@@ -111,7 +111,7 @@ pub async fn create_decision(pool: &SqlitePool, input: CreateDecisionInput) -> R
     let profile = prosecutor_profile::get_prosecutor_profile(pool).await?;
     if DPP_ONLY.contains(&input.decision_type.as_str()) && !profile.as_ref().is_some_and(|p| p.is_dpp) {
         return Err(DomainError::Forbidden(
-            "Only the Director of Public Prosecutions may record this decision. Mark this installation's prosecutor as the DPP in Settings if that is who is deciding."
+            "Only the head of the prosecution service may record this decision. In Settings > People, mark the person who holds that office if they are the one deciding."
                 .to_string(),
         ));
     }

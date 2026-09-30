@@ -17,6 +17,8 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-opener = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-dialog = "2"
@@ -31,15 +33,29 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 sqlx = { version = "0.9", features = ["sqlite", "runtime-tokio", "migrate", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 sha2 = "0.10"
+base64 = "0.22"
 tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "macros", "rt-multi-thread"] }
 axum = "0.8"
 tower-http = { version = "0.6", features = ["cors"] }
 tower = { version = "0.5", features = ["util"] }
-pleadli-node-core = { path = "../../../packages/node-core" }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["ai", "lan"] }
+# The office computer serves joined computers over TLS (L6); the client side
+# is node-core's pinned client, on the same reqwest.
+axum-server = { version = "0.8", features = ["tls-rustls-no-provider"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+argon2 = "0.5"
+rand_core = { version = "0.6", features = ["getrandom"] }
+hmac = "0.12"
+sha1 = "0.10"
+qrcode = "0.14"
 
 [dev-dependencies]
 # A fixed key for tests that run domain code without a startup.
 pleadli-node-core = { path = "../../../packages/node-core", features = ["test-keys"] }
+
+# Argon2 is unusably slow unoptimised; sign-in would stall in development.
+[profile.dev.package.argon2]
+opt-level = 3
 
 [profile.release]
 codegen-units = 1

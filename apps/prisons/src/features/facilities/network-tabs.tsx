@@ -89,7 +89,7 @@ function FacilityNetworkTab() {
       description: (
         <span>
           <code>{config.hqHostname}</code>
-          {reachability.data && (reachability.data.reachable ? '. Answering just now.' : '. Did not answer just now.')}
+          {reachability.data && (reachability.data.reachable ? m.facilities_answering_now() : m.facilities_not_answering_now())}
         </span>
       ),
       control: (

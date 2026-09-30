@@ -1,4 +1,5 @@
 import { useReportDirty } from '@/hooks/use-report-dirty'
+import { referenceLabel } from '@/lib/jurisdiction'
 import { RichTextInput } from '@pleadli/rich-text'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -7,6 +8,7 @@ import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useCreateResubmission } from './queries'
 import { createResubmissionSchema, type Referral } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type ResubmissionFormProps = {
   prosecutionFileId: string
@@ -50,11 +52,11 @@ export function ResubmissionForm({ prosecutionFileId, onSuccess, onDirtyChange }
       try {
         const input = { ...value, prosecutionFileId, receivedAt: new Date(value.receivedAt).getTime() }
         const result = await createResubmission.mutateAsync(input)
-        t.success('Resubmission logged')
+        t.success(m["referral.resubmission.logged"]())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not log resubmission', { description: 'Please try again.' })
+        t.error(m["referral.resubmission.log_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -70,14 +72,14 @@ export function ResubmissionForm({ prosecutionFileId, onSuccess, onDirtyChange }
       }}
     >
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="policeStation">{(f) => <f.input label="Police station (optional)" placeholder="e.g. Jinja Police Station" />}</form.AppField>
-        <form.AppField name="policeReference">{(f) => <f.input label="Police reference (optional)" placeholder="e.g. JINJA CRB 314/2019" />}</form.AppField>
+        <form.AppField name="policeStation">{(f) => <f.input label={m["file.form.police_station_optional"]()} placeholder={m["file.form.police_station_placeholder"]()} />}</form.AppField>
+        <form.AppField name="policeReference">{(f) => <f.input label={referenceLabel('police', m["file.form.police_reference"])} placeholder={m["file.form.police_reference_placeholder"]()} />}</form.AppField>
       </div>
 
       <form.AppField name="receivedAt">
         {(f) => (
           <Field>
-            <FieldLabel>Received</FieldLabel>
+            <FieldLabel>{m["file.form.received"]()}</FieldLabel>
             <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
           </Field>
         )}
@@ -86,8 +88,8 @@ export function ResubmissionForm({ prosecutionFileId, onSuccess, onDirtyChange }
       <form.AppField name="materialSummary">
         {(f) => (
           <Field>
-            <FieldLabel>What was provided (optional)</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="What was provided…" />
+            <FieldLabel>{m["referral.resubmission.provided_optional"]()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["referral.resubmission.provided_placeholder"]()} />
           </Field>
         )}
       </form.AppField>
@@ -95,15 +97,15 @@ export function ResubmissionForm({ prosecutionFileId, onSuccess, onDirtyChange }
       <form.AppField name="notes">
         {(f) => (
           <Field>
-            <FieldLabel>Notes (optional)</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Notes…" />
+            <FieldLabel>{m["common.notes_optional"]()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["common.notes_placeholder"]()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Log resubmission" />
+          <form.submit label={m["referral.resubmission.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

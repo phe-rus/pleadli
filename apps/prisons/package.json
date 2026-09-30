@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "tauri": "node scripts/guard.mjs && NODE_OPTIONS=--max-old-space-size=768 CARGO_BUILD_JOBS=2 NO_AT_BRIDGE=1 GDK_PROGNAME=\"prisons\" WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
     "e2e": "bun run scripts/e2e-data-layer.ts",
-    "i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --output-structure locale-modules"
+    "i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --output-structure locale-modules --strategy localStorage baseLocale"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.0",
@@ -30,6 +30,8 @@
     "@tauri-apps/plugin-notification": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-os": "^2",
+    "@tauri-apps/plugin-process": "^2",
+    "@tauri-apps/plugin-updater": "^2",
     "date-fns": "^4.4.0",
     "framer-motion": "^13.2.0",
     "motion": "^13.4.0",

@@ -34,7 +34,7 @@ export const createCourtProductionSchema = z.object({
   courtReference: z.string(),
   productionDate: z.number(),
   purpose: z.string(),
-  productionMethod: z.string().min(1, 'Production method is required.'),
+  productionMethod: z.string().min(1, { error: () => m.validation_production_method_required() }),
 })
 
 export type CreateCourtProductionInput = z.infer<typeof createCourtProductionSchema>
@@ -67,7 +67,7 @@ export function courtOutcomeLabel(value: string | null) {
 
 export const recordCourtOutcomeSchema = z.object({
   productionId: z.string().min(1),
-  outcome: z.string().min(1, 'Choose what the court decided.'),
+  outcome: z.string().min(1, { error: () => m.validation_choose_court_decision() }),
   notes: z.string(),
   nextDate: z.number().nullable(),
 })

@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/dates'
 import { EmptyNote } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { Tag } from '@/components/status-tag'
@@ -6,27 +7,27 @@ import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
 import { saveFile } from './data'
 import { ImportButton } from './import-button'
 import { useIncoming, useOutgoing } from './queries'
 import { outgoingKindLabels, type Outgoing } from './schema'
+import * as m from '@/paraglide/messages'
 
 function OutgoingRow({ item }: { item: Outgoing }) {
   const save = useMutation({
     mutationFn: () => saveFile('outgoing', item.id),
-    onSuccess: (saved) => saved && t.success('Saved. Send the file to the station.'),
-    onError: (e) => t.error('Could not save it', { description: e instanceof ApiError ? e.message : typeof e === 'string' ? e : 'Please try again.' }),
+    onSuccess: (saved) => saved && t.success(m["interchange.out.saved"]()),
+    onError: (e) => t.error(m["interchange.out.save_failed"](), { description: e instanceof ApiError ? e.message : typeof e === 'string' ? e : m["common.try_again"]() }),
   })
   return (
     <Row
       title={`${outgoingKindLabels[item.kind] ?? item.kind}: ${item.summary.replace(/^[^:]+: /, '')}`}
-      summary={`To ${item.stationName ?? 'a station'}${item.policeReference ? `. ${item.policeReference}` : ''}. Prepared ${format(item.preparedAt, 'PPp')}${item.exportedAt ? `. Saved ${format(item.exportedAt, 'PPp')}` : ''}.`}
+      summary={`${m["interchange.out.to"]({ station: item.stationName ?? m["interchange.a_station"]() })}${item.policeReference ? `. ${item.policeReference}` : ''}. ${m["interchange.out.prepared"]({ date: formatDate(item.preparedAt, 'datetime') })}${item.exportedAt ? `. ${m["interchange.out.saved_on"]({ date: formatDate(item.exportedAt, 'datetime') })}` : ''}.`}
       trailing={
         <>
-          <Tag tone={item.exportedAt ? 'done' : 'open'}>{item.exportedAt ? 'Saved to send' : 'Not sent yet'}</Tag>
+          <Tag tone={item.exportedAt ? 'done' : 'open'}>{item.exportedAt ? m["interchange.out.saved_to_send"]() : m["interchange.out.not_sent"]()}</Tag>
           <Button size="sm" variant="outline" disabled={save.isPending} onClick={() => save.mutate()}>
-            {item.exportedAt ? 'Save again' : 'Save the file'}
+            {item.exportedAt ? m["interchange.out.save_again"]() : m["interchange.out.save"]()}
           </Button>
         </>
       }
@@ -49,8 +50,8 @@ export function IncomingView() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Incoming</h1>
-          <p>Referrals from the stations this office trusts. They wait here, held apart from the records, until you read and accept them.</p>
+          <h1>{m["nav.item.incoming"]()}</h1>
+          <p>{m["interchange.in.subtitle"]()}</p>
         </div>
         <div className="page-actions">
           <ImportButton onImported={(o) => o.packageId && void navigate({ to: '/incoming/$packageId', params: { packageId: o.packageId } })} />
@@ -59,23 +60,23 @@ export function IncomingView() {
 
       <section className="page-section">
         <div className="section-head">
-          <h2>Waiting to be read</h2>
+          <h2>{m["interchange.status.waiting"]()}</h2>
           {waiting.length > 0 && <Tag tone="open">{waiting.length}</Tag>}
         </div>
         {waiting.length === 0 ? (
-          <EmptyNote>Nothing is waiting. Import a package a station has sent.</EmptyNote>
+          <EmptyNote>{m["interchange.in.empty"]()}</EmptyNote>
         ) : (
           <RowList>
             {waiting.map((p) => (
               <Row
                 key={p.id}
                 marker="open"
-                title={p.policeReference ?? 'Referral'}
-                summary={`From ${p.stationName ?? 'a station'}. Received ${format(p.receivedAt, 'PPp')}.`}
+                title={p.policeReference ?? m["interchange.referral"]()}
+                summary={m["interchange.in.from_received"]({ station: p.stationName ?? m["interchange.a_station"](), date: formatDate(p.receivedAt, 'datetime') })}
                 trailing={
                   <>
-                    {p.resubmission && <Tag tone="waiting">Resubmission</Tag>}
-                    <Link to="/incoming/$packageId" params={{ packageId: p.id }} className="text-primary">Read</Link>
+                    {p.resubmission && <Tag tone="waiting">{m["interchange.resubmission"]()}</Tag>}
+                    <Link to="/incoming/$packageId" params={{ packageId: p.id }} className="text-primary">{m["interchange.read"]()}</Link>
                   </>
                 }
               />
@@ -86,12 +87,12 @@ export function IncomingView() {
 
       <section className="page-section">
         <div className="section-head">
-          <h2>To send back</h2>
+          <h2>{m["interchange.in.to_send"]()}</h2>
           {toSend.length + confirmations.length > 0 && <Tag tone="open">{toSend.length + confirmations.length}</Tag>}
         </div>
-        <p>Receipts, decision notices and connection confirmations. Each is signed by this office and sealed so only the station can read it. Save the file and send it by any means.</p>
+        <p>{m["interchange.in.to_send_hint"]()}</p>
         {outgoing.length === 0 ? (
-          <EmptyNote>Nothing has been prepared. A receipt is prepared when you accept or reject a referral; a decision notice is prepared from the file's Decisions tab.</EmptyNote>
+          <EmptyNote>{m["interchange.in.nothing_prepared"]()}</EmptyNote>
         ) : (
           <RowList>
             {outgoing.map((o) => (
@@ -103,20 +104,20 @@ export function IncomingView() {
 
       {decided.length > 0 && (
         <section className="page-section">
-          <h2>Decided</h2>
+          <h2>{m["interchange.in.decided"]()}</h2>
           <RowList>
             {decided.map((p) => (
               <Row
                 key={p.id}
-                title={p.policeReference ?? 'Referral'}
-                summary={`From ${p.stationName ?? 'a station'}. ${p.status === 'accepted' ? 'Accepted' : 'Rejected'} ${p.decidedAt ? format(p.decidedAt, 'PP') : ''}${p.decidedBy ? `, ${p.decidedBy}` : ''}${p.rejectReason ? `. ${p.rejectReason}` : ''}.`}
+                title={p.policeReference ?? m["interchange.referral"]()}
+                summary={`${m["interchange.in.from"]({ station: p.stationName ?? m["interchange.a_station"]() })} ${p.status === 'accepted' ? m["interchange.status.accepted"]() : m["interchange.status.rejected"]()} ${p.decidedAt ? formatDate(p.decidedAt) : ''}${p.decidedBy ? `, ${p.decidedBy}` : ''}${p.rejectReason ? `. ${p.rejectReason}` : ''}.`}
                 trailing={
                   <>
-                    <Tag tone={p.status === 'accepted' ? 'done' : 'stopped'}>{p.status === 'accepted' ? 'Accepted' : 'Rejected'}</Tag>
+                    <Tag tone={p.status === 'accepted' ? 'done' : 'stopped'}>{p.status === 'accepted' ? m["interchange.status.accepted"]() : m["interchange.status.rejected"]()}</Tag>
                     {p.prosecutionFileId ? (
-                      <Link to="/files/$fileId" params={{ fileId: p.prosecutionFileId }} className="text-primary">Open the file</Link>
+                      <Link to="/files/$fileId" params={{ fileId: p.prosecutionFileId }} className="text-primary">{m["interchange.open_file"]()}</Link>
                     ) : (
-                      <Link to="/incoming/$packageId" params={{ packageId: p.id }} className="text-primary">Read</Link>
+                      <Link to="/incoming/$packageId" params={{ packageId: p.id }} className="text-primary">{m["interchange.read"]()}</Link>
                     )}
                   </>
                 }

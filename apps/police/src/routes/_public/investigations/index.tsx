@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { caseStatuses, casesOptions, useCases } from '@/features/cases'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
@@ -18,15 +19,14 @@ function RouteComponent() {
   return (
     <article className="page">
       <section className="flex flex-col">
-        <h1>Investigations</h1>
+        <h1>{m["nav.investigations"]()}</h1>
         <p className="md:max-w-sm">
-          Pick a case to open its working view: people, statements, custody, bonds, and files, brought together
-          in one place.
+          {m["investigation.list_lead"]()}
         </p>
       </section>
 
       {cases.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No cases opened yet.</p>
+        <p className="text-xs text-muted-foreground">{m["intake_page.empty"]()}</p>
       ) : (
         <div className="flex flex-col gap-1">
           {cases.map((c) => (
@@ -41,7 +41,7 @@ function RouteComponent() {
                 <p className="truncate text-xs text-muted-foreground">{c.summary}</p>
               </div>
               <span className="shrink-0 text-xs text-muted-foreground">
-                {statusLabel(c.status)} · {c.peopleCount} people
+                {statusLabel(c.status)} · {m["investigation.people_count"]({ count: c.peopleCount })}
               </span>
             </Link>
           ))}

@@ -1,0 +1,1917 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "age": {
+    "days": "Siku {count}",
+    "one_day": "Siku 1",
+    "today": "Leo",
+    "weeks": "Wiki {count}"
+  },
+  "attachments": {
+    "add": "Ongeza hati",
+    "add_failed": "Imeshindikana kuongeza hati",
+    "label": "Hati",
+    "none": "Hakuna hati zilizoambatishwa.",
+    "remove": "Ondoa hati",
+    "save_first": "Hifadhi rekodi hii kwanza, kisha unaweza kuambatisha hati.",
+    "upload_failed": "Kupakia kumeshindikana."
+  },
+  "capacity": {
+    "age": "Umri wa kazi inayosubiri",
+    "age_band": {
+      "one_to_two": "Wiki moja hadi mbili",
+      "over_four": "Zaidi ya wiki nne",
+      "two_to_four": "Wiki mbili hadi nne",
+      "under_week": "Chini ya wiki moja"
+    },
+    "age_hint": "Muda ambao majalada yanayosubiri uamuzi yamesubiri, tangu rufaa au uwasilishaji upya wa mwisho.",
+    "by_offence": "Ilipojikita: kosa",
+    "by_offence_empty": "Hakuna mashtaka yaliyopendekezwa kwenye majalada hai.",
+    "by_offence_hint": "Mashtaka yaliyopendekezwa kwenye majalada hai, kwa kosa.",
+    "by_prosecutor": "Kwa mwendesha mashtaka",
+    "by_prosecutor_hint": "Maamuzi na nyaraka hubeba jina la mtu aliyeyafanya.",
+    "by_station": "Ilipojikita: kituo",
+    "by_station_hint": "Majalada hai (yanayosubiri uamuzi au yaliyo kwa Polisi) kwa kituo cha Polisi kilichoyaleta.",
+    "days": "siku {days}",
+    "decisions": "Maamuzi katika kipindi hiki",
+    "decisions_empty": "Hakuna maamuzi katika kipindi hiki.",
+    "decisions_hint": "Kwa aina. Makosa kadhaa yaliyoamuliwa pamoja huhesabiwa mara moja.",
+    "directions": "Maagizo kwa Polisi",
+    "directions_empty": "Hakuna maagizo yaliyotolewa.",
+    "directions_rate": "{percent}% ya yaliyojibiwa yametimizwa.",
+    "directions_summary": "Kati ya {directions} yaliyotolewa, {met} yametimizwa, {not_met} hayajatimizwa na {open} bado yako wazi.",
+    "how_long": "Inachukua muda gani",
+    "longest_waiting": "Yaliyosubiri uamuzi kwa muda mrefu zaidi",
+    "longest_with_police": "Yaliyokaa kwa Polisi muda mrefu zaidi",
+    "months": "miezi {count}",
+    "moved": "Jinsi kazi ilivyosonga",
+    "moved_hint": "Kwa mwezi wa kalenda. Uamuzi kuhusu makosa kadhaa huhesabiwa mara moja. Safu ya mwisho ni mwezi huu hadi sasa.",
+    "no_active": "Hakuna majalada hai.",
+    "none_with_police": "Hakuna jalada lililo kwa Polisi.",
+    "none_yet": "bado hakuna",
+    "not_measured": "Haipimwi",
+    "not_measured_body": "Uwezo ni kwa ajili ya kuona kazi ni kiasi gani na iko wapi, ili iweze kupangwa.",
+    "not_measured_court": "Muda wa upande wa mahakama, hadi mashauri ya mahakama yarekodiwe.",
+    "not_measured_target": "Ulinganisho kati ya waendesha mashtaka au dhidi ya lengo: hakuna uliofafanuliwa, na hakuna unaodokezwa.",
+    "nothing_to_measure": "Hakuna cha kupima katika kipindi hiki bado.",
+    "period": "Kipindi",
+    "queue": {
+      "concluded": "Uamuzi wa mashtaka umefanywa",
+      "concluded_label": "Yamekamilika",
+      "documents": "Zimeandaliwa na bado hazijatolewa",
+      "documents_label": "Hati zinazosubiri",
+      "in_review": "Linasubiri uamuzi, mapitio yanaendelea au limewasilishwa upya",
+      "in_review_label": "Katika mapitio",
+      "intake": "Limepokelewa, hakuna mapitio yaliyorekodiwa",
+      "reopened": "Maamuzi yaliyokamilika yaliyorudishwa kwa mapitio",
+      "returned": "Liko kwa Polisi kwa upelelezi zaidi"
+    },
+    "queues": "Foleni",
+    "replay_hint": "Majalada yanayosubiri mwishoni mwa kila mwezi huhesabiwa kutoka historia ya kila jalada.",
+    "returned_on": "Lilirudishwa {date}.",
+    "row": {
+      "decided": "Majalada yaliyoamuliwa",
+      "issued": "Hati zilizotolewa",
+      "police_end": "Kwa Polisi, mwishoni mwa mwezi",
+      "received": "Majalada yaliyopokelewa",
+      "waiting_end": "Yanasubiri uamuzi, mwishoni mwa mwezi"
+    },
+    "set_prosecutor": "Ongeza watu kwenye Mipangilio ili kila uamuzi ubebe jina sahihi.",
+    "spread": "kwa wastani wa kati, katika {across}. Wastani {average}, ndefu zaidi {longest}.",
+    "subtitle": "Kiasi cha kazi kilichopo kwenye usakinishaji huu, jinsi kilivyosonga, na kilipojikita. Kinapima kazi, si mwendesha mashtaka.",
+    "turnaround": {
+      "document": "Kutoka hati hadi kutolewa",
+      "document_about": "Kutoka hati kuandaliwa hadi kutolewa.",
+      "police": "Muda kwa Polisi",
+      "police_about": "Kutoka kurudishwa hadi uwasilishaji upya uliojibu.",
+      "referral": "Kutoka rufaa hadi uamuzi wa kwanza",
+      "referral_about": "Kutoka rufaa hadi uamuzi wa kwanza wa mashtaka, kwa majalada yaliyoamuliwa katika kipindi hiki."
+    },
+    "turnaround_band": {
+      "four_weeks": "Hadi wiki nne",
+      "longer": "Zaidi",
+      "two_weeks": "Hadi wiki mbili",
+      "week": "Hadi wiki moja"
+    },
+    "waiting_since": "Linasubiri tangu {date}."
+  },
+  "charge": {
+    "form": {
+      "accused_optional": "Mshtakiwa (si lazima)",
+      "offence": "Kosa",
+      "offence_placeholder": "mf. Wizi wa gari",
+      "offence_required": "Kosa linahitajika.",
+      "particulars_optional": "Maelezo ya kosa (si lazima)",
+      "particulars_placeholder": "Maelezo ya kosa…",
+      "record_failed": "Imeshindikana kuandika shtaka",
+      "recorded": "Shtaka limeandikwa",
+      "section_optional": "Kifungu cha sheria (si lazima)",
+      "submit": "Ongeza shtaka"
+    }
+  },
+  "command_menu": {
+    "description": "Tafuta watu, majalada na kila kitu kingine ndani ya {office}.",
+    "no_matches": "Bado hakuna matokeo.",
+    "placeholder": "Tafuta kwa jina, NIN, namba ya usajili, kumbukumbu…",
+    "title": "Tafuta ndani ya {product}",
+    "type_to_search": "Andika kutafuta ndani ya {office}."
+  },
+  "comments": {
+    "add": "Ongeza maoni",
+    "failed": "Maoni hayakuweza kutumwa",
+    "label": "Maoni",
+    "placeholder": "Andika maoni…",
+    "post": "Tuma",
+    "unnamed": "Bila jina"
+  },
+  "common": {
+    "cancel": "Ghairi",
+    "could_not_record": "Imeshindikana kuandika",
+    "discard_unsaved": "Una mabadiliko ambayo hayajahifadhiwa. Uyatupe?",
+    "none": "Hakuna.",
+    "not_recorded": "Haijarekodiwa",
+    "notes": "Maelezo",
+    "notes_optional": "Maelezo (si lazima)",
+    "notes_placeholder": "Maelezo…",
+    "open": "Fungua",
+    "planned": "Imepangwa",
+    "remove": "Ondoa",
+    "request_failed": "Ombi halikufanikiwa.",
+    "review": "Pitia",
+    "save_changes": "Hifadhi mabadiliko",
+    "source_note_optional": "Dokezo la chanzo (si lazima)",
+    "try_again": "Tafadhali jaribu tena."
+  },
+  "count": {
+    "active_file": {
+      "many": "majalada {count} hai",
+      "one": "jalada {count} hai"
+    },
+    "awaiting_file": {
+      "many": "Majalada {count} yanasubiri uamuzi",
+      "one": "Jalada {count} linasubiri uamuzi"
+    },
+    "charged_file": {
+      "many": "majalada {count} yaliyoshtakiwa",
+      "one": "jalada {count} lililoshtakiwa"
+    },
+    "day": {
+      "many": "siku {count}",
+      "one": "siku {count}"
+    },
+    "direction": {
+      "many": "maagizo {count}",
+      "one": "agizo {count}"
+    },
+    "document": {
+      "many": "hati {count}",
+      "one": "hati {count}"
+    },
+    "file": {
+      "many": "majalada {count}",
+      "one": "jalada {count}"
+    },
+    "item": {
+      "many": "vipengele {count}",
+      "one": "kipengele {count}"
+    },
+    "proposed_charge": {
+      "many": "mashtaka {count} yaliyopendekezwa",
+      "one": "shtaka {count} lililopendekezwa"
+    },
+    "receipt_or_notice": {
+      "many": "risiti au taarifa {count}",
+      "one": "risiti au taarifa {count}"
+    },
+    "referral": {
+      "many": "rufaa {count}",
+      "one": "rufaa {count}"
+    },
+    "return": {
+      "many": "marejesho {count}",
+      "one": "urejesho {count}"
+    },
+    "review_note": {
+      "many": "madokezo {count} ya mapitio",
+      "one": "dokezo {count} la mapitio"
+    },
+    "statement": {
+      "many": "maelezo {count}",
+      "one": "maelezo {count}"
+    }
+  },
+  "decision": {
+    "form": {
+      "all_counts": "makosa yote",
+      "applies_to": "Inahusu",
+      "completes_review": "Uamuzi huu unakamilisha mapitio",
+      "completes_review_hint": "Usiuchague ikiwa makosa mengine bado yanasubiri kuamuliwa kutokana na matokeo haya. Mapitio yaliyokamilika hayawezi kubadilishwa tena.",
+      "correcting_after": "wa tarehe {date}. Uamuzi wa awali unabaki kwenye kumbukumbu. Eleza marekebisho hapa chini.",
+      "correcting_before": "Unarekebisha uamuzi wa",
+      "counts_hint": "Chagua makosa yanayohusika na uamuzi huu, au jalada zima. Hali ya jalada hufuata makosa yake.",
+      "covering_note_optional": "Barua ya maelezo (si lazima)",
+      "decided_at": "Imeamuliwa tarehe",
+      "decided_by_optional": "Imeamuliwa na (si lazima)",
+      "decision": "Uamuzi",
+      "decision_placeholder": "Chagua uamuzi",
+      "direction_instruction_required": "Kila agizo linahitaji maelekezo yake yaandikwe kikamilifu.",
+      "dpp_only": "{head} pekee",
+      "needs_review": "inahitaji mapitio",
+      "needs_review_hint": "Kuidhinisha, kukataa, kuelekeza nje ya mahakama, shtaka la kizingiti na kurudisha hufuata mapitio ya mashtaka. Anzisha moja kutoka kichupo cha Mapitio.",
+      "no_accused": "Hakuna mshtakiwa aliyetajwa",
+      "not_delegable": "Haikabidhiwi: hutekelezwa na {head} binafsi.",
+      "not_dpp_refuse": "Hujawekwa alama kama Mkurugenzi, kwa hiyo uamuzi huu utakataliwa.",
+      "privileged_hint": "Siri kati ya {office} na chombo cha upelelezi, haitolewi kwa wasioidhinishwa.",
+      "reasons_optional": "Sababu (si lazima)",
+      "reasons_placeholder": "Sababu…",
+      "reasons_required": "Sababu (lazima)",
+      "record_failed": "Imeshindwa kurekodi uamuzi",
+      "recorded": "Uamuzi umerekodiwa",
+      "recorded_many": "Maamuzi {count} yamerekodiwa",
+      "review_not_support": "mapitio hayaungi mkono",
+      "review_outcome": "Matokeo ya mapitio ya {standard} yaliyoanza {date}. Maamuzi yanayoungwa mkono yamewekwa alama hapa chini.",
+      "submit": "Rekodi uamuzi",
+      "type_required": "Aina ya uamuzi inahitajika.",
+      "whole_file": "Jalada zima"
+    },
+    "type": {
+      "amend_charge": "Rekebisha / elekeza shtaka mbadala",
+      "committal_venue_high_court": "Kupeleka kesi / uamuzi wa mahakama (Mahakama Kuu)",
+      "decline": "Kukataa kushtaki",
+      "discontinue": "Kusitisha mashauri",
+      "divert": "Kuelekeza nje (mbadala wa mashtaka)",
+      "nolle_prosequi": "Nolle prosequi",
+      "plea_bargain_accepted": "Makubaliano ya kukiri kosa yamekubaliwa",
+      "return_for_investigation": "Rudisha kwa upelelezi zaidi",
+      "sanction": "Idhinisha (amua kushtaki)",
+      "take_over": "Chukua usimamizi wa mashtaka",
+      "threshold_charge": "Shtaka la Kipimo cha Kizingiti"
+    }
+  },
+  "direction": {
+    "editor": {
+      "add": "Ongeza maelekezo",
+      "description": "Eleza Polisi wanapaswa kufanya nini. Jalada likirudi utaandika kama kila moja limetimizwa.",
+      "from_unnamed": "Haijatajwa ni kutoka kwa nani",
+      "instruction_aria": "Agizo {number}",
+      "kind_aria": "Aina ya maelekezo {number}",
+      "label": "Maelekezo kwa Polisi (angalau moja)",
+      "statement_from_aria": "Maelezo yachukuliwe kutoka kwa"
+    },
+    "kind": {
+      "clarification": {
+        "hint": "Jambo katika jalada lisilo wazi au linalopingana.",
+        "label": "Ufafanuzi"
+      },
+      "evidence": {
+        "hint": "Ushahidi unaopaswa kupatikana au kuwasilishwa.",
+        "label": "Ushahidi wa ziada"
+      },
+      "investigation": {
+        "hint": "Hatua ambayo Polisi wanapaswa kuchukua.",
+        "label": "Upelelezi unahitajika"
+      },
+      "missing_material": {
+        "hint": "Nyaraka ambazo jalada lilipaswa kuwa nazo na halikuwa nazo.",
+        "label": "Kinachokosekana"
+      },
+      "other": {
+        "hint": "Maelekezo mengine yoyote yaliyoandikwa.",
+        "label": "Maelekezo mengine"
+      },
+      "procedural": {
+        "hint": "Hatua ya kiutaratibu inayopaswa kutimizwa.",
+        "label": "Takwa la kiutaratibu"
+      },
+      "statement": {
+        "hint": "Maelezo yanayopaswa kuchukuliwa, na kutoka kwa nani.",
+        "label": "Maelezo ya ziada"
+      }
+    },
+    "list": {
+      "from": "Kutoka kwa {name}",
+      "recorded_on": "Imeandikwa {date}",
+      "reopen": "Fungua upya",
+      "what_came_back": "Kilichorudishwa",
+      "what_came_back_placeholder": "Kilichorudishwa (si lazima)"
+    },
+    "response": {
+      "met": "Limetimizwa",
+      "not_met": "Halijatimizwa",
+      "open": "Wazi"
+    }
+  },
+  "doc": {
+    "a_decision": "Uamuzi kwenye jalada hili",
+    "actions": "Vitendo vya hati",
+    "add_item": "+ Ongeza mstari",
+    "add_paragraph": "Ongeza aya chini",
+    "all_documents": "Nyaraka",
+    "altered": "Imebadilishwa",
+    "altered_long": "Maudhui yaliyohifadhiwa yamebadilika tangu ilipotolewa",
+    "assist_failed": "Msaidizi hakuweza kuandika aya hii",
+    "author": "Mwandishi",
+    "custody_document": "Hati",
+    "discard": "Tupa rasimu",
+    "discard_confirm": "Tupa rasimu hii? Uamuzi ilikotoka hauathiriwi.",
+    "discard_failed": "Imeshindwa kutupa",
+    "done_editing": "Imekamilika",
+    "download_docx": "Pakua DOCX",
+    "download_md": "Pakua Markdown",
+    "draft": "Rasimu",
+    "draft_banner": "RASIMU, HAIJATOLEWA",
+    "draft_hint": "Rasimu hufuata kumbukumbu inaposasishwa. Ikishatolewa, maudhui hufungwa pamoja na marejeo yake na hayawezi kubadilishwa.",
+    "draft_hint_template": "Hii ni rasimu kutoka kiolezo cha nchi yako. Bofya Hariri kubadilisha mstari wowote, au muulize msaidizi aandike aya. Kutoa huongeza sahihi yako, muhuri wa ofisi na nambari ya uthibitisho, na kuifunga.",
+    "edit": "Hariri",
+    "export_failed": "Uhamishaji umeshindwa.",
+    "for_custody": "Kwa kizuizi na muda wa kisheria",
+    "for_decision": "Kwa uamuzi wa jalada hili",
+    "from_decision": "Kutoka kwa uamuzi: {decision}, {date}",
+    "from_template": "Kiolezo",
+    "issue": "Toa",
+    "issue_confirm": "Toa hati hii? Itapewa namba yake ya marejeo na haiwezi kubadilishwa tena.",
+    "issue_failed": "Imeshindwa kutoa",
+    "issue_now": "Toa sasa",
+    "issue_sure": "Itoe? Itasainiwa, kupigwa muhuri na haitabadilika tena.",
+    "issued": "Imetolewa",
+    "issued_on": "Ilitolewa {date}",
+    "kind": {
+      "charge_sheet": "Hati ya mashtaka",
+      "charge_sheet_about": "Hati ya mashtaka iliyoidhinishwa, kutoka kwa uamuzi wa kuidhinisha, kushtaki kwa Kipimo cha Kizingiti, au kurekebisha shtaka.",
+      "decline_reasons": "Sababu zilizoandikwa za kukataa",
+      "decline_reasons_about": "Sababu za siri zilizoandikwa za uamuzi wa kukataa kushtaki.",
+      "directions_about": "Maagizo kwenye urejesho kwa upelelezi zaidi."
+    },
+    "last_prepared": "Iliandaliwa mwisho",
+    "new": "Hati mpya",
+    "new_lead": "Nyaraka kutoka fomu zinazotumika {country}. Kila moja hufunguka kama rasimu ya kusoma na kuhariri.",
+    "new_title": "Andaa hati",
+    "next": "Hati inayofuata",
+    "none_prepared": "Hakuna iliyoandaliwa bado.",
+    "not_issued": "Bado haijatolewa.",
+    "other_documents": "Nyaraka nyingine",
+    "pdf_hint": "Hufungua dirisha la kuchapisha. Chagua Hifadhi kama PDF kama printa.",
+    "pdf_toast": "Chagua “Hifadhi kama PDF” kama printa",
+    "prepare": "Andaa",
+    "prepare_failed": "Imeshindwa kuandaa hati",
+    "prepared_from": "Imeandaliwa kutoka",
+    "previous": "Hati iliyotangulia",
+    "print": "Chapisha",
+    "ready": "Tayari kuandaliwa",
+    "ready_empty": "Kila uamuzi unaozalisha hati una hati iliyoandaliwa.",
+    "refresh": "Sasisha kutoka kumbukumbu",
+    "refresh_failed": "Imeshindwa kusasisha",
+    "remove_block": "Ondoa",
+    "save_failed": "Imeshindwa kuhifadhi faili",
+    "save_pdf": "Hifadhi kama PDF",
+    "saved": "Imehifadhiwa",
+    "set_when_issued": "Huwekwa inapotolewa",
+    "sha": "Msimbo wa ukaguzi (unathibitisha nakala haijabadilishwa)",
+    "taken_when_issued": "Huchukuliwa inapotolewa",
+    "type_here": "Andika hapa",
+    "verify_label": "Hakiki hati hii kwenye ofisi iliyoitoa",
+    "write_with_assist": "Andika aya hii kwa msaidizi"
+  },
+  "event": {
+    "attachment": "Hati imeambatishwa: {what}",
+    "by": "Na {name}",
+    "charge": "Shtaka lililopendekezwa limerekodiwa: {what}",
+    "decision_corrected": "Uamuzi umerekebishwa: {what}",
+    "decision_recorded": "Uamuzi umerekodiwa: {what}",
+    "direction_met": "Agizo limetimizwa: {kind}",
+    "direction_not_met": "Agizo halijatimizwa: {kind}",
+    "document_issued": "Hati imetolewa: {what}",
+    "evidence": "Ushahidi umerekodiwa: {what}",
+    "referral": "Rufaa ya Polisi imepokelewa",
+    "resubmission": "Uwasilishaji upya umepokelewa kutoka Polisi",
+    "review_note": "Dokezo la mapitio limeongezwa",
+    "review_reopened": "Uamuzi umefunguliwa upya kwa mapitio: {test}",
+    "review_started": "Mapitio ya mashtaka yameanzishwa: {test}",
+    "statement": "Maelezo yamerekodiwa: {what}"
+  },
+  "evidence": {
+    "category": {
+      "digital": "Ushahidi wa kidijitali",
+      "documentary": "Ushahidi wa nyaraka",
+      "exhibit": "Kielelezo",
+      "expert": "Ushahidi wa mtaalamu"
+    },
+    "form": {
+      "category": "Kundi",
+      "category_placeholder": "Chagua kundi",
+      "category_required": "Kundi linahitajika.",
+      "description": "Maelezo",
+      "description_placeholder": "Kitu hiki ni nini…",
+      "mark_optional": "Alama ya utambulisho (si lazima)",
+      "record_failed": "Imeshindikana kuandika ushahidi",
+      "recorded": "Ushahidi umeandikwa",
+      "recovered_optional": "Kilipatikana wapi (si lazima)",
+      "source_placeholder": "mf. kama kilivyoorodheshwa kwenye rejista ya vielelezo ya Polisi",
+      "submit": "Ongeza ushahidi"
+    }
+  },
+  "file": {
+    "form": {
+      "court_case_number": "Namba ya kesi mahakamani",
+      "material_optional": "Kilichoambatana na jalada (si lazima)",
+      "material_placeholder": "mf. Hati ya mashtaka (rasimu), maelezo ya mashahidi, maelezo ya afisa aliyekamata, picha za vielelezo",
+      "odpp_number": "Namba ya usajili wa mashtaka",
+      "odpp_number_hint": "Kama ilivyoandikwa kwenye jalada.",
+      "odpp_number_optional": "Namba ya usajili wa mashtaka (si lazima)",
+      "odpp_number_placeholder": "Weka itakapojulikana",
+      "open_failed": "Imeshindikana kufungua jalada",
+      "opened": "Jalada limefunguliwa",
+      "police_reference": "Kumbukumbu ya polisi",
+      "police_reference_hint": "Kama ilivyoandikwa kwenye jalada la polisi: kituo, CRB, namba na mwaka.",
+      "police_reference_optional": "Kumbukumbu ya polisi (si lazima)",
+      "police_reference_placeholder": "mf. JINJA CRB 314/2019",
+      "police_station": "Kituo cha polisi",
+      "police_station_optional": "Kituo cha polisi (si lazima)",
+      "police_station_placeholder": "mf. Kituo cha Polisi Jinja",
+      "received": "Limepokelewa",
+      "submit_open": "Fungua jalada",
+      "title": "Kichwa",
+      "title_placeholder": "mf. Jamhuri dhidi ya Okello, wizi wa gari",
+      "title_required": "Kichwa kifupi cha jalada kinahitajika.",
+      "update_failed": "Imeshindikana kusasisha taarifa za jalada",
+      "updated": "Taarifa za jalada zimesasishwa"
+    },
+    "link": {
+      "link_failed": "Imeshindikana kumuunganisha mtu",
+      "linked": "Mtu ameunganishwa na jalada",
+      "person": "Mtu",
+      "role": "Nafasi kwenye jalada hili",
+      "role_placeholder": "Chagua nafasi",
+      "submit": "Unganisha mtu"
+    },
+    "role": {
+      "accused": "Mshtakiwa",
+      "complainant": "Mlalamikaji / mwathirika",
+      "witness": "Shahidi"
+    },
+    "status": {
+      "declined": "Limekataliwa",
+      "discontinued": "Limesitishwa",
+      "diverted": "Limeelekezwa nje ya mahakama",
+      "plea_bargained": "Makubaliano ya kukiri kosa",
+      "resubmitted": "Limewasilishwa upya na Polisi",
+      "returned_for_investigation": "Limerudishwa kwa upelelezi zaidi",
+      "sanctioned": "Shtaka limeidhinishwa",
+      "taken_over": "Limechukuliwa",
+      "under_review": "Linasubiri uamuzi"
+    },
+    "view": {
+      "active": {
+        "about": "Linasubiri uamuzi wa kushtaki, mapitio yakiendelea au limerudishwa na Polisi.",
+        "label": "Mapitio yanayoendelea"
+      },
+      "all": {
+        "about": "Kila jalada kwenye rejista.",
+        "label": "Majalada yote"
+      },
+      "closed": {
+        "about": "Uamuzi wa kushtaki umefanyika.",
+        "label": "Yaliyofungwa"
+      },
+      "intake": {
+        "about": "Limepokelewa, bado hakuna mapitio yaliyoandikwa.",
+        "label": "Mapokezi"
+      },
+      "reopened": {
+        "about": "Majalada yaliyohitimishwa yaliyorudishwa kwa mapitio, pamoja na sababu ya kila moja kufunguliwa upya.",
+        "label": "Mapitio yaliyofunguliwa upya"
+      },
+      "returned": {
+        "about": "Liko Polisi kwa upelelezi zaidi.",
+        "label": "Yaliyorudishwa Polisi"
+      }
+    }
+  },
+  "file_tab": {
+    "chronology": "Mfuatano wa matukio",
+    "court": "Mahakama",
+    "file": "Jalada",
+    "index": "Jalada",
+    "details": "Maelezo",
+    "case": "Kesi",
+    "activity": "Shughuli"
+  },
+  "file_ws": {
+    "a_count": "Kosa moja",
+    "attachments": "Viambatisho",
+    "back": "Rudi kwenye majalada yote",
+    "came_back": "Kilichorudi",
+    "chronology_empty": "Hakuna kilichorekodiwa kwenye jalada hili.",
+    "correct": "Rekebisha",
+    "correct_description": "Rekodi uamuzi unaochukua nafasi ya huu. Ule wa awali unabaki kwenye kumbukumbu.",
+    "correct_title": "Rekebisha uamuzi huu",
+    "corrected": "Ilirekebishwa {date}",
+    "corrects": "Inarekebisha {decision} ya {date}",
+    "court_no": "Namba ya kesi ya mahakama",
+    "court_number_hint": "Imerekodiwa na mwendesha mashtaka; kumbukumbu ya mahakama yenyewe ndiyo mamlaka.",
+    "court_number_label": "Namba ya kesi ya mahakama",
+    "court_reference": "Marejeo ya mahakama",
+    "decisions_hint": "Maamuzi hayahaririwi wala kuondolewa kamwe. Marekebisho ni uamuzi mpya unaoeleza kwa nini. Hali ya jalada hufuata makosa yake.",
+    "edit": "Hariri maelezo",
+    "edit_description": "Sasisha namba za usajili, marejeo na mahakama.",
+    "edit_title": "Hariri maelezo ya jalada",
+    "link_person": "Unganisha mtu",
+    "link_person_description": "Ongeza mshtakiwa, mlalamikaji au shahidi kwenye jalada hili.",
+    "log_resubmission": "Rekodi uwasilishaji upya",
+    "log_resubmission_description": "Rekodi jalada likirudi kutoka Polisi.",
+    "no_court_number": "Hakuna namba ya kesi ya mahakama iliyorekodiwa. Hutolewa mara hati ya mashtaka inapowasilishwa.",
+    "no_decisions": "Hakuna maamuzi yaliyorekodiwa bado.",
+    "no_directions": "Hakuna maagizo yaliyorekodiwa pamoja na urejesho huu.",
+    "no_people": "Hakuna mtu aliyeunganishwa na jalada hili bado.",
+    "not_found": "Jalada halijapatikana",
+    "not_found_body": "Jalada hili halimo kwenye rejista. Huenda lilifunguliwa kwenye usakinishaji mwingine.",
+    "not_returned": "Jalada hili halijarudishwa kwa Polisi.",
+    "odpp_no": "Namba ya usajili wa mashtaka",
+    "planned_adjournments": "Kuahirishwa, na kichocheo cha mapitio baada ya kuahirishwa mara tatu mfululizo.",
+    "planned_body": "Tarehe za usikilizaji na kuahirishwa huhifadhiwa hapa na mwendesha mashtaka hadi programu ya mahakama itakapounganishwa.",
+    "planned_hearings": "Tarehe za usikilizaji na kila usikilizaji ulikuwa wa nini.",
+    "planned_notices": "Taarifa kwa mwendesha mashtaka.",
+    "planned_title": "Tarehe za kesi na kuahirishwa",
+    "police_ref": "Marejeo ya Polisi",
+    "police_station": "Kituo cha Polisi",
+    "received": "Lilipokelewa {date}.",
+    "record_decision": "Rekodi uamuzi",
+    "record_decision_description": "Kuidhinisha, kukataa, kuelekeza nje, shtaka la kizingiti na kurudisha hufuata mapitio ya mashtaka. Mengine hurekodiwa hapa.",
+    "references": "Marejeo",
+    "remove_person": "Ondoa {name} kwenye jalada hili",
+    "resubmitted_on": "Liliwasilishwa upya {date}",
+    "returned_on": "Lilirudishwa {date}",
+    "returns": "Kurudisha na kuwasilisha upya",
+    "sections": "Sehemu za jalada",
+    "stands": "Hali ya jalada hili",
+    "threshold_due": "Mapitio ya siku 14 ya shtaka la Kipimo cha Kizingiti yanadaiwa {date}.",
+    "threshold_overdue": "Mapitio ya siku 14 ya shtaka la Kipimo cha Kizingiti yalipaswa kufanyika {date}. Huondoka uamuzi unaofuata unaporekodiwa.",
+    "threshold_review": "Mapitio ya kizingiti",
+    "via_connection": "Liliwasilishwa kupitia muunganisho na {station}.",
+    "whole_file": "Jalada zima",
+    "with_police": "Kwa Polisi",
+    "tasks": "Kazi"
+  },
+  "intake_alerts": {
+    "title": "Linasubiri uamuzi wa kushtaki"
+  },
+  "interchange": {
+    "a_station": "kituo",
+    "conn": {
+      "answered": "kimejibu. Bado hakiaminiki: yeyote angeweza kujibu. Piga simu au kutana na kituo na uwaombe wasome alama yao. Andika wanachosoma. Lazima ilingane na hii:",
+      "area": "Eneo linaloshughulikiwa",
+      "area_placeholder": "Eneo inaloshughulikia (si lazima)",
+      "create_identity": "Unda utambulisho",
+      "decline": "Kataa",
+      "decline_failed": "Imeshindwa kukataa",
+      "decline_placeholder": "Si wao? Sema kwa nini (si lazima)",
+      "decline_reason": "Sababu ya kukataa",
+      "empty": "Hakuna kituo kilichoalikwa. Alika vituo ambavyo ofisi hii inashughulikia.",
+      "end": "Komesha muunganisho",
+      "end_failed": "Imeshindwa kuukomesha",
+      "end_placeholder": "Ili kukomesha muunganisho huu, sema kwa nini",
+      "end_reason": "Sababu ya kukomesha muunganisho",
+      "ended": "Muunganisho umekomeshwa",
+      "fingerprint_hint": "Kituo huomba msimbo huu kinapothibitisha ofisi hii. Wasomee; usiutume katika ujumbe mmoja na mwaliko.",
+      "fingerprint_label": "Alama ya ofisi hii",
+      "fingerprint_placeholder": "Andika kile kituo kinachosoma",
+      "fingerprint_read": "Alama ambayo kituo kilisoma",
+      "handles": "Inashughulikia: {area}.",
+      "identify": "Tambulisha ofisi hii",
+      "identify_description": "Ipe ofisi jina kama vituo vinavyotuma kwake vinavyoijua. Inapata ufunguo wa kusaini na ufunguo wa usimbaji ambao haviondoki kwenye kompyuta hii. Jina haliwezi kubadilishwa baadaye, kwa sababu kila kituo hulithibitisha.",
+      "identify_first": "Tambulisha ofisi hii kwanza.",
+      "identity_created": "Ofisi hii sasa ina utambulisho",
+      "identity_failed": "Imeshindwa kuiweka",
+      "identity_set": "Utambulisho umewekwa",
+      "import_answer": "Ingiza jibu la kituo",
+      "invite_description": "Kituo kinaweza kutuma hapa tu ikiwa ofisi hii imekialika. Mwaliko ni wa kituo hicho, hutumika mara moja, na huisha muda. Tuma faili kwa kituo kwa njia yoyote: flash, barua pepe, upakuaji.",
+      "invite_failed": "Imeshindwa kutengeneza mwaliko",
+      "invite_hint": "Kisha ingiza jibu ambalo kituo kinarudisha.",
+      "invite_title": "Alika kituo",
+      "invited": "Mwaliko umetengenezwa",
+      "invited_on": "Kilialikwa {date}",
+      "known_as": "Hivi ndivyo vituo vinavyotuma hapa vinavyoijua ofisi hii.",
+      "make_invite": "Tengeneza mwaliko",
+      "office_name": "Jina la ofisi",
+      "office_placeholder": "k.m. {office} Wandegeya",
+      "officer_in_charge": "afisa msimamizi {name}",
+      "open_for": "Wazi kwa",
+      "save_again": "Hifadhi mwaliko tena",
+      "save_invite_failed": "Imeshindwa kuhifadhi mwaliko",
+      "station": "Kituo",
+      "station_placeholder": "Kituo, mf. Kituo cha Polisi Wandegeya",
+      "stations": "Vituo",
+      "subtitle": "Vituo vipi vya polisi vinaweza kutuma majalada kwa ofisi hii. Kituo hutuma hapa tu ikiwa ofisi hii ilikialika na mtu hapa amethibitisha ni nani.",
+      "trust": "Inalingana: amini kituo hiki",
+      "trusted_detail": "Alama {fingerprint}. Imethibitishwa {date}{by}. Namba ya juu zaidi ya kifurushi kilichopokelewa: {seq}.",
+      "trusted_toast": "Kituo kinaaminiwa. Kitumie uthibitisho.",
+      "waiting": "{count} zinasubiri",
+      "waiting_answer": "Inasubiri {station} kujibu. Wazi hadi {date}."
+    },
+    "file_failed": "Faili halikuweza kutengenezwa.",
+    "import": "Pokea jalada kutoka kituo",
+    "import_failed": "Kifurushi hakikupokelewa",
+    "in": {
+      "decided": "Zimeamuliwa",
+      "empty": "Hakuna kinachosubiri. Ingiza kifurushi ambacho kituo kimetuma.",
+      "from": "Kutoka {station}.",
+      "from_received": "Kutoka {station}. Ilipokelewa {date}.",
+      "nothing_prepared": "Hakuna kilichoandaliwa. Risiti huandaliwa unapokubali au kukataa rufaa; taarifa ya uamuzi huandaliwa kutoka kichupo cha Maamuzi cha jalada.",
+      "subtitle": "Rufaa kutoka vituo ambavyo ofisi hii inaviamini. Zinasubiri hapa, zikiwa zimetengwa na kumbukumbu, hadi uzisome na kuzikubali.",
+      "to_send": "Za kurudisha",
+      "to_send_hint": "Risiti, taarifa za maamuzi na uthibitisho wa muunganisho. Kila moja imesainiwa na ofisi hii na kufungwa ili kituo pekee kiweze kuisoma. Hifadhi faili na uitume kwa njia yoyote."
+    },
+    "kind": {
+      "decision_notice": "Taarifa ya uamuzi",
+      "pairing_confirmation": "Muunganisho",
+      "receipt": "Risiti"
+    },
+    "notice": {
+      "button": "Arifu kituo",
+      "drafts": "Taarifa imeandaliwa. Rasimu {count} za hati hazimo: zitoe kwanza ikiwa zinapaswa kuwemo.",
+      "failed": "Imeshindwa kuandaa taarifa",
+      "prepared": "Taarifa imeandaliwa. Hifadhi faili ili kuituma."
+    },
+    "open_file": "Fungua jalada",
+    "out": {
+      "not_sent": "Bado haijatumwa",
+      "prepared": "Imeandaliwa {date}",
+      "save": "Hifadhi faili",
+      "save_again": "Hifadhi tena",
+      "save_failed": "Imeshindwa kuihifadhi",
+      "saved": "Imehifadhiwa. Tuma faili kwa kituo.",
+      "saved_on": "Imehifadhiwa {date}",
+      "saved_to_send": "Imehifadhiwa kutumwa",
+      "to": "Kwa {station}"
+    },
+    "package_file": "Faili kutoka kituo",
+    "package_filter": "Faili la Pleadli",
+    "read": "Soma",
+    "referral": "Rufaa",
+    "resubmission": "Uwasilishaji upya",
+    "review": {
+      "accept": "Kubali na ufungue jalada",
+      "accept_failed": "Imeshindwa kuikubali",
+      "add_new": "Ongeza kama mtu mpya",
+      "already_here": "Tayari yupo",
+      "answers": "Hii inajibu nini",
+      "charges": "Mashtaka yaliyopendekezwa",
+      "creates_file": "Kukubali kunaunda jalada la mashtaka kwa hatua moja: watu {people}, maelezo {statements}, vielelezo {exhibits}, mashtaka yaliyopendekezwa {charges} na faili {files}. Kisha risiti inakuwa tayari kwa kituo.",
+      "creates_material": "Kukubali kunaongeza nyenzo mpya kwenye jalada kwa hatua moja: watu {people}, maelezo {statements}, vielelezo {exhibits}, mashtaka yaliyopendekezwa {charges} na faili {files}. Kisha risiti inakuwa tayari kwa kituo.",
+      "decide": "Amua",
+      "exhibits": "Vielelezo",
+      "files": "Faili zilizoambatana",
+      "files_hint": "Viambatisho vimekaguliwa na havijabadilishwa. Vinaingia kwenye jalada pale tu unapolikubali.",
+      "fingerprint": "Msimbo wa utambulisho wa kituo",
+      "gap": "Pengo",
+      "gap_many": "Vifurushi {count} vyenye namba kabla ya hiki kutoka kituo hiki havijapokelewa hapa.",
+      "gap_one": "Kifurushi kimoja chenye namba kabla ya hiki kutoka kituo hiki hakijapokelewa hapa.",
+      "name_differs": "Jina linatofautiana",
+      "name_differs_body": "Rufaa inakitaja kituo kama “{named}”, lakini muunganisho ulithibitishwa kama “{confirmed}”.",
+      "nin": "NIN {nin}",
+      "no_files": "Hakuna faili zilizokuja na rufaa hii.",
+      "not_trusted": "Haiaminiki",
+      "not_trusted_body": "Muunganisho wa kituo hiki hauaminiki tena, kwa hiyo hii haiwezi kukubaliwa.",
+      "not_with_station": "Haliko kwa kituo ({status}), kwa hiyo hii haiwezi kukubaliwa.",
+      "opened": "Jalada limefunguliwa. Risiti iko tayari kutumwa.",
+      "opened_failed": "Jalada limefunguliwa. Hati {count} hazikuweza kuambatishwa.",
+      "or_reject": "Au ikatae",
+      "origin": "Ilikotoka",
+      "referred_by": "Imeletwa na {station}. Ilipokelewa {date}.",
+      "registration": "Namba ya usajili wa mashtaka",
+      "registration_placeholder": "Ikiwa inayo (si lazima)",
+      "reject": "Kataa rufaa",
+      "reject_failed": "Imeshindwa kuikataa",
+      "reject_placeholder": "Kwa nini inakataliwa. Kituo kitaambiwa.",
+      "reject_reason": "Sababu ya kukataa",
+      "rejected_toast": "Imekataliwa. Risiti yenye sababu yako iko tayari kutumwa.",
+      "resubmission_of": "Uwasilishaji upya wa",
+      "same_nin": "{name} ana kitambulisho cha taifa kilekile.",
+      "sent": "Imetumwa",
+      "sent_value": "{date}, kifurushi {seq}",
+      "sha": "Msimbo wa ukaguzi",
+      "signature_checked": "Imekaguliwa: kweli imetoka kituo hicho, ni ofisi hii tu inayoweza kuifungua, na hakuna kilichobadilishwa njiani. Kilichomo bado ni maelezo ya kituo.",
+      "signed_by": "Imetumwa na",
+      "statements": "Maelezo",
+      "summary": "Muhtasari wa kituo",
+      "taken_by": "yalichukuliwa na {name}",
+      "title": "Kichwa cha jalada",
+      "title_placeholder": "Acha tupu ili kutumia kichwa kilichopendekezwa",
+      "unknown": "Haijulikani",
+      "unknown_file": "Jalada lisilojulikana",
+      "unknown_file_body": "Inataja jalada ambalo kituo hiki hakikuleta, kwa hiyo haiwezi kukubaliwa.",
+      "use_existing": "Tumia {name}",
+      "who": "Nani anasema hivyo",
+      "with_station": "Liko kwa kituo. Kukubali kunaongeza nyenzo hii kwenye jalada hilo. Hakufungui jalada jipya."
+    },
+    "role": {
+      "accused": "Mshtakiwa",
+      "arresting_officer": "Afisa aliyekamata",
+      "complainant": "Mlalamikaji",
+      "investigating_officer": "Afisa mpelelezi",
+      "witness": "Shahidi"
+    },
+    "state": {
+      "awaiting_confirmation": "Kimejibu: thibitisha alama",
+      "declined": "Kimekataliwa",
+      "expired": "Mwaliko umeisha muda",
+      "invited": "Kimealikwa, bado hakijajibu",
+      "revoked": "Kimebatilishwa",
+      "trusted": "Kinaaminiwa"
+    },
+    "status": {
+      "accepted": "Imekubaliwa",
+      "rejected": "Imekataliwa",
+      "waiting": "Inasubiri kusomwa"
+    }
+  },
+  "material": {
+    "add_charge": "Ongeza shtaka",
+    "add_charge_description": "Rekodi shtaka ambalo Polisi wanapendekeza kwenye jalada hili.",
+    "add_evidence": "Ongeza ushahidi",
+    "add_evidence_description": "Rekodi kielelezo au ushahidi mwingine ambao Polisi wanasema upo.",
+    "add_observation": "Ongeza maoni",
+    "add_observation_description": "Andika swali, pengo au suala wakati wa mapitio. Si uamuzi rasmi.",
+    "add_statement": "Ongeza maelezo",
+    "add_statement_description": "Rekodi maelezo yaliyotolewa pamoja na rufaa ya Polisi.",
+    "evidence": "Ushahidi",
+    "no_charges": "Hakuna mashtaka yaliyorekodiwa bado.",
+    "no_evidence": "Hakuna ushahidi uliorekodiwa bado.",
+    "no_observations": "Hakuna maoni yaliyorekodiwa bado.",
+    "no_statements": "Hakuna maelezo yaliyopokelewa bado.",
+    "observations": "Maoni",
+    "photos": "Picha na viambatisho",
+    "review_stands": "Hali ya mapitio",
+    "scanned": "Nakala iliyoskaniwa na viambatisho"
+  },
+  "nav": {
+    "item": {
+      "active_reviews": "Mapitio yanayoendelea",
+      "capacity": "Uwezo na mzigo wa kazi",
+      "charging_review": "Mapitio ya kushtaki",
+      "closed": "Yaliyofungwa",
+      "court_matters": "Mashauri ya mahakama",
+      "decisions": "Maamuzi",
+      "documents": "Hati",
+      "incoming": "Yanayoingia",
+      "intake": "Mapokezi",
+      "overview": "Leo",
+      "people": "Watu",
+      "police_connections": "Miunganisho ya Polisi",
+      "police_material": "Nyaraka za Polisi",
+      "reopened": "Mapitio yaliyofunguliwa upya",
+      "reports": "Ripoti",
+      "returned": "Yaliyorudishwa Polisi",
+      "search": "Tafuta",
+      "settings": "Mipangilio",
+      "today": "Leo",
+      "files": "Majalada",
+      "board": "Ubao",
+      "calendar": "Kalenda",
+      "statistics": "Takwimu",
+      "cases": "Kesi",
+      "tasks": "Kazi"
+    },
+    "section": {
+      "files": "Majalada",
+      "office": "Ofisi",
+      "work": "Kazi ya mashtaka"
+    }
+  },
+  "next": {
+    "charged": "Limeshtakiwa. Hakuna namba ya kesi ya mahakama iliyorekodiwa bado.",
+    "charged_case": "Limeshtakiwa. Kesi ya mahakama {number}.",
+    "charged_next": "Rekodi namba ya kesi ya mahakama mara hati ya mashtaka itakapowasilishwa.",
+    "concluded": "Uamuzi wa mashtaka umefanywa na jalada limekamilika.",
+    "continue_review": "Endelea na mapitio",
+    "go_directions": "Pitia maagizo",
+    "material": "Nyenzo imerekodiwa. Mapitio hayajaanza.",
+    "material_next": "Soma nyenzo na urekodi maoni yako.",
+    "no_further": "Hakuna hatua zaidi iliyorekodiwa.",
+    "observations": "Maoni yamerekodiwa. Hakuna mapitio ya mashtaka yaliyoanzishwa.",
+    "observations_next": "Anzisha mapitio ya mashtaka ukiwa tayari kutumia kipimo.",
+    "open_court": "Fungua mahakama",
+    "open_decisions": "Fungua maamuzi",
+    "received": "Limepokelewa kutoka Polisi. Hakuna nyenzo iliyorekodiwa bado.",
+    "received_next": "Rekodi maelezo, ushahidi na mashtaka yaliyopendekezwa yaliyokuja na rufaa.",
+    "record_case": "Rekodi namba ya kesi",
+    "record_material": "Rekodi nyenzo",
+    "record_new_material": "Rekodi nyenzo mpya",
+    "reopened": "Imefunguliwa upya kwa mapitio.",
+    "reopened_next": "Tumia kipimo, rekodi matokeo, na rekodi uamuzi unaorekebisha ule wa awali.",
+    "reopened_reason": "Imefunguliwa upya kwa mapitio: {reason}",
+    "resubmitted": "Polisi wamewasilisha upya jalada hili baada ya upelelezi zaidi.",
+    "resubmitted_next": "Rekodi kilichorudi, kipitie, na uamue.",
+    "resubmitted_open": "Polisi wamewasilisha upya jalada hili. Maagizo {open} kati ya {total} bado yako wazi.",
+    "resubmitted_open_next": "Pitia maagizo, rekodi kilichorudi, kisha pitia na uamue.",
+    "start_review": "Anzisha mapitio",
+    "under_way": "Mapitio ya {test} yanaendelea.",
+    "under_way_next": "Rekodi matokeo na hitimisho la kila kipimo, kisha uamuzi wanaouunga mkono.",
+    "with_police": "Liko kwa Polisi kwa upelelezi zaidi.",
+    "with_police_directions": "Liko kwa Polisi kwa upelelezi zaidi, pamoja na {directions}.",
+    "with_police_next": "Rekodi uwasilishaji upya jalada litakaporudi.",
+    "papers": "Jalada la polisi limeingia: hati {count}.",
+    "papers_next": "Lisome, kisha anza mapitio. Msaidizi anaweza kuandaa muhtasari kwanza."
+  },
+  "not_found": {
+    "back": "Rudi ukurasa uliotangulia",
+    "body": "Ukurasa unaoutafuta haupo.",
+    "page_title": "Ukurasa haukupatikana",
+    "refresh": "Pakia upya ukurasa",
+    "route_title": "Njia haikupatikana"
+  },
+  "overview": {
+    "activity": "Shughuli za hivi karibuni",
+    "activity_empty": "Hakuna kilichorekodiwa bado.",
+    "attention": {
+      "directions_given": "Yametolewa: {directions}.",
+      "directions_open": "Maagizo {open} kati ya {total} bado yako wazi.",
+      "drafts_summary": "Rasimu hufuata kumbukumbu hadi itolewe. Isome, kisha uitoe.",
+      "drafts_title": "{documents} zimeandaliwa lakini hazijatolewa",
+      "empty": "Hakuna kinachohitaji umakini. Hakuna jalada linalosubiri uamuzi, hakuna lililo kwa Polisi, na hakuna mapitio yanayodaiwa.",
+      "incoming_summary": "Zinawekwa kando na kumbukumbu hadi uzisome na kuzikubali.",
+      "incoming_title": "{referrals} kutoka Polisi zinasubiri kusomwa",
+      "no_court_ref_summary": "Rekodi namba ya mahakama mara hati ya mashtaka itakapowasilishwa.",
+      "no_court_ref_title": "{files} bila namba ya kesi ya mahakama",
+      "no_review": "Hakuna mapitio yaliyorekodiwa bado.",
+      "outgoing_summary": "Hifadhi kila faili na uitume kituoni.",
+      "outgoing_title": "{items} zimeandaliwa kwa Polisi, bado hazijatumwa",
+      "reopened": "{reference}. Uamuzi uliokamilika umefunguliwa upya na unapitiwa.",
+      "resubmitted": "{reference}. Limewasilishwa upya na Polisi, linasubiri: {age}, linasubiri mapitio.",
+      "returned": "{reference}. Liko kwa Polisi kwa upelelezi zaidi. Linasubiri kuwasilishwa upya.",
+      "returned_since": "{reference}. Liko kwa Polisi kwa upelelezi zaidi tangu {date}. Linasubiri kuwasilishwa upya.",
+      "review_due": "Mapitio yanadaiwa",
+      "review_overdue": "Mapitio yamechelewa",
+      "threshold_due": "Mapitio ya Kipimo cha Kizingiti yanadaiwa {date} (zimebaki {left}).",
+      "threshold_overdue": "Mapitio ya Kipimo cha Kizingiti yalipaswa kufanyika {date}. Mapitio ya siku 14 huondoka uamuzi unaofuata unaporekodiwa.",
+      "title": "Yanahitaji umakini"
+    },
+    "figure": {
+      "active_files": "Majalada hai",
+      "awaiting_decision": "Yanasubiri uamuzi",
+      "decisions_recorded": "Maamuzi yaliyorekodiwa",
+      "reopened": "Yamefunguliwa upya",
+      "resubmitted": "Yamewasilishwa upya",
+      "with_court_reference": "Yenye namba ya mahakama"
+    },
+    "subtitle": "{date}. Kinachohitaji umakini wako, na kazi iliyo mezani kwako.",
+    "waiting": "Inasubiri: {age}.",
+    "workload": "Mzigo wa kazi wa sasa"
+  },
+  "page": {
+    "court": {
+      "about": "Majalada yaliyoshtakiwa, na kumbukumbu ya mahakama kwa kila moja. Rekodi ya mahakama yenyewe ndiyo mamlaka.",
+      "case": "{reference}. Kesi namba {number}.",
+      "charged_on": "{reference}. Imeshtakiwa {date}. Andika namba ya kesi hati ya mashtaka ikishawasilishwa.",
+      "with": "Yenye namba ya kesi",
+      "with_empty": "Bado hakuna namba za kesi zilizoandikwa.",
+      "without": "Imeshtakiwa, bado haina namba ya kesi",
+      "without_empty": "Kila jalada lililoshtakiwa lina namba ya kesi."
+    },
+    "decisions": {
+      "about": "Kilichoamuliwa, na nani na lini. Maamuzi hayabadilishwi wala kuondolewa kamwe."
+    },
+    "documents": {
+      "about": "Huandaliwa kutoka uamuzi, husomwa, kisha hutolewa. Hati iliyotolewa ni ya mwisho na hubeba kumbukumbu yake.",
+      "coming": "Vinakuja",
+      "coming_1": "Maoni ya kisheria",
+      "coming_2": "Hati ya mashtaka (Mahakama Kuu)",
+      "coming_3": "Muhtasari wa kesi",
+      "coming_4": "Taarifa ya uamuzi kwa kituo",
+      "coming_body": "Kila moja itaonekana kama hati halisi: kichwa cha barua, sahihi na muhuri."
+    },
+    "files": {
+      "col": {
+        "accused": "Mshtakiwa",
+        "court": "Namba ya kesi",
+        "id": "Kitambulisho",
+        "received": "Imepokelewa",
+        "recorded": "Imeandikwa",
+        "reference": "Kumbukumbu",
+        "station": "Kituo cha polisi",
+        "status": "Hali",
+        "title": "Kichwa",
+        "waiting": "Inasubiri",
+        "with_police": "Kwa polisi"
+      },
+      "empty": "Hakuna majalada hapa.",
+      "empty_active": "Hakuna jalada linalopitiwa.",
+      "empty_all": "Bado hakuna majalada yaliyofunguliwa.",
+      "empty_closed": "Bado hakuna uamuzi wa kushtaki uliofanywa.",
+      "empty_intake": "Hakuna kilichofika kinachosubiri mapitio ya kwanza.",
+      "empty_reopened": "Hakuna uamuzi unaofunguliwa upya.",
+      "empty_returned": "Hakuna jalada lililoko kwa polisi.",
+      "oldest_first": "Ya zamani kwanza",
+      "search_list": "Tafuta kwenye orodha hii",
+      "views": "Mitazamo ya rejista"
+    },
+    "material": {
+      "charges": "Mashtaka",
+      "charges_about": "Mashtaka yaliyopendekezwa na polisi, katika majalada yote.",
+      "empty": "Bado hakuna kilichoandikwa. Nyaraka huandikwa ndani ya kila jalada.",
+      "evidence": "Ushahidi",
+      "evidence_about": "Kila kielelezo na ushahidi ulioripotiwa na polisi, katika majalada yote.",
+      "kinds": "Aina za nyaraka",
+      "statements": "Maelezo",
+      "statements_about": "Kila maelezo yaliyopokelewa kutoka polisi, katika majalada yote."
+    },
+    "reports": {
+      "about": "Majibu ya maswali kuhusu kipindi, yanayoweza kuchapishwa na kutolewa.",
+      "body": "Kila ripoti husoma kumbukumbu zile zile za programu, kwa hiyo namba hulingana kila wakati.",
+      "coming": "Ripoti zijazo",
+      "r1": "Majalada yaliyopokelewa, kwa kipindi na kituo cha polisi",
+      "r2": "Maamuzi ya kushtaki, kwa aina na kwa muda",
+      "r3": "Majalada yaliyorudishwa polisi, na muda yaliokaa huko",
+      "r4": "Mapitio yanayosubiri, na muda yaliyosubiri",
+      "r5": "Mzigo wa kazi",
+      "r6": "Mashauri ya mahakama"
+    },
+    "search": {
+      "about": "Tafuta jalada au mtu kwa jina, kitambulisho cha taifa, namba ya usajili au kumbukumbu.",
+      "none": "Hakuna watu wala majalada yanayolingana.",
+      "placeholder": "Jina, NIN, namba ya usajili, kumbukumbu",
+      "planned_1": "Maelezo, ushahidi na mashtaka yaliyopendekezwa",
+      "planned_2": "Maamuzi na maelezo ya mapitio",
+      "planned_3": "Nyaraka",
+      "planned_4": "Namba za kesi za mahakama",
+      "planned_body": "Utafutaji unapata watu na majalada leo. Hivi vinafuata.",
+      "planned_title": "Tafuta ndani ya nyaraka",
+      "type": "Andika ili kutafuta."
+    },
+    "board": {
+      "about": "Kila kitu ofisi inachopaswa kufanya, kulingana na hatua kilipo. Buruta kadi kuihamisha."
+    },
+    "calendar": {
+      "about": "Usikilizaji, kazi zinazofika mwisho na tarehe za mapitio, kwenye kalenda moja."
+    },
+    "cases": {
+      "about": "Kila kesi iliyo wazi katika hatua yake. Fungua kadi kusoma alichoandaa msaidizi na ukubali; buruta kadi kuihamisha kwa mkono."
+    }
+  },
+  "person": {
+    "form": {
+      "add": "Ongeza mtu",
+      "add_failed": "Imeshindikana kuongeza mtu",
+      "added": "Mtu ameongezwa",
+      "address_optional": "Anwani (si lazima)",
+      "first_name": "Jina la kwanza",
+      "first_name_required": "Jina la kwanza linahitajika.",
+      "last_name": "Jina la ukoo",
+      "last_name_required": "Jina la ukoo linahitajika.",
+      "national_id_optional": "Kitambulisho cha Taifa (si lazima)",
+      "other_names_optional": "Majina mengine (si lazima)",
+      "phone_optional": "Simu (si lazima)",
+      "update_failed": "Imeshindikana kusasisha taarifa za mtu",
+      "updated": "Taarifa za mtu zimesasishwa"
+    }
+  },
+  "person_picker": {
+    "add_aria": "Ongeza mtu mpya",
+    "add_description": "Andika mtu ambaye bado hajulikani kwenye mfumo.",
+    "add_title": "Ongeza mtu",
+    "empty": "Hakuna watu wanaolingana",
+    "placeholder": "Tafuta mtu…"
+  },
+  "protection": {
+    "basic": "PIN kwa kila mtu",
+    "basic_about": "Kila mtu huingia kwa PIN yake ya tarakimu 6.",
+    "change": "Badilisha",
+    "change_hint": "Kubadilisha huwatoa watu wengine wote.",
+    "changed": "Ulinzi sasa ni: {level}",
+    "full": "Ulinzi kamili",
+    "full_about": "Nenosiri na msimbo kutoka kwenye simu. Kwa ofisi zenye watu kadhaa.",
+    "full_next_sign_in": "Utaunganisha simu yako utakapoingia tena. Wengine wote wanahitaji nenosiri jipya kutoka kwako kwenye Watu.",
+    "idle": "Toka bila kutumika",
+    "idle_description": "Baada ya muda huu bila kutumika, programu humtoa mtu.",
+    "none": "Bila kuingia",
+    "none_about": "Programu hufunguka mara moja. Kwa mtu mmoja kwenye kompyuta anayoitumia peke yake.",
+    "others_need_new": "Wengine wote wanahitaji PIN mpya kutoka kwako kwenye Watu kabla ya kuingia.",
+    "title": "Kuingia",
+    "your_new_password": "Nenosiri lako jipya",
+    "your_new_pin": "PIN yako mpya"
+  },
+  "referral": {
+    "resubmission": {
+      "log_failed": "Imeshindikana kuandika uwasilishaji upya",
+      "logged": "Uwasilishaji upya umeandikwa",
+      "provided_optional": "Kilichowasilishwa (si lazima)",
+      "provided_placeholder": "Kilichowasilishwa…",
+      "submit": "Andika uwasilishaji upya"
+    }
+  },
+  "review": {
+    "criterion": {
+      "admissibility": {
+        "about": "Je, unaweza kuwasilishwa mbele ya mahakama?",
+        "label": "Kukubalika mahakamani"
+      },
+      "age": {
+        "about": "Umri wa mtuhumiwa.",
+        "label": "Umri"
+      },
+      "availability": {
+        "about": "Je, ushahidi unapatikana, na utaendelea kupatikana?",
+        "label": "Upatikanaji"
+      },
+      "credibility": {
+        "about": "Je, mashahidi wanaaminika?",
+        "label": "Uaminifu wa mashahidi"
+      },
+      "culpability": {
+        "about": "Mtuhumiwa ana hatia kiasi gani?",
+        "label": "Kiwango cha hatia"
+      },
+      "defence": {
+        "about": "Je, utetezi umetolewa, na ushahidi unaujibu vipi?",
+        "label": "Utetezi uliotolewa"
+      },
+      "harm": {
+        "about": "Madhara kwa mwathirika na kwa jamii.",
+        "label": "Madhara"
+      },
+      "out_of_court_disposal": {
+        "about": "Je, kuna mbadala wa mashtaka?",
+        "label": "Suluhu nje ya mahakama"
+      },
+      "proportionality": {
+        "about": "Je, mashtaka ni hatua inayolingana na kosa?",
+        "label": "Uwiano"
+      },
+      "relevance": {
+        "about": "Je, ushahidi unahusiana na kinachopaswa kuthibitishwa?",
+        "label": "Umuhimu"
+      },
+      "reliability": {
+        "about": "Je, ushahidi unaweza kutegemewa?",
+        "label": "Kutegemewa"
+      },
+      "sensitive_information": {
+        "about": "Je, kulinda taarifa nyeti kunapingana na kushtaki?",
+        "label": "Taarifa nyeti"
+      },
+      "seriousness": {
+        "about": "Kosa ni zito kiasi gani?",
+        "label": "Uzito wa kosa"
+      },
+      "threshold_bail": {
+        "about": "Kwa mfano, hatari ya mtuhumiwa kutoroka.",
+        "label": "Sababu za msingi za kupinga dhamana"
+      },
+      "threshold_further_evidence": {
+        "about": "Kuna sababu za kuridhisha kuamini ushahidi zaidi utapatikana, pamoja na muda uliopangwa kwa kinachosubiriwa.",
+        "label": "Ushahidi zaidi unatarajiwa"
+      },
+      "threshold_guilt": {
+        "about": "Ushahidi mkuu unatoa sababu za kuridhisha kuamini mtuhumiwa alitenda kosa.",
+        "label": "Sababu za kuridhisha kuamini hatia"
+      },
+      "threshold_public_interest": {
+        "about": "Kushtaki sasa ni kwa maslahi ya umma.",
+        "label": "Maslahi ya umma katika kushtaki"
+      },
+      "threshold_seriousness": {
+        "about": "Muhtasari wa ukweli unaoeleza kwa nini uzito wa kosa unahalalisha shtaka la haraka.",
+        "label": "Uzito wa kosa unahalalisha kushtaki sasa"
+      }
+    },
+    "finding": {
+      "against": "Dhidi ya kushtaki",
+      "favours": "Inaunga mkono kushtaki",
+      "unresolved": "Haijaamuliwa"
+    },
+    "outcome": {
+      "failed": "Haikufaulu",
+      "met": "Imetimizwa",
+      "not_met": "Haijatimizwa",
+      "passed": "Imefaulu"
+    },
+    "panel": {
+      "add_note": "Ongeza dokezo",
+      "change_until_concluded": "Unaweza kubadilisha matokeo na hitimisho hadi uamuzi ukamilishe mapitio. Ili kutathmini makosa kwa njia tofauti, kamilisha mapitio haya na uanzishe mengine.",
+      "choose_test": "Chagua kipimo cha kutumia. Hakuna kinachorekodiwa hadi uanze.",
+      "concluded_reviews": "Mapitio yaliyokamilika",
+      "date_range": "{from} hadi {to}",
+      "decision_made": "Uamuzi wa mashtaka umefanywa. Ili kuufikiria upya, fungua uamuzi upya.",
+      "decision_option": "{decision}, {date}",
+      "decision_to_reopen": "Uamuzi wa kufungua upya",
+      "finding_failed": "Imeshindwa kurekodi tokeo",
+      "finding_on": "Tokeo kuhusu {criterion}",
+      "findings_support": "Matokeo yanaunga mkono: {decisions}.",
+      "note_on": "Dokezo kuhusu {criterion}",
+      "note_placeholder": "Dokezo kuhusu tokeo hili (si lazima)",
+      "outcome_failed": "Imeshindwa kurekodi matokeo",
+      "pi_locked": "Hutumika tu baada ya Kipimo cha Ushahidi kufaulu.",
+      "reason_placeholder": "Sababu, kwa ajili ya kumbukumbu",
+      "record_decision": "Rekodi uamuzi",
+      "record_decision_description": "Matokeo ya mapitio haya.",
+      "recorded_of": "{recorded} kati ya {total} yamerekodiwa",
+      "reopen_decision": "Fungua uamuzi upya",
+      "reopen_decision_description": "Rudisha uamuzi uliokamilika kwa mapitio.",
+      "reopen_explainer": "Uamuzi uliokamilika unaweza kufikiriwa upya ikiwa wa awali ulikuwa na makosa, ushahidi mpya au muhimu umejitokeza, au uchunguzi wa kifo ulipendekeza mashtaka. Kufungua upya ni mapitio yanayojitegemea; uamuzi unaotokana nayo unarekebisha ule wa zamani, ambao unabaki kwenye kumbukumbu.",
+      "reopen_failed": "Imeshindwa kufungua upya",
+      "reopen_submit": "Fungua upya kwa mapitio",
+      "reopened_because": "Imefunguliwa upya kwa sababu: {reason}",
+      "review_title": "Mapitio ya {standard}",
+      "review_title_reopened": "Mapitio ya {standard} (yamefunguliwa upya)",
+      "section_title": "Mapitio ya mashtaka",
+      "standard_reopened": "{standard}, yamefunguliwa upya",
+      "start_failed": "Imeshindwa kuanzisha mapitio",
+      "start_named": "Anzisha mapitio ya {standard}",
+      "started": "Yalianza {date}.",
+      "started_by": "Yalianza {date} na {name}.",
+      "test_outcome": "{test}: {outcome}",
+      "test_result": "{test}: {outcome}",
+      "test_to_apply": "Kipimo cha kutumia",
+      "threshold_hint": "Ili kutimizwa, masharti yote matano yanapaswa kuwekwa alama ya kuunga mkono.",
+      "why_reopened": "Kwa nini unafunguliwa upya",
+      "with_police": "Jalada hili liko kwa Polisi. Mapitio mapya yataanza litakaporudi.",
+      "withdraw": "Ondoa",
+      "your_conclusion": "Hitimisho lako"
+    },
+    "standard": {
+      "threshold": {
+        "about": "Kipimo finyu zaidi kwa kesi nadra na nzito sana ambapo upelelezi haujakamilika lakini kushtaki sasa kunahalalishwa. Masharti yote matano lazima yatimizwe, na uamuzi lazima upitiwe ndani ya siku 14.",
+        "label": "Kipimo cha Kizingiti"
+      },
+      "two_stage": {
+        "about": "Chaguo la kawaida. Kipimo cha Ushahidi kwanza, kisha Kipimo cha Maslahi ya Umma ikiwa tu cha kwanza kimefaulu.",
+        "label": "Kipimo cha Hatua Mbili"
+      }
+    },
+    "test": {
+      "evidential": {
+        "about": "Je, kuna matarajio halisi ya kutiwa hatiani?",
+        "label": "Kipimo cha Ushahidi"
+      },
+      "public_interest": {
+        "about": "Je, mashtaka ni kwa maslahi ya umma? Hutumika tu baada ya Kipimo cha Ushahidi kufaulu.",
+        "label": "Kipimo cha Maslahi ya Umma"
+      },
+      "threshold": {
+        "about": "Masharti yote matano lazima yatimizwe.",
+        "label": "Kipimo cha Kizingiti"
+      }
+    }
+  },
+  "review_note": {
+    "form": {
+      "author_optional": "Mwandishi (si lazima)",
+      "author_placeholder": "Jina",
+      "observation": "Uchunguzi",
+      "observation_placeholder": "Uligundua nini ulipokuwa ukipitia jalada hili?",
+      "record_failed": "Imeshindikana kuandika uchunguzi",
+      "recorded": "Uchunguzi umeandikwa",
+      "submit": "Ongeza uchunguzi"
+    }
+  },
+  "review_page": {
+    "empty": "Hakuna jalada linalosubiri uamuzi wa mashtaka.",
+    "empty_any": "Hakuna jalada linalosubiri uamuzi.",
+    "reopened": "{reference}. Uamuzi uliokamilika unafikiriwa upya.",
+    "subtitle": "Majalada yanayosubiri uamuzi wa mashtaka, la zamani zaidi kwanza. Mapitio hufanywa ndani ya kila jalada.",
+    "the_review": "Mapitio",
+    "the_review_hint": "Mapitio hurekodiwa ndani ya kila jalada. Kurudisha kwa upelelezi zaidi huambatana na maagizo kwa Polisi.",
+    "threshold_is_due": "Limeshtakiwa kwa Kipimo cha Kizingiti {charged}. Mapitio ya siku 14 yanadaiwa {due}.",
+    "threshold_reviews": "Mapitio ya Kipimo cha Kizingiti",
+    "threshold_under_way": "Mapitio ya kizingiti yanaendelea",
+    "threshold_was_due": "Limeshtakiwa kwa Kipimo cha Kizingiti {charged}. Mapitio ya siku 14 yalipaswa kufanyika {due}.",
+    "under_way": "Mapitio yanaendelea",
+    "waiting": "Yanasubiri uamuzi"
+  },
+  "security": {
+    "audit": {
+      "broken": "Mnyororo umekatika kwenye ingizo {entry}.",
+      "description": "Rekodi ya maamuzi, mapitio, nyaraka zilizotolewa, viambatisho, kuingia na nakala rudufu ambayo inaweza kuongezewa tu. Kila ingizo limeunganishwa na lililotangulia, kwa hiyo ingizo lililobadilishwa au kuondolewa huonekana.",
+      "intact": "Imethibitishwa: maingizo {entries}, mnyororo uko salama.",
+      "title": "Rekodi ya kilichofanywa",
+      "verify": "Thibitisha mnyororo",
+      "verify_failed": "Imeshindwa kuthibitisha"
+    },
+    "audit_action": {
+      "app_locked": "Programu imefungwa",
+      "app_unlocked": "Programu imefunguliwa",
+      "attachment_added": "Hati imeambatishwa",
+      "attachment_removed": "Kiambatisho kimeondolewa",
+      "backup_created": "Nakala rudufu imetengenezwa",
+      "backup_restored": "Nakala rudufu imerejeshwa",
+      "decision_corrected": "Uamuzi umerekebishwa",
+      "decision_recorded": "Uamuzi umerekodiwa",
+      "document_discarded": "Rasimu ya hati imetupwa",
+      "document_issued": "Hati imetolewa",
+      "installation_changed": "Maelezo ya ofisi yamebadilishwa",
+      "lock_enabled": "Kufuli la programu limewashwa",
+      "lock_passphrase_changed": "Nywila ya kufuli imebadilishwa",
+      "lock_removed": "Kufuli la programu limezimwa",
+      "protection_changed": "Ulinzi umebadilishwa",
+      "review_reopened": "Uamuzi umefunguliwa upya kwa mapitio",
+      "review_started": "Mapitio ya mashtaka yameanzishwa",
+      "second_factor_linked": "Simu imeunganishwa",
+      "second_factor_reset": "Muunganisho wa simu umewekwa upya",
+      "setup_completed": "Programu imesanidiwa",
+      "sign_in_failed": "PIN au nenosiri si sahihi",
+      "signed_in": "Ameingia",
+      "signed_out": "Ametoka",
+      "staff_added": "Mtu ameongezwa",
+      "staff_changed": "Mtu amebadilishwa",
+      "staff_secret_set": "PIN au nenosiri imewekwa",
+      "unlock_failed": "Nywila isiyo sahihi imeingizwa"
+    },
+    "backup": {
+      "confirm": "Thibitisha nywila ya nakala rudufu",
+      "description": "Faili moja lililosimbwa lenye kila kumbukumbu na hati. Ni nywila iliyo hapa chini pekee inayolifungua, na haihifadhiwi popote: ikipotea, nakala rudufu haiwezi kufunguliwa.",
+      "failed": "Imeshindwa kutengeneza nakala rudufu",
+      "hint": "Weka faili mahali pengine tofauti na kompyuta hii, na nywila mahali tofauti na faili.",
+      "last": "Mwisho {date}",
+      "never": "Haijawahi kuhifadhiwa nakala",
+      "passphrase": "Nywila ya nakala rudufu",
+      "passphrase_placeholder": "Nywila ya nakala rudufu (angalau herufi 10)",
+      "saved": "Nakala rudufu imehifadhiwa",
+      "title": "Tengeneza nakala rudufu"
+    },
+    "confirm_placeholder": "Thibitisha nywila",
+    "gate": {
+      "backup_open_failed": "Nakala rudufu haikuweza kufunguliwa.",
+      "backup_ready": "Nakala rudufu iko tayari kurejeshwa.",
+      "choose_restore": "Chagua nakala rudufu na urejeshe",
+      "enter": "Ingiza nywila ili kuendelea.",
+      "explainer": "Kufunga kunalinda skrini. Kumbukumbu kwenye kompyuta hii zimesimbwa kufuli liwe limewekwa au la.",
+      "locked_title": "{product} imefungwa",
+      "passphrase": "Nywila",
+      "recovery_body": "Hakuna kilichobadilishwa au kufutwa. Kurejesha nakala rudufu kunarudisha kumbukumbu; data ilivyo sasa inawekwa kando.",
+      "recovery_reason": "{product} haikuweza kufungua kumbukumbu zake.",
+      "recovery_title": "Data haikuweza kufunguliwa",
+      "restart_to_finish": "Anzisha upya ili kumaliza.",
+      "restore_this": "Rejesha nakala rudufu hii",
+      "retry": "Majaribio mengi yasiyo sahihi. Jaribu tena baada ya sekunde {seconds}.",
+      "unlock": "Fungua",
+      "unlock_failed": "Haikuweza kufunguliwa."
+    },
+    "idle": {
+      "hour": "saa 1",
+      "minutes": "dakika {count}",
+      "never": "Kamwe"
+    },
+    "passphrase_mismatch": "Nywila hizo mbili hazifanani",
+    "protection": {
+      "database": "Majalada na kumbukumbu",
+      "database_summary": "Zimefungwa kwenye kompyuta hii.",
+      "description": "Kila jalada na hati huhifadhiwa zikiwa zimefungwa kwa usimbaji fiche kwenye kompyuta hii, yeyote aliyeingia.",
+      "documents_summary": "Kila kiambatisho kimefungwa peke yake.",
+      "encrypted": "Imefungwa",
+      "key_file": "Zimelindwa",
+      "key_file_hint": "Kompyuta hii haina hifadhi ya funguo iliyojengwa ndani, kwa hiyo ufunguo huhifadhiwa kando ya data. Waombe wafanyakazi wa TEHAMA walinde folda nzima ya data.",
+      "keystore": "Zimelindwa kikamilifu",
+      "keystore_hint": "Mtu anayenakili data kwenye kompyuta nyingine hawezi kuifungua.",
+      "sealed": "Imefungwa",
+      "title": "Kumbukumbu zako zimefungwa"
+    },
+    "restore": {
+      "choose": "Chagua nakala rudufu",
+      "description": "Hubadilisha kumbukumbu na hati kwa zile zilizo kwenye nakala rudufu. Zilizopo sasa zinawekwa kando, hazifutwi. Hakuna kinachobadilika hadi programu ianzishwe upya.",
+      "file": "Faili la nakala rudufu",
+      "open": "Fungua nakala rudufu",
+      "open_failed": "Nakala rudufu hiyo haikuweza kufunguliwa",
+      "ready": "Tayari kurejesha",
+      "restart": "Anzisha upya na urejeshe",
+      "restart_to_finish": "Anzisha programu upya ili kumaliza.",
+      "staged": "Nakala rudufu iliyotengenezwa {date} ikiwa na hati {documents} iko tayari.",
+      "title": "Rejesha kutoka nakala rudufu"
+    }
+  },
+  "settings": {
+    "about": {
+      "appearance": "Jinsi eneo la kazi linavyoonekana kwenye kompyuta hii.",
+      "backup": "Kutunza nakala iliyosimbwa ya rekodi mahali pengine, na kuirejesha.",
+      "licence": "Leseni ambayo taasisi yako ilikubali wakati wa usanidi.",
+      "notifications": "Wakati kompyuta inapokujulisha kazi imewasili.",
+      "office": "Jina la ofisi, nembo na rangi. Kila mtu ofisini huona vivyo hivyo.",
+      "people": "Nani anaweza kutumia programu hii, na kila mmoja anaweza kufanya nini.",
+      "protection": "Jinsi watu wanavyoingia, jinsi kumbukumbu zinavyolindwa, na rekodi ya kilichofanywa.",
+      "you": "Jina na cheo chako huonekana kwenye maamuzi yako na nyaraka unazosaini.",
+      "assist": "Kama msaidizi wa AI unatumika hapa, na unapeleka wapi majalada kusomwa."
+    },
+    "admin_only": "Ni msimamizi tu anayeweza kubadilisha hili.",
+    "alerts": {
+      "description": "Arifa mara ya kwanza jalada linapofika likisubiri uamuzi wa kushtaki. Inakuambia jalada limefika; si tarehe ya mwisho.",
+      "hint": "Kwenye programu ya kompyuta pekee.",
+      "title": "Arifa za kompyuta",
+      "toggle": "Niarifu jalada linapofika"
+    },
+    "group": {
+      "about": "Kuhusu",
+      "computer": "Kompyuta hii",
+      "office": "Ofisi hii",
+      "you": "Wewe"
+    },
+    "language": {
+      "description": "Lugha ya programu, kwako kwenye kompyuta hii. Hubadilika mara moja.",
+      "label": "Lugha"
+    },
+    "licence": {
+      "accepted": "Imekubaliwa",
+      "accepted_line": "Toleo {version}, lilikubaliwa tarehe {date} na {name}."
+    },
+    "nav": {
+      "appearance": "Muonekano na lugha",
+      "backup": "Nakala Rudufu",
+      "licence": "Leseni",
+      "notifications": "Arifa",
+      "office": "Ofisi na muonekano",
+      "people": "Watu",
+      "protection": "Ulinzi",
+      "you": "Maelezo yako",
+      "assist": "Msaidizi"
+    },
+    "office": {
+      "colour": "Rangi",
+      "country": "Nchi",
+      "country_hint": "Ilichaguliwa wakati wa usanidi. Huweka namba za kumbukumbu, mpangilio wa jalada na sheria.",
+      "everyone_sees": "Kila mtu ofisini huyaona haya, kwenye kila kompyuta.",
+      "headquarters": "Makao makuu",
+      "hq_description": "Makao makuu husimamia ofisi zinazoungana nayo.",
+      "language": "Lugha ya ofisi",
+      "language_hint": "Lugha ambayo kompyuta hufunguka nayo mara ya kwanza. Kila mtu bado anaweza kuchagua yake.",
+      "logo": "Nembo",
+      "logo_default": "Tumia ya kawaida",
+      "logo_failed": "Picha hiyo haikuweza kutumika.",
+      "logo_hint": "Kwenye kila skrini na nyaraka zilizochapishwa. PNG, JPG, SVG au WebP, hadi MB 1.",
+      "logo_upload": "Chagua picha",
+      "name": "Jina la ofisi",
+      "office": "Ofisi",
+      "office_description": "Ofisi hii inafanya kazi yenyewe. Inaweza kuunganishwa na makao makuu baadaye.",
+      "title": "Ofisi",
+      "country_dev_hint": "Toleo la majaribio tu: badilisha nchi ili kujaribu namba zake, mpangilio wa jalada na maneno yake. Ofisi halisi hubaki na nchi iliyochaguliwa wakati wa kusakinisha.",
+      "country_changed": "Nchi imebadilishwa kuwa {country}"
+    },
+    "owner": {
+      "office": "Msimamizi",
+      "read_only": "Kusoma",
+      "this_machine": "Kompyuta hii",
+      "you": "Yako"
+    },
+    "save": "Hifadhi",
+    "save_failed": "Haikuweza kuhifadhiwa",
+    "saved": "Imehifadhiwa",
+    "subtitle": "Wewe, ofisi hii, na kompyuta hii.",
+    "theme": {
+      "description": "Mwanga, giza, au fuata kompyuta hii.",
+      "title": "Mandhari"
+    },
+    "title": "Mipangilio",
+    "you": {
+      "change": "Badilisha",
+      "identity": "Jina na cheo",
+      "identity_description": "Huonekana kwenye maamuzi yako, nyaraka unazoandaa, na kwenye rekodi ya kilichofanywa.",
+      "password": "Nenosiri lako",
+      "password_description": "Chagua nenosiri jipya la angalau herufi 12.",
+      "pin": "PIN yako",
+      "pin_description": "Chagua PIN mpya ya tarakimu 6. Iweke siri."
+    }
+  },
+  "staff": {
+    "active": "Anaweza kutumia programu",
+    "add": "Ongeza mtu",
+    "add_full_hint": "Mpe nenosiri la kwanza. Ataunganisha simu yake mara ya kwanza anapoingia.",
+    "add_hint": "Mpe PIN ya kwanza. Anaweza kuibadilisha baada ya kuingia.",
+    "added": "{name} ameongezwa",
+    "description": "Kila mtu anayeweza kutumia programu hii.",
+    "edit": "Badilisha",
+    "first_password": "Nenosiri la kwanza",
+    "first_pin": "PIN ya kwanza",
+    "flag": {
+      "admin_only": "Ni msimamizi tu anayeweza kuonyesha nani ni Mkurugenzi.",
+      "is_dpp": "{head}",
+      "is_dpp_hint": "Baadhi ya maamuzi, kama kusitisha mashtaka, ni ya {head} pekee. Hukataliwa kwa mtu yeyote asiyewekewa alama hapa."
+    },
+    "inactive": "Hayupo tena",
+    "name": "Jina kamili",
+    "new_password": "Weka nenosiri jipya",
+    "new_pin": "Weka PIN mpya",
+    "no_secret": "Bado hawezi kuingia",
+    "none_level_hint": "Bila kuingia, ni msimamizi tu anayetumia kompyuta hii. Ongeza ulinzi ili kuongeza watu.",
+    "password_placeholder": "Angalau herufi 12",
+    "phone_pending": "Simu haijaunganishwa",
+    "phone_reset": "Simu imepotea: unganisha nyingine",
+    "phone_reset_done": "Ataunganisha simu mpya atakapoingia tena.",
+    "pin_placeholder": "Tarakimu 6",
+    "rank": "Cheo",
+    "rank_placeholder": "Kwa mfano, {rank}",
+    "role": {
+      "administrator": "Msimamizi",
+      "clerk": "Karani",
+      "prosecutor": "Mwendesha mashtaka"
+    },
+    "role_label": "Jukumu",
+    "set": "Weka",
+    "title": "Watu"
+  },
+  "stage": {
+    "action": "Hatua inayofuata",
+    "action_about": "Hati inayotokana na uamuzi: hati ya mashtaka, maagizo au sababu zilizoandikwa.",
+    "assessment": "Tathmini",
+    "assessment_about": "Chagua kipimo: Kipimo cha Hatua Mbili au Kipimo cha Kizingiti.",
+    "decision_about": "Uamuzi unaoungwa mkono na matokeo.",
+    "findings": "Matokeo",
+    "findings_about": "Kila kigezo kilionyesha nini, na hitimisho la kila kipimo.",
+    "reasons": "Sababu",
+    "reasons_about": "Kwa nini, iliyorekodiwa pamoja na uamuzi.",
+    "review": "Mapitio",
+    "review_about": "Soma nyenzo na urekodi maoni.",
+    "state": {
+      "available": "Hurekodiwa ndani ya jalada",
+      "done": "Imerekodiwa",
+      "todo": "Bado"
+    },
+    "pipe": {
+      "receive": "Kupokea",
+      "review": "Mapitio",
+      "decide": "Kuamua",
+      "prepare": "Kuandaa",
+      "handover": "Kukabidhi",
+      "follow_up": "Ufuatiliaji",
+      "concluded": "Imekamilika",
+      "receive_about": "Jalada la polisi linafika na kupangwa: kila hati mahali pake, watu na shtaka lililopendekezwa vikipatikana.",
+      "review_about": "Ushahidi unapimwa: kipimo cha ushahidi, kisha kipimo cha maslahi ya umma, kigezo kwa kigezo.",
+      "decide_about": "Uamuzi unaoruhusiwa na sheria kulingana na mapitio, pamoja na sababu.",
+      "prepare_about": "Nyaraka zinazohitajika na uamuzi, zimeandaliwa kutoka kwenye rekodi ili kuhaririwa na kusainiwa.",
+      "handover_about": "Jalada au nyaraka zinatoka: kwa polisi, mahakama au wengine, kwa mfumo wa kubadilishana, barua pepe, kuchapisha au kuchukuliwa.",
+      "follow_up_about": "Usikilizaji, majibu ya polisi, vikumbusho: hadi hakuna kinachotarajiwa tena.",
+      "concluded_about": "Matokeo yanarekodiwa na jalada linafungwa."
+    }
+  },
+  "statement": {
+    "form": {
+      "content": "Maudhui ya maelezo",
+      "content_placeholder": "Maelezo yanasema nini…",
+      "given_at": "Yalitolewa tarehe",
+      "person_required": "Mtu anahitajika.",
+      "record_failed": "Imeshindikana kuandika maelezo",
+      "recorded": "Maelezo yameandikwa",
+      "role": "Aina ya maelezo",
+      "role_required": "Aina ya maelezo inahitajika.",
+      "source_placeholder": "mf. kama yalivyopokelewa kwenye jalada la Polisi",
+      "submit": "Ongeza maelezo"
+    },
+    "role": {
+      "accused": "Maelezo ya mshtakiwa",
+      "arresting_officer": "Afisa aliyekamata",
+      "complainant": "Mlalamikaji",
+      "investigating_officer": "Afisa mpelelezi",
+      "witness": "Shahidi"
+    }
+  },
+  "tabs": {
+    "document": "Hati",
+    "file": "Jalada",
+    "files": "Majalada",
+    "overview": "Leo"
+  },
+  "theme": {
+    "dark": "Giza",
+    "light": "Mwanga",
+    "placeholder": "Mandhari",
+    "system": "Mfumo"
+  },
+  "window": {
+    "close": "Funga",
+    "maximize": "Kuza",
+    "minimize": "Punguza"
+  },
+  "workspace": {
+    "hide_sidebar": "Ficha upau wa pembeni",
+    "pinned": "Yaliyobandikwa",
+    "profile": {
+      "dpp": "{head}",
+      "none_title": "Hakuna aliyeingia"
+    },
+    "quick": {
+      "add_person": "Ongeza mtu",
+      "add_person_description": "Mtu anayeonekana kwenye jalada: mshtakiwa, mlalamikaji au shahidi.",
+      "find": "Tafuta",
+      "label": "Vitendo vya haraka",
+      "open_file": "Fungua jalada",
+      "open_file_description": "Andika shauri lililopelekwa na Polisi.",
+      "start": "Anza"
+    },
+    "recent": "Ya karibuni",
+    "ribbon": "Utepe",
+    "search_prompt": "Tafuta majalada, watu, kumbukumbu",
+    "search_shortcut": "Tafuta (Ctrl K)",
+    "show_sidebar": "Onyesha upau wa pembeni",
+    "sidebar": "Upau wa pembeni",
+    "sign_out": "Toka",
+    "tab": {
+      "close_named": "Funga {title}",
+      "close_shortcut": "Funga (Ctrl W)",
+      "next": "Kichupo kinachofuata",
+      "next_shortcut": "Kichupo kinachofuata (Ctrl Tab)",
+      "open_tabs": "Vichupo vilivyo wazi",
+      "pin": "Bandika",
+      "pin_named": "Bandika {title}",
+      "previous": "Kichupo kilichotangulia",
+      "previous_shortcut": "Kichupo kilichotangulia (Ctrl Shift Tab)",
+      "unpin": "Bandua",
+      "unpin_named": "Bandua {title}"
+    },
+    "tagline": "Eneo la kazi la mashtaka",
+    "window": "Dirisha",
+    "more": "Zaidi",
+    "places": "Maeneo"
+  },
+  "assist": {
+    "title": "Msaidizi",
+    "add_to_board": "Weka kwenye ubao",
+    "on_board": "Iko kwenye ubao",
+    "for": "Kwa:",
+    "against": "Dhidi:",
+    "check_law": "Hakiki kila kosa na kifungu dhidi ya maandishi ya sheria kabla ya kukitegemea.",
+    "contradictions": "Mahali jalada linajipinga",
+    "draft_label": "Rasimu ya msaidizi, haijahakikiwa. Imeandaliwa {date} kwa {model}. Uamuzi ni wako.",
+    "missing": "Kinachokosekana kwenye jalada",
+    "next_steps": "Hatua zinazofuata",
+    "off_title": "Msaidizi haujawashwa",
+    "off_body": "Msimamizi huwasha msaidizi kwenye Mipangilio, na kuthibitisha jalada linapelekwa wapi kusomwa.",
+    "offences": "Makosa yanayoonyeshwa na ukweli",
+    "open_settings": "Fungua mipangilio ya msaidizi",
+    "options": "Chaguo za uamuzi",
+    "people": "Watu na wanachosema",
+    "prepare": "Soma jalada hili",
+    "refresh": "Soma tena",
+    "reading_file": "Inasoma jalada",
+    "reading_body": "Kwa kawaida huchukua chini ya dakika moja.",
+    "suggested": "Pendekezo",
+    "summary": "Kilichotokea",
+    "what_it_does": "Msaidizi husoma kila kitu kwenye jalada na kukupa muhtasari mfupi: ukweli, kinachokosekana, pale ushahidi unapotofautiana, chaguo za uamuzi na sababu zake, na hatua zinazofuata unazoweza kuweka kwenye ubao. Haamui kamwe.",
+    "you_decide": "Haya ni machaguo, si uamuzi. Weka uamuzi wako chini ya Maamuzi.",
+    "settings": {
+      "title": "Msaidizi",
+      "description": "Husoma jalada na kuandaa muhtasari, na hupanga karatasi zilizoingizwa ndani ya jalada. Haamui kamwe.",
+      "use": "Tumia msaidizi katika ofisi hii",
+      "ready": "Tayari",
+      "needs": "Inahitaji kusanidiwa",
+      "off": "Imezimwa",
+      "turned_on": "Msaidizi umewashwa",
+      "turned_off": "Msaidizi umezimwa",
+      "where_title": "Jalada linakwenda wapi",
+      "where_body": "Kabla ya mtu yeyote kutumia msaidizi, msimamizi huthibitisha hili.",
+      "point_sent": "Maandishi ya jalada, na skani unazoomba isome, hutumwa kwa mtoa huduma (Google Gemini) ili yasomwe. Hakuna kingine kinachoondoka kwenye kompyuta hii.",
+      "point_free": "Kwa ufunguo wa bure mtoa huduma anaweza kuhifadhi anachotumiwa na watu wake wakakisoma. Tumia akaunti ya kulipia au ya serikali kwa majalada halisi.",
+      "point_logged": "Kila ombi hurekodiwa: nani aliomba, kwa jalada gani, na lini.",
+      "point_decide": "Anachoandika msaidizi ni rasimu. Mwendesha mashtaka ndiye anayeamua na kusaini.",
+      "agree": "Naelewa, na ofisi hii inaweza kutuma majalada kwa mtoa huduma.",
+      "confirm": "Thibitisha na uwashe",
+      "confirmed": "Imethibitishwa",
+      "not_confirmed": "Haijathibitishwa",
+      "confirmed_by": "Imethibitishwa na {name} tarehe {date}.",
+      "key_title": "Ufunguo wa mtoa huduma",
+      "key_body": "Ufunguo kutoka akaunti ya Google AI Studio ya ofisi. Huhifadhiwa kwa usalama kwenye kompyuta hii na hauonyeshwi tena.",
+      "key": "Ufunguo mpya",
+      "key_placeholder": "Bandika ufunguo",
+      "key_set": "Ufunguo {hint}",
+      "key_env": "Ufunguo wa majaribio {hint}",
+      "key_missing": "Hakuna ufunguo",
+      "key_removed": "Ufunguo umeondolewa",
+      "remove_key": "Ondoa ufunguo",
+      "model": "Modeli",
+      "point_sent_any": "Maandishi ya jalada, na skani inazosoma, hutumwa kwa mtoa huduma uliyemchagua hapa chini. Hakuna kingine kinachoondoka kwenye kompyuta hii.",
+      "provider_title": "Mtoa huduma",
+      "provider_body": "Chagua mmoja na ubandike ufunguo wake. Funguo huhifadhiwa kwa usalama kwenye kompyuta hii na hazionyeshwi tena.",
+      "provider_changed": "Msaidizi sasa anatumia {name}",
+      "base_url": "Anwani ya seva",
+      "key_where": "Pata ufunguo kwenye {url}",
+      "model_title": "Modeli",
+      "model_body": "Otomatiki huchagua modeli bora ya sasa kutoka orodha ya mtoa huduma, na hutumia inayofuata ikiwa ina shughuli.",
+      "auto_model": "Chagua modeli kiotomatiki",
+      "show_models": "Onyesha modeli za mtoa huduma",
+      "loading_models": "Inamuuliza mtoa huduma...",
+      "model_fixed": "Msaidizi atatumia {model} kila mara",
+      "auto_first": "Otomatiki: ya kwanza",
+      "auto_backup": "Otomatiki: akiba {n}",
+      "in_use": "Inatumika"
+    },
+    "ask": {
+      "missing": "Nini kinakosekana kwenye jalada hili?",
+      "decide": "Niamue nini, na kwa nini?",
+      "law": "Sheria gani inatumika hapa?",
+      "next": "Hatua inayofuata ni ipi?",
+      "today": "Nini kinanihitaji leo?",
+      "how_stage": "Hatua za kesi zinafanyaje kazi?",
+      "limits": "Muda gani wa kisheria unatumika nchi hii?"
+    },
+    "dock": {
+      "file_intro": "Uliza kuhusu jalada hili. Msaidizi amelisoma, pamoja na sheria za ofisi na jinsi kesi zinazofanana zilivyoshughulikiwa hapa.",
+      "office_intro": "Uliza kuhusu kazi yako, hatua za kesi, au sheria ya nchi hii. Fungua jalada kuuliza kulihusu.",
+      "model": "Imejibiwa na {model}",
+      "clear": "Mazungumzo mapya",
+      "ask_file": "Uliza kuhusu jalada hili",
+      "ask_office": "Muulize msaidizi",
+      "send": "Tuma",
+      "footer": "Rasimu, si maamuzi. Hakiki kabla ya kuzitegemea.",
+      "on_file": "jalada hili",
+      "on_office": "ofisi"
+    },
+    "thinking": "Inasoma...",
+    "provider": {
+      "gemini": "Modeli za Google. Ufunguo wa bure unatosha kujaribu.",
+      "openrouter": "Ufunguo mmoja, modeli mamia; huchagua kwa ajili yako.",
+      "anthropic": "Claude, kutoka Anthropic. Hodari kwa kusoma nyaraka ndefu za kisheria.",
+      "other_label": "Seva yako",
+      "other": "Modeli kwenye kompyuta hii (Ollama) au seva ya serikali."
+    }
+  },
+  "board": {
+    "add_placeholder": "Ongeza kazi",
+    "close": "Funga",
+    "col": {
+      "todo": "Za kufanya",
+      "doing": "Zinaendelea",
+      "waiting_police": "Zinasubiri polisi",
+      "waiting_court": "Zinasubiri mahakama",
+      "done": "Zimekamilika"
+    },
+    "delete": "Futa",
+    "dismiss": "Ondoa",
+    "done_count": "Zimekamilika: {count}",
+    "due": "Mwisho {date}",
+    "due_label": "Tarehe ya mwisho",
+    "empty_column": "Hakuna kitu hapa",
+    "keep": "Weka",
+    "mark_done": "Weka kuwa imekamilika",
+    "note_placeholder": "Ongeza maelezo",
+    "reopen": "Fungua tena",
+    "suggested": "Imependekezwa na msaidizi"
+  },
+  "calendar": {
+    "coming_up": "Zinazokuja",
+    "legend": {
+      "hearing": "Usikilizaji",
+      "review": "Mapitio ya kizingiti",
+      "task": "Kazi inayotakiwa"
+    },
+    "more": "{count} zaidi",
+    "next": "Mwezi ujao",
+    "nothing": "Hakuna kitu siku hii.",
+    "previous": "Mwezi uliopita",
+    "threshold_review": "Mapitio ya kipimo cha kizingiti",
+    "today": "Leo"
+  },
+  "court": {
+    "add_filing": "Rekodi uwasilishaji",
+    "add_hearing": "Ongeza usikilizaji",
+    "court": "Mahakama",
+    "date": "Tarehe",
+    "time": "Saa",
+    "what": "Kwa ajili ya",
+    "filed_on": "Iliwasilishwa tarehe",
+    "filed_what": "Kilichowasilishwa",
+    "filed_what_placeholder": "k.m. Hati ya mashtaka, Muhtasari wa kesi",
+    "filings": "Mawasilisho",
+    "hearings": "Usikilizaji",
+    "kind": {
+      "mention": "Kutajwa",
+      "plea": "Kujibu shtaka",
+      "bail": "Dhamana",
+      "hearing": "Usikilizaji",
+      "trial": "Kesi",
+      "ruling": "Uamuzi mdogo",
+      "judgment": "Hukumu",
+      "sentence": "Adhabu",
+      "other": "Nyingine"
+    },
+    "no_filings": "Hakuna kilichowasilishwa bado.",
+    "no_hearings": "Hakuna usikilizaji bado. Ongeza tarehe ya kwanza mahakama ikiitoa.",
+    "note_placeholder": "Maelezo (si lazima)",
+    "outcome_placeholder": "Kilichotokea (kuahirishwa, kujibu shtaka, uamuzi...)",
+    "receipt": "Stakabadhi",
+    "receipt_placeholder": "Muhuri au namba ya stakabadhi",
+    "remove": "Ondoa"
+  },
+  "cover": {
+    "accused": "Mshtakiwa",
+    "offence": "Kosa",
+    "no_charge": "Hakuna shtaka lililoandaliwa",
+    "next_date": "Tarehe ijayo",
+    "no_date": "Hakuna"
+  },
+  "import": {
+    "button": "Ingiza karatasi",
+    "title": "Ingiza karatasi kwenye jalada hili",
+    "lead_assist": "Ongeza PDF iliyoskaniwa au picha za kurasa. Msaidizi huzisoma, huzigawa kuwa hati na kuweka kila moja mahali pake kwenye jalada. Unahakiki baadaye.",
+    "lead_plain": "Ongeza PDF iliyoskaniwa au picha za kurasa. Kila moja huingia kwenye jalada kama hati moja upange. Washa msaidizi kwenye Mipangilio ili zisomwe na kupangwa kwa ajili yako.",
+    "drop": "Dondosha skani hapa, au zichague",
+    "kinds": "PDF, JPG, PNG au picha za simu. Nyingi kwa pamoja ni sawa.",
+    "remove": "Ondoa",
+    "add": "Ongeza kwenye jalada",
+    "without_assist": "Ongeza bila kusoma",
+    "read_and_arrange": "Soma na upange",
+    "storing": "Inahifadhi skani, {done} kati ya {total}",
+    "reading": "Inasoma kurasa",
+    "reading_body": "Pamoja na mwandiko wa mkono na mihuri. Jalada nene linaweza kuchukua dakika moja au mbili.",
+    "done": "Hati {count} zimewekwa kwenye jalada",
+    "done_body": "Hakiki kila moja imewekwa wapi, hamisha zilizokosewa, kisha thibitisha.",
+    "see_file": "Tazama jalada",
+    "failed": "Skani hazikuweza kusomwa",
+    "failed_body": "Skani ulizoongeza zimehifadhiwa kwenye jalada chini ya Maelezo. Unaweza kujaribu tena, au kuzipanga kwa mkono.",
+    "try_again": "Jaribu tena",
+    "found_title": "Pia imepatikana kwenye karatasi",
+    "found_body": "Ongeza watu na shtaka lililopendekezwa kwenye jalada, ili jalada na hatua inayofuata vijazwe. Ondoa alama kwa kilichokosewa.",
+    "proposed_charge": "Shtaka lililopendekezwa",
+    "add_found": "Ongeza kwenye jalada",
+    "not_now": "Si sasa"
+  },
+  "index": {
+    "add_to_file": "Ongeza kwenye jalada",
+    "check_title": "Msaidizi ameweka hati {count}. Zihakiki.",
+    "check_body": "Fungua hati yoyote uisome au uihamishe sehemu nyingine. Thibitisha jalada likiwa sawa.",
+    "confirm": "Thibitisha",
+    "confirm_all": "Thibitisha zote",
+    "count": "Hati {count}, kurasa {sheets}.",
+    "date": "Tarehe iliyoandikwa",
+    "empty": "Bado hakuna kitu kwenye jalada.",
+    "empty_body": "Ingiza jalada la polisi kama skani au picha, au andika hati moja kwa moja: maelezo yaliyochukuliwa, kumbukumbu, maelezo ya simu.",
+    "kind": "Ni nini",
+    "no_text": "Hakuna maandishi kwa hati hii.",
+    "nothing_yet": "Bado hakuna",
+    "open_scan": "Fungua skani",
+    "order_provisional": "Mpangilio wa sehemu ni wa muda kwa nchi hii.",
+    "pages": "kurasa {from} hadi {to}",
+    "people_named": "Watu waliotajwa",
+    "placed_by_assist": "Imewekwa na msaidizi, bado haijahakikiwa",
+    "remove": "Ondoa kwenye jalada",
+    "sheet": "Ukurasa {n}",
+    "sheets": "Kurasa {from} hadi {to}",
+    "text": "Maandishi",
+    "text_placeholder": "Andika au bandika kinachosemwa na hati",
+    "title": "Kichwa",
+    "title_placeholder": "k.m. Maelezo ya Grace Namutebi",
+    "type_document": "Andika hati",
+    "unsorted": "Bado hazijapangwa",
+    "view_scan": "Skani",
+    "view_text": "Maandishi"
+  },
+  "timeline": {
+    "label": "Jalada liko wapi",
+    "received": "Limepokelewa",
+    "reviewed": "Limepitiwa",
+    "decided": "Limeamuliwa",
+    "in_court": "Mahakamani",
+    "closed": "Limefungwa"
+  },
+  "outcome": {
+    "convicted": "Ametiwa hatiani",
+    "acquitted": "Ameachiliwa",
+    "withdrawn": "Limeondolewa",
+    "declined": "Halikushtakiwa",
+    "diverted": "Limeelekezwa njia mbadala",
+    "returned_not_resubmitted": "Lilirudishwa, halikurejeshwa",
+    "other": "Nyingine"
+  },
+  "handover": {
+    "method": {
+      "connection": "Kituo kilichounganishwa",
+      "email": "Barua pepe",
+      "print": "Imechapishwa",
+      "collection": "Imechukuliwa ana kwa ana",
+      "download": "Nakala iliyohifadhiwa",
+      "other": "Nyingine"
+    },
+    "printed": "Nakala iliyochapishwa",
+    "saved_copy": "Nakala ya jalada iliyohifadhiwa",
+    "by_email": "Imetumwa kwa barua pepe",
+    "email_body": "Tafadhali pata jalada lililoambatishwa: {title}.",
+    "email_attach": "Jalada limehifadhiwa. Liambatishe kwenye barua pepe iliyofunguka.",
+    "saved": "Jalada limehifadhiwa",
+    "failed": "Jalada halikuweza kutengenezwa",
+    "building": "Inaunganisha...",
+    "download": "Hifadhi jalada lote (PDF)",
+    "print": "Chapisha",
+    "email": "Barua pepe"
+  },
+  "pipe": {
+    "receive_body": "Hati {documents} kwenye jalada ({unchecked} hazijahakikiwa), watu {people} na mashtaka {charges} yaliyopendekezwa yamerekodiwa.",
+    "prepare_no_decision": "Hakuna uamuzi uliorekodiwa bado: amua kwanza.",
+    "prepare_body": "Andaa {document} kwa uamuzi: {decision}.",
+    "prepare_nothing": "Uamuzi ({decision}) hauhitaji hati yake. Kubali kuendelea kukabidhi.",
+    "decision": "Uamuzi",
+    "reasons": "Sababu",
+    "directions": "Maelekezo kwa polisi",
+    "add_direction": "Ongeza maelekezo",
+    "recipient": "Anayepokea",
+    "method": "Kwa njia gani",
+    "covering_note": "Barua ya kuambatisha",
+    "reply_days": "Fuatilia baada ya (siku, 0 kama hakuna)",
+    "in_days": "ndani ya siku {days}",
+    "ready_to_conclude": "Msaidizi anaona hakuna kinachotarajiwa tena: kukubali kunahamisha jalada hadi Imekamilika.",
+    "outcome": "Matokeo",
+    "closing_note": "Maelezo ya kufunga",
+    "diy_receive": "Ingiza karatasi au andika hati, kwenye",
+    "accepted": "Imekubaliwa. Jalada sasa liko: {stage}",
+    "accept_failed": "Haikuweza kukubaliwa",
+    "stage_past": "Ilifanywa awali",
+    "stage_future": "Bado inakuja",
+    "concluded_as": "Imekamilika: {outcome}, {date}.",
+    "from_record": "Kutokana na kilichomo kwenye jalada",
+    "proposed_by": "Imeandaliwa na msaidizi ({model}), {date}. Isome, badilisha unachohitaji, kisha ukubali.",
+    "reject_why": "Kwa nini? (humsaidia msaidizi wakati ujao)",
+    "reject": "Kataa",
+    "ask_again": "Uliza tena",
+    "accept": "Kubali na uendelee",
+    "accept_conclude": "Kubali na ufunge jalada",
+    "propose_failed": "Msaidizi hakuweza kuandaa hatua hii",
+    "preparing": "Inaandaa...",
+    "prepare_with_assist": "Andaa kwa msaidizi",
+    "check": "Hakiki hatua hii",
+    "assist_off": "Msaidizi umezimwa: fanya hatua hii mwenyewe hapa chini, au uwashe kwenye Mipangilio.",
+    "answered": "{status} na {who}, {date}",
+    "status": {
+      "accepted": "Imekubaliwa",
+      "edited": "Imekubaliwa kwa mabadiliko",
+      "rejected": "Imekataliwa"
+    },
+    "do_it_yourself": "Fanya hatua hii mwenyewe",
+    "skip_to": "Endelea hadi {stage}",
+    "procedure": "Kizuizi, rumande na haki"
+  },
+  "cases": {
+    "proposal_ready": "Tayari kupitiwa",
+    "hearing": "Usikilizaji {date}",
+    "days_here": "siku {days} hapa",
+    "tasks": "kazi {count}",
+    "as_list": "Tazama kama orodha"
+  },
+  "export": {
+    "scan_missing": "Skani ya hati hii haikuweza kuwekwa kwenye jalada. Maandishi yake kama yalivyosomwa:",
+    "index": "Orodha",
+    "sheet_column": "Kurasa",
+    "sheet": "Ukurasa {n}",
+    "case_file": "Jalada la kesi",
+    "received": "Lilipokelewa",
+    "contents": "Yaliyomo",
+    "contents_value": "Hati {documents}, kurasa {sheets}",
+    "prepared": "Imeandaliwa"
+  },
+  "viewer": {
+    "cannot_show": "Hati hii haiwezi kuonyeshwa hapa.",
+    "open_outside": "Fungua kwa programu nyingine",
+    "full": "Skrini nzima",
+    "exit_full": "Toka skrini nzima"
+  },
+  "laws": {
+    "title": "Maktaba ya sheria",
+    "count": "Maandishi {count}",
+    "body": "Maandishi ambayo msaidizi anaweza kunukuu kwa {country}, kila moja na tarehe iliyo sahihi. Msaidizi husema kama andiko analohitaji halipo.",
+    "as_at": "Maandishi hadi {date} · {source}",
+    "api_body": "Huweka sheria za nchi kuwa za sasa, pamoja na tarehe zake. Ofisi inahitaji tokeni yake kutoka laws.africa.",
+    "token_placeholder": "Tokeni ya Laws.Africa",
+    "sync": "Sasisha sheria sasa",
+    "syncing": "Inasasisha...",
+    "synced": "Sheria {updated} zimesasishwa",
+    "not_found": "Hazikupatikana: {titles}",
+    "sync_failed": "Sheria hazikuweza kusasishwa",
+    "add_by_hand": "Ongeza andiko kwa mkono",
+    "manual_title": "Kichwa, k.m. Code pénal congolais",
+    "manual_cite": "Rejea (si lazima)",
+    "manual_as_at": "Sahihi hadi (tarehe)",
+    "manual_body": "Bandika maandishi kamili",
+    "manual_add": "Ongeza kwenye maktaba"
+  },
+  "clock": {
+    "title": "Muda wa kisheria",
+    "none": "Hakuna kukamatwa wala kizuizi kilichorekodiwa, kwa hiyo hakuna muda unaohesabiwa.",
+    "add_event": "Rekodi kukamatwa au kizuizi",
+    "person": "Nani (kama washtakiwa ni wengi)",
+    "save": "Hifadhi",
+    "overdue": "Muda umepita {when} ({date}). Hakuna kilichorekodiwa kinachoumaliza.",
+    "running": "Unaisha {when} ({date}).",
+    "late": "Uliisha kwa kuchelewa, tarehe {date}.",
+    "met": "Uliheshimiwa: uliisha tarehe {date}.",
+    "basis": "{hours} kuanzia {from} · {basis}",
+    "days": "siku {n}",
+    "hours": "saa {n}",
+    "secondary": "(vyanzo vya pili: hakiki kwenye maandishi)",
+    "today_title": "Muda unaohitaji hatua sasa: {count}"
+  },
+  "seal": {
+    "hint": "PNG au JPEG chini ya KB 400, kwenye mandharinyuma nyeupe au angavu. Hunakiliwa kwenye kila hati inapotolewa.",
+    "none": "Haijawekwa",
+    "nothing": "Bado hakuna",
+    "remove": "Ondoa",
+    "set": "Imewekwa",
+    "signature_body": "Huwekwa kwenye nyaraka unazotoa, juu ya jina lako.",
+    "signature_title": "Sahihi yako",
+    "stamp_body": "Muhuri wa ofisi, huwekwa kwenye kila hati inayotolewa hapa.",
+    "stamp_title": "Muhuri wa ofisi",
+    "too_big": "Picha ni kubwa kuliko KB 400.",
+    "upload": "Pakia picha",
+    "wrong_type": "Tumia picha ya PNG au JPEG."
+  },
+  "verify": {
+    "check": "Hakiki",
+    "code": "Nambari",
+    "genuine": "Halisi: {title}, {file}, imetolewa na {author} tarehe {date}. Rekodi haijabadilika tangu hapo.",
+    "lead": "Andika rejea na nambari iliyochapishwa kando ya QR kwenye hati ya karatasi kuthibitisha ilitolewa hapa na haijabadilishwa.",
+    "mismatch": "Hati yenye rejea hii ipo, lakini nambari hailingani au rekodi ilibadilishwa. Chukulia karatasi kuwa si halisi.",
+    "not_found": "Hakuna hati yenye rejea hii iliyotolewa hapa.",
+    "reference": "Rejea, k.m. ODPP-2026-0001",
+    "title": "Hakiki hati"
+  }
+}

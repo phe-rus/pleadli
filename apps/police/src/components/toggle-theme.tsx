@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@pleadli/ui/components/select"
 import { useTheme } from "./theme-provider"
 
@@ -5,9 +6,9 @@ export const Toggletheme = () => {
     const { theme, setTheme } = useTheme()
 
     const items = [
-        { value: "light", label: "Light" },
-        { value: "dark", label: "Dark" },
-        { value: "system", label: "System" },
+        { value: "light", label: m["theme.light"]() },
+        { value: "dark", label: m["theme.dark"]() },
+        { value: "system", label: m["theme.system"]() },
     ]
 
     const handleValueChange = (value: string) => {
@@ -21,7 +22,7 @@ export const Toggletheme = () => {
             onValueChange={(value) => handleValueChange(value as string)}
         >
             <SelectTrigger size='sm' className='max-w-xs'>
-                <SelectValue placeholder="Theme" />
+                <SelectValue placeholder={m["theme.placeholder"]()} />
             </SelectTrigger>
             <SelectContent>
                 <SelectGroup>

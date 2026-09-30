@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { peopleSearchOptions, PersonForm, usePeopleSearch, type Person } from '@/features/people'
 import { AddCircleIcon } from '@hugeicons/core-free-icons'
@@ -6,7 +7,7 @@ import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/search/people/')({
@@ -25,7 +26,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["col.id"](),
         cell: ({ row }) => (
           <Link
             to="/search/people/$personId"
@@ -36,27 +37,27 @@ function RouteComponent() {
           </Link>
         ),
       },
-      { accessorKey: 'firstName', header: 'First name' },
-      { accessorKey: 'lastName', header: 'Last name' },
-      { accessorKey: 'otherNames', header: 'Other names' },
+      { accessorKey: 'firstName', header: m["col.first_name"]() },
+      { accessorKey: 'lastName', header: m["col.last_name"]() },
+      { accessorKey: 'otherNames', header: m["col.other_names"]() },
       {
         accessorKey: 'phone',
-        header: 'Phone',
+        header: m["col.phone"](),
         cell: ({ row }) => row.original.phone ?? '·',
       },
       {
         accessorKey: 'nationalId',
-        header: 'NIN / National ID',
+        header: m["col.nin_national_id"](),
         cell: ({ row }) => row.original.nationalId ?? '·',
       },
       {
         accessorKey: 'address',
-        header: 'Address',
+        header: m["col.address"](),
         cell: ({ row }) => row.original.address ?? '·',
       },
       {
         accessorKey: 'createdAt',
-        header: 'Added',
+        header: m["col.added"](),
         cell: ({ row }) => format(row.original.createdAt, 'PPPPpp'),
       },
     ]
@@ -67,7 +68,7 @@ function RouteComponent() {
       <section className="flex items-center gap-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-5">
-            <h1>People</h1>
+            <h1>{m["nav.people"]()}</h1>
 
             <Createpanel
               open={addOpen}
@@ -75,30 +76,30 @@ function RouteComponent() {
               trigger={
                 <Button size="sm">
                   <HugeiconsIcon icon={AddCircleIcon} />
-                  Add person
+                  {m["pickers.person_add_title"]()}
                 </Button>
               }
               headings={{
-                title: 'Add person',
-                description: "Record someone who isn't already known to the system.",
+                title: m["pickers.person_add_title"](),
+                description: m["pickers.person_add_description"](),
               }}
             >
               <PersonForm onSuccess={() => setAddOpen(false)} />
             </Createpanel>
           </div>
           <p className="md:max-w-sm">
-            Find a person, or add one if they aren't known to the system yet.
+            {m["people_page.lead"]()}
           </p>
         </div>
       </section>
 
       <DataTable
-        aria-label="People"
+        aria-label={m["nav.people"]()}
         data={people}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="No people recorded yet."
-        searchPlaceholder="Search people by name, phone, or national ID…"
+        emptyMessage={m["people_page.empty"]()}
+        searchPlaceholder={m["people_page.search"]()}
       />
     </article>
   )

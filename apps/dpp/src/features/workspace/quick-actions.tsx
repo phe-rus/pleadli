@@ -17,6 +17,7 @@ import {
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useWorkspace } from './tabs-store'
+import * as m from '@/paraglide/messages'
 
 type Panel = 'file' | 'person' | null
 
@@ -39,30 +40,30 @@ export function QuickActions() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button size="icon" variant="ghost" aria-label="Quick actions" title="Quick actions" className="cursor-pointer">
+            <Button size="icon" variant="ghost" aria-label={m["workspace.quick.label"]()} title={m["workspace.quick.label"]()} className="cursor-pointer">
               <HugeiconsIcon icon={AddCircleIcon} />
             </Button>
           }
         />
         <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-60">
           <DropdownMenuGroup>
-            <DropdownMenuLabel>Find</DropdownMenuLabel>
+            <DropdownMenuLabel>{m["workspace.quick.find"]()}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setCommandOpen(true)}>
               <HugeiconsIcon icon={Search01Icon} />
-              Search
+              {m["nav.item.search"]()}
               <DropdownMenuShortcut>Ctrl K</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuLabel>Start</DropdownMenuLabel>
+            <DropdownMenuLabel>{m["workspace.quick.start"]()}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setPanel('file')}>
               <HugeiconsIcon icon={FolderViewIcon} />
-              Open a file
+              {m["workspace.quick.open_file"]()}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setPanel('person')}>
               <HugeiconsIcon icon={UserGroupIcon} />
-              Add a person
+              {m["workspace.quick.add_person"]()}
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
@@ -72,7 +73,7 @@ export function QuickActions() {
         open={panel === 'file'}
         onOpenChange={(open) => !open && close()}
         isDirty={dirty}
-        headings={{ title: 'Open a file', description: 'Log a matter referred by Police.' }}
+        headings={{ title: m["workspace.quick.open_file"](), description: m["workspace.quick.open_file_description"]() }}
       >
         <ProsecutionFileForm
           onDirtyChange={setDirty}
@@ -86,7 +87,7 @@ export function QuickActions() {
         open={panel === 'person'}
         onOpenChange={(open) => !open && close()}
         isDirty={dirty}
-        headings={{ title: 'Add a person', description: 'Someone who appears on a file: accused, complainant or witness.' }}
+        headings={{ title: m["workspace.quick.add_person"](), description: m["workspace.quick.add_person_description"]() }}
       >
         <PersonForm onDirtyChange={setDirty} onSuccess={close} />
       </Createpanel>

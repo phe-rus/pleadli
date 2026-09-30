@@ -114,7 +114,7 @@ export function LegalTab({ prisonerId }: { prisonerId: string }) {
                 <Row label={m.prisoners_sentence()} value={sentenceTermText(sentence)} />
                 <Row label={m.prisoners_runs_from()} value={format(sentence.startsOn, 'd MMM yyyy')} />
                 {!clocks.isLife && <Row label={m.prisoners_term_ends()} value={dateOnly(clocks.sentenceEndsOn)} />}
-                {!clocks.isLife && <Row label={m.prisoners_remission_one_third()} value={clocks.remissionDays != null ? `${clocks.remissionDays} days` : 'Not computed'} />}
+                {!clocks.isLife && <Row label={m.prisoners_remission_one_third()} value={clocks.remissionDays != null ? m.legal_days({ d: clocks.remissionDays }) : m.prisoners_not_computed()} />}
                 {!clocks.isLife && <Row label={m.prisoners_release_due()} value={dateOnly(clocks.releaseDueOn)} />}
                 {clocks.paroleWindowOpensOn != null && <Row label={m.prisoners_parole_window_opens()} value={dateOnly(clocks.paroleWindowOpensOn)} />}
                 <p className="pt-1 text-xs text-muted-foreground">{m.prisoners_dates_are_computed_check_them_against()}</p>

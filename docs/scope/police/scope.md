@@ -36,7 +36,8 @@ This workspace is fully caught up with its own product doc: every domain in `doc
 | 21 | Station Admin (profile/establishment/officers nav) | Station operations | existing |
 | 22 | Officers management | Station operations | existing |
 | 23 | Settings incl. remote access & Cloudflare Tunnel | Station operations | existing |
-| 24 | Redact password from officer input Debug output | Next slice | planned |
+| 24 | Redact password from officer input Debug output | Station operations | existing |
+| 25 | Sign in transition: loading indicator + real stall fix | Station operations | existing |
 
 ## Find & Search
 
@@ -121,12 +122,16 @@ code in `apps/police/src-tauri/src/domain/officers.rs`
 ### 23. Settings incl. remote access & Cloudflare Tunnel · existing
 Cloudflare Tunnel pairing, backup alerts, and dispatch live status; substantial infrastructure not yet detailed in `docs/police/PRODUCT.md`'s ecosystem section beyond a general gesture at "connected deployment." code in `apps/police/src/routes/_public/settings/`, `apps/police/src/routes/_public/logs/`
 
-## Next slice
+### 24. Redact password from officer input Debug output · existing
+Found 2026-09-18 during a cross check on `_root`'s officer identity spec: `CreateOfficerInput` and `UpdateOfficerInput` in `apps/police/src-tauri/src/domain/officers.rs` derived `Debug` on a struct holding a plain `password: String` field, so any panic or error log involving one of these printed the password verbatim. Prisons' own version of this pattern deliberately avoids the bug (spec [0001](../../specs/_root/0001-officer-identity-sign-in/index.md)); this row was Police fixing the same class of bug in its own existing code. Closed 2026-09-21 per `docs/police/AUDIT.md`'s own log ("one officer record" entry): neither struct derives `Debug` anymore, confirmed directly in code. This row was still marked `planned` here; corrected during a 2026-09-22 review, not a new build.
+Code in `apps/police/src-tauri/src/domain/officers.rs`.
 
-### 24. Redact password from officer input Debug output
-Found 2026-09-18 during a cross check on `_root`'s officer identity spec: `CreateOfficerInput` and `UpdateOfficerInput` in `apps/police/src-tauri/src/domain/officers.rs` derive `Debug` on a struct holding a plain `password: String` field, so any panic or error log involving one of these prints the password verbatim. Prisons' own version of this pattern deliberately avoids the bug (spec [0001](../../specs/_root/0001-officer-identity-sign-in/index.md)); this row is Police fixing the same class of bug in its own existing code.
-**Done when:** neither struct's `Debug` output ever includes the plain password value.
-- [ ] Build it: `/develop redact password from officer input debug output`
+### 25. Sign in transition: real bug, no visible indicator and a minutes-long stall · existing
+2026-09-22, user-reported: after a successful badge sign in, the screen gave no loading feedback at all (`SessionGate` returned `null` while waiting) and the actual wait was reliably around a minute. Direct timing of the real `/auth/sign-in` endpoint proved the backend answers in single-digit milliseconds; Argon2 was never involved for this installation's badge-only auth mode regardless. The real cause: `SessionGate`'s post-sign-in `changed()` called `queryClient.clear()` then `refetchQueries()` in the same tick, a race, since `clear()` had already removed the query objects `refetchQueries` was trying to match, so nothing was actually refetched; the eventual sign-in was the `me` query's unrelated once-a-minute background `refetchInterval` finally firing. Fixed by having `changed()` call `queryClient.fetchQuery()` directly and await it, with no dependency on observer timing, plus real loading UI (`SetupProgress`, reused from onboarding) for every wait in the gate, not a blank screen. User-confirmed fixed 2026-09-22.
+Code in `apps/police/src/features/session/session-gate.tsx`, `apps/police/src/features/session/sign-in-screen.tsx`, `apps/police/src/features/session/setup-progress.tsx`. Also tuned Argon2 to a lighter, still OWASP-listed cost profile (`officers.rs`) during the investigation before the real cause was found; kept since it's harmless and not a regression, but it was not the fix.
+
+## Not yet built
+- **Attachment vault sealing and a hash-chained audit trail**: the SQLCipher database migration (uncommitted as of 2026-09-22, `db.rs` + new `domain/keys.rs`, same `packages/node-core` pattern as DPP/Courts/Lawyers/Prisons) encrypts the database itself, but the Police Vault (`apps/police/src-tauri/src/domain/attachments.rs`) stays plain files on disk, not sealed under that key, and there is no `domain/audit.rs` chain at all. `docs/police/AUDIT.md` names this directly: "The vault is still plain files in Documents. Sealing it belongs to the security stage... which is a decision to take then." Every other Pleadli desktop app already has both. Needs its own `/architect` pass, not assumed here.
 
 ## Deferred
 - **Per action admin credential check for Police's own sensitive actions**: `_root`'s officer identity spec introduces this pattern for Prisons; whether Police's main desktop app should adopt it for any of its own sensitive actions (beyond the remote server's existing bearer token login, which is unrelated) was not decided and is not currently planned · needs a decision

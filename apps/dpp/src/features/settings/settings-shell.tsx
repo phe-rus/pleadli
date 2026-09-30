@@ -1,113 +1,76 @@
-import { BackupPane, SecurityPane } from '@/features/security/settings-panes'
-import { SettingsCard } from '@/components/settings-card'
-import { Toggletheme } from '@/components/toggle-theme'
-import { isIntakeAlertsEnabled, setIntakeAlertsEnabled } from '@/hooks/use-intake-alerts'
-import { ApiError } from '@/lib/api'
-import { useProsecutorProfile, useSaveProsecutorProfile } from '@/features/prosecutor-profile'
-import { useAppForm } from '@pleadli/forms-tables/forms'
+import { AssistPane } from '@/features/assist/assist-settings'
+import { SignatureCard, StampCard } from '@/features/documents/seals'
+import { BackupPane } from '@/features/security/settings-panes'
+import { useSecurityStatus } from '@/features/security'
+import * as m from '@/paraglide/messages'
 import { Badge } from '@pleadli/ui/badge'
-import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
-import { Switch } from '@pleadli/ui/switch'
 import { Link } from '@tanstack/react-router'
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { AppearancePane, LicencePane, NotificationsPane, OfficePane, PeoplePane, ProtectionPane, YouPane } from './panes'
 
-const sections = [
-  { id: 'prosecutor', label: 'Prosecutor', about: 'Who decisions and documents are attributed to. There is no sign-in: this installation belongs to one prosecutor.', owner: 'You decide' },
-  { id: 'appearance', label: 'Appearance', about: 'How the workspace looks on this machine.', owner: 'This machine' },
-  { id: 'notifications', label: 'Notifications', about: 'When the desktop tells you work has arrived.', owner: 'This machine' },
-  { id: 'security', label: 'Security', about: 'Encryption of the records, the application lock and the audit trail.', owner: 'This machine' },
-  { id: 'backup', label: 'Backup', about: 'Keeping an encrypted copy of the record somewhere else, and restoring it.', owner: 'This machine' },
+/** Settings, grouped by who owns each choice, so it is always clear whether a
+ * change is yours, the whole office's (the administrator's) or only this
+ * computer's. `id` stays a plain literal: it is compared and put in the URL;
+ * every label comes from the catalog at render time. */
+const groups = [
+  { id: 'you', sections: ['you'] },
+  { id: 'office', sections: ['office', 'people', 'protection', 'assist'] },
+  { id: 'computer', sections: ['appearance', 'notifications', 'backup'] },
+  { id: 'about', sections: ['licence'] },
 ] as const
 
-export type SettingsSectionId = (typeof sections)[number]['id']
+type GroupId = (typeof groups)[number]['id']
+export type SettingsSectionId = (typeof groups)[number]['sections'][number]
+
+const allSections: readonly SettingsSectionId[] = groups.flatMap((g) => g.sections)
 
 export function isSettingsSection(value: unknown): value is SettingsSectionId {
-  return sections.some((section) => section.id === value)
+  return allSections.includes(value as SettingsSectionId)
 }
 
-function ProsecutorPane() {
-  const { data: profile } = useProsecutorProfile()
-  const save = useSaveProsecutorProfile()
-
-  const form = useAppForm({
-    defaultValues: { name: profile?.name ?? '', rank: profile?.rank ?? '', isDpp: profile?.isDpp ?? false },
-    onSubmit: async ({ value }) => {
-      try {
-        await save.mutateAsync({ name: value.name, rank: value.rank.trim() ? value.rank : null, isDpp: value.isDpp })
-        t.success('Prosecutor saved')
-      } catch (error) {
-        t.error('Could not save', { description: error instanceof ApiError ? error.message : 'Please try again.' })
-      }
-    },
-  })
-
-  return (
-    <SettingsCard
-      title="Identity"
-      description="Your name and rank appear on decisions and on documents such as the charge sheet's sanctioning line."
-      hint="Saved on this machine."
-      action={
-        <form.AppForm>
-          <form.submit label="Save" />
-        </form.AppForm>
-      }
-      onSubmit={(event) => {
-        event.preventDefault()
-        void form.handleSubmit()
-      }}
-    >
-      <form.AppField name="name">{(f) => <f.input label="Full name" />}</form.AppField>
-      <form.AppField name="rank">{(f) => <f.input label="Rank (optional)" placeholder="e.g. Senior State Attorney" />}</form.AppField>
-      <form.AppField name="isDpp">
-        {(f) => (
-          <label className="flex items-start justify-between gap-4">
-            <span className="flex flex-col gap-1">
-              <strong>Director of Public Prosecutions</strong>
-              <p>This installation is used by the DPP personally. Discontinuing proceedings and entering a nolle prosequi cannot be delegated, so they are refused unless this is on.</p>
-            </span>
-            <Switch checked={f.state.value} onCheckedChange={(checked) => f.handleChange(checked)} />
-          </label>
-        )}
-      </form.AppField>
-    </SettingsCard>
-  )
+const groupText: Record<GroupId, () => string> = {
+  you: m["settings.group.you"],
+  office: m["settings.group.office"],
+  computer: m["settings.group.computer"],
+  about: m["settings.group.about"],
 }
 
-function AppearancePane() {
-  return (
-    <SettingsCard title="Theme" description="Light, dark, or follow the system." hint="Also in the window's title bar.">
-      <div className="w-40">
-        <Toggletheme />
-      </div>
-    </SettingsCard>
-  )
+const sectionText: Record<SettingsSectionId, { label: () => string; about: () => string }> = {
+  you: { label: m["settings.nav.you"], about: m["settings.about.you"] },
+  office: { label: m["settings.nav.office"], about: m["settings.about.office"] },
+  people: { label: m["settings.nav.people"], about: m["settings.about.people"] },
+  protection: { label: m["settings.nav.protection"], about: m["settings.about.protection"] },
+  assist: { label: m["settings.nav.assist"], about: m["settings.about.assist"] },
+  appearance: { label: m["settings.nav.appearance"], about: m["settings.about.appearance"] },
+  notifications: { label: m["settings.nav.notifications"], about: m["settings.about.notifications"] },
+  backup: { label: m["settings.nav.backup"], about: m["settings.about.backup"] },
+  licence: { label: m["settings.nav.licence"], about: m["settings.about.licence"] },
 }
 
-function NotificationsPane() {
-  const [enabled, setEnabled] = useState(isIntakeAlertsEnabled)
-  return (
-    <SettingsCard title="Desktop alerts" description="A notification the first time a file appears waiting on a charging decision. It says a file arrived. It is not a deadline: there is none for that." hint="Only in the desktop app.">
-      <label className="flex items-center justify-between gap-4">
-        <strong>Alert me when a file arrives</strong>
-        <Switch
-          checked={enabled}
-          onCheckedChange={(checked) => {
-            setIntakeAlertsEnabled(checked)
-            setEnabled(checked)
-          }}
-        />
-      </label>
-    </SettingsCard>
-  )
-}
+const ownerOf = (group: GroupId) =>
+  group === 'you' ? m["settings.owner.you"]() : group === 'office' ? m["settings.owner.office"]() : group === 'computer' ? m["settings.owner.this_machine"]() : m["settings.owner.read_only"]()
 
 const panes: Record<SettingsSectionId, () => ReactNode> = {
-  prosecutor: () => <ProsecutorPane />,
+  you: () => (
+    <>
+      <YouPane />
+      <SignatureCard />
+    </>
+  ),
+  office: () => (
+    <>
+      <OfficePane />
+      <StampCard />
+    </>
+  ),
+  people: () => <PeoplePane />,
+  protection: () => <ProtectionPane />,
+  assist: () => <AssistPane />,
   appearance: () => <AppearancePane />,
   notifications: () => <NotificationsPane />,
-  security: () => <SecurityPane />,
   backup: () => <BackupPane />,
+  licence: () => <LicencePane />,
 }
 
 /** Settings as a left list of sections and one pane, the section in the URL so
@@ -115,47 +78,58 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
  * everything in a section sits in: `w-full` up to `md:max-w-md`, and nothing
  * inside it sets a width of its own. */
 export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
-  const current = sections.find((section) => section.id === sectionId) ?? sections[0]
+  const { data: status } = useSecurityStatus()
+  const current = isSettingsSection(sectionId) ? sectionId : 'you'
+  const group = groups.find((g) => (g.sections as readonly string[]).includes(current))!
+  // With no sign-in there is nobody else to manage.
+  const hidden = (id: SettingsSectionId) => id === 'people' && status?.level === 'none' && status?.actor?.role !== 'administrator'
 
   return (
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Settings</h1>
-          <p>This installation, this machine, and the prosecutor who uses it.</p>
+          <h1>{m["settings.title"]()}</h1>
+          <p>{m["settings.subtitle"]()}</p>
         </div>
       </header>
 
       <div className="flex flex-col gap-6 md:flex-row md:gap-10">
-        <nav aria-label="Settings sections" className="flex shrink-0 flex-row flex-wrap gap-0.5 md:w-52 md:flex-col">
-          {sections.map((section) => {
-            const active = section.id === current.id
-            return (
-              <Link
-                key={section.id}
-                to="/settings/$section"
-                params={{ section: section.id }}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'rounded-md px-2.5 py-1.5 no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none',
-                  active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
-                )}
-              >
-                {section.label}
-              </Link>
-            )
-          })}
+        <nav aria-label={m["settings.title"]()} className="flex shrink-0 flex-col gap-4 md:w-52">
+          {groups.map((g) => (
+            <div key={g.id} className="flex flex-col gap-0.5">
+              <span className="px-2.5 pb-1 text-[0.6875rem] font-medium tracking-wider text-muted-foreground uppercase">{groupText[g.id]()}</span>
+              {g.sections
+                .filter((id) => !hidden(id))
+                .map((id) => {
+                  const active = id === current
+                  return (
+                    <Link
+                      key={id}
+                      to="/settings/$section"
+                      params={{ section: id }}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'rounded-md px-2.5 py-1.5 no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none',
+                        active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
+                      )}
+                    >
+                      {sectionText[id].label()}
+                    </Link>
+                  )
+                })}
+            </div>
+          ))}
         </nav>
 
         <section aria-labelledby="settings-section" className="flex w-full min-w-0 flex-col gap-5 md:max-w-md">
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 id="settings-section">{current.label}</h2>
-              <Badge variant="outline">{current.owner}</Badge>
+              <h2 id="settings-section">{sectionText[current].label()}</h2>
+              <Badge variant="outline">{ownerOf(group.id)}</Badge>
             </div>
-            <p>{current.about}</p>
+            <p>{sectionText[current].about()}</p>
           </div>
-          {panes[current.id]()}
+          {panes[current]()}
         </section>
       </div>
     </article>

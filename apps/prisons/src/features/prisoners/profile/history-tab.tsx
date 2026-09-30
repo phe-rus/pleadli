@@ -8,7 +8,7 @@ import { RichTextPreview } from '@pleadli/rich-text'
 import { Badge } from '@pleadli/ui/badge'
 import { format } from 'date-fns/format'
 import { Dash, ProfileSection, ProfileTable } from './blocks'
-import { buildTimeline } from './timeline'
+import { buildTimeline, timelineKindLabel } from './timeline'
 import { m } from '@/paraglide/messages'
 
 export function HistoryTab({ prisonerId }: { prisonerId: string }) {
@@ -85,7 +85,7 @@ export function HistoryTab({ prisonerId }: { prisonerId: string }) {
               <li key={entry.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
                 <span className="w-24 shrink-0 text-xs text-muted-foreground">{format(entry.at, 'd MMM yyyy')}</span>
                 <Badge variant="outline" className="w-16 justify-center text-[10px]">
-                  {entry.kind}
+                  {timelineKindLabel(entry.kind)}
                 </Badge>
                 <span className="min-w-0 flex-1 truncate">
                   {entry.title}

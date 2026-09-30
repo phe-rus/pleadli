@@ -14,7 +14,7 @@ export type HearingLike = { id: string; at: number; purpose: string; courtroom: 
 
 type PanelProps = { onSuccess?: () => void; onDirtyChange?: (dirty: boolean) => void }
 
-const purposeOptions = purposes.map((p) => ({ value: p.id, label: p.label }))
+const purposeOptions = () => purposes.map((p) => ({ value: p.id, label: p.label }))
 const formClass = 'flex flex-1 flex-col gap-4 overflow-y-auto p-4'
 
 /** The next morning at nine, a sensible starting point for a new hearing. */
@@ -60,7 +60,7 @@ export function HearingForm({ matterId, existing, onSuccess, onDirtyChange }: Pa
       }}
     >
       <form.AppField name="at">{(f) => <DateTimeField label="Date and time" value={f.state.value} onChange={f.handleChange} />}</form.AppField>
-      <form.AppField name="purpose">{(f) => <f.select label="Purpose" options={purposeOptions} />}</form.AppField>
+      <form.AppField name="purpose">{(f) => <f.select label="Purpose" options={purposeOptions()} />}</form.AppField>
       <form.AppField name="courtroom">{(f) => <f.input label="Courtroom (optional)" />}</form.AppField>
       <form.AppField name="note">{(f) => <f.textarea label="Note (optional)" rows={2} />}</form.AppField>
       <DrawerFooter>
@@ -152,7 +152,7 @@ export function AdjournForm({ hearing, defaults, onSuccess, onDirtyChange }: Pan
         {(f) => <DateTimeField label="Next date (optional)" value={f.state.value} onChange={f.handleChange} description="Leave empty if the court has not fixed the next date. The matter then stays on Today until it has one." />}
       </form.AppField>
       <form.Subscribe selector={(state) => state.values.nextDate}>
-        {(next) => next && <form.AppField name="nextPurpose">{(f) => <f.select label="Purpose of the next hearing" options={purposeOptions} />}</form.AppField>}
+        {(next) => next && <form.AppField name="nextPurpose">{(f) => <f.select label="Purpose of the next hearing" options={purposeOptions()} />}</form.AppField>}
       </form.Subscribe>
       <DrawerFooter>
         <form.AppForm>

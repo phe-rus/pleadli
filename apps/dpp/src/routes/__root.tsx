@@ -1,5 +1,4 @@
 import { Notfound } from '@/components/notfound'
-import { SplashScreen } from '@/components/splash-screen'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
 import { forwardErrorsToLog } from '@/lib/forward-errors-to-log'
 import tailwindcss from '@/styles/globals.css?url'
@@ -49,9 +48,7 @@ function RootComponent() {
             'selection:bg-primary/15'
           )}>
             <TooltipProvider>
-              <SplashScreen>
-                <Outlet />
-              </SplashScreen>
+              <Outlet />
             </TooltipProvider>
             <GooeyToaster richColors />
           </div>

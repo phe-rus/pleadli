@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const existingOfficerSchema = z.object({
@@ -30,7 +31,7 @@ export const actorSchema = z.object({
 export type Actor = z.infer<typeof actorSchema>
 
 export const signInSchema = z.object({
-  badgeNumber: z.string().min(1, 'Enter a badge number.'),
+  badgeNumber: z.string().min(1, { error: () => m["validation.enter_a_badge_number"]() }),
   password: z.string(),
 })
 
@@ -40,14 +41,14 @@ export const administratorSchema = z.object({
   existingOfficerId: z.string().nullable(),
   name: z.string(),
   rank: z.string(),
-  badgeNumber: z.string().min(1, 'The administrator needs a badge number.'),
+  badgeNumber: z.string().min(1, { error: () => m["validation.the_administrator_needs_a_badge_number"]() }),
   password: z.string(),
 })
 
 export type AdministratorInput = z.infer<typeof administratorSchema>
 
 export const stationSetupSchema = z.object({
-  stationName: z.string().min(1, 'The station needs a name.'),
+  stationName: z.string().min(1, { error: () => m["validation.the_station_needs_a_name"]() }),
   region: z.string(),
   district: z.string(),
   division: z.string(),
@@ -57,13 +58,13 @@ export const stationSetupSchema = z.object({
 export type StationSetupInput = z.infer<typeof stationSetupSchema>
 
 export const commandLevels = [
-  { value: 'region', label: 'Region' },
-  { value: 'district', label: 'District' },
-  { value: 'headquarters', label: 'Headquarters' },
+  { value: 'region', get label() { return m["session.level.region"]() } },
+  { value: 'district', get label() { return m["session.level.district"]() } },
+  { value: 'headquarters', get label() { return m["session.level.headquarters"]() } },
 ] as const
 
 export const commandSetupSchema = z.object({
-  commandName: z.string().min(1, 'The command needs a name.'),
+  commandName: z.string().min(1, { error: () => m["validation.the_command_needs_a_name"]() }),
   level: z.string().min(1),
   administrator: administratorSchema,
 })
@@ -90,13 +91,14 @@ export const authEventSchema = z.object({
 export type AuthEvent = z.infer<typeof authEventSchema>
 
 export function authEventLabel(action: string) {
-  return (
+  const label = (
     {
-      sign_in: 'Signed in',
-      sign_out: 'Signed out',
-      sign_in_refused: 'Sign-in refused',
-      policy_changed: 'Sign-in policy changed',
-      installed: 'Installation set up',
-    }[action] ?? action
-  )
+      sign_in: m["auth_event.sign_in"],
+      sign_out: m["auth_event.sign_out"],
+      sign_in_refused: m["auth_event.sign_in_refused"],
+      policy_changed: m["auth_event.policy_changed"],
+      installed: m["auth_event.installed"],
+    } as Record<string, (() => string) | undefined>
+  )[action]
+  return label ? label() : action
 }

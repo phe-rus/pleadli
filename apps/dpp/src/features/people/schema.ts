@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import * as m from '@/paraglide/messages'
 
 export const personSchema = z.object({
   id: z.string(),
@@ -14,8 +15,8 @@ export const personSchema = z.object({
 export type Person = z.infer<typeof personSchema>
 
 export const createPersonSchema = z.object({
-  firstName: z.string().min(1, 'First name is required.'),
-  lastName: z.string().min(1, 'Last name is required.'),
+  firstName: z.string().min(1, { error: () => m["person.form.first_name_required"]() }),
+  lastName: z.string().min(1, { error: () => m["person.form.last_name_required"]() }),
   otherNames: z.string(),
   phone: z.string(),
   nationalId: z.string(),

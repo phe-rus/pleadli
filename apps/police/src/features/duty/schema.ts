@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const dutyAssignmentSchema = z.object({
@@ -27,11 +28,11 @@ export const createDutyAssignmentSchema = z
     notes: z.string(),
   })
   .refine((value) => value.officerId || value.officerName.trim(), {
-    message: 'Choose an officer or enter a name.',
+    error: () => m["validation.choose_an_officer_or_enter_a_name"](),
     path: ['officerName'],
   })
   .refine((value) => value.shiftEnd > value.shiftStart, {
-    message: 'Shift end must be after shift start.',
+    error: () => m["validation.shift_end_must_be_after_shift_start"](),
     path: ['shiftEnd'],
   })
 

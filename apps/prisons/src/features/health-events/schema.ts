@@ -31,7 +31,7 @@ export type HealthEvent = z.infer<typeof healthEventSchema>
 
 export const createHealthEventSchema = z.object({
   prisonerId: z.string().min(1),
-  eventType: z.string().min(1, 'Event type is required.'),
+  eventType: z.string().min(1, { error: () => m.validation_event_type_required() }),
   facilityName: z.string(),
   occurredAt: z.number(),
   authorizedBy: z.string(),

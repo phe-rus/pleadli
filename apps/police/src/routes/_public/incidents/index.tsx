@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import {
   incidentPersonName,
@@ -14,7 +15,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/incidents/')({
@@ -40,7 +41,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["col.id"](),
         cell: ({ row }) => (
           <span
             className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
@@ -50,54 +51,54 @@ function RouteComponent() {
           </span>
         ),
       },
-      { accessorKey: 'summary', header: 'Summary' },
+      { accessorKey: 'summary', header: m["col.summary"]() },
       {
         accessorKey: 'description',
-        header: 'Description',
+        header: m["col.description"](),
         cell: ({ getValue }) => (
           <RichTextPreview value={getValue<string>()} className="line-clamp-2 max-w-sm" />
         ),
       },
       {
         accessorKey: 'location',
-        header: 'Location',
+        header: m["col.location"](),
         cell: ({ row }) => row.original.location ?? '·',
       },
-      { accessorKey: 'personId', header: 'Person ID', cell: ({ row }) => row.original.personId ?? '·' },
+      { accessorKey: 'personId', header: m["col.person_id"](), cell: ({ row }) => row.original.personId ?? '·' },
       {
         id: 'relatedPerson',
         accessorFn: (row) => incidentPersonName(row) ?? '',
-        header: 'Related person',
+        header: m["col.related_person"](),
         cell: ({ getValue }) => getValue<string>() || '·',
       },
       {
         accessorKey: 'personFirstName',
-        header: 'Person first name',
+        header: m["col.person_first_name"](),
         cell: ({ row }) => row.original.personFirstName ?? '·',
       },
       {
         accessorKey: 'personLastName',
-        header: 'Person last name',
+        header: m["col.person_last_name"](),
         cell: ({ row }) => row.original.personLastName ?? '·',
       },
       {
         accessorKey: 'personOtherNames',
-        header: 'Person other names',
+        header: m["col.person_other_names"](),
         cell: ({ row }) => row.original.personOtherNames ?? '·',
       },
       {
         accessorKey: 'stationDiaryEntryId',
-        header: 'SD entry ID',
+        header: m["col.sd_entry_id"](),
         cell: ({ row }) => row.original.stationDiaryEntryId ?? '·',
       },
       {
         accessorKey: 'occurredAt',
-        header: 'Occurred',
+        header: m["col.occurred"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
       {
         accessorKey: 'createdAt',
-        header: 'Recorded',
+        header: m["col.recorded"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
@@ -108,7 +109,7 @@ function RouteComponent() {
       <section className="flex items-center gap-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-5">
-            <h1>Incidents</h1>
+            <h1>{m["nav.incidents"]()}</h1>
 
             <Createpanel
               open={addOpen}
@@ -117,18 +118,18 @@ function RouteComponent() {
               trigger={
                 <Button size="sm">
                   <HugeiconsIcon icon={AddCircleIcon} />
-                  Record incident
+                  {m["incidents.submit"]()}
                 </Button>
               }
               headings={{
-                title: 'Record incident',
-                description: 'What happened, when, and where.',
+                title: m["incidents.submit"](),
+                description: m["incidents_page.add_desc"](),
               }}
             >
               <IncidentForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
             </Createpanel>
           </div>
-          <p className="md:max-w-sm">Something that happened or was reported.</p>
+          <p className="md:max-w-sm">{m["incidents_page.lead"]()}</p>
         </div>
       </section>
 
@@ -138,7 +139,7 @@ function RouteComponent() {
           if (!open) setEditingIncident(null)
         }}
         isDirty={editDirty}
-        headings={{ title: 'Edit incident', description: 'Update what was recorded.' }}
+        headings={{ title: m["incidents_page.edit_title"](), description: m["incidents_page.edit_desc"]() }}
       >
         {editingIncident && (
           <IncidentForm
@@ -151,12 +152,12 @@ function RouteComponent() {
       </Createpanel>
 
       <DataTable
-        aria-label="Incidents"
+        aria-label={m["nav.incidents"]()}
         data={incidents}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="No incidents recorded yet."
-        searchPlaceholder="Search incidents…"
+        emptyMessage={m["incidents_page.empty"]()}
+        searchPlaceholder={m["incidents_page.search"]()}
       />
     </article>
   )

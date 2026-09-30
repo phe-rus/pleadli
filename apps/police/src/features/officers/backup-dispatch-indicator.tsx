@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { useBackupRingtone } from '@/hooks/use-backup-ringtone'
 import { Location01Icon, SirenIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -8,6 +9,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { isTauri } from '@tauri-apps/api/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { format } from '@/lib/date'
 import { activeBackupAlertsOptions, officersOptions, useActiveBackupAlerts, useEndBackupAlert, useRespondToBackupAlert } from './queries'
 import { backupAlertMapUrl, backupAlertStatus, type BackupAlert } from './schema'
 
@@ -18,9 +20,9 @@ function syncToast(alert: BackupAlert) {
     return
   }
   const description =
-    status === 'responding' ? `${alert.responderName} is responding.` : `${alert.officerName} needs backup. Not yet responded to.`
+    status === 'responding' ? m["backup.responding"]({ name: alert.responderName ?? '' }) : m["backup.needs"]({ name: alert.officerName })
   const push = status === 'responding' ? t.success : t
-  push('Active backup dispatch', { id: alert.id, description, duration: Number.POSITIVE_INFINITY })
+  push(m["backup.active_toast"](), { id: alert.id, description, duration: Number.POSITIVE_INFINITY })
 }
 
 /**
@@ -89,7 +91,7 @@ export function BackupDispatchIndicator() {
       await respond.mutateAsync({ id: modalAlert.id, officerId: respondingOfficerId })
       setRespondingOfficerId('')
     } catch {
-      t.error('Could not dispatch that officer', { description: 'Please try again.' })
+      t.error(m["backup.dispatch_failed"](), { description: m["common.try_again"]() })
     }
   }
 
@@ -99,7 +101,7 @@ export function BackupDispatchIndicator() {
       ring.stop()
       setModalAlertId(null)
     } catch {
-      t.error('Could not end the dispatch', { description: 'Please try again.' })
+      t.error(m["backup.end_failed"](), { description: m["common.try_again"]() })
     }
   }
 
@@ -108,7 +110,7 @@ export function BackupDispatchIndicator() {
       {activeAlerts.length > 0 && (
         <Button type="button" size="sm" variant="destructive" onClick={() => setModalAlertId(activeAlerts[0].id)}>
           <HugeiconsIcon icon={SirenIcon} />
-          {activeAlerts.length} active dispatch{activeAlerts.length === 1 ? '' : 'es'}
+          {activeAlerts.length === 1 ? m["backup.active_one"]() : m["backup.active_n"]({ count: activeAlerts.length })}
         </Button>
       )}
 
@@ -117,12 +119,12 @@ export function BackupDispatchIndicator() {
           {modalAlert && (
             <>
               <DialogHeader>
-                <DialogTitle>Backup requested</DialogTitle>
-                <DialogDescription>{modalAlert.officerName} is requesting backup.</DialogDescription>
+                <DialogTitle>{m["backup.requested_title"]()}</DialogTitle>
+                <DialogDescription>{m["backup.requesting"]({ name: modalAlert.officerName })}</DialogDescription>
               </DialogHeader>
 
               <div className="flex flex-col gap-2 text-xs">
-                <span className="text-muted-foreground">Requested {new Date(modalAlert.createdAt).toLocaleString()}</span>
+                <span className="text-muted-foreground">{m["backup.requested_at"]({ date: format(modalAlert.createdAt, 'PP p') })}</span>
 
                 {mapUrl && (
                   <a
@@ -132,17 +134,17 @@ export function BackupDispatchIndicator() {
                     className="inline-flex w-fit items-center gap-1 text-primary underline"
                   >
                     <HugeiconsIcon icon={Location01Icon} className="size-3.5" />
-                    View location
+                    {m["backup.view_location"]()}
                   </a>
                 )}
 
                 {modalAlert.responderName ? (
-                  <span className="font-medium">Responding: {modalAlert.responderName}</span>
+                  <span className="font-medium">{m["backup.responding_label"]({ name: modalAlert.responderName })}</span>
                 ) : (
                   <div className="flex items-center gap-2">
                     <Select value={respondingOfficerId} onValueChange={(value) => value && setRespondingOfficerId(value)}>
                       <SelectTrigger size="sm" className="w-full">
-                        <SelectValue placeholder="Dispatch an officer" />
+                        <SelectValue placeholder={m["backup.dispatch_placeholder"]()} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
@@ -155,7 +157,7 @@ export function BackupDispatchIndicator() {
                       </SelectContent>
                     </Select>
                     <Button type="button" size="sm" onClick={handleRespond} disabled={!respondingOfficerId || respond.isPending}>
-                      Dispatch
+                      {m["backup.dispatch"]()}
                     </Button>
                   </div>
                 )}
@@ -163,10 +165,10 @@ export function BackupDispatchIndicator() {
 
               <DialogFooter>
                 <Button type="button" size="sm" variant="destructive" onClick={() => handleEnd(modalAlert.id)} disabled={end.isPending}>
-                  End dispatch
+                  {m["backup.end"]()}
                 </Button>
                 <Button type="button" size="sm" variant="secondary" onClick={() => setModalAlertId(null)}>
-                  Dismiss
+                  {m["common.dismiss"]()}
                 </Button>
               </DialogFooter>
             </>

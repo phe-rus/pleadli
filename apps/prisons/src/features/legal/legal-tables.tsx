@@ -43,7 +43,7 @@ export function DiaryTable({ diary }: { diary: readonly DiaryEntry[] }) {
           const diff = row.original.productionDate - now
           if (diff < 0) return <Badge variant="destructive">{m.legal_outcome_not_recorded()}</Badge>
           const days = Math.floor(diff / DAY_MS)
-          return <Badge variant="outline">{days === 0 ? m.legal_today() : `In ${days} day${days === 1 ? '' : 's'}`}</Badge>
+          return <Badge variant="outline">{days === 0 ? m.legal_today() : days === 1 ? m.legal_in_one_day() : m.legal_in_days({ days })}</Badge>
         },
       },
       {

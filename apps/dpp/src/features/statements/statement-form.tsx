@@ -9,6 +9,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useCreateStatement } from './queries'
 import { createStatementSchema, statementRoles, type Statement } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type StatementFormProps = {
   prosecutionFileId: string
@@ -49,11 +50,11 @@ export function StatementForm({ prosecutionFileId, onSuccess, onDirtyChange }: S
       try {
         const input = { ...value, prosecutionFileId, givenAt: new Date(value.givenAt).getTime() }
         const result = await createStatement.mutateAsync(input)
-        t.success('Statement recorded')
+        t.success(m["statement.form.recorded"]())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record statement', { description: 'Please try again.' })
+        t.error(m["statement.form.record_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -71,7 +72,7 @@ export function StatementForm({ prosecutionFileId, onSuccess, onDirtyChange }: S
       <form.AppField name="personId">
         {(f) => (
           <Field>
-            <FieldLabel>Person</FieldLabel>
+            <FieldLabel>{m["file.link.person"]()}</FieldLabel>
             <PersonPicker value={f.state.value || null} onValueChange={(id) => f.handleChange(id ?? '')} />
           </Field>
         )}
@@ -81,10 +82,10 @@ export function StatementForm({ prosecutionFileId, onSuccess, onDirtyChange }: S
         <form.AppField name="statementRole">
           {(f) => (
             <Field>
-              <FieldLabel>Statement role</FieldLabel>
+              <FieldLabel>{m["statement.form.role"]()}</FieldLabel>
               <Select items={statementRoles} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select role" />
+                  <SelectValue placeholder={m["file.link.role_placeholder"]()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -102,7 +103,7 @@ export function StatementForm({ prosecutionFileId, onSuccess, onDirtyChange }: S
         <form.AppField name="givenAt">
           {(f) => (
             <Field>
-              <FieldLabel>Given at</FieldLabel>
+              <FieldLabel>{m["statement.form.given_at"]()}</FieldLabel>
               <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
             </Field>
           )}
@@ -112,19 +113,19 @@ export function StatementForm({ prosecutionFileId, onSuccess, onDirtyChange }: S
       <form.AppField name="content">
         {(f) => (
           <Field>
-            <FieldLabel>Statement content</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="What the statement says…" />
+            <FieldLabel>{m["statement.form.content"]()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["statement.form.content_placeholder"]()} />
           </Field>
         )}
       </form.AppField>
 
       <form.AppField name="sourceNote">
-        {(f) => <f.input label="Source note (optional)" placeholder="e.g. as received in the Police file" />}
+        {(f) => <f.input label={m["common.source_note_optional"]()} placeholder={m["statement.form.source_placeholder"]()} />}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Add statement" />
+          <form.submit label={m["statement.form.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

@@ -207,9 +207,9 @@ export function isOutsideVisitingHours(rules: VisitRules, at: number) {
 }
 
 export const newVisitorSchema = z.object({
-  fullName: z.string().min(1, 'Enter the visitor’s full name.'),
+  fullName: z.string().min(1, { error: () => m.visits_enter_the_visitor_s_full_name() }),
   idType: z.string(),
-  idNumber: z.string().min(1, 'Every visitor needs a photographic ID.'),
+  idNumber: z.string().min(1, { error: () => m.visits_every_visitor_needs_a_photographic_id() }),
   phone: z.string(),
   relationship: z.string(),
 })
@@ -228,7 +228,7 @@ export const createVisitSchema = z.object({
   partySize: z.number().optional(),
   supervisingOfficer: z.string().optional(),
   notes: z.string().optional(),
-  visitType: z.string().min(1, 'Visit type is required.'),
+  visitType: z.string().min(1, { error: () => m.validation_visit_type_required() }),
   status: z.string().optional(),
   authorizedBy: z.string().optional(),
   overLimitReason: z.string().optional(),

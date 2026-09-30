@@ -1,13 +1,20 @@
+import { AssistPanel } from '@/features/assist/assist-panel'
+import * as m_ from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { Createpanel } from '@/components/create-panel'
 import { Row, RowList } from '@/components/operational-row'
 import { EmptyNote } from '@/components/planned'
 import { Tag } from '@/components/status-tag'
 import { describeAction, useAudit } from '@/features/audit'
+import { DeadlinesSection } from '@/features/clocks'
+import { FilingsSection } from '@/features/filings'
+import { PapersSection } from '@/features/papers'
+import { MoneySection } from '@/features/money'
 import { custodyLabel } from '@/features/clients'
 import { DocumentCreateForm, documentKindLabel } from '@/features/documents'
 import { HearingActions, HearingForm, hearingStatusLabels, purposeLabel, reasonLabel, responsibleLabel, type Hearing } from '@/features/hearings'
-import { CloseMatterForm, engagementLabel, levelLabel, MatterForm, matterOptions, PleaForm, pleaStatusLabel, useMatter, useReopenMatter } from '@/features/matters'
+import { inCourt, matterTypeLabel } from '@/features/matter-types'
+import { CloseMatterForm, engagementLabel, levelLabel, MatterForm, matterOptions, PartiesSection, PleaForm, pleaStatusLabel, StageStepper, useMatter, useReopenMatter } from '@/features/matters'
 import { durationText, NoteComposer, NoteRow, TimeForm, useRemoveTime } from '@/features/practice'
 import { TaskForm, TaskRow } from '@/features/tasks'
 import { ApiError, messageOf } from '@/lib/api'
@@ -63,15 +70,19 @@ function RouteComponent() {
   const listed = detail.hearings.filter((h) => h.status === 'scheduled').sort((a, b) => a.at - b.at)
   const openTasks = detail.tasks.filter((task) => task.doneAt == null)
   const minutes = detail.time.reduce((sum, e) => sum + e.minutes, 0)
+  // What only criminal work has: custody, the offence, a plea negotiation.
+  const criminal = m.matterType === 'criminal_defence'
+  const court = inCourt(m.matterType)
 
   const facts: [string, string | null][] = [
     ['Client', detail.client.name],
-    ['Custody', detail.client.custody ? `${custodyLabel(detail.client.custody)}${detail.client.custodyPlace ? `, ${detail.client.custodyPlace}` : ''}` : null],
+    ['Kind of matter', matterTypeLabel(m.matterType)],
+    ['Custody', criminal && detail.client.custody ? `${custodyLabel(detail.client.custody)}${detail.client.custodyPlace ? `, ${detail.client.custodyPlace}` : ''}` : null],
     ['Acting', `${engagementLabel(m.engagement)}${m.appointedOn ? `, appointed ${format(m.appointedOn, 'PP')}` : ''}`],
     ['Your reference', m.ourRef],
     ['Court', [m.courtName, m.courtLevel ? levelLabel(m.courtLevel) : null].filter(Boolean).join(', ') || null],
     ['Offence', m.offence],
-    ['Next hearing', listed[0] ? `${format(listed[0].at, 'PPp')}, ${purposeLabel(listed[0].purpose).toLowerCase()}` : open ? 'None listed' : null],
+    ['Next hearing', !court ? null : listed[0] ? `${format(listed[0].at, 'PPp')}, ${purposeLabel(listed[0].purpose).toLowerCase()}` : open ? 'None listed' : null],
     ['Outcome', m.outcome],
     ['Notes', m.notes],
   ]
@@ -81,18 +92,20 @@ function RouteComponent() {
       <header className="page-header">
         <div>
           <h1>{m.courtNumber ?? m.title}</h1>
-          <p>{m.courtNumber ? m.title : 'No court number recorded'}</p>
+          <p>{m.courtNumber ? m.title : court ? 'No court number recorded' : matterTypeLabel(m.matterType)}</p>
         </div>
         <div className="page-actions">
-          {open ? <Tag tone={listed.length ? 'open' : 'urgent'}>{listed.length ? 'Open' : 'No hearing listed'}</Tag> : <Tag tone="done">Closed</Tag>}
+          {open ? court && !listed.length ? <Tag tone="urgent">No hearing listed</Tag> : <Tag tone="open">Open</Tag> : <Tag tone="done">Closed</Tag>}
           <PanelButton label="Edit" title="Edit the matter" description="Correct the details, or how you came to act." variant="secondary" icon={false}>
             {({ close, setDirty: report }) => <MatterForm existing={m} onSuccess={close} onDirtyChange={report} />}
           </PanelButton>
           {open ? (
             <>
-              <PanelButton label="List a hearing" title="List a hearing" description="Put a hearing in your diary.">
-                {({ close, setDirty: report }) => <HearingForm matterId={matterId} onSuccess={close} onDirtyChange={report} />}
-              </PanelButton>
+              {court && (
+                <PanelButton label="List a hearing" title="List a hearing" description="Put a hearing in your diary.">
+                  {({ close, setDirty: report }) => <HearingForm matterId={matterId} onSuccess={close} onDirtyChange={report} />}
+                </PanelButton>
+              )}
               <PanelButton label="Draft a document" title="Draft a document" description="Starts a draft. You write it in its own page.">
                 {({ close, setDirty: report }) => (
                   <DocumentCreateForm
@@ -104,6 +117,9 @@ function RouteComponent() {
                     }}
                   />
                 )}
+              </PanelButton>
+              <PanelButton label={m_["assist.settings.title"]()} title={m_["assist.panel.title"]()} description={m_["assist.panel.description"]()} variant="secondary" icon={false}>
+                {() => <AssistPanel matterId={matterId} />}
               </PanelButton>
               <Button size="sm" variant="secondary" onClick={() => setClosing(true)}>
                 Close
@@ -121,6 +137,8 @@ function RouteComponent() {
         </div>
       </header>
 
+      <StageStepper matter={m} />
+
       <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
         {facts
           .filter(([, value]) => value)
@@ -134,6 +152,7 @@ function RouteComponent() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-8">
+          {court && (
           <section aria-labelledby="hearings" className="page-section">
             <div className="section-head">
               <h2 id="hearings">Hearings</h2>
@@ -162,6 +181,11 @@ function RouteComponent() {
               </RowList>
             )}
           </section>
+          )}
+
+          <DeadlinesSection matterId={matterId} open={open} clocks={detail.clocks} />
+
+          <PartiesSection matter={m} parties={detail.parties} />
 
           <section aria-labelledby="notes" className="page-section">
             <div className="section-head">
@@ -206,6 +230,10 @@ function RouteComponent() {
               </RowList>
             )}
           </section>
+
+          <PapersSection matterId={matterId} open={open} />
+          <MoneySection matterId={matterId} clientId={m.clientId} engagement={m.engagement} open={open} />
+          <FilingsSection matterId={matterId} matterTitle={m.courtNumber ? `${m.courtNumber}, ${m.title}` : m.title} court={m.courtName} open={open} filings={detail.filings} documents={detail.documents} />
         </div>
 
         <div className="flex flex-col gap-8">
@@ -229,6 +257,7 @@ function RouteComponent() {
             )}
           </section>
 
+          {criminal && (
           <section aria-labelledby="plea" className="page-section">
             <div className="section-head">
               <h2 id="plea">Plea negotiation</h2>
@@ -258,6 +287,7 @@ function RouteComponent() {
               </div>
             )}
           </section>
+          )}
 
           <section aria-labelledby="time" className="page-section">
             <div className="section-head">

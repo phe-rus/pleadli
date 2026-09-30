@@ -1,8 +1,9 @@
 import { Badge } from '@pleadli/ui/badge'
 import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
-import { applications } from '@/data/home'
+import { products, readinessLabel } from '@/data/products'
+import { ArrowRight02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/docs/applications')({
   component: RouteComponent,
@@ -18,50 +19,44 @@ function RouteComponent() {
           Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers, and Pleadli Prisons are
           separate applications, each designed around the work its users actually do. They are
           connected by Pleadli Cloud and by the cases they legitimately share, not merged into one
-          product.
+          product. See{' '}
+          <Link to="/products" className="font-medium text-foreground underline underline-offset-2">
+            the full products section
+          </Link>{' '}
+          for a deep page per application.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {applications.map((application) => (
-          <Card key={application.name}>
-            <CardHeader className="gap-3">
-              <div className="flex items-center justify-between">
-                <div
-                  className={
-                    application.status === 'Building now'
-                      ? 'flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'
-                      : 'flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground'
-                  }
-                >
-                  <HugeiconsIcon icon={application.icon} />
+        {products.map((product) => (
+          <Link key={product.slug} to="/products/$slug" params={{ slug: product.slug }} className="group">
+            <Card className="h-full transition-colors group-hover:border-primary/40">
+              <CardHeader className="gap-3">
+                <div className="flex items-center justify-between">
+                  <div
+                    className={
+                      product.readiness === 'building'
+                        ? 'flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'
+                        : 'flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground'
+                    }
+                  >
+                    <HugeiconsIcon icon={product.icon} />
+                  </div>
+                  <Badge variant={product.readiness === 'building' ? 'default' : 'secondary'}>
+                    {readinessLabel[product.readiness]}
+                  </Badge>
                 </div>
-                <Badge variant={application.status === 'Building now' ? 'default' : 'secondary'}>
-                  {application.status}
-                </Badge>
-              </div>
-              <div>
-                <CardTitle>{application.name}</CardTitle>
-                <CardDescription className="text-base!">{application.focus}</CardDescription>
-              </div>
-              <ul className="flex flex-col gap-1.5">
-                {application.points.map((point) => (
-                  <li key={point} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground" />
-                    {point}
-                  </li>
-                ))}
-              </ul>
-              <div className="flex flex-col gap-1 border-t border-border/60 pt-3">
-                <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Usage</h3>
-                <p className="text-sm text-muted-foreground">{application.usage}</p>
-              </div>
-              <div className="flex flex-col gap-1">
-                <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Download</h3>
-                <p className="text-sm text-muted-foreground">{application.download}</p>
-              </div>
-            </CardHeader>
-          </Card>
+                <div>
+                  <CardTitle>{product.name}</CardTitle>
+                  <CardDescription className="text-base!">{product.tagline}</CardDescription>
+                </div>
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                  Read more
+                  <HugeiconsIcon icon={ArrowRight02Icon} className="size-3.5!" />
+                </span>
+              </CardHeader>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -82,7 +77,8 @@ function RouteComponent() {
           Police and DPP sit next to each other in a case's early life, investigation and
           prosecution, which makes the shared-identity, institution-owned-records model testable
           end to end without needing every application built first. This is a practical starting
-          point, not a sequence the other applications are waiting in line behind.
+          point, not a sequence the other applications are waiting in line behind, and it is why
+          they carry the deepest security and document work today.
         </p>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import { formatDate } from '@/lib/dates'
+import { serviceNames } from '@/lib/jurisdiction'
 import { ApiError } from '@/lib/api'
 import { DirectionsEditor, type DirectionDraft } from '@/features/directions'
 import { useReportDirty } from '@/hooks/use-report-dirty'
@@ -15,9 +17,9 @@ import { Field, FieldDescription, FieldLabel } from '@pleadli/ui/field'
 import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
-import { format } from 'date-fns/format'
 import { useCreateDecision } from './queries'
-import { createDecisionSchema, decisionTypeDelegable, decisionTypeLabel, decisionTypes, type Decision } from './schema'
+import { availableDecisionTypes, createDecisionSchema, decisionTypeDelegable, decisionTypeLabel, type Decision } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type DecisionFormProps = {
   prosecutionFileId: string
@@ -52,7 +54,7 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
   const permitted = review ? permittedDecisions(review) : []
   const allowed = (type: string) => !chargingDecisionTypes.includes(type) || permitted.includes(type)
   // While correcting a decision, a charging outcome needs a reopening review, not this form.
-  const options = decisionTypes.filter((d) => !(corrects && chargingDecisionTypes.includes(d.value)))
+  const options = availableDecisionTypes().filter((d) => !(corrects && chargingDecisionTypes.includes(d.value)))
 
   const form = useAppForm({
     defaultValues: {
@@ -73,13 +75,13 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
     onSubmit: async ({ value, formApi }) => {
       try {
         const result = await createDecision.mutateAsync(toInput(value))
-        t.success(result.length > 1 ? `${result.length} decisions recorded` : 'Decision recorded')
+        t.success(result.length > 1 ? m["decision.form.recorded_many"]({ count: result.length }) : m["decision.form.recorded"]())
         formApi.reset()
         onSuccess?.(result)
       } catch (error) {
         // The server's own refusal is written to be read (that only the DPP may
         // discontinue, or what the review has not yet found), so it is shown.
-        t.error('Could not record decision', { description: error instanceof ApiError ? error.message : 'Please try again.' })
+        t.error(m["decision.form.record_failed"](), { description: error instanceof ApiError ? error.message : m["common.try_again"]() })
       }
     },
   })
@@ -105,7 +107,7 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
 
   const accusedOf = (personId: string | null) => {
     const link = people.find((p) => p.personId === personId)
-    return link ? `${link.personLastName}, ${link.personFirstName}` : 'No accused named'
+    return link ? `${link.personLastName}, ${link.personFirstName}` : m["decision.form.no_accused"]()
   }
   const byAccused = new Map<string, typeof charges>()
   for (const charge of charges) byAccused.set(charge.accusedPersonId ?? '', [...(byAccused.get(charge.accusedPersonId ?? '') ?? []), charge])
@@ -120,22 +122,22 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
     >
       {corrects && (
         <p className="rounded-md border border-border bg-muted/40 p-3">
-          Correcting the decision to <strong>{decisionTypeLabel(corrects.decisionType)}</strong> of {format(corrects.decidedAt, 'PP')}. The earlier decision stays on the record. Explain the correction below.
+          {m["decision.form.correcting_before"]()} <strong>{decisionTypeLabel(corrects.decisionType)}</strong> {m["decision.form.correcting_after"]({ date: formatDate(corrects.decidedAt) })}
         </p>
       )}
       {review && !corrects && (
         <p className="rounded-md border border-border bg-muted/40 p-3">
-          Outcome of the {standardLabel(review.standard)} review started {format(review.startedAt, 'PP')}. The decisions it supports are marked below.
+          {m["decision.form.review_outcome"]({ standard: standardLabel(review.standard), date: formatDate(review.startedAt) })}
         </p>
       )}
 
       <form.AppField name="decisionType">
         {(f) => (
           <Field>
-            <FieldLabel>Decision</FieldLabel>
+            <FieldLabel>{m["decision.form.decision"]()}</FieldLabel>
             <Select items={options} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a decision" />
+                <SelectValue placeholder={m["decision.form.decision_placeholder"]()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -144,7 +146,7 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
                     return (
                       <SelectItem key={d.value} value={d.value} disabled={dppBlocked || !allowed(d.value)}>
                         {d.label}
-                        {dppBlocked ? ' (DPP only)' : !allowed(d.value) ? (review ? ' (review does not support)' : ' (needs a review)') : ''}
+                        {dppBlocked ? ` (${m["decision.form.dpp_only"]({ head: serviceNames().headShort })})` : !allowed(d.value) ? (review ? ` (${m["decision.form.review_not_support"]()})` : ` (${m["decision.form.needs_review"]()})`) : ''}
                       </SelectItem>
                     )
                   })}
@@ -152,15 +154,15 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
               </SelectContent>
             </Select>
             {!review && !corrects && (
-              <FieldDescription>Sanction, decline, divert, threshold charge and return follow a charging review. Start one from the Review tab.</FieldDescription>
+              <FieldDescription>{m["decision.form.needs_review_hint"]()}</FieldDescription>
             )}
             {f.state.value && !decisionTypeDelegable(f.state.value) && (
               <FieldDescription>
                 <Badge variant="secondary" className="mr-1.5">
-                  DPP only
+                  {m["decision.form.dpp_only"]({ head: serviceNames().headShort })}
                 </Badge>
-                Not delegable under Ugandan law: exercised by the Director of Public Prosecutions personally.
-                {!profile?.isDpp && ' This installation is not set up as the DPP, so it will refuse this decision.'}
+                {m["decision.form.not_delegable"]({ head: serviceNames().head })}
+                {!profile?.isDpp && ` ${m["decision.form.not_dpp_refuse"]()}`}
               </FieldDescription>
             )}
           </Field>
@@ -171,10 +173,10 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
         <form.AppField name="chargeIds">
           {(f) => (
             <Field>
-              <FieldLabel>Applies to</FieldLabel>
+              <FieldLabel>{m["decision.form.applies_to"]()}</FieldLabel>
               <label className="flex items-center gap-2">
                 <Checkbox checked={f.state.value.length === 0} onCheckedChange={() => f.handleChange([])} />
-                The whole file
+                {m["decision.form.whole_file"]()}
               </label>
               {[...byAccused.entries()].map(([personId, counts]) => {
                 const ids = counts.map((c) => c.id)
@@ -184,7 +186,7 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
                     <label className="flex items-center gap-2">
                       <Checkbox checked={all} onCheckedChange={() => f.handleChange(all ? f.state.value.filter((id) => !ids.includes(id)) : [...new Set([...f.state.value, ...ids])])} />
                       <strong>{accusedOf(personId || null)}</strong>
-                      <span className="text-muted-foreground">all counts</span>
+                      <span className="text-muted-foreground">{m["decision.form.all_counts"]()}</span>
                     </label>
                     {counts.map((charge) => (
                       <label key={charge.id} className="flex items-center gap-2 pl-6">
@@ -199,7 +201,7 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
                   </div>
                 )
               })}
-              <FieldDescription>Choose the counts this decision is about, or the whole file. The file's status follows its counts.</FieldDescription>
+              <FieldDescription>{m["decision.form.counts_hint"]()}</FieldDescription>
             </Field>
           )}
         </form.AppField>
@@ -222,11 +224,11 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
       </form.Subscribe>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="decidedBy">{(f) => <f.input label="Decided by (optional)" placeholder="Name" />}</form.AppField>
+        <form.AppField name="decidedBy">{(f) => <f.input label={m["decision.form.decided_by_optional"]()} placeholder={m["review_note.form.author_placeholder"]()} />}</form.AppField>
         <form.AppField name="decidedAt">
           {(f) => (
             <Field>
-              <FieldLabel>Decided at</FieldLabel>
+              <FieldLabel>{m["decision.form.decided_at"]()}</FieldLabel>
               <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
             </Field>
           )}
@@ -240,9 +242,9 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
             <form.AppField name="reasons">
               {(f) => (
                 <Field>
-                  <FieldLabel>{type === 'return_for_investigation' ? 'Covering note (optional)' : required ? 'Reasons (required)' : 'Reasons (optional)'}</FieldLabel>
-                  <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Reasons…" />
-                  <FieldDescription>Privileged between ODPP and the investigating agency, never disclosed to unauthorised persons.</FieldDescription>
+                  <FieldLabel>{type === 'return_for_investigation' ? m["decision.form.covering_note_optional"]() : required ? m["decision.form.reasons_required"]() : m["decision.form.reasons_optional"]()}</FieldLabel>
+                  <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["decision.form.reasons_placeholder"]()} />
+                  <FieldDescription>{m["decision.form.privileged_hint"]({ office: serviceNames().short })}</FieldDescription>
                 </Field>
               )}
             </form.AppField>
@@ -256,8 +258,8 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
             <label className="flex items-start gap-2">
               <Checkbox checked={f.state.value} onCheckedChange={(checked) => f.handleChange(Boolean(checked))} />
               <span>
-                This decision completes the review
-                <FieldDescription>Leave it off if other counts are still to be decided from these same findings. A concluded review can no longer be changed.</FieldDescription>
+                {m["decision.form.completes_review"]()}
+                <FieldDescription>{m["decision.form.completes_review_hint"]()}</FieldDescription>
               </span>
             </label>
           )}
@@ -266,7 +268,7 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Record decision" />
+          <form.submit label={m["decision.form.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

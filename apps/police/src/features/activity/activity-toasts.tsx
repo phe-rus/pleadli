@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { parseSearchRoute } from '@/lib/parse-search-route'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useNavigate } from '@tanstack/react-router'
@@ -38,7 +39,7 @@ export function ActivityToasts() {
 }
 
 function notify(item: ActivityItem, onOpen: () => void) {
-  const action = { label: 'Open', onClick: onOpen }
+  const action = { label: m["common.open"](), onClick: onOpen }
   if (isHighSignalActivity(item)) {
     t.info(item.title, { description: item.subtitle || undefined, action })
   } else {

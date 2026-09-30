@@ -4,6 +4,7 @@ import { SettingsCard } from '@/components/settings-card'
 import { SettingsTable, type SettingsRow } from '@/components/settings-table'
 import { Toggletheme } from '@/components/toggle-theme'
 import { useVerifyActivationCode } from '@/features/activation'
+import { readLogoFile, setBrandLogo, useBrandLogo } from '@/features/brand'
 import { FacilityProfileForm, useFacilityProfile, useSaveFacilityProfile } from '@/features/facility'
 import { changeLocale, localeNames, selectableLocales } from '@/features/i18n'
 import { jurisdictionPack } from '@/features/jurisdiction'
@@ -14,7 +15,7 @@ import { m } from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { format } from 'date-fns/format'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 /** The facility's own identity, in the place an administrator looks for it. */
 export function FacilityPane() {
@@ -132,6 +133,7 @@ export function AppearancePane() {
   const rows: SettingsRow[] = [{ key: 'appearance', label: m.settings_appearance_label(), description: m.settings_appearance_description(), control: <Toggletheme /> }]
   return (
     <div className="flex flex-col gap-6">
+      <LogoCard />
       <SettingsTable rows={rows} />
       {import.meta.env.DEV && <DevRoleSwitch compact={false} />}
     </div>
@@ -147,5 +149,47 @@ export function SecurityPane() {
       <SignInPolicyPanel />
       <SettingsTable rows={rows} />
     </div>
+  )
+}
+
+/** The institution's logo: the default crest, or one an administrator uploads. */
+function LogoCard() {
+  const { src, custom } = useBrandLogo()
+  const input = useRef<HTMLInputElement>(null)
+  const onFile = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      setBrandLogo(await readLogoFile(file))
+      t.success(m.brand_logo_saved())
+    } catch {
+      t.error(m.brand_logo_failed())
+    }
+  }
+  return (
+    <SettingsCard
+      title={m.brand_logo_title()}
+      description={m.brand_logo_description()}
+      hint={m.brand_logo_hint()}
+      action={
+        <div className="flex gap-2">
+          {custom && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setBrandLogo(null)}>
+              {m.brand_logo_reset()}
+            </Button>
+          )}
+          <input ref={input} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="sr-only" onChange={(e) => void onFile(e.target.files?.[0])} />
+          <Button type="button" size="sm" onClick={() => input.current?.click()}>
+            {m.brand_logo_upload()}
+          </Button>
+        </div>
+      }
+    >
+      <div className="flex items-center gap-4">
+        <div className="flex size-20 items-center justify-center rounded-lg border border-border bg-white p-2">
+          <img src={src} alt="" className="size-full object-contain" />
+        </div>
+        <p>{custom ? m.brand_logo_custom() : m.brand_logo_default()}</p>
+      </div>
+    </SettingsCard>
   )
 }

@@ -2,6 +2,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { PrisonIcon } from '@hugeicons/core-free-icons'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
+import { BrandLogo } from '@/features/brand'
 import { m } from '@/paraglide/messages'
 
 /** Shared visual shell for every screen that renders before an officer is
@@ -38,8 +39,8 @@ function BrandPanel() {
         transition={{ duration: 0.3 }}
         className="relative flex items-center gap-2.5"
       >
-        <div className="flex size-8 items-center justify-center rounded-md bg-primary-foreground/15">
-          <HugeiconsIcon icon={PrisonIcon} size={17} />
+        <div className="flex size-10 items-center justify-center rounded-md bg-white p-1">
+          <BrandLogo className="size-8" />
         </div>
         <span className="text-sm font-semibold tracking-tight">{m.app_name()}</span>
       </motion.div>

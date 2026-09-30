@@ -1,16 +1,17 @@
 import * as z from 'zod'
+import * as m from '@/paraglide/messages'
 
 // The substance the research confirms is what "further evidence or steps must
 // be taken" (RESEARCH.md §3). The other kinds come from the product brief and
 // only give the instruction a shape. The server holds the same list.
 export const directionKinds = [
-  { id: 'missing_material', label: 'What is missing', hint: 'Material the file should have had and did not.' },
-  { id: 'investigation', label: 'Investigation required', hint: 'A step Police are to take.' },
-  { id: 'statement', label: 'Additional statement', hint: 'A statement to be taken, and from whom.' },
-  { id: 'evidence', label: 'Additional evidence', hint: 'Evidence to be obtained or produced.' },
-  { id: 'clarification', label: 'Clarification', hint: 'Something in the file that is unclear or inconsistent.' },
-  { id: 'procedural', label: 'Procedural requirement', hint: 'A procedural step that must be complied with.' },
-  { id: 'other', label: 'Other direction', hint: 'Any other documented direction.' },
+  { id: 'missing_material', get label() { return m["direction.kind.missing_material.label"]() }, get hint() { return m["direction.kind.missing_material.hint"]() } },
+  { id: 'investigation', get label() { return m["direction.kind.investigation.label"]() }, get hint() { return m["direction.kind.investigation.hint"]() } },
+  { id: 'statement', get label() { return m["direction.kind.statement.label"]() }, get hint() { return m["direction.kind.statement.hint"]() } },
+  { id: 'evidence', get label() { return m["direction.kind.evidence.label"]() }, get hint() { return m["direction.kind.evidence.hint"]() } },
+  { id: 'clarification', get label() { return m["direction.kind.clarification.label"]() }, get hint() { return m["direction.kind.clarification.hint"]() } },
+  { id: 'procedural', get label() { return m["direction.kind.procedural.label"]() }, get hint() { return m["direction.kind.procedural.hint"]() } },
+  { id: 'other', get label() { return m["direction.kind.other.label"]() }, get hint() { return m["direction.kind.other.hint"]() } },
 ] as const
 
 export type DirectionKind = (typeof directionKinds)[number]['id']
@@ -38,12 +39,12 @@ export type Direction = z.infer<typeof directionSchema>
 export type DirectionDraft = { kind: DirectionKind; instruction: string; personId: string | null }
 
 export const responses = [
-  { id: 'met', label: 'Met' },
-  { id: 'not_met', label: 'Not met' },
+  { id: 'met', get label() { return m["direction.response.met"]() } },
+  { id: 'not_met', get label() { return m["direction.response.not_met"]() } },
 ] as const
 
 export function responseLabel(response: string) {
-  return response === 'met' ? 'Met' : response === 'not_met' ? 'Not met' : 'Open'
+  return response === 'met' ? m["direction.response.met"]() : response === 'not_met' ? m["direction.response.not_met"]() : m["direction.response.open"]()
 }
 
 /** The directions given in one return: those on the same decision act. The

@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import * as m from '@/paraglide/messages'
 
 export const chargeSchema = z.object({
   id: z.string(),
@@ -15,7 +16,7 @@ export type Charge = z.infer<typeof chargeSchema>
 export const createChargeSchema = z.object({
   prosecutionFileId: z.string().min(1),
   accusedPersonId: z.string().nullable(),
-  offence: z.string().min(1, 'Offence is required.'),
+  offence: z.string().min(1, { error: () => m["charge.form.offence_required"]() }),
   statutorySection: z.string(),
   particulars: z.string(),
 })

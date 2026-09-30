@@ -55,7 +55,7 @@ export function ConnectionIndicator() {
         </div>
         {linked && (
           <div className="flex flex-col gap-1.5 border-t border-border/40 pt-3">
-            <Row label={m.connectivity_last_exchange()} value={status.lastExchangeAt ? formatDistanceToNow(status.lastExchangeAt, { addSuffix: true }) : 'Not yet'} />
+            <Row label={m.connectivity_last_exchange()} value={status.lastExchangeAt ? formatDistanceToNow(status.lastExchangeAt, { addSuffix: true }) : m.connectivity_not_yet()} />
             <Row label={m.connectivity_pending()} value={pendingText(status)} />
             <Row label={m.connectivity_network()} value={transportLabel[status.transport]} />
           </div>

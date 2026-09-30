@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 // The five statuses below are exactly the decision points
@@ -6,11 +7,11 @@ import * as z from 'zod'
 // referral to DPP, or continued custody bounded by the deadline) — not
 // invented.
 export const custodyStatuses = [
-  { value: 'in_custody', label: 'In custody' },
-  { value: 'released_no_charge', label: 'Released without charge' },
-  { value: 'released_on_bond', label: 'Released on bond' },
-  { value: 'produced_in_court', label: 'Produced in court' },
-  { value: 'referred_to_dpp', label: 'Referred to DPP' },
+  { value: 'in_custody', get label() { return m["custody.status.in_custody"]() } },
+  { value: 'released_no_charge', get label() { return m["custody.status.released_without_charge"]() } },
+  { value: 'released_on_bond', get label() { return m["custody.status.released_on_bond"]() } },
+  { value: 'produced_in_court', get label() { return m["custody.status.produced_in_court"]() } },
+  { value: 'referred_to_dpp', get label() { return m["custody.status.referred_to_dpp"]() } },
 ] as const
 
 export function custodyStatusLabel(status: string) {
@@ -39,14 +40,14 @@ export const custodyRecordSchema = z.object({
 export type CustodyRecord = z.infer<typeof custodyRecordSchema>
 
 export const createCustodyRecordSchema = z.object({
-  personId: z.string().min(1, 'Person is required.'),
+  personId: z.string().min(1, { error: () => m["validation.person_is_required"]() }),
   incidentId: z.string().nullable(),
   caseId: z.string().nullable(),
   arrestedAt: z.number(),
   location: z.string(),
   crossJurisdictionTransfer: z.boolean(),
   transferredAt: z.number().nullable(),
-  status: z.string().min(1, 'Status is required.'),
+  status: z.string().min(1, { error: () => m["validation.status_is_required"]() }),
   releasedAt: z.number().nullable(),
   notes: z.string(),
 })
@@ -107,8 +108,8 @@ export function custodyCompliance(record: Pick<CustodyRecord, 'arrestedAt' | 'cr
 /** The basis of a deadline in words, for people. */
 export function custodyBasisLabel(basis: CustodyCompliance['basis']) {
   return {
-    'arrest+48h': '48 hours from the arrest',
-    'transfer-window+7d': 'the 7 day transfer window from the arrest',
-    'post-transfer+48h (inferred)': '48 hours from the transfer (inferred, not confirmed)',
-  }[basis]
+    'arrest+48h': m["custody.basis.arrest"],
+    'transfer-window+7d': m["custody.basis.transfer_window"],
+    'post-transfer+48h (inferred)': m["custody.basis.post_transfer"],
+  }[basis]()
 }

@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/dates'
 import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
 import { Tag } from '@/components/status-tag'
@@ -8,7 +9,6 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Textarea } from '@pleadli/ui/textarea'
 import { DrawerFooter } from '@pleadli/ui/drawer'
-import { format } from 'date-fns/format'
 import { useState } from 'react'
 import { useReviewsForFile, useSetAssessment, useSetOutcome, useStartReview } from './queries'
 import {
@@ -25,8 +25,9 @@ import {
   type Standard,
   type Test,
 } from './schema'
+import * as m from '@/paraglide/messages'
 
-const say = (error: unknown) => (error instanceof ApiError ? error.message : 'Please try again.')
+const say = (error: unknown) => (error instanceof ApiError ? error.message : m["common.try_again"]())
 
 function CriterionRow({ review, test, criterionId }: { review: ChargingReview; test: Test; criterionId: string }) {
   const item = criteria[test].items.find((c) => c.id === criterionId)!
@@ -37,7 +38,7 @@ function CriterionRow({ review, test, criterionId }: { review: ChargingReview; t
   const open = review.concludedAt === null
 
   const record = (finding: Finding, text = note) =>
-    save.mutate({ reviewId: review.id, criterion: criterionId, finding, note: text }, { onError: (e) => t.error('Could not record the finding', { description: say(e) }) })
+    save.mutate({ reviewId: review.id, criterion: criterionId, finding, note: text }, { onError: (e) => t.error(m["review.panel.finding_failed"](), { description: say(e) }) })
 
   return (
     <div className="flex flex-col gap-2 py-3">
@@ -46,7 +47,7 @@ function CriterionRow({ review, test, criterionId }: { review: ChargingReview; t
           <strong>{item.label}</strong>
           <p>{item.about}</p>
         </div>
-        <div role="group" aria-label={`Finding on ${item.label}`} className="flex shrink-0 gap-1">
+        <div role="group" aria-label={m["review.panel.finding_on"]({ criterion: item.label })} className="flex shrink-0 gap-1">
           {findings.map((f) => (
             <Button
               key={f.id}
@@ -64,7 +65,7 @@ function CriterionRow({ review, test, criterionId }: { review: ChargingReview; t
       </div>
       {!noting && open && (
         <Button size="xs" type="button" variant="ghost" className="w-fit" onClick={() => setNoting(true)}>
-          Add a note
+          {m["review.panel.add_note"]()}
         </Button>
       )}
       {noting && <Textarea
@@ -74,8 +75,8 @@ function CriterionRow({ review, test, criterionId }: { review: ChargingReview; t
         onBlur={() => {
           if (note !== (assessment?.note ?? '') && (assessment || note.trim())) record((assessment?.finding as Finding) ?? 'unresolved')
         }}
-        placeholder="Note on this finding (optional)"
-        aria-label={`Note on ${item.label}`}
+        placeholder={m["review.panel.note_placeholder"]()}
+        aria-label={m["review.panel.note_on"]({ criterion: item.label })}
       />}
     </div>
   )
@@ -91,18 +92,18 @@ function TestSection({ review, test }: { review: ChargingReview; test: Test }) {
   const locked = test === 'public_interest' && review.evidentialOutcome !== 'passed'
 
   const record = (value: string | null) =>
-    setOutcome.mutate({ reviewId: review.id, test, outcome: value }, { onError: (e) => t.error('Could not record the outcome', { description: say(e) }) })
+    setOutcome.mutate({ reviewId: review.id, test, outcome: value }, { onError: (e) => t.error(m["review.panel.outcome_failed"](), { description: say(e) }) })
 
   return (
     <section className="page-section">
       <div className="section-head">
         <div className="flex flex-col">
           <h3>{def.label}</h3>
-          <p>{locked ? 'Applied only once the Evidential Test is passed.' : def.about}</p>
+          <p>{locked ? m["review.panel.pi_locked"]() : def.about}</p>
         </div>
         <div className="flex items-center gap-2">
-          {outcome && <Tag tone={outcome === 'passed' || outcome === 'met' ? 'done' : 'urgent'}>{def.label}: {outcomeLabels[outcome]}</Tag>}
-          <span className="text-muted-foreground tabular-nums">{counts.recorded} of {counts.total} recorded</span>
+          {outcome && <Tag tone={outcome === 'passed' || outcome === 'met' ? 'done' : 'urgent'}>{m["review.panel.test_outcome"]({ test: def.label, outcome: outcomeLabels[outcome] })}</Tag>}
+          <span className="text-muted-foreground tabular-nums">{m["review.panel.recorded_of"]({ recorded: counts.recorded, total: counts.total })}</span>
         </div>
       </div>
 
@@ -116,11 +117,11 @@ function TestSection({ review, test }: { review: ChargingReview; test: Test }) {
 
       {open && !locked && (
         <div className="flex flex-wrap items-center gap-2">
-          <strong>Your conclusion</strong>
+          <strong>{m["review.panel.your_conclusion"]()}</strong>
           <Button size="sm" type="button" variant={outcome === yes ? 'default' : 'outline'} onClick={() => record(yes)}>{outcomeLabels[yes]}</Button>
           <Button size="sm" type="button" variant={outcome === no ? 'default' : 'outline'} onClick={() => record(no)}>{outcomeLabels[no]}</Button>
-          {outcome && <Button size="sm" type="button" variant="ghost" onClick={() => record(null)}>Withdraw</Button>}
-          {test === 'threshold' && <p>Met needs all five requirements marked as favouring.</p>}
+          {outcome && <Button size="sm" type="button" variant="ghost" onClick={() => record(null)}>{m["review.panel.withdraw"]()}</Button>}
+          {test === 'threshold' && <p>{m["review.panel.threshold_hint"]()}</p>}
         </div>
       )}
     </section>
@@ -133,21 +134,21 @@ function OpenReview({ fileId, review }: { fileId: string; review: ChargingReview
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-card p-4">
         <div className="flex min-w-0 flex-col gap-1">
-          <h3>{standardLabel(review.standard)} review{review.reopensDecisionId ? ' (reopened)' : ''}</h3>
-          <p>Started {format(review.startedAt, 'PPp')}{review.startedBy ? ` by ${review.startedBy}` : ''}.</p>
-          {review.reopenReason && <p>Reopened because: {review.reopenReason}</p>}
+          <h3>{review.reopensDecisionId ? m["review.panel.review_title_reopened"]({ standard: standardLabel(review.standard) }) : m["review.panel.review_title"]({ standard: standardLabel(review.standard) })}</h3>
+          <p>{review.startedBy ? m["review.panel.started_by"]({ date: formatDate(review.startedAt, 'datetime'), name: review.startedBy }) : m["review.panel.started"]({ date: formatDate(review.startedAt, 'datetime') })}</p>
+          {review.reopenReason && <p>{m["review.panel.reopened_because"]({ reason: review.reopenReason })}</p>}
           <p>
-            What the findings support: {permitted.map((p) => decisionTypeLabel(p)).join(', ')}.
+            {m["review.panel.findings_support"]({ decisions: permitted.map((p) => decisionTypeLabel(p)).join(', ') })}
           </p>
         </div>
-        <PanelButton label="Record the decision" title="Record the decision" description="The outcome of this review." variant="default">
+        <PanelButton label={m["review.panel.record_decision"]()} title={m["review.panel.record_decision"]()} description={m["review.panel.record_decision_description"]()} variant="default">
           {({ close, setDirty }) => <DecisionForm prosecutionFileId={fileId} review={review} onSuccess={close} onDirtyChange={setDirty} />}
         </PanelButton>
       </div>
       {testsFor(review.standard).map((test) => (
         <TestSection key={test} review={review} test={test} />
       ))}
-      <p>Findings and conclusions are yours to change until the decision concludes the review. To assess counts differently, conclude this review and start another.</p>
+      <p>{m["review.panel.change_until_concluded"]()}</p>
     </div>
   )
 }
@@ -155,7 +156,7 @@ function OpenReview({ fileId, review }: { fileId: string; review: ChargingReview
 function StartControls({ fileId }: { fileId: string }) {
   const start = useStartReview()
   const begin = (standard: Standard) =>
-    start.mutate({ prosecutionFileId: fileId, standard }, { onError: (e) => t.error('Could not start the review', { description: say(e) }) })
+    start.mutate({ prosecutionFileId: fileId, standard }, { onError: (e) => t.error(m["review.panel.start_failed"](), { description: say(e) }) })
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -166,7 +167,7 @@ function StartControls({ fileId }: { fileId: string }) {
             <p>{s.about}</p>
           </div>
           <Button size="sm" className="w-fit" variant={s.id === 'two_stage' ? 'default' : 'outline'} disabled={start.isPending} onClick={() => begin(s.id)}>
-            Start a {s.label} review
+            {m["review.panel.start_named"]({ standard: s.label })}
           </Button>
         </div>
       ))}
@@ -188,31 +189,31 @@ function ReopenForm({ fileId, onSuccess }: { fileId: string; onSuccess: () => vo
         event.preventDefault()
         start.mutate(
           { prosecutionFileId: fileId, standard, reopensDecisionId: decisionId, reopenReason: reason },
-          { onSuccess, onError: (e) => t.error('Could not reopen', { description: say(e) }) },
+          { onSuccess, onError: (e) => t.error(m["review.panel.reopen_failed"](), { description: say(e) }) },
         )
       }}
     >
-      <p>A concluded decision can be reconsidered when the original was wrong, new or significant evidence has come to light, or an inquest recommended prosecution. The reopening is a review of its own; the decision it produces corrects the old one, which stays on the record.</p>
+      <p>{m["review.panel.reopen_explainer"]()}</p>
       <label className="flex flex-col gap-1">
-        <strong>Decision to reopen</strong>
+        <strong>{m["review.panel.decision_to_reopen"]()}</strong>
         <select className="h-8 rounded-md border border-input bg-input/20 px-2" value={decisionId} onChange={(e) => setDecisionId(e.target.value)}>
           {decisions.map((d) => (
-            <option key={d.id} value={d.id}>{decisionTypeLabel(d.decisionType)}, {format(d.decidedAt, 'PP')}</option>
+            <option key={d.id} value={d.id}>{m["review.panel.decision_option"]({ decision: decisionTypeLabel(d.decisionType), date: formatDate(d.decidedAt) })}</option>
           ))}
         </select>
       </label>
       <label className="flex flex-col gap-1">
-        <strong>Test to apply</strong>
+        <strong>{m["review.panel.test_to_apply"]()}</strong>
         <select className="h-8 rounded-md border border-input bg-input/20 px-2" value={standard} onChange={(e) => setStandard(e.target.value as Standard)}>
           {standards.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
       </label>
       <label className="flex flex-col gap-1">
-        <strong>Why it is being reopened</strong>
-        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="The reason, for the record" />
+        <strong>{m["review.panel.why_reopened"]()}</strong>
+        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={m["review.panel.reason_placeholder"]()} />
       </label>
       <DrawerFooter>
-        <Button type="submit" disabled={start.isPending || !decisionId || !reason.trim()}>Reopen for review</Button>
+        <Button type="submit" disabled={start.isPending || !decisionId || !reason.trim()}>{m["review.panel.reopen_submit"]()}</Button>
       </DrawerFooter>
     </form>
   )
@@ -231,9 +232,9 @@ export function ChargingReviewSection({ fileId, status }: { fileId: string; stat
   return (
     <section className="page-section">
       <div className="section-head">
-        <h2>Charging review</h2>
+        <h2>{m["review.panel.section_title"]()}</h2>
         {!open && !waiting && decisions.length > 0 && (
-          <PanelButton label="Reopen a decision" title="Reopen a decision" description="Bring a concluded decision back for review." icon={false}>
+          <PanelButton label={m["review.panel.reopen_decision"]()} title={m["review.panel.reopen_decision"]()} description={m["review.panel.reopen_decision_description"]()} icon={false}>
             {({ close }) => <ReopenForm fileId={fileId} onSuccess={close} />}
           </PanelButton>
         )}
@@ -243,18 +244,18 @@ export function ChargingReviewSection({ fileId, status }: { fileId: string; stat
         <OpenReview fileId={fileId} review={open} />
       ) : waiting ? (
         <>
-          <p>Choose the test to apply. Nothing is recorded until you start.</p>
+          <p>{m["review.panel.choose_test"]()}</p>
           <StartControls fileId={fileId} />
         </>
       ) : status === 'returned_for_investigation' ? (
-        <EmptyNote>This file is with Police. A new review starts when it comes back.</EmptyNote>
+        <EmptyNote>{m["review.panel.with_police"]()}</EmptyNote>
       ) : (
-        <EmptyNote>The charging decision has been made. To reconsider it, reopen the decision.</EmptyNote>
+        <EmptyNote>{m["review.panel.decision_made"]()}</EmptyNote>
       )}
 
       {concluded.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3>Concluded reviews</h3>
+          <h3>{m["review.panel.concluded_reviews"]()}</h3>
           <div role="list" className={cn('flex flex-col divide-y divide-border/60 border-y border-border/60')}>
             {concluded.map((review) => {
               const outcome = review.standard === 'threshold' ? review.thresholdOutcome : review.evidentialOutcome
@@ -262,11 +263,11 @@ export function ChargingReviewSection({ fileId, status }: { fileId: string; stat
               return (
                 <div key={review.id} role="listitem" className="flex flex-wrap items-center justify-between gap-2 py-3">
                   <div className="flex flex-col">
-                    <strong>{standardLabel(review.standard)}{review.reopensDecisionId ? ', reopened' : ''}</strong>
+                    <strong>{review.reopensDecisionId ? m["review.panel.standard_reopened"]({ standard: standardLabel(review.standard) }) : standardLabel(review.standard)}</strong>
                     <p>
-                      {format(review.startedAt, 'PP')} to {format(review.concludedAt!, 'PP')}
-                      {outcome ? `. ${review.standard === 'threshold' ? 'Threshold' : 'Evidential'} Test ${outcomeLabels[outcome].toLowerCase()}` : ''}
-                      {review.publicInterestOutcome ? `. Public Interest Test ${outcomeLabels[review.publicInterestOutcome].toLowerCase()}` : ''}.
+                      {m["review.panel.date_range"]({ from: formatDate(review.startedAt), to: formatDate(review.concludedAt!) })}
+                      {outcome ? `. ${m["review.panel.test_result"]({ test: review.standard === 'threshold' ? m["review.test.threshold.label"]() : m["review.test.evidential.label"](), outcome: outcomeLabels[outcome].toLowerCase() })}` : ''}
+                      {review.publicInterestOutcome ? `. ${m["review.panel.test_result"]({ test: m["review.test.public_interest.label"](), outcome: outcomeLabels[review.publicInterestOutcome].toLowerCase() })}` : ''}.
                     </p>
                   </div>
                   {decided[0] && <Tag tone="done">{decisionTypeLabel(decided[0].decisionType)}</Tag>}

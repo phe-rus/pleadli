@@ -1,18 +1,19 @@
 import * as z from 'zod'
+import * as m from '@/paraglide/messages'
 
 // Mirrors docs/dpp/PRODUCT.md §Decisions & Reviews's confirmed status
 // buckets — a cached queue-bucket on the file, not the audit trail itself
 // (see features/decisions for that).
 export const fileStatuses = [
-  { value: 'under_review', label: 'Awaiting decision' },
-  { value: 'resubmitted', label: 'Resubmitted by Police' },
-  { value: 'sanctioned', label: 'Sanctioned' },
-  { value: 'declined', label: 'Declined' },
-  { value: 'diverted', label: 'Diverted' },
-  { value: 'returned_for_investigation', label: 'Returned for further investigation' },
-  { value: 'taken_over', label: 'Taken over' },
-  { value: 'discontinued', label: 'Discontinued' },
-  { value: 'plea_bargained', label: 'Plea bargained' },
+  { value: 'under_review', get label() { return m["file.status.under_review"]() } },
+  { value: 'resubmitted', get label() { return m["file.status.resubmitted"]() } },
+  { value: 'sanctioned', get label() { return m["file.status.sanctioned"]() } },
+  { value: 'declined', get label() { return m["file.status.declined"]() } },
+  { value: 'diverted', get label() { return m["file.status.diverted"]() } },
+  { value: 'returned_for_investigation', get label() { return m["file.status.returned_for_investigation"]() } },
+  { value: 'taken_over', get label() { return m["file.status.taken_over"]() } },
+  { value: 'discontinued', get label() { return m["file.status.discontinued"]() } },
+  { value: 'plea_bargained', get label() { return m["file.status.plea_bargained"]() } },
 ] as const
 
 export function fileStatusLabel(status: string) {
@@ -34,12 +35,12 @@ export function fileStatusTone(status: string): StatusTone {
 /** The slices of the register (server: `view_filter`). Each says what it is,
  * because the same file is in exactly one of them. */
 export const fileViews = [
-  { id: 'intake', label: 'Intake', about: 'Received, and no review recorded yet.' },
-  { id: 'active', label: 'Active reviews', about: 'Awaiting a charging decision, with a review under way or handed back by Police.' },
-  { id: 'returned', label: 'Returned to Police', about: 'With Police for further investigation.' },
-  { id: 'reopened', label: 'Reopened reviews', about: 'Concluded files brought back for review, with the reason each was reopened.' },
-  { id: 'closed', label: 'Closed', about: 'The charging decision has been made.' },
-  { id: 'all', label: 'All files', about: 'Every file in the register.' },
+  { id: 'intake', get label() { return m["file.view.intake.label"]() }, get about() { return m["file.view.intake.about"]() } },
+  { id: 'active', get label() { return m["file.view.active.label"]() }, get about() { return m["file.view.active.about"]() } },
+  { id: 'returned', get label() { return m["file.view.returned.label"]() }, get about() { return m["file.view.returned.about"]() } },
+  { id: 'reopened', get label() { return m["file.view.reopened.label"]() }, get about() { return m["file.view.reopened.about"]() } },
+  { id: 'closed', get label() { return m["file.view.closed.label"]() }, get about() { return m["file.view.closed.about"]() } },
+  { id: 'all', get label() { return m["file.view.all.label"]() }, get about() { return m["file.view.all.about"]() } },
 ] as const
 
 export type FileViewId = (typeof fileViews)[number]['id']
@@ -66,6 +67,10 @@ export const prosecutionFileSchema = z.object({
   notes: z.string().nullable(),
   createdAt: z.number(),
   policeConnectionId: z.string().nullable(),
+  stage: z.enum(['receive', 'review', 'decide', 'prepare', 'handover', 'follow_up', 'concluded']).catch('receive'),
+  stageChangedAt: z.number().nullable().catch(null),
+  outcome: z.string().nullable().catch(null),
+  concludedAt: z.number().nullable().catch(null),
 })
 
 export type ProsecutionFile = z.infer<typeof prosecutionFileSchema>
@@ -92,7 +97,7 @@ export type FileSummary = z.infer<typeof fileSummarySchema>
 
 export const createProsecutionFileSchema = z.object({
   odppRegistrationNumber: z.string(),
-  title: z.string().min(1, 'A short title for the file is required.'),
+  title: z.string().min(1, { error: () => m["file.form.title_required"]() }),
   policeStation: z.string(),
   policeReference: z.string(),
   receivedAt: z.number(),
@@ -104,7 +109,7 @@ export type CreateProsecutionFileInput = z.infer<typeof createProsecutionFileSch
 
 export const updateProsecutionFileSchema = z.object({
   odppRegistrationNumber: z.string(),
-  title: z.string().min(1, 'A short title for the file is required.'),
+  title: z.string().min(1, { error: () => m["file.form.title_required"]() }),
   policeStation: z.string(),
   policeReference: z.string(),
   courtCaseNumber: z.string(),
@@ -114,9 +119,9 @@ export const updateProsecutionFileSchema = z.object({
 export type UpdateProsecutionFileInput = z.infer<typeof updateProsecutionFileSchema>
 
 export const filePersonRoles = [
-  { value: 'accused', label: 'Accused' },
-  { value: 'complainant', label: 'Complainant / victim' },
-  { value: 'witness', label: 'Witness' },
+  { value: 'accused', get label() { return m["file.role.accused"]() } },
+  { value: 'complainant', get label() { return m["file.role.complainant"]() } },
+  { value: 'witness', get label() { return m["file.role.witness"]() } },
 ] as const
 
 export const prosecutionFilePersonSchema = z.object({

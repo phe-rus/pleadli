@@ -1,12 +1,14 @@
 import { Loaders } from '@/components/loaders'
 import { ThemeProvider } from '@/components/theme-provider'
-import { SecurityGate } from '@/features/security'
+import { AppGate } from '@/features/app-gate'
+import { LanguageSelect, LocaleBoundary } from '@/features/i18n'
 import { Queryprovider, queryContext } from '@/lib/query-context'
 import "@/styles/globals.css"
 import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import ReactDOM from 'react-dom/client'
 import { routeTree } from './routeTree.gen'
+import { startUpdateChecks } from '@/lib/updater'
 
 const getRouter = () => {
     const queryClient = queryContext()
@@ -48,10 +50,12 @@ if (!rootElement) {
 }
 
 if (!rootElement.innerHTML) {
+    startUpdateChecks()
     const root = ReactDOM.createRoot(rootElement)
     const router = getRouter()
-    // The gate sits outside the router, so a locked app (or data that could not
-    // be opened) is decided before any route loads and its loaders fail.
+    // The gate sits outside the router, so setup, sign-in, a locked app or data
+    // that could not be opened are decided before any route loads. The language
+    // selector sits outside it too: it is there from the first screen.
     root.render(
         <ThemeProvider
             attribute="class"
@@ -62,9 +66,12 @@ if (!rootElement.innerHTML) {
             disableTransitionOnChange
         >
             <Queryprovider query={queryContext()}>
-                <SecurityGate onUnlocked={() => void router.invalidate()}>
-                    <RouterProvider router={router} />
-                </SecurityGate>
+                <AppGate onUnlocked={() => void router.invalidate()}>
+                    <LocaleBoundary>
+                        <RouterProvider router={router} />
+                    </LocaleBoundary>
+                </AppGate>
+                <LanguageSelect />
             </Queryprovider>
         </ThemeProvider>
     )

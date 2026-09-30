@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import {
   chargeSheetAccusedName,
@@ -13,7 +14,7 @@ import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms
 import { Button, buttonVariants } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/legal-forms/')({
@@ -39,7 +40,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["col.id"](),
         cell: ({ row }) => (
           <span
             className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
@@ -49,48 +50,48 @@ function RouteComponent() {
           </span>
         ),
       },
-      { accessorKey: 'caseId', header: 'Case ID' },
-      { accessorKey: 'caseReference', header: 'Case' },
-      { accessorKey: 'caseSummary', header: 'Case summary' },
+      { accessorKey: 'caseId', header: m["col.case_id"]() },
+      { accessorKey: 'caseReference', header: m["col.case"]() },
+      { accessorKey: 'caseSummary', header: m["col.case_summary"]() },
       {
         accessorKey: 'accusedPersonId',
-        header: 'Accused person ID',
+        header: m["col.accused_person_id"](),
         cell: ({ row }) => row.original.accusedPersonId ?? '·',
       },
       {
         id: 'accused',
         accessorFn: (row) => chargeSheetAccusedName(row) ?? '',
-        header: 'Accused',
+        header: m["col.accused"](),
         cell: ({ getValue }) => getValue<string>() || '·',
       },
       {
         accessorKey: 'accusedFirstName',
-        header: 'Accused first name',
+        header: m["col.accused_first_name"](),
         cell: ({ row }) => row.original.accusedFirstName ?? '·',
       },
       {
         accessorKey: 'accusedLastName',
-        header: 'Accused last name',
+        header: m["col.accused_last_name"](),
         cell: ({ row }) => row.original.accusedLastName ?? '·',
       },
       {
         accessorKey: 'accusedOtherNames',
-        header: 'Accused other names',
+        header: m["col.accused_other_names"](),
         cell: ({ row }) => row.original.accusedOtherNames ?? '·',
       },
-      { accessorKey: 'offence', header: 'Offence' },
-      { accessorKey: 'statutorySection', header: 'Statutory section' },
-      { accessorKey: 'particulars', header: 'Particulars' },
+      { accessorKey: 'offence', header: m["col.offence"]() },
+      { accessorKey: 'statutorySection', header: m["col.statutory_section"]() },
+      { accessorKey: 'particulars', header: m["col.particulars"]() },
       {
         accessorKey: 'chargedAt',
-        header: 'Charged',
+        header: m["col.charged"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
-      { accessorKey: 'officerName', header: 'Officer', cell: ({ row }) => row.original.officerName ?? '·' },
-      { accessorKey: 'stationName', header: 'Station', cell: ({ row }) => row.original.stationName ?? '·' },
+      { accessorKey: 'officerName', header: m["col.officer"](), cell: ({ row }) => row.original.officerName ?? '·' },
+      { accessorKey: 'stationName', header: m["col.station"](), cell: ({ row }) => row.original.stationName ?? '·' },
       {
         accessorKey: 'createdAt',
-        header: 'Drawn up',
+        header: m["col.drawn_up"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
       {
@@ -101,8 +102,8 @@ function RouteComponent() {
             to="/legal-forms/$chargeSheetId"
             params={{ chargeSheetId: row.original.id }}
             className={cn(buttonVariants({ size: 'icon-xs', variant: 'ghost' }))}
-            aria-label="View charge sheet"
-            title="View charge sheet"
+            aria-label={m["legal_page.view"]()}
+            title={m["legal_page.view"]()}
           >
             <HugeiconsIcon icon={ViewIcon} />
           </Link>
@@ -116,7 +117,7 @@ function RouteComponent() {
       <section className="flex items-center gap-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-5">
-            <h1>Charge Sheets &amp; Forms</h1>
+            <h1>{m["legal_page.title"]()}</h1>
 
             <Createpanel
               open={addOpen}
@@ -125,17 +126,16 @@ function RouteComponent() {
               trigger={
                 <Button size="sm">
                   <HugeiconsIcon icon={AddCircleIcon} />
-                  Draw up charge sheet
+                  {m["charge_sheet.submit"]()}
                 </Button>
               }
-              headings={{ title: 'Draw up charge sheet', description: 'PF53, generated from data already in Pleadli.' }}
+              headings={{ title: m["charge_sheet.submit"](), description: m["legal_page.add_desc"]() }}
             >
               <ChargeSheetForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
             </Createpanel>
           </div>
           <p className="md:max-w-sm">
-            Generated from Case and Person data already in the system. Only the offence, statutory section, and
-            particulars are new.
+            {m["legal_page.lead"]()}
           </p>
         </div>
       </section>
@@ -146,7 +146,7 @@ function RouteComponent() {
           if (!open) setEditing(null)
         }}
         isDirty={editDirty}
-        headings={{ title: 'Edit charge sheet', description: 'Update this charge sheet.' }}
+        headings={{ title: m["legal_page.edit_title"](), description: m["legal_page.edit_desc"]() }}
       >
         {editing && (
           <ChargeSheetForm
@@ -159,12 +159,12 @@ function RouteComponent() {
       </Createpanel>
 
       <DataTable
-        aria-label="Charge sheets"
+        aria-label={m["legal_page.table"]()}
         data={chargeSheets}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="No charge sheets drawn up yet."
-        searchPlaceholder="Search by offence, case reference, or accused…"
+        emptyMessage={m["legal_page.empty"]()}
+        searchPlaceholder={m["legal_page.search"]()}
       />
     </article>
   )

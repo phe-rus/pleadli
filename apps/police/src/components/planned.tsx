@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Tag } from '@/components/status-tag'
 import type { ReactNode } from 'react'
 
@@ -9,7 +10,7 @@ export function Planned({ title, children, covers }: { title: string; children?:
     <section className="flex flex-col gap-3 rounded-lg border border-dashed border-border p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3>{title}</h3>
-        <Tag tone="planned">Planned</Tag>
+        <Tag tone="planned">{m["common.planned"]()}</Tag>
       </div>
       {children && <p>{children}</p>}
       {covers && (

@@ -1,3 +1,6 @@
+import * as m from '@/paraglide/messages'
+import { Loading03Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { Input } from '@pleadli/ui/input'
 import { useState } from 'react'
@@ -42,13 +45,13 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
   return (
     <ScreenFrame
       mode={installation.mode ?? undefined}
-      title={command ? 'Command sign-in' : 'Sign in'}
+      title={command ? m["sign_in.command_title"]() : m["sign_in.title"]()}
       description={
         command
-          ? `${installation.name ?? 'This command'} needs a badge number and a password.`
+          ? m["sign_in.command_desc"]({ name: installation.name ?? m["sign_in.this_command"]() })
           : needsPassword
-            ? `${installation.name ?? 'This station'} needs your badge number and password.`
-            : `${installation.name ?? 'This station'}: type your badge number. It says who is at the keyboard; it is not a secret.`
+            ? m["sign_in.password_desc"]({ name: installation.name ?? m["sign_in.this_station"]() })
+            : m["sign_in.badge_desc"]({ name: installation.name ?? m["sign_in.this_station"]() })
       }
     >
       <form
@@ -63,15 +66,15 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
             setPassword('')
             onSignedIn()
           } catch (e) {
-            setError(e instanceof ApiError ? e.message : 'It could not sign you in.')
+            setError(e instanceof ApiError ? e.message : m["sign_in.failed"]())
           } finally {
             setBusy(false)
           }
         }}
       >
-        <Input autoFocus aria-label="Badge number" placeholder="Badge number" autoComplete="username" value={badge} onChange={(e) => setBadge(e.target.value)} />
+        <Input autoFocus aria-label={m["common.badge_number"]()} placeholder={m["common.badge_number"]()} autoComplete="username" value={badge} disabled={busy} onChange={(e) => setBadge(e.target.value)} />
         {recent.length > 0 && !badge && (
-          <div className="flex flex-wrap gap-1.5" aria-label="Recent badges">
+          <div className="flex flex-wrap gap-1.5" aria-label={m["sign_in.recent"]()}>
             {recent.map((recentBadge) => (
               <button
                 key={recentBadge}
@@ -85,7 +88,7 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
           </div>
         )}
         {(command || needsPassword) && (
-          <Input type="password" aria-label="Password" placeholder="Password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input type="password" aria-label={m["common.password"]()} placeholder={m["common.password"]()} autoComplete="current-password" value={password} disabled={busy} onChange={(e) => setPassword(e.target.value)} />
         )}
         {error && (
           <p role="alert" className="text-destructive">
@@ -93,7 +96,8 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
           </p>
         )}
         <Button type="submit" disabled={busy || !badge.trim() || ((command || needsPassword) && !password)}>
-          Sign in
+          {busy && <HugeiconsIcon icon={Loading03Icon} className="animate-spin" />}
+          {busy ? m["sign_in.signing_in"]() : m["sign_in.title"]()}
         </Button>
       </form>
     </ScreenFrame>

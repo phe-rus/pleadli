@@ -1,3 +1,4 @@
+import { tableText } from "./text"
 import { MoreVerticalIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@pleadli/ui/button"
@@ -21,14 +22,14 @@ export function selectColumn<TData extends RowData>(): DataTableColumnDef<TData>
                     table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()
                 }
                 onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked)}
-                aria-label="Select all"
+                aria-label={tableText().selectAll}
             />
         ),
         cell: ({ row }) => (
             <Checkbox
                 checked={row.getIsSelected()}
                 onCheckedChange={(checked) => row.toggleSelected(checked)}
-                aria-label="Select row"
+                aria-label={tableText().selectRow}
             />
         ),
     }
@@ -39,12 +40,12 @@ export function RowActionsMenu({ children }: RowActionsMenuProps) {
         <DropdownMenu>
             <DropdownMenuTrigger
                 render={
-                    <Button type="button" variant="ghost" size="icon-xs" aria-label="Row actions">
+                    <Button type="button" variant="ghost" size="icon-xs" aria-label={tableText().rowActions}>
                         <HugeiconsIcon icon={MoreVerticalIcon} className="size-4" />
                     </Button>
                 }
             />
-            <DropdownMenuContent aria-label="Row actions">{children}</DropdownMenuContent>
+            <DropdownMenuContent aria-label={tableText().rowActions}>{children}</DropdownMenuContent>
         </DropdownMenu>
     )
 }

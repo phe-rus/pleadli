@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { isNavActive, navFor, sectionsFor, type NavItem } from '@/data/navigationItems'
 import { signOut, useInstallation, useMe } from '@/features/session'
 import { stationProfileOptions } from '@/features/station-admin/queries'
@@ -10,6 +11,7 @@ import { type ReactNode } from 'react'
 import { useStationCounts } from './station-counts'
 import { useGo, useTabActions } from './tab-actions'
 import { tabIcon } from './tab-icon'
+import { tabLabel } from './tab-identity'
 import { MAX_RECENTS, useWorkspace, type SectionId } from './tabs-store'
 
 const rowClass = 'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left text-base outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
@@ -83,8 +85,8 @@ function SidebarOfficer() {
       <div className="flex min-w-0 flex-1 flex-col leading-tight">
         <span className="truncate text-sm font-medium">{[me.rank, me.name].filter(Boolean).join(' ')}</span>
         <span className="truncate text-xs text-muted-foreground">
-          {profile?.name ?? 'Not named'}
-          {me.role === 'admin' ? ', administrator' : ''}
+          {profile?.name ?? m["workspace.not_named"]()}
+          {me.role === 'admin' ? m["workspace.administrator_suffix"]() : ''}
         </span>
       </div>
       <button
@@ -97,7 +99,7 @@ function SidebarOfficer() {
         }
         className="cursor-pointer text-xs text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50"
       >
-        Sign out
+        {m["workspace.sign_out"]()}
       </button>
     </div>
   )
@@ -131,7 +133,7 @@ export function Navigator() {
 
   return (
     <aside
-      aria-label="Sidebar"
+      aria-label={m["workspace.sidebar"]()}
       inert={!leftOpen}
       className={cn('shrink-0 overflow-hidden bg-background transition-[width] duration-200 ease-out motion-reduce:transition-none print:hidden', leftOpen ? 'w-78' : 'w-0')}
     >
@@ -144,23 +146,23 @@ export function Navigator() {
               className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border border-border/50 bg-background px-2 text-xs text-muted-foreground transition-colors outline-none hover:border-border/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               <HugeiconsIcon icon={Search01Icon} className="size-3.5 shrink-0" />
-              <span className="truncate">Search people, cases, references</span>
+              <span className="truncate">{m["workspace.search_hint"]()}</span>
             </button>
           </div>
         )}
 
         <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pt-1 pb-2">
           {pinned.length > 0 && (
-            <Section id="pinned" label="Pinned">
+            <Section id="pinned" label={m["workspace.pinned"]()}>
               {pinned.map((tab) => (
-                <Row key={tab.key} icon={tabIcon(tab)} label={tab.title} active={tab.key === activeKey} onOpen={() => activate(tab)} />
+                <Row key={tab.key} icon={tabIcon(tab)} label={tabLabel(tab)} active={tab.key === activeKey} onOpen={() => activate(tab)} />
               ))}
             </Section>
           )}
           {recent.length > 0 && (
-            <Section id="recent" label="Recent">
+            <Section id="recent" label={m["workspace.recent"]()}>
               {recent.map((item) => (
-                <Row key={item.key} icon={tabIcon(item)} label={item.title} active={item.key === activeKey} onOpen={() => go(item.to)} />
+                <Row key={item.key} icon={tabIcon(item)} label={tabLabel(item)} active={item.key === activeKey} onOpen={() => go(item.to)} />
               ))}
             </Section>
           )}

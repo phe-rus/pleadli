@@ -157,8 +157,8 @@ export function FacilityOfficerProfile({ officer }: { officer: FacilityOfficer }
               { label: m.officers_facility(), value: officer.facilityName },
               { label: m.officers_badge_number(), value: officer.badgeNumber },
               { label: m.officers_role(), value: officerRoleLabel(officer.role) },
-              { label: m.officers_administrator(), value: officer.isAdmin ? 'Yes' : 'No' },
-              { label: m.officers_status(), value: officer.active ? 'Active' : 'Disabled' },
+              { label: m.officers_administrator(), value: officer.isAdmin ? m.common_yes() : m.common_no() },
+              { label: m.officers_status(), value: officer.active ? m.officers_active() : m.officers_disabled() },
               { label: m.officers_last_pushed(), value: format(officer.syncedAt, 'PPp') },
             ]}
           />

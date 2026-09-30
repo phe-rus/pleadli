@@ -8,19 +8,39 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
+const defaultTitle = 'Pleadli · Justice infrastructure for Uganda'
+const defaultDescription =
+  'Pleadli gives police, prosecutors, courts, lawyers, and prisons software built around their own work, while keeping the matters they legitimately share connected. Purpose-built, offline-first applications for Uganda’s justice system.'
+
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "theme-color", content: "oklch(0.9904 0.0148 94.1935)" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: 'Pleadli' },
+      { title: defaultTitle },
+      { name: 'description', content: defaultDescription },
+      { name: 'robots', content: 'index, follow' },
+      // Open Graph
+      { property: 'og:type', content: 'website' },
+      { property: 'og:site_name', content: 'Pleadli' },
+      { property: 'og:title', content: defaultTitle },
+      { property: 'og:description', content: defaultDescription },
+      { property: 'og:locale', content: 'en_UG' },
+      // Twitter
+      { name: 'twitter:card', content: 'summary' },
+      { name: 'twitter:title', content: defaultTitle },
+      { name: 'twitter:description', content: defaultDescription },
     ],
     links: [
       {
         rel: 'stylesheet',
         href: appCss,
-      }
+      },
+      { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+      { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+      { rel: 'icon', href: '/favicon.png', type: 'image/png' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
     ],
   }),
   notFoundComponent: () => (

@@ -6,6 +6,7 @@ import { ShieldKeyIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { buttonVariants } from '@pleadli/ui/button'
 import { Link } from '@tanstack/react-router'
+import { inlineLabel } from '@/features/i18n'
 import { m } from '@/paraglide/messages'
 
 /** Head Office and a facility are different installations of the same app,
@@ -40,7 +41,7 @@ function NoRecordAccess({ role }: { role: string }) {
       <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-16 text-center text-muted-foreground">
         <HugeiconsIcon icon={ShieldKeyIcon} size={20} />
         <p className="max-w-sm text-sm">
-          {m.route_index_the_role_manages_accounts_workstations_a({ role: officerRoleLabel(role).toLowerCase() })}</p>
+          {m.route_index_the_role_manages_accounts_workstations_a({ role: inlineLabel(officerRoleLabel(role)) })}</p>
         <Link to="/officers" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
           {m.route_index_manage_accounts()}
         </Link>

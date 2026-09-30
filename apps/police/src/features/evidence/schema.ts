@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 // The obvious record-lifecycle states, not an invented legal procedure —
@@ -7,9 +8,9 @@ import * as z from 'zod'
 // docs/police/research findings on the 2021 Exhibit Management Guidelines
 // and UPF's PF17A "Exhibit" form — see the migration's own comment.
 export const exhibitStatuses = [
-  { value: 'in_storage', label: 'In storage' },
-  { value: 'released', label: 'Released' },
-  { value: 'disposed', label: 'Disposed' },
+  { value: 'in_storage', get label() { return m["evidence.status.in_storage"]() } },
+  { value: 'released', get label() { return m["evidence.status.released"]() } },
+  { value: 'disposed', get label() { return m["evidence.status.disposed"]() } },
 ] as const
 
 export function exhibitStatusLabel(status: string) {
@@ -44,7 +45,7 @@ export const createExhibitSchema = z.object({
   caseId: z.string().nullable(),
   incidentId: z.string().nullable(),
   personId: z.string().nullable(),
-  description: z.string().min(1, 'Description is required.'),
+  description: z.string().min(1, { error: () => m["validation.description_is_required"]() }),
   identificationMark: z.string(),
   recoveredAt: z.number(),
   recoveredFromLocation: z.string(),
@@ -52,7 +53,7 @@ export const createExhibitSchema = z.object({
   witnesses: z.string(),
   receivingOfficerName: z.string(),
   storageLocation: z.string(),
-  status: z.string().min(1, 'Status is required.'),
+  status: z.string().min(1, { error: () => m["validation.status_is_required"]() }),
   notes: z.string(),
 })
 
@@ -77,7 +78,7 @@ export type ExhibitMovement = z.infer<typeof exhibitMovementSchema>
 
 export const createExhibitMovementSchema = z.object({
   movedAt: z.number(),
-  location: z.string().min(1, 'Location is required.'),
+  location: z.string().min(1, { error: () => m["validation.location_is_required"]() }),
   custodianName: z.string(),
   reason: z.string(),
 })

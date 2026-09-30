@@ -1,8 +1,9 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const officerRoles = [
-  { value: 'officer', label: 'Officer' },
-  { value: 'admin', label: 'Admin' },
+  { value: 'officer', get label() { return m["officers.role.officer"]() } },
+  { value: 'admin', get label() { return m["officers.role.admin"]() } },
 ] as const
 
 export function officerRoleLabel(role: string) {
@@ -39,21 +40,21 @@ export type Officer = z.infer<typeof officerSchema>
 
 const officerFields = {
   badgeNumber: z.string(),
-  name: z.string().min(1, 'Name is required.'),
+  name: z.string().min(1, { error: () => m["validation.name_is_required"]() }),
   rank: z.string(),
   post: z.string(),
-  role: z.string().min(1, 'Role is required.'),
+  role: z.string().min(1, { error: () => m["validation.role_is_required"]() }),
   notes: z.string(),
   personId: z.string().nullable(),
 }
 
-const passwordRule = z.string().min(8, 'Password must be at least 8 characters.')
+const passwordRule = z.string().min(8, { error: () => m["validation.password_must_be_at_least_8_characters"]() })
 
 export const createOfficerSchema = z
   .object({ ...officerFields, password: z.string() })
-  .refine((v) => !v.password.trim() || v.badgeNumber.trim(), { message: 'A badge number is needed to sign in.', path: ['badgeNumber'] })
+  .refine((v) => !v.password.trim() || v.badgeNumber.trim(), { error: () => m["validation.a_badge_number_is_needed_to_sign_in"](), path: ['badgeNumber'] })
   .refine((v) => !v.password.trim() || passwordRule.safeParse(v.password).success, {
-    message: 'Password must be at least 8 characters.',
+    error: () => m["validation.password_must_be_at_least_8_characters"](),
     path: ['password'],
   })
 
@@ -61,9 +62,9 @@ export type CreateOfficerInput = z.infer<typeof createOfficerSchema>
 
 export const updateOfficerSchema = z
   .object({ ...officerFields, active: z.boolean(), password: z.string().nullable() })
-  .refine((v) => !v.password || v.badgeNumber.trim(), { message: 'A badge number is needed to sign in.', path: ['badgeNumber'] })
+  .refine((v) => !v.password || v.badgeNumber.trim(), { error: () => m["validation.a_badge_number_is_needed_to_sign_in"](), path: ['badgeNumber'] })
   .refine((v) => !v.password || passwordRule.safeParse(v.password).success, {
-    message: 'Password must be at least 8 characters.',
+    error: () => m["validation.password_must_be_at_least_8_characters"](),
     path: ['password'],
   })
 

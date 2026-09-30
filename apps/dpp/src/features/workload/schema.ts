@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 import { decisionTypeLabel } from '@/features/decisions/schema'
 import { directionKindLabel } from '@/features/directions/schema'
@@ -76,31 +77,31 @@ export function describeEvent(event: ActivityEvent): { title: string; detail?: s
   const detail = event.detail ?? undefined
   switch (event.kind) {
     case 'referral_received':
-      return { title: 'Police referral received', detail: [event.subject, event.detail].filter(Boolean).join(', ') || undefined }
+      return { title: m["event.referral"](), detail: [event.subject, event.detail].filter(Boolean).join(', ') || undefined }
     case 'resubmission_received':
-      return { title: 'Resubmission received from Police', detail: [event.subject, event.detail].filter(Boolean).join(', ') || undefined }
+      return { title: m["event.resubmission"](), detail: [event.subject, event.detail].filter(Boolean).join(', ') || undefined }
     case 'statement_added':
-      return { title: `Statement recorded: ${statementRoleLabel(event.subject ?? '')}`, detail }
+      return { title: m["event.statement"]({ what: statementRoleLabel(event.subject ?? '') }), detail }
     case 'evidence_added':
-      return { title: `Evidence recorded: ${evidenceCategoryLabel(event.subject ?? '')}`, detail }
+      return { title: m["event.evidence"]({ what: evidenceCategoryLabel(event.subject ?? '') }), detail }
     case 'charge_added':
-      return { title: `Proposed charge recorded: ${event.subject ?? ''}`, detail }
+      return { title: m["event.charge"]({ what: event.subject ?? '' }), detail }
     case 'review_note_added':
-      return { title: 'Review note added', detail: event.subject ? `By ${event.subject}` : undefined }
+      return { title: m["event.review_note"](), detail: event.subject ? m["event.by"]({ name: event.subject }) : undefined }
     case 'direction_answered':
-      return { title: `Direction ${event.subject === 'met' ? 'met' : 'not met'}: ${directionKindLabel(event.detail ?? '')}` }
+      return { title: (event.subject === 'met' ? m["event.direction_met"] : m["event.direction_not_met"])({ kind: directionKindLabel(event.detail ?? '') }) }
     case 'document_issued':
-      return { title: `Document issued: ${event.subject ?? ''}`, detail }
+      return { title: m["event.document_issued"]({ what: event.subject ?? '' }), detail }
     case 'review_started':
-      return { title: `Charging review started: ${event.subject === 'threshold' ? 'Threshold Test' : 'Two-Stage Test'}`, detail: detail ? `By ${detail}` : undefined }
+      return { title: m["event.review_started"]({ test: (event.subject === 'threshold' ? m["review.test.threshold.label"]() : m["review.standard.two_stage.label"]()) }), detail: detail ? m["event.by"]({ name: detail }) : undefined }
     case 'review_reopened':
-      return { title: `Decision reopened for review: ${event.subject === 'threshold' ? 'Threshold Test' : 'Two-Stage Test'}`, detail }
+      return { title: m["event.review_reopened"]({ test: (event.subject === 'threshold' ? m["review.test.threshold.label"]() : m["review.standard.two_stage.label"]()) }), detail }
     case 'decision_corrected':
-      return { title: `Decision corrected: ${decisionTypeLabel(event.subject ?? '')}`, detail: detail ? `By ${detail}` : undefined }
+      return { title: m["event.decision_corrected"]({ what: decisionTypeLabel(event.subject ?? '') }), detail: detail ? m["event.by"]({ name: detail }) : undefined }
     case 'decision_recorded':
-      return { title: `Decision recorded: ${decisionTypeLabel(event.subject ?? '')}`, detail: detail ? `By ${detail}` : undefined }
+      return { title: m["event.decision_recorded"]({ what: decisionTypeLabel(event.subject ?? '') }), detail: detail ? m["event.by"]({ name: detail }) : undefined }
     case 'attachment_added':
-      return { title: `Document attached: ${event.subject ?? ''}` }
+      return { title: m["event.attachment"]({ what: event.subject ?? '' }) }
     default:
       return { title: event.kind }
   }

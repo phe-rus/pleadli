@@ -1,15 +1,16 @@
+import * as m from '@/paraglide/messages'
 import { isRichTextEmpty } from '@pleadli/rich-text'
 import * as z from 'zod'
 
 // The category list is the one already established in
 // docs/police/PRODUCT.md's Station Diary section — not invented here.
 export const stationDiaryCategories = [
-  { value: 'incident_report', label: 'Incident report' },
-  { value: 'lost_property', label: 'Lost property' },
-  { value: 'public_inquiry', label: 'Public inquiry' },
-  { value: 'officer_movement', label: 'Officer movement' },
-  { value: 'shift_handover', label: 'Shift handover' },
-  { value: 'other', label: 'Other' },
+  { value: 'incident_report', get label() { return m["diary.category.incident_report"]() } },
+  { value: 'lost_property', get label() { return m["diary.category.lost_property"]() } },
+  { value: 'public_inquiry', get label() { return m["diary.category.public_inquiry"]() } },
+  { value: 'officer_movement', get label() { return m["diary.category.officer_movement"]() } },
+  { value: 'shift_handover', get label() { return m["diary.category.shift_handover"]() } },
+  { value: 'other', get label() { return m["diary.category.other"]() } },
 ] as const
 
 export const stationDiaryEntrySchema = z.object({
@@ -28,8 +29,8 @@ export const stationDiaryEntrySchema = z.object({
 export type StationDiaryEntry = z.infer<typeof stationDiaryEntrySchema>
 
 export const createStationDiaryEntrySchema = z.object({
-  category: z.string().min(1, 'Category is required.'),
-  content: z.string().refine((value) => !isRichTextEmpty(value), 'Content is required.'),
+  category: z.string().min(1, { error: () => m["validation.category_is_required"]() }),
+  content: z.string().refine((value) => !isRichTextEmpty(value), { error: () => m["validation.content_is_required"]() }),
   personId: z.string().nullable(),
 })
 

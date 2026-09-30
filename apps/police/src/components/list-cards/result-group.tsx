@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import type { ReactNode } from 'react'
 import { cn } from '@pleadli/ui/lib/utils'
 
@@ -14,7 +15,7 @@ export const ResultGroup = ({ title, count, children, className }: ResultGroupPr
       <div className="flex items-baseline justify-between gap-3 border-t border-border/60 pt-5">
         <h3 className="font-heading text-sm font-semibold tracking-tight">{title}</h3>
         <span className="text-[0.625rem] text-muted-foreground">
-          {count} {count === 1 ? 'match' : 'matches'}
+          {count === 1 ? m["common.match_one"]() : m["common.match_count"]({ count })}
         </span>
       </div>
       {children}

@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const linkSchema = z
@@ -16,8 +17,8 @@ export const linkSchema = z
 export type Link = z.infer<typeof linkSchema>
 
 export const connectSchema = z.object({
-  address: z.string().min(1, 'Enter the address of the command.'),
-  stationNumber: z.string().min(1, 'Enter the station number the command gave this station.'),
+  address: z.string().min(1, { error: () => m["validation.enter_the_address_of_the_command"]() }),
+  stationNumber: z.string().min(1, { error: () => m["validation.enter_the_station_number_the_command_gave_this_s"]() }),
   activationCode: z.string(),
 })
 

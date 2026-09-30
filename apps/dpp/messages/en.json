@@ -1,0 +1,1917 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "age": {
+    "days": "{count} days",
+    "one_day": "1 day",
+    "today": "Today",
+    "weeks": "{count} weeks"
+  },
+  "attachments": {
+    "add": "Add document",
+    "add_failed": "Could not add document",
+    "label": "Documents",
+    "none": "No documents attached.",
+    "remove": "Remove document",
+    "save_first": "Save this record first, then you can attach documents.",
+    "upload_failed": "The upload failed."
+  },
+  "capacity": {
+    "age": "Age of pending work",
+    "age_band": {
+      "one_to_two": "One to two weeks",
+      "over_four": "Over four weeks",
+      "two_to_four": "Two to four weeks",
+      "under_week": "Under a week"
+    },
+    "age_hint": "How long files awaiting a decision have been waiting, from the referral or the latest resubmission.",
+    "by_offence": "Where it is concentrated: offence",
+    "by_offence_empty": "No proposed charges on active files.",
+    "by_offence_hint": "Proposed charges on active files, by offence.",
+    "by_prosecutor": "By prosecutor",
+    "by_prosecutor_hint": "Decisions and documents carry the name of the person who made them.",
+    "by_station": "Where it is concentrated: station",
+    "by_station_hint": "Active files (awaiting a decision or with Police) by the Police station that referred them.",
+    "days": "{days} days",
+    "decisions": "Decisions in this period",
+    "decisions_empty": "No decisions in this period.",
+    "decisions_hint": "By kind. Several counts decided together count once.",
+    "directions": "Directions to Police",
+    "directions_empty": "No directions have been given.",
+    "directions_rate": "{percent}% of those answered were met.",
+    "directions_summary": "Of {directions} given, {met} met, {not_met} not met and {open} still open.",
+    "how_long": "How long it takes",
+    "longest_waiting": "Longest waiting on a decision",
+    "longest_with_police": "Longest with Police",
+    "months": "{count} months",
+    "moved": "How the work has moved",
+    "moved_hint": "By calendar month. A decision about several counts counts once. The last column is this month so far.",
+    "no_active": "No active files.",
+    "none_with_police": "No file is with Police.",
+    "none_yet": "none yet",
+    "not_measured": "Not measured",
+    "not_measured_body": "Capacity is for seeing how much work there is and where, so it can be planned for.",
+    "not_measured_court": "Court-side timings, until court matters are recorded.",
+    "not_measured_target": "Comparison between prosecutors or against a target: none is defined, and none is implied.",
+    "nothing_to_measure": "Nothing to measure in this period yet.",
+    "period": "Period",
+    "queue": {
+      "concluded": "The charging decision has been made",
+      "concluded_label": "Concluded",
+      "documents": "Prepared and not yet issued",
+      "documents_label": "Documents pending",
+      "in_review": "Awaiting a decision, review under way or resubmitted",
+      "in_review_label": "In review",
+      "intake": "Received, no review recorded",
+      "reopened": "Concluded decisions brought back for review",
+      "returned": "With Police for further investigation"
+    },
+    "queues": "Queues",
+    "replay_hint": "Files waiting at each month end are counted from each file's history.",
+    "returned_on": "Returned {date}.",
+    "row": {
+      "decided": "Files decided",
+      "issued": "Documents issued",
+      "police_end": "With Police, at month end",
+      "received": "Files received",
+      "waiting_end": "Waiting on a decision, at month end"
+    },
+    "set_prosecutor": "Add people in Settings so each decision carries the right name.",
+    "spread": "in the middle, across {across}. Average {average}, longest {longest}.",
+    "subtitle": "How much work is sitting with this installation, how it has moved, and where it is concentrated. It measures the work, not the prosecutor.",
+    "turnaround": {
+      "document": "Document to issue",
+      "document_about": "From a document being prepared to it being issued.",
+      "police": "Time with Police",
+      "police_about": "From a return to the resubmission that answered it.",
+      "referral": "Referral to first decision",
+      "referral_about": "From the referral to the first charging decision, for files decided in this period."
+    },
+    "turnaround_band": {
+      "four_weeks": "Up to four weeks",
+      "longer": "Longer",
+      "two_weeks": "Up to two weeks",
+      "week": "Up to a week"
+    },
+    "waiting_since": "Waiting since {date}."
+  },
+  "charge": {
+    "form": {
+      "accused_optional": "Accused (optional)",
+      "offence": "Offence",
+      "offence_placeholder": "e.g. Theft of motor vehicle",
+      "offence_required": "Offence is required.",
+      "particulars_optional": "Particulars (optional)",
+      "particulars_placeholder": "Particulars of the offence…",
+      "record_failed": "Could not record charge",
+      "recorded": "Charge recorded",
+      "section_optional": "Statutory section (optional)",
+      "submit": "Add charge"
+    }
+  },
+  "command_menu": {
+    "description": "Search people, files, and everything else across the {office}.",
+    "no_matches": "No matches yet.",
+    "placeholder": "Search by name, NIN, registration number, reference…",
+    "title": "Search {product}",
+    "type_to_search": "Type to search across the {office}."
+  },
+  "comments": {
+    "add": "Add comment",
+    "failed": "Could not post the comment",
+    "label": "Comments",
+    "placeholder": "Write a comment…",
+    "post": "Post",
+    "unnamed": "Unnamed"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "could_not_record": "Could not record",
+    "discard_unsaved": "You have unsaved changes. Discard them?",
+    "none": "None.",
+    "not_recorded": "Not recorded",
+    "notes": "Notes",
+    "notes_optional": "Notes (optional)",
+    "notes_placeholder": "Notes…",
+    "open": "Open",
+    "planned": "Planned",
+    "remove": "Remove",
+    "request_failed": "The request failed.",
+    "review": "Review",
+    "save_changes": "Save changes",
+    "source_note_optional": "Source note (optional)",
+    "try_again": "Please try again."
+  },
+  "count": {
+    "active_file": {
+      "many": "{count} active files",
+      "one": "{count} active file"
+    },
+    "awaiting_file": {
+      "many": "{count} files awaiting a decision",
+      "one": "{count} file awaiting a decision"
+    },
+    "charged_file": {
+      "many": "{count} charged files",
+      "one": "{count} charged file"
+    },
+    "day": {
+      "many": "{count} days",
+      "one": "{count} day"
+    },
+    "direction": {
+      "many": "{count} directions",
+      "one": "{count} direction"
+    },
+    "document": {
+      "many": "{count} documents",
+      "one": "{count} document"
+    },
+    "file": {
+      "many": "{count} files",
+      "one": "{count} file"
+    },
+    "item": {
+      "many": "{count} items",
+      "one": "{count} item"
+    },
+    "proposed_charge": {
+      "many": "{count} proposed charges",
+      "one": "{count} proposed charge"
+    },
+    "receipt_or_notice": {
+      "many": "{count} receipts or notices",
+      "one": "{count} receipt or notice"
+    },
+    "referral": {
+      "many": "{count} referrals",
+      "one": "{count} referral"
+    },
+    "return": {
+      "many": "{count} returns",
+      "one": "{count} return"
+    },
+    "review_note": {
+      "many": "{count} review notes",
+      "one": "{count} review note"
+    },
+    "statement": {
+      "many": "{count} statements",
+      "one": "{count} statement"
+    }
+  },
+  "decision": {
+    "form": {
+      "all_counts": "all counts",
+      "applies_to": "Applies to",
+      "completes_review": "This decision completes the review",
+      "completes_review_hint": "Leave it off if other counts are still to be decided from these same findings. A concluded review can no longer be changed.",
+      "correcting_after": "of {date}. The earlier decision stays on the record. Explain the correction below.",
+      "correcting_before": "Correcting the decision to",
+      "counts_hint": "Choose the counts this decision is about, or the whole file. The file's status follows its counts.",
+      "covering_note_optional": "Covering note (optional)",
+      "decided_at": "Decided at",
+      "decided_by_optional": "Decided by (optional)",
+      "decision": "Decision",
+      "decision_placeholder": "Select a decision",
+      "direction_instruction_required": "Every direction needs its instruction written out.",
+      "dpp_only": "{head} only",
+      "needs_review": "needs a review",
+      "needs_review_hint": "Sanction, decline, divert, threshold charge and return follow a charging review. Start one from the Review tab.",
+      "no_accused": "No accused named",
+      "not_delegable": "Not delegable: exercised by the {head} personally.",
+      "not_dpp_refuse": "You are not marked as the Director, so this decision will be refused.",
+      "privileged_hint": "Privileged between the {office} and the investigating agency, never disclosed to unauthorised persons.",
+      "reasons_optional": "Reasons (optional)",
+      "reasons_placeholder": "Reasons…",
+      "reasons_required": "Reasons (required)",
+      "record_failed": "Could not record decision",
+      "recorded": "Decision recorded",
+      "recorded_many": "{count} decisions recorded",
+      "review_not_support": "review does not support",
+      "review_outcome": "Outcome of the {standard} review started {date}. The decisions it supports are marked below.",
+      "submit": "Record decision",
+      "type_required": "Decision type is required.",
+      "whole_file": "The whole file"
+    },
+    "type": {
+      "amend_charge": "Amend / direct alternative charge",
+      "committal_venue_high_court": "Committal / venue decision (High Court)",
+      "decline": "Decline to charge",
+      "discontinue": "Discontinue proceedings",
+      "divert": "Divert (alternative to prosecution)",
+      "nolle_prosequi": "Nolle prosequi",
+      "plea_bargain_accepted": "Plea bargain accepted",
+      "return_for_investigation": "Return for further investigation",
+      "sanction": "Sanction (decide to prosecute)",
+      "take_over": "Take over prosecution",
+      "threshold_charge": "Threshold Test charge"
+    }
+  },
+  "direction": {
+    "editor": {
+      "add": "Add a direction",
+      "description": "Say what Police are to do. When the file comes back you record whether each was met.",
+      "from_unnamed": "From whom is not named",
+      "instruction_aria": "Instruction {number}",
+      "kind_aria": "Kind of direction {number}",
+      "label": "Directions to Police (at least one)",
+      "statement_from_aria": "Statement to be taken from"
+    },
+    "kind": {
+      "clarification": {
+        "hint": "Something in the file that is unclear or inconsistent.",
+        "label": "Clarification"
+      },
+      "evidence": {
+        "hint": "Evidence to be obtained or produced.",
+        "label": "Additional evidence"
+      },
+      "investigation": {
+        "hint": "A step Police are to take.",
+        "label": "Investigation required"
+      },
+      "missing_material": {
+        "hint": "Material the file should have had and did not.",
+        "label": "What is missing"
+      },
+      "other": {
+        "hint": "Any other documented direction.",
+        "label": "Other direction"
+      },
+      "procedural": {
+        "hint": "A procedural step that must be complied with.",
+        "label": "Procedural requirement"
+      },
+      "statement": {
+        "hint": "A statement to be taken, and from whom.",
+        "label": "Additional statement"
+      }
+    },
+    "list": {
+      "from": "From {name}",
+      "recorded_on": "Recorded {date}",
+      "reopen": "Reopen",
+      "what_came_back": "What came back",
+      "what_came_back_placeholder": "What came back (optional)"
+    },
+    "response": {
+      "met": "Met",
+      "not_met": "Not met",
+      "open": "Open"
+    }
+  },
+  "doc": {
+    "a_decision": "A decision on this file",
+    "actions": "Document actions",
+    "add_item": "+ Add a line",
+    "add_paragraph": "Add a paragraph below",
+    "all_documents": "Documents",
+    "altered": "Altered",
+    "altered_long": "Stored content has changed since it was issued",
+    "assist_failed": "Assist could not write this paragraph",
+    "author": "Author",
+    "custody_document": "Document",
+    "discard": "Discard draft",
+    "discard_confirm": "Discard this draft? The decision it came from is not affected.",
+    "discard_failed": "Could not discard",
+    "done_editing": "Done",
+    "download_docx": "Download DOCX",
+    "download_md": "Download Markdown",
+    "draft": "Draft",
+    "draft_banner": "DRAFT, NOT ISSUED",
+    "draft_hint": "A draft follows the record when refreshed. Once issued, the content is frozen with its reference and cannot be changed.",
+    "draft_hint_template": "This is a draft from your country's template. Click Edit to change any line on the page, or ask Assist to write a paragraph. Issuing adds your signature, the office stamp and a verification code, and freezes it.",
+    "edit": "Edit",
+    "export_failed": "The export failed.",
+    "for_custody": "For custody and time limits",
+    "for_decision": "For the decision on this file",
+    "from_decision": "From the decision: {decision}, {date}",
+    "from_template": "A template",
+    "issue": "Issue",
+    "issue_confirm": "Issue this document? It is given its reference and can no longer be changed.",
+    "issue_failed": "Could not issue",
+    "issue_now": "Issue now",
+    "issue_sure": "Issue it? It will be signed, stamped and can no longer change.",
+    "issued": "Issued",
+    "issued_on": "Issued {date}",
+    "kind": {
+      "charge_sheet": "Charge sheet",
+      "charge_sheet_about": "The sanctioned charge sheet, from a decision to sanction, to charge on the Threshold Test, or to amend the charge.",
+      "decline_reasons": "Written reasons for declining",
+      "decline_reasons_about": "The privileged written reasons for a decision to decline to charge.",
+      "directions_about": "The directions on a return for further investigation."
+    },
+    "last_prepared": "Last prepared",
+    "new": "New document",
+    "new_lead": "Documents from the forms used in {country}. Each opens as a draft to read and edit.",
+    "new_title": "Prepare a document",
+    "next": "Next document",
+    "none_prepared": "None prepared yet.",
+    "not_issued": "Not yet issued.",
+    "other_documents": "Other documents",
+    "pdf_hint": "Opens the print dialog. Choose Save as PDF as the printer.",
+    "pdf_toast": "Choose “Save as PDF” as the printer",
+    "prepare": "Prepare",
+    "prepare_failed": "Could not prepare the document",
+    "prepared_from": "Prepared from",
+    "previous": "Previous document",
+    "print": "Print",
+    "ready": "Ready to prepare",
+    "ready_empty": "Every decision that produces a document has one prepared.",
+    "refresh": "Refresh from the record",
+    "refresh_failed": "Could not refresh",
+    "remove_block": "Remove",
+    "save_failed": "Could not save the file",
+    "save_pdf": "Save as PDF",
+    "saved": "Saved",
+    "set_when_issued": "Set when issued",
+    "sha": "Check code (proves the printout is unchanged)",
+    "taken_when_issued": "Taken when issued",
+    "type_here": "Type here",
+    "verify_label": "Check this document at the issuing office",
+    "write_with_assist": "Write this paragraph with Assist"
+  },
+  "event": {
+    "attachment": "Document attached: {what}",
+    "by": "By {name}",
+    "charge": "Proposed charge recorded: {what}",
+    "decision_corrected": "Decision corrected: {what}",
+    "decision_recorded": "Decision recorded: {what}",
+    "direction_met": "Direction met: {kind}",
+    "direction_not_met": "Direction not met: {kind}",
+    "document_issued": "Document issued: {what}",
+    "evidence": "Evidence recorded: {what}",
+    "referral": "Police referral received",
+    "resubmission": "Resubmission received from Police",
+    "review_note": "Review note added",
+    "review_reopened": "Decision reopened for review: {test}",
+    "review_started": "Charging review started: {test}",
+    "statement": "Statement recorded: {what}"
+  },
+  "evidence": {
+    "category": {
+      "digital": "Digital evidence",
+      "documentary": "Documentary evidence",
+      "exhibit": "Exhibit",
+      "expert": "Expert evidence"
+    },
+    "form": {
+      "category": "Category",
+      "category_placeholder": "Select category",
+      "category_required": "Category is required.",
+      "description": "Description",
+      "description_placeholder": "What this item is…",
+      "mark_optional": "Identification mark (optional)",
+      "record_failed": "Could not record evidence item",
+      "recorded": "Evidence item recorded",
+      "recovered_optional": "Recovered from (optional)",
+      "source_placeholder": "e.g. as listed in the Police exhibit register",
+      "submit": "Add evidence item"
+    }
+  },
+  "file": {
+    "form": {
+      "court_case_number": "Court case number",
+      "material_optional": "What accompanied the file (optional)",
+      "material_placeholder": "e.g. Charge sheet (draft), witness statements, arresting officer statement, exhibit photos",
+      "odpp_number": "Prosecution registration number",
+      "odpp_number_hint": "As written on the file.",
+      "odpp_number_optional": "Prosecution registration number (optional)",
+      "odpp_number_placeholder": "Assign when known",
+      "open_failed": "Could not open file",
+      "opened": "File opened",
+      "police_reference": "Police reference",
+      "police_reference_hint": "As written on the police file: station, CRB, number and year.",
+      "police_reference_optional": "Police reference (optional)",
+      "police_reference_placeholder": "e.g. JINJA CRB 314/2019",
+      "police_station": "Police station",
+      "police_station_optional": "Police station (optional)",
+      "police_station_placeholder": "e.g. Jinja Police Station",
+      "received": "Received",
+      "submit_open": "Open file",
+      "title": "Title",
+      "title_placeholder": "e.g. State vs. Okello, theft of motor vehicle",
+      "title_required": "A short title for the file is required.",
+      "update_failed": "Could not update file details",
+      "updated": "File details updated"
+    },
+    "link": {
+      "link_failed": "Could not link person",
+      "linked": "Person linked to file",
+      "person": "Person",
+      "role": "Role on this file",
+      "role_placeholder": "Select role",
+      "submit": "Link person"
+    },
+    "role": {
+      "accused": "Accused",
+      "complainant": "Complainant / victim",
+      "witness": "Witness"
+    },
+    "status": {
+      "declined": "Declined",
+      "discontinued": "Discontinued",
+      "diverted": "Diverted",
+      "plea_bargained": "Plea bargained",
+      "resubmitted": "Resubmitted by Police",
+      "returned_for_investigation": "Returned for further investigation",
+      "sanctioned": "Sanctioned",
+      "taken_over": "Taken over",
+      "under_review": "Awaiting decision"
+    },
+    "view": {
+      "active": {
+        "about": "Awaiting a charging decision, with a review under way or handed back by Police.",
+        "label": "Active reviews"
+      },
+      "all": {
+        "about": "Every file in the register.",
+        "label": "All files"
+      },
+      "closed": {
+        "about": "The charging decision has been made.",
+        "label": "Closed"
+      },
+      "intake": {
+        "about": "Received, and no review recorded yet.",
+        "label": "Intake"
+      },
+      "reopened": {
+        "about": "Concluded files brought back for review, with the reason each was reopened.",
+        "label": "Reopened reviews"
+      },
+      "returned": {
+        "about": "With Police for further investigation.",
+        "label": "Returned to Police"
+      }
+    }
+  },
+  "file_tab": {
+    "chronology": "Chronology",
+    "court": "Court",
+    "file": "File",
+    "index": "The file",
+    "details": "Details",
+    "case": "Case",
+    "activity": "Activity"
+  },
+  "file_ws": {
+    "a_count": "A count",
+    "attachments": "Attachments",
+    "back": "Back to all files",
+    "came_back": "What came back",
+    "chronology_empty": "Nothing has been recorded on this file.",
+    "correct": "Correct",
+    "correct_description": "Record a decision that replaces this one. The earlier one stays on the record.",
+    "correct_title": "Correct this decision",
+    "corrected": "Corrected {date}",
+    "corrects": "Corrects {decision} of {date}",
+    "court_no": "Court case no.",
+    "court_number_hint": "Recorded by the prosecutor; the court's own record is the authority.",
+    "court_number_label": "Court case number",
+    "court_reference": "Court reference",
+    "decisions_hint": "Decisions are never edited or removed. A correction is a new decision that says why. The file's status follows its counts.",
+    "edit": "Edit details",
+    "edit_description": "Update registration, reference and court numbers.",
+    "edit_title": "Edit file details",
+    "link_person": "Link a person",
+    "link_person_description": "Add an accused, complainant or witness to this file.",
+    "log_resubmission": "Log resubmission",
+    "log_resubmission_description": "Record the file coming back from Police.",
+    "no_court_number": "No court case number recorded. It is assigned once the charge sheet is filed.",
+    "no_decisions": "No decisions recorded yet.",
+    "no_directions": "No directions were recorded with this return.",
+    "no_people": "No one is linked to this file yet.",
+    "not_found": "File not found",
+    "not_found_body": "This file is not in the register. It may have been opened on another installation.",
+    "not_returned": "This file has not been returned to Police.",
+    "odpp_no": "Prosecution registration no.",
+    "planned_adjournments": "Adjournments, and the three consecutive adjournments review trigger.",
+    "planned_body": "Hearing dates and adjournments are kept here by the prosecutor until the courts' own app can be connected.",
+    "planned_hearings": "Hearing dates and what each hearing was for.",
+    "planned_notices": "Notices to the prosecutor.",
+    "planned_title": "Trial dates and adjournments",
+    "police_ref": "Police reference",
+    "police_station": "Police station",
+    "received": "Received {date}.",
+    "record_decision": "Record a decision",
+    "record_decision_description": "Sanction, decline, divert, threshold charge and return follow a charging review. The others are recorded here.",
+    "references": "References",
+    "remove_person": "Remove {name} from this file",
+    "resubmitted_on": "Resubmitted {date}",
+    "returned_on": "Returned {date}",
+    "returns": "Return and resubmission",
+    "sections": "File sections",
+    "stands": "Where this file stands",
+    "threshold_due": "The 14-day review of the Threshold Test charge is due {date}.",
+    "threshold_overdue": "The 14-day review of the Threshold Test charge was due {date}. It clears when a later decision is recorded.",
+    "threshold_review": "Threshold review",
+    "via_connection": "Referred through the connection to {station}.",
+    "whole_file": "Whole file",
+    "with_police": "With Police",
+    "tasks": "Tasks"
+  },
+  "intake_alerts": {
+    "title": "Awaiting a charging decision"
+  },
+  "interchange": {
+    "a_station": "a station",
+    "conn": {
+      "answered": "answered. It is not trusted yet: anyone could have answered. Phone or meet the station and have them read their fingerprint out. Type what they read. It must match this one:",
+      "area": "Area handled",
+      "area_placeholder": "The area it handles (optional)",
+      "create_identity": "Create the identity",
+      "decline": "Decline",
+      "decline_failed": "Could not decline",
+      "decline_placeholder": "Not them? Say why (optional)",
+      "decline_reason": "Reason for declining",
+      "empty": "No station has been invited. Invite the stations this office handles.",
+      "end": "End the connection",
+      "end_failed": "Could not end it",
+      "end_placeholder": "To end this connection, say why",
+      "end_reason": "Reason for ending the connection",
+      "ended": "Connection ended",
+      "fingerprint_hint": "A station asks for this code when it confirms this office. Read it to them; do not send it in the same message as the invitation.",
+      "fingerprint_label": "Fingerprint of this office",
+      "fingerprint_placeholder": "Type what the station reads out",
+      "fingerprint_read": "Fingerprint the station read out",
+      "handles": "Handles: {area}.",
+      "identify": "Identify this office",
+      "identify_description": "Name the office as the stations that send to it know it. It gets a signing key and an encryption key that never leave this computer. The name cannot be changed afterwards, because every station confirms it.",
+      "identify_first": "Identify this office first.",
+      "identity_created": "This office now has an identity",
+      "identity_failed": "Could not set it up",
+      "identity_set": "Identity set",
+      "import_answer": "Import a station's answer",
+      "invite_description": "A station can only send here if this office invites it. The invitation is for that station, is used once, and expires. Send the file to the station by any means: a stick, e-mail, a download.",
+      "invite_failed": "Could not make the invitation",
+      "invite_hint": "Then import the answer the station sends back.",
+      "invite_title": "Invite a station",
+      "invited": "Invitation made",
+      "invited_on": "Invited {date}",
+      "known_as": "This is who the stations that send here know this office as.",
+      "make_invite": "Make the invitation",
+      "office_name": "Office name",
+      "office_placeholder": "e.g. {office} Wandegeya",
+      "officer_in_charge": "officer in charge {name}",
+      "open_for": "Open for",
+      "save_again": "Save the invitation again",
+      "save_invite_failed": "Could not save the invitation",
+      "station": "Station",
+      "station_placeholder": "The station, e.g. Wandegeya Police Station",
+      "stations": "Stations",
+      "subtitle": "Which police stations may send files to this office. A station sends here only if this office invited it and a person here has confirmed who it is.",
+      "trust": "It matches: trust this station",
+      "trusted_detail": "Fingerprint {fingerprint}. Confirmed {date}{by}. Highest package number received: {seq}.",
+      "trusted_toast": "Station trusted. Send it the confirmation.",
+      "waiting": "{count} waiting",
+      "waiting_answer": "Waiting for {station} to answer. Open until {date}."
+    },
+    "file_failed": "The file could not be made.",
+    "import": "Receive a file from a station",
+    "import_failed": "The package was not taken in",
+    "in": {
+      "decided": "Decided",
+      "empty": "Nothing is waiting. Import a package a station has sent.",
+      "from": "From {station}.",
+      "from_received": "From {station}. Received {date}.",
+      "nothing_prepared": "Nothing has been prepared. A receipt is prepared when you accept or reject a referral; a decision notice is prepared from the file's Decisions tab.",
+      "subtitle": "Referrals from the stations this office trusts. They wait here, held apart from the records, until you read and accept them.",
+      "to_send": "To send back",
+      "to_send_hint": "Receipts, decision notices and connection confirmations. Each is signed by this office and sealed so only the station can read it. Save the file and send it by any means."
+    },
+    "kind": {
+      "decision_notice": "Decision notice",
+      "pairing_confirmation": "Connection",
+      "receipt": "Receipt"
+    },
+    "notice": {
+      "button": "Notify the station",
+      "drafts": "Notice prepared. {count} draft documents are not in it: issue them first if they should be.",
+      "failed": "Could not prepare the notice",
+      "prepared": "Notice prepared. Save the file to send it."
+    },
+    "open_file": "Open the file",
+    "out": {
+      "not_sent": "Not sent yet",
+      "prepared": "Prepared {date}",
+      "save": "Save the file",
+      "save_again": "Save again",
+      "save_failed": "Could not save it",
+      "saved": "Saved. Send the file to the station.",
+      "saved_on": "Saved {date}",
+      "saved_to_send": "Saved to send",
+      "to": "To {station}"
+    },
+    "package_file": "File from the station",
+    "package_filter": "Pleadli file",
+    "read": "Read",
+    "referral": "Referral",
+    "resubmission": "Resubmission",
+    "review": {
+      "accept": "Accept and open the file",
+      "accept_failed": "Could not accept it",
+      "add_new": "Add as a new person",
+      "already_here": "Already here",
+      "answers": "What this answers",
+      "charges": "Proposed charges",
+      "creates_file": "Accepting creates a prosecution file in one step: {people} people, {statements} statements, {exhibits} exhibits, {charges} proposed charges and {files} files. A receipt is then ready for the station.",
+      "creates_material": "Accepting adds the new material to the file in one step: {people} people, {statements} statements, {exhibits} exhibits, {charges} proposed charges and {files} files. A receipt is then ready for the station.",
+      "decide": "Decide",
+      "exhibits": "Exhibits",
+      "files": "Files with it",
+      "files_hint": "The attachments were checked and have not been altered. They join the file only when you accept it.",
+      "fingerprint": "Station's identity code",
+      "gap": "Gap",
+      "gap_many": "{count} packages numbered before this one from this station have not been received here.",
+      "gap_one": "A package numbered before this one from this station has not been received here.",
+      "name_differs": "Name differs",
+      "name_differs_body": "The referral names the station “{named}”, but the connection was confirmed as “{confirmed}”.",
+      "nin": "NIN {nin}",
+      "no_files": "No files came with this referral.",
+      "not_trusted": "Not trusted",
+      "not_trusted_body": "This station's connection is no longer trusted, so this cannot be accepted.",
+      "not_with_station": "It is not with the station ({status}), so this cannot be accepted.",
+      "opened": "File opened. A receipt is ready to send.",
+      "opened_failed": "File opened. {count} documents could not be attached.",
+      "or_reject": "Or reject it",
+      "origin": "Where this came from",
+      "referred_by": "Referred by {station}. Received {date}.",
+      "registration": "Prosecution registration number",
+      "registration_placeholder": "If it has one (optional)",
+      "reject": "Reject the referral",
+      "reject_failed": "Could not reject it",
+      "reject_placeholder": "Why it is being rejected. The station is told.",
+      "reject_reason": "Reason for rejecting",
+      "rejected_toast": "Rejected. A receipt with your reason is ready to send.",
+      "resubmission_of": "A resubmission of",
+      "same_nin": "{name} has the same national ID.",
+      "sent": "Sent",
+      "sent_value": "{date}, package {seq}",
+      "sha": "Check code",
+      "signature_checked": "Checked: this really came from that station, only this office can open it, and nothing was changed on the way. What it says is still the station's account.",
+      "signed_by": "Sent by",
+      "statements": "Statements",
+      "summary": "The station's summary",
+      "taken_by": "taken by {name}",
+      "title": "Title of the file",
+      "title_placeholder": "Leave empty to use the suggested title",
+      "unknown": "Unknown",
+      "unknown_file": "Unknown file",
+      "unknown_file_body": "It names a file this station did not refer, so it cannot be accepted.",
+      "use_existing": "Use {name}",
+      "who": "Who says so",
+      "with_station": "It is with the station. Accepting adds this material to that file. It does not open a new one."
+    },
+    "role": {
+      "accused": "Accused",
+      "arresting_officer": "Arresting officer",
+      "complainant": "Complainant",
+      "investigating_officer": "Investigating officer",
+      "witness": "Witness"
+    },
+    "state": {
+      "awaiting_confirmation": "Answered: confirm the fingerprint",
+      "declined": "Declined",
+      "expired": "Invitation expired",
+      "invited": "Invited, no answer yet",
+      "revoked": "Revoked",
+      "trusted": "Trusted"
+    },
+    "status": {
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "waiting": "Waiting to be read"
+    }
+  },
+  "material": {
+    "add_charge": "Add a charge",
+    "add_charge_description": "Record a charge Police is proposing on this file.",
+    "add_evidence": "Add evidence",
+    "add_evidence_description": "Record an exhibit or other evidence Police says exists.",
+    "add_observation": "Add an observation",
+    "add_observation_description": "Note a question, gap or issue while reviewing. Not a formal decision.",
+    "add_statement": "Add a statement",
+    "add_statement_description": "Record a statement provided with the Police referral.",
+    "evidence": "Evidence",
+    "no_charges": "No charges recorded yet.",
+    "no_evidence": "No evidence recorded yet.",
+    "no_observations": "No observations recorded yet.",
+    "no_statements": "No statements received yet.",
+    "observations": "Observations",
+    "photos": "Photographs and attachments",
+    "review_stands": "Where the review stands",
+    "scanned": "Scanned copy and attachments"
+  },
+  "nav": {
+    "item": {
+      "active_reviews": "Active reviews",
+      "capacity": "Capacity and workload",
+      "charging_review": "Charging review",
+      "closed": "Closed",
+      "court_matters": "Court matters",
+      "decisions": "Decisions",
+      "documents": "Documents",
+      "incoming": "Incoming",
+      "intake": "Intake",
+      "overview": "Today",
+      "people": "People",
+      "police_connections": "Police connections",
+      "police_material": "Police material",
+      "reopened": "Reopened reviews",
+      "reports": "Reports",
+      "returned": "Returned to Police",
+      "search": "Search",
+      "settings": "Settings",
+      "today": "Today",
+      "files": "Files",
+      "board": "Board",
+      "calendar": "Calendar",
+      "statistics": "Statistics",
+      "cases": "Cases",
+      "tasks": "Tasks"
+    },
+    "section": {
+      "files": "Files",
+      "office": "Office",
+      "work": "Prosecution work"
+    }
+  },
+  "next": {
+    "charged": "Charged. No court case number recorded yet.",
+    "charged_case": "Charged. Court case {number}.",
+    "charged_next": "Record the court case number once the charge sheet is filed.",
+    "concluded": "The charging decision has been made and the file is concluded.",
+    "continue_review": "Continue the review",
+    "go_directions": "Go through the directions",
+    "material": "Material recorded. The review has not begun.",
+    "material_next": "Read the material and record your observations.",
+    "no_further": "No further action recorded.",
+    "observations": "Observations recorded. No charging review started.",
+    "observations_next": "Start the charging review when you are ready to apply the test.",
+    "open_court": "Open court",
+    "open_decisions": "Open decisions",
+    "received": "Received from Police. No material recorded yet.",
+    "received_next": "Record the statements, evidence and proposed charges that came with the referral.",
+    "record_case": "Record the case number",
+    "record_material": "Record the material",
+    "record_new_material": "Record the new material",
+    "reopened": "Reopened for review.",
+    "reopened_next": "Apply the test, record the findings, and record the decision that corrects the earlier one.",
+    "reopened_reason": "Reopened for review: {reason}",
+    "resubmitted": "Police have resubmitted this file after further investigation.",
+    "resubmitted_next": "Record what came back, review it, and decide.",
+    "resubmitted_open": "Police have resubmitted this file. {open} of {total} directions are still open.",
+    "resubmitted_open_next": "Go through the directions, record what came back, then review and decide.",
+    "start_review": "Start the review",
+    "under_way": "{test} review under way.",
+    "under_way_next": "Record the findings and the conclusion of each test, then the decision they support.",
+    "with_police": "With Police for further investigation.",
+    "with_police_directions": "With Police for further investigation, with {directions}.",
+    "with_police_next": "Log the resubmission when the file comes back.",
+    "papers": "The police file is in: {count} documents.",
+    "papers_next": "Read it, then start the review. Assist can prepare a brief first."
+  },
+  "not_found": {
+    "back": "Navigate to previous page",
+    "body": "The page you're looking for doesn't exist.",
+    "page_title": "Page not found",
+    "refresh": "Refresh page",
+    "route_title": "Route not found"
+  },
+  "overview": {
+    "activity": "Recent activity",
+    "activity_empty": "Nothing has been recorded yet.",
+    "attention": {
+      "directions_given": "{directions} given.",
+      "directions_open": "{open} of {total} directions still open.",
+      "drafts_summary": "A draft follows the record until it is issued. Read it, then issue it.",
+      "drafts_title": "{documents} prepared but not issued",
+      "empty": "Nothing needs attention. No file is waiting on a decision, none is with Police, and no review is due.",
+      "incoming_summary": "Held apart from the records until you read and accept them.",
+      "incoming_title": "{referrals} from Police waiting to be read",
+      "no_court_ref_summary": "Record the court reference once the charge sheet has been filed.",
+      "no_court_ref_title": "{files} without a court case number",
+      "no_review": "No review recorded yet.",
+      "outgoing_summary": "Save each file and send it to the station.",
+      "outgoing_title": "{items} prepared for Police, not sent yet",
+      "reopened": "{reference}. A concluded decision has been reopened and is under review.",
+      "resubmitted": "{reference}. Resubmitted by Police, waiting {age}, awaiting review.",
+      "returned": "{reference}. With Police for further investigation. Waiting for the resubmission.",
+      "returned_since": "{reference}. With Police for further investigation since {date}. Waiting for the resubmission.",
+      "review_due": "Review due",
+      "review_overdue": "Review overdue",
+      "threshold_due": "Threshold Test review due {date} ({left} left).",
+      "threshold_overdue": "Threshold Test review was due {date}. The 14-day review clears when a later decision is recorded.",
+      "title": "Needs attention"
+    },
+    "figure": {
+      "active_files": "Active files",
+      "awaiting_decision": "Awaiting a decision",
+      "decisions_recorded": "Decisions recorded",
+      "reopened": "Reopened",
+      "resubmitted": "Resubmitted",
+      "with_court_reference": "With a court reference"
+    },
+    "subtitle": "{date}. What needs your attention, and how much is on your desk.",
+    "waiting": "Waiting {age}.",
+    "workload": "Current workload"
+  },
+  "page": {
+    "court": {
+      "about": "Files that were charged, and the court reference for each. The court's own record is the authority.",
+      "case": "{reference}. Court case {number}.",
+      "charged_on": "{reference}. Charged {date}. Record the case number once the charge sheet is filed.",
+      "with": "With a court case number",
+      "with_empty": "No court case numbers recorded yet.",
+      "without": "Charged, no court case number yet",
+      "without_empty": "Every charged file has a court case number."
+    },
+    "decisions": {
+      "about": "What was decided, by whom and when. Decisions are never edited or removed."
+    },
+    "documents": {
+      "about": "Prepared from a decision, read, then issued. An issued document is final and carries its reference.",
+      "coming": "Coming next",
+      "coming_1": "Legal opinion",
+      "coming_2": "Indictment",
+      "coming_3": "Summary of the case",
+      "coming_4": "Decision notice to the station",
+      "coming_body": "Each will look like the real document: letterhead, signature and stamp."
+    },
+    "files": {
+      "col": {
+        "accused": "Accused",
+        "court": "Court case no.",
+        "id": "ID",
+        "received": "Received",
+        "recorded": "Recorded",
+        "reference": "Reference",
+        "station": "Police station",
+        "status": "Status",
+        "title": "Title",
+        "waiting": "Waiting",
+        "with_police": "With Police"
+      },
+      "empty": "No files here.",
+      "empty_active": "No file is being reviewed.",
+      "empty_all": "No files have been opened yet.",
+      "empty_closed": "No charging decision has been made yet.",
+      "empty_intake": "Nothing has arrived that is still waiting for a first review.",
+      "empty_reopened": "No decision is being reopened.",
+      "empty_returned": "No file is with Police.",
+      "oldest_first": "Oldest first",
+      "search_list": "Search this list",
+      "views": "Views of the register"
+    },
+    "material": {
+      "charges": "Charges",
+      "charges_about": "The charges Police proposed, across all files.",
+      "empty": "Nothing recorded yet. Material is recorded inside each file.",
+      "evidence": "Evidence",
+      "evidence_about": "Every exhibit and item of evidence Police reports, across all files.",
+      "kinds": "Kinds of material",
+      "statements": "Statements",
+      "statements_about": "Every statement received from Police, across all files."
+    },
+    "reports": {
+      "about": "Answers to questions about a period, printable and exportable.",
+      "body": "Every report reads the same records as the rest of the app, so the numbers always match.",
+      "coming": "Reports to come",
+      "r1": "Files received, by period and by police station",
+      "r2": "Charging decisions, by type and over time",
+      "r3": "Files returned to Police, and how long they were away",
+      "r4": "Reviews pending, and how long they have waited",
+      "r5": "Workload",
+      "r6": "Court matters"
+    },
+    "search": {
+      "about": "Find a file or a person by name, national ID, registration number or reference.",
+      "none": "No people or files match.",
+      "placeholder": "Name, NIN, registration number, reference",
+      "planned_1": "Statements, evidence and proposed charges",
+      "planned_2": "Decisions and review notes",
+      "planned_3": "Documents",
+      "planned_4": "Court case numbers",
+      "planned_body": "Search finds people and files today. These come next.",
+      "planned_title": "Search inside the material",
+      "type": "Type to search."
+    },
+    "board": {
+      "about": "Everything the office has to do, by where it stands. Drag a card to move it."
+    },
+    "calendar": {
+      "about": "Hearings, tasks that fall due and review dates, on one calendar."
+    },
+    "cases": {
+      "about": "Every open case in its stage. Open a card to read what Assist prepared and accept it; drag a card to move it by hand."
+    }
+  },
+  "person": {
+    "form": {
+      "add": "Add person",
+      "add_failed": "Could not add person",
+      "added": "Person added",
+      "address_optional": "Address (optional)",
+      "first_name": "First name",
+      "first_name_required": "First name is required.",
+      "last_name": "Last name",
+      "last_name_required": "Last name is required.",
+      "national_id_optional": "National ID (optional)",
+      "other_names_optional": "Other names (optional)",
+      "phone_optional": "Phone (optional)",
+      "update_failed": "Could not update person",
+      "updated": "Person updated"
+    }
+  },
+  "person_picker": {
+    "add_aria": "Add new person",
+    "add_description": "Record someone who isn't already known to the system.",
+    "add_title": "Add person",
+    "empty": "No matching people",
+    "placeholder": "Search for a person…"
+  },
+  "protection": {
+    "basic": "PIN for everyone",
+    "basic_about": "Each person signs in with their own 6-digit PIN.",
+    "change": "Change",
+    "change_hint": "Changing it signs everyone else out.",
+    "changed": "Protection is now: {level}",
+    "full": "Full protection",
+    "full_about": "A password and a code from the phone. For offices with several people.",
+    "full_next_sign_in": "You link your phone at your next sign-in. Everyone else needs a new password from you in People.",
+    "idle": "Sign out when idle",
+    "idle_description": "After this long without use, the app signs the person out.",
+    "none": "No sign-in",
+    "none_about": "The app opens straight away. For one person on a computer only they use.",
+    "others_need_new": "Everyone else needs a new PIN from you in People before they can sign in.",
+    "title": "Sign-in",
+    "your_new_password": "Your new password",
+    "your_new_pin": "Your new PIN"
+  },
+  "referral": {
+    "resubmission": {
+      "log_failed": "Could not log resubmission",
+      "logged": "Resubmission logged",
+      "provided_optional": "What was provided (optional)",
+      "provided_placeholder": "What was provided…",
+      "submit": "Log resubmission"
+    }
+  },
+  "review": {
+    "criterion": {
+      "admissibility": {
+        "about": "Can it be put before the court?",
+        "label": "Admissibility"
+      },
+      "age": {
+        "about": "The age of the suspect.",
+        "label": "Age"
+      },
+      "availability": {
+        "about": "Is the evidence available, and will it stay so?",
+        "label": "Availability"
+      },
+      "credibility": {
+        "about": "Are the witnesses credible?",
+        "label": "Credibility"
+      },
+      "culpability": {
+        "about": "How culpable is the suspect?",
+        "label": "Culpability"
+      },
+      "defence": {
+        "about": "Is a defence raised, and how does the evidence meet it?",
+        "label": "Defence raised"
+      },
+      "harm": {
+        "about": "The harm to the victim and to the community.",
+        "label": "Harm"
+      },
+      "out_of_court_disposal": {
+        "about": "Is an alternative to prosecution available?",
+        "label": "Out-of-court disposal"
+      },
+      "proportionality": {
+        "about": "Is prosecution a proportionate response?",
+        "label": "Proportionality"
+      },
+      "relevance": {
+        "about": "Is the evidence relevant to what has to be proved?",
+        "label": "Relevance"
+      },
+      "reliability": {
+        "about": "Can the evidence be relied on?",
+        "label": "Reliability"
+      },
+      "sensitive_information": {
+        "about": "Does protecting sensitive information weigh against prosecuting?",
+        "label": "Sensitive information"
+      },
+      "seriousness": {
+        "about": "How serious is the offence?",
+        "label": "Seriousness"
+      },
+      "threshold_bail": {
+        "about": "For example, the risk that the suspect will abscond.",
+        "label": "Substantial grounds to object to bail"
+      },
+      "threshold_further_evidence": {
+        "about": "There are reasonable grounds to believe further evidence will emerge, with timelines for what is outstanding.",
+        "label": "Further evidence is expected"
+      },
+      "threshold_guilt": {
+        "about": "The key evidence gives reasonable grounds to believe the suspect committed the offence.",
+        "label": "Reasonable grounds to believe guilt"
+      },
+      "threshold_public_interest": {
+        "about": "Charging now is in the public interest.",
+        "label": "Public interest in charging"
+      },
+      "threshold_seriousness": {
+        "about": "A summary of the facts explaining why the seriousness justifies an immediate charge.",
+        "label": "Seriousness justifies charging now"
+      }
+    },
+    "finding": {
+      "against": "Against charging",
+      "favours": "Favours charging",
+      "unresolved": "Unresolved"
+    },
+    "outcome": {
+      "failed": "Failed",
+      "met": "Met",
+      "not_met": "Not met",
+      "passed": "Passed"
+    },
+    "panel": {
+      "add_note": "Add a note",
+      "change_until_concluded": "Findings and conclusions are yours to change until the decision concludes the review. To assess counts differently, conclude this review and start another.",
+      "choose_test": "Choose the test to apply. Nothing is recorded until you start.",
+      "concluded_reviews": "Concluded reviews",
+      "date_range": "{from} to {to}",
+      "decision_made": "The charging decision has been made. To reconsider it, reopen the decision.",
+      "decision_option": "{decision}, {date}",
+      "decision_to_reopen": "Decision to reopen",
+      "finding_failed": "Could not record the finding",
+      "finding_on": "Finding on {criterion}",
+      "findings_support": "What the findings support: {decisions}.",
+      "note_on": "Note on {criterion}",
+      "note_placeholder": "Note on this finding (optional)",
+      "outcome_failed": "Could not record the outcome",
+      "pi_locked": "Applied only once the Evidential Test is passed.",
+      "reason_placeholder": "The reason, for the record",
+      "record_decision": "Record the decision",
+      "record_decision_description": "The outcome of this review.",
+      "recorded_of": "{recorded} of {total} recorded",
+      "reopen_decision": "Reopen a decision",
+      "reopen_decision_description": "Bring a concluded decision back for review.",
+      "reopen_explainer": "A concluded decision can be reconsidered when the original was wrong, new or significant evidence has come to light, or an inquest recommended prosecution. The reopening is a review of its own; the decision it produces corrects the old one, which stays on the record.",
+      "reopen_failed": "Could not reopen",
+      "reopen_submit": "Reopen for review",
+      "reopened_because": "Reopened because: {reason}",
+      "review_title": "{standard} review",
+      "review_title_reopened": "{standard} review (reopened)",
+      "section_title": "Charging review",
+      "standard_reopened": "{standard}, reopened",
+      "start_failed": "Could not start the review",
+      "start_named": "Start a {standard} review",
+      "started": "Started {date}.",
+      "started_by": "Started {date} by {name}.",
+      "test_outcome": "{test}: {outcome}",
+      "test_result": "{test} {outcome}",
+      "test_to_apply": "Test to apply",
+      "threshold_hint": "Met needs all five requirements marked as favouring.",
+      "why_reopened": "Why it is being reopened",
+      "with_police": "This file is with Police. A new review starts when it comes back.",
+      "withdraw": "Withdraw",
+      "your_conclusion": "Your conclusion"
+    },
+    "standard": {
+      "threshold": {
+        "about": "A narrower test for rare, very serious cases where the investigation is incomplete but charging now is justified. All five requirements must be met, and the decision must be reviewed within 14 days.",
+        "label": "Threshold Test"
+      },
+      "two_stage": {
+        "about": "The default. The Evidential Test first, then the Public Interest Test only if the first is passed.",
+        "label": "Two-Stage Test"
+      }
+    },
+    "test": {
+      "evidential": {
+        "about": "Is there a realistic prospect of conviction?",
+        "label": "Evidential Test"
+      },
+      "public_interest": {
+        "about": "Is prosecution in the public interest? Applied only once the Evidential Test is passed.",
+        "label": "Public Interest Test"
+      },
+      "threshold": {
+        "about": "All five requirements must be met.",
+        "label": "Threshold Test"
+      }
+    }
+  },
+  "review_note": {
+    "form": {
+      "author_optional": "Author (optional)",
+      "author_placeholder": "Name",
+      "observation": "Observation",
+      "observation_placeholder": "What did you notice while reviewing this file?",
+      "record_failed": "Could not record observation",
+      "recorded": "Observation recorded",
+      "submit": "Add observation"
+    }
+  },
+  "review_page": {
+    "empty": "No file is waiting on a charging decision.",
+    "empty_any": "No file is waiting on a decision.",
+    "reopened": "{reference}. A concluded decision is being reconsidered.",
+    "subtitle": "Files waiting on a charging decision, oldest first. The review is done inside each file.",
+    "the_review": "The review",
+    "the_review_hint": "Reviews are recorded inside each file. A return for further investigation carries directions to Police.",
+    "threshold_is_due": "Charged on the Threshold Test {charged}. The 14-day review is due {due}.",
+    "threshold_reviews": "Threshold Test reviews",
+    "threshold_under_way": "Threshold review under way",
+    "threshold_was_due": "Charged on the Threshold Test {charged}. The 14-day review was due {due}.",
+    "under_way": "Review under way",
+    "waiting": "Waiting on a decision"
+  },
+  "security": {
+    "audit": {
+      "broken": "The chain is broken at entry {entry}.",
+      "description": "A record of decisions, reviews, documents issued, attachments, sign-ins and backups that can only be added to. Each entry is linked to the one before, so a changed or removed entry shows.",
+      "intact": "Verified: {entries} entries, chain intact.",
+      "title": "Record of what was done",
+      "verify": "Verify the chain",
+      "verify_failed": "Could not verify"
+    },
+    "audit_action": {
+      "app_locked": "Application locked",
+      "app_unlocked": "Application unlocked",
+      "attachment_added": "Document attached",
+      "attachment_removed": "Attachment removed",
+      "backup_created": "Backup made",
+      "backup_restored": "Backup restored",
+      "decision_corrected": "Decision corrected",
+      "decision_recorded": "Decision recorded",
+      "document_discarded": "Draft document discarded",
+      "document_issued": "Document issued",
+      "installation_changed": "Office details changed",
+      "lock_enabled": "Application lock turned on",
+      "lock_passphrase_changed": "Lock passphrase changed",
+      "lock_removed": "Application lock turned off",
+      "protection_changed": "Protection changed",
+      "review_reopened": "Decision reopened for review",
+      "review_started": "Charging review started",
+      "second_factor_linked": "Phone linked",
+      "second_factor_reset": "Phone link reset",
+      "setup_completed": "Installation set up",
+      "sign_in_failed": "Wrong PIN or password",
+      "signed_in": "Signed in",
+      "signed_out": "Signed out",
+      "staff_added": "Person added",
+      "staff_changed": "Person changed",
+      "staff_secret_set": "PIN or password set",
+      "unlock_failed": "Wrong passphrase entered"
+    },
+    "backup": {
+      "confirm": "Confirm backup passphrase",
+      "description": "One encrypted file holding every record and document. Only the passphrase below opens it, and it is not stored anywhere: if it is lost, the backup cannot be opened.",
+      "failed": "Could not make the backup",
+      "hint": "Keep the file somewhere other than this computer, and the passphrase somewhere other than the file.",
+      "last": "Last {date}",
+      "never": "Never backed up",
+      "passphrase": "Backup passphrase",
+      "passphrase_placeholder": "Backup passphrase (at least 10 characters)",
+      "saved": "Backup saved",
+      "title": "Make a backup"
+    },
+    "confirm_placeholder": "Confirm the passphrase",
+    "gate": {
+      "backup_open_failed": "The backup could not be opened.",
+      "backup_ready": "A backup is ready to be restored.",
+      "choose_restore": "Choose a backup and restore",
+      "enter": "Enter the passphrase to continue.",
+      "explainer": "Locking protects the screen. The records on this computer are encrypted whether or not a lock is set.",
+      "locked_title": "{product} is locked",
+      "passphrase": "Passphrase",
+      "recovery_body": "Nothing has been changed or deleted. Restoring a backup brings the records back; the data as it is now is kept aside.",
+      "recovery_reason": "{product} could not open its records.",
+      "recovery_title": "The data could not be opened",
+      "restart_to_finish": "Restart to finish.",
+      "restore_this": "Restore this backup",
+      "retry": "Too many wrong attempts. Try again in {seconds} seconds.",
+      "unlock": "Unlock",
+      "unlock_failed": "It could not be unlocked."
+    },
+    "idle": {
+      "hour": "1 hour",
+      "minutes": "{count} minutes",
+      "never": "Never"
+    },
+    "passphrase_mismatch": "The two passphrases are not the same",
+    "protection": {
+      "database": "Files and records",
+      "database_summary": "Locked on this computer.",
+      "description": "Every file and document is kept locked with encryption on this computer, whoever is signed in.",
+      "documents_summary": "Each attachment is locked on its own.",
+      "encrypted": "Locked",
+      "key_file": "Protected",
+      "key_file_hint": "This computer has no built-in key store, so the key is kept beside the data. Ask your IT staff to keep the whole data folder private.",
+      "keystore": "Fully protected",
+      "keystore_hint": "Someone who copies the data to another computer cannot open it.",
+      "sealed": "Locked",
+      "title": "Your records are locked"
+    },
+    "restore": {
+      "choose": "Choose a backup",
+      "description": "Replaces the records and documents with those in a backup. The current ones are kept aside, not deleted. Nothing changes until the application restarts.",
+      "file": "Backup file",
+      "open": "Open the backup",
+      "open_failed": "That backup could not be opened",
+      "ready": "Ready to restore",
+      "restart": "Restart and restore",
+      "restart_to_finish": "Restart the application to finish.",
+      "staged": "A backup made {date} with {documents} documents is ready.",
+      "title": "Restore from a backup"
+    }
+  },
+  "settings": {
+    "about": {
+      "appearance": "How the workspace looks on this machine.",
+      "backup": "Keeping an encrypted copy of the record somewhere else, and restoring it.",
+      "licence": "The licence your institution accepted at setup.",
+      "notifications": "When the desktop tells you work has arrived.",
+      "office": "The office's name, crest and colour. Everyone in the office sees the same.",
+      "people": "Who may use this installation, and what each person may do.",
+      "protection": "How people sign in, how the records are protected, and the record of what was done.",
+      "you": "Your name and rank appear on your decisions and on the documents you sign.",
+      "assist": "Whether AI Assist is used here, and where it sends files to be read."
+    },
+    "admin_only": "Only an administrator can change this.",
+    "alerts": {
+      "description": "A notification the first time a file arrives waiting on a charging decision. It tells you a file arrived; it is not a deadline.",
+      "hint": "Only in the desktop app.",
+      "title": "Desktop alerts",
+      "toggle": "Alert me when a file arrives"
+    },
+    "group": {
+      "about": "About",
+      "computer": "This computer",
+      "office": "This office",
+      "you": "You"
+    },
+    "language": {
+      "description": "The app's language, for you on this computer. It changes at once.",
+      "label": "Language"
+    },
+    "licence": {
+      "accepted": "Accepted",
+      "accepted_line": "Version {version}, accepted on {date} by {name}."
+    },
+    "nav": {
+      "appearance": "Appearance and language",
+      "backup": "Backup",
+      "licence": "Licence",
+      "notifications": "Notifications",
+      "office": "Office and look",
+      "people": "People",
+      "protection": "Protection",
+      "you": "Your details",
+      "assist": "Assist"
+    },
+    "office": {
+      "colour": "Colour",
+      "country": "Country",
+      "country_hint": "Chosen at setup. It sets reference numbers, file layout and laws.",
+      "everyone_sees": "Everyone in the office sees these, on every computer.",
+      "headquarters": "Headquarters",
+      "hq_description": "Headquarters oversees the offices that connect to it.",
+      "language": "Office language",
+      "language_hint": "The language a computer opens in the first time. Each person can still choose their own.",
+      "logo": "Crest or logo",
+      "logo_default": "Use the default",
+      "logo_failed": "That image could not be used.",
+      "logo_hint": "On every screen and on printed documents. PNG, JPG, SVG or WebP, up to 1 MB.",
+      "logo_upload": "Choose an image",
+      "name": "Name of the office",
+      "office": "Office",
+      "office_description": "This office works on its own. It can connect to headquarters later.",
+      "title": "The office",
+      "country_dev_hint": "Development build only: switch the country to try its numbering, file order and wording. A real office keeps the country chosen at setup.",
+      "country_changed": "Country changed to {country}"
+    },
+    "owner": {
+      "office": "Administrator",
+      "read_only": "To read",
+      "this_machine": "This machine",
+      "you": "Yours"
+    },
+    "save": "Save",
+    "save_failed": "Could not save",
+    "saved": "Saved",
+    "subtitle": "You, this office, and this computer.",
+    "theme": {
+      "description": "Light, dark, or follow this computer.",
+      "title": "Theme"
+    },
+    "title": "Settings",
+    "you": {
+      "change": "Change",
+      "identity": "Name and title",
+      "identity_description": "Shown on your decisions, on documents you prepare, and in the record of what was done.",
+      "password": "Your password",
+      "password_description": "Choose a new password of at least 12 characters.",
+      "pin": "Your PIN",
+      "pin_description": "Choose a new 6-digit PIN. Keep it to yourself."
+    }
+  },
+  "staff": {
+    "active": "Can use the app",
+    "add": "Add a person",
+    "add_full_hint": "Give them a first password. They link their phone the first time they sign in.",
+    "add_hint": "Give them a first PIN. They can change it after signing in.",
+    "added": "{name} added",
+    "description": "Everyone who may use this installation.",
+    "edit": "Change",
+    "first_password": "First password",
+    "first_pin": "First PIN",
+    "flag": {
+      "admin_only": "Only an administrator can mark who is the Director.",
+      "is_dpp": "{head}",
+      "is_dpp_hint": "Some decisions, such as discontinuing a prosecution, belong to the {head} alone. They are refused for anyone not marked here."
+    },
+    "inactive": "No longer here",
+    "name": "Full name",
+    "new_password": "Set a new password",
+    "new_pin": "Set a new PIN",
+    "no_secret": "Cannot sign in yet",
+    "none_level_hint": "With no sign-in, only the administrator uses this computer. Raise the protection to add people.",
+    "password_placeholder": "At least 12 characters",
+    "phone_pending": "Phone not linked",
+    "phone_reset": "Lost phone: link a new one",
+    "phone_reset_done": "They will link a new phone at their next sign-in.",
+    "pin_placeholder": "6 digits",
+    "rank": "Rank or title",
+    "rank_placeholder": "For example, {rank}",
+    "role": {
+      "administrator": "Administrator",
+      "clerk": "Clerk",
+      "prosecutor": "Prosecutor"
+    },
+    "role_label": "Role",
+    "set": "Set",
+    "title": "People"
+  },
+  "stage": {
+    "action": "Resulting action",
+    "action_about": "The document the decision produces: charge sheet, directions or written reasons.",
+    "assessment": "Assessment",
+    "assessment_about": "Choose the test: the Two-Stage Test or the Threshold Test.",
+    "decision_about": "The decision the findings support.",
+    "findings": "Findings",
+    "findings_about": "What each criterion found, and the conclusion of each test.",
+    "reasons": "Reasons",
+    "reasons_about": "Why, recorded with the decision.",
+    "review": "Review",
+    "review_about": "Read the material and record observations.",
+    "state": {
+      "available": "Recorded in a file",
+      "done": "Recorded",
+      "todo": "Not yet"
+    },
+    "pipe": {
+      "receive": "Receive",
+      "review": "Review",
+      "decide": "Decide",
+      "prepare": "Prepare",
+      "handover": "Hand over",
+      "follow_up": "Follow up",
+      "concluded": "Concluded",
+      "receive_about": "The police file arrives and is put in order: every document in its place, the people and the proposed charge found.",
+      "review_about": "The evidence is weighed: the Evidential Test, then the Public Interest Test, criterion by criterion.",
+      "decide_about": "The decision the law allows on what the review found, with reasons.",
+      "prepare_about": "The documents the decision needs, drafted from the record to edit and sign.",
+      "handover_about": "The file or the documents go out: to Police, the court or others, by the exchange, email, print or collection.",
+      "follow_up_about": "Hearings, answers from Police, reminders: until nothing more is expected.",
+      "concluded_about": "The outcome is recorded and the file closes."
+    }
+  },
+  "statement": {
+    "form": {
+      "content": "Statement content",
+      "content_placeholder": "What the statement says…",
+      "given_at": "Given at",
+      "person_required": "Person is required.",
+      "record_failed": "Could not record statement",
+      "recorded": "Statement recorded",
+      "role": "Statement role",
+      "role_required": "Statement role is required.",
+      "source_placeholder": "e.g. as received in the Police file",
+      "submit": "Add statement"
+    },
+    "role": {
+      "accused": "Statement of the accused",
+      "arresting_officer": "Arresting officer",
+      "complainant": "Complainant",
+      "investigating_officer": "Investigating officer",
+      "witness": "Witness"
+    }
+  },
+  "tabs": {
+    "document": "Document",
+    "file": "File",
+    "files": "Files",
+    "overview": "Today"
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light",
+    "placeholder": "Theme",
+    "system": "System"
+  },
+  "window": {
+    "close": "Close",
+    "maximize": "Maximize",
+    "minimize": "Minimize"
+  },
+  "workspace": {
+    "hide_sidebar": "Hide sidebar",
+    "pinned": "Pinned",
+    "profile": {
+      "dpp": "{head}",
+      "none_title": "Nobody signed in"
+    },
+    "quick": {
+      "add_person": "Add a person",
+      "add_person_description": "Someone who appears on a file: accused, complainant or witness.",
+      "find": "Find",
+      "label": "Quick actions",
+      "open_file": "Open a file",
+      "open_file_description": "Log a matter referred by Police.",
+      "start": "Start"
+    },
+    "recent": "Recent",
+    "ribbon": "Ribbon",
+    "search_prompt": "Search files, people, references",
+    "search_shortcut": "Search (Ctrl K)",
+    "show_sidebar": "Show sidebar",
+    "sidebar": "Sidebar",
+    "sign_out": "Sign out",
+    "tab": {
+      "close_named": "Close {title}",
+      "close_shortcut": "Close (Ctrl W)",
+      "next": "Next tab",
+      "next_shortcut": "Next tab (Ctrl Tab)",
+      "open_tabs": "Open tabs",
+      "pin": "Pin",
+      "pin_named": "Pin {title}",
+      "previous": "Previous tab",
+      "previous_shortcut": "Previous tab (Ctrl Shift Tab)",
+      "unpin": "Unpin",
+      "unpin_named": "Unpin {title}"
+    },
+    "tagline": "Prosecution workspace",
+    "window": "Window",
+    "more": "More",
+    "places": "Places"
+  },
+  "assist": {
+    "title": "Assist",
+    "add_to_board": "Add to Board",
+    "on_board": "On the Board",
+    "for": "For:",
+    "against": "Against:",
+    "check_law": "Check every offence and section against the text of the law before you rely on it.",
+    "contradictions": "Where the file disagrees with itself",
+    "draft_label": "Draft by Assist, not verified. Prepared {date} with {model}. You decide.",
+    "missing": "What the file still needs",
+    "next_steps": "Next steps",
+    "off_title": "Assist is not on",
+    "off_body": "An administrator turns Assist on in Settings, and confirms where it sends the file to be read.",
+    "offences": "Offences the facts point to",
+    "open_settings": "Open Assist settings",
+    "options": "Decision options",
+    "people": "People and what they say",
+    "prepare": "Read this file",
+    "refresh": "Read it again",
+    "reading_file": "Reading the file",
+    "reading_body": "This usually takes under a minute.",
+    "suggested": "Suggested",
+    "summary": "What happened",
+    "what_it_does": "Assist reads everything in the file and gives you a short brief: the facts, what is missing, where the evidence disagrees, the decision options with reasons, and next steps you can put on the Board. It never decides.",
+    "you_decide": "These are options, not a decision. Record your own decision under Decisions.",
+    "settings": {
+      "title": "Assist",
+      "description": "Reads a file and prepares a brief, and sorts imported paper into the file. It never decides.",
+      "use": "Use Assist in this office",
+      "ready": "Ready",
+      "needs": "Needs setting up",
+      "off": "Off",
+      "turned_on": "Assist is on",
+      "turned_off": "Assist is off",
+      "where_title": "Where the file goes",
+      "where_body": "Before anyone uses Assist, an administrator confirms this.",
+      "point_sent": "The text of the file, and any scans you ask it to read, are sent to the provider (Google Gemini) to be read. Nothing else leaves this computer.",
+      "point_free": "On a free key the provider may keep what it is sent and people there may read it. Use a paid or government account for real case files.",
+      "point_logged": "Every request is recorded: who asked, for which file, and when.",
+      "point_decide": "What Assist writes is a draft. A prosecutor decides and signs.",
+      "agree": "I understand, and this office may send files to the provider.",
+      "confirm": "Confirm and turn on",
+      "confirmed": "Confirmed",
+      "not_confirmed": "Not confirmed",
+      "confirmed_by": "Confirmed by {name} on {date}.",
+      "key_title": "Provider key",
+      "key_body": "The key from the office's Google AI Studio account. It is kept locked on this computer and never shown again.",
+      "key": "New key",
+      "key_placeholder": "Paste the key",
+      "key_set": "Key {hint}",
+      "key_env": "Development key {hint}",
+      "key_missing": "No key",
+      "key_removed": "Key removed",
+      "remove_key": "Remove the key",
+      "model": "Model",
+      "point_sent_any": "The text of the file, and any scans it reads, go to the provider chosen below to be read. Nothing else leaves this computer.",
+      "provider_title": "Provider",
+      "provider_body": "Pick one and paste its key. Keys are kept locked on this computer and never shown again.",
+      "provider_changed": "Assist now uses {name}",
+      "base_url": "Server address",
+      "key_where": "Get a key at {url}",
+      "model_title": "Model",
+      "model_body": "Automatic picks the provider's current best general model from its own list, and falls back to the next one when it is busy.",
+      "auto_model": "Choose the model automatically",
+      "show_models": "Show the provider's models",
+      "loading_models": "Asking the provider...",
+      "model_fixed": "Assist will always use {model}",
+      "auto_first": "Automatic: first",
+      "auto_backup": "Automatic: backup {n}",
+      "in_use": "In use"
+    },
+    "ask": {
+      "missing": "What is missing from this file?",
+      "decide": "What should I decide, and why?",
+      "law": "Which law applies here?",
+      "next": "What is the next step?",
+      "today": "What needs me today?",
+      "how_stage": "How do the case stages work?",
+      "limits": "Which time limits apply in this country?"
+    },
+    "dock": {
+      "file_intro": "Ask about this file. Assist has read it, with the law the office holds and how similar cases were handled here.",
+      "office_intro": "Ask about your work, the stages of a case, or the law of this country. Open a file to ask about it.",
+      "model": "Answered by {model}",
+      "clear": "New conversation",
+      "ask_file": "Ask about this file",
+      "ask_office": "Ask Assist",
+      "send": "Send",
+      "footer": "Drafts, not decisions. Check before you rely on them.",
+      "on_file": "this file",
+      "on_office": "the office"
+    },
+    "thinking": "Reading...",
+    "provider": {
+      "gemini": "Google's models. A free key works for trying it out.",
+      "openrouter": "One key, hundreds of models; it picks one for you.",
+      "anthropic": "Claude, from Anthropic. Strong at long legal reading.",
+      "other_label": "Own server",
+      "other": "A model on this computer (Ollama) or a government server."
+    }
+  },
+  "board": {
+    "add_placeholder": "Add a task",
+    "close": "Close",
+    "col": {
+      "todo": "To do",
+      "doing": "Doing",
+      "waiting_police": "Waiting on Police",
+      "waiting_court": "Waiting on court",
+      "done": "Done"
+    },
+    "delete": "Delete",
+    "dismiss": "Dismiss",
+    "done_count": "Done: {count}",
+    "due": "Due {date}",
+    "due_label": "Due",
+    "empty_column": "Nothing here",
+    "keep": "Keep",
+    "mark_done": "Mark done",
+    "note_placeholder": "Add a note",
+    "reopen": "Reopen",
+    "suggested": "Suggested by Assist"
+  },
+  "calendar": {
+    "coming_up": "Coming up",
+    "legend": {
+      "hearing": "Hearing",
+      "review": "Threshold review",
+      "task": "Task due"
+    },
+    "more": "{count} more",
+    "next": "Next month",
+    "nothing": "Nothing on this day.",
+    "previous": "Previous month",
+    "threshold_review": "Threshold Test review due",
+    "today": "Today"
+  },
+  "court": {
+    "add_filing": "Record a filing",
+    "add_hearing": "Add a hearing",
+    "court": "Court",
+    "date": "Date",
+    "time": "Time",
+    "what": "What for",
+    "filed_on": "Filed on",
+    "filed_what": "What was filed",
+    "filed_what_placeholder": "e.g. Charge sheet, Summary of the case",
+    "filings": "Filings",
+    "hearings": "Hearings",
+    "kind": {
+      "mention": "Mention",
+      "plea": "Plea",
+      "bail": "Bail",
+      "hearing": "Hearing",
+      "trial": "Trial",
+      "ruling": "Ruling",
+      "judgment": "Judgment",
+      "sentence": "Sentence",
+      "other": "Other"
+    },
+    "no_filings": "Nothing filed yet.",
+    "no_hearings": "No hearing yet. Add the first date when the court gives it.",
+    "note_placeholder": "Note (optional)",
+    "outcome_placeholder": "What happened (adjourned to, plea taken, ruling...)",
+    "receipt": "Receipt",
+    "receipt_placeholder": "Stamp or receipt number",
+    "remove": "Remove"
+  },
+  "cover": {
+    "accused": "Accused",
+    "offence": "Offence",
+    "no_charge": "No charge drafted",
+    "next_date": "Next date",
+    "no_date": "None set"
+  },
+  "import": {
+    "button": "Import paper",
+    "title": "Import paper into this file",
+    "lead_assist": "Add a scanned PDF or photos of the pages. Assist reads them, splits them into documents and puts each one in its place in the file. You check it after.",
+    "lead_plain": "Add a scanned PDF or photos of the pages. Each goes into the file as one document for you to sort. Turn on Assist in Settings to have them read and arranged for you.",
+    "drop": "Drop scans here, or choose them",
+    "kinds": "PDF, JPG, PNG or phone photos. Several at once is fine.",
+    "remove": "Remove",
+    "add": "Add to the file",
+    "without_assist": "Add without reading",
+    "read_and_arrange": "Read and arrange",
+    "storing": "Storing scans, {done} of {total}",
+    "reading": "Reading the pages",
+    "reading_body": "Handwriting and stamps included. A thick file can take a minute or two.",
+    "done": "{count} documents placed in the file",
+    "done_body": "Check where each one went, move any that are wrong, then confirm.",
+    "see_file": "See the file",
+    "failed": "The scans could not be read",
+    "failed_body": "The scans you added are kept with the file under Details. You can try again, or sort them by hand.",
+    "try_again": "Try again",
+    "found_title": "Also found in the papers",
+    "found_body": "Add the people and the proposed charge to the file, so its cover and next step fill in. Untick anything that is wrong.",
+    "proposed_charge": "Proposed charge",
+    "add_found": "Add to the file",
+    "not_now": "Not now"
+  },
+  "index": {
+    "add_to_file": "Add to the file",
+    "check_title": "Assist placed {count} documents. Check them.",
+    "check_body": "Open any document to read it or move it to another section. Confirm when the file is in order.",
+    "confirm": "Confirm",
+    "confirm_all": "Confirm all",
+    "count": "{count} documents, {sheets} sheets.",
+    "date": "Date on it",
+    "empty": "Nothing in the file yet.",
+    "empty_body": "Import the police file as scans or photos, or type a document straight in: a statement taken down, a minute, a note of a call.",
+    "kind": "What it is",
+    "no_text": "No text for this document.",
+    "nothing_yet": "Nothing yet",
+    "open_scan": "Open the scan",
+    "order_provisional": "The order of sections is provisional for this country.",
+    "pages": "pages {from} to {to}",
+    "people_named": "People named",
+    "placed_by_assist": "Placed by Assist, not yet checked",
+    "remove": "Remove from the file",
+    "sheet": "Sheet {n}",
+    "sheets": "Sheets {from} to {to}",
+    "text": "Text",
+    "text_placeholder": "Type or paste what the document says",
+    "title": "Title",
+    "title_placeholder": "e.g. Statement of Grace Namutebi",
+    "type_document": "Type a document",
+    "unsorted": "Not yet in a section",
+    "view_scan": "Scan",
+    "view_text": "Text"
+  },
+  "timeline": {
+    "label": "Where the file is",
+    "received": "Received",
+    "reviewed": "Reviewed",
+    "decided": "Decided",
+    "in_court": "In court",
+    "closed": "Closed"
+  },
+  "outcome": {
+    "convicted": "Convicted",
+    "acquitted": "Acquitted",
+    "withdrawn": "Withdrawn",
+    "declined": "Not prosecuted",
+    "diverted": "Diverted",
+    "returned_not_resubmitted": "Returned, never resubmitted",
+    "other": "Other"
+  },
+  "handover": {
+    "method": {
+      "connection": "Connected station",
+      "email": "Email",
+      "print": "Printed",
+      "collection": "Collected in person",
+      "download": "Saved copy",
+      "other": "Other"
+    },
+    "printed": "Printed copy",
+    "saved_copy": "Saved copy of the file",
+    "by_email": "Sent by email",
+    "email_body": "Please find attached the case file: {title}.",
+    "email_attach": "The file is saved. Attach it to the email that opened.",
+    "saved": "Case file saved",
+    "failed": "The case file could not be made",
+    "building": "Putting it together...",
+    "download": "Save the whole file (PDF)",
+    "print": "Print",
+    "email": "Email"
+  },
+  "pipe": {
+    "receive_body": "{documents} documents in the file ({unchecked} not yet checked), {people} people and {charges} proposed charges recorded.",
+    "prepare_no_decision": "No decision is recorded yet: decide first.",
+    "prepare_body": "Prepare the {document} for the decision: {decision}.",
+    "prepare_nothing": "The decision ({decision}) needs no document of its own. Accept to go on to the hand-over.",
+    "decision": "Decision",
+    "reasons": "Reasons",
+    "directions": "Directions to Police",
+    "add_direction": "Add a direction",
+    "recipient": "Who receives it",
+    "method": "How",
+    "covering_note": "Covering note",
+    "reply_days": "Follow up after (days, 0 for none)",
+    "in_days": "in {days} days",
+    "ready_to_conclude": "Assist thinks nothing more is expected: accepting moves the file to Concluded.",
+    "outcome": "Outcome",
+    "closing_note": "Closing note",
+    "diy_receive": "Import the paper or type the documents in, on",
+    "accepted": "Accepted. The file is now at: {stage}",
+    "accept_failed": "Could not accept",
+    "stage_past": "Done earlier",
+    "stage_future": "Still to come",
+    "concluded_as": "Concluded: {outcome}, {date}.",
+    "from_record": "From what the file already holds",
+    "proposed_by": "Prepared by Assist ({model}), {date}. Read it, change what you need, then accept.",
+    "reject_why": "Why? (helps Assist next time)",
+    "reject": "Reject",
+    "ask_again": "Ask again",
+    "accept": "Accept and move on",
+    "accept_conclude": "Accept and close the file",
+    "propose_failed": "Assist could not prepare this stage",
+    "preparing": "Preparing...",
+    "prepare_with_assist": "Prepare with Assist",
+    "check": "Check this stage",
+    "assist_off": "Assist is off: do this stage yourself below, or turn Assist on in Settings.",
+    "answered": "{status} by {who}, {date}",
+    "status": {
+      "accepted": "Accepted",
+      "edited": "Accepted with changes",
+      "rejected": "Rejected"
+    },
+    "do_it_yourself": "Do this stage yourself",
+    "skip_to": "Move on to {stage}",
+    "procedure": "Custody, detention and rights"
+  },
+  "cases": {
+    "proposal_ready": "Ready to review",
+    "hearing": "Hearing {date}",
+    "days_here": "{days} d here",
+    "tasks": "{count} tasks",
+    "as_list": "See as a list"
+  },
+  "export": {
+    "scan_missing": "The scan for this document could not be put in the file. Its text as read:",
+    "index": "Index",
+    "sheet_column": "Sheets",
+    "sheet": "Sheet {n}",
+    "case_file": "Case file",
+    "received": "Received",
+    "contents": "Contents",
+    "contents_value": "{documents} documents, {sheets} sheets",
+    "prepared": "Prepared"
+  },
+  "viewer": {
+    "cannot_show": "This document cannot be shown here.",
+    "open_outside": "Open in another program",
+    "full": "Full screen",
+    "exit_full": "Leave full screen"
+  },
+  "laws": {
+    "title": "Law library",
+    "count": "{count} texts",
+    "body": "The texts Assist may quote for {country}, each with the date it is correct at. Assist says so when the text it needs is not here.",
+    "as_at": "Text as at {date} · {source}",
+    "api_body": "Keeps the country's statutes current, with their dates. The office needs its own token from laws.africa.",
+    "token_placeholder": "Laws.Africa token",
+    "sync": "Update the laws now",
+    "syncing": "Updating...",
+    "synced": "{updated} laws updated",
+    "not_found": "Not found there: {titles}",
+    "sync_failed": "The laws could not be updated",
+    "add_by_hand": "Add a text by hand",
+    "manual_title": "Title, e.g. Code pénal congolais",
+    "manual_cite": "Reference (optional)",
+    "manual_as_at": "Correct at (date)",
+    "manual_body": "Paste the full text",
+    "manual_add": "Add to the library"
+  },
+  "clock": {
+    "title": "Time limits",
+    "none": "No arrest or detention recorded on this file, so no legal clock is running.",
+    "add_event": "Record arrest or detention",
+    "person": "Who (if several accused)",
+    "save": "Save",
+    "overdue": "Limit passed {when} ({date}). Nothing recorded ends it.",
+    "running": "Runs out {when} ({date}).",
+    "late": "Ended late, on {date}.",
+    "met": "Respected: ended on {date}.",
+    "basis": "{hours} from {from} · {basis}",
+    "days": "{n} days",
+    "hours": "{n} hours",
+    "secondary": "(from secondary sources: confirm in the text)",
+    "today_title": "Time limits needing you now: {count}"
+  },
+  "seal": {
+    "hint": "A PNG or JPEG under 400 KB, on a white or clear background. It is copied onto each document when it is issued.",
+    "none": "Not set",
+    "nothing": "None yet",
+    "remove": "Remove",
+    "set": "Set",
+    "signature_body": "Put on documents you issue, above your name.",
+    "signature_title": "Your signature",
+    "stamp_body": "The office stamp, put on every document issued here.",
+    "stamp_title": "Office stamp",
+    "too_big": "The image is larger than 400 KB.",
+    "upload": "Upload an image",
+    "wrong_type": "Use a PNG or JPEG image."
+  },
+  "verify": {
+    "check": "Check",
+    "code": "Code",
+    "genuine": "Genuine: {title}, {file}, issued by {author} on {date}. The record has not changed since.",
+    "lead": "Type the reference and the code printed beside the QR on a paper document to confirm it was issued here and has not been altered.",
+    "mismatch": "A document with this reference exists, but the code does not match or the record was altered. Treat the paper as not genuine.",
+    "not_found": "No document with this reference was issued here.",
+    "reference": "Reference, e.g. ODPP-2026-0001",
+    "title": "Verify a document"
+  }
+}

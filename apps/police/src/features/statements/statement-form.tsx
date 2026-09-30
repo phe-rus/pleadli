@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
@@ -55,12 +56,12 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
         const result = statement
           ? await updateStatement.mutateAsync({ id: statement.id, input })
           : await createStatement.mutateAsync(input)
-        t.success(statement ? 'Statement updated' : 'Statement recorded')
+        t.success(statement ? m["statements.updated"]() : m["statements.recorded"]())
         if (!statement) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(statement ? 'Could not update statement' : 'Could not record statement', {
-          description: 'Please try again.',
+        t.error(statement ? m["statements.update_failed"]() : m["statements.record_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -80,7 +81,7 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
         <form.AppField name="personId">
           {(f) => (
             <Field>
-              <FieldLabel>Given by</FieldLabel>
+              <FieldLabel>{m["statements.given_by"]()}</FieldLabel>
               <PersonPicker value={f.state.value || null} onValueChange={(id) => f.handleChange(id ?? '')} />
             </Field>
           )}
@@ -89,21 +90,21 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
         <form.AppField name="content">
           {(f) => (
             <Field data-invalid={f.state.meta.isTouched && !f.state.meta.isValid}>
-              <FieldLabel>Statement</FieldLabel>
-              <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="What they said…" />
+              <FieldLabel>{m["statements.statement"]()}</FieldLabel>
+              <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["statements.placeholder"]()} />
             </Field>
           )}
         </form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="officerId">
-            {(f) => <OfficerPicker label="Taken by (officer)" value={f.state.value} onValueChange={f.handleChange} />}
+            {(f) => <OfficerPicker label={m["statements.taken_by"]()} value={f.state.value} onValueChange={f.handleChange} />}
           </form.AppField>
           <form.Subscribe selector={(state) => state.values.officerId}>
             {(officerId) =>
               officerId ? null : (
                 <>
-                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
+                <form.AppField name="officerName">{(f) => <f.input label={m["common.name"]()} />}</form.AppField>
                 </>
               )
             }
@@ -111,7 +112,7 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
           <form.AppField name="givenAt">
             {(f) => (
               <Field>
-                <FieldLabel>When given</FieldLabel>
+                <FieldLabel>{m["statements.given_at"]()}</FieldLabel>
                 <Input
                   type="datetime-local"
                   value={f.state.value}
@@ -125,18 +126,18 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
         <form.AppField name="caseId">
           {(f) => (
             <Field>
-              <FieldLabel>Related case (optional)</FieldLabel>
+              <FieldLabel>{m["common.related_case"]()}</FieldLabel>
               <Select
-                items={[{ value: '', label: 'None' }, ...cases.map((c: Case) => ({ value: c.id, label: c.reference }))]}
+                items={[{ value: '', label: m["common.none"]() }, ...cases.map((c: Case) => ({ value: c.id, label: c.reference }))]}
                 value={f.state.value ?? ''}
                 onValueChange={(value) => f.handleChange(value || null)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="None" />
+                  <SelectValue placeholder={m["common.none"]()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="">{m["common.none"]()}</SelectItem>
                     {cases.map((c: Case) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.reference}
@@ -154,7 +155,7 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={statement ? 'Save changes' : 'Record statement'} />
+          <form.submit label={statement ? m["common.save_changes"]() : m["statements.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

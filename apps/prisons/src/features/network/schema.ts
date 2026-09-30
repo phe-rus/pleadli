@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 
 /** Head Office's own Cloudflare Tunnel config, ported from Police's
  * identical shape (spec: docs/specs/prisons/0001-head-office-peer-sync-
@@ -13,13 +14,13 @@ export const cloudflareConfigSchema = z.object({
 export type CloudflareConfig = z.infer<typeof cloudflareConfigSchema>
 
 export const saveCloudflareConfigSchema = z.object({
-  apiToken: z.string().min(1, 'API token is required.'),
-  accountId: z.string().min(1, 'Account ID is required.'),
-  domain: z.string().min(1, 'Domain is required.'),
+  apiToken: z.string().min(1, { error: () => m.validation_api_token_required() }),
+  accountId: z.string().min(1, { error: () => m.validation_account_id_required() }),
+  domain: z.string().min(1, { error: () => m.validation_domain_required() }),
   stationName: z
     .string()
-    .min(1, 'Station name is required.')
-    .regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, and hyphens only.'),
+    .min(1, { error: () => m.validation_station_name_required() })
+    .regex(/^[a-z0-9-]+$/, { error: () => m.validation_station_name_format() }),
 })
 
 /** What setting up the tunnel answers with: the public address, nothing secret. */

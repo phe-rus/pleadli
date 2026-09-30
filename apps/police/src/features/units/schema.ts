@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const unitSchema = z.object({
@@ -30,5 +31,6 @@ export type SaveChainInput = z.infer<typeof saveChainSchema>
  * organised: the real structure is still to be confirmed with serving
  * officers (docs/police/AUDIT.md section 4). */
 export function unitKindLabel(kind: string) {
-  return { region: 'Region', district: 'District', division: 'Division', station: 'Station' }[kind] ?? kind
+  const label = ({ region: m["units.kind.region"], district: m["units.kind.district"], division: m["units.kind.division"], station: m["units.kind.station"] } as Record<string, (() => string) | undefined>)[kind]
+  return label ? label() : kind
 }

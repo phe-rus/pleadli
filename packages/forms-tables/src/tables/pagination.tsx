@@ -1,3 +1,4 @@
+import { tableText } from "./text"
 import {
     ChevronFirstIcon,
     ChevronLastIcon,
@@ -31,7 +32,7 @@ export function DataTablePagination<TData extends RowData>({
     return (
         <div className="flex items-center gap-4">
             <p className="text-xs text-muted-foreground">
-                Page {pageCount ? pageIndex + 1 : 0} of {pageCount}
+                {tableText().page(pageCount ? pageIndex + 1 : 0, pageCount)}
             </p>
 
             <div className="flex items-center gap-1">
@@ -74,7 +75,7 @@ export function DataTablePagination<TData extends RowData>({
             </div>
 
             <Select
-                aria-label="Rows per page"
+                aria-label={tableText().rowsPerPage}
                 value={String(pageSize)}
                 onValueChange={(key) => table.setPageSize(Number(key))}
             >

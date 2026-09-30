@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const stationFiguresSchema = z
@@ -71,7 +72,7 @@ export const rosterEntrySchema = z.object({
 export type RosterEntry = z.infer<typeof rosterEntrySchema>
 
 export const registerStationSchema = z.object({
-  name: z.string().min(1, 'The station needs a name.'),
+  name: z.string().min(1, { error: () => m["validation.the_station_needs_a_name"]() }),
   region: z.string(),
   district: z.string(),
 })
@@ -80,13 +81,13 @@ export type RegisterStationInput = z.infer<typeof registerStationSchema>
 
 export function stationStateLabel(state: StationView['state']) {
   return {
-    registered: 'Not connected',
-    requested: 'Waiting for approval',
-    reporting: 'Reporting',
-    quiet: 'Connected, no report yet',
-    silent: 'Silent',
-    revoked: 'Revoked',
-  }[state]
+    registered: m["command.state.registered"],
+    requested: m["command.state.requested"],
+    reporting: m["command.state.reporting"],
+    quiet: m["command.state.quiet"],
+    silent: m["command.state.silent"],
+    revoked: m["command.state.revoked"],
+  }[state]()
 }
 
 export function stationStateTone(state: StationView['state']): 'open' | 'waiting' | 'done' | 'stopped' | 'urgent' | 'neutral' {

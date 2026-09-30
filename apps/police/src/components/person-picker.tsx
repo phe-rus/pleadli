@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { peopleSearchOptions, personFullName, PersonForm } from '@/features/people'
 import { AddCircleIcon } from '@hugeicons/core-free-icons'
@@ -20,7 +21,7 @@ export type PersonPickerProps = {
   placeholder?: string
 }
 
-export function PersonPicker({ value, onValueChange, placeholder = 'Search for a person…' }: PersonPickerProps) {
+export function PersonPicker({ value, onValueChange, placeholder = m["pickers.person_placeholder"]() }: PersonPickerProps) {
   const [query, setQuery] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const { data: people } = useQuery(peopleSearchOptions(query))
@@ -36,7 +37,7 @@ export function PersonPicker({ value, onValueChange, placeholder = 'Search for a
                   {personFullName(person)}
                 </ComboboxItem>
               ))}
-              <ComboboxEmpty>No matching people</ComboboxEmpty>
+              <ComboboxEmpty>{m["pickers.person_empty"]()}</ComboboxEmpty>
             </ComboboxList>
           </ComboboxContent>
         </ComboboxInput>
@@ -46,13 +47,13 @@ export function PersonPicker({ value, onValueChange, placeholder = 'Search for a
         open={addOpen}
         onOpenChange={setAddOpen}
         trigger={
-          <Button type="button" size="icon-sm" variant="secondary" aria-label="Add new person">
+          <Button type="button" size="icon-sm" variant="secondary" aria-label={m["pickers.person_add_aria"]()}>
             <HugeiconsIcon icon={AddCircleIcon} />
           </Button>
         }
         headings={{
-          title: 'Add person',
-          description: "Record someone who isn't already known to the system.",
+          title: m["pickers.person_add_title"](),
+          description: m["pickers.person_add_description"](),
         }}
       >
         <PersonForm

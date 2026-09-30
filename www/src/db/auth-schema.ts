@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
@@ -138,3 +138,57 @@ export const entitlement = sqliteTable("entitlement", {
   application: text("application").notNull(),
   enabled: integer("enabled", { mode: "boolean" }).default(true).notNull(),
 });
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+  memberships: many(membership),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const organizationRelations = relations(organization, ({ many }) => ({
+  organizationUnits: many(organizationUnit),
+  entitlements: many(entitlement),
+}));
+
+export const organizationUnitRelations = relations(
+  organizationUnit,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [organizationUnit.organizationId],
+      references: [organization.id],
+    }),
+    memberships: many(membership),
+  }),
+);
+
+export const membershipRelations = relations(membership, ({ one }) => ({
+  user: one(user, {
+    fields: [membership.userId],
+    references: [user.id],
+  }),
+  organizationUnit: one(organizationUnit, {
+    fields: [membership.organizationUnitId],
+    references: [organizationUnit.id],
+  }),
+}));
+
+export const entitlementRelations = relations(entitlement, ({ one }) => ({
+  organization: one(organization, {
+    fields: [entitlement.organizationId],
+    references: [organization.id],
+  }),
+}));

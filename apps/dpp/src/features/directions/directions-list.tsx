@@ -1,24 +1,25 @@
+import { formatDate } from '@/lib/dates'
 import { Tag } from '@/components/status-tag'
 import { ApiError } from '@/lib/api'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Textarea } from '@pleadli/ui/textarea'
-import { format } from 'date-fns/format'
 import { useState } from 'react'
 import { useRespondToDirection } from './queries'
 import { directionKindLabel, responseLabel, responses, type Direction } from './schema'
+import * as m from '@/paraglide/messages'
 
 function Item({ direction, canRecord, personName }: { direction: Direction; canRecord: boolean; personName: string | null }) {
   const respond = useRespondToDirection()
   const [note, setNote] = useState(direction.responseNote ?? '')
   const record = (response: string) =>
-    respond.mutate({ id: direction.id, response, note }, { onError: (e) => t.error('Could not record', { description: e instanceof ApiError ? e.message : 'Please try again.' }) })
+    respond.mutate({ id: direction.id, response, note }, { onError: (e) => t.error(m["common.could_not_record"](), { description: e instanceof ApiError ? e.message : m["common.try_again"]() }) })
 
   return (
     <div role="listitem" className="flex flex-col gap-2 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <Tag tone="neutral">{directionKindLabel(direction.kind)}</Tag>
-        {personName && <span className="text-muted-foreground">From {personName}</span>}
+        {personName && <span className="text-muted-foreground">{m["direction.list.from"]({ name: personName })}</span>}
         <Tag tone={direction.response === 'met' ? 'done' : direction.response === 'not_met' ? 'urgent' : 'open'} className="ml-auto">
           {responseLabel(direction.response)}
         </Tag>
@@ -27,7 +28,7 @@ function Item({ direction, canRecord, personName }: { direction: Direction; canR
       {direction.responseNote && !canRecord && <p>{direction.responseNote}</p>}
       {canRecord && (
         <div className="flex flex-col gap-2">
-          <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="What came back (optional)" aria-label="What came back" />
+          <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder={m["direction.list.what_came_back_placeholder"]()} aria-label={m["direction.list.what_came_back"]()} />
           <div className="flex flex-wrap items-center gap-2">
             {responses.map((r) => (
               <Button key={r.id} size="xs" type="button" variant={direction.response === r.id ? 'default' : 'outline'} onClick={() => record(r.id)}>
@@ -36,10 +37,10 @@ function Item({ direction, canRecord, personName }: { direction: Direction; canR
             ))}
             {direction.response !== 'open' && (
               <Button size="xs" type="button" variant="ghost" onClick={() => record('open')}>
-                Reopen
+                {m["direction.list.reopen"]()}
               </Button>
             )}
-            {direction.respondedAt && <span className="text-muted-foreground">Recorded {format(direction.respondedAt, 'PP')}</span>}
+            {direction.respondedAt && <span className="text-muted-foreground">{m["direction.list.recorded_on"]({ date: formatDate(direction.respondedAt) })}</span>}
           </div>
         </div>
       )}

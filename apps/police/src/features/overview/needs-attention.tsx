@@ -1,10 +1,11 @@
+import * as m from '@/paraglide/messages'
 import { EmptyNote } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { Tag } from '@/components/status-tag'
 import { custodyCompliance, custodyPersonName, type CustodyRecord } from '@/features/custody/schema'
 import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
-import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
+import { format } from '@/lib/date'
+import { formatDistanceToNowStrict } from '@/lib/date'
 
 /** A person in custody is listed here once the record puts them within this
  * many hours of the limit, or past it. Everyone else in the cells is on the
@@ -15,8 +16,8 @@ const openLink = 'text-primary'
 
 function hoursPhrase(hours: number) {
   const abs = Math.abs(hours)
-  if (abs < 1) return `${Math.max(1, Math.round(abs * 60))} minutes`
-  return `${Math.round(abs)} ${Math.round(abs) === 1 ? 'hour' : 'hours'}`
+  if (abs < 1) return m["custody.minutes"]({ count: Math.max(1, Math.round(abs * 60)) })
+  return Math.round(abs) === 1 ? m["custody.hour_one"]() : m["custody.hours"]({ count: Math.round(abs) })
 }
 
 /** What needs an officer now, and only that: each item is read from the
@@ -34,12 +35,12 @@ export function NeedsAttention({ inCustody, referralsPending }: { inCustody: Cus
   return (
     <section aria-labelledby="attention" className="page-section">
       <div className="section-head">
-        <h2 id="attention">Needs attention</h2>
-        {count > 0 && <Tag tone="open">{count === 1 ? '1 item' : `${count} items`}</Tag>}
+        <h2 id="attention">{m["common.needs_attention"]()}</h2>
+        {count > 0 && <Tag tone="open">{count === 1 ? m["common.item_one"]() : m["common.item_count"]({ count })}</Tag>}
       </div>
 
       {count === 0 ? (
-        <EmptyNote>Nothing needs attention. No one in custody is near the limit and no referral is waiting.</EmptyNote>
+        <EmptyNote>{m["attention.empty"]()}</EmptyNote>
       ) : (
         <RowList>
           {due.map(({ record, compliance }) => (
@@ -49,13 +50,13 @@ export function NeedsAttention({ inCustody, referralsPending }: { inCustody: Cus
               title={custodyPersonName(record)}
               summary={
                 compliance.isOverdue
-                  ? `Past the limit by ${hoursPhrase(compliance.hoursRemaining)}. Arrested ${formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true })}. The limit was ${format(compliance.deadline, 'PP p')}.`
-                  : `${hoursPhrase(compliance.hoursRemaining)} left. Arrested ${formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true })}. The limit is ${format(compliance.deadline, 'PP p')}.`
+                  ? m["attention.past_summary"]({ time: hoursPhrase(compliance.hoursRemaining), when: formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true }), deadline: format(compliance.deadline, 'PP p') })
+                  : m["attention.near_summary"]({ time: hoursPhrase(compliance.hoursRemaining), when: formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true }), deadline: format(compliance.deadline, 'PP p') })
               }
               trailing={
                 <>
-                  <Tag tone={compliance.isOverdue ? 'urgent' : 'open'}>{compliance.isOverdue ? 'Past the limit' : 'Near the limit'}</Tag>
-                  <Link to="/search/custody" className={openLink}>Custody</Link>
+                  <Tag tone={compliance.isOverdue ? 'urgent' : 'open'}>{compliance.isOverdue ? m["common.past_the_limit"]() : m["common.near_the_limit"]()}</Tag>
+                  <Link to="/search/custody" className={openLink}>{m["common.custody"]()}</Link>
                 </>
               }
             />
@@ -64,9 +65,9 @@ export function NeedsAttention({ inCustody, referralsPending }: { inCustody: Cus
           {referralsPending > 0 && (
             <Row
               aligned
-              title={referralsPending === 1 ? '1 referral has no outcome yet' : `${referralsPending} referrals have no outcome yet`}
-              summary="Record what came back, or follow it up with the office it was sent to."
-              trailing={<Link to="/referrals" className={openLink}>Referrals</Link>}
+              title={referralsPending === 1 ? m["attention.referral_one"]() : m["attention.referral_n"]({ count: referralsPending })}
+              summary={m["attention.referral_summary"]()}
+              trailing={<Link to="/referrals" className={openLink}>{m["common.referrals"]()}</Link>}
             />
           )}
         </RowList>

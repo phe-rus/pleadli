@@ -1,3 +1,5 @@
+import * as m from '@/paraglide/messages'
+import { formatDate } from '@/lib/dates'
 import { EmptyNote } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { Tag } from '@/components/status-tag'
@@ -6,12 +8,11 @@ import { statementRoleLabel } from '@/features/statements/schema'
 import { materialOptions, useMaterial, type MaterialKind, type MaterialRow } from '@/features/workload'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
 
 const kinds = [
-  { id: 'statement', label: 'Statements', about: 'Every statement received with a Police referral, across all files.' },
-  { id: 'evidence', label: 'Evidence', about: 'Every exhibit and item of evidence Police says exists, across all files.' },
-  { id: 'charge', label: 'Charges', about: 'The charges Police proposed, across all files.' },
+  { id: 'statement', label: m["page.material.statements"], about: m["page.material.statements_about"] },
+  { id: 'evidence', label: m["page.material.evidence"], about: m["page.material.evidence_about"] },
+  { id: 'charge', label: m["page.material.charges"], about: m["page.material.charges_about"] },
 ] as const
 
 const isKind = (value: unknown): value is MaterialKind => kinds.some((k) => k.id === value)
@@ -42,12 +43,12 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Police material</h1>
-          <p>{current.about}</p>
+          <h1>{m["nav.item.police_material"]()}</h1>
+          <p>{current.about()}</p>
         </div>
       </header>
 
-      <nav aria-label="Kinds of material" className="-mb-2 flex gap-1 border-b border-border/60">
+      <nav aria-label={m["page.material.kinds"]()} className="-mb-2 flex gap-1 border-b border-border/60">
         {kinds.map((item) => (
           <Link
             key={item.id}
@@ -60,13 +61,13 @@ function RouteComponent() {
               item.id === kind ? 'text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary' : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {item.label}
+            {item.label()}
           </Link>
         ))}
       </nav>
 
       {rows.length === 0 ? (
-        <EmptyNote>None recorded yet. Material is recorded on a file, under Police material.</EmptyNote>
+        <EmptyNote>{m["page.material.empty"]()}</EmptyNote>
       ) : (
         <RowList>
           {rows.map((row) => (
@@ -81,7 +82,7 @@ function RouteComponent() {
                   {row.fileReference ? `, ${row.fileReference}` : ''}
                 </>
               }
-              trailing={<Tag tone="neutral">{format(row.at, 'PP')}</Tag>}
+              trailing={<Tag tone="neutral">{formatDate(row.at)}</Tag>}
             />
           ))}
         </RowList>

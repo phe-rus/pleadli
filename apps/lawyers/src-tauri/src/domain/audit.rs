@@ -1,21 +1,26 @@
 //! The audit trail. The chain itself is `packages/node-core` (`audit`); what is
-//! this application's own is who is recorded as acting: the advocate
-//! set up in Settings, or nobody until then.
+//! this application's own is who is recorded as acting: the person signed in
+//! on the computer the request came from (`request.rs`), or nobody before
+//! setup.
 
 use pleadli_node_core::audit as chain;
 use sqlx::{SqliteConnection, SqlitePool};
 
 pub use chain::{AuditEntry, Entry, Verification};
 
-async fn actor(conn: &mut SqliteConnection) -> Result<Option<String>, sqlx::Error> {
-    sqlx::query_scalar("SELECT name FROM advocate_profile WHERE id = 'default'").fetch_optional(&mut *conn).await
-}
 
 /// Appends an entry on the connection given, so it commits or rolls back with
 /// the change it records.
 pub async fn record(conn: &mut SqliteConnection, entry: Entry<'_>) -> Result<(), sqlx::Error> {
-    let who = actor(conn).await?;
+    let who = super::request::actor().map(|a| a.name);
     chain::record(conn, who.as_deref(), entry).await
+}
+
+/// Appends an entry on its own, for events that change nothing else (a
+/// sign-in, a refused attempt).
+pub async fn log(pool: &SqlitePool, entry: Entry<'_>) -> Result<(), sqlx::Error> {
+    let mut conn = pool.acquire().await?;
+    record(&mut conn, entry).await
 }
 
 pub async fn recent(pool: &SqlitePool, case_id: Option<&str>, limit: i64) -> Result<Vec<AuditEntry>, sqlx::Error> {

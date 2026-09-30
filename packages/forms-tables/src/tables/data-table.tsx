@@ -1,3 +1,4 @@
+import { tableText } from "./text"
 import {
   Cancel01Icon,
   ChevronDownIcon,
@@ -144,8 +145,8 @@ export function DataTable<TData extends RowData>({
   data,
   columns,
   getRowId,
-  emptyMessage = "No results.",
-  searchPlaceholder = "Search…",
+  emptyMessage,
+  searchPlaceholder,
   bulkActions,
   pagination = true,
   pageSizeOptions,
@@ -156,6 +157,7 @@ export function DataTable<TData extends RowData>({
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState("")
   const [sorting, setSorting] = useState<SortingState>([])
+  const tt = tableText()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({})
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
@@ -224,7 +226,7 @@ export function DataTable<TData extends RowData>({
           }) :
           <InputGroup className="max-w-full rounded">
             <InputGroupInput
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? tt.search}
               autoComplete="off"
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
@@ -242,7 +244,7 @@ export function DataTable<TData extends RowData>({
                   setFiltersOpen(false)
                 }}
               >
-                Columns
+                {tt.columns}
                 {hiddenCount > 0 && (
                   <Badge
                     variant="destructive"
@@ -268,7 +270,7 @@ export function DataTable<TData extends RowData>({
                   setColumnsOpen(false)
                 }}
               >
-                Filters
+                {tt.filters}
                 {activeFilterCount > 0 && (
                   <Badge
                     variant="destructive"
@@ -296,7 +298,7 @@ export function DataTable<TData extends RowData>({
           'bg-input/15 rounded-md p-5'
         )}>
           <div className="flex items-center justify-between">
-            <h3 className="text-xs">Columns</h3>
+            <h3 className="text-xs">{tt.columns}</h3>
             {hiddenCount > 0 && (
               <Button
                 type="button"
@@ -305,7 +307,7 @@ export function DataTable<TData extends RowData>({
                 onClick={() => table.resetColumnVisibility()}
                 className="text-muted-foreground hover:text-foreground"
               >
-                Show all
+                {tt.showAll}
               </Button>
             )}
           </div>
@@ -337,7 +339,7 @@ export function DataTable<TData extends RowData>({
           'bg-input/15 rounded-md p-5'
         )}>
           <div className="flex items-center justify-between">
-            <h3 className="text-xs">Filters</h3>
+            <h3 className="text-xs">{tt.filters}</h3>
             {activeFilterCount > 0 && (
               <Button
                 type="button"
@@ -347,7 +349,7 @@ export function DataTable<TData extends RowData>({
                 className="text-muted-foreground hover:text-foreground"
               >
                 <HugeiconsIcon icon={Cancel01Icon} className="size-3" />
-                Clear all
+                {tt.clearAll}
               </Button>
             )}
           </div>
@@ -375,7 +377,7 @@ export function DataTable<TData extends RowData>({
 
       {bulkActions && selectedCount > 0 && (
         <div className="flex items-center gap-3 border border-dashed border-primary/30 bg-primary/5 px-4 py-2">
-          <span className="text-xs font-medium">{selectedCount} selected</span>
+          <span className="text-xs font-medium">{tt.selected(selectedCount)}</span>
           <div className="h-4 w-px bg-input/40" />
           {bulkActions(selectedRows, clearSelection)}
           <Button
@@ -385,7 +387,7 @@ export function DataTable<TData extends RowData>({
             onClick={clearSelection}
             className="ml-auto text-muted-foreground hover:text-foreground"
           >
-            Clear
+            {tt.clear}
           </Button>
         </div>
       )}
@@ -465,7 +467,7 @@ export function DataTable<TData extends RowData>({
             ) : (
               <TableRow>
                 <TableCell colSpan={columnCount} className="h-24 text-center">
-                  {emptyMessage}
+                  {emptyMessage ?? tt.noResults}
                 </TableCell>
               </TableRow>
             )}

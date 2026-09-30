@@ -5,6 +5,7 @@ import { RowList, Row } from '@/components/operational-row'
 import { EmptyNote } from '@/components/planned'
 import { StatTile } from '@/components/stat-tile'
 import { Tag } from '@/components/status-tag'
+import { PracticeDeadlines } from '@/features/clocks'
 import { HearingActions, purposeLabel, reasonLabel, type DiaryRow } from '@/features/hearings'
 import { MatterForm } from '@/features/matters'
 import { overviewOptions, useOverview, type Attention } from '@/features/overview'
@@ -128,6 +129,8 @@ function RouteComponent() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-8">
+          <PracticeDeadlines />
+
           <section aria-labelledby="listed" className="page-section">
             <div className="section-head">
               <h2 id="listed">In court today</h2>

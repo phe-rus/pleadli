@@ -118,7 +118,7 @@ export function ReceptionProcedure() {
       id: 'instrument',
       label: m.reception_instrument(),
       done: Boolean(draft.instrumentKind) && draft.authenticated,
-      summary: draft.instrumentKind ? `${admissionInstrumentLabel(draft.instrumentKind)}${draft.authenticated ? ', verified' : ', not verified'}` : null,
+      summary: draft.instrumentKind ? (draft.authenticated ? m.reception_summary_verified : m.reception_summary_not_verified)({ kind: admissionInstrumentLabel(draft.instrumentKind) }) : null,
     },
     {
       id: 'person',

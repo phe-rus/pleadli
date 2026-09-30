@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { entityTypeLabel, useSearch, type SearchResult } from '@/features/search'
 import { parseSearchRoute } from '@/lib/parse-search-route'
 import { Badge } from '@pleadli/ui/badge'
@@ -48,16 +49,16 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg md:max-w-xl" showCloseButton={false}>
-        <DialogTitle className="sr-only">Search Pleadli Police</DialogTitle>
+        <DialogTitle className="sr-only">{m["command_menu.title"]()}</DialogTitle>
         <DialogDescription className="sr-only">
-          Search people, cases, custody, statements, and everything else across the station.
+          {m["command_menu.description"]()}
         </DialogDescription>
 
         <Input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, NIN, phone, case number, reference…"
+          placeholder={m["command_menu.placeholder"]()}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
               e.preventDefault()
@@ -75,9 +76,9 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
 
         <div className="max-h-96 overflow-y-auto">
           {query.trim().length === 0 ? (
-            <p className="p-3 text-xs text-muted-foreground">Type to search across the whole station.</p>
+            <p className="p-3 text-xs text-muted-foreground">{m["command_menu.hint"]()}</p>
           ) : items.length === 0 ? (
-            <p className="p-3 text-xs text-muted-foreground">No matches yet.</p>
+            <p className="p-3 text-xs text-muted-foreground">{m["command_menu.no_matches"]()}</p>
           ) : (
             items.map((result, index) => (
               <button

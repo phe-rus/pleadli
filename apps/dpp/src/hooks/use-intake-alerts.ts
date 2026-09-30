@@ -2,6 +2,7 @@ import { filesOptions } from '@/features/prosecution-files'
 import { useQuery } from '@tanstack/react-query'
 import { isTauri } from '@tauri-apps/api/core'
 import { useEffect } from 'react'
+import * as m from '@/paraglide/messages'
 
 const STORAGE_KEY = 'pleadli:dpp-intake-alerts-enabled'
 const NOTIFIED_KEY = 'pleadli:dpp-intake-alerts-notified'
@@ -72,7 +73,7 @@ export function useIntakeAlerts() {
         if (alreadyNotified(file.id)) continue
 
         sendNotification({
-          title: 'Awaiting a charging decision',
+          title: m["intake_alerts.title"](),
           body: `${file.title}${file.odppRegistrationNumber ? ` (${file.odppRegistrationNumber})` : ''}`,
         })
         markNotified(file.id)

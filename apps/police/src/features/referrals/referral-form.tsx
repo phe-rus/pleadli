@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { OfficerPicker } from '@/features/officers'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
@@ -56,12 +57,12 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
         const result = referral
           ? await updateReferral.mutateAsync({ id: referral.id, input })
           : await createReferral.mutateAsync(input)
-        t.success(referral ? 'Referral updated' : 'Referral recorded')
+        t.success(referral ? m["referrals.updated"]() : m["referrals.recorded"]())
         if (!referral) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(referral ? 'Could not update referral' : 'Could not record referral', {
-          description: 'Please try again.',
+        t.error(referral ? m["referrals.update_failed"]() : m["referrals.record_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -81,14 +82,14 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
         <form.AppField name="caseId">
           {(f) => (
             <Field>
-              <FieldLabel>Case</FieldLabel>
+              <FieldLabel>{m["common.case"]()}</FieldLabel>
               <Select
                 items={cases.map((c: Case) => ({ value: c.id, label: `${c.reference}: ${c.summary}` }))}
                 value={f.state.value}
                 onValueChange={(value) => f.handleChange(value ?? f.state.value)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select case" />
+                  <SelectValue placeholder={m["common.select_case"]()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -106,10 +107,10 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="destinationType">
-            {(f) => <f.select label="Destination type" options={[...referralDestinationTypes]} />}
+            {(f) => <f.select label={m["referrals.destination_type"]()} options={[...referralDestinationTypes]} />}
           </form.AppField>
           <form.AppField name="destinationName">
-            {(f) => <f.input label="Destination" placeholder="e.g. Resident State Attorney, Buganda Road" />}
+            {(f) => <f.input label={m["referrals.destination_label"]()} placeholder={m["referrals.destination_placeholder"]()} />}
           </form.AppField>
         </div>
 
@@ -117,7 +118,7 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
           <form.AppField name="referredAt">
             {(f) => (
               <Field>
-                <FieldLabel>Referred at</FieldLabel>
+                <FieldLabel>{m["referrals.referred_at"]()}</FieldLabel>
                 <Input
                   type="datetime-local"
                   value={f.state.value}
@@ -127,18 +128,18 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
             )}
           </form.AppField>
           <form.AppField name="status">
-            {(f) => <f.select label="Status" options={[...referralStatuses]} />}
+            {(f) => <f.select label={m["common.status"]()} options={[...referralStatuses]} />}
           </form.AppField>
         </div>
 
         <form.AppField name="officerId">
-            {(f) => <OfficerPicker label="Referring officer" value={f.state.value} onValueChange={f.handleChange} />}
+            {(f) => <OfficerPicker label={m["referrals.referring_officer"]()} value={f.state.value} onValueChange={f.handleChange} />}
           </form.AppField>
           <form.Subscribe selector={(state) => state.values.officerId}>
             {(officerId) =>
               officerId ? null : (
                 <>
-                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
+                <form.AppField name="officerName">{(f) => <f.input label={m["common.name"]()} />}</form.AppField>
                 </>
               )
             }
@@ -147,7 +148,7 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
         <form.AppField name="notes">
           {(f) => (
             <Field>
-              <FieldLabel>Notes (optional)</FieldLabel>
+              <FieldLabel>{m["common.notes_optional"]()}</FieldLabel>
               <Textarea value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} rows={3} />
             </Field>
           )}
@@ -158,7 +159,7 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={referral ? 'Save changes' : 'Record referral'} />
+          <form.submit label={referral ? m["common.save_changes"]() : m["referrals.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

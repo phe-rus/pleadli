@@ -23,6 +23,9 @@ pub fn file_name(doc: &Document, extension: &str) -> String {
 
 pub fn markdown(doc: &Document) -> String {
     let mut out = String::new();
+    for line in &doc.content.letterhead {
+        out.push_str(&format!("_{line}_  \n"));
+    }
     out.push_str(&format!("_{}_\n\n# {}\n\n", doc.content.office, doc.content.title));
     out.push_str(&format!("**{}**\n\n", status_line(doc)));
     for block in &doc.content.blocks {
@@ -55,6 +58,9 @@ pub fn markdown(doc: &Document) -> String {
             }
         }
     }
+    if let Some(code) = &doc.content.verify_code {
+        out.push_str(&format!("---\nVerification: {} {code}\n", doc.reference.clone().unwrap_or_default()));
+    }
     if let Some(sha) = &doc.content_sha256 {
         out.push_str(&format!("---\nSHA-256 of the issued content: `{sha}`\n"));
     }
@@ -65,7 +71,16 @@ pub fn docx(doc: &Document) -> Result<Vec<u8>, String> {
     let text = |t: &str| Run::new().add_text(t);
     let mut d = Docx::new();
 
-    d = d.add_paragraph(Paragraph::new().align(AlignmentType::Center).add_run(text(&doc.content.office.to_uppercase()).size(18)));
+    // The country's letterhead lines, or the office alone for older documents.
+    if doc.content.letterhead.is_empty() {
+        d = d.add_paragraph(Paragraph::new().align(AlignmentType::Center).add_run(text(&doc.content.office.to_uppercase()).size(18)));
+    } else {
+        let last = doc.content.letterhead.len() - 1;
+        for (i, line) in doc.content.letterhead.iter().enumerate() {
+            let run = text(&line.to_uppercase()).size(18);
+            d = d.add_paragraph(Paragraph::new().align(AlignmentType::Center).add_run(if i == last { run.bold() } else { run }));
+        }
+    }
     d = d.add_paragraph(Paragraph::new().align(AlignmentType::Center).add_run(text(&doc.content.title.to_uppercase()).bold().size(26)));
     d = d.add_paragraph(Paragraph::new().align(AlignmentType::Center).add_run(text(&status_line(doc)).size(18)));
     d = d.add_paragraph(Paragraph::new());
@@ -109,7 +124,8 @@ pub fn docx(doc: &Document) -> Result<Vec<u8>, String> {
         }
     }
 
-    d = d.footer(Footer::new().add_paragraph(Paragraph::new().align(AlignmentType::Center).add_run(text(&format!("{}  |  {}", doc.content.office, status_line(doc))).size(16))));
+    let verify = doc.content.verify_code.as_ref().map(|c| format!("  |  Verification {c}")).unwrap_or_default();
+    d = d.footer(Footer::new().add_paragraph(Paragraph::new().align(AlignmentType::Center).add_run(text(&format!("{}  |  {}{verify}", doc.content.office, status_line(doc))).size(16))));
 
     let mut buffer = std::io::Cursor::new(Vec::new());
     d.build().pack(&mut buffer).map_err(|e| e.to_string())?;

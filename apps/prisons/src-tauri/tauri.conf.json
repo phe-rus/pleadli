@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "prisons",
+  "productName": "Pleadli Prisons",
   "version": "0.1.0",
   "identifier": "com.pleadli.prisons",
   "build": {
@@ -41,7 +41,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "createUpdaterArtifacts": false,
+    "createUpdaterArtifacts": true,
     "externalBin": [
       "binaries/cloudflared"
     ],
@@ -53,5 +53,15 @@
       "icons/icon.ico"
     ]
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZCMEQyREJDRDRBNkY1MDAKUldRQTlhYlV2QzBOKzNOUjRzbllhb2hqcGx5YlYrNDlKSUlKaWJ1TlJHK0JSSlFWMXR4L0I1ZUEK",
+      "endpoints": [
+        "https://github.com/phe-rus/pleadli-releases/releases/download/prisons-latest/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
 }

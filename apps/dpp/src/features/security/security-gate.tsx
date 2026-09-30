@@ -1,3 +1,5 @@
+import { formatDate } from '@/lib/dates'
+import { productName } from '@/lib/jurisdiction'
 import { Controls } from '@/components/toolbar/controls'
 import { onLocked } from '@/lib/api'
 import { ApiError } from '@/lib/api'
@@ -8,10 +10,9 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { restartApp, stageRestore, unlock } from './data'
 import { useSecurityStatus } from './queries'
 import type { Staged } from './schema'
-import { JusticeScale01Icon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { format } from 'date-fns/format'
+import { BrandLogo } from '@/features/brand'
 import { isTauri } from '@tauri-apps/api/core'
+import * as m from '@/paraglide/messages'
 
 function Centered({ children }: { children: ReactNode }) {
   return (
@@ -25,7 +26,7 @@ function Centered({ children }: { children: ReactNode }) {
   )
 }
 
-function LockScreen({ retryAfter, onUnlocked }: { retryAfter: number; onUnlocked?: () => void }) {
+export function LockScreen({ retryAfter, onUnlocked }: { retryAfter: number; onUnlocked?: () => void }) {
   const queryClient = useQueryClient()
   const [passphrase, setPassphrase] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -34,10 +35,10 @@ function LockScreen({ retryAfter, onUnlocked }: { retryAfter: number; onUnlocked
   return (
     <Centered>
       <div className="flex items-center gap-3">
-        <HugeiconsIcon icon={JusticeScale01Icon} className="size-6 text-primary" />
+        <BrandLogo className="size-8" />
         <div className="flex flex-col">
-          <h1>Pleadli DPP is locked</h1>
-          <p>Enter the passphrase to continue.</p>
+          <h1>{m["security.gate.locked_title"]({ product: productName() })}</h1>
+          <p>{m["security.gate.enter"]()}</p>
         </div>
       </div>
       <form
@@ -52,28 +53,28 @@ function LockScreen({ retryAfter, onUnlocked }: { retryAfter: number; onUnlocked
             await queryClient.invalidateQueries()
             onUnlocked?.()
           } catch (e) {
-            setError(e instanceof ApiError ? e.message : 'It could not be unlocked.')
+            setError(e instanceof ApiError ? e.message : m["security.gate.unlock_failed"]())
             await queryClient.invalidateQueries({ queryKey: ['security'] })
           } finally {
             setBusy(false)
           }
         }}
       >
-        <Input type="password" autoFocus autoComplete="current-password" aria-label="Passphrase" placeholder="Passphrase" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
-        {error && <p role="alert" className="text-destructive">{error}</p>}
-        {!error && retryAfter > 0 && <p role="status">Too many wrong attempts. Try again in {retryAfter} seconds.</p>}
+        <Input type="password" autoFocus autoComplete="current-password" aria-label={m["security.gate.passphrase"]()} placeholder={m["security.gate.passphrase"]()} value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
+        {error && <p role="alert" className="not-typeset text-destructive">{error}</p>}
+        {!error && retryAfter > 0 && <p role="status">{m["security.gate.retry"]({ seconds: retryAfter })}</p>}
         <Button type="submit" disabled={busy || passphrase.length === 0}>
-          Unlock
+          {m["security.gate.unlock"]()}
         </Button>
       </form>
-      <p>Locking protects the screen. The records on this computer are encrypted whether or not a lock is set.</p>
+      <p>{m["security.gate.explainer"]()}</p>
     </Centered>
   )
 }
 
 /** Shown when the data could not be opened: the key is missing, or the database
  * fails its check. The only way on is a backup. */
-function RecoveryScreen({ reason, pending }: { reason: string | null; pending: boolean }) {
+export function RecoveryScreen({ reason, pending }: { reason: string | null; pending: boolean }) {
   const [passphrase, setPassphrase] = useState('')
   const [file, setFile] = useState<File | undefined>()
   const [staged, setStaged] = useState<Staged | null>(null)
@@ -84,16 +85,16 @@ function RecoveryScreen({ reason, pending }: { reason: string | null; pending: b
   return (
     <Centered>
       <div className="flex flex-col gap-1">
-        <h1>The data could not be opened</h1>
-        <p>{reason ?? 'Pleadli DPP could not open its records.'}</p>
-        <p>Nothing has been changed or deleted. Restoring a backup brings the records back; the data as it is now is kept aside.</p>
+        <h1>{m["security.gate.recovery_title"]()}</h1>
+        <p>{reason ?? m["security.gate.recovery_reason"]({ product: productName() })}</p>
+        <p>{m["security.gate.recovery_body"]()}</p>
       </div>
       {ready ? (
         <div className="flex flex-col gap-3">
           <p role="status">
-            {staged ? `A backup made ${format(staged.createdAt, 'PPp')} with ${staged.documents} documents is ready.` : 'A backup is ready to be restored.'} Restart to finish.
+            {staged ? m["security.restore.staged"]({ date: formatDate(staged.createdAt, 'datetime'), documents: staged.documents }) : m["security.gate.backup_ready"]()} {m["security.gate.restart_to_finish"]()}
           </p>
-          {isTauri() ? <Button onClick={() => void restartApp()}>Restart and restore</Button> : <p>Restart the application to finish.</p>}
+          {isTauri() ? <Button onClick={() => void restartApp()}>{m["security.restore.restart"]()}</Button> : <p>{m["security.restore.restart_to_finish"]()}</p>}
         </div>
       ) : (
         <form
@@ -105,17 +106,17 @@ function RecoveryScreen({ reason, pending }: { reason: string | null; pending: b
             try {
               setStaged(await stageRestore(passphrase, file))
             } catch (e) {
-              setError(e instanceof ApiError ? e.message : typeof e === 'string' ? e : 'The backup could not be opened.')
+              setError(e instanceof ApiError ? e.message : typeof e === 'string' ? e : m["security.gate.backup_open_failed"]())
             } finally {
               setBusy(false)
             }
           }}
         >
-          {!isTauri() && <input type="file" accept=".dppbk" aria-label="Backup file" onChange={(e) => setFile(e.target.files?.[0])} />}
-          <Input type="password" aria-label="Backup passphrase" placeholder="Backup passphrase" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
-          {error && <p role="alert" className="text-destructive">{error}</p>}
+          {!isTauri() && <input type="file" accept=".dppbk" aria-label={m["security.restore.file"]()} onChange={(e) => setFile(e.target.files?.[0])} />}
+          <Input type="password" aria-label={m["security.backup.passphrase"]()} placeholder={m["security.backup.passphrase"]()} value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
+          {error && <p role="alert" className="not-typeset text-destructive">{error}</p>}
           <Button type="submit" disabled={busy || passphrase.length === 0 || (!isTauri() && !file)}>
-            {isTauri() ? 'Choose a backup and restore' : 'Restore this backup'}
+            {isTauri() ? m["security.gate.choose_restore"]() : m["security.gate.restore_this"]()}
           </Button>
         </form>
       )}

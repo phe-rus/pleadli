@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { RecordExportActions } from '@/components/record-export-actions'
 import { ChargeSheetPrintable, chargeSheetsOptions, useChargeSheets, useExportChargeSheetDocument } from '@/features/legal-forms'
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
@@ -27,9 +28,9 @@ function RouteComponent() {
   const handleExport = async (format: 'pdf' | 'docx') => {
     try {
       const found = await exportDocument.mutateAsync(format)
-      if (found) t.success(`${format === 'pdf' ? 'PDF' : 'Word'} document exported`)
+      if (found) t.success(format === 'pdf' ? m["data_io.pdf_exported"]() : m["data_io.word_exported"]())
     } catch {
-      t.error(`Could not export to ${format === 'pdf' ? 'PDF' : 'Word'}`, { description: 'Please try again.' })
+      t.error(format === 'pdf' ? m["data_io.pdf_failed"]() : m["data_io.word_failed"](), { description: m["common.try_again"]() })
     }
   }
 
@@ -41,7 +42,7 @@ function RouteComponent() {
           className="inline-flex w-fit items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5" />
-          Back to Charge Sheets &amp; Forms
+          {m["legal_page.back"]()}
         </Link>
         <RecordExportActions
           onPrint={() => navigate({ to: '/print/legal-forms/$chargeSheetId', params: { chargeSheetId } })}

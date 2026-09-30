@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { api, DEV_API_URL } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
@@ -32,7 +33,7 @@ export async function exportChargeSheetDocument(id: string, format: DocumentForm
     const { save } = await import('@tauri-apps/plugin-dialog')
     const path = await save({
       defaultPath: `charge-sheet.${format}`,
-      filters: [{ name: format === 'pdf' ? 'PDF Document' : 'Word Document', extensions: [format] }],
+      filters: [{ name: format === 'pdf' ? m["common.pdf_document"]() : m["common.word_document"](), extensions: [format] }],
     })
     if (typeof path !== 'string') return false
     await invoke('export_charge_sheet_document', { id, format, destinationPath: path })

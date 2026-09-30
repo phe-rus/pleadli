@@ -2,6 +2,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
 import { api, devAttachmentUrl, devUploadUrl, seg } from '@/lib/api'
 import { attachmentSchema } from './schema'
+import * as m from '@/paraglide/messages'
 
 export async function listAttachments(entityType: string, entityId: string) {
   return z.array(attachmentSchema).parse(await api('GET', '/api/attachments', { query: { entityType, entityId } }))
@@ -20,7 +21,7 @@ export async function addAttachmentFile(entityType: string, entityId: string, fi
   formData.append('entityId', entityId)
   formData.append('file', file)
   const response = await fetch(devUploadUrl, { method: 'POST', body: formData })
-  if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { message?: string } | null)?.message ?? 'The upload failed.')
+  if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { message?: string } | null)?.message ?? m["attachments.upload_failed"]())
   return attachmentSchema.parse(await response.json())
 }
 

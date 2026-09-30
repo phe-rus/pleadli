@@ -1,9 +1,10 @@
+import * as m from '@/paraglide/messages'
 import { EmptyNote } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { Tag } from '@/components/status-tag'
 import { Button } from '@pleadli/ui/button'
-import { format } from 'date-fns/format'
-import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
+import { format } from '@/lib/date'
+import { formatDistanceToNowStrict } from '@/lib/date'
 import { custodyBasisLabel, custodyCompliance, custodyPersonName, type CustodyRecord } from './schema'
 
 /** Past this many hours before the limit a row is marked as needing action. */
@@ -11,11 +12,12 @@ const NEAR_HOURS = 6
 
 function remaining(hours: number) {
   const abs = Math.abs(hours)
-  if (abs < 1) return `${Math.max(1, Math.round(abs * 60))} minutes`
-  if (abs < 48) return `${Math.round(abs)} ${Math.round(abs) === 1 ? 'hour' : 'hours'}`
+  if (abs < 1) return m["custody.minutes"]({ count: Math.max(1, Math.round(abs * 60)) })
+  if (abs < 48) return Math.round(abs) === 1 ? m["custody.hour_one"]() : m["custody.hours"]({ count: Math.round(abs) })
   const days = Math.floor(abs / 24)
   const rest = Math.round(abs - days * 24)
-  return `${days} ${days === 1 ? 'day' : 'days'}${rest > 0 ? ` ${rest} h` : ''}`
+  const dayText = days === 1 ? m["custody.day_one"]() : m["custody.days"]({ count: days })
+  return rest > 0 ? m["custody.and_hours"]({ days: dayText, hours: rest }) : dayText
 }
 
 /** Who is in the cells, ordered by the deadline the record itself fixes, the
@@ -28,7 +30,7 @@ export function CustodyBoard({ records, onOpen }: { records: CustodyRecord[]; on
     .map((record) => ({ record, compliance: custodyCompliance(record) }))
     .sort((a, b) => a.compliance.deadline - b.compliance.deadline)
 
-  if (inCells.length === 0) return <EmptyNote>No one is recorded in custody.</EmptyNote>
+  if (inCells.length === 0) return <EmptyNote>{m["custody.nobody"]()}</EmptyNote>
 
   return (
     <RowList>
@@ -43,16 +45,17 @@ export function CustodyBoard({ records, onOpen }: { records: CustodyRecord[]; on
             title={custodyPersonName(record)}
             summary={
               <>
-                Arrested {formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true })}
-                {record.location ? ` at ${record.location}` : ''}
-                {record.caseReference ? `. Case ${record.caseReference}` : ''}. Limit {format(compliance.deadline, 'PP p')}, {custodyBasisLabel(compliance.basis)}.
+                {m["custody.arrested_summary"]({ when: formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true }) })}
+                {record.location ? m["custody.at_location"]({ location: record.location }) : ''}
+                {record.caseReference ? m["custody.case_ref"]({ reference: record.caseReference }) : ''}
+                {m["custody.limit_summary"]({ deadline: format(compliance.deadline, 'PP p'), basis: custodyBasisLabel(compliance.basis) })}
               </>
             }
             trailing={
               <>
-                <Tag tone={past ? 'urgent' : near ? 'open' : 'neutral'}>{past ? `Past the limit by ${remaining(compliance.hoursRemaining)}` : `${remaining(compliance.hoursRemaining)} left`}</Tag>
+                <Tag tone={past ? 'urgent' : near ? 'open' : 'neutral'}>{past ? m["custody.past_by"]({ time: remaining(compliance.hoursRemaining) }) : m["custody.left"]({ time: remaining(compliance.hoursRemaining) })}</Tag>
                 <Button size="sm" variant="secondary" onClick={() => onOpen(record)} className="cursor-pointer">
-                  Open
+                  {m["common.open"]()}
                 </Button>
               </>
             }

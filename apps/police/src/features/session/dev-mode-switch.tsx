@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { CodeIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -18,7 +19,7 @@ export function DevModeSwitch({ compact = false }: { compact?: boolean }) {
   const flip = useMutation({
     mutationFn: setDevMode,
     onSuccess: () => window.location.assign('/'),
-    onError: (error) => t.error('Could not switch', { description: error instanceof ApiError ? error.message : 'The switch did not go through.' }),
+    onError: (error) => t.error(m["dev.switch_failed"](), { description: error instanceof ApiError ? error.message : m["dev.switch_failed_desc"]() }),
   })
 
   if (!installation?.installed) return null
@@ -28,16 +29,16 @@ export function DevModeSwitch({ compact = false }: { compact?: boolean }) {
   if (!compact) {
     return (
       <label className="flex shrink-0 items-center gap-2">
-        {command ? 'Command' : 'Station'}
+        {command ? m["dev.command"]() : m["dev.station"]()}
         <Switch checked={command} onCheckedChange={toggle} disabled={flip.isPending} />
       </label>
     )
   }
 
   return (
-    <label className={cn('flex h-6 items-center gap-1.5 rounded-md border border-dashed border-border px-2 text-xs text-muted-foreground')} title="Dev builds only: switch between Station and Command">
+    <label className={cn('flex h-6 items-center gap-1.5 rounded-md border border-dashed border-border px-2 text-xs text-muted-foreground')} title={m["dev.title"]()}>
       <HugeiconsIcon icon={CodeIcon} size={13} />
-      {command ? 'Command' : 'Station'}
+      {command ? m["dev.command"]() : m["dev.station"]()}
       <Switch checked={command} onCheckedChange={toggle} disabled={flip.isPending} />
     </label>
   )

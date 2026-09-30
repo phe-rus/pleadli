@@ -21,7 +21,7 @@ struct Row {
     title: String,
     reference: Option<String>,
     status: String,
-    source_decision_id: String,
+    source_decision_id: Option<String>,
     author: Option<String>,
     content: String,
     content_sha256: Option<String>,
@@ -43,7 +43,8 @@ pub struct Document {
     /// Pleadli's own number, assigned when the document is issued.
     pub reference: Option<String>,
     pub status: String,
-    pub source_decision_id: String,
+    /// The decision it follows, or none for a document that stands on the file alone.
+    pub source_decision_id: Option<String>,
     pub author: Option<String>,
     pub prepared_at: i64,
     pub issued_at: Option<i64>,
@@ -174,7 +175,14 @@ fn ensure_draft(doc: &Document) -> Result<(), DomainError> {
 pub async fn refresh(pool: &SqlitePool, id: &str) -> Result<Document, DomainError> {
     let doc = get(pool, id).await?;
     ensure_draft(&doc)?;
-    let source = decision(pool, &doc.source_decision_id).await?;
+    let Some(source_id) = doc.source_decision_id.clone() else {
+        return invalid("This document was made from a template: change it on the page instead.");
+    };
+    // A document made from a country template is rebuilt on the screen, not here.
+    if doc.content.lang.is_some() {
+        return invalid("This document was made from a template: change it on the page instead.");
+    }
+    let source = decision(pool, &source_id).await?;
     let act = act_of(pool, &source).await?;
     let file = prosecution_files::get_prosecution_file(pool, &doc.prosecution_file_id).await?.ok_or_else(|| DomainError::NotFound("File not found.".to_string()))?;
     let content = document_builder::build(pool, &doc.kind, &file, &act).await?;
@@ -187,39 +195,159 @@ pub async fn refresh(pool: &SqlitePool, id: &str) -> Result<Document, DomainErro
     get(pool, id).await
 }
 
-/// Issues a draft: assigns its reference, records who issued it, and freezes
-/// the content with its hash.
-pub async fn issue(pool: &SqlitePool, id: &str) -> Result<Document, DomainError> {
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IssueInput {
+    /// The start of the reference in the country's style ("ODPP", "PARQUET").
+    pub prefix: Option<String>,
+}
+
+/// Issues a draft: assigns its reference, puts the signer's signature and the
+/// office stamp on it, adds the verification code and its QR, and freezes the
+/// whole with its hash. The signer is the person issuing it.
+pub async fn issue(pool: &SqlitePool, id: &str, input: IssueInput, signer: Option<(&str, &str)>) -> Result<Document, DomainError> {
     let doc = get(pool, id).await?;
     ensure_draft(&doc)?;
-    let source = decision(pool, &doc.source_decision_id).await?;
+    let decided_by = match &doc.source_decision_id {
+        Some(d) => decision(pool, d).await?.decided_by,
+        None => None,
+    };
     let profile = prosecutor_profile::get_prosecutor_profile(pool).await?;
-    let Some(author) = source.decided_by.clone().or(profile.map(|p| p.name)) else {
+    let Some(author) = signer.map(|(_, name)| name.to_string()).or(decided_by).or(profile.map(|p| p.name)) else {
         return invalid("Set the prosecutor in Settings before issuing a document, so it carries a name.");
     };
+    let signature: Option<String> = match signer {
+        Some((staff_id, _)) => sqlx::query_scalar("SELECT signature FROM staff WHERE id = ?").bind(staff_id).fetch_optional(pool).await?.flatten(),
+        None => None,
+    };
+    let stamp: Option<String> = sqlx::query_scalar("SELECT stamp FROM installation WHERE id = 'this'").fetch_optional(pool).await?.flatten();
+    let prefix: String = input
+        .prefix
+        .unwrap_or_else(|| "DPP".into())
+        .to_uppercase()
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .take(12)
+        .collect();
+    let prefix = if prefix.is_empty() { "DPP".to_string() } else { prefix };
 
-    let stored: String = sqlx::query_scalar("SELECT content FROM documents WHERE id = ?").bind(id).fetch_one(pool).await?;
     let now = chrono::Utc::now();
     let year: i64 = now.format("%Y").to_string().parse().unwrap_or(0);
-
     let mut tx = pool.begin().await?;
-    let next: i64 = sqlx::query_scalar("SELECT next FROM document_counters WHERE year = ?").bind(year).fetch_optional(&mut *tx).await?.unwrap_or(1);
-    sqlx::query("INSERT INTO document_counters (year, next) VALUES (?, ?) ON CONFLICT (year) DO UPDATE SET next = excluded.next")
+    let next: i64 = sqlx::query_scalar("SELECT next FROM document_counters WHERE prefix = ? AND year = ?").bind(&prefix).bind(year).fetch_optional(&mut *tx).await?.unwrap_or(1);
+    sqlx::query("INSERT INTO document_counters (prefix, year, next) VALUES (?, ?, ?) ON CONFLICT (prefix, year) DO UPDATE SET next = excluded.next")
+        .bind(&prefix)
         .bind(year)
         .bind(next + 1)
         .execute(&mut *tx)
         .await?;
-    sqlx::query("UPDATE documents SET status = 'issued', reference = ?, author = ?, content_sha256 = ?, issued_at = ? WHERE id = ?")
-        .bind(format!("DPP-{year}-{next:04}"))
+    let reference = format!("{prefix}-{year}-{next:04}");
+
+    // The seals go in first; the code is taken from the sealed content, and
+    // the stored content (code and QR included) is what the hash covers.
+    let mut content = doc.content.clone();
+    content.signature_image = signature;
+    content.stamp_image = stamp;
+    let sealed = serde_json::to_string(&content).unwrap_or_default();
+    let code = hash(&format!("{reference}|{sealed}"))[..12].to_uppercase();
+    content.verify_code = Some(code.clone());
+    content.verify_qr = qrcode::QrCode::new(format!("PLEADLI {reference} {code}").as_bytes())
+        .ok()
+        .map(|q| q.render::<qrcode::render::svg::Color>().quiet_zone(false).min_dimensions(96, 96).build());
+    let stored = serde_json::to_string(&content).unwrap_or_default();
+
+    sqlx::query("UPDATE documents SET status = 'issued', reference = ?, author = ?, content = ?, content_sha256 = ?, issued_at = ? WHERE id = ?")
+        .bind(&reference)
         .bind(&author)
+        .bind(&stored)
         .bind(hash(&stored))
         .bind(now.timestamp_millis())
         .bind(id)
         .execute(&mut *tx)
         .await?;
-    audit::record(&mut tx, Entry::new("document_issued").subject("document", id).file(&doc.prosecution_file_id).detail(format!("DPP-{year}-{next:04}, {}", doc.kind))).await?;
+    audit::record(&mut tx, Entry::new("document_issued").subject("document", id).file(&doc.prosecution_file_id).detail(format!("{reference}, {}", doc.kind))).await?;
     tx.commit().await?;
     get(pool, id).await
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DraftInput {
+    pub prosecution_file_id: String,
+    pub decision_id: Option<String>,
+    pub kind: String,
+    pub title: String,
+    pub content: DocumentContent,
+}
+
+/// A draft made on the screen from a country template.
+pub async fn create_draft(pool: &SqlitePool, input: DraftInput) -> Result<Document, DomainError> {
+    if input.title.trim().is_empty() || input.kind.trim().is_empty() {
+        return invalid("A document needs a kind and a title.");
+    }
+    if let Some(d) = &input.decision_id {
+        let existing: Option<String> = sqlx::query_scalar("SELECT id FROM documents WHERE source_decision_id = ? AND kind = ?").bind(d).bind(&input.kind).fetch_optional(pool).await?;
+        if let Some(id) = existing {
+            return get(pool, &id).await;
+        }
+    }
+    let id = Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO documents (id, prosecution_file_id, kind, title, status, source_decision_id, content, prepared_at) VALUES (?, ?, ?, ?, 'draft', ?, ?, ?)")
+        .bind(&id)
+        .bind(&input.prosecution_file_id)
+        .bind(input.kind.trim())
+        .bind(input.title.trim())
+        .bind(&input.decision_id)
+        .bind(serde_json::to_string(&input.content).unwrap_or_default())
+        .bind(chrono::Utc::now().timestamp_millis())
+        .execute(pool)
+        .await?;
+    get(pool, &id).await
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContentInput {
+    pub title: String,
+    pub content: DocumentContent,
+}
+
+/// What the prosecutor changed on the page of a draft.
+pub async fn update_content(pool: &SqlitePool, id: &str, input: ContentInput) -> Result<Document, DomainError> {
+    let doc = get(pool, id).await?;
+    ensure_draft(&doc)?;
+    sqlx::query("UPDATE documents SET title = ?, content = ?, prepared_at = ? WHERE id = ?")
+        .bind(input.title.trim())
+        .bind(serde_json::to_string(&input.content).unwrap_or_default())
+        .bind(chrono::Utc::now().timestamp_millis())
+        .bind(id)
+        .execute(pool)
+        .await?;
+    get(pool, id).await
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Verification {
+    pub found: bool,
+    /// The code matches and the stored content is unchanged since issue.
+    pub genuine: bool,
+    pub title: Option<String>,
+    pub file_title: Option<String>,
+    pub author: Option<String>,
+    pub issued_at: Option<i64>,
+}
+
+/// Checks a paper document against the record: its reference and the code
+/// printed beside the QR.
+pub async fn verify(pool: &SqlitePool, reference: &str, code: &str) -> Result<Verification, DomainError> {
+    let id: Option<String> = sqlx::query_scalar("SELECT id FROM documents WHERE reference = ? AND status = 'issued'").bind(reference.trim()).fetch_optional(pool).await?;
+    let Some(id) = id else {
+        return Ok(Verification { found: false, genuine: false, title: None, file_title: None, author: None, issued_at: None });
+    };
+    let doc = get(pool, &id).await?;
+    let genuine = doc.integrity == "intact" && doc.content.verify_code.as_deref().is_some_and(|c| c.eq_ignore_ascii_case(code.trim()));
+    Ok(Verification { found: true, genuine, title: Some(doc.title), file_title: Some(doc.file_title), author: doc.author, issued_at: doc.issued_at })
 }
 
 /// Throws a draft away. An issued document is never deleted.

@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { SettingsCard } from '@/components/settings-card'
 import { Tag } from '@/components/status-tag'
 import { useMe } from '@/features/session'
@@ -5,8 +6,8 @@ import { Button } from '@pleadli/ui/button'
 import { Field, FieldDescription, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
-import { format } from 'date-fns/format'
-import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
+import { format } from '@/lib/date'
+import { formatDistanceToNowStrict } from '@/lib/date'
 import { useState } from 'react'
 import { useConnect, useDisconnect, useLink } from './queries'
 
@@ -31,10 +32,10 @@ export function ConnectionSettings() {
     const tone = link.state === 'connected' ? 'done' : link.state === 'pending' ? 'open' : 'urgent'
     return (
       <SettingsCard
-        title="Command"
-        badge={<Tag tone={tone}>{link.state === 'connected' ? 'Connected' : link.state === 'pending' ? 'Waiting for approval' : 'Not accepted'}</Tag>}
-        description={`${link.stationName ?? link.stationNumber} at ${link.address}, as station ${link.stationNumber}.`}
-        hint={admin ? undefined : 'Only an administrator can change this.'}
+        title={m["command_link.title"]()}
+        badge={<Tag tone={tone}>{link.state === 'connected' ? m["common.connected"]() : link.state === 'pending' ? m["command_link.pending"]() : m["command_link.not_accepted"]()}</Tag>}
+        description={m["command_link.description"]({ name: link.stationName ?? link.stationNumber, address: link.address, number: link.stationNumber })}
+        hint={admin ? undefined : m["command_link.admin_only"]()}
         action={
           admin ? (
             <Button
@@ -42,61 +43,61 @@ export function ConnectionSettings() {
               variant="secondary"
               disabled={disconnect.isPending}
               onClick={() => {
-                if (window.confirm('Disconnect from the command? It will stop receiving this station\'s reports.')) void disconnect.mutateAsync()
+                if (window.confirm(m["command_link.disconnect_confirm"]())) void disconnect.mutateAsync()
               }}
             >
-              Disconnect
+              {m["common.disconnect"]()}
             </Button>
           ) : undefined
         }
       >
         <p>
-          {link.state === 'pending' && `Asked by ${link.requestedBy ?? 'an officer'}. An administrator at the command has to approve it. This page checks every 20 seconds.`}
-          {link.state === 'connected' && (link.lastReportAt ? `Last report ${formatDistanceToNowStrict(link.lastReportAt, { addSuffix: true })} (${format(link.lastReportAt, 'PP p')}).` : 'Connected. The first report goes out within a minute.')}
-          {link.state === 'rejected' && 'The command does not accept this station. Disconnect and connect again, or ask the command.'}
+          {link.state === 'pending' && m["command_link.asked_by"]({ name: link.requestedBy ?? m["command_link.an_officer"]() })}
+          {link.state === 'connected' && (link.lastReportAt ? m["command_link.last_report"]({ when: formatDistanceToNowStrict(link.lastReportAt, { addSuffix: true }), date: format(link.lastReportAt, 'PP p') }) : m["command_link.connected_first"]())}
+          {link.state === 'rejected' && m["command_link.rejected"]()}
         </p>
         {link.lastError && <p className="text-destructive">{link.lastError}</p>}
-        <p className="text-muted-foreground">This station sends its command counts (people in custody, near the limit, open cases, referrals without an outcome, officers on duty) and its roster of officers. It never sends a case, a person, a statement or a password.</p>
+        <p className="text-muted-foreground">{m["command_link.what_is_sent"]()}</p>
       </SettingsCard>
     )
   }
 
   return (
     <SettingsCard
-      title="Connect to a command"
-      description="Connect this station to the command (HQ) it reports to. The command gives the station a number, and may give an activation code."
-      hint={admin ? 'The connection is not encrypted yet; use it on a network the command controls.' : 'Only an administrator can connect the station.'}
+      title={m["command_link.connect_title"]()}
+      description={m["command_link.connect_description"]()}
+      hint={admin ? m["command_link.not_encrypted"]() : m["command_link.admin_only_connect"]()}
       onSubmit={async (event) => {
         event.preventDefault()
         setError(null)
         try {
           await connect.mutateAsync({ address, stationNumber: number, activationCode: code })
           setCode('')
-          t.success('Connection requested')
+          t.success(m["command_link.requested"]())
         } catch (e) {
-          setError(e instanceof Error ? e.message : 'It could not connect.')
+          setError(e instanceof Error ? e.message : m["command_link.could_not_connect"]())
         }
       }}
       action={
         admin ? (
           <Button type="submit" size="sm" disabled={connect.isPending || !address.trim() || !number.trim()}>
-            Connect
+            {m["common.connect"]()}
           </Button>
         ) : undefined
       }
     >
       <Field>
-        <FieldLabel>Address of the command</FieldLabel>
-        <Input placeholder="e.g. 192.168.1.20:47822" disabled={!admin} value={address} onChange={(e) => setAddress(e.target.value)} />
-        <FieldDescription>The address and port the command shows on its Settings.</FieldDescription>
+        <FieldLabel>{m["command_link.address_label"]()}</FieldLabel>
+        <Input placeholder={m["command_link.address_placeholder"]()} disabled={!admin} value={address} onChange={(e) => setAddress(e.target.value)} />
+        <FieldDescription>{m["command_link.address_hint"]()}</FieldDescription>
       </Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field>
-          <FieldLabel>Station number</FieldLabel>
-          <Input placeholder="e.g. ST-0001" disabled={!admin} value={number} onChange={(e) => setNumber(e.target.value)} />
+          <FieldLabel>{m["common.station_number"]()}</FieldLabel>
+          <Input placeholder={m["command_link.number_placeholder"]()} disabled={!admin} value={number} onChange={(e) => setNumber(e.target.value)} />
         </Field>
         <Field>
-          <FieldLabel>Activation code (optional)</FieldLabel>
+          <FieldLabel>{m["command_link.activation_optional"]()}</FieldLabel>
           <Input disabled={!admin} value={code} onChange={(e) => setCode(e.target.value)} />
         </Field>
       </div>

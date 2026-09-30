@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { api, DEV_API_URL } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
@@ -63,7 +64,7 @@ export async function exportPersonDocument(id: string, format: DocumentFormat) {
     const { save } = await import('@tauri-apps/plugin-dialog')
     const path = await save({
       defaultPath: `person-record.${format}`,
-      filters: [{ name: format === 'pdf' ? 'PDF Document' : 'Word Document', extensions: [format] }],
+      filters: [{ name: format === 'pdf' ? m["common.pdf_document"]() : m["common.word_document"](), extensions: [format] }],
     })
     if (typeof path !== 'string') return false
     await invoke('export_person_document', { id, format, destinationPath: path })

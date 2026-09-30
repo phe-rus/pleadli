@@ -1,17 +1,20 @@
+import * as m from '@/paraglide/messages'
 import { Controls } from '@/components/toolbar/controls'
 import { NetworkIcon, PoliceBadgeIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
+import { BrandLogo } from '@/features/brand'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 
 export type Mode = 'station' | 'command'
 
-const brand = {
-  station: { icon: PoliceBadgeIcon, label: 'Station', headline: 'One station, every record in one place.', body: 'Diary, cases, custody and statements, kept on this computer and working without a network.' },
-  command: { icon: NetworkIcon, label: 'Command', headline: 'See what your stations report.', body: 'A command holds no case or person records, only what its stations choose to report up.' },
-  neutral: { icon: PoliceBadgeIcon, label: '', headline: 'Police work, kept in order.', body: 'Pleadli Police is built for the officer at the desk: offline first, with nothing to sign up for.' },
-}
+/** A function, not a table, so the words are read in the current language. */
+const brand = () => ({
+  station: { icon: PoliceBadgeIcon, label: m["pre_auth.station_label"](), headline: m["pre_auth.station_headline"](), body: m["pre_auth.station_body"]() },
+  command: { icon: NetworkIcon, label: m["pre_auth.command_label"](), headline: m["pre_auth.command_headline"](), body: m["pre_auth.command_body"]() },
+  neutral: { icon: PoliceBadgeIcon, label: '', headline: m["pre_auth.neutral_headline"](), body: m["pre_auth.neutral_body"]() },
+})
 
 /** Shared shell for every screen that comes before the workspace (first-launch
  * setup and sign-in): a branded panel on the left, the screen itself on the
@@ -32,15 +35,15 @@ export function PreAuthLayout({ mode, children }: { mode?: Mode; children: React
 }
 
 function BrandPanel({ mode }: { mode?: Mode }) {
-  const content = brand[mode ?? 'neutral']
+  const content = brand()[mode ?? 'neutral']
   return (
     <div data-tauri-drag-region className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground md:flex">
       <HugeiconsIcon icon={content.icon} size={420} strokeWidth={0.75} className="pointer-events-none absolute -right-24 -bottom-24 text-primary-foreground/10" />
       <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="not-typeset relative flex items-center gap-2.5">
-        <div className="flex size-8 items-center justify-center rounded-md bg-primary-foreground/15">
-          <HugeiconsIcon icon={content.icon} size={17} />
+        <div className="flex size-10 items-center justify-center rounded-md bg-white p-1">
+          <BrandLogo className="size-8" />
         </div>
-        <span className="text-sm font-semibold tracking-tight">Pleadli Police{content.label ? `, ${content.label}` : ''}</span>
+        <span className="text-sm font-semibold tracking-tight">{content.label ? m["pre_auth.product_with"]({ label: content.label }) : m["pre_auth.product"]()}</span>
       </motion.div>
       <motion.div key={mode ?? 'neutral'} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.35 }} className="not-typeset relative flex max-w-sm flex-col gap-3">
         <h2 className="text-2xl leading-snug font-semibold text-balance">{content.headline}</h2>
@@ -77,7 +80,7 @@ export function ScreenHeader({ icon, title, description }: { icon: typeof Police
  * left without a wizard's chrome. */
 export function Progress({ index, total }: { index: number; total: number }) {
   return (
-    <div role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={index + 1} aria-label={`Step ${index + 1} of ${total}`} className="flex gap-1.5">
+    <div role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={index + 1} aria-label={m["pre_auth.step_of"]({ index: index + 1, total })} className="flex gap-1.5">
       {Array.from({ length: total }, (_, position) => (
         <span key={position} className={cn('h-0.5 flex-1 rounded-full transition-colors duration-300 motion-reduce:transition-none', position <= index ? 'bg-primary' : 'bg-border')} />
       ))}

@@ -18,7 +18,10 @@
     {
       "identifier": "shell:allow-spawn",
       "allow": [
-        { "name": "binaries/cloudflared", "sidecar": true }
+        {
+          "name": "binaries/cloudflared",
+          "sidecar": true
+        }
       ]
     },
     "core:window:allow-close",
@@ -30,6 +33,10 @@
     "core:window:allow-is-maximized",
     "core:window:allow-start-dragging",
     "core:window:allow-start-resize-dragging",
-    "core:window:allow-toggle-maximize"
+    "core:window:allow-toggle-maximize",
+    "updater:default",
+    "process:allow-restart",
+    "dialog:allow-ask",
+    "dialog:allow-message"
   ]
 }

@@ -102,7 +102,8 @@ pub async fn list_time(pool: &SqlitePool, matter_id: &str, from: i64, to: i64) -
         .await
 }
 
-pub async fn add_time(pool: &SqlitePool, matter_id: &str, input: TimeInput) -> Result<TimeEntry, DomainError> {
+/// `staff_id` is who did the work (pro bono hours are counted per advocate).
+pub async fn add_time(pool: &SqlitePool, matter_id: &str, input: TimeInput, staff_id: Option<&str>) -> Result<TimeEntry, DomainError> {
     check_timestamp(input.worked_on, "The day worked")?;
     if input.minutes <= 0 || input.minutes > 1440 {
         return invalid("Time is between one minute and a full day.");
@@ -114,13 +115,17 @@ pub async fn add_time(pool: &SqlitePool, matter_id: &str, input: TimeInput) -> R
     let id = Uuid::new_v4().to_string();
     let mut tx = begin_write(pool).await?;
     require_open(&mut tx, matter_id).await?;
-    sqlx::query("INSERT INTO time_entries (id, matter_id, worked_on, minutes, description) VALUES (?, ?, ?, ?, ?)").bind(&id).bind(matter_id).bind(input.worked_on).bind(input.minutes).bind(&description).execute(&mut *tx).await?;
+    sqlx::query("INSERT INTO time_entries (id, matter_id, worked_on, minutes, description, staff_id) VALUES (?, ?, ?, ?, ?, ?)").bind(&id).bind(matter_id).bind(input.worked_on).bind(input.minutes).bind(&description).bind(staff_id).execute(&mut *tx).await?;
     tx.commit().await?;
     Ok(sqlx::query_as::<_, TimeEntry>(sqlx::AssertSqlSafe(format!("{TIME_SELECT} WHERE e.id = ?"))).bind(&id).fetch_one(pool).await?)
 }
 
 pub async fn remove_time(pool: &SqlitePool, id: &str) -> Result<(), DomainError> {
     let mut tx = begin_write(pool).await?;
+    let billed: Option<String> = sqlx::query_scalar("SELECT fee_note_id FROM fee_note_lines WHERE time_entry_id = ?").bind(id).fetch_optional(&mut *tx).await?;
+    if billed.is_some() {
+        return invalid("That time is on a fee note. Take it off the draft, or cancel the fee note, first.");
+    }
     let done = sqlx::query("DELETE FROM time_entries WHERE id = ?").bind(id).execute(&mut *tx).await?;
     if done.rows_affected() == 0 {
         return Err(DomainError::NotFound("Time entry not found.".to_string()));

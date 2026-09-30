@@ -1,9 +1,28 @@
 import { api, seg } from '@/lib/api'
 import * as z from 'zod'
-import { matterDetailSchema, matterSchema, matterSummarySchema, pleaSchema, type MatterInput, type MatterViewId } from './schema'
+import { conflictHitSchema, matterDetailSchema, matterSchema, matterSummarySchema, partySchema, pleaSchema, type MatterInput, type MatterViewId, type PartyInput } from './schema'
 
-export async function listMatters(view: MatterViewId | '' = '', query = '') {
-  return z.array(matterSummarySchema).parse(await api('GET', '/api/matters', { query: { view: view === 'all' ? '' : view, query } }))
+export async function listMatters(view: MatterViewId | '' = '', query = '', type = '') {
+  return z.array(matterSummarySchema).parse(await api('GET', '/api/matters', { query: { view: view === 'all' ? '' : view === 'board' ? 'open' : view, query, type } }))
+}
+
+export async function setStage(id: string, stage: string) {
+  return matterSchema.parse(await api('PUT', `/api/matters/${seg(id)}/stage`, { body: { stage } }))
+}
+
+export async function addParty(matterId: string, input: PartyInput) {
+  return partySchema.parse(await api('POST', `/api/matters/${seg(matterId)}/parties`, { body: input }))
+}
+
+export async function updateParty(id: string, input: PartyInput) {
+  return partySchema.parse(await api('PUT', `/api/parties/${seg(id)}`, { body: input }))
+}
+
+export const removeParty = (id: string) => api('DELETE', `/api/parties/${seg(id)}`)
+
+/** Every client and party of the practice sharing a word with `name`. */
+export async function findConflicts(name: string, exceptMatter?: string) {
+  return z.array(conflictHitSchema).parse(await api('GET', '/api/conflicts', { query: { name, exceptMatter } }))
 }
 
 export async function getMatter(id: string) {

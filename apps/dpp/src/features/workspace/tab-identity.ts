@@ -1,5 +1,6 @@
 import { areaMeta } from '@/data/navigationItems'
 import { fileViews, isFileView } from '@/features/prosecution-files/schema'
+import * as m from '@/paraglide/messages'
 import type { WorkspaceTab } from './tabs-store'
 
 /** A stable identity for one location: the tab key, its kind, and where it
@@ -42,24 +43,34 @@ export function identityForLocation(pathname: string, search: Record<string, unk
   return null
 }
 
-function titleFor(identity: TabIdentity, search: Record<string, unknown>): string {
-  switch (identity.kind) {
+/** A tab's title for display, worked out at render time so it follows the
+ * current language. Only a record's own title (a file's title, a document's
+ * reference) is stored on the tab; areas and Overview are named from their
+ * location every time they are drawn. */
+export function tabTitle(tab: { kind: WorkspaceTab['kind']; title: string; to: string }): string {
+  switch (tab.kind) {
     case 'overview':
-      return 'Overview'
+      return m["tabs.overview"]()
     case 'file':
-      return 'File'
+      return tab.title || m["tabs.file"]()
     case 'document':
-      return 'Document'
+      return tab.title || m["tabs.document"]()
     case 'area': {
-      if (identity.key === 'area:/files') {
+      const [pathname, query = ''] = tab.to.split('?')
+      const search = Object.fromEntries(new URLSearchParams(query))
+      if (pathname === '/files') {
         const view = isFileView(search.view) ? search.view : 'intake'
-        return fileViews.find((v) => v.id === view)?.label ?? 'Files'
+        return fileViews.find((v) => v.id === view)?.label ?? m["tabs.files"]()
       }
-      return areaMeta(identity.key.slice('area:'.length))?.label ?? identity.to
+      const identity = identityForLocation(pathname, search)
+      const areaPath = identity ? identity.key.slice('area:'.length) : pathname
+      return areaMeta(areaPath)?.label() ?? tab.to
     }
   }
 }
 
-export function tabFromIdentity(identity: TabIdentity, search: Record<string, unknown> = {}): WorkspaceTab {
-  return { key: identity.key, kind: identity.kind, title: titleFor(identity, search), to: identity.to }
+/** Stores no display text: a record tab starts untitled and is renamed with
+ * the record's own title once it loads (see `tabTitle`). */
+export function tabFromIdentity(identity: TabIdentity): WorkspaceTab {
+  return { key: identity.key, kind: identity.kind, title: '', to: identity.to }
 }

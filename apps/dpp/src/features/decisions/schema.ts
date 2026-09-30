@@ -1,4 +1,6 @@
 import * as z from 'zod'
+import * as m from '@/paraglide/messages'
+import { activeJurisdiction, packText } from '@/lib/jurisdiction'
 
 // The confirmed decision-type set from docs/dpp/PRODUCT.md §Decisions &
 // Reviews (RESEARCH.md §4). `delegable: false` marks discontinuance and
@@ -7,20 +9,33 @@ import * as z from 'zod'
 // server refuses them unless the installation's prosecutor is marked as the
 // DPP (`domain/decisions.rs`); the UI only explains that ahead of time.
 export const decisionTypes = [
-  { value: 'sanction', label: 'Sanction (decide to prosecute)', delegable: true },
-  { value: 'threshold_charge', label: 'Threshold Test charge', delegable: true },
-  { value: 'decline', label: 'Decline to charge', delegable: true },
-  { value: 'divert', label: 'Divert (alternative to prosecution)', delegable: true },
-  { value: 'return_for_investigation', label: 'Return for further investigation', delegable: true },
-  { value: 'take_over', label: 'Take over prosecution', delegable: true },
-  { value: 'discontinue', label: 'Discontinue proceedings', delegable: false },
-  { value: 'nolle_prosequi', label: 'Nolle prosequi', delegable: false },
-  { value: 'plea_bargain_accepted', label: 'Plea bargain accepted', delegable: true },
-  { value: 'committal_venue_high_court', label: 'Committal / venue decision (High Court)', delegable: true },
-  { value: 'amend_charge', label: 'Amend / direct alternative charge', delegable: true },
+  { value: 'sanction', get label() { return m["decision.type.sanction"]() }, delegable: true },
+  { value: 'threshold_charge', get label() { return m["decision.type.threshold_charge"]() }, delegable: true },
+  { value: 'decline', get label() { return m["decision.type.decline"]() }, delegable: true },
+  { value: 'divert', get label() { return m["decision.type.divert"]() }, delegable: true },
+  { value: 'return_for_investigation', get label() { return m["decision.type.return_for_investigation"]() }, delegable: true },
+  { value: 'take_over', get label() { return m["decision.type.take_over"]() }, delegable: true },
+  { value: 'discontinue', get label() { return m["decision.type.discontinue"]() }, delegable: false },
+  { value: 'nolle_prosequi', get label() { return m["decision.type.nolle_prosequi"]() }, delegable: false },
+  { value: 'plea_bargain_accepted', get label() { return m["decision.type.plea_bargain_accepted"]() }, delegable: true },
+  { value: 'committal_venue_high_court', get label() { return m["decision.type.committal_venue_high_court"]() }, delegable: true },
+  { value: 'amend_charge', get label() { return m["decision.type.amend_charge"]() }, delegable: true },
 ] as const
 
+/** The decisions this office's country has, under its own names. A country
+ * not yet researched gets the general set. A decision recorded under another
+ * country (a dev switch, an imported file) still shows by the general name. */
+export function availableDecisionTypes() {
+  const pack = activeJurisdiction()?.decisions
+  if (!pack) return [...decisionTypes]
+  return decisionTypes
+    .filter((d) => pack.some((o) => o.kind === d.value))
+    .map((d) => ({ ...d, label: decisionTypeLabel(d.value) }))
+}
+
 export function decisionTypeLabel(type: string) {
+  const own = activeJurisdiction()?.decisions?.find((o) => o.kind === type)
+  if (own) return packText(own.label)
   return decisionTypes.find((d) => d.value === type)?.label ?? type
 }
 
@@ -55,7 +70,7 @@ export type DecisionRow = z.infer<typeof decisionRowSchema>
 
 export const createDecisionSchema = z.object({
   prosecutionFileId: z.string().min(1),
-  decisionType: z.string().min(1, 'Decision type is required.'),
+  decisionType: z.string().min(1, { error: () => m["decision.form.type_required"]() }),
   decidedBy: z.string(),
   decidedAt: z.number(),
   reasons: z.string(),
@@ -64,7 +79,7 @@ export const createDecisionSchema = z.object({
   reviewId: z.string().nullable(),
   correctsDecisionId: z.string().nullable(),
   concludeReview: z.boolean(),
-  directions: z.array(z.object({ kind: z.string(), instruction: z.string().min(1, 'Every direction needs its instruction written out.'), personId: z.string().nullable() })),
+  directions: z.array(z.object({ kind: z.string(), instruction: z.string().min(1, { error: () => m["decision.form.direction_instruction_required"]() }), personId: z.string().nullable() })),
 })
 
 export type CreateDecisionInput = z.infer<typeof createDecisionSchema>

@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use super::audit::{self, Entry};
 use super::error::{check_timestamp, clean, invalid, DomainError};
+use super::matter_types;
 use super::tasks;
 use pleadli_node_core::db::begin_write;
 
@@ -23,6 +24,8 @@ pub struct Matter {
     pub offence: Option<String>,
     pub engagement: String,
     pub appointed_on: Option<i64>,
+    pub matter_type: String,
+    pub stage: String,
     pub status: String,
     pub outcome: Option<String>,
     pub closed_at: Option<i64>,
@@ -45,6 +48,8 @@ pub struct MatterSummary {
     pub court_level: Option<String>,
     pub offence: Option<String>,
     pub engagement: String,
+    pub matter_type: String,
+    pub stage: String,
     pub status: String,
     pub outcome: Option<String>,
     pub next_hearing_at: Option<i64>,
@@ -65,6 +70,10 @@ pub struct MatterInput {
     pub engagement: String,
     pub appointed_on: Option<i64>,
     pub notes: Option<String>,
+    /// Chosen when the matter is opened and fixed after: a matter's stages
+    /// belong to its type. Defaults to criminal defence for older callers.
+    #[serde(default)]
+    pub matter_type: Option<String>,
 }
 
 struct Checked {
@@ -95,7 +104,7 @@ fn check(input: &MatterInput) -> Result<Checked, DomainError> {
     Ok(Checked { title, our_ref: clean(input.our_ref.clone()), level, appointed_on })
 }
 
-const COLUMNS: &str = "id, client_id, title, our_ref, court_number, court_name, court_level, offence, engagement, appointed_on, status, outcome, closed_at, notes, created_at, updated_at";
+const COLUMNS: &str = "id, client_id, title, our_ref, court_number, court_name, court_level, offence, engagement, appointed_on, matter_type, stage, status, outcome, closed_at, notes, created_at, updated_at";
 
 pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Matter>, sqlx::Error> {
     sqlx::query_as::<_, Matter>(sqlx::AssertSqlSafe(format!("SELECT {COLUMNS} FROM matters WHERE id = ?"))).bind(id).fetch_optional(pool).await
@@ -104,27 +113,29 @@ pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Matter>, sqlx::Er
 /// `view` is `open`, `no_hearing` (open, with no hearing listed), `closed`, or
 /// empty for every matter. `query` matches the title, references, court number,
 /// offence or the client's name.
-pub async fn list(pool: &SqlitePool, query: &str, view: &str, limit: i64) -> Result<Vec<MatterSummary>, sqlx::Error> {
+pub async fn list(pool: &SqlitePool, query: &str, view: &str, matter_type: &str, limit: i64) -> Result<Vec<MatterSummary>, sqlx::Error> {
     let filter = match view {
         "open" => "AND m.status = 'open'",
         "closed" => "AND m.status = 'closed'",
-        "no_hearing" => "AND m.status = 'open' AND NOT EXISTS (SELECT 1 FROM hearings h WHERE h.matter_id = m.id AND h.status = 'scheduled')",
+        "no_hearing" => "AND m.status = 'open' AND m.matter_type NOT IN ('land_transaction', 'company_matter', 'advice') AND NOT EXISTS (SELECT 1 FROM hearings h WHERE h.matter_id = m.id AND h.status = 'scheduled')",
         _ => "",
     };
     let like = format!("%{}%", query.trim().replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
     sqlx::query_as::<_, MatterSummary>(sqlx::AssertSqlSafe(format!(
-        "SELECT m.id, m.client_id, c.name AS client_name, m.title, m.our_ref, m.court_number, m.court_name, m.court_level, m.offence, m.engagement, m.status, m.outcome,
+        "SELECT m.id, m.client_id, c.name AS client_name, m.title, m.our_ref, m.court_number, m.court_name, m.court_level, m.offence, m.engagement, m.matter_type, m.stage, m.status, m.outcome,
             (SELECT MIN(h.at) FROM hearings h WHERE h.matter_id = m.id AND h.status = 'scheduled') AS next_hearing_at,
             (SELECT COUNT(*) FROM tasks t WHERE t.matter_id = m.id AND t.done_at IS NULL) AS open_tasks,
             m.created_at
          FROM matters m JOIN clients c ON c.id = m.client_id
          WHERE (m.title LIKE ?1 ESCAPE '\\' OR COALESCE(m.our_ref, '') LIKE ?1 ESCAPE '\\' OR COALESCE(m.court_number, '') LIKE ?1 ESCAPE '\\'
                 OR COALESCE(m.offence, '') LIKE ?1 ESCAPE '\\' OR c.name LIKE ?1 ESCAPE '\\')
+         AND (?3 = '' OR m.matter_type = ?3)
          {filter}
          ORDER BY m.created_at DESC LIMIT ?2"
     )))
     .bind(like)
     .bind(limit.clamp(1, 500))
+    .bind(matter_type)
     .fetch_all(pool)
     .await
 }
@@ -136,6 +147,11 @@ async fn ref_is_free(pool: &SqlitePool, our_ref: &str, except: Option<&str>) -> 
 
 pub async fn create(pool: &SqlitePool, input: MatterInput) -> Result<Matter, DomainError> {
     let c = check(&input)?;
+    let kind = matter_types::find(input.matter_type.as_deref().unwrap_or("criminal_defence")).ok_or_else(|| DomainError::Invalid("That kind of matter is not known.".to_string()))?;
+    let enabled: Option<String> = sqlx::query_scalar("SELECT usage FROM usages WHERE usage = ?").bind(kind.usage).fetch_optional(pool).await?;
+    if enabled.is_none() {
+        return invalid("This practice does not do that kind of work yet. Switch it on in Settings, Practice.");
+    }
     if let Some(r) = &c.our_ref {
         if !ref_is_free(pool, r, None).await? {
             return invalid("Another matter already has that reference.");
@@ -147,7 +163,7 @@ pub async fn create(pool: &SqlitePool, input: MatterInput) -> Result<Matter, Dom
     if client.is_none() {
         return Err(DomainError::NotFound("Client not found.".to_string()));
     }
-    sqlx::query("INSERT INTO matters (id, client_id, title, our_ref, court_number, court_name, court_level, offence, engagement, appointed_on, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO matters (id, client_id, title, our_ref, court_number, court_name, court_level, offence, engagement, appointed_on, notes, matter_type, stage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&id)
         .bind(&input.client_id)
         .bind(&c.title)
@@ -159,10 +175,12 @@ pub async fn create(pool: &SqlitePool, input: MatterInput) -> Result<Matter, Dom
         .bind(&input.engagement)
         .bind(c.appointed_on)
         .bind(clean(input.notes))
+        .bind(kind.id)
+        .bind(kind.stages[0])
         .execute(&mut *tx)
         .await?;
     tasks::apply_engagement_rules(&mut tx, &id, &input.engagement, c.appointed_on).await?;
-    audit::record(&mut tx, Entry::new("matter_opened").subject("matter", &id).scope(&id).detail(&input.engagement)).await?;
+    audit::record(&mut tx, Entry::new("matter_opened").subject("matter", &id).scope(&id).detail(format!("{} {}", kind.id, input.engagement))).await?;
     tx.commit().await?;
     Ok(get(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?)
 }
@@ -247,6 +265,25 @@ pub async fn reopen(pool: &SqlitePool, id: &str) -> Result<Matter, DomainError> 
     }
     sqlx::query("UPDATE matters SET status = 'open', outcome = NULL, closed_at = NULL, updated_at = cast(unixepoch('subsecond') * 1000 as integer) WHERE id = ?").bind(id).execute(&mut *tx).await?;
     audit::record(&mut tx, Entry::new("matter_reopened").subject("matter", id).scope(id)).await?;
+    tx.commit().await?;
+    Ok(get(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?)
+}
+
+/// Moves an open matter to another stage of its own type (the board). Any
+/// stage, forward or back: the record says where the work stands, not a
+/// one-way pipeline.
+pub async fn set_stage(pool: &SqlitePool, id: &str, stage: &str) -> Result<Matter, DomainError> {
+    let mut tx = begin_write(pool).await?;
+    require_open(&mut tx, id).await?;
+    let current: (String, String) = sqlx::query_as("SELECT matter_type, stage FROM matters WHERE id = ?").bind(id).fetch_one(&mut *tx).await?;
+    let kind = matter_types::find(&current.0).ok_or_else(|| DomainError::Invalid("This matter's kind is not known.".to_string()))?;
+    if !kind.stages.contains(&stage) {
+        return invalid("That is not a stage of this kind of matter.");
+    }
+    if current.1 != stage {
+        sqlx::query("UPDATE matters SET stage = ?, updated_at = cast(unixepoch('subsecond') * 1000 as integer) WHERE id = ?").bind(stage).bind(id).execute(&mut *tx).await?;
+        audit::record(&mut tx, Entry::new("stage_changed").subject("matter", id).scope(id).detail(format!("{} -> {stage}", current.1))).await?;
+    }
     tx.commit().await?;
     Ok(get(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?)
 }

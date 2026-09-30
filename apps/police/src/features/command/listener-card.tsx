@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { SettingsCard } from '@/components/settings-card'
 import { useListener } from './queries'
 
@@ -8,11 +9,11 @@ export function ListenerCard() {
   const address = listener?.address ? `${listener.address}:${listener.port}` : null
   return (
     <SettingsCard
-      title="Where stations connect"
-      description="A station enters this address, and the station number from the Stations page, in its own Settings."
-      hint="The connection is not encrypted yet. Use it on a network this command controls."
+      title={m["command.listener_title"]()}
+      description={m["command.listener_description"]()}
+      hint={m["command.listener_hint"]()}
     >
-      {address ? <p className="rounded-md bg-secondary px-4 py-3 font-mono text-lg">{address}</p> : <p className="text-muted-foreground">This computer has no network address. Connect it to the network first.</p>}
+      {address ? <p className="rounded-md bg-secondary px-4 py-3 font-mono text-lg">{address}</p> : <p className="text-muted-foreground">{m["command.listener_no_address"]()}</p>}
     </SettingsCard>
   )
 }

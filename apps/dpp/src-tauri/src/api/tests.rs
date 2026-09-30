@@ -13,10 +13,29 @@ use super::{router, AppState};
 
 const DAY: i64 = 86_400_000;
 
+/// A set-up installation with no sign-in: one administrator, always acting.
 async fn app() -> Router {
+    let app = bare_app().await;
+    let (status, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none", json!({ "name": "A. Prosecutor", "role": "administrator" })))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    app
+}
+
+/// A fresh installation that has not been through setup.
+async fn bare_app() -> Router {
     let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-    router(AppState { pool, vault_root: std::env::temp_dir(), data_dir: std::env::temp_dir(), security: std::sync::Arc::new(crate::domain::security::Security::new()) })
+    let security = std::sync::Arc::new(crate::domain::security::Security::new());
+    security.load(&pool).await.unwrap();
+    router(AppState { pool, vault_root: std::env::temp_dir(), data_dir: std::env::temp_dir(), security })
+}
+
+fn setup_body(protection: &str, administrator: Value) -> Value {
+    json!({
+        "licenceVersion": "2026-09", "jurisdiction": "ug", "language": "en", "model": "office",
+        "officeName": "Wandegeya", "region": "Kampala", "protection": protection, "accent": "gold",
+        "administrator": administrator, "people": []
+    })
 }
 
 async fn call(app: &Router, method: Method, path: &str, body: Option<Value>) -> (StatusCode, Value) {
@@ -538,57 +557,72 @@ async fn capacity_replays_the_backlog_and_measures_turnaround_from_the_record() 
 }
 
 #[tokio::test]
-async fn the_lock_closes_the_api_until_the_passphrase_is_given_and_every_lock_event_is_audited() {
-    let app = app().await;
-    let (_, status) = call(&app, Method::GET, "/api/security/status", None).await;
-    assert_eq!(status["configured"], false);
-    assert_eq!(status["locked"], false);
+async fn an_older_installation_stays_behind_its_passphrase_until_it_is_set_up() {
+    let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    // The lock as an older build left it.
+    crate::domain::security::Security::new().set_passphrase(&pool, None, "a long enough passphrase").await.unwrap();
+    let security = std::sync::Arc::new(crate::domain::security::Security::new());
+    security.load(&pool).await.unwrap();
+    let app = router(AppState { pool, vault_root: std::env::temp_dir(), data_dir: std::env::temp_dir(), security });
 
-    // A passphrase has to be long enough, and is stored only as a hash.
-    let (code, _) = call(&app, Method::PUT, "/api/security/passphrase", Some(json!({ "new": "short" }))).await;
-    assert_eq!(code, StatusCode::UNPROCESSABLE_ENTITY);
-    let (code, _) = call(&app, Method::PUT, "/api/security/passphrase", Some(json!({ "new": "a long enough passphrase" }))).await;
-    assert_eq!(code, StatusCode::OK);
-    // Changing it needs the old one.
-    let (code, _) = call(&app, Method::PUT, "/api/security/passphrase", Some(json!({ "new": "another good passphrase" }))).await;
-    assert_eq!(code, StatusCode::FORBIDDEN);
-
-    assert_eq!(call(&app, Method::POST, "/api/security/lock", None).await.0, StatusCode::OK);
-    // Locked: data is refused, status and unlock still answer.
-    assert_eq!(call(&app, Method::GET, "/api/workload", None).await.0, StatusCode::LOCKED);
-    assert_eq!(call(&app, Method::GET, "/api/prosecution-files", None).await.0, StatusCode::LOCKED);
-    assert_eq!(call(&app, Method::GET, "/api/audit", None).await.0, StatusCode::LOCKED);
-    let (_, status) = call(&app, Method::GET, "/api/security/status", None).await;
-    assert_eq!(status["locked"], true);
-    assert!(status["lastBackupAt"].is_null());
-
+    assert_eq!(call(&app, Method::GET, "/api/setup/status", None).await.0, StatusCode::LOCKED, "setup waits for the passphrase");
     assert_eq!(call(&app, Method::POST, "/api/security/unlock", Some(json!({ "passphrase": "wrong wrong wrong" }))).await.0, StatusCode::FORBIDDEN);
     assert_eq!(call(&app, Method::POST, "/api/security/unlock", Some(json!({ "passphrase": "a long enough passphrase" }))).await.0, StatusCode::OK);
+    assert_eq!(call(&app, Method::GET, "/api/setup/status", None).await.0, StatusCode::OK);
+    let (status, _) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none", json!({ "name": "Admin", "role": "administrator" })))).await;
+    assert_eq!(status, StatusCode::OK);
+    // Setup replaced the passphrase with the protection level.
+    let (_, lock) = call(&app, Method::GET, "/api/security/status", None).await;
+    assert_eq!(lock["configured"], false);
+    assert_eq!(lock["locked"], false);
+}
+
+#[tokio::test]
+async fn signing_out_closes_the_api_and_every_sign_in_event_is_audited() {
+    let app = bare_app().await;
+    call(&app, Method::POST, "/api/setup/complete", Some(setup_body("basic", json!({ "name": "Admin", "role": "administrator", "secret": "123456" })))).await;
+    let (_, status) = call(&app, Method::GET, "/api/security/status", None).await;
+    assert_eq!(status["configured"], true);
+    assert_eq!(status["level"], "basic");
+    assert_eq!(status["locked"], false);
+
+    assert_eq!(call(&app, Method::POST, "/api/session/sign-out", None).await.0, StatusCode::OK);
+    for path in ["/api/workload", "/api/prosecution-files", "/api/audit", "/api/staff"] {
+        assert_eq!(call(&app, Method::GET, path, None).await.0, StatusCode::LOCKED, "{path}");
+    }
+    let (_, status) = call(&app, Method::GET, "/api/security/status", None).await;
+    assert_eq!(status["locked"], true);
+    assert!(status["actor"].is_null());
+    assert!(status["lastBackupAt"].is_null());
+
+    let (_, people) = call(&app, Method::GET, "/api/session/people", None).await;
+    let admin = people[0]["id"].as_str().unwrap().to_string();
+    assert_eq!(call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": admin, "secret": "999999" }))).await.0, StatusCode::FORBIDDEN);
+    assert_eq!(call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": admin, "secret": "123456" }))).await.0, StatusCode::OK);
     assert_eq!(call(&app, Method::GET, "/api/workload", None).await.0, StatusCode::OK);
 
     let (_, entries) = call(&app, Method::GET, "/api/audit", None).await;
     let actions: Vec<&str> = entries.as_array().unwrap().iter().map(|e| e["action"].as_str().unwrap()).collect();
-    for expected in ["lock_enabled", "app_locked", "unlock_failed", "app_unlocked"] {
+    for expected in ["setup_completed", "signed_out", "sign_in_failed", "signed_in"] {
         assert!(actions.contains(&expected), "{expected} missing from {actions:?}");
     }
-    // The passphrase itself is nowhere in the trail.
-    assert!(!entries.to_string().contains("enough passphrase"));
-
-    // Removing the lock needs the passphrase too.
-    assert_eq!(call(&app, Method::POST, "/api/security/passphrase/remove", Some(json!({ "passphrase": "nope nope nope" }))).await.0, StatusCode::FORBIDDEN);
-    assert_eq!(call(&app, Method::POST, "/api/security/passphrase/remove", Some(json!({ "passphrase": "a long enough passphrase" }))).await.0, StatusCode::OK);
+    // The PIN itself is nowhere in the trail.
+    assert!(!entries.to_string().contains("123456"));
 }
 
 #[tokio::test]
-async fn repeated_wrong_passphrases_are_slowed_down() {
-    let app = app().await;
-    call(&app, Method::PUT, "/api/security/passphrase", Some(json!({ "new": "a long enough passphrase" }))).await;
-    call(&app, Method::POST, "/api/security/lock", None).await;
+async fn repeated_wrong_pins_are_slowed_down() {
+    let app = bare_app().await;
+    call(&app, Method::POST, "/api/setup/complete", Some(setup_body("basic", json!({ "name": "Admin", "role": "administrator", "secret": "123456" })))).await;
+    call(&app, Method::POST, "/api/session/sign-out", None).await;
+    let (_, people) = call(&app, Method::GET, "/api/session/people", None).await;
+    let admin = people[0]["id"].as_str().unwrap().to_string();
     for _ in 0..5 {
-        assert_eq!(call(&app, Method::POST, "/api/security/unlock", Some(json!({ "passphrase": "wrong wrong wrong" }))).await.0, StatusCode::FORBIDDEN);
+        assert_eq!(call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": admin, "secret": "000000" }))).await.0, StatusCode::FORBIDDEN);
     }
-    // Now even the right passphrase waits.
-    let (code, body) = call(&app, Method::POST, "/api/security/unlock", Some(json!({ "passphrase": "a long enough passphrase" }))).await;
+    // Now even the right PIN waits.
+    let (code, body) = call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": admin, "secret": "123456" }))).await;
     assert_eq!(code, StatusCode::FORBIDDEN);
     assert!(body["message"].as_str().unwrap().contains("Too many"));
     let (_, status) = call(&app, Method::GET, "/api/security/status", None).await;
@@ -880,4 +914,75 @@ mod interchange_flow {
         let (_, d) = decide(&w.app, &manual, "take_over", 0).await;
         assert_eq!(call(&w.app, Method::POST, &format!("/api/interchange/decisions/{}/notice", d["id"].as_str().unwrap()), None).await.0, StatusCode::UNPROCESSABLE_ENTITY);
     }
+}
+
+#[tokio::test]
+async fn nothing_works_before_setup_and_setup_happens_once() {
+    let app = bare_app().await;
+    let (status, body) = call(&app, Method::GET, "/api/prosecution-files", None).await;
+    assert_eq!(status, StatusCode::PRECONDITION_REQUIRED);
+    assert_eq!(body["code"], "SETUP_REQUIRED");
+    let (status, brand) = call(&app, Method::GET, "/api/installation/brand", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(brand["installed"], false);
+
+    let (status, lock) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none", json!({ "name": "The DPP", "role": "administrator", "flag": true })))).await;
+    assert_eq!(status, StatusCode::OK, "{lock}");
+    assert_eq!(lock["installed"], true);
+    assert_eq!(lock["locked"], false);
+    assert_eq!(lock["actor"]["name"], "The DPP");
+    assert_eq!(call(&app, Method::GET, "/api/prosecution-files", None).await.0, StatusCode::OK);
+
+    let again = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none", json!({ "name": "Someone", "role": "administrator" })))).await;
+    assert_eq!(again.0, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn basic_protection_needs_a_pin_and_signs_people_in_one_at_a_time() {
+    let app = bare_app().await;
+    let (status, _) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("basic", json!({ "name": "Admin", "role": "administrator", "secret": "12" })))).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "a PIN is 6 digits");
+
+    let mut body = setup_body("basic", json!({ "name": "Admin", "role": "administrator", "secret": "123456" }));
+    body["people"] = json!([{ "name": "Clerk", "role": "clerk", "secret": "654321" }]);
+    let (status, lock) = call(&app, Method::POST, "/api/setup/complete", Some(body)).await;
+    assert_eq!(status, StatusCode::OK, "{lock}");
+    assert_eq!(lock["locked"], false, "the person who set it up is signed in");
+
+    call(&app, Method::POST, "/api/session/sign-out", None).await;
+    assert_eq!(call(&app, Method::GET, "/api/prosecution-files", None).await.0, StatusCode::LOCKED);
+    let (_, people) = call(&app, Method::GET, "/api/session/people", None).await;
+    assert_eq!(people.as_array().unwrap().len(), 2);
+    let clerk = people.as_array().unwrap().iter().find(|p| p["name"] == "Clerk").unwrap()["id"].as_str().unwrap().to_string();
+
+    let (status, _) = call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": clerk, "secret": "000000" }))).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, out) = call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": clerk, "secret": "654321" }))).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(out["status"], "signed_in");
+    assert_eq!(call(&app, Method::GET, "/api/prosecution-files", None).await.0, StatusCode::OK);
+
+    // A clerk is not an administrator, and cannot make themselves the DPP.
+    assert_eq!(call(&app, Method::POST, "/api/staff", Some(json!({ "name": "X", "role": "clerk", "secret": "111111" }))).await.0, StatusCode::FORBIDDEN);
+    assert_eq!(call(&app, Method::PUT, "/api/prosecutor-profile", Some(json!({ "name": "Clerk", "isDpp": true }))).await.0, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn full_protection_checks_the_phone_code() {
+    let app = bare_app().await;
+    let (_, enrolment) = call(&app, Method::POST, "/api/setup/second-factor", Some(json!({ "name": "Admin" }))).await;
+    let key = enrolment["secret"].as_str().unwrap().to_string();
+    let wrong = setup_body("full", json!({ "name": "Admin", "role": "administrator", "secret": "a long enough pass", "secondFactor": { "secret": key, "code": "000000" } }));
+    let right_code = crate::domain::totp::current_code(&key);
+    assert_eq!(call(&app, Method::POST, "/api/setup/complete", Some(wrong)).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    let right = setup_body("full", json!({ "name": "Admin", "role": "administrator", "secret": "a long enough pass", "secondFactor": { "secret": key, "code": right_code } }));
+    let (status, lock) = call(&app, Method::POST, "/api/setup/complete", Some(right)).await;
+    assert_eq!(status, StatusCode::OK, "{lock}");
+
+    call(&app, Method::POST, "/api/session/sign-out", None).await;
+    let (_, people) = call(&app, Method::GET, "/api/session/people", None).await;
+    let admin = people[0]["id"].as_str().unwrap().to_string();
+    let (_, out) = call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": admin, "secret": "a long enough pass" }))).await;
+    assert_eq!(out["status"], "code", "the password alone is not enough");
+    assert_eq!(call(&app, Method::GET, "/api/prosecution-files", None).await.0, StatusCode::LOCKED);
 }

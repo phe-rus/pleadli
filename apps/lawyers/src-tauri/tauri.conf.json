@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Pleadli Lawyers",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "identifier": "com.pleadli.lawyers",
   "build": {
     "beforeDevCommand": "bun run dev",
@@ -41,7 +41,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "createUpdaterArtifacts": false,
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -53,5 +53,15 @@
     "shortDescription": "Pleadli Lawyers: the advocate's practice",
     "publisher": "Pleadli"
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZCMEQyREJDRDRBNkY1MDAKUldRQTlhYlV2QzBOKzNOUjRzbllhb2hqcGx5YlYrNDlKSUlKaWJ1TlJHK0JSSlFWMXR4L0I1ZUEK",
+      "endpoints": [
+        "https://github.com/phe-rus/pleadli-releases/releases/download/lawyers-latest/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
 }

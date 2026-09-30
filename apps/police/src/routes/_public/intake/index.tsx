@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { caseStatuses, casesOptions, CaseForm, useCases, type Case } from '@/features/cases'
 import { AddCircleIcon, BinocularsIcon } from '@hugeicons/core-free-icons'
@@ -7,7 +8,7 @@ import { Button, buttonVariants } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/intake/')({
@@ -37,7 +38,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["col.id"](),
         cell: ({ row }) => (
           <span
             className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
@@ -47,23 +48,23 @@ function RouteComponent() {
           </span>
         ),
       },
-      { accessorKey: 'reference', header: 'Reference' },
-      { accessorKey: 'summary', header: 'Summary' },
+      { accessorKey: 'reference', header: m["col.reference"]() },
+      { accessorKey: 'summary', header: m["col.summary"]() },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: m["col.status"](),
         cell: ({ getValue }) => statusLabel(getValue<string>()),
       },
-      { accessorKey: 'incidentId', header: 'Incident ID', cell: ({ row }) => row.original.incidentId ?? '·' },
+      { accessorKey: 'incidentId', header: m["col.incident_id"](), cell: ({ row }) => row.original.incidentId ?? '·' },
       {
         accessorKey: 'incidentSummary',
-        header: 'Related incident',
+        header: m["col.related_incident"](),
         cell: ({ row }) => row.original.incidentSummary ?? '·',
       },
-      { accessorKey: 'peopleCount', header: 'People' },
+      { accessorKey: 'peopleCount', header: m["col.people"]() },
       {
         accessorKey: 'createdAt',
-        header: 'Opened',
+        header: m["col.opened"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
       {
@@ -74,8 +75,8 @@ function RouteComponent() {
             to="/investigations/$caseId"
             params={{ caseId: row.original.id }}
             className={cn(buttonVariants({ size: 'icon-xs', variant: 'ghost' }))}
-            aria-label="Open investigation"
-            title="Open investigation"
+            aria-label={m["common.open_investigation"]()}
+            title={m["common.open_investigation"]()}
           >
             <HugeiconsIcon icon={BinocularsIcon} />
           </Link>
@@ -89,7 +90,7 @@ function RouteComponent() {
       <section className="flex items-center gap-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-5">
-            <h1>Case Intake</h1>
+            <h1>{m["intake_page.title"]()}</h1>
 
             <Createpanel
               open={addOpen}
@@ -98,15 +99,15 @@ function RouteComponent() {
               trigger={
                 <Button size="sm">
                   <HugeiconsIcon icon={AddCircleIcon} />
-                  Open case
+                  {m["cases.submit"]()}
                 </Button>
               }
-              headings={{ title: 'Open case', description: 'Start formal handling of a matter.' }}
+              headings={{ title: m["cases.submit"](), description: m["intake_page.add_desc"]() }}
             >
               <CaseForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
             </Createpanel>
           </div>
-          <p className="md:max-w-sm">Formal police handling of a matter: one dimension among several, not the root everything else hangs off.</p>
+          <p className="md:max-w-sm">{m["intake_page.lead"]()}</p>
         </div>
       </section>
 
@@ -116,7 +117,7 @@ function RouteComponent() {
           if (!open) setEditingCase(null)
         }}
         isDirty={editDirty}
-        headings={{ title: 'Edit case', description: 'Update this case.' }}
+        headings={{ title: m["intake_page.edit_title"](), description: m["intake_page.edit_desc"]() }}
       >
         {editingCase && (
           <CaseForm
@@ -129,12 +130,12 @@ function RouteComponent() {
       </Createpanel>
 
       <DataTable
-        aria-label="Cases"
+        aria-label={m["intake_page.table"]()}
         data={cases}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="No cases opened yet."
-        searchPlaceholder="Search cases…"
+        emptyMessage={m["intake_page.empty"]()}
+        searchPlaceholder={m["intake_page.search"]()}
       />
     </article>
   )

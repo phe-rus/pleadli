@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { useAppForm } from '@pleadli/forms-tables/forms'
@@ -38,11 +39,11 @@ export function StationAssetForm({ category, asset, onSuccess }: StationAssetFor
         const result = asset
           ? await updateAsset.mutateAsync({ id: asset.id, input: value })
           : await createAsset.mutateAsync(value)
-        t.success(asset ? 'Item updated' : 'Item added')
+        t.success(asset ? m["assets.updated"]() : m["assets.added"]())
         if (!asset) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(asset ? 'Could not update item' : 'Could not add item', { description: 'Please try again.' })
+        t.error(asset ? m["assets.update_failed"]() : m["assets.add_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -56,32 +57,32 @@ export function StationAssetForm({ category, asset, onSuccess }: StationAssetFor
       }}
     >
       <FieldGroup>
-        <form.AppField name="description">{(f) => <f.input label="Description" />}</form.AppField>
+        <form.AppField name="description">{(f) => <f.input label={m["common.description"]()} />}</form.AppField>
         <form.AppField name="itemIdentifier">
-          {(f) => <f.input label="Identifier" placeholder="Serial number, plate, etc." />}
+          {(f) => <f.input label={m["assets.identifier"]()} placeholder={m["assets.identifier_placeholder"]()} />}
         </form.AppField>
         <form.AppField name="status">
-          {(f) => <f.select label="Status" options={[...stationAssetStatuses]} />}
+          {(f) => <f.select label={m["common.status"]()} options={[...stationAssetStatuses]} />}
         </form.AppField>
         <form.AppField name="holderName">
-          {(f) => <f.input label="Held by" placeholder="Officer or unit currently holding it" />}
+          {(f) => <f.input label={m["assets.held_by"]()} placeholder={m["assets.held_by_placeholder"]()} />}
         </form.AppField>
         <form.AppField name="personId">
           {(f) => (
             <Field>
-              <FieldLabel>Related person (optional)</FieldLabel>
+              <FieldLabel>{m["common.related_person"]()}</FieldLabel>
               <PersonPicker value={f.state.value} onValueChange={f.handleChange} />
             </Field>
           )}
         </form.AppField>
-        <form.AppField name="notes">{(f) => <f.textarea label="Notes" />}</form.AppField>
+        <form.AppField name="notes">{(f) => <f.textarea label={m["common.notes"]()} />}</form.AppField>
 
         <AttachmentsField entityType={entityTypes.stationAsset} entityId={asset?.id} />
       </FieldGroup>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={asset ? 'Save changes' : 'Add item'} />
+          <form.submit label={asset ? m["common.save_changes"]() : m["assets.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

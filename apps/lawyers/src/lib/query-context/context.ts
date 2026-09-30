@@ -18,7 +18,8 @@ export const clientContext = () => {
                 staleTime: 60_000,
                 retry: (count, error) => {
                     const status = (error as { status?: number })?.status
-                    return status !== 401 && status !== 403 && count < 2
+                    // 423: nobody is signed in; 428: not set up yet. Retrying changes nothing until the gate is passed.
+                    return status !== 401 && status !== 403 && status !== 423 && status !== 428 && count < 2
                 },
             },
         },

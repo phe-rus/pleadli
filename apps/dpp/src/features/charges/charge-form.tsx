@@ -7,6 +7,7 @@ import { Field, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useCreateCharge } from './queries'
 import { createChargeSchema, type Charge } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type ChargeFormProps = {
   prosecutionFileId: string
@@ -38,11 +39,11 @@ export function ChargeForm({ prosecutionFileId, onSuccess, onDirtyChange }: Char
     onSubmit: async ({ value, formApi }) => {
       try {
         const result = await createCharge.mutateAsync({ ...value, prosecutionFileId })
-        t.success('Charge recorded')
+        t.success(m["charge.form.recorded"]())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record charge', { description: 'Please try again.' })
+        t.error(m["charge.form.record_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -60,29 +61,29 @@ export function ChargeForm({ prosecutionFileId, onSuccess, onDirtyChange }: Char
       <form.AppField name="accusedPersonId">
         {(f) => (
           <Field>
-            <FieldLabel>Accused (optional)</FieldLabel>
+            <FieldLabel>{m["charge.form.accused_optional"]()}</FieldLabel>
             <PersonPicker value={f.state.value} onValueChange={f.handleChange} />
           </Field>
         )}
       </form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="offence">{(f) => <f.input label="Offence" placeholder="e.g. Theft of motor vehicle" />}</form.AppField>
-        <form.AppField name="statutorySection">{(f) => <f.input label="Statutory section (optional)" />}</form.AppField>
+        <form.AppField name="offence">{(f) => <f.input label={m["charge.form.offence"]()} placeholder={m["charge.form.offence_placeholder"]()} />}</form.AppField>
+        <form.AppField name="statutorySection">{(f) => <f.input label={m["charge.form.section_optional"]()} />}</form.AppField>
       </div>
 
       <form.AppField name="particulars">
         {(f) => (
           <Field>
-            <FieldLabel>Particulars (optional)</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Particulars of the offence…" />
+            <FieldLabel>{m["charge.form.particulars_optional"]()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["charge.form.particulars_placeholder"]()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Add charge" />
+          <form.submit label={m["charge.form.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

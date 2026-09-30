@@ -1,5 +1,7 @@
 import type { Workload } from '@/features/workload/schema'
+import { plural } from '@/lib/present'
 import type { ProsecutionFile } from '@/features/prosecution-files/schema'
+import * as m from '@/paraglide/messages'
 
 export type FileFacts = {
   file: ProsecutionFile
@@ -7,6 +9,8 @@ export type FileFacts = {
   evidence: number
   charges: number
   reviewNotes: number
+  /** Documents in the file's index (typed or scanned). */
+  papers: number
   decisions: number
   /** From the file's own decisions, newest first: what the last return was. */
   returnedAt: number | null
@@ -39,49 +43,52 @@ export function nextAction(facts: FileFacts): NextAction {
 
   if (facts.openReview?.reopens) {
     return {
-      state: `Reopened for review${facts.openReview.reason ? `: ${facts.openReview.reason}` : '.'}`,
-      next: 'Apply the test, record the findings, and record the decision that corrects the earlier one.',
+      state: facts.openReview.reason ? m["next.reopened_reason"]({ reason: facts.openReview.reason }) : m["next.reopened"](),
+      next: m["next.reopened_next"](),
       tab: 'review',
-      label: 'Continue the review',
+      label: m["next.continue_review"](),
     }
   }
   if (facts.openReview) {
     return {
-      state: `${facts.openReview.standard === 'threshold' ? 'Threshold Test' : 'Two-Stage Test'} review under way.`,
-      next: 'Record the findings and the conclusion of each test, then the decision they support.',
+      state: m["next.under_way"]({ test: (facts.openReview.standard === 'threshold' ? m["review.test.threshold.label"]() : m["review.standard.two_stage.label"]()) }),
+      next: m["next.under_way_next"](),
       tab: 'review',
-      label: 'Continue the review',
+      label: m["next.continue_review"](),
     }
   }
 
   switch (file.currentStatus) {
     case 'under_review':
       if (facts.reviewNotes > 0) {
-        return { state: 'Observations recorded. No charging review started.', next: 'Start the charging review when you are ready to apply the test.', tab: 'review', label: 'Start the review' }
+        return { state: m["next.observations"](), next: m["next.observations_next"](), tab: 'review', label: m["next.start_review"]() }
+      }
+      if (noMaterial && facts.papers > 0) {
+        return { state: m["next.papers"]({ count: facts.papers }), next: m["next.papers_next"](), tab: 'review', label: m["next.start_review"]() }
       }
       if (noMaterial) {
-        return { state: 'Received from Police. No material recorded yet.', next: 'Record the statements, evidence and proposed charges that came with the referral.', tab: 'material', label: 'Record the material' }
+        return { state: m["next.received"](), next: m["next.received_next"](), tab: 'material', label: m["next.record_material"]() }
       }
-      return { state: 'Material recorded. The review has not begun.', next: 'Read the material and record your observations.', tab: 'review', label: 'Start the review' }
+      return { state: m["next.material"](), next: m["next.material_next"](), tab: 'review', label: m["next.start_review"]() }
     case 'resubmitted':
       if (facts.directionsOpen > 0) {
         return {
-          state: `Police have resubmitted this file. ${facts.directionsOpen} of ${facts.directionsTotal} directions are still open.`,
-          next: 'Go through the directions, record what came back, then review and decide.',
+          state: m["next.resubmitted_open"]({ open: facts.directionsOpen, total: facts.directionsTotal }),
+          next: m["next.resubmitted_open_next"](),
           tab: 'decisions',
-          label: 'Go through the directions',
+          label: m["next.go_directions"](),
         }
       }
-      return { state: 'Police have resubmitted this file after further investigation.', next: 'Record what came back, review it, and decide.', tab: 'material', label: 'Record the new material' }
+      return { state: m["next.resubmitted"](), next: m["next.resubmitted_next"](), tab: 'material', label: m["next.record_new_material"]() }
     case 'returned_for_investigation':
-      return { state: `With Police for further investigation${facts.directionsTotal > 0 ? `, with ${facts.directionsTotal === 1 ? 'a direction' : `${facts.directionsTotal} directions`}` : ''}.`, next: 'Log the resubmission when the file comes back.', tab: 'decisions', label: 'Open decisions', action: 'resubmission' }
+      return { state: facts.directionsTotal > 0 ? m["next.with_police_directions"]({ directions: plural(facts.directionsTotal, m["count.direction.one"], m["count.direction.many"]) }) : m["next.with_police"](), next: m["next.with_police_next"](), tab: 'decisions', label: m["next.open_decisions"](), action: 'resubmission' }
     case 'sanctioned':
     case 'plea_bargained':
       return file.courtCaseNumber
-        ? { state: `Charged. Court case ${file.courtCaseNumber}.`, next: 'No further action recorded.', tab: 'court', label: 'Open court' }
-        : { state: 'Charged. No court case number recorded yet.', next: 'Record the court case number once the charge sheet is filed.', tab: 'court', label: 'Record the case number' }
+        ? { state: m["next.charged_case"]({ number: file.courtCaseNumber }), next: m["next.no_further"](), tab: 'court', label: m["next.open_court"]() }
+        : { state: m["next.charged"](), next: m["next.charged_next"](), tab: 'court', label: m["next.record_case"]() }
     default:
-      return { state: 'The charging decision has been made and the file is concluded.', next: 'No further action recorded.', tab: 'decisions', label: 'Open decisions' }
+      return { state: m["next.concluded"](), next: m["next.no_further"](), tab: 'decisions', label: m["next.open_decisions"]() }
   }
 }
 

@@ -12,6 +12,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    /* Paraglide compiles messages to JS with JSDoc types */
+    "allowJs": true,
+    "checkJs": false,
     "jsx": "react-jsx",
     "paths": {
       "@/*": ["./src/*"],

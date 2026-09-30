@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { useReportDirty } from '@/hooks/use-report-dirty'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -14,10 +15,10 @@ export function RegisterStationForm({ onSuccess, onDirtyChange }: { onSuccess?: 
     onSubmit: async ({ value }) => {
       try {
         const station = await register.mutateAsync(value)
-        t.success(`${station.name} is registered as ${station.stationNumber}`)
+        t.success(m["command.registered_as"]({ name: station.name, number: station.stationNumber }))
         onSuccess?.()
       } catch (error) {
-        t.error('Could not register the station', { description: error instanceof Error ? error.message : 'Please try again.' })
+        t.error(m["command.register_failed"](), { description: error instanceof Error ? error.message : m["common.try_again"]() })
       }
     },
   })
@@ -32,16 +33,16 @@ export function RegisterStationForm({ onSuccess, onDirtyChange }: { onSuccess?: 
       }}
     >
       <FieldGroup>
-        <form.AppField name="name">{(f) => <f.input label="Station name" placeholder="e.g. Wandegeya Police Station" />}</form.AppField>
+        <form.AppField name="name">{(f) => <f.input label={m["command.station_name"]()} placeholder={m["command.station_name_placeholder"]()} />}</form.AppField>
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="region">{(f) => <f.input label="Region" />}</form.AppField>
-          <form.AppField name="district">{(f) => <f.input label="District" />}</form.AppField>
+          <form.AppField name="region">{(f) => <f.input label={m["common.region"]()} />}</form.AppField>
+          <form.AppField name="district">{(f) => <f.input label={m["common.district"]()} />}</form.AppField>
         </div>
-        <FieldDescription>The station is given a number here. It connects from its own Settings using that number.</FieldDescription>
+        <FieldDescription>{m["command.register_hint"]()}</FieldDescription>
       </FieldGroup>
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Register station" />
+          <form.submit label={m["command.register_submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

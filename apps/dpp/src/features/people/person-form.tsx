@@ -5,6 +5,7 @@ import { DrawerFooter } from '@pleadli/ui/drawer'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useCreatePerson, useUpdatePerson } from './queries'
 import { createPersonSchema, type Person } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type PersonFormProps = {
   person?: Person
@@ -36,11 +37,11 @@ export function PersonForm({ person, onSuccess, onDirtyChange }: PersonFormProps
         const result = person
           ? await updatePerson.mutateAsync({ id: person.id, input: value })
           : await createPerson.mutateAsync(value)
-        t.success(person ? 'Person updated' : 'Person added')
+        t.success(person ? m["person.form.updated"]() : m["person.form.added"]())
         if (!person) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(person ? 'Could not update person' : 'Could not add person', { description: 'Please try again.' })
+        t.error(person ? m["person.form.update_failed"]() : m["person.form.add_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -56,24 +57,24 @@ export function PersonForm({ person, onSuccess, onDirtyChange }: PersonFormProps
       }}
     >
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="firstName">{(f) => <f.input label="First name" />}</form.AppField>
-        <form.AppField name="lastName">{(f) => <f.input label="Last name" />}</form.AppField>
+        <form.AppField name="firstName">{(f) => <f.input label={m["person.form.first_name"]()} />}</form.AppField>
+        <form.AppField name="lastName">{(f) => <f.input label={m["person.form.last_name"]()} />}</form.AppField>
       </div>
 
-      <form.AppField name="otherNames">{(f) => <f.input label="Other names (optional)" />}</form.AppField>
+      <form.AppField name="otherNames">{(f) => <f.input label={m["person.form.other_names_optional"]()} />}</form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="phone">{(f) => <f.input label="Phone (optional)" />}</form.AppField>
-        <form.AppField name="nationalId">{(f) => <f.input label="National ID (optional)" />}</form.AppField>
+        <form.AppField name="phone">{(f) => <f.input label={m["person.form.phone_optional"]()} />}</form.AppField>
+        <form.AppField name="nationalId">{(f) => <f.input label={m["person.form.national_id_optional"]()} />}</form.AppField>
       </div>
 
-      <form.AppField name="address">{(f) => <f.input label="Address (optional)" />}</form.AppField>
+      <form.AppField name="address">{(f) => <f.input label={m["person.form.address_optional"]()} />}</form.AppField>
 
       <AttachmentsField entityType={entityTypes.person} entityId={person?.id} />
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={person ? 'Save changes' : 'Add person'} />
+          <form.submit label={person ? m["common.save_changes"]() : m["person.form.add"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

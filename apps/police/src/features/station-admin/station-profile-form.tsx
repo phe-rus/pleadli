@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { useReportDirty } from '@/hooks/use-report-dirty'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -28,10 +29,10 @@ export function StationProfileForm({ onSuccess, onDirtyChange }: StationProfileF
     onSubmit: async ({ value }) => {
       try {
         await saveProfile.mutateAsync(value)
-        t.success('Station profile saved')
+        t.success(m["station_profile.saved"]())
         onSuccess?.()
       } catch {
-        t.error('Could not save station profile', { description: 'Please try again.' })
+        t.error(m["station_profile.save_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -48,27 +49,27 @@ export function StationProfileForm({ onSuccess, onDirtyChange }: StationProfileF
     >
       <FieldGroup>
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="name">{(f) => <f.input label="Station name" />}</form.AppField>
+          <form.AppField name="name">{(f) => <f.input label={m["command.station_name"]()} />}</form.AppField>
           <form.AppField name="jurisdiction">
-            {(f) => <f.input label="Jurisdiction" placeholder="e.g. Kampala Central Division" />}
+            {(f) => <f.input label={m["station_profile.jurisdiction"]()} placeholder={m["station_profile.jurisdiction_placeholder"]()} />}
           </form.AppField>
         </div>
 
-        <form.AppField name="address">{(f) => <f.input label="Address" />}</form.AppField>
+        <form.AppField name="address">{(f) => <f.input label={m["people.address"]()} />}</form.AppField>
 
         <form.AppField name="contact">
-          {(f) => <f.input label="Contact / telephone" />}
+          {(f) => <f.input label={m["station_profile.contact"]()} />}
         </form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
-          <form.AppField name="ocStationName">{(f) => <f.input label="OC Station name" />}</form.AppField>
-          <form.AppField name="ocStationRank">{(f) => <f.input label="OC Station rank" />}</form.AppField>
+          <form.AppField name="ocStationName">{(f) => <f.input label={m["station_profile.oc_name"]()} />}</form.AppField>
+          <form.AppField name="ocStationRank">{(f) => <f.input label={m["station_profile.oc_rank"]()} />}</form.AppField>
         </div>
       </FieldGroup>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Save station profile" />
+          <form.submit label={m["station_profile.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

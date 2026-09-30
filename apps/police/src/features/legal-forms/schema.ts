@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 // PF53 "Charge" — the fields here are only what nothing else in the
@@ -26,11 +27,11 @@ export const chargeSheetSchema = z.object({
 export type ChargeSheet = z.infer<typeof chargeSheetSchema>
 
 export const createChargeSheetSchema = z.object({
-  caseId: z.string().min(1, 'Case is required.'),
+  caseId: z.string().min(1, { error: () => m["validation.case_is_required"]() }),
   accusedPersonId: z.string().nullable(),
-  offence: z.string().min(1, 'The offence is required.'),
-  statutorySection: z.string().min(1, 'The statutory section is required.'),
-  particulars: z.string().min(1, 'Particulars are required.'),
+  offence: z.string().min(1, { error: () => m["validation.the_offence_is_required"]() }),
+  statutorySection: z.string().min(1, { error: () => m["validation.the_statutory_section_is_required"]() }),
+  particulars: z.string().min(1, { error: () => m["validation.particulars_are_required"]() }),
   chargedAt: z.number(),
   officerId: z.string().nullable(),
   officerName: z.string(),

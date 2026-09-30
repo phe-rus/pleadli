@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/dates'
 import { EmptyNote } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { FileStatusTag, Tag } from '@/components/status-tag'
@@ -5,8 +6,8 @@ import { ReviewStages, reviewStagesOverview } from '@/features/file-workspace/re
 import { fileReference, filesOptions, useFiles } from '@/features/prosecution-files'
 import { useWorkload, workloadOptions } from '@/features/workload'
 import { ageLabel, plural } from '@/lib/present'
+import * as m from '@/paraglide/messages'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
 
 export const Route = createFileRoute('/_public/review/')({
   loader: async ({ context }) => {
@@ -32,28 +33,28 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Charging review</h1>
-          <p>Files waiting on a charging decision, oldest first. The review is done inside each file.</p>
+          <h1>{m["nav.item.charging_review"]()}</h1>
+          <p>{m["review_page.subtitle"]()}</p>
         </div>
       </header>
 
       <section className="page-section">
-        <h2>The review</h2>
+        <h2>{m["review_page.the_review"]()}</h2>
         <ReviewStages stages={reviewStagesOverview()} />
-        <p>Reviews are recorded inside each file. A return for further investigation carries directions to Police.</p>
+        <p>{m["review_page.the_review_hint"]()}</p>
       </section>
 
       {workload.thresholdReviews.length > 0 && (
         <section className="page-section">
-          <h2>Threshold Test reviews</h2>
+          <h2>{m["review_page.threshold_reviews"]()}</h2>
           <RowList>
             {workload.thresholdReviews.map((review) => (
               <Row
                 key={review.fileId}
                 marker={review.dueAt < Date.now() ? 'urgent' : 'open'}
                 title={review.fileTitle}
-                summary={`Charged on the Threshold Test ${format(review.decidedAt, 'PP')}. The 14-day review ${review.dueAt < Date.now() ? 'was due' : 'is due'} ${format(review.dueAt, 'PP')}.`}
-                trailing={<Link to="/files/$fileId" params={{ fileId: review.fileId }} search={{ tab: 'decisions' }} className="text-primary">Open</Link>}
+                summary={(review.dueAt < Date.now() ? m["review_page.threshold_was_due"] : m["review_page.threshold_is_due"])({ charged: formatDate(review.decidedAt), due: formatDate(review.dueAt) })}
+                trailing={<Link to="/files/$fileId" params={{ fileId: review.fileId }} search={{ tab: 'decisions' }} className="text-primary">{m["common.open"]()}</Link>}
               />
             ))}
           </RowList>
@@ -62,15 +63,15 @@ function RouteComponent() {
 
       {reopened.length > 0 && (
         <section className="page-section">
-          <h2>Reopened</h2>
+          <h2>{m["overview.figure.reopened"]()}</h2>
           <RowList>
             {reopened.map((file) => (
               <Row
                 key={file.id}
                 marker="open"
                 title={file.title}
-                summary={`${fileReference(file)}. A concluded decision is being reconsidered.`}
-                trailing={<Link to="/files/$fileId" params={{ fileId: file.id }} search={{ tab: 'review' }} className="text-primary">Review</Link>}
+                summary={m["review_page.reopened"]({ reference: fileReference(file) })}
+                trailing={<Link to="/files/$fileId" params={{ fileId: file.id }} search={{ tab: 'review' }} className="text-primary">{m["common.review"]()}</Link>}
               />
             ))}
           </RowList>
@@ -79,11 +80,11 @@ function RouteComponent() {
 
       <section className="page-section">
         <div className="section-head">
-          <h2>Waiting on a decision</h2>
-          <Tag tone="open">{plural(files.length, 'file')}</Tag>
+          <h2>{m["review_page.waiting"]()}</h2>
+          <Tag tone="open">{plural(files.length, m["count.file.one"], m["count.file.many"])}</Tag>
         </div>
         {files.length === 0 ? (
-          <EmptyNote>No file is waiting on a charging decision.</EmptyNote>
+          <EmptyNote>{m["review_page.empty"]()}</EmptyNote>
         ) : (
           <RowList>
             {files.map((file) => (
@@ -91,11 +92,11 @@ function RouteComponent() {
                 key={file.id}
                 marker="open"
                 title={file.title}
-                summary={`${fileReference(file)}${file.accused ? `. ${file.accused}` : ''}. Waiting ${ageLabel(file.awaitingSince).toLowerCase()}. ${plural(file.statementCount, 'statement')}, ${plural(file.chargeCount, 'proposed charge')}, ${plural(file.reviewNoteCount, 'review note')}.`}
+                summary={`${fileReference(file)}${file.accused ? `. ${file.accused}` : ''}. ${m["overview.waiting"]({ age: ageLabel(file.awaitingSince).toLowerCase() })} ${plural(file.statementCount, m["count.statement.one"], m["count.statement.many"])}, ${plural(file.chargeCount, m["count.proposed_charge.one"], m["count.proposed_charge.many"])}, ${plural(file.reviewNoteCount, m["count.review_note.one"], m["count.review_note.many"])}.`}
                 trailing={
                   <>
-                    {file.openReviewId ? <Tag tone="open">{file.openReviewStandard === 'threshold' ? 'Threshold review under way' : 'Review under way'}</Tag> : <FileStatusTag status={file.currentStatus} />}
-                    <Link to="/files/$fileId" params={{ fileId: file.id }} search={{ tab: 'review' }} className="text-primary">Review</Link>
+                    {file.openReviewId ? <Tag tone="open">{file.openReviewStandard === 'threshold' ? m["review_page.threshold_under_way"]() : m["review_page.under_way"]()}</Tag> : <FileStatusTag status={file.currentStatus} />}
+                    <Link to="/files/$fileId" params={{ fileId: file.id }} search={{ tab: 'review' }} className="text-primary">{m["common.review"]()}</Link>
                   </>
                 }
               />

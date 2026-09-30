@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { CasePicker } from '@/components/case-picker'
 import { personFullName } from '@/features/people'
 import { ArrowLeft01Icon, ArrowRight01Icon, FileImportIcon } from '@hugeicons/core-free-icons'
@@ -131,14 +132,14 @@ export function ImportWizard() {
   const handlePickFile = async () => {
     if (isTauri()) {
       const { open } = await import('@tauri-apps/plugin-dialog')
-      const path = await open({ multiple: false, filters: [{ name: 'Spreadsheet', extensions: ['csv', 'xlsx', 'xls', 'xlsb', 'ods'] }] })
+      const path = await open({ multiple: false, filters: [{ name: m["import.spreadsheet"](), extensions: ['csv', 'xlsx', 'xls', 'xlsb', 'ods'] }] })
       if (typeof path !== 'string') return
       try {
         const parsed = await parseFile.mutateAsync({ path })
         setPreview(parsed)
         setStep('mapping')
       } catch {
-        t.error('Could not read that file', { description: 'Check it is a valid CSV or Excel file.' })
+        t.error(m["import.read_failed"](), { description: m["import.read_failed_desc"]() })
       }
       return
     }
@@ -154,7 +155,7 @@ export function ImportWizard() {
       setPreview(parsed)
       setStep('mapping')
     } catch {
-      t.error('Could not read that file', { description: 'Check it is a valid CSV or Excel file.' })
+      t.error(m["import.read_failed"](), { description: m["import.read_failed_desc"]() })
     }
   }
 
@@ -188,7 +189,7 @@ export function ImportWizard() {
       }
       setStep('resolving')
     } catch {
-      t.error('Could not resolve people or cases', { description: 'Please try again.' })
+      t.error(m["import.resolve_failed"](), { description: m["common.try_again"]() })
     }
   }
 
@@ -230,25 +231,24 @@ export function ImportWizard() {
       setResult(outcome)
       setStep('result')
     } catch {
-      t.error('Import failed', { description: 'Please try again.' })
+      t.error(m["import.failed"](), { description: m["common.try_again"]() })
     }
   }
 
   return (
     <Field>
-      <FieldLabel>Import records</FieldLabel>
+      <FieldLabel>{m["import.title"]()}</FieldLabel>
       <FieldDescription>
-        Bring existing police work in from a CSV or Excel file: pick the record type, map its columns to real fields,
-        confirm who each row belongs to, then import.
+        {m["import.desc"]()}
       </FieldDescription>
 
       <div className="flex flex-col gap-4 pt-1 md:max-w-2xl">
         {step === 'type' && (
           <div className="flex flex-col gap-3">
-            <StepHeader title="1. Choose a record type" description="What kind of record does each row in your file represent?" />
+            <StepHeader title={m["import.step1_title"]()} description={m["import.step1_desc"]()} />
             <Select value={entityType} onValueChange={(value) => value && setEntityType(value as ImportableEntityType)}>
               <SelectTrigger className="w-full md:max-w-sm">
-                <SelectValue placeholder="Record type" />
+                <SelectValue placeholder={m["import.record_type"]()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -261,7 +261,7 @@ export function ImportWizard() {
               </SelectContent>
             </Select>
             <Button type="button" size="sm" className="w-fit" disabled={!entityType} onClick={() => setStep('file')}>
-              Next
+              {m["common.next"]()}
               <HugeiconsIcon icon={ArrowRight01Icon} />
             </Button>
           </div>
@@ -269,17 +269,17 @@ export function ImportWizard() {
 
         {step === 'file' && (
           <div className="flex flex-col gap-3">
-            <StepHeader title="2. Choose a file" description="A CSV or Excel file, one row per record, with a header row." />
+            <StepHeader title={m["import.step2_title"]()} description={m["import.step2_desc"]()} />
             <div className="flex items-center gap-2">
               <Button type="button" size="sm" variant="secondary" onClick={handlePickFile} disabled={parseFile.isPending}>
                 <HugeiconsIcon icon={FileImportIcon} />
-                Choose file…
+                {m["import.choose_file"]()}
               </Button>
               <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls,.xlsb,.ods" className="hidden" onChange={handleFileInputChange} />
             </div>
             <Button type="button" size="sm" variant="ghost" className="w-fit" onClick={() => setStep('type')}>
               <HugeiconsIcon icon={ArrowLeft01Icon} />
-              Back
+              {m["common.back"]()}
             </Button>
           </div>
         )}
@@ -287,8 +287,8 @@ export function ImportWizard() {
         {step === 'mapping' && preview && fields && (
           <div className="flex flex-col gap-3">
             <StepHeader
-              title="3. Map columns"
-              description={`${preview.rows.length} row${preview.rows.length === 1 ? '' : 's'} detected. Match each field to a column in your file, or leave it ignored.`}
+              title={m["import.step3_title"]()}
+              description={preview.rows.length === 1 ? m["import.step3_desc_one"]() : m["import.step3_desc"]({ count: preview.rows.length })}
             />
             <div className="flex flex-col gap-2 rounded-md border border-input/40 p-2">
               {fields.map((f) => (
@@ -302,11 +302,11 @@ export function ImportWizard() {
                     onValueChange={(value) => setMapping((prev) => ({ ...prev, [f.key]: value === '__ignore__' ? null : value }))}
                   >
                     <SelectTrigger size="sm" className="w-full">
-                      <SelectValue placeholder="Ignore" />
+                      <SelectValue placeholder={m["import.ignore"]()} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="__ignore__">Ignore</SelectItem>
+                        <SelectItem value="__ignore__">{m["import.ignore"]()}</SelectItem>
                         {preview.headers.map((h) => (
                           <SelectItem key={h} value={h}>
                             {h}
@@ -321,7 +321,7 @@ export function ImportWizard() {
             <div className="flex items-center gap-2">
               <Button type="button" size="sm" variant="ghost" onClick={() => setStep('file')}>
                 <HugeiconsIcon icon={ArrowLeft01Icon} />
-                Back
+                {m["common.back"]()}
               </Button>
               <Button
                 type="button"
@@ -332,12 +332,12 @@ export function ImportWizard() {
                 }}
                 disabled={resolvePeople.isPending || resolveCases.isPending}
               >
-                Next
+                {m["common.next"]()}
                 <HugeiconsIcon icon={ArrowRight01Icon} />
               </Button>
               {Object.keys(mapping).length === 0 && (
                 <Button type="button" size="sm" variant="secondary" onClick={() => setMapping(guessMapping(fields, preview.headers))}>
-                  Guess mapping
+                  {m["import.guess"]()}
                 </Button>
               )}
             </div>
@@ -347,13 +347,13 @@ export function ImportWizard() {
         {step === 'resolving' && (
           <div className="flex flex-col gap-3">
             <StepHeader
-              title="4. Confirm who's who"
-              description="Every name and case reference below needs a real record to attach to. Matches are suggested, never assumed: check each one."
+              title={m["import.step4_title"]()}
+              description={m["import.step4_desc"]()}
             />
 
             {personTuples.length > 0 && (
               <div className="flex flex-col gap-2">
-                <h4 className="text-xs font-medium text-muted-foreground">People ({personTuples.length})</h4>
+                <h4 className="text-xs font-medium text-muted-foreground">{m["import.people_count"]({ count: personTuples.length })}</h4>
                 {personTuples.map((tuple) => {
                   const resolution = personResolutions.get(tuple.key)
                   const choice = personChoices[tuple.key] ?? 'new'
@@ -369,13 +369,13 @@ export function ImportWizard() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            <SelectItem value="new">Create a new person</SelectItem>
+                            <SelectItem value="new">{m["import.create_person"]()}</SelectItem>
                             {resolution?.exactMatch && (
-                              <SelectItem value={resolution.exactMatch.id}>Use existing: {personFullName(resolution.exactMatch)}</SelectItem>
+                              <SelectItem value={resolution.exactMatch.id}>{m["import.use_existing"]({ name: personFullName(resolution.exactMatch) })}</SelectItem>
                             )}
                             {resolution?.candidates.map((c) => (
                               <SelectItem key={c.id} value={c.id}>
-                                Use existing: {personFullName(c)}
+                                {m["import.use_existing"]({ name: personFullName(c) })}
                                 {c.nationalId ? ` · ${c.nationalId}` : ''}
                               </SelectItem>
                             ))}
@@ -385,8 +385,8 @@ export function ImportWizard() {
                       {choice === 'new' && (
                         <span className="text-muted-foreground">
                           {resolution?.exactMatch || (resolution?.candidates.length ?? 0) > 0
-                            ? 'Will create a new person despite similar existing records.'
-                            : 'No existing match found; will create a new person.'}
+                            ? m["import.new_despite"]()
+                            : m["import.no_match_new"]()}
                         </span>
                       )}
                     </div>
@@ -397,7 +397,7 @@ export function ImportWizard() {
 
             {caseReferences.length > 0 && (
               <div className="flex flex-col gap-2">
-                <h4 className="text-xs font-medium text-muted-foreground">Case references ({caseReferences.length})</h4>
+                <h4 className="text-xs font-medium text-muted-foreground">{m["import.case_refs_count"]({ count: caseReferences.length })}</h4>
                 {caseReferences.map((reference) => {
                   const resolution = caseResolutions.get(reference)
                   const linked = caseChoices[reference] || null
@@ -405,10 +405,10 @@ export function ImportWizard() {
                     <div key={reference} className="flex flex-wrap items-center gap-2 rounded-md border border-input/40 p-2 text-xs">
                       <span className="min-w-40 font-medium">{reference}</span>
                       {resolution?.matchedCaseId ? (
-                        <span className="text-muted-foreground">Matched to an existing case.</span>
+                        <span className="text-muted-foreground">{m["import.matched_case"]()}</span>
                       ) : (
                         <>
-                          <span className="text-muted-foreground">No exact match.</span>
+                          <span className="text-muted-foreground">{m["import.no_exact"]()}</span>
                           <div className="w-64">
                             <CasePicker value={linked} onValueChange={(id) => setCaseChoices((prev) => ({ ...prev, [reference]: id ?? '' }))} />
                           </div>
@@ -423,10 +423,10 @@ export function ImportWizard() {
             <div className="flex items-center gap-2">
               <Button type="button" size="sm" variant="ghost" onClick={() => setStep('mapping')}>
                 <HugeiconsIcon icon={ArrowLeft01Icon} />
-                Back
+                {m["common.back"]()}
               </Button>
               <Button type="button" size="sm" onClick={() => setStep('preview')}>
-                Next
+                {m["common.next"]()}
                 <HugeiconsIcon icon={ArrowRight01Icon} />
               </Button>
             </div>
@@ -436,16 +436,16 @@ export function ImportWizard() {
         {step === 'preview' && preview && (
           <div className="flex flex-col gap-3">
             <StepHeader
-              title="5. Confirm import"
-              description={`Ready to import ${rowsToImport.length} record${rowsToImport.length === 1 ? '' : 's'}. This cannot be undone automatically; review before confirming.`}
+              title={m["import.step5_title"]()}
+              description={rowsToImport.length === 1 ? m["import.step5_desc_one"]() : m["import.step5_desc"]({ count: rowsToImport.length })}
             />
             <div className="flex items-center gap-2">
               <Button type="button" size="sm" variant="ghost" onClick={() => setStep(usesPersonRef || usesCaseRef ? 'resolving' : 'mapping')}>
                 <HugeiconsIcon icon={ArrowLeft01Icon} />
-                Back
+                {m["common.back"]()}
               </Button>
               <Button type="button" size="sm" onClick={handleConfirmImport} disabled={bulkImport.isPending || rowsToImport.length === 0}>
-                Import {rowsToImport.length} record{rowsToImport.length === 1 ? '' : 's'}
+                {rowsToImport.length === 1 ? m["import.import_one"]() : m["import.import_n"]({ count: rowsToImport.length })}
               </Button>
             </div>
           </div>
@@ -454,20 +454,20 @@ export function ImportWizard() {
         {step === 'result' && result && (
           <div className="flex flex-col gap-3">
             <StepHeader
-              title="Done"
-              description={`${result.imported} imported${result.failed.length > 0 ? `, ${result.failed.length} failed` : ''}.`}
+              title={m["import.done"]()}
+              description={result.failed.length > 0 ? m["import.imported_failed"]({ count: result.imported, failed: result.failed.length }) : m["import.imported"]({ count: result.imported })}
             />
             {result.failed.length > 0 && (
               <div className="flex flex-col gap-1 rounded-md border border-destructive/40 bg-destructive/5 p-2">
                 {result.failed.map((failure) => (
                   <div key={failure.row} className="text-xs">
-                    <span className="font-medium">Row {failure.row + 1}:</span> <span className="text-muted-foreground">{failure.error}</span>
+                    <span className="font-medium">{m["import.row"]({ number: failure.row + 1 })}</span> <span className="text-muted-foreground">{failure.error}</span>
                   </div>
                 ))}
               </div>
             )}
             <Button type="button" size="sm" variant="secondary" className="w-fit" onClick={reset}>
-              Import another file
+              {m["import.another"]()}
             </Button>
           </div>
         )}

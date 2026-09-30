@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/dates'
 import { Tag } from '@/components/status-tag'
 import { EmptyNote } from '@/components/planned'
 import { PanelButton } from '@/components/add-panel'
@@ -11,8 +12,8 @@ import { evidenceCategoryLabel, EvidenceForm, useEvidenceForFile } from '@/featu
 import { ReviewNoteForm, useReviewNotesForFile } from '@/features/review-notes'
 import { statementRoleLabel, StatementForm, useStatementsForFile } from '@/features/statements'
 import { RichTextPreview } from '@pleadli/rich-text'
-import { format } from 'date-fns/format'
 import { ReviewStages, reviewStages } from './review-stages'
+import * as m from '@/paraglide/messages'
 
 /** What Police sent: the proposed charges, the statements and the evidence.
  * DPP's own record of what was provided, never edited to "correct" Police's
@@ -26,13 +27,13 @@ export function MaterialPanel({ fileId }: { fileId: string }) {
     <div className="flex flex-col gap-8">
       <section className="page-section">
         <div className="section-head">
-          <h2>Proposed charges</h2>
-          <PanelButton label="Add a charge" title="Add a charge" description="Record a charge Police is proposing on this file.">
+          <h2>{m["interchange.review.charges"]()}</h2>
+          <PanelButton label={m["material.add_charge"]()} title={m["material.add_charge"]()} description={m["material.add_charge_description"]()}>
             {({ close, setDirty }) => <ChargeForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>
         {charges.length === 0 ? (
-          <EmptyNote>No charges recorded yet.</EmptyNote>
+          <EmptyNote>{m["material.no_charges"]()}</EmptyNote>
         ) : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {charges.map((charge) => (
@@ -51,13 +52,13 @@ export function MaterialPanel({ fileId }: { fileId: string }) {
 
       <section className="page-section">
         <div className="section-head">
-          <h2>Statements</h2>
-          <PanelButton label="Add a statement" title="Add a statement" description="Record a statement provided with the Police referral.">
+          <h2>{m["interchange.review.statements"]()}</h2>
+          <PanelButton label={m["material.add_statement"]()} title={m["material.add_statement"]()} description={m["material.add_statement_description"]()}>
             {({ close, setDirty }) => <StatementForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>
         {statements.length === 0 ? (
-          <EmptyNote>No statements received yet.</EmptyNote>
+          <EmptyNote>{m["material.no_statements"]()}</EmptyNote>
         ) : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {statements.map((statement) => (
@@ -67,10 +68,10 @@ export function MaterialPanel({ fileId }: { fileId: string }) {
                   <strong>
                     {statement.personLastName}, {statement.personFirstName}
                   </strong>
-                  <span className="text-muted-foreground">{format(statement.givenAt, 'PP')}</span>
+                  <span className="text-muted-foreground">{formatDate(statement.givenAt)}</span>
                 </div>
                 <RichTextPreview value={statement.content} />
-                <AttachmentsField entityType={entityTypes.statement} entityId={statement.id} label="Scanned copy and attachments" />
+                <AttachmentsField entityType={entityTypes.statement} entityId={statement.id} label={m["material.scanned"]()} />
                 <CommentThread entityType="statement" entityId={statement.id} />
               </div>
             ))}
@@ -80,13 +81,13 @@ export function MaterialPanel({ fileId }: { fileId: string }) {
 
       <section className="page-section">
         <div className="section-head">
-          <h2>Evidence</h2>
-          <PanelButton label="Add evidence" title="Add evidence" description="Record an exhibit or other evidence Police says exists.">
+          <h2>{m["material.evidence"]()}</h2>
+          <PanelButton label={m["material.add_evidence"]()} title={m["material.add_evidence"]()} description={m["material.add_evidence_description"]()}>
             {({ close, setDirty }) => <EvidenceForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>
         {evidence.length === 0 ? (
-          <EmptyNote>No evidence recorded yet.</EmptyNote>
+          <EmptyNote>{m["material.no_evidence"]()}</EmptyNote>
         ) : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {evidence.map((item) => (
@@ -96,7 +97,7 @@ export function MaterialPanel({ fileId }: { fileId: string }) {
                   {item.identificationMark && <span className="text-muted-foreground">{item.identificationMark}</span>}
                 </div>
                 <RichTextPreview value={item.description} />
-                <AttachmentsField entityType={entityTypes.evidenceItem} entityId={item.id} label="Photographs and attachments" />
+                <AttachmentsField entityType={entityTypes.evidenceItem} entityId={item.id} label={m["material.photos"]()} />
                 <CommentThread entityType="evidence_item" entityId={item.id} />
               </div>
             ))}
@@ -120,7 +121,7 @@ export function ReviewPanel({ fileId }: { fileId: string }) {
   return (
     <div className="flex flex-col gap-8">
       <section className="page-section">
-        <h2>Where the review stands</h2>
+        <h2>{m["material.review_stands"]()}</h2>
         <ReviewStages stages={reviewStages({ reviewNotes: notes.length, review: current, decision })} />
       </section>
 
@@ -128,19 +129,19 @@ export function ReviewPanel({ fileId }: { fileId: string }) {
 
       <section className="page-section">
         <div className="section-head">
-          <h2>Observations</h2>
-          <PanelButton label="Add an observation" title="Add an observation" description="Note a question, gap or issue while reviewing. Not a formal decision.">
+          <h2>{m["material.observations"]()}</h2>
+          <PanelButton label={m["material.add_observation"]()} title={m["material.add_observation"]()} description={m["material.add_observation_description"]()}>
             {({ close, setDirty }) => <ReviewNoteForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>
         {notes.length === 0 ? (
-          <EmptyNote>No observations recorded yet.</EmptyNote>
+          <EmptyNote>{m["material.no_observations"]()}</EmptyNote>
         ) : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {notes.map((note) => (
               <div key={note.id} role="listitem" className="flex flex-col gap-2 py-3">
                 <p className="text-muted-foreground">
-                  {format(note.createdAt, 'PPp')}
+                  {formatDate(note.createdAt, 'datetime')}
                   {note.author ? `, ${note.author}` : ''}
                 </p>
                 <RichTextPreview value={note.note} />

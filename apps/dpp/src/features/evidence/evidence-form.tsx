@@ -7,6 +7,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useCreateEvidenceItem } from './queries'
 import { createEvidenceItemSchema, evidenceCategories, type EvidenceItem } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type EvidenceFormProps = {
   prosecutionFileId: string
@@ -39,11 +40,11 @@ export function EvidenceForm({ prosecutionFileId, onSuccess, onDirtyChange }: Ev
     onSubmit: async ({ value, formApi }) => {
       try {
         const result = await createItem.mutateAsync({ ...value, prosecutionFileId })
-        t.success('Evidence item recorded')
+        t.success(m["evidence.form.recorded"]())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record evidence item', { description: 'Please try again.' })
+        t.error(m["evidence.form.record_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -61,10 +62,10 @@ export function EvidenceForm({ prosecutionFileId, onSuccess, onDirtyChange }: Ev
       <form.AppField name="category">
         {(f) => (
           <Field>
-            <FieldLabel>Category</FieldLabel>
+            <FieldLabel>{m["evidence.form.category"]()}</FieldLabel>
             <Select items={evidenceCategories} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={m["evidence.form.category_placeholder"]()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -83,24 +84,24 @@ export function EvidenceForm({ prosecutionFileId, onSuccess, onDirtyChange }: Ev
       <form.AppField name="description">
         {(f) => (
           <Field>
-            <FieldLabel>Description</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="What this item is…" />
+            <FieldLabel>{m["evidence.form.description"]()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["evidence.form.description_placeholder"]()} />
           </Field>
         )}
       </form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="identificationMark">{(f) => <f.input label="Identification mark (optional)" />}</form.AppField>
-        <form.AppField name="recoveredFromLocation">{(f) => <f.input label="Recovered from (optional)" />}</form.AppField>
+        <form.AppField name="identificationMark">{(f) => <f.input label={m["evidence.form.mark_optional"]()} />}</form.AppField>
+        <form.AppField name="recoveredFromLocation">{(f) => <f.input label={m["evidence.form.recovered_optional"]()} />}</form.AppField>
       </div>
 
       <form.AppField name="sourceNote">
-        {(f) => <f.input label="Source note (optional)" placeholder="e.g. as listed in the Police exhibit register" />}
+        {(f) => <f.input label={m["common.source_note_optional"]()} placeholder={m["evidence.form.source_placeholder"]()} />}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Add evidence item" />
+          <form.submit label={m["evidence.form.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

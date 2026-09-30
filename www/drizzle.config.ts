@@ -18,7 +18,7 @@ const localConfig = () => {
 export default defineConfig({
   dialect: 'sqlite',
   schema: './src/db/auth-schema.ts',
-  out: './migrations',
+  out: './.migrations',
   driver: 'd1-http',
   dbCredentials: {
     url: localConfig() ?? '',

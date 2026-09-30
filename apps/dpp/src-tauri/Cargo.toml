@@ -21,6 +21,8 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-opener = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-dialog = "2"
@@ -47,14 +49,28 @@ argon2 = "0.5"
 chacha20poly1305 = { version = "0.10", features = ["stream"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 docx-rs = "0.4.22"
+# Authenticator codes (RFC 6238) and the QR code a phone scans to link.
+hmac = "0.12"
+sha1 = "0.10"
+qrcode = "0.14"
+# AI Assist calls its provider over HTTPS from here, so the key never reaches the webview.
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 pleadli-interchange = { path = "../../../packages/interchange" }
-pleadli-node-core = { path = "../../../packages/node-core" }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["ai"] }
 
 [dev-dependencies]
 # A fixed key for tests that run domain code without a startup.
 pleadli-node-core = { path = "../../../packages/node-core", features = ["test-keys"] }
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+# Hashing a PIN or password is deliberately slow; unoptimised it takes
+# seconds, which makes a development build feel broken at sign-in.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
+
 [profile.release]
 codegen-units = 1
 lto = true

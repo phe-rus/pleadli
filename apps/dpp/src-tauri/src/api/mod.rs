@@ -25,6 +25,13 @@ use crate::domain::capacity::{self, Capacity};
 use crate::domain::charges::{self, Charge, CreateChargeInput};
 use crate::domain::charging_reviews::{self, AssessmentInput, OutcomeInput, ReviewWithAssessments, StartReviewInput};
 use crate::domain::comments::{self, Comment, CreateCommentInput};
+use crate::domain::assist::{self, AssistSettings, AssistSettingsInput, CountryContext};
+use crate::domain::court::{self, CalendarEntry, Filing, FilingInput, Hearing, HearingInput};
+use crate::domain::file_items::{self, FileItem, FileItemInput, FileItemUpdate};
+use crate::domain::tasks::{self, CreateTaskInput, Task, UpdateTaskInput};
+use crate::domain::laws::{self, LawSummary, ManualLaw};
+use crate::domain::custody::{self, CustodyEvent, CustodyEventInput};
+use crate::domain::pipeline::{self, AnswerInput, Answered, BoardCard, ChatInput, ChatReply, Handover, HandoverInput, Proposal};
 use crate::domain::directions::{self, Direction, ResponseInput};
 use crate::domain::decisions::{self, CreateDecisionInput, Decision, DecisionRow};
 use crate::domain::document_export;
@@ -35,7 +42,10 @@ use crate::domain::error::DomainError;
 use crate::domain::interchange::{self, Connection, ImportOutcome, OfficeIdentity, OutgoingPackage};
 use crate::domain::keys;
 use crate::domain::referral_intake::{self, AcceptInput, Accepted, IncomingDetail, IncomingSummary};
-use crate::domain::security::{LockStatus, Security};
+use crate::domain::installation::{self, Brand, Installation, SetupInput, SetupStatus, UpdateInstallationInput};
+use crate::domain::security::{self as security_domain, LockStatus, Security, SignInInput, SignInOutcome};
+use crate::domain::staff::{self, Actor, PersonInput, Protection, SignInPerson, Staff, UpdateStaffInput};
+use crate::domain::totp::{self, Enrolment};
 use crate::domain::evidence::{self, CreateEvidenceItemInput, EvidenceItem};
 use crate::domain::people::{self, CreatePersonInput, Person};
 use crate::domain::prosecution_files::{
@@ -74,6 +84,8 @@ impl From<DomainError> for ApiError {
             DomainError::NotFound(m) => ApiError(StatusCode::NOT_FOUND, "NOT_FOUND", m),
             DomainError::Db(e) => {
                 log::error!("database error: {e}");
+                #[cfg(debug_assertions)]
+                eprintln!("database error: {e}");
                 ApiError(StatusCode::INTERNAL_SERVER_ERROR, "DATABASE", "The record could not be read or saved.".to_string())
             }
         }
@@ -257,8 +269,69 @@ async fn refresh_document(State(s): State<AppState>, Path(id): Path<String>) -> 
     Ok(Json(documents::refresh(&s.pool, &id).await?))
 }
 
-async fn issue_document(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Document> {
-    Ok(Json(documents::issue(&s.pool, &id).await?))
+async fn issue_document(State(s): State<AppState>, Path(id): Path<String>, body: axum::body::Bytes) -> ApiResult<Document> {
+    // The body is optional: an empty request issues with the default reference prefix.
+    let input: documents::IssueInput = if body.is_empty() { Default::default() } else { serde_json::from_slice(&body).unwrap_or_default() };
+    let actor = s.security.actor();
+    let signer = actor.as_ref().map(|a| (a.id.as_str(), a.name.as_str()));
+    Ok(Json(documents::issue(&s.pool, &id, input, signer).await?))
+}
+
+async fn draft_document(State(s): State<AppState>, Json(input): Json<documents::DraftInput>) -> ApiResult<Document> {
+    Ok(Json(documents::create_draft(&s.pool, input).await?))
+}
+
+async fn update_document_content(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<documents::ContentInput>) -> ApiResult<Document> {
+    Ok(Json(documents::update_content(&s.pool, &id, input).await?))
+}
+
+#[derive(Deserialize)]
+struct VerifyQuery {
+    reference: String,
+    code: String,
+}
+
+async fn verify_document(State(s): State<AppState>, Query(q): Query<VerifyQuery>) -> ApiResult<documents::Verification> {
+    Ok(Json(documents::verify(&s.pool, &q.reference, &q.code).await?))
+}
+
+#[derive(Deserialize)]
+struct ImageInput {
+    image: Option<String>,
+}
+
+/// A signature or stamp: a PNG or JPEG under 400 KB, as a data URL.
+fn check_image(image: &Option<String>) -> Result<(), ApiError> {
+    if let Some(i) = image {
+        let ok = (i.starts_with("data:image/png;base64,") || i.starts_with("data:image/jpeg;base64,")) && i.len() < 550_000;
+        if !ok {
+            return Err(ApiError(StatusCode::UNPROCESSABLE_ENTITY, "INVALID", "Use a PNG or JPEG image under 400 KB.".to_string()));
+        }
+    }
+    Ok(())
+}
+
+async fn set_my_signature(State(s): State<AppState>, Json(input): Json<ImageInput>) -> Result<StatusCode, ApiError> {
+    let actor = s.security.actor().ok_or_else(|| ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "Nobody is signed in.".to_string()))?;
+    check_image(&input.image)?;
+    sqlx::query("UPDATE staff SET signature = ? WHERE id = ?").bind(&input.image).bind(&actor.id).execute(&s.pool).await.map_err(|e| ApiError::from(crate::domain::error::DomainError::from(e)))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn get_seals(State(s): State<AppState>) -> ApiResult<serde_json::Value> {
+    let signature: Option<String> = match s.security.actor() {
+        Some(a) => sqlx::query_scalar("SELECT signature FROM staff WHERE id = ?").bind(&a.id).fetch_optional(&s.pool).await.map_err(|e| ApiError::from(crate::domain::error::DomainError::from(e)))?.flatten(),
+        None => None,
+    };
+    let stamp: Option<String> = sqlx::query_scalar("SELECT stamp FROM installation WHERE id = 'this'").fetch_optional(&s.pool).await.map_err(|e| ApiError::from(crate::domain::error::DomainError::from(e)))?.flatten();
+    Ok(Json(serde_json::json!({ "signature": signature, "stamp": stamp })))
+}
+
+async fn set_stamp(State(s): State<AppState>, Json(input): Json<ImageInput>) -> Result<StatusCode, ApiError> {
+    require_admin(&s)?;
+    check_image(&input.image)?;
+    sqlx::query("UPDATE installation SET stamp = ? WHERE id = 'this'").bind(&input.image).execute(&s.pool).await.map_err(|e| ApiError::from(crate::domain::error::DomainError::from(e)))?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn discard_document(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
@@ -646,7 +719,399 @@ async fn get_profile(State(s): State<AppState>) -> ApiResult<Option<ProsecutorPr
 }
 
 async fn save_profile(State(s): State<AppState>, Json(input): Json<SaveProsecutorProfileInput>) -> ApiResult<ProsecutorProfile> {
-    Ok(Json(prosecutor_profile::save_prosecutor_profile(&s.pool, input).await?))
+    let saved = prosecutor_profile::save_prosecutor_profile(&s.pool, input).await?;
+    s.security.refresh_actor(&s.pool).await?;
+    Ok(Json(saved))
+}
+
+// ---- Setup, sign-in and the people of the installation ---------------------
+
+fn require_admin(s: &AppState) -> Result<Actor, ApiError> {
+    match s.security.actor() {
+        Some(actor) if actor.is_administrator() => Ok(actor),
+        _ => Err(ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "Only an administrator can do that.".to_string())),
+    }
+}
+
+fn not_installed(s: &AppState) -> Result<(), ApiError> {
+    if s.security.is_installed() {
+        return Err(ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "This installation is already set up.".to_string()));
+    }
+    Ok(())
+}
+
+async fn setup_status(State(s): State<AppState>) -> ApiResult<SetupStatus> {
+    Ok(Json(installation::setup_status(&s.pool).await?))
+}
+
+#[derive(Deserialize)]
+struct EnrolInput {
+    name: String,
+}
+
+async fn setup_second_factor(State(s): State<AppState>, Json(input): Json<EnrolInput>) -> ApiResult<Enrolment> {
+    not_installed(&s)?;
+    let name = input.name.trim();
+    if name.is_empty() {
+        return Err(DomainError::Invalid("A name is required.".to_string()).into());
+    }
+    Ok(Json(totp::enrol(security_domain::ISSUER, name).map_err(DomainError::Invalid)?))
+}
+
+async fn setup_complete(State(s): State<AppState>, Json(input): Json<SetupInput>) -> ApiResult<LockStatus> {
+    not_installed(&s)?;
+    installation::complete_setup(&s.pool, input).await?;
+    s.security.load(&s.pool).await?;
+    // Whoever set it up is already signed in: they just proved who they are.
+    if let Some(admin) = staff::first_administrator(&s.pool).await? {
+        s.security.adopt(&s.pool, admin).await?;
+    }
+    Ok(Json(s.security.status()))
+}
+
+async fn get_brand(State(s): State<AppState>) -> ApiResult<Brand> {
+    Ok(Json(installation::brand(&s.pool).await?))
+}
+
+async fn get_installation(State(s): State<AppState>) -> ApiResult<Option<Installation>> {
+    Ok(Json(installation::get(&s.pool).await?))
+}
+
+async fn update_installation(State(s): State<AppState>, Json(input): Json<UpdateInstallationInput>) -> ApiResult<Installation> {
+    require_admin(&s)?;
+    Ok(Json(installation::update(&s.pool, input).await?))
+}
+
+#[derive(Deserialize)]
+struct JurisdictionInput {
+    jurisdiction: String,
+    #[serde(default)]
+    region: Option<String>,
+}
+
+/// Development only: moves the installation to another country so each
+/// country's numbering, file order and wording can be tried without a new
+/// setup. A release build refuses it: a real office's country is fixed at setup.
+async fn set_jurisdiction(State(s): State<AppState>, Json(input): Json<JurisdictionInput>) -> ApiResult<Installation> {
+    if !cfg!(debug_assertions) {
+        return Err(ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "The country is chosen at setup.".to_string()));
+    }
+    require_admin(&s)?;
+    Ok(Json(installation::set_jurisdiction(&s.pool, &input.jurisdiction, input.region).await?))
+}
+
+#[derive(Deserialize)]
+struct ProtectionInput {
+    protection: String,
+    #[serde(default)]
+    secret: Option<String>,
+}
+
+async fn set_protection(State(s): State<AppState>, Json(input): Json<ProtectionInput>) -> ApiResult<LockStatus> {
+    let admin = require_admin(&s)?;
+    let level = Protection::parse(&input.protection).ok_or_else(|| DomainError::Invalid("That protection level is not known.".to_string()))?;
+    installation::set_protection(&s.pool, &admin.id, level, input.secret.as_deref()).await?;
+    s.security.load(&s.pool).await?;
+    // The administrator who changed it stays signed in under the new level.
+    s.security.adopt(&s.pool, admin).await?;
+    Ok(Json(s.security.status()))
+}
+
+async fn session_people(State(s): State<AppState>) -> ApiResult<Vec<SignInPerson>> {
+    Ok(Json(staff::sign_in_list(&s.pool, s.security.protection()).await?))
+}
+
+async fn sign_in(State(s): State<AppState>, Json(input): Json<SignInInput>) -> ApiResult<SignInOutcome> {
+    Ok(Json(s.security.sign_in(&s.pool, input).await?))
+}
+
+async fn sign_out(State(s): State<AppState>) -> ApiResult<LockStatus> {
+    s.security.lock_now(&s.pool).await;
+    Ok(Json(s.security.status()))
+}
+
+async fn list_staff(State(s): State<AppState>) -> ApiResult<Vec<Staff>> {
+    Ok(Json(staff::list(&s.pool).await?))
+}
+
+async fn create_staff(State(s): State<AppState>, Json(input): Json<PersonInput>) -> ApiResult<Staff> {
+    require_admin(&s)?;
+    let created = staff::create(&s.pool, s.security.protection(), input).await?;
+    let _ = audit::log(&s.pool, audit::Entry::new("staff_added").subject("staff", &created.id)).await;
+    Ok(Json(created))
+}
+
+async fn update_staff(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<UpdateStaffInput>) -> ApiResult<Staff> {
+    require_admin(&s)?;
+    let updated = staff::update(&s.pool, &id, input).await?;
+    let _ = audit::log(&s.pool, audit::Entry::new("staff_changed").subject("staff", &id)).await;
+    s.security.refresh_actor(&s.pool).await?;
+    Ok(Json(updated))
+}
+
+#[derive(Deserialize)]
+struct SecretInput {
+    secret: String,
+}
+
+/// An administrator sets anyone's PIN or password; a person may set their own.
+async fn set_staff_secret(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<SecretInput>) -> Result<StatusCode, ApiError> {
+    let actor = s.security.actor().ok_or_else(|| ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "Nobody is signed in.".to_string()))?;
+    if !actor.is_administrator() && actor.id != id {
+        return Err(ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "Only an administrator can do that.".to_string()));
+    }
+    staff::set_secret(&s.pool, s.security.protection(), &id, &input.secret).await?;
+    let _ = audit::log(&s.pool, audit::Entry::new("staff_secret_set").subject("staff", &id)).await;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// A lost phone: the person links a new one at their next sign-in.
+async fn reset_second_factor(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    require_admin(&s)?;
+    staff::set_second_factor(&s.pool, &id, None).await?;
+    let _ = audit::log(&s.pool, audit::Entry::new("second_factor_reset").subject("staff", &id)).await;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+// ---- Board, court calendar, the file's index, Assist ----------------------
+
+fn actor_name(s: &AppState) -> Option<String> {
+    s.security.actor().map(|a| a.name)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FileScope {
+    file_id: Option<String>,
+}
+
+async fn list_tasks(State(s): State<AppState>, Query(q): Query<FileScope>) -> ApiResult<Vec<Task>> {
+    Ok(Json(tasks::list(&s.pool, q.file_id.as_deref()).await?))
+}
+
+async fn create_task(State(s): State<AppState>, Json(input): Json<CreateTaskInput>) -> ApiResult<Task> {
+    Ok(Json(tasks::create(&s.pool, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn update_task(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<UpdateTaskInput>) -> ApiResult<Task> {
+    Ok(Json(tasks::update(&s.pool, &id, input).await?))
+}
+
+async fn delete_task(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    tasks::delete(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FileIdQuery {
+    file_id: String,
+}
+
+async fn list_hearings(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Vec<Hearing>> {
+    Ok(Json(court::hearings_for_file(&s.pool, &q.file_id).await?))
+}
+
+async fn create_hearing(State(s): State<AppState>, Json(input): Json<HearingInput>) -> ApiResult<Hearing> {
+    Ok(Json(court::create_hearing(&s.pool, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn update_hearing(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<HearingInput>) -> ApiResult<Hearing> {
+    Ok(Json(court::update_hearing(&s.pool, &id, input).await?))
+}
+
+async fn delete_hearing(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    court::delete_hearing(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn list_filings(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Vec<Filing>> {
+    Ok(Json(court::filings_for_file(&s.pool, &q.file_id).await?))
+}
+
+async fn create_filing(State(s): State<AppState>, Json(input): Json<FilingInput>) -> ApiResult<Filing> {
+    Ok(Json(court::create_filing(&s.pool, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn delete_filing(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    court::delete_filing(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+struct Range {
+    from: i64,
+    to: i64,
+}
+
+async fn get_calendar(State(s): State<AppState>, Query(r): Query<Range>) -> ApiResult<Vec<CalendarEntry>> {
+    Ok(Json(court::calendar(&s.pool, r.from, r.to).await?))
+}
+
+async fn list_file_items(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Vec<FileItem>> {
+    Ok(Json(file_items::list(&s.pool, &q.file_id).await?))
+}
+
+async fn create_file_item(State(s): State<AppState>, Json(input): Json<FileItemInput>) -> ApiResult<FileItem> {
+    Ok(Json(file_items::create(&s.pool, input, "person", actor_name(&s).as_deref()).await?))
+}
+
+async fn update_file_item(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<FileItemUpdate>) -> ApiResult<FileItem> {
+    Ok(Json(file_items::update(&s.pool, &id, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn delete_file_item(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    file_items::delete(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn confirm_file_items(State(s): State<AppState>, Json(q): Json<FileIdQuery>) -> ApiResult<serde_json::Value> {
+    let n = file_items::confirm_all(&s.pool, &q.file_id, actor_name(&s).as_deref()).await?;
+    Ok(Json(serde_json::json!({ "confirmed": n })))
+}
+
+async fn get_assist_settings(State(s): State<AppState>) -> ApiResult<AssistSettings> {
+    Ok(Json(assist::settings(&s.pool).await?))
+}
+
+async fn save_assist_settings(State(s): State<AppState>, Json(input): Json<AssistSettingsInput>) -> ApiResult<AssistSettings> {
+    let admin = require_admin(&s)?;
+    Ok(Json(assist::save_settings(&s.pool, input, &admin.name).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BriefRequest {
+    file_id: String,
+    #[serde(default)]
+    context: CountryContext,
+}
+
+async fn create_brief(State(s): State<AppState>, Json(r): Json<BriefRequest>) -> ApiResult<assist::Brief> {
+    Ok(Json(assist::brief(&s.pool, &r.file_id, &r.context, actor_name(&s).as_deref()).await?))
+}
+
+async fn latest_brief(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Option<assist::Brief>> {
+    Ok(Json(assist::latest_brief(&s.pool, &q.file_id).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ArrangeRequest {
+    file_id: String,
+    attachment_ids: Vec<String>,
+    #[serde(default)]
+    context: CountryContext,
+}
+
+async fn arrange_scans(State(s): State<AppState>, Json(r): Json<ArrangeRequest>) -> ApiResult<assist::Arranged> {
+    Ok(Json(assist::arrange(&s.pool, &s.vault_root, &r.file_id, &r.attachment_ids, &r.context, actor_name(&s).as_deref()).await?))
+}
+
+async fn assist_log(State(s): State<AppState>) -> ApiResult<Vec<assist::LogEntry>> {
+    Ok(Json(assist::recent_log(&s.pool, 50).await?))
+}
+
+async fn assist_models(State(s): State<AppState>) -> ApiResult<Vec<crate::domain::ai::ModelInfo>> {
+    Ok(Json(assist::models(&s.pool).await?))
+}
+
+async fn assist_chat(State(s): State<AppState>, Json(input): Json<ChatInput>) -> ApiResult<ChatReply> {
+    Ok(Json(pipeline::chat(&s.pool, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn case_board(State(s): State<AppState>) -> ApiResult<Vec<BoardCard>> {
+    Ok(Json(pipeline::board(&s.pool).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StageInput {
+    stage: String,
+}
+
+async fn set_file_stage(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<StageInput>) -> Result<StatusCode, ApiError> {
+    pipeline::set_stage(&s.pool, &id, &input.stage, actor_name(&s).as_deref()).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn list_proposals(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Vec<Proposal>> {
+    Ok(Json(pipeline::latest(&s.pool, &q.file_id).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProposeRequest {
+    file_id: String,
+    stage: Option<String>,
+    #[serde(default)]
+    context: CountryContext,
+}
+
+async fn create_proposal(State(s): State<AppState>, Json(r): Json<ProposeRequest>) -> ApiResult<Proposal> {
+    Ok(Json(pipeline::propose(&s.pool, &r.file_id, r.stage.as_deref(), &r.context, actor_name(&s).as_deref()).await?))
+}
+
+async fn answer_proposal(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<AnswerInput>) -> ApiResult<Answered> {
+    let actor = s.security.actor().ok_or_else(|| ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "Nobody is signed in.".to_string()))?;
+    Ok(Json(pipeline::answer(&s.pool, &s.vault_root, &id, input, &actor.name).await?))
+}
+
+async fn list_handovers(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Vec<Handover>> {
+    Ok(Json(pipeline::handovers(&s.pool, &q.file_id).await?))
+}
+
+async fn create_handover(State(s): State<AppState>, Json(input): Json<HandoverInput>) -> ApiResult<Handover> {
+    Ok(Json(pipeline::record_handover(&s.pool, input, actor_name(&s).as_deref()).await?))
+}
+
+#[derive(Deserialize)]
+struct JurisdictionQuery {
+    jurisdiction: String,
+}
+
+async fn list_laws(State(s): State<AppState>, Query(q): Query<JurisdictionQuery>) -> ApiResult<Vec<LawSummary>> {
+    Ok(Json(laws::list(&s.pool, &q.jurisdiction).await?))
+}
+
+async fn add_law(State(s): State<AppState>, Json(input): Json<ManualLaw>) -> Result<StatusCode, ApiError> {
+    require_admin(&s)?;
+    laws::add_manual(&s.pool, input).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn delete_law(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    require_admin(&s)?;
+    laws::delete(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+struct SyncRequest {
+    jurisdiction: String,
+    titles: Vec<String>,
+}
+
+async fn sync_laws(State(s): State<AppState>, Json(r): Json<SyncRequest>) -> ApiResult<laws::SyncResult> {
+    require_admin(&s)?;
+    let token = assist::laws_token(&s.pool).await?.ok_or_else(|| ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "Add the Laws.Africa token in Settings first.".to_string()))?;
+    Ok(Json(laws::sync_laws_africa(&s.pool, &token, &r.jurisdiction, &r.titles).await?))
+}
+
+async fn list_custody(State(s): State<AppState>, Query(q): Query<FileScope>) -> ApiResult<Vec<CustodyEvent>> {
+    Ok(Json(match q.file_id {
+        Some(id) => custody::list(&s.pool, &id).await?,
+        None => custody::open_files(&s.pool).await?,
+    }))
+}
+
+async fn create_custody(State(s): State<AppState>, Json(input): Json<CustodyEventInput>) -> ApiResult<CustodyEvent> {
+    Ok(Json(custody::create(&s.pool, input, "person", actor_name(&s).as_deref()).await?))
+}
+
+async fn delete_custody(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    custody::delete(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 pub fn router(state: AppState) -> Router {
@@ -670,6 +1135,12 @@ pub fn router(state: AppState) -> Router {
         .route("/documents/{id}", get(get_document).delete(discard_document))
         .route("/documents/{id}/refresh", post(refresh_document))
         .route("/documents/{id}/issue", post(issue_document))
+        .route("/documents/draft", post(draft_document))
+        .route("/documents/verify", get(verify_document))
+        .route("/documents/{id}/content", axum::routing::put(update_document_content))
+        .route("/seals", get(get_seals))
+        .route("/seals/signature", axum::routing::put(set_my_signature))
+        .route("/seals/stamp", axum::routing::put(set_stamp))
         .route("/documents/{id}/export/{format}", get(export_document))
         .route("/security/lock", post(lock_now))
         .route("/security/unlock", post(unlock))
@@ -705,6 +1176,32 @@ pub fn router(state: AppState) -> Router {
         .route("/charges", post(create_charge))
         .route("/review-notes", post(create_review_note))
         .route("/comments", post(create_comment).get(list_comments))
+        .route("/tasks", get(list_tasks).post(create_task))
+        .route("/tasks/{id}", axum::routing::patch(update_task).delete(delete_task))
+        .route("/hearings", get(list_hearings).post(create_hearing))
+        .route("/hearings/{id}", axum::routing::put(update_hearing).delete(delete_hearing))
+        .route("/filings", get(list_filings).post(create_filing))
+        .route("/filings/{id}", delete(delete_filing))
+        .route("/calendar", get(get_calendar))
+        .route("/file-items", get(list_file_items).post(create_file_item))
+        .route("/file-items/confirm", post(confirm_file_items))
+        .route("/file-items/{id}", axum::routing::patch(update_file_item).delete(delete_file_item))
+        .route("/assist/settings", get(get_assist_settings).put(save_assist_settings))
+        .route("/assist/brief", get(latest_brief).post(create_brief))
+        .route("/assist/arrange", post(arrange_scans))
+        .route("/assist/log", get(assist_log))
+        .route("/assist/models", get(assist_models))
+        .route("/assist/chat", post(assist_chat))
+        .route("/cases/board", get(case_board))
+        .route("/prosecution-files/{id}/stage", axum::routing::put(set_file_stage))
+        .route("/proposals", get(list_proposals).post(create_proposal))
+        .route("/proposals/{id}/answer", post(answer_proposal))
+        .route("/handovers", get(list_handovers).post(create_handover))
+        .route("/laws", get(list_laws).post(add_law))
+        .route("/laws/sync", post(sync_laws))
+        .route("/laws/{id}", delete(delete_law))
+        .route("/custody-events", get(list_custody).post(create_custody))
+        .route("/custody-events/{id}", delete(delete_custody))
         .route("/attachments", post(create_attachment).get(list_attachments))
         .route("/attachments/{id}", delete(delete_attachment))
         .route("/attachments/{id}/file", get(attachment_file))
@@ -713,7 +1210,21 @@ pub fn router(state: AppState) -> Router {
         .route("/capacity", get(get_capacity))
         .route("/activity", get(activity))
         .route("/material", get(material))
-        .route("/prosecutor-profile", get(get_profile).post(save_profile).put(save_profile));
+        .route("/prosecutor-profile", get(get_profile).post(save_profile).put(save_profile))
+        .route("/setup/status", get(setup_status))
+        .route("/setup/second-factor", post(setup_second_factor))
+        .route("/setup/complete", post(setup_complete))
+        .route("/installation", get(get_installation).put(update_installation))
+        .route("/installation/brand", get(get_brand))
+        .route("/installation/protection", axum::routing::put(set_protection))
+        .route("/installation/jurisdiction", axum::routing::put(set_jurisdiction))
+        .route("/session/people", get(session_people))
+        .route("/session/sign-in", post(sign_in))
+        .route("/session/sign-out", post(sign_out))
+        .route("/staff", get(list_staff).post(create_staff))
+        .route("/staff/{id}", axum::routing::put(update_staff))
+        .route("/staff/{id}/secret", axum::routing::put(set_staff_secret))
+        .route("/staff/{id}/second-factor", delete(reset_second_factor));
 
     // Status is always readable (the lock screen needs it). Unlocking is the
     // one thing a locked app allows; everything else is closed until then.
@@ -725,17 +1236,34 @@ pub fn router(state: AppState) -> Router {
         .with_state(state)
 }
 
-/// While the app is locked, only unlocking is allowed. Anything else is refused
-/// with 423 before it reaches a handler. Every other call counts as use, which
-/// postpones the idle lock.
+/// Who may reach what. Branding and the lock status are always readable. Before
+/// setup only setup itself works (and, on an older installation still behind
+/// its passphrase, only unlocking). After setup, with nobody signed in, only
+/// the sign-in list and signing in work. Everything else counts as use, which
+/// postpones the idle sign-out.
 async fn gate(State(s): State<AppState>, request: axum::extract::Request, next: axum::middleware::Next) -> Response {
     // Inside the nested router the prefix is already stripped.
-    if !request.uri().path().ends_with("/security/unlock") {
-        if s.security.is_locked() {
+    let path = request.uri().path();
+    if path.ends_with("/security/unlock") || path == "/installation/brand" {
+        return next.run(request).await;
+    }
+    let locked = s.security.is_locked();
+    if !s.security.is_installed() {
+        if locked {
             return ApiError(StatusCode::LOCKED, "LOCKED", "The application is locked.".to_string()).into_response();
         }
-        s.security.touch();
+        if path.starts_with("/setup/") {
+            return next.run(request).await;
+        }
+        return ApiError(StatusCode::PRECONDITION_REQUIRED, "SETUP_REQUIRED", "The application is not set up yet.".to_string()).into_response();
     }
+    if path.starts_with("/setup/") || path == "/session/people" || path == "/session/sign-in" {
+        return next.run(request).await;
+    }
+    if locked {
+        return ApiError(StatusCode::LOCKED, "LOCKED", "Sign in to continue.".to_string()).into_response();
+    }
+    s.security.touch();
     next.run(request).await
 }
 
@@ -750,7 +1278,7 @@ pub fn recovery_router(data_dir: PathBuf, reason: String) -> Router {
     }
     async fn status(State(r): State<Recovery>) -> Json<serde_json::Value> {
         Json(serde_json::json!({
-            "state": "recovery", "configured": false, "locked": false, "idleMinutes": 0, "retryAfterSeconds": 0,
+            "state": "recovery", "installed": false, "level": null, "actor": null, "configured": false, "locked": false, "idleMinutes": 0, "retryAfterSeconds": 0,
             "reason": r.reason, "protection": null, "lastBackupAt": null, "restorePending": backup::pending(&r.data_dir),
         }))
     }

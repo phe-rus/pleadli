@@ -1,8 +1,9 @@
+import * as m from '@/paraglide/messages'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { onSessionEnded } from '@/lib/api'
 import { Onboarding } from './onboarding'
-import { useInstallation, useMe } from './queries'
+import { installationOptions, meOptions, useInstallation, useMe } from './queries'
 import { ScreenFrame } from './screen-frame'
 import { SignInScreen } from './sign-in-screen'
 import { SetupProgress } from './setup-progress'
@@ -35,17 +36,38 @@ export function SessionGate({ children, onChange }: { children: ReactNode; onCha
     [queryClient, onChange],
   )
 
+  // Clearing drops what was on screen (a real privacy property: the next
+  // officer at a shared terminal must never see the last one's data). Do not
+  // trust that an observer notices the clear and refetches on its own: fetch
+  // both queries directly and await them, so the cache genuinely holds fresh
+  // data the moment this returns, not just a hope that something else (for
+  // `me`, otherwise a once-a-minute background interval) eventually does.
+  const [transitioning, setTransitioning] = useState(false)
   const changed = () => {
     queryClient.clear()
-    onChange()
+    setTransitioning(true)
+    void Promise.all([queryClient.fetchQuery(meOptions()), queryClient.fetchQuery(installationOptions())]).finally(() => {
+      setTransitioning(false)
+      onChange()
+    })
   }
 
-  if (isLoading || (installation?.installed && meLoading)) return settingUp ? <SetupProgress mode={installation?.mode ?? undefined} /> : null
+  if (transitioning || isLoading || (installation?.installed && meLoading)) {
+    return settingUp ? (
+      <SetupProgress mode={installation?.mode ?? undefined} />
+    ) : (
+      <SetupProgress
+        mode={installation?.mode ?? undefined}
+        title={m["pre_auth.signing_in_title"]()}
+        description={m["pre_auth.signing_in_desc"]()}
+      />
+    )
+  }
   if (isError || !installation) {
     return (
-      <ScreenFrame title="Waiting for the application" description="Pleadli Police could not reach its own data. If it keeps failing, restart the application.">
+      <ScreenFrame title={m["pre_auth.waiting_title"]()} description={m["pre_auth.waiting_desc"]()}>
         <button type="button" onClick={() => void refetch()} className="w-fit cursor-pointer text-primary">
-          Try again
+          {m["common.try_again_button"]()}
         </button>
       </ScreenFrame>
     )

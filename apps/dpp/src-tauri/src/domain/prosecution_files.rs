@@ -22,6 +22,11 @@ pub struct ProsecutionFile {
     pub created_at: i64,
     /// The connection to the station that referred it, when it arrived through one.
     pub police_connection_id: Option<String>,
+    /// Where it is in the case pipeline (docs/dpp/PIPELINE.md).
+    pub stage: String,
+    pub stage_changed_at: Option<i64>,
+    pub outcome: Option<String>,
+    pub concluded_at: Option<i64>,
 }
 
 /// Creating a file always logs the intake referral event alongside it

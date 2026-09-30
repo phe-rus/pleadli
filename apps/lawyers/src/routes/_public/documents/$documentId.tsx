@@ -1,7 +1,10 @@
 import { Createpanel } from '@/components/create-panel'
 import { Tag } from '@/components/status-tag'
 import { documentKindLabel, documentOptions, DocumentSheet, FileForm, updateDocument, useDiscardDocument, useDocument } from '@/features/documents'
+import { DocumentExport } from '@/features/export'
+import { useActor } from '@/features/installation'
 import { ApiError, messageOf } from '@/lib/api'
+import * as m from '@/paraglide/messages'
 import { PrinterIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { RichTextInput, richTextToPlainText } from '@pleadli/rich-text'
@@ -37,6 +40,7 @@ function RouteComponent() {
   const discard = useDiscardDocument()
   const navigate = useNavigate()
   const [filing, setFiling] = useState(false)
+  const canFile = useActor()?.role === 'advocate'
   const [title, setTitle] = useState(document?.title ?? '')
   const bodyRef = useRef(document?.body ?? '')
   const [saved, setSaved] = useState<Saved>('idle')
@@ -99,6 +103,7 @@ function RouteComponent() {
             <>
               <Tag tone="open">Draft</Tag>
               <Tag tone="stopped">{saved === 'saving' ? 'Saving…' : saved === 'saved' ? 'Saved' : saved === 'failed' ? 'Not saved' : 'Saves as you write'}</Tag>
+              <DocumentExport get={() => ({ ...document, title: latest.current.title.trim() || document.title, body: bodyRef.current })} beforeExport={save} />
               <Button
                 size="sm"
                 variant="secondary"
@@ -117,19 +122,28 @@ function RouteComponent() {
               >
                 Discard
               </Button>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  clearTimeout(timer.current)
-                  if (await save()) setFiling(true)
-                }}
-              >
-                File
-              </Button>
+              {canFile ? (
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    clearTimeout(timer.current)
+                    if (await save()) setFiling(true)
+                  }}
+                >
+                  File
+                </Button>
+              ) : (
+                // Only an advocate files in the practice's name (Advocates Act ss.64, 66, 67);
+                // the backend refuses anyone else, and the screen says so before they try.
+                <Tag tone="waiting" className="whitespace-normal">
+                  {m["document.advocate_files"]()}
+                </Tag>
+              )}
             </>
           ) : (
             <>
               {document.intact === false ? <Tag tone="urgent">Changed since filing</Tag> : <Tag tone="done">Filed, unchanged</Tag>}
+              <DocumentExport get={() => document} />
               <Button size="sm" variant="secondary" onClick={() => window.print()}>
                 <HugeiconsIcon icon={PrinterIcon} />
                 Print

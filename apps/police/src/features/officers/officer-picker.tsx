@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Field, FieldLabel } from '@pleadli/ui/field'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useOfficers } from './queries'
@@ -12,8 +13,8 @@ const NOT_ON_BOOKS = ''
 export function OfficerPicker({
   value,
   onValueChange,
-  label = 'Officer',
-  notOnBooksLabel = 'Someone not on the station books',
+  label = m["common.officer"](),
+  notOnBooksLabel = m["officers.not_on_books"](),
 }: {
   value: string | null
   onValueChange: (officerId: string | null) => void

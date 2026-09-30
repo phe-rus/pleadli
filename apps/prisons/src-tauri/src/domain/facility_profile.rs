@@ -13,7 +13,7 @@ use super::time::now_ms;
 /// country dropdown: terminology, thresholds and instruments live with it.
 pub const JURISDICTIONS: &[&str] = &["ug"];
 /// Languages with a complete catalogue. Others fall back to English.
-pub const LANGUAGES: &[&str] = &["en"];
+pub const LANGUAGES: &[&str] = &["en", "sw", "de"];
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]

@@ -9,7 +9,7 @@ export { baseLocale, locales, type Locale }
 /** Which locales an installation may choose today. The catalogs for the rest
  * exist and fall back to English key by key, but the node refuses a language
  * it has no complete translation for (`facility_profile::LANGUAGES`). */
-export const selectableLocales: readonly Locale[] = ['en']
+export const selectableLocales: readonly Locale[] = ['en', 'sw', 'de']
 
 export const localeNames: Record<Locale, string> = {
   en: 'English',
@@ -57,4 +57,11 @@ export function useLocaleFromProfile() {
   const { can, session } = usePermissions()
   const { data: profile } = useQuery({ ...facilityProfileOptions(), retry: false, enabled: !!session && (can('prisoner.read') || can('node.manage')) })
   useEffect(() => changeLocale(profile?.language), [profile?.language])
+}
+export { LanguageSelect } from './language-select'
+
+/** A label used mid-sentence. English and Kiswahili lower-case it; German
+ * keeps the capital, because its nouns are always capitalised. Display only. */
+export function inlineLabel(label: string) {
+  return getLocale() === 'de' ? label : label.toLowerCase()
 }

@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Planned } from '@/components/planned'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -12,15 +13,15 @@ function RouteComponent() {
     <article className="page page-narrow">
       <header className="page-header">
         <div>
-          <h1>Reports</h1>
-          <p>Answers to operational questions over a period, printable and exportable. Not built yet.</p>
+          <h1>{m["nav.item.reports"]()}</h1>
+          <p>{m["page.reports.about"]()}</p>
         </div>
       </header>
       <Planned
-        title="Reports to come"
-        covers={['Files received, by period and by Police station', 'Charging decisions, by type and over time', 'Files returned to Police, and how long they were away', 'Reviews pending, and how long they have waited', 'Workload and capacity', 'Court matters']}
+        title={m["page.reports.coming"]()}
+        covers={[m["page.reports.r1"](), m["page.reports.r2"](), m["page.reports.r3"](), m["page.reports.r4"](), m["page.reports.r5"](), m["page.reports.r6"]()]}
       >
-        Each report will be read from the same record as the rest of the application, so its numbers match what you see elsewhere.
+        {m["page.reports.body"]()}
       </Planned>
     </article>
   )

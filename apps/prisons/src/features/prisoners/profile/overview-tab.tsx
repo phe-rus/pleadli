@@ -12,7 +12,7 @@ import { Card, CardContent } from '@pleadli/ui/card'
 import { format } from 'date-fns/format'
 import type { ReactNode } from 'react'
 import { ProfileSection } from './blocks'
-import { buildTimeline } from './timeline'
+import { buildTimeline, timelineKindLabel } from './timeline'
 import { m } from '@/paraglide/messages'
 
 const dateOnly = (ms: number | null) => (ms == null ? m.prisoners_not_computed() : format(ms, 'd MMM yyyy'))
@@ -58,7 +58,7 @@ export function OverviewTab({ prisonerId, onOpenTab }: { prisonerId: string; onO
       <div className="flex flex-wrap gap-3">
         <Fact
           label={m.prisoners_next_court()}
-          value={file.nextCourtAt ? format(file.nextCourtAt, 'd MMM yyyy p') : 'None scheduled'}
+          value={file.nextCourtAt ? format(file.nextCourtAt, 'd MMM yyyy p') : m.prisoners_none_scheduled()}
           hint={remand ? m.prisoners_remand_a_court_date_should_always() : undefined}
           warn={remand && inCustody && !file.nextCourtAt}
         />
@@ -77,7 +77,7 @@ export function OverviewTab({ prisonerId, onOpenTab }: { prisonerId: string; onO
         />
         <Fact
           label={m.prisoners_where()}
-          value={prisoner.currentLocation ?? 'Not placed'}
+          value={prisoner.currentLocation ?? m.prisoners_not_placed()}
           hint={
             openStay
               ? `${stayEntryKinds[openStay.entryKind as keyof typeof stayEntryKinds] ?? openStay.entryKind} ${format(openStay.enteredAt, 'd MMM yyyy')}`
@@ -129,7 +129,7 @@ export function OverviewTab({ prisonerId, onOpenTab }: { prisonerId: string; onO
             {recent.map((entry) => (
               <li key={entry.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
                 <Badge variant="outline" className="w-16 justify-center text-[10px]">
-                  {entry.kind}
+                  {timelineKindLabel(entry.kind)}
                 </Badge>
                 <span className="min-w-0 flex-1 truncate">
                   {entry.title}

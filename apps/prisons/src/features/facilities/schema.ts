@@ -44,11 +44,11 @@ export const facilitySchema = z.object({
 export type Facility = z.infer<typeof facilitySchema>
 
 export const registerFacilityInputSchema = z.object({
-  name: z.string().min(1, 'Facility name is required.'),
-  facilityNumber: z.string().min(1, 'Facility ID or number is required.'),
-  location: z.string().min(1, 'Location is required.'),
+  name: z.string().min(1, { error: () => m.validation_facility_name_required() }),
+  facilityNumber: z.string().min(1, { error: () => m.validation_facility_number_required() }),
+  location: z.string().min(1, { error: () => m.validation_location_required() }),
   region: z.enum(facilityRegions),
-  headOfficerName: z.string().min(1, "The head officer's name is required."),
+  headOfficerName: z.string().min(1, { error: () => m.validation_head_officer_required() }),
 })
 
 export type RegisterFacilityInput = z.infer<typeof registerFacilityInputSchema>
@@ -114,7 +114,7 @@ export type SyncRunResult = z.infer<typeof syncRunResultSchema>
 export function syncStatusLabel(status: string | null) {
   switch (status) {
     case 'ok':
-      return 'In sync'
+      return m.facilities_in_sync()
     case 'pending_verification':
       return m.facilities_waiting_for_head_office_verification()
     case 'rejected':

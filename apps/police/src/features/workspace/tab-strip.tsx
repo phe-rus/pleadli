@@ -1,9 +1,11 @@
+import * as m from '@/paraglide/messages'
 import { PinIcon, XIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useEffect, useRef, useState } from 'react'
 import { useTabActions } from './tab-actions'
 import { tabIcon } from './tab-icon'
+import { tabLabel } from './tab-identity'
 import { useWorkspace, type WorkspaceTab } from './tabs-store'
 
 const iconButton =
@@ -59,14 +61,14 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <HugeiconsIcon icon={tabIcon(tab)} className="size-4 shrink-0" />
-        <span className="truncate">{tab.title}</span>
+        <span className="truncate">{tabLabel(tab)}</span>
       </button>
       {!fixed && (
         <>
           <button
             type="button"
-            aria-label={pinned ? `Unpin ${tab.title}` : `Pin ${tab.title}`}
-            title={pinned ? 'Unpin' : 'Pin'}
+            aria-label={pinned ? m["workspace.unpin_tab"]({ title: tabLabel(tab) }) : m["workspace.pin_tab"]({ title: tabLabel(tab) })}
+            title={pinned ? m["workspace.unpin"]() : m["workspace.pin"]()}
             onClick={() => togglePinned(tab.key)}
             className={cn(iconButton, !pinned && 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100')}
           >
@@ -75,8 +77,8 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
           {!pinned && (
             <button
               type="button"
-              aria-label={`Close ${tab.title}`}
-              title="Close (Ctrl W)"
+              aria-label={m["workspace.close_tab"]({ title: tabLabel(tab) })}
+              title={m["workspace.close_ctrl_w"]()}
               onClick={() => close(tab.key)}
               className={cn(iconButton, 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100', active && 'opacity-70')}
             >
@@ -103,7 +105,7 @@ export function TabStrip() {
 
   return (
     <div data-tauri-drag-region className="flex min-w-0 flex-1 items-end self-stretch">
-      <div ref={listRef} role="tablist" aria-label="Open tabs" className="no-scrollbar flex min-w-0 items-end gap-1 overflow-x-auto pl-2">
+      <div ref={listRef} role="tablist" aria-label={m["workspace.open_tabs"]()} className="no-scrollbar flex min-w-0 items-end gap-1 overflow-x-auto pl-2">
         {tabs.map((tab) => (
           <TabItem key={tab.key} tab={tab} dragging={dragging} onDragging={setDragging} />
         ))}

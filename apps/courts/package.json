@@ -5,14 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "check": "tsc --noEmit",
+    "build": "bun run i18n && tsc && vite build",
+    "check": "bun run i18n && tsc --noEmit",
     "preview": "vite preview",
-    "tauri": "NO_AT_BRIDGE=1 GDK_PROGNAME=\"courts\" WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev"
+    "tauri": "NO_AT_BRIDGE=1 GDK_PROGNAME=\"courts\" WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
+    "i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --output-structure locale-modules"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.0",
     "@hugeicons/react": "^1.1.10",
+    "@inlang/paraglide-js": "^2.25.4",
     "@pleadli/forms-tables": "workspace:*",
     "@pleadli/rich-text": "workspace:*",
     "@pleadli/ui": "workspace:*",
@@ -28,11 +30,13 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-os": "^2",
     "date-fns": "^4.4.0",
+    "motion": "^13.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@inlang/plugin-message-format": "^4.4.4",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/router-plugin": "^1.168.36",
     "@tauri-apps/cli": "^2",

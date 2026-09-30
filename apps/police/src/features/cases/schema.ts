@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 // Imported from each domain's own schema module directly, not its feature
 // barrel — the same circular-import precaution as features/people/schema.ts.
 import { attachmentSchema } from '@/features/attachments/schema'
@@ -12,11 +13,11 @@ import * as z from 'zod'
 // The role list is exactly what docs/police/PRODUCT.md specifies for how a
 // Case relates to People — not invented here.
 export const caseRoles = [
-  { value: 'complainant', label: 'Complainant' },
-  { value: 'suspect', label: 'Suspect' },
-  { value: 'witness', label: 'Witness' },
-  { value: 'victim', label: 'Victim' },
-  { value: 'accused', label: 'Accused' },
+  { value: 'complainant', get label() { return m["cases.role.complainant"]() } },
+  { value: 'suspect', get label() { return m["cases.role.suspect"]() } },
+  { value: 'witness', get label() { return m["cases.role.witness"]() } },
+  { value: 'victim', get label() { return m["cases.role.victim"]() } },
+  { value: 'accused', get label() { return m["cases.role.accused"]() } },
 ] as const
 
 export function caseRoleLabel(role: string) {
@@ -27,8 +28,8 @@ export function caseRoleLabel(role: string) {
 // A real "referred" status belongs with the Referrals domain once that's
 // resolved, not guessed at here.
 export const caseStatuses = [
-  { value: 'open', label: 'Open' },
-  { value: 'closed', label: 'Closed' },
+  { value: 'open', get label() { return m["cases.status.open"]() } },
+  { value: 'closed', get label() { return m["cases.status.closed"]() } },
 ] as const
 
 export function caseStatusLabel(status: string) {
@@ -68,8 +69,8 @@ export const casePersonInputSchema = z.object({
 export const createCaseSchema = z.object({
   // Blank on a new case means: number it in the Crime Record Book.
   reference: z.string(),
-  summary: z.string().min(1, 'Summary is required.'),
-  status: z.string().min(1, 'Status is required.'),
+  summary: z.string().min(1, { error: () => m["validation.summary_is_required"]() }),
+  status: z.string().min(1, { error: () => m["validation.status_is_required"]() }),
   incidentId: z.string().nullable(),
   people: z.array(casePersonInputSchema),
 })

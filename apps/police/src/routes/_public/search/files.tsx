@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { getAttachmentRoute } from '@/features/attachments'
 import { openVaultEntry, revealVaultEntry, useVaultDirectory } from '@/features/files'
 import { formatFileSize, pathSegments, type VaultEntry } from '@/features/files/schema'
@@ -24,7 +25,7 @@ import {
 import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { Fragment, useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/search/files')({
@@ -42,15 +43,15 @@ function OpenRecordButton({ entry }: { entry: VaultEntry }) {
       type="button"
       size="icon-xs"
       variant="ghost"
-      aria-label="Open the record this file belongs to"
-      title="Open record"
+      aria-label={m["files.open_record_aria"]()}
+      title={m["files.open_record"]()}
       onClick={async (event) => {
         event.stopPropagation()
         try {
           const route = await getAttachmentRoute(entry.entityType!, entry.entityId!)
           navigate({ to: route } as never)
         } catch {
-          t.error('Could not open the record this file belongs to')
+          t.error(m["files.open_failed"]())
         }
       }}
     >
@@ -69,7 +70,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'name',
-        header: 'Name',
+        header: m["col.name"](),
         cell: ({ row }) => {
           const entry = row.original
           if (entry.isDir) {
@@ -96,15 +97,15 @@ function RouteComponent() {
           )
         },
       },
-      { accessorKey: 'relativePath', header: 'Path' },
+      { accessorKey: 'relativePath', header: m["col.path"]() },
       {
         accessorKey: 'isDir',
-        header: 'Type',
-        cell: ({ row }) => (row.original.isDir ? 'Folder' : 'File'),
+        header: m["col.type"](),
+        cell: ({ row }) => (row.original.isDir ? m["files.folder"]() : m["files.file"]()),
       },
       {
         accessorKey: 'entityType',
-        header: 'Record',
+        header: m["col.record"](),
         cell: ({ row }) =>
           row.original.entityType ? (
             <Badge variant="secondary">{entityTypeLabel(row.original.entityType)}</Badge>
@@ -112,21 +113,21 @@ function RouteComponent() {
             '·'
           ),
       },
-      { accessorKey: 'entityId', header: 'Record ID', cell: ({ row }) => row.original.entityId ?? '·' },
+      { accessorKey: 'entityId', header: m["col.record_id"](), cell: ({ row }) => row.original.entityId ?? '·' },
       {
         accessorKey: 'attachmentId',
-        header: 'Attachment ID',
+        header: m["col.attachment_id"](),
         cell: ({ row }) => row.original.attachmentId ?? '·',
       },
-      { accessorKey: 'mimeType', header: 'MIME type', cell: ({ row }) => row.original.mimeType ?? '·' },
+      { accessorKey: 'mimeType', header: m["col.mime_type"](), cell: ({ row }) => row.original.mimeType ?? '·' },
       {
         accessorKey: 'sizeBytes',
-        header: 'Size',
+        header: m["col.size"](),
         cell: ({ row }) => (row.original.isDir ? '·' : formatFileSize(row.original.sizeBytes ?? 0)),
       },
       {
         accessorKey: 'modifiedAt',
-        header: 'Modified',
+        header: m["col.modified"](),
         cell: ({ row }) => (row.original.modifiedAt ? format(row.original.modifiedAt, 'PPp') : '·'),
       },
       {
@@ -142,8 +143,8 @@ function RouteComponent() {
                 type="button"
                 size="icon-xs"
                 variant="ghost"
-                aria-label="Reveal in folder"
-                title="Reveal in folder"
+                aria-label={m["files.reveal"]()}
+                title={m["files.reveal"]()}
                 onClick={(event) => {
                   event.stopPropagation()
                   revealVaultEntry(entry)
@@ -161,10 +162,9 @@ function RouteComponent() {
   return (
     <article className="page">
       <section className="flex flex-col">
-        <h1>Files</h1>
+        <h1>{m["files.title"]()}</h1>
         <p className="md:max-w-lg">
-          The Police Vault itself. Every record generates its own folder here, on this device's Documents, and
-          every file attached anywhere in the app lives in the matching one.
+          {m["files.lead"]()}
         </p>
       </section>
 
@@ -174,8 +174,8 @@ function RouteComponent() {
             to="/search/files"
             search={{ path: crumbs.slice(0, -1).map((c) => c.label).join('/') }}
             className={cn(buttonVariants({ size: 'icon-sm', variant: 'ghost' }))}
-            aria-label="Up one level"
-            title="Up one level"
+            aria-label={m["files.up"]()}
+            title={m["files.up"]()}
           >
             <HugeiconsIcon icon={ArrowUp01Icon} />
           </Link>
@@ -186,9 +186,9 @@ function RouteComponent() {
             <Fragment>
               <BreadcrumbItem>
                 {crumbs.length === 0 ? (
-                  <BreadcrumbPage>Police Vault</BreadcrumbPage>
+                  <BreadcrumbPage>{m["files.vault"]()}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink render={<Link to="/search/files" search={{ path: '' }}>Police Vault</Link>} />
+                  <BreadcrumbLink render={<Link to="/search/files" search={{ path: '' }}>{m["files.vault"]()}</Link>} />
                 )}
               </BreadcrumbItem>
               {crumbs.length > 0 && <BreadcrumbSeparator />}
@@ -213,12 +213,12 @@ function RouteComponent() {
       </div>
 
       <DataTable
-        aria-label="Vault folder contents"
+        aria-label={m["files.table"]()}
         data={entries ?? []}
         columns={columns}
         getRowId={(row) => row.relativePath}
-        emptyMessage="This folder is empty."
-        searchPlaceholder="Search this folder…"
+        emptyMessage={m["files.empty"]()}
+        searchPlaceholder={m["files.search"]()}
       />
     </article>
   )

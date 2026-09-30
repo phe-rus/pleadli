@@ -1,6 +1,6 @@
 import { api, seg } from '@/lib/api'
 import * as z from 'zod'
-import { documentSchema, documentSummarySchema, type CreateDocumentInput, type UpdateDocumentInput } from './schema'
+import { documentSchema, documentSummarySchema, verificationSchema, type CreateDocumentInput, type UpdateDocumentInput } from './schema'
 
 export async function listDocuments(status = '') {
   return z.array(documentSummarySchema).parse(await api('GET', '/api/documents', { query: { status } }))
@@ -24,4 +24,8 @@ export async function discardDocument(id: string) {
 
 export async function fileDocument(id: string, input: { filedOn: number; filedWith: string | null }) {
   return documentSchema.parse(await api('POST', `/api/documents/${seg(id)}/file`, { body: input }))
+}
+
+export async function verifyDocument(reference: string, code: string) {
+  return verificationSchema.parse(await api('POST', '/api/documents/verify', { body: { reference, code } }))
 }

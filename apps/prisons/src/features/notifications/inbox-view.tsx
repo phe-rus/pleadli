@@ -52,13 +52,17 @@ function Reader({ id }: { id: string }) {
 
   const rows: [string, React.ReactNode][] = [
     [m.notifications_from(), item.source],
-    ['To', item.recipient],
+    [m.notifications_to(), item.recipient],
     [m.notifications_type(), kindLabel[item.kind] ?? item.kind],
     ...(item.recordedByName ? ([[m.notifications_recorded_by(), item.recordedByName]] as [string, string][]) : []),
     ...(item.resolution ? ([[m.notifications_outcome(), item.resolution]] as [string, string][]) : []),
     [
       m.notifications_handled(),
-      item.actionedAt ? `${format(item.actionedAt, 'd MMM yyyy, HH:mm')}${item.actionedByName ? ` by ${item.actionedByName}` : ''}` : m.notifications_not_yet(),
+      item.actionedAt
+        ? item.actionedByName
+          ? m.notifications_handled_by({ at: format(item.actionedAt, 'd MMM yyyy, HH:mm'), name: item.actionedByName })
+          : format(item.actionedAt, 'd MMM yyyy, HH:mm')
+        : m.notifications_not_yet(),
     ],
     [m.notifications_opened_by(), item.reads.length === 0 ? m.notifications_no_one_yet() : item.reads.map((r) => `${r.officerName} (${format(r.readAt, 'd MMM, HH:mm')})`).join(', ')],
   ]

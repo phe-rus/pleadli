@@ -1,4 +1,6 @@
+import * as m from '@/paraglide/messages'
 import { isNavActive, lawyersNav, navSections, type NavItem } from '@/data/navigationItems'
+import { useUsagesEnabled } from '@/features/installation'
 import { overviewOptions } from '@/features/overview'
 import { useProfile } from '@/features/profile'
 import { ArrowDown01Icon, Search01Icon } from '@hugeicons/core-free-icons'
@@ -8,6 +10,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useLocation } from '@tanstack/react-router'
 import { type ReactNode } from 'react'
 import { useGo, useTabActions } from './tab-actions'
+import { tabLabel } from './tab-identity'
 import { tabIcon } from './tab-icon'
 import { MAX_RECENTS, useWorkspace, type SectionId } from './tabs-store'
 
@@ -113,6 +116,7 @@ export function Navigator() {
   const go = useGo()
   const { activate } = useTabActions()
   const { data: today } = useQuery(overviewOptions())
+  const { data: usages } = useUsagesEnabled()
 
   const pinned = tabs.filter((tab) => tab.pinned && tab.kind !== 'overview')
   const recent = recents.filter((item) => item.kind !== 'overview').slice(0, MAX_RECENTS)
@@ -142,23 +146,23 @@ export function Navigator() {
 
         <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pt-1 pb-2">
           {pinned.length > 0 && (
-            <Section id="pinned" label="Pinned">
+            <Section id="pinned" label={m["nav.pinned"]()}>
               {pinned.map((tab) => (
-                <Row key={tab.key} icon={tabIcon(tab)} label={tab.title} active={tab.key === activeKey} onOpen={() => activate(tab)} />
+                <Row key={tab.key} icon={tabIcon(tab)} label={tabLabel(tab)} active={tab.key === activeKey} onOpen={() => activate(tab)} />
               ))}
             </Section>
           )}
           {recent.length > 0 && (
-            <Section id="recent" label="Recent">
+            <Section id="recent" label={m["nav.recent"]()}>
               {recent.map((item) => (
-                <Row key={item.key} icon={tabIcon(item)} label={item.title} active={item.key === activeKey} onOpen={() => go(item.to)} />
+                <Row key={item.key} icon={tabIcon(item)} label={tabLabel(item)} active={item.key === activeKey} onOpen={() => go(item.to)} />
               ))}
             </Section>
           )}
           {navSections.map((section) => (
             <Section key={section.id} id={section.id} label={section.label}>
               {lawyersNav
-                .filter((item) => item.section === section.id)
+                .filter((item) => item.section === section.id && (!item.usage || usages?.includes(item.usage)))
                 .map((item) => (
                   <Row
                     key={`${item.to}${item.search ? `?${new URLSearchParams(item.search)}` : ''}`}

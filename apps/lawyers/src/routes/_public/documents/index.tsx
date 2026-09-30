@@ -1,6 +1,6 @@
 import { EmptyNote } from '@/components/planned'
 import { Tag } from '@/components/status-tag'
-import { documentKindLabel, documentsOptions, useDocuments, type DocumentSummary } from '@/features/documents'
+import { documentKindLabel, documentsOptions, useDocuments, VerifyCard, type DocumentSummary } from '@/features/documents'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -59,6 +59,10 @@ function RouteComponent() {
           <p>What you have drafted and filed. A filed document is frozen: it can be printed and replaced, never edited.</p>
         </div>
       </header>
+
+      <div className="md:max-w-xl">
+        <VerifyCard />
+      </div>
 
       {documents.length === 0 ? (
         <EmptyNote>No document has been drafted yet. Open a matter and choose Draft a document.</EmptyNote>

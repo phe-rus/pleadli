@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import { m } from '@/paraglide/messages'
 import { officerSchema } from '@/features/officers/schema'
 
 /** What the sign-in and onboarding screens need before anyone is signed in
@@ -38,14 +39,14 @@ export const signInResultSchema = sessionSchema.extend({
 export type SignInResult = z.infer<typeof signInResultSchema>
 
 export const signInSchema = z.object({
-  badgeNumber: z.string().min(1, 'Badge number is required.'),
-  password: z.string().min(1, 'Password is required.'),
+  badgeNumber: z.string().min(1, { error: () => m.validation_badge_required() }),
+  password: z.string().min(1, { error: () => m.validation_password_required() }),
 })
 
 export const bootstrapSchema = z.object({
-  badgeNumber: z.string().min(1, 'Badge number is required.'),
-  name: z.string().min(1, 'Name is required.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
+  badgeNumber: z.string().min(1, { error: () => m.validation_badge_required() }),
+  name: z.string().min(1, { error: () => m.validation_name_required() }),
+  password: z.string().min(8, { error: () => m.validation_password_min_8() }),
 })
 
 export type BootstrapInput = z.infer<typeof bootstrapSchema>

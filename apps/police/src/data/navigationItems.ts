@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import {
   AlarmClock,
   AlertCircleIcon,
@@ -42,23 +43,23 @@ export type NavItem = {
 export type NavSection = 'desk' | 'cells' | 'investigations' | 'station' | 'office' | 'command'
 
 export const navSections: readonly { id: NavSection; label: string }[] = [
-  { id: 'desk', label: 'Front desk' },
-  { id: 'cells', label: 'Cells and custody' },
-  { id: 'investigations', label: 'Investigations' },
-  { id: 'station', label: 'Station' },
-  { id: 'office', label: 'Administration' },
+  { id: 'desk', get label() { return m["nav_sections.front_desk"]() } },
+  { id: 'cells', get label() { return m["nav_sections.cells_and_custody"]() } },
+  { id: 'investigations', get label() { return m["nav_sections.investigations"]() } },
+  { id: 'station', get label() { return m["nav_sections.station"]() } },
+  { id: 'office', get label() { return m["nav_sections.administration"]() } },
 ]
 
 /** What a Command shows. It holds no case, person or custody records, so none
  * of those areas are here: only the stations under it and its own officers. */
-export const commandSections: readonly { id: NavSection; label: string }[] = [{ id: 'command', label: 'Command' }]
+export const commandSections: readonly { id: NavSection; label: string }[] = [{ id: 'command', get label() { return m["nav_sections.command"]() } }]
 
 export const commandNav: readonly NavItem[] = [
-  { label: 'Overview', icon: DashboardBrowsingIcon, to: '/', exact: true },
-  { label: 'Stations', icon: Building06Icon, to: '/stations', count: 'stationsAttention', section: 'command' },
-  { label: 'Officers', icon: ShieldKeyIcon, to: '/station/officers', section: 'command' },
-  { label: 'Command profile', icon: Building06Icon, to: '/station/profile', section: 'command' },
-  { label: 'Settings', icon: Settings01Icon, to: '/settings', exact: true },
+  { get label() { return m["nav.overview"]() }, icon: DashboardBrowsingIcon, to: '/', exact: true },
+  { get label() { return m["nav.stations"]() }, icon: Building06Icon, to: '/stations', count: 'stationsAttention', section: 'command' },
+  { get label() { return m["nav.officers"]() }, icon: ShieldKeyIcon, to: '/station/officers', section: 'command' },
+  { get label() { return m["nav.command_profile"]() }, icon: Building06Icon, to: '/station/profile', section: 'command' },
+  { get label() { return m["nav.settings"]() }, icon: Settings01Icon, to: '/settings', exact: true },
 ] as const
 
 /** The information architecture, in the order work happens at a station rather
@@ -67,39 +68,39 @@ export const commandNav: readonly NavItem[] = [
  * in it, then administration. The routes are unchanged; only the grouping is
  * new. */
 export const policeNav: readonly NavItem[] = [
-  { label: 'Overview', icon: DashboardBrowsingIcon, to: '/', exact: true },
-  { label: 'Search', icon: Search01Icon, to: '/search', exact: true },
-  { label: 'Case files', icon: FolderViewIcon, to: '/search/files' },
+  { get label() { return m["nav.overview"]() }, icon: DashboardBrowsingIcon, to: '/', exact: true },
+  { get label() { return m["nav.search"]() }, icon: Search01Icon, to: '/search', exact: true },
+  { get label() { return m["nav.case_files"]() }, icon: FolderViewIcon, to: '/search/files' },
 
-  { label: 'Station diary', icon: Notebook01Icon, to: '/sd-log', section: 'desk' },
-  { label: 'Incidents', icon: SirenIcon, to: '/incidents', section: 'desk' },
-  { label: 'Case intake', icon: FolderViewIcon, to: '/intake', section: 'desk' },
+  { get label() { return m["nav.station_diary"]() }, icon: Notebook01Icon, to: '/sd-log', section: 'desk' },
+  { get label() { return m["nav.incidents"]() }, icon: SirenIcon, to: '/incidents', section: 'desk' },
+  { get label() { return m["nav.case_intake"]() }, icon: FolderViewIcon, to: '/intake', section: 'desk' },
 
-  { label: 'Custody', icon: CellsIcon, to: '/search/custody', count: 'inCells', section: 'cells' },
-  { label: 'Bonds and sureties', icon: AlarmClock, to: '/search/bonds', section: 'cells' },
+  { get label() { return m["nav.custody"]() }, icon: CellsIcon, to: '/search/custody', count: 'inCells', section: 'cells' },
+  { get label() { return m["nav.bonds_and_sureties"]() }, icon: AlarmClock, to: '/search/bonds', section: 'cells' },
 
-  { label: 'Investigations', icon: BinocularsIcon, to: '/investigations', count: 'openCases', section: 'investigations' },
-  { label: 'Statements', icon: Mic01Icon, to: '/statements', section: 'investigations' },
-  { label: 'Evidence and exhibits', icon: FingerPrintCheckIcon, to: '/evidence', section: 'investigations' },
-  { label: 'Charge sheets and forms', icon: File02Icon, to: '/legal-forms', section: 'investigations' },
-  { label: 'Referrals', icon: Share08Icon, to: '/referrals', count: 'referralsPending', section: 'investigations' },
+  { get label() { return m["nav.investigations"]() }, icon: BinocularsIcon, to: '/investigations', count: 'openCases', section: 'investigations' },
+  { get label() { return m["nav.statements"]() }, icon: Mic01Icon, to: '/statements', section: 'investigations' },
+  { get label() { return m["nav.evidence_and_exhibits"]() }, icon: FingerPrintCheckIcon, to: '/evidence', section: 'investigations' },
+  { get label() { return m["nav.charge_sheets_and_forms"]() }, icon: File02Icon, to: '/legal-forms', section: 'investigations' },
+  { get label() { return m["nav.referrals"]() }, icon: Share08Icon, to: '/referrals', count: 'referralsPending', section: 'investigations' },
 
-  { label: 'Duty roster', icon: UserIcon, to: '/roster', section: 'station' },
-  { label: 'People', icon: UserGroupIcon, to: '/search/people', section: 'station' },
-  { label: 'Vehicles', icon: Car01Icon, to: '/vehicles', section: 'station' },
-  { label: 'Armory', icon: GunIcon, to: '/stores/armory', section: 'station' },
-  { label: 'Impounded assets', icon: ArchiveIcon, to: '/stores/impounded', section: 'station' },
+  { get label() { return m["nav.duty_roster"]() }, icon: UserIcon, to: '/roster', section: 'station' },
+  { get label() { return m["nav.people"]() }, icon: UserGroupIcon, to: '/search/people', section: 'station' },
+  { get label() { return m["nav.vehicles"]() }, icon: Car01Icon, to: '/vehicles', section: 'station' },
+  { get label() { return m["nav.armory"]() }, icon: GunIcon, to: '/stores/armory', section: 'station' },
+  { get label() { return m["nav.impounded_assets"]() }, icon: ArchiveIcon, to: '/stores/impounded', section: 'station' },
 
-  { label: 'Reports', icon: BarChartIcon, to: '/reports', section: 'office' },
-  { label: 'Station profile', icon: Building06Icon, to: '/station/profile', section: 'office' },
-  { label: 'Officers', icon: ShieldKeyIcon, to: '/station/officers', section: 'office' },
-  { label: 'Backup requests', icon: AlertCircleIcon, to: '/logs/backup-alerts', section: 'office' },
-  { label: 'Remote access', icon: ListViewIcon, to: '/logs/remote-access', section: 'office' },
+  { get label() { return m["nav.reports"]() }, icon: BarChartIcon, to: '/reports', section: 'office' },
+  { get label() { return m["nav.station_profile"]() }, icon: Building06Icon, to: '/station/profile', section: 'office' },
+  { get label() { return m["nav.officers"]() }, icon: ShieldKeyIcon, to: '/station/officers', section: 'office' },
+  { get label() { return m["nav.backup_requests"]() }, icon: AlertCircleIcon, to: '/logs/backup-alerts', section: 'office' },
+  { get label() { return m["nav.remote_access"]() }, icon: ListViewIcon, to: '/logs/remote-access', section: 'office' },
 
-  { label: 'Settings', icon: Settings01Icon, to: '/settings', exact: true },
-  { label: 'Stores and armory', icon: ArchiveIcon, to: '/stores', exact: true },
-  { label: 'Station administration', icon: Building06Icon, to: '/station', exact: true },
-  { label: 'Logs', icon: ListViewIcon, to: '/logs', exact: true },
+  { get label() { return m["nav.settings"]() }, icon: Settings01Icon, to: '/settings', exact: true },
+  { get label() { return m["nav.stores_and_armory"]() }, icon: ArchiveIcon, to: '/stores', exact: true },
+  { get label() { return m["nav.station_administration"]() }, icon: Building06Icon, to: '/station', exact: true },
+  { get label() { return m["nav.logs"]() }, icon: ListViewIcon, to: '/logs', exact: true },
 ] as const
 
 /** The nav entry a location belongs to, for tab titles and icons. */

@@ -61,7 +61,7 @@ export function NodePanel() {
           : environment.atRest.keyHeldIn === 'key_file'
             ? m.node_data_at_rest_key_file()
             : m.node_data_at_rest_unknown(),
-      control: <Badge variant={environment.atRest.keyHeldIn === 'keystore' ? 'default' : 'secondary'}>{environment.atRest.encrypted ? 'Encrypted' : 'Not encrypted'}</Badge>,
+      control: <Badge variant={environment.atRest.keyHeldIn === 'keystore' ? 'default' : 'secondary'}>{environment.atRest.encrypted ? m.node_encrypted() : m.node_not_encrypted()}</Badge>,
     },
   ]
 

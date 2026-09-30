@@ -80,8 +80,14 @@ export type Sentence = z.infer<typeof sentenceSchema>
 
 export function sentenceTermText(sentence: Pick<Sentence, 'isLife' | 'termYears' | 'termMonths' | 'termDays'>) {
   if (sentence.isLife) return m.custody_life()
-  const part = (n: number, unit: string) => (n > 0 ? `${n} ${unit}${n === 1 ? '' : 's'}` : null)
-  return [part(sentence.termYears, 'year'), part(sentence.termMonths, 'month'), part(sentence.termDays, 'day')].filter(Boolean).join(', ')
+  const part = (n: number, one: () => string, many: (p: { n: number }) => string) => (n > 0 ? (n === 1 ? one() : many({ n })) : null)
+  return [
+    part(sentence.termYears, m.custody_term_year_one, m.custody_term_years),
+    part(sentence.termMonths, m.custody_term_month_one, m.custody_term_months),
+    part(sentence.termDays, m.custody_term_day_one, m.custody_term_days),
+  ]
+    .filter(Boolean)
+    .join(', ')
 }
 
 export const clocksSchema = z.object({
@@ -127,7 +133,7 @@ export type PrisonerFile = z.infer<typeof prisonerFileSchema>
 
 export const recordInstrumentSchema = z.object({
   prisonerId: z.string().min(1),
-  kind: z.string().min(1, 'Choose the instrument type.'),
+  kind: z.string().min(1, { error: () => m.validation_instrument_type_required() }),
   issuingAuthority: z.string(),
   reference: z.string(),
   issuedOn: z.number().nullable(),

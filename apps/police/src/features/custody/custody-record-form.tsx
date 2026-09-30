@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
@@ -13,8 +14,9 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Switch } from '@pleadli/ui/switch'
 import { Textarea } from '@pleadli/ui/textarea'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { format } from '@/lib/date'
 import { useCreateCustodyRecord, useUpdateCustodyRecord } from './queries'
-import { custodyCompliance, custodyStatuses, createCustodyRecordSchema, type CustodyRecord } from './schema'
+import { custodyBasisLabel, custodyCompliance, custodyStatuses, createCustodyRecordSchema, type CustodyRecord } from './schema'
 
 export type CustodyRecordFormProps = {
   record?: CustodyRecord
@@ -69,12 +71,12 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
         const result = record
           ? await updateRecord.mutateAsync({ id: record.id, input })
           : await createRecord.mutateAsync(input)
-        t.success(record ? 'Custody record updated' : 'Custody record created')
+        t.success(record ? m["custody.updated"]() : m["custody.created"]())
         if (!record) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(record ? 'Could not update custody record' : 'Could not create custody record', {
-          description: 'Please try again.',
+        t.error(record ? m["custody.update_failed"]() : m["custody.create_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -94,7 +96,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
         <form.AppField name="personId">
           {(f) => (
             <Field>
-              <FieldLabel>Person in custody</FieldLabel>
+              <FieldLabel>{m["custody.person"]()}</FieldLabel>
               <PersonPicker value={f.state.value || null} onValueChange={(id) => f.handleChange(id ?? '')} />
             </Field>
           )}
@@ -104,7 +106,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
           <form.AppField name="arrestedAt">
             {(f) => (
               <Field>
-                <FieldLabel>Arrested at</FieldLabel>
+                <FieldLabel>{m["custody.arrested_at"]()}</FieldLabel>
                 <Input
                   type="datetime-local"
                   value={f.state.value}
@@ -114,7 +116,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
             )}
           </form.AppField>
           <form.AppField name="location">
-            {(f) => <f.input label="Lock-up / location" placeholder="e.g. Central Police Station cells" />}
+            {(f) => <f.input label={m["custody.location"]()} placeholder={m["custody.location_placeholder"]()} />}
           </form.AppField>
         </div>
 
@@ -131,10 +133,10 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
               <Field>
                 <div className="flex items-center gap-2">
                   <Badge variant={compliance.isOverdue ? 'destructive' : compliance.hoursRemaining < 6 ? 'default' : 'secondary'}>
-                    {compliance.isOverdue ? `${hours}h overdue` : `${hours}h remaining`}
+                    {compliance.isOverdue ? m["common.hours_overdue"]({ hours }) : m["common.hours_remaining"]({ hours })}
                   </Badge>
                   <FieldDescription>
-                    Deadline: {new Date(compliance.deadline).toLocaleString()} ({compliance.basis})
+                    {m["custody.deadline"]({ date: format(compliance.deadline, 'PP p'), basis: custodyBasisLabel(compliance.basis) })}
                   </FieldDescription>
                 </div>
               </Field>
@@ -146,7 +148,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
           {(f) => (
             <Field orientation="horizontal">
               <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-              <FieldLabel>Cross-jurisdiction transfer (arrested outside the station's area)</FieldLabel>
+              <FieldLabel>{m["custody.cross_jurisdiction"]()}</FieldLabel>
             </Field>
           )}
         </form.AppField>
@@ -157,15 +159,14 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
               <form.AppField name="transferredAt">
                 {(f) => (
                   <Field>
-                    <FieldLabel>Transferred to this station at</FieldLabel>
+                    <FieldLabel>{m["custody.transferred_at"]()}</FieldLabel>
                     <Input
                       type="datetime-local"
                       value={f.state.value}
                       onChange={(e) => f.handleChange(e.target.value)}
                     />
                     <FieldDescription>
-                      The Police Act allows up to 7 days to transfer a suspect arrested outside the station's
-                      jurisdiction; the 48-hour clock applies once here.
+                      {m["custody.transfer_hint"]()}
                     </FieldDescription>
                   </Field>
                 )}
@@ -177,14 +178,14 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
         <form.AppField name="status">
           {(f) => (
             <Field>
-              <FieldLabel>Status</FieldLabel>
+              <FieldLabel>{m["common.status"]()}</FieldLabel>
               <Select
                 items={custodyStatuses}
                 value={f.state.value}
                 onValueChange={(value) => f.handleChange(value ?? f.state.value)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={m["common.select_status"]()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -206,7 +207,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
               <form.AppField name="releasedAt">
                 {(f) => (
                   <Field>
-                    <FieldLabel>Resolved at</FieldLabel>
+                    <FieldLabel>{m["custody.resolved_at"]()}</FieldLabel>
                     <Input
                       type="datetime-local"
                       value={f.state.value}
@@ -223,18 +224,18 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
           <form.AppField name="incidentId">
             {(f) => (
               <Field>
-                <FieldLabel>Related incident (optional)</FieldLabel>
+                <FieldLabel>{m["common.related_incident"]()}</FieldLabel>
                 <Select
-                  items={[{ value: '', label: 'None' }, ...incidents.map((i: Incident) => ({ value: i.id, label: i.summary }))]}
+                  items={[{ value: '', label: m["common.none"]() }, ...incidents.map((i: Incident) => ({ value: i.id, label: i.summary }))]}
                   value={f.state.value ?? ''}
                   onValueChange={(value) => f.handleChange(value || null)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None" />
+                    <SelectValue placeholder={m["common.none"]()} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="">{m["common.none"]()}</SelectItem>
                       {incidents.map((i: Incident) => (
                         <SelectItem key={i.id} value={i.id}>
                           {i.summary}
@@ -250,18 +251,18 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
           <form.AppField name="caseId">
             {(f) => (
               <Field>
-                <FieldLabel>Related case (optional)</FieldLabel>
+                <FieldLabel>{m["common.related_case"]()}</FieldLabel>
                 <Select
-                  items={[{ value: '', label: 'None' }, ...cases.map((c: Case) => ({ value: c.id, label: c.reference }))]}
+                  items={[{ value: '', label: m["common.none"]() }, ...cases.map((c: Case) => ({ value: c.id, label: c.reference }))]}
                   value={f.state.value ?? ''}
                   onValueChange={(value) => f.handleChange(value || null)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None" />
+                    <SelectValue placeholder={m["common.none"]()} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="">{m["common.none"]()}</SelectItem>
                       {cases.map((c: Case) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.reference}
@@ -278,7 +279,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
         <form.AppField name="notes">
           {(f) => (
             <Field>
-              <FieldLabel>Notes (optional)</FieldLabel>
+              <FieldLabel>{m["common.notes_optional"]()}</FieldLabel>
               <Textarea value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} rows={3} />
             </Field>
           )}
@@ -289,7 +290,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={record ? 'Save changes' : 'Create custody record'} />
+          <form.submit label={record ? m["common.save_changes"]() : m["custody.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

@@ -11,20 +11,13 @@ _These are recommendations to keep the build orderly, not requirements. A worksp
 
 | Workspace | Status | Features (existing / planned / total) | Scope |
 |---|---|---|---|
-| `apps/police` | fully caught up with its own product doc; a small real security bug found via a cross check now queued to fix | 23 existing / 1 planned / 24 | [police/scope.md](police/scope.md) |
+| `apps/police` | fully caught up with its own product doc; the small security bug found via a cross check is fixed; a real, unstarted gap (attachment vault sealing, no audit chain) is on the SQLCipher work now uncommitted in the tree | 24 existing / 24 | [police/scope.md](police/scope.md) |
 | `apps/dpp` | built, 3 real gaps vs its product doc queued as the next slice | 14 existing / 3 planned / 17 | [dpp/scope.md](dpp/scope.md) |
 | `apps/prisons` | a 2026-09-18 audit found 2 features claimed done that weren't (Reports, Search, now in progress); a Head Office and peer prison sync network was added as a deliberate scope reversal from the engineer, now blocked on `_root`'s officer identity decision | 14 existing / 1 in-progress / 7 planned / 22 | [prisons/scope.md](prisons/scope.md) |
+| `apps/courts` | far past "research only" (that status here was stale): register through returns all built and tested, sectioned Settings added 2026-09-22; the real open items are DPP/Prisons interchange, roles, and D10 field validation with a real magistrate and clerk | 14 existing / 24 | [courts/scope.md](courts/scope.md) |
+| `apps/lawyers` | app lock built end to end (spec 0001), Settings resectioned, notes on rich text; per-matter access control and OS native auth explicitly deferred | 3 existing / 3 | [lawyers/scope.md](lawyers/scope.md) |
 | `www` (Pleadli Cloud) | built, one feature mid way, several candidate gaps deferred pending a decision | 6 existing / 1 in-progress / 7 | [www/scope.md](www/scope.md) |
 | `_root` (shared packages + monorepo tooling) | packages stable; foundational tooling (AGENTS.md, CI) missing entirely; officer identity and sign in designed and spec captured, ready to build | 3 existing / 1 in-progress / 3 planned / 7 | [_root/scope.md](_root/scope.md) |
-
-## Not yet started
-
-`docs/courts/RESEARCH.md` and `docs/lawyers/RESEARCH.md` exist (domain and legal research only), but neither has a `PRODUCT.md` and neither has an `apps/*` workspace yet. There is nothing built to enroll and no product model to plan against yet. Note: `www`'s own `/docs/applications` marketing copy currently describes Courts and Lawyers as "Designed, not yet built," which overstates where they actually are (research only, not designed). Worth a copy fix, flagged here rather than silently corrected. Planning either as a real workspace is a `/scope <workspace> <idea>` run of its own, once a `PRODUCT.md` exists (or as part of writing one).
-
-| Workspace | Status |
-|---|---|
-| `courts` | research only, no product doc, no code |
-| `lawyers` | research only, no product doc, no code |
 
 ## Legend
 

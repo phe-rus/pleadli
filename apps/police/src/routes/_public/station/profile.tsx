@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { stationProfileOptions, StationProfileForm, useStationProfile } from '@/features/station-admin'
 import { chainOptions, ChainForm, unitKindLabel, useChain } from '@/features/units'
@@ -38,8 +39,8 @@ function RouteComponent() {
     <article className="page">
       <section className="flex items-start justify-between gap-4">
         <div className="flex flex-col">
-          <h1>Station Profile</h1>
-          <p className="md:max-w-lg">What station this is. The canonical source PF53 and Overview both read from.</p>
+          <h1>{m["profile_page.title"]()}</h1>
+          <p className="md:max-w-lg">{m["profile_page.lead"]()}</p>
         </div>
 
         <Createpanel
@@ -49,27 +50,27 @@ function RouteComponent() {
           trigger={
             <Button size="sm" variant="secondary">
               <HugeiconsIcon icon={Edit02Icon} />
-              Edit
+              {m["people_page.edit"]()}
             </Button>
           }
-          headings={{ title: 'Edit station profile', description: "Update this station's recorded identity." }}
+          headings={{ title: m["profile_page.edit_title"](), description: m["profile_page.edit_desc"]() }}
         >
           <StationProfileForm onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
         </Createpanel>
       </section>
 
       <div className="grid grid-cols-2 gap-6 md:max-w-lg">
-        <Field label="Station name" value={profile?.name} />
-        <Field label="Jurisdiction" value={profile?.jurisdiction} />
-        <Field label="Address" value={profile?.address} />
-        <Field label="Contact / telephone" value={profile?.contact} />
-        <Field label="OC Station name" value={profile?.ocStationName} />
-        <Field label="OC Station rank" value={profile?.ocStationRank} />
+        <Field label={m["command.station_name"]()} value={profile?.name} />
+        <Field label={m["station_profile.jurisdiction"]()} value={profile?.jurisdiction} />
+        <Field label={m["people.address"]()} value={profile?.address} />
+        <Field label={m["station_profile.contact"]()} value={profile?.contact} />
+        <Field label={m["station_profile.oc_name"]()} value={profile?.ocStationName} />
+        <Field label={m["station_profile.oc_rank"]()} value={profile?.ocStationRank} />
       </div>
 
       <section aria-labelledby="structure" className="page-section md:max-w-lg">
         <div className="section-head">
-          <h2 id="structure">Place in the command structure</h2>
+          <h2 id="structure">{m["profile_page.structure"]()}</h2>
           <Createpanel
             open={chainOpen}
             onOpenChange={setChainOpen}
@@ -77,22 +78,22 @@ function RouteComponent() {
             trigger={
               <Button size="sm" variant="secondary">
                 <HugeiconsIcon icon={Edit02Icon} />
-                Edit
+                {m["people_page.edit"]()}
               </Button>
             }
-            headings={{ title: 'Command structure', description: 'The region, district and division this station sits in.' }}
+            headings={{ title: m["profile_page.structure_title"](), description: m["profile_page.structure_desc"]() }}
           >
             <ChainForm onSuccess={() => setChainOpen(false)} onDirtyChange={setChainDirty} />
           </Createpanel>
         </div>
         {chain.above.length === 0 ? (
-          <p className="text-muted-foreground">Not recorded. Add the region and district so this station can be placed in the structure.</p>
+          <p className="text-muted-foreground">{m["profile_page.not_recorded"]()}</p>
         ) : (
           <div className="grid grid-cols-2 gap-6">
             {chain.above.map((unit) => (
               <Field key={unit.id} label={unitKindLabel(unit.kind)} value={unit.name} />
             ))}
-            <Field label="Station" value={chain.station.name} />
+            <Field label={m["common.station"]()} value={chain.station.name} />
           </div>
         )}
       </section>

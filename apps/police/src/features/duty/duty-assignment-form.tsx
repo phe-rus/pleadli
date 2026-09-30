@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { OfficerPicker } from '@/features/officers'
 import { useAppForm } from '@pleadli/forms-tables/forms'
@@ -53,12 +54,12 @@ export function DutyAssignmentForm({ assignment, onSuccess }: DutyAssignmentForm
         const result = assignment
           ? await updateAssignment.mutateAsync({ id: assignment.id, input })
           : await createAssignment.mutateAsync(input)
-        t.success(assignment ? 'Assignment updated' : 'Assignment added')
+        t.success(assignment ? m["duty.updated"]() : m["duty.added"]())
         if (!assignment) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(assignment ? 'Could not update assignment' : 'Could not add assignment', {
-          description: 'Please try again.',
+        t.error(assignment ? m["duty.update_failed"]() : m["duty.add_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -81,20 +82,20 @@ export function DutyAssignmentForm({ assignment, onSuccess }: DutyAssignmentForm
           {(officerId) =>
             officerId ? null : (
               <div className="grid grid-cols-2 gap-3">
-                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
-                <form.AppField name="officerRank">{(f) => <f.input label="Rank" />}</form.AppField>
+                <form.AppField name="officerName">{(f) => <f.input label={m["common.name"]()} />}</form.AppField>
+                <form.AppField name="officerRank">{(f) => <f.input label={m["common.rank"]()} />}</form.AppField>
               </div>
             )
           }
         </form.Subscribe>
 
-        <form.AppField name="unit">{(f) => <f.input label="Unit" />}</form.AppField>
+        <form.AppField name="unit">{(f) => <f.input label={m["common.unit"]()} />}</form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="shiftStart">
             {(f) => (
               <Field>
-                <FieldLabel>Shift start</FieldLabel>
+                <FieldLabel>{m["duty.shift_start"]()}</FieldLabel>
                 <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
               </Field>
             )}
@@ -102,21 +103,21 @@ export function DutyAssignmentForm({ assignment, onSuccess }: DutyAssignmentForm
           <form.AppField name="shiftEnd">
             {(f) => (
               <Field>
-                <FieldLabel>Shift end</FieldLabel>
+                <FieldLabel>{m["duty.shift_end"]()}</FieldLabel>
                 <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
               </Field>
             )}
           </form.AppField>
         </div>
 
-        <form.AppField name="notes">{(f) => <f.textarea label="Notes" />}</form.AppField>
+        <form.AppField name="notes">{(f) => <f.textarea label={m["common.notes"]()} />}</form.AppField>
 
         <AttachmentsField entityType={entityTypes.dutyAssignment} entityId={assignment?.id} />
       </FieldGroup>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={assignment ? 'Save changes' : 'Add assignment'} />
+          <form.submit label={assignment ? m["common.save_changes"]() : m["duty.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

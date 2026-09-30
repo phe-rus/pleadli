@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { useReportDirty } from '@/hooks/use-report-dirty'
@@ -50,12 +51,12 @@ export function IncidentForm({ incident, onSuccess, onDirtyChange }: IncidentFor
         const result = incident
           ? await updateIncident.mutateAsync({ id: incident.id, input })
           : await createIncident.mutateAsync(input)
-        t.success(incident ? 'Incident updated' : 'Incident recorded')
+        t.success(incident ? m["incidents.updated"]() : m["incidents.recorded"]())
         if (!incident) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(incident ? 'Could not update incident' : 'Could not record incident', {
-          description: 'Please try again.',
+        t.error(incident ? m["incidents.update_failed"]() : m["incidents.record_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -73,26 +74,26 @@ export function IncidentForm({ incident, onSuccess, onDirtyChange }: IncidentFor
     >
       <FieldGroup>
         <form.AppField name="summary">
-          {(f) => <f.input label="Summary" placeholder="What happened, briefly" />}
+          {(f) => <f.input label={m["common.summary"]()} placeholder={m["incidents.summary_placeholder"]()} />}
         </form.AppField>
 
         <form.AppField name="description">
           {(f) => (
             <Field data-invalid={f.state.meta.isTouched && !f.state.meta.isValid}>
-              <FieldLabel>Description</FieldLabel>
-              <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Details…" />
+              <FieldLabel>{m["common.description"]()}</FieldLabel>
+              <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["common.details_placeholder"]()} />
             </Field>
           )}
         </form.AppField>
 
         <form.AppField name="location">
-          {(f) => <f.input label="Location" placeholder="Where it happened" />}
+          {(f) => <f.input label={m["common.location"]()} placeholder={m["incidents.location_placeholder"]()} />}
         </form.AppField>
 
         <form.AppField name="occurredAt">
           {(f) => (
             <Field>
-              <FieldLabel>When it happened</FieldLabel>
+              <FieldLabel>{m["incidents.occurred_at"]()}</FieldLabel>
               <Input
                 type="datetime-local"
                 value={f.state.value}
@@ -105,7 +106,7 @@ export function IncidentForm({ incident, onSuccess, onDirtyChange }: IncidentFor
         <form.AppField name="personId">
           {(f) => (
             <Field>
-              <FieldLabel>Related person (optional)</FieldLabel>
+              <FieldLabel>{m["common.related_person"]()}</FieldLabel>
               <PersonPicker value={f.state.value} onValueChange={f.handleChange} />
             </Field>
           )}
@@ -116,7 +117,7 @@ export function IncidentForm({ incident, onSuccess, onDirtyChange }: IncidentFor
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={incident ? 'Save changes' : 'Record incident'} />
+          <form.submit label={incident ? m["common.save_changes"]() : m["incidents.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

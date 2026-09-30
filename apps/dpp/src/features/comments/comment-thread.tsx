@@ -1,10 +1,12 @@
+import { formatDate } from '@/lib/dates'
 import { RichTextInput, RichTextPreview, isRichTextEmpty } from '@pleadli/rich-text'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
-import { format } from 'date-fns/format'
 import { useState } from 'react'
 import { useCommentsForEntity, useCreateComment } from './queries'
+import { useSecurityStatus } from '@/features/security'
+import * as m from '@/paraglide/messages'
 
 export type CommentThreadProps = {
   entityType: string
@@ -20,7 +22,8 @@ export type CommentThreadProps = {
  * one component works for statements, evidence items, charges, decisions,
  * and review notes alike.
  */
-export function CommentThread({ entityType, entityId, label = 'Comments' }: CommentThreadProps) {
+export function CommentThread({ entityType, entityId, label }: CommentThreadProps) {
+  const { data: status } = useSecurityStatus()
   const id = entityId ?? ''
   const { data: comments } = useCommentsForEntity(entityType, id)
   const createComment = useCreateComment(entityType, id)
@@ -32,21 +35,21 @@ export function CommentThread({ entityType, entityId, label = 'Comments' }: Comm
   const handleSubmit = async () => {
     if (isRichTextEmpty(draft)) return
     try {
-      await createComment.mutateAsync({ author: '', body: draft })
+      await createComment.mutateAsync({ author: status?.actor?.name ?? '', body: draft })
       setDraft('')
       setComposing(false)
     } catch {
-      t.error('Could not post comment', { description: 'Please try again.' })
+      t.error(m["comments.failed"](), { description: m["common.try_again"]() })
     }
   }
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label ?? m["comments.label"]()}</span>
         {!composing && (
           <Button type="button" size="xs" variant="ghost" onClick={() => setComposing(true)}>
-            Add comment
+            {m["comments.add"]()}
           </Button>
         )}
       </div>
@@ -56,8 +59,8 @@ export function CommentThread({ entityType, entityId, label = 'Comments' }: Comm
           {comments?.map((comment) => (
             <div key={comment.id} className={cn('rounded-sm border border-input/40 px-2 py-1.5')}>
               <div className="mb-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-medium">{comment.author || 'Unnamed'}</span>
-                <span>{format(comment.createdAt, 'PPp')}</span>
+                <span className="font-medium">{comment.author || m["comments.unnamed"]()}</span>
+                <span>{formatDate(comment.createdAt, 'datetime')}</span>
               </div>
               <RichTextPreview value={comment.body} className="text-xs" />
             </div>
@@ -67,13 +70,13 @@ export function CommentThread({ entityType, entityId, label = 'Comments' }: Comm
 
       {composing && (
         <div className="flex flex-col gap-2">
-          <RichTextInput value={draft} onChange={setDraft} placeholder="Write a comment…" />
+          <RichTextInput value={draft} onChange={setDraft} placeholder={m["comments.placeholder"]()} />
           <div className="flex justify-end gap-2">
             <Button type="button" size="xs" variant="ghost" onClick={() => { setComposing(false); setDraft('') }}>
-              Cancel
+              {m["common.cancel"]()}
             </Button>
             <Button type="button" size="xs" onClick={handleSubmit} disabled={createComment.isPending}>
-              Post
+              {m["comments.post"]()}
             </Button>
           </div>
         </div>

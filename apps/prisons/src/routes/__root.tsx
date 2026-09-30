@@ -3,7 +3,7 @@ import { SplashScreen } from '@/components/splash-screen'
 import { ThemeProvider } from '@/components/theme-provider'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
 import { AppErrorBoundary, ErrorOverlay, watchWindowErrors } from '@/features/diagnostics'
-import { LocaleBoundary } from '@/features/i18n'
+import { LanguageSelect, LocaleBoundary } from '@/features/i18n'
 import { NodeUnreachableBanner, RecoveryGate } from '@/features/node'
 import { OnboardingGate } from '@/features/onboarding'
 import { SignInGate } from '@/features/session'
@@ -84,6 +84,7 @@ function RootComponent() {
                 </SplashScreen>
               </TooltipProvider>
             </MotionConfig>
+            <LanguageSelect />
             <GooeyToaster richColors />
             <ErrorOverlay />
           </div>

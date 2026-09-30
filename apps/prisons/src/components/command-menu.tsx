@@ -306,7 +306,7 @@ function CommandRowButton({
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="text-[0.625rem]!">
-            {command.kind === 'start' ? m.ui_start() : 'Go'}
+            {command.kind === 'start' ? m.ui_start() : m.ui_go()}
           </Badge>
           <span className="truncate text-sm">{command.label}</span>
         </div>

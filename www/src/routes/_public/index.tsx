@@ -3,7 +3,6 @@ import { Button } from '@pleadli/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
 import {
   adminNavItems,
-  applications,
   applicationSpotlight,
   caseRecords,
   homeProblems,
@@ -11,8 +10,17 @@ import {
   scalingChains,
   trustPoints,
 } from '@/data/home'
+import { products, readinessLabel } from '@/data/products'
 import { cn } from '@pleadli/ui/lib/utils'
-import { AddCircleIcon, ArrowRight02Icon, JusticeScale01Icon, LockKeyIcon } from '@hugeicons/core-free-icons'
+import {
+  AddCircleIcon,
+  ArrowRight02Icon,
+  CheckmarkCircle02Icon,
+  Download01Icon,
+  JusticeScale01Icon,
+  LockKeyIcon,
+  Route02Icon,
+} from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
@@ -102,7 +110,7 @@ function RouteComponent() {
             <span className="font-mono text-xs text-muted-foreground">{caseRecords.caseId}</span>
             <Badge variant="secondary">Pleadli case</Badge>
           </div>
-          <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 lg:grid-cols-5">
             {caseRecords.records.map((record) => (
               <div key={record.application} className="flex flex-col gap-2 bg-card p-4">
                 <div className="flex items-center gap-2">
@@ -128,30 +136,40 @@ function RouteComponent() {
           </p>
         </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {applications.map((application) => (
-            <Card
-              key={application.name}
-              className={cn(application.status === 'Building now' && 'border-primary/30')}
-            >
-              <CardHeader className="gap-3">
-                <HugeiconsIcon icon={application.icon} className="text-muted-foreground" />
-                <div>
-                  <CardTitle>{application.name}</CardTitle>
-                  <CardDescription className="text-base!">{application.focus}</CardDescription>
+          {products.map((product) => (
+            <Link key={product.slug} to="/products/$slug" params={{ slug: product.slug }} className="group">
+              <Card className="h-full gap-5 p-5 transition-colors group-hover:border-primary/40">
+                <div className="flex items-center justify-between">
+                  <div
+                    className={cn(
+                      'flex size-10 shrink-0 items-center justify-center rounded-lg',
+                      product.readiness === 'building' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    <HugeiconsIcon icon={product.icon} />
+                  </div>
+                  <Badge variant={product.readiness === 'building' ? 'default' : 'secondary'} className="w-fit">
+                    {readinessLabel[product.readiness]}
+                  </Badge>
                 </div>
-                <ul className="flex flex-col gap-1.5">
-                  {application.points.map((point) => (
-                    <li key={point} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground" />
+                <div>
+                  <CardTitle>{product.name}</CardTitle>
+                  <CardDescription className="text-base!">{product.homeFocus}</CardDescription>
+                </div>
+                <ul className="flex flex-col gap-2 pl-0 [&>li]:pl-0">
+                  {product.homePoints.map((point) => (
+                    <li key={point} className="flex items-start gap-2">
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} className="mt-0.5 size-3.5! shrink-0 text-primary" />
                       {point}
                     </li>
                   ))}
                 </ul>
-                <Badge variant={application.status === 'Building now' ? 'default' : 'secondary'} className="w-fit">
-                  {application.status}
-                </Badge>
-              </CardHeader>
-            </Card>
+                <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary">
+                  Learn more
+                  <HugeiconsIcon icon={ArrowRight02Icon} className="size-3.5! transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Card>
+            </Link>
           ))}
         </div>
         <p className="text-sm text-muted-foreground md:max-w-lg">
@@ -241,16 +259,16 @@ function RouteComponent() {
                   </Button>
                 </div>
                 <div className="flex flex-col gap-2 p-2 sm:gap-3 sm:p-4">
-                  {applications.slice(0, 2).map((application) => (
+                  {products.slice(0, 2).map((product) => (
                     <div
-                      key={application.name}
+                      key={product.slug}
                       className="flex items-center gap-2 rounded-md border p-2 sm:gap-3 sm:p-3"
                     >
-                      <HugeiconsIcon icon={application.icon} className="shrink-0 text-muted-foreground" />
+                      <HugeiconsIcon icon={product.icon} className="shrink-0 text-muted-foreground" />
                       <span className="min-w-0 flex-1 truncate text-xs font-medium sm:text-sm">
-                        {application.name}
+                        {product.name}
                       </span>
-                      <Badge className="shrink-0">{application.status}</Badge>
+                      <Badge className="shrink-0">{readinessLabel[product.readiness]}</Badge>
                     </div>
                   ))}
                 </div>
@@ -306,6 +324,26 @@ function RouteComponent() {
               </CardHeader>
             </Card>
           ))}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-5 border-t border-border/60 py-20 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-2xl!">See where things actually stand</h2>
+          <p className="md:max-w-md">
+            A live, honestly-scored roadmap across all five applications, and what downloading
+            each one looks like today.
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <Button variant="secondary" nativeButton={false} render={<Link to="/roadmap" />}>
+            <HugeiconsIcon icon={Route02Icon} data-icon="inline-start" />
+            Roadmap
+          </Button>
+          <Button variant="outline" nativeButton={false} render={<Link to="/downloads" />}>
+            <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
+            Downloads
+          </Button>
         </div>
       </section>
 

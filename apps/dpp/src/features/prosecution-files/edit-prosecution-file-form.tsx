@@ -1,4 +1,5 @@
 import { useReportDirty } from '@/hooks/use-report-dirty'
+import { referenceLabel } from '@/lib/jurisdiction'
 import { RichTextInput } from '@pleadli/rich-text'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -6,6 +7,7 @@ import { Field, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useUpdateProsecutionFile } from './queries'
 import { updateProsecutionFileSchema, type ProsecutionFile } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type EditProsecutionFileFormProps = {
   file: ProsecutionFile
@@ -34,10 +36,10 @@ export function EditProsecutionFileForm({ file, onSuccess, onDirtyChange }: Edit
     onSubmit: async ({ value }) => {
       try {
         const result = await updateFile.mutateAsync({ id: file.id, input: value })
-        t.success('File details updated')
+        t.success(m["file.form.updated"]())
         onSuccess?.(result)
       } catch {
-        t.error('Could not update file details', { description: 'Please try again.' })
+        t.error(m["file.form.update_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -52,30 +54,30 @@ export function EditProsecutionFileForm({ file, onSuccess, onDirtyChange }: Edit
         form.handleSubmit()
       }}
     >
-      <form.AppField name="title">{(f) => <f.input label="Title" />}</form.AppField>
+      <form.AppField name="title">{(f) => <f.input label={m["file.form.title"]()} />}</form.AppField>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="odppRegistrationNumber">{(f) => <f.input label="ODPP registration number" />}</form.AppField>
-        <form.AppField name="courtCaseNumber">{(f) => <f.input label="Court case number" />}</form.AppField>
+        <form.AppField name="odppRegistrationNumber">{(f) => <f.input label={referenceLabel('prosecution', m["file.form.odpp_number"])} />}</form.AppField>
+        <form.AppField name="courtCaseNumber">{(f) => <f.input label={referenceLabel('court', m["file.form.court_case_number"])} />}</form.AppField>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <form.AppField name="policeStation">{(f) => <f.input label="Police station" />}</form.AppField>
-        <form.AppField name="policeReference">{(f) => <f.input label="Police reference" />}</form.AppField>
+        <form.AppField name="policeStation">{(f) => <f.input label={m["file.form.police_station"]()} />}</form.AppField>
+        <form.AppField name="policeReference">{(f) => <f.input label={referenceLabel('police', m["file.form.police_reference"])} />}</form.AppField>
       </div>
 
       <form.AppField name="notes">
         {(f) => (
           <Field>
-            <FieldLabel>Notes</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="Notes…" />
+            <FieldLabel>{m["common.notes"]()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["common.notes_placeholder"]()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Save changes" />
+          <form.submit label={m["common.save_changes"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

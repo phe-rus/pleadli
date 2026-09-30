@@ -1,8 +1,7 @@
-//! Prosecutor profile (spec: docs/specs/_root/0001-officer-identity-sign-in).
-//! DPP is a single prosecutor installation by deliberate product decision
-//! (docs/dpp/PRODUCT.md), so this is a plain, editable singleton, not a
-//! login or roster. It is the identity a decision, a document and the audit
-//! trail are attributed to.
+//! The prosecutor acting: the signed-in person (or, with no sign-in, the
+//! administrator), read through the `prosecutor_profile` view (migration
+//! 0020). It is the identity a decision, a document and the audit trail are
+//! attributed to.
 
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
@@ -37,23 +36,29 @@ pub async fn get_prosecutor_profile(pool: &SqlitePool) -> Result<Option<Prosecut
     .await
 }
 
+/// Saves the signed-in person's own details. Whether someone is the Director
+/// decides the non-delegable decisions, so only an administrator may change it.
 pub async fn save_prosecutor_profile(pool: &SqlitePool, input: SaveProsecutorProfileInput) -> Result<ProsecutorProfile, DomainError> {
     let name = input.name.trim().to_string();
     if name.is_empty() {
         return invalid("The prosecutor's name is required.");
     }
-    let now = chrono::Utc::now().timestamp_millis();
-    sqlx::query(
-        "INSERT INTO prosecutor_profile (id, name, rank, is_dpp, updated_at) VALUES ('default', ?, ?, ?, ?)
-         ON CONFLICT (id) DO UPDATE SET name = excluded.name, rank = excluded.rank,
-                                        is_dpp = excluded.is_dpp, updated_at = excluded.updated_at",
-    )
-    .bind(&name)
-    .bind(clean(input.rank))
-    .bind(input.is_dpp)
-    .bind(now)
-    .execute(pool)
-    .await?;
+    let current: Option<(String, String, bool)> =
+        sqlx::query_as("SELECT staff_id, role, is_dpp FROM prosecutor_profile WHERE id = 'default'").fetch_optional(pool).await?;
+    let Some((id, role, is_dpp)) = current else {
+        return Err(DomainError::Forbidden("Nobody is signed in.".to_string()));
+    };
+    if input.is_dpp != is_dpp && role != "administrator" {
+        return Err(DomainError::Forbidden("Only an administrator can mark someone as the head of the prosecution service.".to_string()));
+    }
+    sqlx::query("UPDATE staff SET name = ?, rank = ?, is_dpp = ?, updated_at = ? WHERE id = ?")
+        .bind(&name)
+        .bind(clean(input.rank))
+        .bind(input.is_dpp)
+        .bind(chrono::Utc::now().timestamp_millis())
+        .bind(&id)
+        .execute(pool)
+        .await?;
 
     Ok(get_prosecutor_profile(pool).await?.ok_or(sqlx::Error::RowNotFound)?)
 }

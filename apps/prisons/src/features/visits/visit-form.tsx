@@ -151,7 +151,7 @@ export function VisitForm({ prisonerId, onSuccess, onDirtyChange }: VisitFormPro
                 >
                   <span className="font-medium">{visitor.fullName}</span>
                   <span className="text-muted-foreground">
-                    {visitor.relationship ?? m.visits_visitor()} {m.visits_visit_2({ visitsCompleted: visitor.visitsCompleted })}{visitor.visitsCompleted === 1 ? '' : 's'}
+                    {visitor.relationship ?? m.visits_visitor()} {visitor.visitsCompleted === 1 ? m.visits_visit_2_one() : m.visits_visit_2({ visitsCompleted: visitor.visitsCompleted })}
                   </span>
                   {visitor.status === 'suspended' && <Badge variant="destructive">{m.visits_suspended_2()}</Badge>}
                 </Chip>

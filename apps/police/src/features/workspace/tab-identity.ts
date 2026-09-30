@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { areaMeta } from '@/data/navigationItems'
 import type { WorkspaceTab } from './tabs-store'
 
@@ -31,16 +32,26 @@ export function identityForLocation(pathname: string): TabIdentity | null {
 function titleFor(identity: TabIdentity): string {
   switch (identity.kind) {
     case 'overview':
-      return 'Overview'
+      return m["nav.overview"]()
     case 'case':
-      return 'Case'
+      return m["workspace.tab_case"]()
     case 'person':
-      return 'Person'
+      return m["workspace.tab_person"]()
     case 'chargesheet':
-      return 'Charge sheet'
+      return m["workspace.tab_chargesheet"]()
     case 'area':
       return areaMeta(identity.key.slice('area:'.length))?.label ?? identity.to
   }
+}
+
+/** The words a tab or recent item shows. Overview and areas are named in the
+ * current language every time they are drawn, since their saved title keeps
+ * the language it was opened in; a record keeps its own saved name (a case
+ * reference, a person's name). */
+export function tabLabel(tab: { kind: WorkspaceTab['kind']; to: string; title: string }): string {
+  if (tab.kind === 'overview') return m["nav.overview"]()
+  if (tab.kind === 'area') return areaMeta(tab.to.split('?')[0])?.label ?? tab.title
+  return tab.title
 }
 
 export function tabFromIdentity(identity: TabIdentity): WorkspaceTab {

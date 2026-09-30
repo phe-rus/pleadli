@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 
 /** Where the development listener answers, for the plain browser dev server. A
@@ -94,7 +95,7 @@ export async function api(path: string, init?: ApiInit): Promise<any> {
       setBrowserToken(null)
       endedListeners.forEach((listener) => listener())
     }
-    throw new ApiError(status, messageOf(body, typeof body === 'object' && body ? JSON.stringify(body) : 'The request was refused.'))
+    throw new ApiError(status, messageOf(body, typeof body === 'object' && body ? JSON.stringify(body) : m["common.request_refused"]()))
   }
   return status === 204 ? null : body
 }

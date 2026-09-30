@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const identitySchema = z.object({
@@ -35,12 +36,12 @@ export const connectionSchema = z.object({
 export type Connection = z.infer<typeof connectionSchema>
 
 export const connectionStates: Record<string, { label: string; tone: 'open' | 'waiting' | 'done' | 'stopped' | 'urgent' }> = {
-  invited: { label: 'Invited, no answer yet', tone: 'waiting' },
-  expired: { label: 'Invitation expired', tone: 'stopped' },
-  awaiting_confirmation: { label: 'Answered: confirm the fingerprint', tone: 'open' },
-  trusted: { label: 'Trusted', tone: 'done' },
-  declined: { label: 'Declined', tone: 'stopped' },
-  revoked: { label: 'Revoked', tone: 'urgent' },
+  invited: { get label() { return m["interchange.state.invited"]() }, tone: 'waiting' },
+  expired: { get label() { return m["interchange.state.expired"]() }, tone: 'stopped' },
+  awaiting_confirmation: { get label() { return m["interchange.state.awaiting_confirmation"]() }, tone: 'open' },
+  trusted: { get label() { return m["interchange.state.trusted"]() }, tone: 'done' },
+  declined: { get label() { return m["interchange.state.declined"]() }, tone: 'stopped' },
+  revoked: { get label() { return m["interchange.state.revoked"]() }, tone: 'urgent' },
 }
 
 export const importOutcomeSchema = z.object({ kind: z.string(), connectionId: z.string(), packageId: z.string().nullable(), message: z.string() })
@@ -119,18 +120,18 @@ export const outgoingSchema = z.object({
 export type Outgoing = z.infer<typeof outgoingSchema>
 
 export const outgoingKindLabels: Record<string, string> = {
-  receipt: 'Receipt',
-  decision_notice: 'Decision notice',
-  pairing_confirmation: 'Connection',
+  get receipt() { return m["interchange.kind.receipt"]() },
+  get decision_notice() { return m["interchange.kind.decision_notice"]() },
+  get pairing_confirmation() { return m["interchange.kind.pairing_confirmation"]() },
 }
 
 export const acceptedSchema = z.object({ fileId: z.string(), attached: z.number(), attachmentsFailed: z.number() })
 export const preparedSchema = z.object({ id: z.string(), draftDocuments: z.number() })
 
 export const roleLabels: Record<string, string> = {
-  accused: 'Accused',
-  complainant: 'Complainant',
-  witness: 'Witness',
-  arresting_officer: 'Arresting officer',
-  investigating_officer: 'Investigating officer',
+  get accused() { return m["interchange.role.accused"]() },
+  get complainant() { return m["interchange.role.complainant"]() },
+  get witness() { return m["interchange.role.witness"]() },
+  get arresting_officer() { return m["interchange.role.arresting_officer"]() },
+  get investigating_officer() { return m["interchange.role.investigating_officer"]() },
 }

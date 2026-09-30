@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { isRichTextEmpty } from '@pleadli/rich-text'
 import * as z from 'zod'
 
@@ -18,8 +19,8 @@ export const incidentSchema = z.object({
 export type Incident = z.infer<typeof incidentSchema>
 
 export const createIncidentSchema = z.object({
-  summary: z.string().min(1, 'Summary is required.'),
-  description: z.string().refine((value) => !isRichTextEmpty(value), 'Description is required.'),
+  summary: z.string().min(1, { error: () => m["validation.summary_is_required"]() }),
+  description: z.string().refine((value) => !isRichTextEmpty(value), { error: () => m["validation.description_is_required"]() }),
   location: z.string(),
   occurredAt: z.number(),
   personId: z.string().nullable(),

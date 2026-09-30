@@ -139,9 +139,9 @@ function FlagStrip({ prisonerId }: { prisonerId: string }) {
   const flags = [
     (pendingInstruments || prisoner.documentsPending) && { label: m.prisoners_documents_pending(), tone: 'destructive' as const },
     pastBail && { label: m.prisoners_past_mandatory_bail(), tone: 'destructive' as const },
-    overdue > 0 && { label: `${overdue} overdue`, tone: 'destructive' as const },
+    overdue > 0 && { label: m.prisoners_overdue({ overdue }), tone: 'destructive' as const },
     inWindow && { label: m.prisoners_parole_window_open(), tone: 'outline' as const },
-    clocks.reviewable && inCustody && { label: 's.88 review applies', tone: 'outline' as const },
+    clocks.reviewable && inCustody && { label: m.prisoners_s_88_review_applies(), tone: 'outline' as const },
     prisoner.highCourtOnlyOffence && { label: m.prisoners_high_court_only(), tone: 'secondary' as const },
     prisoner.currentStatus === 'in_transit' && { label: m.prisoners_in_transit(), tone: 'outline' as const },
   ].filter(Boolean) as { label: string; tone: 'destructive' | 'outline' | 'secondary' }[]

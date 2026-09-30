@@ -45,13 +45,13 @@ export const officerSchema = z.object({
 export type Officer = z.infer<typeof officerSchema>
 
 export const createOfficerSchema = z.object({
-  badgeNumber: z.string().min(1, 'Badge number is required.'),
-  name: z.string().min(1, 'Name is required.'),
+  badgeNumber: z.string().min(1, { error: () => m.validation_badge_required() }),
+  name: z.string().min(1, { error: () => m.validation_name_required() }),
   // The node owns the secret rules (password, PIN, or none), so it answers
   // with the reason instead of a length guessed here.
   password: z.string(),
   passwordless: z.boolean().optional(),
-  role: z.string().min(1, 'Role is required.'),
+  role: z.string().min(1, { error: () => m.validation_role_required() }),
   isAdmin: z.boolean(),
   rank: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
@@ -63,8 +63,8 @@ export const createOfficerSchema = z.object({
 export type CreateOfficerInput = z.infer<typeof createOfficerSchema>
 
 export const updateOfficerSchema = z.object({
-  name: z.string().min(1, 'Name is required.'),
-  role: z.string().min(1, 'Role is required.'),
+  name: z.string().min(1, { error: () => m.validation_name_required() }),
+  role: z.string().min(1, { error: () => m.validation_role_required() }),
   isAdmin: z.boolean(),
   active: z.boolean(),
   password: z.string().nullable(),

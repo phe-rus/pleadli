@@ -9,6 +9,8 @@ import { referralsForFileOptions } from '@/features/referrals'
 import { reviewNotesForFileOptions } from '@/features/review-notes'
 import { statementsForFileOptions } from '@/features/statements'
 import { chronologyOptions } from '@/features/workload'
+import { fileItemsOptions } from '@/features/file-index'
+import { hearingsOptions } from '@/features/court'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/files/$fileId')({
@@ -27,6 +29,8 @@ export const Route = createFileRoute('/_public/files/$fileId')({
       queryClient.query({ ...chronologyOptions(params.fileId), staleTime: 'static' }),
       queryClient.query({ ...reviewsForFileOptions(params.fileId), staleTime: 'static' }),
       queryClient.query({ ...directionsForFileOptions(params.fileId), staleTime: 'static' }),
+      queryClient.query({ ...fileItemsOptions(params.fileId), staleTime: 'static' }),
+      queryClient.query({ ...hearingsOptions(params.fileId), staleTime: 'static' }),
     ])
   },
   component: RouteComponent,
@@ -35,5 +39,5 @@ export const Route = createFileRoute('/_public/files/$fileId')({
 function RouteComponent() {
   const { fileId } = Route.useParams()
   const { tab } = Route.useSearch()
-  return <FileWorkspace fileId={fileId} tab={tab ?? 'file'} />
+  return <FileWorkspace fileId={fileId} tab={tab ?? 'index'} />
 }

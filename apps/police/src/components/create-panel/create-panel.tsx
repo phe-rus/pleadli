@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@pleadli/ui/components/drawer"
 import { FC, PropsWithChildren, ReactElement } from "react"
 
@@ -30,7 +31,7 @@ export const Createpanel: FC<createPanelProps> = ({
 }) => {
     const handleOpenChange = (nextOpen: boolean) => {
         if (!nextOpen && isDirty) {
-            const discard = window.confirm('You have unsaved changes. Discard them?')
+            const discard = window.confirm(m["common.unsaved_discard"]())
             if (!discard) return
         }
         onOpenChange?.(nextOpen)

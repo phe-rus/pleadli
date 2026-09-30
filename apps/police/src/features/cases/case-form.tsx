@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { useNextRegisterNumber } from '@/features/registers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
@@ -58,8 +59,8 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
     },
     validators: {
       onSubmit: ({ value }) => {
-        if (existingCase && !value.reference.trim()) return 'Reference is required.'
-        if (!value.summary.trim()) return 'Summary is required.'
+        if (existingCase && !value.reference.trim()) return m["validation.reference_required"]()
+        if (!value.summary.trim()) return m["validation.summary_is_required"]()
         return undefined
       },
     },
@@ -72,11 +73,11 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
         const result = existingCase
           ? await updateCase.mutateAsync({ id: existingCase.id, input })
           : await createCase.mutateAsync(input)
-        t.success(existingCase ? 'Case updated' : 'Case opened')
+        t.success(existingCase ? m["cases.updated"]() : m["cases.opened"]())
         onSuccess?.(result)
       } catch {
-        t.error(existingCase ? 'Could not update case' : 'Could not open case', {
-          description: 'Please try again.',
+        t.error(existingCase ? m["cases.update_failed"]() : m["cases.open_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -100,35 +101,35 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
           <form.AppField name="reference">
             {(f) => (
               <f.input
-                label="Reference"
-                placeholder={existingCase ? 'e.g. JINJA CRB 314/2019' : (nextNumber?.reference ?? 'Numbered when saved')}
+                label={m["common.reference"]()}
+                placeholder={existingCase ? m["cases.reference_example"]() : (nextNumber?.reference ?? m["common.numbered_when_saved"]())}
               />
             )}
           </form.AppField>
           <form.AppField name="status">
-            {(f) => <f.select label="Status" options={[...caseStatuses]} />}
+            {(f) => <f.select label={m["common.status"]()} options={[...caseStatuses]} />}
           </form.AppField>
         </div>
 
-        {!existingCase && <FieldDescription>Leave the reference blank to take the next number in the Crime Record Book.</FieldDescription>}
+        {!existingCase && <FieldDescription>{m["cases.reference_hint"]()}</FieldDescription>}
 
-        <form.AppField name="summary">{(f) => <f.textarea label="Summary" />}</form.AppField>
+        <form.AppField name="summary">{(f) => <f.textarea label={m["common.summary"]()} />}</form.AppField>
 
         <form.AppField name="incidentId">
           {(f) => (
             <Field>
-              <FieldLabel>Related incident (optional)</FieldLabel>
+              <FieldLabel>{m["cases.related_incident"]()}</FieldLabel>
               <Select
-                items={[{ value: '', label: 'None' }, ...incidents.map((i: Incident) => ({ value: i.id, label: i.summary }))]}
+                items={[{ value: '', label: m["common.none"]() }, ...incidents.map((i: Incident) => ({ value: i.id, label: i.summary }))]}
                 value={f.state.value ?? ''}
                 onValueChange={(value) => f.handleChange(value || null)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="None" />
+                  <SelectValue placeholder={m["common.none"]()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="">{m["common.none"]()}</SelectItem>
                     {incidents.map((incident: Incident) => (
                       <SelectItem key={incident.id} value={incident.id}>
                         {incident.summary}
@@ -142,7 +143,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
         </form.AppField>
 
         <Field>
-          <FieldLabel>People involved</FieldLabel>
+          <FieldLabel>{m["cases.people_involved"]()}</FieldLabel>
           <div className="flex flex-col gap-2">
             {people.map((person, index) => (
               <div
@@ -156,7 +157,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
                   type="button"
                   size="icon-xs"
                   variant="ghost"
-                  aria-label="Remove"
+                  aria-label={m["common.remove"]()}
                   onClick={() => {
                     setPeople((prev) => prev.filter((_, i) => i !== index))
                     setPeopleDirty(true)
@@ -169,10 +170,10 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
           </div>
 
           <div className="flex items-center gap-2">
-            <PersonPicker value={newPersonId} onValueChange={setNewPersonId} placeholder="Find a person…" />
+            <PersonPicker value={newPersonId} onValueChange={setNewPersonId} placeholder={m["common.find_person"]()} />
             <Select items={[...caseRoles]} value={newRole} onValueChange={(value) => value && setNewRole(value)}>
               <SelectTrigger size="sm" className="min-w-28">
-                <SelectValue placeholder="Role" />
+                <SelectValue placeholder={m["common.role"]()} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -188,7 +189,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
               type="button"
               size="icon-sm"
               variant="secondary"
-              aria-label="Add person to case"
+              aria-label={m["cases.add_person"]()}
               disabled={!newPersonId}
               onClick={() => {
                 if (!newPersonId) return
@@ -209,7 +210,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={existingCase ? 'Save changes' : 'Open case'} />
+          <form.submit label={existingCase ? m["common.save_changes"]() : m["cases.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

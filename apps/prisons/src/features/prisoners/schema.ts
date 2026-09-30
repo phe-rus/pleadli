@@ -91,8 +91,8 @@ export const prisonerSchema = z.object({
 export type Prisoner = z.infer<typeof prisonerSchema>
 
 export const updatePrisonerSchema = z.object({
-  firstName: z.string().min(1, 'First name is required.'),
-  lastName: z.string().min(1, 'Last name is required.'),
+  firstName: z.string().min(1, { error: () => m.validation_first_name_required() }),
+  lastName: z.string().min(1, { error: () => m.validation_last_name_required() }),
   otherNames: z.string(),
   nationalId: z.string(),
   reference: z.string(),

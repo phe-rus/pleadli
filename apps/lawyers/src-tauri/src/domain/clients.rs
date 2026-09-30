@@ -11,7 +11,10 @@ use pleadli_node_core::db::begin_write;
 pub struct Client {
     pub id: String,
     pub name: String,
+    /// A person, or an organisation (a company, a bank, a ministry).
+    pub kind: String,
     pub phone: Option<String>,
+    pub email: Option<String>,
     pub address: Option<String>,
     pub custody: Option<String>,
     pub custody_place: Option<String>,
@@ -26,7 +29,9 @@ pub struct Client {
 pub struct ClientSummary {
     pub id: String,
     pub name: String,
+    pub kind: String,
     pub phone: Option<String>,
+    pub email: Option<String>,
     pub address: Option<String>,
     pub custody: Option<String>,
     pub custody_place: Option<String>,
@@ -40,7 +45,11 @@ pub struct ClientSummary {
 #[serde(rename_all = "camelCase")]
 pub struct ClientInput {
     pub name: String,
+    #[serde(default)]
+    pub kind: Option<String>,
     pub phone: Option<String>,
+    #[serde(default)]
+    pub email: Option<String>,
     pub address: Option<String>,
     pub custody: Option<String>,
     pub custody_place: Option<String>,
@@ -49,6 +58,7 @@ pub struct ClientInput {
 
 struct Checked {
     name: String,
+    kind: &'static str,
     custody: Option<String>,
     place: Option<String>,
 }
@@ -64,11 +74,18 @@ fn check(input: &ClientInput) -> Result<Checked, DomainError> {
             return invalid("Custody is at liberty, remanded, or serving a sentence.");
         }
     }
+    let kind = match input.kind.as_deref() {
+        None | Some("person") => "person",
+        Some("organisation") => "organisation",
+        Some(_) => return invalid("A client is a person or an organisation."),
+    };
+    // Custody is a person's, and only matters in criminal work.
+    let custody = if kind == "organisation" { None } else { custody };
     let place = if matches!(custody.as_deref(), Some("remanded") | Some("serving")) { clean(input.custody_place.clone()) } else { None };
-    Ok(Checked { name, custody, place })
+    Ok(Checked { name, kind, custody, place })
 }
 
-const COLUMNS: &str = "id, name, phone, address, custody, custody_place, notes, created_at, updated_at";
+const COLUMNS: &str = "id, name, kind, phone, email, address, custody, custody_place, notes, created_at, updated_at";
 
 pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Client>, sqlx::Error> {
     sqlx::query_as::<_, Client>(sqlx::AssertSqlSafe(format!("SELECT {COLUMNS} FROM clients WHERE id = ?"))).bind(id).fetch_optional(pool).await
@@ -77,7 +94,7 @@ pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Client>, sqlx::Er
 pub async fn list(pool: &SqlitePool, query: &str, limit: i64) -> Result<Vec<ClientSummary>, sqlx::Error> {
     let like = format!("%{}%", query.trim().replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
     sqlx::query_as::<_, ClientSummary>(
-        "SELECT c.id, c.name, c.phone, c.address, c.custody, c.custody_place, c.notes,
+        "SELECT c.id, c.name, c.kind, c.phone, c.email, c.address, c.custody, c.custody_place, c.notes,
             (SELECT COUNT(*) FROM matters m WHERE m.client_id = c.id) AS matters,
             (SELECT COUNT(*) FROM matters m WHERE m.client_id = c.id AND m.status = 'open') AS open_matters,
             c.created_at
@@ -94,10 +111,12 @@ pub async fn create(pool: &SqlitePool, input: ClientInput) -> Result<Client, Dom
     let c = check(&input)?;
     let id = Uuid::new_v4().to_string();
     let mut tx = begin_write(pool).await?;
-    sqlx::query("INSERT INTO clients (id, name, phone, address, custody, custody_place, notes) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO clients (id, name, kind, phone, email, address, custody, custody_place, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&id)
         .bind(&c.name)
+        .bind(c.kind)
         .bind(clean(input.phone))
+        .bind(clean(input.email))
         .bind(clean(input.address))
         .bind(&c.custody)
         .bind(&c.place)
@@ -113,10 +132,12 @@ pub async fn update(pool: &SqlitePool, id: &str, input: ClientInput) -> Result<C
     let c = check(&input)?;
     let mut tx = begin_write(pool).await?;
     let done = sqlx::query(
-        "UPDATE clients SET name = ?, phone = ?, address = ?, custody = ?, custody_place = ?, notes = ?, updated_at = cast(unixepoch('subsecond') * 1000 as integer) WHERE id = ?",
+        "UPDATE clients SET name = ?, kind = ?, phone = ?, email = ?, address = ?, custody = ?, custody_place = ?, notes = ?, updated_at = cast(unixepoch('subsecond') * 1000 as integer) WHERE id = ?",
     )
     .bind(&c.name)
+    .bind(c.kind)
     .bind(clean(input.phone))
+    .bind(clean(input.email))
     .bind(clean(input.address))
     .bind(&c.custody)
     .bind(&c.place)

@@ -7,6 +7,7 @@ import { useIssueDocument, useIssuedDocument } from './queries'
 import { ReceptionRecord } from './reception-record'
 import { documentKindLabel, isDocumentKind, type DocumentKind } from './schema'
 import { TransferDossier } from './transfer-dossier'
+import { inlineLabel } from '@/features/i18n'
 import { m } from '@/paraglide/messages'
 
 /** A document open as a tab: the sheet as it will print, and one button that
@@ -43,7 +44,7 @@ function Document({ kind, recordId }: { kind: DocumentKind; recordId: string }) 
             : m.documents_not_issued_yet_it_is_numbered()}
         </p>
         <Button onClick={print} disabled={issue.isPending}>
-          {issued ? m.documents_print_a_copy() : m.documents_print({ kind: documentKindLabel[kind].toLowerCase() })}
+          {issued ? m.documents_print_a_copy() : m.documents_print({ kind: inlineLabel(documentKindLabel[kind]) })}
         </Button>
       </div>
       {kind === 'reception_record' && <ReceptionRecord prisonerId={recordId} issued={issued} />}

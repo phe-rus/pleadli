@@ -1,4 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import * as m from '@/paraglide/messages'
 
 /**
  * The one client for the application's API. Every call goes to a path under
@@ -79,13 +80,14 @@ export function onLocked(listener: () => void) {
   }
 }
 
-export async function api(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, options: ApiOptions = {}): Promise<unknown> {
+export async function api(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', path: string, options: ApiOptions = {}): Promise<unknown> {
   const { status, body } = await transport(method, withQuery(path, options.query), options.body)
   if (status >= 200 && status < 300) return body
 
   const payload = (body && typeof body === 'object' ? body : {}) as { code?: string; message?: string }
-  if (status === 423) lockListeners.forEach((listener) => listener())
-  throw new ApiError(status, payload.code ?? `HTTP_${status}`, payload.message ?? 'The request failed.')
+  // Locked, or not set up yet: the gate re-reads the status and takes over.
+  if (status === 423 || status === 428) lockListeners.forEach((listener) => listener())
+  throw new ApiError(status, payload.code ?? `HTTP_${status}`, payload.message ?? m["common.request_failed"]())
 }
 
 /** A path segment from a record id. */

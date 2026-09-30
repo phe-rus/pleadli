@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 export const vehicleSchema = z.object({
@@ -17,7 +18,7 @@ export const vehicleSchema = z.object({
 export type Vehicle = z.infer<typeof vehicleSchema>
 
 export const createVehicleSchema = z.object({
-  plateNumber: z.string().min(1, 'Plate number is required.'),
+  plateNumber: z.string().min(1, { error: () => m["validation.plate_number_is_required"]() }),
   make: z.string(),
   model: z.string(),
   color: z.string(),

@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
@@ -35,14 +36,14 @@ export function PersonForm({ person, onSuccess }: PersonFormProps) {
         const result = person
           ? await updatePerson.mutateAsync({ id: person.id, input: value })
           : await createPerson.mutateAsync(value)
-        t.success(person ? 'Person updated' : 'Person added', {
+        t.success(person ? m["people.updated"]() : m["people.added"](), {
           description: `${value.lastName}, ${value.firstName}`,
         })
         if (!person) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(person ? 'Could not update person' : 'Could not add person', {
-          description: 'Please try again.',
+        t.error(person ? m["people.update_failed"]() : m["people.add_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -59,32 +60,32 @@ export function PersonForm({ person, onSuccess }: PersonFormProps) {
       <FieldGroup>
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="firstName">
-            {(f) => <f.input placeholder="First name" label="First name" />}
+            {(f) => <f.input placeholder={m["people.first_name"]()} label={m["people.first_name"]()} />}
           </form.AppField>
 
           <form.AppField name="lastName">
-            {(f) => <f.input placeholder="Last name" label="Last name" />}
+            {(f) => <f.input placeholder={m["people.last_name"]()} label={m["people.last_name"]()} />}
           </form.AppField>
 
           <form.AppField name="otherNames">
-            {(f) => <f.input placeholder="Other names" label="Other names" />}
+            {(f) => <f.input placeholder={m["people.other_names"]()} label={m["people.other_names"]()} />}
           </form.AppField>
 
           <div className="col-span-2">
             <form.AppField name="phone">
-              {(f) => <f.input placeholder="Phone number" label="Phone number" />}
+              {(f) => <f.input placeholder={m["people.phone"]()} label={m["people.phone"]()} />}
             </form.AppField>
           </div>
 
           <div className="col-span-2">
             <form.AppField name="nationalId">
-              {(f) => <f.input placeholder="NIN / National ID" label="NIN / National ID" />}
+              {(f) => <f.input placeholder={m["people.nin"]()} label={m["people.nin"]()} />}
             </form.AppField>
           </div>
 
           <div className="col-span-2">
             <form.AppField name="address">
-              {(f) => <f.textarea placeholder="Address" label="Address" />}
+              {(f) => <f.textarea placeholder={m["people.address"]()} label={m["people.address"]()} />}
             </form.AppField>
           </div>
         </div>
@@ -93,7 +94,7 @@ export function PersonForm({ person, onSuccess }: PersonFormProps) {
 
         <DrawerFooter>
           <form.AppForm>
-            <form.submit label={person ? 'Save changes' : 'Submit'} />
+            <form.submit label={person ? m["common.save_changes"]() : m["common.submit"]()} />
           </form.AppForm>
         </DrawerFooter>
       </FieldGroup>

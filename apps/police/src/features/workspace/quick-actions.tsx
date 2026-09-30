@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { CaseForm } from '@/features/cases'
 import { CustodyRecordForm } from '@/features/custody'
@@ -23,13 +24,14 @@ import { useWorkspace } from './tabs-store'
 
 type Panel = 'diary' | 'incident' | 'case' | 'custody' | 'person' | null
 
-const panels: Record<Exclude<Panel, null>, { title: string; description: string }> = {
-  diary: { title: 'Station diary entry', description: 'Record what has been reported or done at the station.' },
-  incident: { title: 'Record an incident', description: 'An occurrence reported to or found by the station.' },
-  case: { title: 'Open a case', description: 'Start a new case file.' },
-  custody: { title: 'Record custody', description: 'Someone taken into custody. The 48 hour clock starts from the arrest.' },
-  person: { title: 'Add a person', description: 'Someone who appears in the station records.' },
-}
+// A function, not a table, so the headings are read in the current language.
+const panels = (): Record<Exclude<Panel, null>, { title: string; description: string }> => ({
+  diary: { title: m["quick.diary_title"](), description: m["quick.diary_desc"]() },
+  incident: { title: m["quick.incident_title"](), description: m["quick.incident_desc"]() },
+  case: { title: m["quick.case_title"](), description: m["quick.case_desc"]() },
+  custody: { title: m["quick.custody_title"](), description: m["quick.custody_desc"]() },
+  person: { title: m["quick.person_title"](), description: m["quick.person_desc"]() },
+})
 
 /** The ribbon's second control: what an officer most often needs to start.
  * Finding something, then the records that begin work. Not a navigation menu:
@@ -73,35 +75,35 @@ export function QuickActions() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button size="icon" variant="ghost" aria-label="Quick actions" title="Quick actions" className="cursor-pointer">
+            <Button size="icon" variant="ghost" aria-label={m["workspace.quick_actions"]()} title={m["workspace.quick_actions"]()} className="cursor-pointer">
               <HugeiconsIcon icon={AddCircleIcon} />
             </Button>
           }
         />
         <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-60">
           <DropdownMenuGroup>
-            <DropdownMenuLabel>Find</DropdownMenuLabel>
+            <DropdownMenuLabel>{m["workspace.find"]()}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setCommandOpen(true)}>
               <HugeiconsIcon icon={Search01Icon} />
-              Search
-              <DropdownMenuShortcut>Ctrl K</DropdownMenuShortcut>
+              {m["workspace.search"]()}
+              <DropdownMenuShortcut>{m["workspace.shortcut_k"]()}</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuLabel>Start</DropdownMenuLabel>
-            {item('diary', Notebook01Icon, 'Station diary entry')}
-            {item('incident', SirenIcon, 'Record an incident')}
-            {item('case', BinocularsIcon, 'Open a case')}
-            {item('custody', CellsIcon, 'Record custody')}
-            {item('person', UserGroupIcon, 'Add a person')}
+            <DropdownMenuLabel>{m["workspace.start"]()}</DropdownMenuLabel>
+            {item('diary', Notebook01Icon, m["quick.diary_title"]())}
+            {item('incident', SirenIcon, m["quick.incident_title"]())}
+            {item('case', BinocularsIcon, m["quick.case_title"]())}
+            {item('custody', CellsIcon, m["quick.custody_title"]())}
+            {item('person', UserGroupIcon, m["quick.person_title"]())}
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {(Object.keys(panels) as Exclude<Panel, null>[]).map((key) => (
-        <Createpanel key={key} open={panel === key} onOpenChange={(open) => !open && close()} isDirty={dirty} headings={panels[key]}>
-          {panel === key && <Suspense fallback={<p className="p-4 text-muted-foreground">Loading</p>}>{forms[key]}</Suspense>}
+      {(Object.entries(panels()) as [Exclude<Panel, null>, { title: string; description: string }][]).map(([key, headings]) => (
+        <Createpanel key={key} open={panel === key} onOpenChange={(open) => !open && close()} isDirty={dirty} headings={headings}>
+          {panel === key && <Suspense fallback={<p className="p-4 text-muted-foreground">{m["workspace.loading"]()}</p>}>{forms[key]}</Suspense>}
         </Createpanel>
       ))}
     </>

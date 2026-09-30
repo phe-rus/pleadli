@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Add01Icon, Delete02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
@@ -45,13 +46,13 @@ function PhotoSlot({
             <img src={dataUrl} alt={label} className="h-full w-full object-cover" />
             <div className="absolute inset-0 hidden items-center justify-center gap-1.5 bg-black/50 group-hover:flex">
               <Button type="button" size="sm" variant="secondary" onClick={onPick} disabled={disabled}>
-                Replace
+                {m["common.replace"]()}
               </Button>
               <Button
                 type="button"
                 size="icon-xs"
                 variant="secondary"
-                aria-label={`Remove ${label.toLowerCase()} photo`}
+                aria-label={m["people.remove_photo"]({ angle: label.toLowerCase() })}
                 onClick={onClear}
                 disabled={disabled}
               >
@@ -67,7 +68,7 @@ function PhotoSlot({
             disabled={disabled}
           >
             <HugeiconsIcon icon={Add01Icon} className="size-5" />
-            <span className="text-[0.625rem]">Add</span>
+            <span className="text-[0.625rem]">{m["common.add"]()}</span>
           </button>
         )}
       </div>
@@ -96,13 +97,13 @@ export function PersonPhotosField({ personId, attachments }: PersonPhotosFieldPr
       const { open } = await import('@tauri-apps/plugin-dialog')
       const path = await open({
         multiple: false,
-        filters: [{ name: 'Image', extensions: ['png', 'jpg', 'jpeg', 'webp', 'heic'] }],
+        filters: [{ name: m["common.image"](), extensions: ['png', 'jpg', 'jpeg', 'webp', 'heic'] }],
       })
       if (typeof path !== 'string') return
       try {
         await setPhoto.mutateAsync({ angle, path })
       } catch {
-        t.error('Could not add photo', { description: 'Please try again.' })
+        t.error(m["people.photo_failed"](), { description: m["common.try_again"]() })
       }
       return
     }
@@ -119,13 +120,13 @@ export function PersonPhotosField({ personId, attachments }: PersonPhotosFieldPr
     try {
       await setPhoto.mutateAsync({ angle, file })
     } catch {
-      t.error('Could not add photo', { description: 'Please try again.' })
+      t.error(m["people.photo_failed"](), { description: m["common.try_again"]() })
     }
   }
 
   return (
     <Field>
-      <FieldLabel>Identification photos</FieldLabel>
+      <FieldLabel>{m["people.photos"]()}</FieldLabel>
       <div className="grid grid-cols-4 gap-3 max-[420px]:grid-cols-2">
         {personPhotoAngles.map(({ value, label }) => (
           <PhotoSlot

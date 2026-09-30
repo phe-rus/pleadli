@@ -1,4 +1,5 @@
-import { format } from 'date-fns/format'
+import * as m from '@/paraglide/messages'
+import { format } from '@/lib/date'
 
 export type PrintableFieldProps = {
   label: string
@@ -29,7 +30,7 @@ export function PrintableSection({ title, count, children }: PrintableSectionPro
       <h2 className="mb-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">
         {title} ({count})
       </h2>
-      {count === 0 ? <p className="text-xs text-muted-foreground">None recorded.</p> : <div className="flex flex-col">{children}</div>}
+      {count === 0 ? <p className="text-xs text-muted-foreground">{m["common.none_recorded"]()}</p> : <div className="flex flex-col">{children}</div>}
     </section>
   )
 }

@@ -20,7 +20,13 @@ pub async fn run_headless(data_dir: std::path::PathBuf) -> Result<(), String> {
     Ok(())
 }
 
+/// Development builds: read the developer's `.env.local` (git-ignored).
+pub fn load_dev_env() {
+    domain::assist::load_dev_env();
+}
+
 pub fn run() {
+    domain::assist::load_dev_env();
     tauri::Builder::default()
         // Single-instance must be the first plugin registered — it needs
         // to intercept a second launch before anything else runs. With
@@ -41,6 +47,9 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        // Installed copies check the public releases for a signed update (see .github/workflows/release.yml).
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_os::init())
@@ -134,6 +143,8 @@ pub fn run() {
             commands::attachments::get_attachment_data_url,
             commands::attachments::open_attachment,
             commands::documents::save_document_export,
+            commands::export::save_case_pdf,
+            commands::export::open_case_pdf,
             commands::documents::document_export_name,
             commands::backup::create_backup,
             commands::backup::stage_restore,

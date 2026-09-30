@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { AddCircleIcon } from '@hugeicons/core-free-icons'
@@ -7,7 +8,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useSearch } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { StationAssetForm } from './station-asset-form'
 import { useStationAssets } from './queries'
 import { stationAssetCategories, stationAssetPersonName, stationAssetStatusLabel, type StationAsset } from './schema'
@@ -40,7 +41,7 @@ export function StationAssetsPage({ category, title, description, addLabel }: St
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["common.id"](),
         cell: ({ row }) => (
           <span
             className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
@@ -52,51 +53,51 @@ export function StationAssetsPage({ category, title, description, addLabel }: St
       },
       {
         accessorKey: 'category',
-        header: 'Category',
+        header: m["common.category"](),
         cell: ({ getValue }) => stationAssetCategoryLabel(getValue<string>()),
       },
-      { accessorKey: 'description', header: 'Description' },
+      { accessorKey: 'description', header: m["common.description"]() },
       {
         accessorKey: 'itemIdentifier',
-        header: 'Identifier',
+        header: m["assets.identifier"](),
         cell: ({ row }) => row.original.itemIdentifier ?? '·',
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: m["common.status"](),
         cell: ({ getValue }) => stationAssetStatusLabel(getValue<string>()),
       },
       {
         accessorKey: 'holderName',
-        header: 'Held by',
+        header: m["assets.held_by"](),
         cell: ({ row }) => row.original.holderName ?? '·',
       },
-      { accessorKey: 'personId', header: 'Person ID', cell: ({ row }) => row.original.personId ?? '·' },
+      { accessorKey: 'personId', header: m["common.person_id"](), cell: ({ row }) => row.original.personId ?? '·' },
       {
         id: 'relatedPerson',
         accessorFn: (row) => stationAssetPersonName(row) ?? '',
-        header: 'Related person',
+        header: m["common.related_person_col"](),
         cell: ({ getValue }) => getValue<string>() || '·',
       },
       {
         accessorKey: 'personFirstName',
-        header: 'Person first name',
+        header: m["common.person_first_name"](),
         cell: ({ row }) => row.original.personFirstName ?? '·',
       },
       {
         accessorKey: 'personLastName',
-        header: 'Person last name',
+        header: m["common.person_last_name"](),
         cell: ({ row }) => row.original.personLastName ?? '·',
       },
       {
         accessorKey: 'personOtherNames',
-        header: 'Person other names',
+        header: m["common.person_other_names"](),
         cell: ({ row }) => row.original.personOtherNames ?? '·',
       },
-      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      { accessorKey: 'notes', header: m["common.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
       {
         accessorKey: 'createdAt',
-        header: 'Added',
+        header: m["common.added"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
@@ -132,7 +133,7 @@ export function StationAssetsPage({ category, title, description, addLabel }: St
         onOpenChange={(open) => {
           if (!open) setEditing(null)
         }}
-        headings={{ title: 'Edit item', description: 'Update this record.' }}
+        headings={{ title: m["assets.edit"](), description: m["common.update_record"]() }}
       >
         {editing && (
           <StationAssetForm
@@ -149,8 +150,8 @@ export function StationAssetsPage({ category, title, description, addLabel }: St
         data={assets}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="Nothing recorded yet."
-        searchPlaceholder="Search…"
+        emptyMessage={m["common.nothing_recorded"]()}
+        searchPlaceholder={m["common.search_placeholder"]()}
       />
     </article>
   )

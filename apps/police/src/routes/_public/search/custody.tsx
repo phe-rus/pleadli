@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import {
   custodyCompliance,
@@ -17,7 +18,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/search/custody')({
@@ -35,7 +36,7 @@ function ComplianceBadge({ record }: { record: CustodyRecord }) {
   const hours = Math.abs(compliance.hoursRemaining).toFixed(1)
   return (
     <Badge variant={compliance.isOverdue ? 'destructive' : compliance.hoursRemaining < 6 ? 'default' : 'secondary'}>
-      {compliance.isOverdue ? `${hours}h overdue` : `${hours}h left`}
+      {compliance.isOverdue ? m["common.hours_overdue"]({ hours }) : m["investigation.hours_left"]({ hours })}
     </Badge>
   )
 }
@@ -54,7 +55,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["col.id"](),
         cell: ({ row }) => (
           <span
             className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
@@ -64,65 +65,65 @@ function RouteComponent() {
           </span>
         ),
       },
-      { accessorKey: 'personId', header: 'Person ID' },
+      { accessorKey: 'personId', header: m["col.person_id"]() },
       {
         id: 'person',
         accessorFn: (row) => custodyPersonName(row),
-        header: 'Person',
+        header: m["col.person"](),
       },
-      { accessorKey: 'personFirstName', header: 'First name' },
-      { accessorKey: 'personLastName', header: 'Last name' },
+      { accessorKey: 'personFirstName', header: m["col.first_name"]() },
+      { accessorKey: 'personLastName', header: m["col.last_name"]() },
       {
         accessorKey: 'personOtherNames',
-        header: 'Other names',
+        header: m["col.other_names"](),
         cell: ({ row }) => row.original.personOtherNames ?? '·',
       },
-      { accessorKey: 'incidentId', header: 'Incident ID', cell: ({ row }) => row.original.incidentId ?? '·' },
-      { accessorKey: 'caseId', header: 'Case ID', cell: ({ row }) => row.original.caseId ?? '·' },
+      { accessorKey: 'incidentId', header: m["col.incident_id"](), cell: ({ row }) => row.original.incidentId ?? '·' },
+      { accessorKey: 'caseId', header: m["col.case_id"](), cell: ({ row }) => row.original.caseId ?? '·' },
       {
         accessorKey: 'caseReference',
-        header: 'Case',
+        header: m["col.case"](),
         cell: ({ row }) => row.original.caseReference ?? '·',
       },
       {
         accessorKey: 'location',
-        header: 'Location',
+        header: m["col.location"](),
         cell: ({ row }) => row.original.location ?? '·',
       },
       {
         accessorKey: 'arrestedAt',
-        header: 'Arrested',
+        header: m["col.arrested"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
       {
         accessorKey: 'crossJurisdictionTransfer',
-        header: 'Cross-jurisdiction',
-        cell: ({ row }) => (row.original.crossJurisdictionTransfer ? 'Yes' : 'No'),
+        header: m["col.cross_jurisdiction"](),
+        cell: ({ row }) => (row.original.crossJurisdictionTransfer ? m["common.yes"]() : m["common.no"]()),
       },
       {
         accessorKey: 'transferredAt',
-        header: 'Transferred',
+        header: m["col.transferred"](),
         cell: ({ row }) => (row.original.transferredAt ? format(row.original.transferredAt, 'PPp') : '·'),
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: m["col.status"](),
         cell: ({ row }) => custodyStatusLabel(row.original.status),
       },
       {
         id: 'compliance',
-        header: '48h status',
+        header: m["col.48h_status"](),
         cell: ({ row }) => <ComplianceBadge record={row.original} />,
       },
       {
         accessorKey: 'releasedAt',
-        header: 'Released',
+        header: m["col.released"](),
         cell: ({ row }) => (row.original.releasedAt ? format(row.original.releasedAt, 'PPp') : '·'),
       },
-      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
       {
         accessorKey: 'createdAt',
-        header: 'Recorded',
+        header: m["col.recorded"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
@@ -132,8 +133,8 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Custody</h1>
-          <p>Who is in the cells, soonest limit first. Each limit is worked out from the arrest time when this page is drawn, never stored, so it cannot drift out of date.</p>
+          <h1>{m["common.custody"]()}</h1>
+          <p>{m["custody_page.lead"]()}</p>
         </div>
         <div className="page-actions">
           <Createpanel
@@ -143,10 +144,10 @@ function RouteComponent() {
             trigger={
               <Button size="sm">
                 <HugeiconsIcon icon={AddCircleIcon} />
-                New custody record
+                {m["custody_page.new"]()}
               </Button>
             }
-            headings={{ title: 'New custody record', description: 'Log an arrest and start the 48-hour clock.' }}
+            headings={{ title: m["custody_page.new"](), description: m["custody_page.new_desc"]() }}
           >
             <CustodyRecordForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
           </Createpanel>
@@ -154,7 +155,7 @@ function RouteComponent() {
       </header>
 
       <section aria-labelledby="in-cells" className="page-section">
-        <h2 id="in-cells">In the cells now</h2>
+        <h2 id="in-cells">{m["custody_page.in_cells"]()}</h2>
         <CustodyBoard records={records} onOpen={setEditing} />
       </section>
 
@@ -164,7 +165,7 @@ function RouteComponent() {
           if (!open) setEditing(null)
         }}
         isDirty={editDirty}
-        headings={{ title: 'Edit custody record', description: 'Update this custody record.' }}
+        headings={{ title: m["custody_page.edit_title"](), description: m["custody_page.edit_desc"]() }}
       >
         {editing && (
           <CustodyRecordForm
@@ -177,14 +178,14 @@ function RouteComponent() {
       </Createpanel>
 
       <section aria-labelledby="all-records" className="page-section">
-        <h2 id="all-records">All custody records</h2>
+        <h2 id="all-records">{m["custody_page.all"]()}</h2>
       <DataTable
-        aria-label="Custody records"
+        aria-label={m["custody_page.table"]()}
         data={records}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="No custody records yet."
-        searchPlaceholder="Search custody records"
+        emptyMessage={m["custody_page.empty"]()}
+        searchPlaceholder={m["custody_page.search"]()}
       />
       </section>
     </article>

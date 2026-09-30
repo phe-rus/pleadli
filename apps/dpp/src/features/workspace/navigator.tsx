@@ -1,5 +1,6 @@
-import { dppNav, isNavActive, navSections, type NavItem } from '@/data/navigationItems'
-import { useProsecutorProfile } from '@/features/prosecutor-profile'
+import { dppNav, isNavActive, type NavItem } from '@/data/navigationItems'
+import { serviceNames } from '@/lib/jurisdiction'
+import { useSecurityStatus } from '@/features/security'
 import { workloadOptions } from '@/features/workload'
 import { ArrowDown01Icon, Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -9,7 +10,9 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { type ReactNode } from 'react'
 import { useGo, useTabActions } from './tab-actions'
 import { tabIcon } from './tab-icon'
+import { tabTitle } from './tab-identity'
 import { MAX_RECENTS, useWorkspace, type SectionId } from './tabs-store'
+import * as m from '@/paraglide/messages'
 
 const rowClass = 'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left text-base outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
 
@@ -59,11 +62,11 @@ function CountChip({ value, tone }: { value: number; tone: 'open' | 'due' }) {
   )
 }
 
-function Row({ icon, label, active, onOpen, chip }: { icon: NavItem['icon']; label: string; active: boolean; onOpen: () => void; chip?: ReactNode }) {
+function Row({ icon, label, active, onOpen, chip, nested = false }: { icon: NavItem['icon']; label: string; active: boolean; onOpen: () => void; chip?: ReactNode; nested?: boolean }) {
   return (
-    <div className={cn('flex items-center rounded-md transition-colors duration-100 hover:bg-secondary/70 motion-reduce:transition-none', active && 'bg-secondary text-primary')}>
-      <button type="button" onClick={onOpen} aria-current={active ? 'page' : undefined} className={cn(rowClass, active && 'font-medium')}>
-        <HugeiconsIcon icon={icon} className="size-4.5 shrink-0 text-muted-foreground" />
+    <div className={cn('flex items-center rounded-md transition-colors duration-100 hover:bg-secondary/70 motion-reduce:transition-none', active && 'bg-secondary text-primary', nested && 'ml-5')}>
+      <button type="button" onClick={onOpen} aria-current={active ? 'page' : undefined} className={cn(rowClass, active && 'font-medium', nested && 'py-0.5 text-sm')}>
+        <HugeiconsIcon icon={icon} className={cn('shrink-0 text-muted-foreground', nested ? 'size-4' : 'size-4.5', active && 'text-primary')} />
         <span className="truncate">{label}</span>
       </button>
       {chip}
@@ -71,34 +74,29 @@ function Row({ icon, label, active, onOpen, chip }: { icon: NavItem['icon']; lab
   )
 }
 
-/** Who is working here: the installation's one prosecutor, or a prompt to say
- * who. No sign-in: the name attributes decisions and documents. */
+/** Who is working here: the signed-in person (with no sign-in, the
+ * administrator). Their name goes on decisions and documents. */
 function SidebarProfile() {
-  const { data: profile } = useProsecutorProfile()
-  if (!profile) {
-    return (
-      <Link to="/settings/$section" params={{ section: 'prosecutor' }} className="flex flex-col px-1 py-0.5 no-underline">
-        <span className="text-sm font-medium">No prosecutor set</span>
-        <span className="text-xs text-muted-foreground">Add your name so decisions carry it</span>
-      </Link>
-    )
-  }
-  const initials = profile.name
+  const { data: status } = useSecurityStatus()
+  const actor = status?.actor
+  if (!actor) return null
+  const initials = actor.name
     .split(/\s+/)
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
     .toUpperCase()
+  const role = { administrator: m["staff.role.administrator"], prosecutor: m["staff.role.prosecutor"], clerk: m["staff.role.clerk"] }[actor.role]
   return (
-    <div className="flex min-w-0 items-center gap-2 px-1 py-0.5">
-      <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-medium text-primary">
+    <Link to="/settings/$section" params={{ section: 'you' }} className="flex min-w-0 items-center gap-2 rounded-md px-1 py-0.5 no-underline hover:bg-secondary/60">
+      <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
         {initials}
       </span>
       <div className="flex min-w-0 flex-col leading-tight">
-        <span className="truncate text-sm font-medium">{profile.name}</span>
-        <span className="truncate text-xs text-muted-foreground">{profile.isDpp ? 'Director of Public Prosecutions' : (profile.rank ?? 'Prosecutor')}</span>
+        <span className="truncate text-sm font-medium">{actor.name}</span>
+        <span className="truncate text-xs text-muted-foreground">{actor.isDpp ? m["workspace.profile.dpp"]({ head: serviceNames().head }) : (actor.rank ?? role())}</span>
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -122,9 +120,21 @@ export function Navigator() {
     return item.count === 'thresholdDue' ? workload.thresholdReviews.length : workload[item.count]
   }
 
+  const navRow = (item: NavItem, nested = false) => (
+    <Row
+      key={`${item.to}${item.search ? `?${new URLSearchParams(item.search)}` : ''}`}
+      icon={item.icon}
+      label={item.label()}
+      nested={nested}
+      active={isNavActive(item, pathname, search)}
+      onOpen={() => go(item.search ? `${item.to}?${new URLSearchParams(item.search)}` : item.to)}
+      chip={<CountChip value={countOf(item)} tone={item.count === 'thresholdDue' ? 'due' : 'open'} />}
+    />
+  )
+
   return (
     <aside
-      aria-label="Sidebar"
+      aria-label={m["workspace.sidebar"]()}
       inert={!leftOpen}
       className={cn('shrink-0 overflow-hidden bg-background transition-[width] duration-200 ease-out motion-reduce:transition-none print:hidden', leftOpen ? 'w-78' : 'w-0')}
     >
@@ -136,41 +146,37 @@ export function Navigator() {
             className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border border-border/50 bg-background px-2 text-xs text-muted-foreground transition-colors outline-none hover:border-border/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <HugeiconsIcon icon={Search01Icon} className="size-3.5 shrink-0" />
-            <span className="truncate">Search files, people, references</span>
+            <span className="truncate">{m["workspace.search_prompt"]()}</span>
           </button>
         </div>
 
         <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pt-1 pb-2">
+          <nav aria-label={m["workspace.places"]()} className="flex flex-col gap-px pb-2">
+            {dppNav
+              .filter((item) => item.section === 'main')
+              .map((item) => (
+                <div key={item.to} className="flex flex-col gap-px">
+                  {navRow(item)}
+                </div>
+              ))}
+          </nav>
           {pinned.length > 0 && (
-            <Section id="pinned" label="Pinned">
+            <Section id="pinned" label={m["workspace.pinned"]()}>
               {pinned.map((tab) => (
-                <Row key={tab.key} icon={tabIcon(tab)} label={tab.title} active={tab.key === activeKey} onOpen={() => activate(tab)} />
+                <Row key={tab.key} icon={tabIcon(tab)} label={tabTitle(tab)} active={tab.key === activeKey} onOpen={() => activate(tab)} />
               ))}
             </Section>
           )}
           {recent.length > 0 && (
-            <Section id="recent" label="Recent">
+            <Section id="recent" label={m["workspace.recent"]()}>
               {recent.map((item) => (
-                <Row key={item.key} icon={tabIcon(item)} label={item.title} active={item.key === activeKey} onOpen={() => go(item.to)} />
+                <Row key={item.key} icon={tabIcon(item)} label={tabTitle(item)} active={item.key === activeKey} onOpen={() => go(item.to)} />
               ))}
             </Section>
           )}
-          {navSections.map((section) => (
-            <Section key={section.id} id={section.id} label={section.label}>
-              {dppNav
-                .filter((item) => item.section === section.id)
-                .map((item) => (
-                  <Row
-                    key={`${item.to}${item.search ? `?${new URLSearchParams(item.search)}` : ''}`}
-                    icon={item.icon}
-                    label={item.label}
-                    active={isNavActive(item, pathname, search)}
-                    onOpen={() => go(item.search ? `${item.to}?${new URLSearchParams(item.search)}` : item.to)}
-                    chip={<CountChip value={countOf(item)} tone={item.count === 'thresholdDue' ? 'due' : 'open'} />}
-                  />
-                ))}
-            </Section>
-          ))}
+          <Section id="more" label={m["workspace.more"]()}>
+            {dppNav.filter((item) => item.section === 'more').map((item) => navRow(item))}
+          </Section>
         </div>
 
         <div className="border-t border-border/20 px-2 py-2">

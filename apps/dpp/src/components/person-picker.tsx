@@ -13,6 +13,7 @@ import {
 } from '@pleadli/ui/combobox'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import * as m from '@/paraglide/messages'
 
 export type PersonPickerProps = {
   value: string | null
@@ -20,7 +21,7 @@ export type PersonPickerProps = {
   placeholder?: string
 }
 
-export function PersonPicker({ value, onValueChange, placeholder = 'Search for a person…' }: PersonPickerProps) {
+export function PersonPicker({ value, onValueChange, placeholder }: PersonPickerProps) {
   const [query, setQuery] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const { data: people } = useQuery(peopleSearchOptions(query))
@@ -28,7 +29,7 @@ export function PersonPicker({ value, onValueChange, placeholder = 'Search for a
   return (
     <div className="flex items-center gap-2">
       <Combobox value={value} onValueChange={onValueChange} inputValue={query} onInputValueChange={setQuery}>
-        <ComboboxInput className="md:max-w-sm rounded!" placeholder={placeholder} showClear>
+        <ComboboxInput className="md:max-w-sm rounded!" placeholder={placeholder ?? m["person_picker.placeholder"]()} showClear>
           <ComboboxContent>
             <ComboboxList>
               {(people ?? []).map((person) => (
@@ -36,7 +37,7 @@ export function PersonPicker({ value, onValueChange, placeholder = 'Search for a
                   {personFullName(person)}
                 </ComboboxItem>
               ))}
-              <ComboboxEmpty>No matching people</ComboboxEmpty>
+              <ComboboxEmpty>{m["person_picker.empty"]()}</ComboboxEmpty>
             </ComboboxList>
           </ComboboxContent>
         </ComboboxInput>
@@ -46,13 +47,13 @@ export function PersonPicker({ value, onValueChange, placeholder = 'Search for a
         open={addOpen}
         onOpenChange={setAddOpen}
         trigger={
-          <Button type="button" size="icon-sm" variant="secondary" aria-label="Add new person">
+          <Button type="button" size="icon-sm" variant="secondary" aria-label={m["person_picker.add_aria"]()}>
             <HugeiconsIcon icon={AddCircleIcon} />
           </Button>
         }
         headings={{
-          title: 'Add person',
-          description: "Record someone who isn't already known to the system.",
+          title: m["person_picker.add_title"](),
+          description: m["person_picker.add_description"](),
         }}
       >
         <PersonForm

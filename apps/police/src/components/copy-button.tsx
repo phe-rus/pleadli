@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { isTauri } from '@tauri-apps/api/core'
@@ -12,7 +13,7 @@ export type CopyButtonProps = {
 
 /** Copies `value` to the clipboard — the native OS clipboard in Tauri,
  * `navigator.clipboard` in the browser-dev fallback. */
-export function CopyButton({ value, label = 'Copy' }: CopyButtonProps) {
+export function CopyButton({ value, label = m["common.copy"]() }: CopyButtonProps) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
@@ -26,7 +27,7 @@ export function CopyButton({ value, label = 'Copy' }: CopyButtonProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch {
-      t.error('Could not copy to clipboard')
+      t.error(m["common.copy_failed"]())
     }
   }
 

@@ -1,9 +1,10 @@
+import * as m from '@/paraglide/messages'
+import { formatDate } from '@/lib/dates'
 import { EmptyNote, Planned } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { FileStatusTag } from '@/components/status-tag'
 import { fileReference, filesOptions, useFiles } from '@/features/prosecution-files'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
 
 export const Route = createFileRoute('/_public/court-matters/')({
   loader: async ({ context }) => {
@@ -24,15 +25,15 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Court matters</h1>
-          <p>Files that were charged, and the court reference DPP holds for each. Recorded here by the prosecutor; the court's own record is the authority.</p>
+          <h1>{m["nav.item.court_matters"]()}</h1>
+          <p>{m["page.court.about"]()}</p>
         </div>
       </header>
 
       <section className="page-section">
-        <h2>Charged, no court case number yet</h2>
+        <h2>{m["page.court.without"]()}</h2>
         {withoutCase.length === 0 ? (
-          <EmptyNote>Every charged file has a court case number, or none has been charged.</EmptyNote>
+          <EmptyNote>{m["page.court.without_empty"]()}</EmptyNote>
         ) : (
           <RowList>
             {withoutCase.map((file) => (
@@ -40,11 +41,11 @@ function RouteComponent() {
                 key={file.id}
                 marker="open"
                 title={file.title}
-                summary={`${fileReference(file)}. Charged ${file.lastDecisionAt ? format(file.lastDecisionAt, 'PP') : ''}. Record the case number once the charge sheet is filed.`}
+                summary={m["page.court.charged_on"]({ reference: fileReference(file), date: file.lastDecisionAt ? formatDate(file.lastDecisionAt) : '' })}
                 trailing={
                   <>
                     <FileStatusTag status={file.currentStatus} />
-                    <Link to="/files/$fileId" params={{ fileId: file.id }} search={{ tab: 'court' }} className="text-primary">Open</Link>
+                    <Link to="/files/$fileId" params={{ fileId: file.id }} search={{ tab: 'court' }} className="text-primary">{m["common.open"]()}</Link>
                   </>
                 }
               />
@@ -54,25 +55,25 @@ function RouteComponent() {
       </section>
 
       <section className="page-section">
-        <h2>With a court case number</h2>
+        <h2>{m["page.court.with"]()}</h2>
         {withCase.length === 0 ? (
-          <EmptyNote>No court case numbers recorded yet.</EmptyNote>
+          <EmptyNote>{m["page.court.with_empty"]()}</EmptyNote>
         ) : (
           <RowList>
             {withCase.map((file) => (
               <Row
                 key={file.id}
                 title={file.title}
-                summary={`${fileReference(file)}. Court case ${file.courtCaseNumber}.`}
-                trailing={<Link to="/files/$fileId" params={{ fileId: file.id }} search={{ tab: 'court' }} className="text-primary">Open</Link>}
+                summary={m["page.court.case"]({ reference: fileReference(file), number: file.courtCaseNumber ?? '' })}
+                trailing={<Link to="/files/$fileId" params={{ fileId: file.id }} search={{ tab: 'court' }} className="text-primary">{m["common.open"]()}</Link>}
               />
             ))}
           </RowList>
         )}
       </section>
 
-      <Planned title="Hearings, adjournments and notices" covers={['Trial dates and what each hearing was for', 'Adjournments, and the review after three consecutive ones', 'Notices to the prosecutor, and court-related documents']}>
-        Nothing is fetched from a court and no court system is connected. These are recorded by the prosecutor once built.
+      <Planned title={m["file_ws.planned_title"]()} covers={[m["file_ws.planned_hearings"](), m["file_ws.planned_adjournments"](), m["file_ws.planned_notices"]()]}>
+        {m["file_ws.planned_body"]()}
       </Planned>
     </article>
   )

@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { officersOptions } from '@/features/officers'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import {
@@ -58,7 +59,7 @@ function OfficerCombobox({
                 {officer.name}{officer.badgeNumber ? ` (${officer.badgeNumber})` : ''}
               </ComboboxItem>
             ))}
-            <ComboboxEmpty>No matching officers</ComboboxEmpty>
+            <ComboboxEmpty>{m["shift_log.no_matching"]()}</ComboboxEmpty>
           </ComboboxList>
         </ComboboxContent>
       </ComboboxInput>
@@ -83,16 +84,16 @@ export function HandoverForm({ onSuccess }: HandoverFormProps) {
         handedOverAt: new Date(value.handedOverAt).getTime(),
       })
       if (!parsed.success) {
-        t.error('Incoming officer is required.')
+        t.error(m["shift_log.incoming_required"]())
         return
       }
       try {
         await createHandover.mutateAsync(parsed.data)
-        t.success('Handover logged')
+        t.success(m["shift_log.handover_logged"]())
         formApi.reset()
         onSuccess?.()
       } catch {
-        t.error('Could not log handover', { description: 'Please try again.' })
+        t.error(m["shift_log.handover_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -109,8 +110,8 @@ export function HandoverForm({ onSuccess }: HandoverFormProps) {
         <form.AppField name="outgoingOfficerId">
           {(f) => (
             <Field>
-              <FieldLabel>Outgoing officer (optional)</FieldLabel>
-              <OfficerCombobox value={f.state.value} onValueChange={f.handleChange} placeholder="Who's handing over…" />
+              <FieldLabel>{m["shift_log.outgoing"]()}</FieldLabel>
+              <OfficerCombobox value={f.state.value} onValueChange={f.handleChange} placeholder={m["shift_log.outgoing_placeholder"]()} />
             </Field>
           )}
         </form.AppField>
@@ -118,29 +119,29 @@ export function HandoverForm({ onSuccess }: HandoverFormProps) {
         <form.AppField name="incomingOfficerId">
           {(f) => (
             <Field>
-              <FieldLabel>Incoming officer</FieldLabel>
-              <OfficerCombobox value={f.state.value || null} onValueChange={(v) => f.handleChange(v ?? '')} placeholder="Who's taking over…" />
+              <FieldLabel>{m["shift_log.incoming"]()}</FieldLabel>
+              <OfficerCombobox value={f.state.value || null} onValueChange={(v) => f.handleChange(v ?? '')} placeholder={m["shift_log.incoming_placeholder"]()} />
             </Field>
           )}
         </form.AppField>
 
-        <form.AppField name="unit">{(f) => <f.input label="Unit (optional)" />}</form.AppField>
+        <form.AppField name="unit">{(f) => <f.input label={m["shift_log.unit_optional"]()} />}</form.AppField>
 
         <form.AppField name="handedOverAt">
           {(f) => (
             <Field>
-              <FieldLabel>Handover time</FieldLabel>
+              <FieldLabel>{m["shift_log.handover_time"]()}</FieldLabel>
               <Input type="datetime-local" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
             </Field>
           )}
         </form.AppField>
 
-        <form.AppField name="notes">{(f) => <f.textarea label="What happened" placeholder="Did this and that…" />}</form.AppField>
+        <form.AppField name="notes">{(f) => <f.textarea label={m["shift_log.what_happened"]()} placeholder={m["shift_log.what_placeholder"]()} />}</form.AppField>
       </FieldGroup>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Log handover" />
+          <form.submit label={m["shift_log.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Attachment01Icon, Delete02Icon, Upload01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
@@ -16,7 +17,7 @@ export type AttachmentsFieldProps = {
   label?: string
 }
 
-export function AttachmentsField({ entityType, entityId, label = 'Attachments' }: AttachmentsFieldProps) {
+export function AttachmentsField({ entityType, entityId, label = m["attachments.label"]() }: AttachmentsFieldProps) {
   const id = entityId ?? ''
   const { data: attachments } = useAttachments(entityType, id)
   const addAttachment = useAddAttachment(entityType, id)
@@ -27,7 +28,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Attachments' }
     return (
       <Field>
         <FieldLabel>{label}</FieldLabel>
-        <p className="text-xs text-muted-foreground">Save this record first, then you can attach files.</p>
+        <p className="text-xs text-muted-foreground">{m["attachments.save_first"]()}</p>
       </Field>
     )
   }
@@ -40,7 +41,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Attachments' }
       try {
         await addAttachment.mutateAsync({ path })
       } catch {
-        t.error('Could not add attachment', { description: 'Please try again.' })
+        t.error(m["attachments.add_failed"](), { description: m["common.try_again"]() })
       }
       return
     }
@@ -54,7 +55,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Attachments' }
     try {
       await addAttachment.mutateAsync({ file })
     } catch {
-      t.error('Could not add attachment', { description: 'Please try again.' })
+      t.error(m["attachments.add_failed"](), { description: m["common.try_again"]() })
     }
   }
 
@@ -64,13 +65,13 @@ export function AttachmentsField({ entityType, entityId, label = 'Attachments' }
         <FieldLabel>{label}</FieldLabel>
         <Button type="button" size="sm" variant="secondary" onClick={handlePick} disabled={addAttachment.isPending}>
           <HugeiconsIcon icon={Upload01Icon} />
-          Add file
+          {m["attachments.add_file"]()}
         </Button>
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileInputChange} />
       </div>
 
       {(attachments ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground">No files attached.</p>
+        <p className="text-xs text-muted-foreground">{m["attachments.none"]()}</p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {attachments?.map((attachment) => (
@@ -93,7 +94,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Attachments' }
                 type="button"
                 size="icon-xs"
                 variant="ghost"
-                aria-label="Remove attachment"
+                aria-label={m["attachments.remove"]()}
                 onClick={() => deleteAttachment.mutate(attachment.id)}
               >
                 <HugeiconsIcon icon={Delete02Icon} />

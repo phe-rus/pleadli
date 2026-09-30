@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/dates'
 import { Createpanel } from '@/components/create-panel'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { peopleOptions, personFullName, PersonForm, usePeople, type Person } from '@/features/people'
@@ -7,7 +8,6 @@ import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/people/')({
@@ -51,7 +51,7 @@ function RouteComponent() {
       {
         accessorKey: 'createdAt',
         header: 'Recorded',
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
+        cell: ({ getValue }) => formatDate(getValue<number>(), 'datetime'),
       },
     ]
   }, [])

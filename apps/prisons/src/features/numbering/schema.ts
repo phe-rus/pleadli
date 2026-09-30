@@ -96,11 +96,11 @@ export type UniformInput = { category: string; colour: string | null; label: str
 export function uniformCategoryLabel(category: string) {
   switch (category) {
     case 'unconvicted':
-      return 'Unconvicted (remand)'
+      return m.prisoners_unconvicted_remand()
     case 'convicted':
       return m.numbering_convicted()
     case 'civil':
-      return 'Civil (debtor)'
+      return m.prisoners_civil_debtor()
     default:
       return category
   }

@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
 
 // A plain string discriminator, not a Rust/TS enum — matches the DB column,
@@ -38,10 +39,10 @@ export type Attachment = z.infer<typeof attachmentSchema>
 // proper mugshot set (front, both profiles, back) rather than one
 // arbitrary "best" photo starred out of a generic file list.
 export const personPhotoAngles = [
-  { value: 'front', label: 'Front' },
-  { value: 'left_profile', label: 'Left profile' },
-  { value: 'right_profile', label: 'Right profile' },
-  { value: 'back', label: 'Back' },
+  { value: 'front', get label() { return m["attachments.angle.front"]() } },
+  { value: 'left_profile', get label() { return m["attachments.angle.left_profile"]() } },
+  { value: 'right_profile', get label() { return m["attachments.angle.right_profile"]() } },
+  { value: 'back', get label() { return m["attachments.angle.back"]() } },
 ] as const
 
 export type PersonPhotoAngle = (typeof personPhotoAngles)[number]['value']

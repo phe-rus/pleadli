@@ -1,14 +1,15 @@
 import * as z from 'zod'
+import * as m from '@/paraglide/messages'
 
 // Confirmed statement categories (docs/dpp/RESEARCH.md §3, ODPP's own
 // Decision to Charge Guidelines): witness statements (incl. exculpatory),
 // arresting/investigating-officer statements, statements of the accused.
 export const statementRoles = [
-  { value: 'witness', label: 'Witness' },
-  { value: 'accused', label: 'Statement of the accused' },
-  { value: 'arresting_officer', label: 'Arresting officer' },
-  { value: 'investigating_officer', label: 'Investigating officer' },
-  { value: 'complainant', label: 'Complainant' },
+  { value: 'witness', get label() { return m["statement.role.witness"]() } },
+  { value: 'accused', get label() { return m["statement.role.accused"]() } },
+  { value: 'arresting_officer', get label() { return m["statement.role.arresting_officer"]() } },
+  { value: 'investigating_officer', get label() { return m["statement.role.investigating_officer"]() } },
+  { value: 'complainant', get label() { return m["statement.role.complainant"]() } },
 ] as const
 
 export function statementRoleLabel(role: string) {
@@ -33,8 +34,8 @@ export type Statement = z.infer<typeof statementSchema>
 
 export const createStatementSchema = z.object({
   prosecutionFileId: z.string().min(1),
-  personId: z.string().min(1, 'Person is required.'),
-  statementRole: z.string().min(1, 'Statement role is required.'),
+  personId: z.string().min(1, { error: () => m["statement.form.person_required"]() }),
+  statementRole: z.string().min(1, { error: () => m["statement.form.role_required"]() }),
   content: z.string(),
   givenAt: z.number(),
   sourceNote: z.string(),

@@ -16,7 +16,11 @@ import {
   DocumentAttachmentIcon,
   FileImportIcon,
   NetworkIcon,
+  Folder01Icon,
+  KanbanIcon,
+  Calendar03Icon,
 } from '@hugeicons/core-free-icons'
+import * as m from '@/paraglide/messages'
 
 export type NavIcon = typeof DashboardBrowsingIcon
 
@@ -24,7 +28,8 @@ export type NavIcon = typeof DashboardBrowsingIcon
 export type NavCount = 'intake' | 'inReview' | 'returned' | 'reopened' | 'thresholdDue' | 'draftDocuments' | 'incomingWaiting'
 
 export type NavItem = {
-  label: string
+  /** Display only: a message getter, so it follows the current language. */
+  label: () => string
   icon: NavIcon
   to: string
   /** A slice of a shared page, held in the URL as a search parameter. */
@@ -35,39 +40,39 @@ export type NavItem = {
   section?: NavSection
 }
 
-export type NavSection = 'files' | 'work' | 'office'
+/** Where an item sits in the sidebar: the six main places, the views of
+ * Files shown under it, or the folded "More" group. */
+export type NavSection = 'main' | 'files' | 'more'
 
-export const navSections: readonly { id: NavSection; label: string }[] = [
-  { id: 'files', label: 'Files' },
-  { id: 'work', label: 'Prosecution work' },
-  { id: 'office', label: 'Office' },
-]
-
-/** The information architecture. The line it draws is between finding a file
- * (the Files group, one page with a view per slice of the register) and doing
- * prosecution work (review, material, decisions, court, documents). */
+/** Seven places, as the client asked: Today, Files, Board, Calendar,
+ * Documents, Statistics, and Search on the ribbon. Everything a prosecutor
+ * does to one file (police material, review, decisions, court) lives inside
+ * the file; the office-wide lists of those stay one click away under More. */
 export const dppNav: readonly NavItem[] = [
-  { label: 'Overview', icon: DashboardBrowsingIcon, to: '/', exact: true },
-  { label: 'Search', icon: Search01Icon, to: '/search' },
+  { label: m["nav.item.today"], icon: DashboardBrowsingIcon, to: '/', exact: true, section: 'main' },
+  { label: m["nav.item.cases"], icon: KanbanIcon, to: '/cases', section: 'main' },
+  { label: m["nav.item.files"], icon: Folder01Icon, to: '/files', search: { view: 'all' }, section: 'more' },
+  { label: m["nav.item.calendar"], icon: Calendar03Icon, to: '/calendar', section: 'main' },
+  { label: m["nav.item.documents"], icon: LegalDocument01Icon, to: '/documents', count: 'draftDocuments', section: 'main' },
+  { label: m["nav.item.statistics"], icon: ChartBarLineIcon, to: '/reports', section: 'main' },
+  { label: m["nav.item.search"], icon: Search01Icon, to: '/search' },
 
-  { label: 'Incoming', icon: FileImportIcon, to: '/incoming', count: 'incomingWaiting', section: 'files' },
-  { label: 'Intake', icon: FolderViewIcon, to: '/files', search: { view: 'intake' }, count: 'intake', section: 'files' },
-  { label: 'Active reviews', icon: Task01Icon, to: '/files', search: { view: 'active' }, count: 'inReview', section: 'files' },
-  { label: 'Returned to Police', icon: Files01Icon, to: '/files', search: { view: 'returned' }, count: 'returned', section: 'files' },
-  { label: 'Reopened reviews', icon: FileEditIcon, to: '/files', search: { view: 'reopened' }, count: 'reopened', section: 'files' },
-  { label: 'Closed', icon: LegalDocument01Icon, to: '/files', search: { view: 'closed' }, section: 'files' },
+  { label: m["nav.item.incoming"], icon: FileImportIcon, to: '/incoming', count: 'incomingWaiting', section: 'more' },
+  { label: m["nav.item.intake"], icon: FolderViewIcon, to: '/files', search: { view: 'intake' }, count: 'intake' },
+  { label: m["nav.item.active_reviews"], icon: Task01Icon, to: '/files', search: { view: 'active' }, count: 'inReview' },
+  { label: m["nav.item.returned"], icon: Files01Icon, to: '/files', search: { view: 'returned' }, count: 'returned' },
+  { label: m["nav.item.reopened"], icon: FileEditIcon, to: '/files', search: { view: 'reopened' }, count: 'reopened' },
+  { label: m["nav.item.closed"], icon: LegalDocument01Icon, to: '/files', search: { view: 'closed' } },
 
-  { label: 'Charging review', icon: BalanceScaleIcon, to: '/review', count: 'thresholdDue', section: 'work' },
-  { label: 'Police material', icon: DocumentAttachmentIcon, to: '/material', section: 'work' },
-  { label: 'Decisions', icon: GavelIcon, to: '/decisions', section: 'work' },
-  { label: 'Court matters', icon: CourtHouseIcon, to: '/court-matters', section: 'work' },
-  { label: 'Documents', icon: LegalDocument01Icon, to: '/documents', count: 'draftDocuments', section: 'work' },
-
-  { label: 'People', icon: UserGroupIcon, to: '/people', section: 'office' },
-  { label: 'Police connections', icon: NetworkIcon, to: '/connections', section: 'office' },
-  { label: 'Reports', icon: ChartBarLineIcon, to: '/reports', section: 'office' },
-  { label: 'Capacity and workload', icon: Analytics01Icon, to: '/capacity', section: 'office' },
-  { label: 'Settings', icon: Settings01Icon, to: '/settings', section: 'office' },
+  { label: m["nav.item.tasks"], icon: Task01Icon, to: '/board', section: 'more' },
+  { label: m["nav.item.charging_review"], icon: BalanceScaleIcon, to: '/review', count: 'thresholdDue', section: 'more' },
+  { label: m["nav.item.police_material"], icon: DocumentAttachmentIcon, to: '/material', section: 'more' },
+  { label: m["nav.item.decisions"], icon: GavelIcon, to: '/decisions', section: 'more' },
+  { label: m["nav.item.court_matters"], icon: CourtHouseIcon, to: '/court-matters', section: 'more' },
+  { label: m["nav.item.people"], icon: UserGroupIcon, to: '/people', section: 'more' },
+  { label: m["nav.item.police_connections"], icon: NetworkIcon, to: '/connections', section: 'more' },
+  { label: m["nav.item.capacity"], icon: Analytics01Icon, to: '/capacity', section: 'more' },
+  { label: m["nav.item.settings"], icon: Settings01Icon, to: '/settings' },
 ] as const
 
 /** The nav entry a location belongs to, for tab titles and icons. `/files`

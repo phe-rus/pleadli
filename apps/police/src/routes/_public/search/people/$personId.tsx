@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { CaseRow } from '@/components/list-cards/case-row'
 import { PersonAvatar } from '@/components/person-avatar'
@@ -9,6 +10,7 @@ import {
 } from '@/features/custody/schema'
 import { bondStatusLabel } from '@/features/bonds/schema'
 import { exhibitStatusLabel } from '@/features/evidence/schema'
+import { stationDiaryCategoryLabel } from '@/features/station-diary/schema'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import {
   personFullName,
@@ -26,7 +28,7 @@ import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/_public/search/people/$personId')({
@@ -55,7 +57,7 @@ function Section({
         {title} <span className="tabular-nums">({count})</span>
       </h2>
       {count === 0 ? (
-        <p className="text-xs text-muted-foreground">None recorded.</p>
+        <p className="text-xs text-muted-foreground">{m["common.none_recorded"]()}</p>
       ) : (
         <div className="flex flex-col gap-1">{children}</div>
       )}
@@ -107,9 +109,9 @@ function RouteComponent() {
   const handleExport = async (format: 'pdf' | 'docx') => {
     try {
       const found = await exportDocument.mutateAsync(format)
-      if (found) t.success(`${format === 'pdf' ? 'PDF' : 'Word'} document exported`)
+      if (found) t.success(format === 'pdf' ? m["data_io.pdf_exported"]() : m["data_io.word_exported"]())
     } catch {
-      t.error(`Could not export to ${format === 'pdf' ? 'PDF' : 'Word'}`, { description: 'Please try again.' })
+      t.error(format === 'pdf' ? m["data_io.pdf_failed"]() : m["data_io.word_failed"](), { description: m["common.try_again"]() })
     }
   }
 
@@ -120,7 +122,7 @@ function RouteComponent() {
         className="inline-flex w-fit items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
       >
         <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5" />
-        Back to People
+        {m["people_page.back"]()}
       </Link>
 
       <section className="flex items-start justify-between gap-4">
@@ -129,10 +131,10 @@ function RouteComponent() {
           <div className="flex flex-col gap-1">
             <h1>{personFullName(person)}</h1>
             <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-              <span>Phone: {person.phone ?? '·'}</span>
-              <span>NIN / National ID: {person.nationalId ?? '·'}</span>
-              <span>Address: {person.address ?? '·'}</span>
-              <span>Recorded: {format(person.createdAt, 'PPP')}</span>
+              <span>{m["people_page.phone"]({ value: person.phone ?? '·' })}</span>
+              <span>{m["people_page.nin"]({ value: person.nationalId ?? '·' })}</span>
+              <span>{m["people_page.address"]({ value: person.address ?? '·' })}</span>
+              <span>{m["people_page.recorded"]({ date: format(person.createdAt, 'PPP') })}</span>
             </div>
           </div>
         </div>
@@ -149,10 +151,10 @@ function RouteComponent() {
             trigger={
               <Button size="sm" variant="secondary">
                 <HugeiconsIcon icon={Edit02Icon} />
-                Edit
+                {m["people_page.edit"]()}
               </Button>
             }
-            headings={{ title: 'Edit person', description: "Update this person's recorded details." }}
+            headings={{ title: m["people_page.edit_title"](), description: m["people_page.edit_desc"]() }}
           >
             <PersonForm person={person} onSuccess={() => setEditOpen(false)} />
           </Createpanel>
@@ -160,7 +162,7 @@ function RouteComponent() {
       </section>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <Section title="Cases" count={profile.cases.length}>
+        <Section title={m["people_page.cases"]()} count={profile.cases.length}>
           {profile.cases.map((c) => (
             <Link key={c.id} to="/investigations/$caseId" params={{ caseId: c.id }}>
               <CaseRow
@@ -169,14 +171,14 @@ function RouteComponent() {
                   title: c.summary,
                   status: c.status,
                   statusLabel: caseStatusLabel(c.status),
-                  subtitle: `${c.peopleCount} people involved`,
+                  subtitle: m["people_page.people_involved"]({ count: c.peopleCount }),
                 }}
               />
             </Link>
           ))}
         </Section>
 
-        <Section title="Incidents" count={profile.incidents.length}>
+        <Section title={m["nav.incidents"]()} count={profile.incidents.length}>
           {profile.incidents.map((i) => (
             <RelatedRow
               key={i.id}
@@ -189,20 +191,20 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title="Statements" count={profile.statements.length}>
+        <Section title={m["nav.statements"]()} count={profile.statements.length}>
           {profile.statements.map((s) => (
             <RelatedRow
               key={s.id}
               to="/statements"
               search={{ open: s.id }}
               title={<RichTextPreview value={s.content} className="line-clamp-1" />}
-              subtitle={s.officerName ? `Taken by ${s.officerName}` : undefined}
+              subtitle={s.officerName ? m["investigation.taken_by"]({ name: s.officerName }) : undefined}
               meta={<span className="text-xs text-muted-foreground">{format(s.givenAt, 'PP')}</span>}
             />
           ))}
         </Section>
 
-        <Section title="Custody" count={profile.custodyRecords.length}>
+        <Section title={m["common.custody"]()} count={profile.custodyRecords.length}>
           {profile.custodyRecords.map((record) => {
             const compliance = record.status === 'in_custody' ? custodyCompliance(record) : null
             return (
@@ -216,8 +218,8 @@ function RouteComponent() {
                   compliance ? (
                     <Badge variant={compliance.isOverdue ? 'destructive' : 'secondary'}>
                       {compliance.isOverdue
-                        ? `${Math.abs(compliance.hoursRemaining).toFixed(1)}h overdue`
-                        : `${compliance.hoursRemaining.toFixed(1)}h left`}
+                        ? m["common.hours_overdue"]({ hours: Math.abs(compliance.hoursRemaining).toFixed(1) })
+                        : m["investigation.hours_left"]({ hours: compliance.hoursRemaining.toFixed(1) })}
                     </Badge>
                   ) : (
                     <span className="text-xs text-muted-foreground">{format(record.arrestedAt, 'PP')}</span>
@@ -228,20 +230,20 @@ function RouteComponent() {
           })}
         </Section>
 
-        <Section title="Bonds & sureties" count={profile.bonds.length}>
+        <Section title={m["investigation.bonds_sureties"]()} count={profile.bonds.length}>
           {profile.bonds.map((bond) => (
             <RelatedRow
               key={bond.id}
               to="/search/bonds"
               search={{ open: bond.id }}
               title={bondStatusLabel(bond.status)}
-              subtitle={bond.withSurety ? (bond.suretyName ?? 'With surety') : 'No surety'}
+              subtitle={bond.withSurety ? (bond.suretyName ?? m["people_page.with_surety"]()) : m["people_page.no_surety"]()}
               meta={<span className="text-xs text-muted-foreground">{format(bond.grantedAt, 'PP')}</span>}
             />
           ))}
         </Section>
 
-        <Section title="Evidence" count={profile.exhibits.length}>
+        <Section title={m["investigation.evidence"]()} count={profile.exhibits.length}>
           {profile.exhibits.map((exhibit) => (
             <RelatedRow
               key={exhibit.id}
@@ -254,7 +256,7 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title="Charge sheets" count={profile.chargeSheets.length}>
+        <Section title={m["investigation.charge_sheets"]()} count={profile.chargeSheets.length}>
           {profile.chargeSheets.map((cs) => (
             <Link
               key={cs.id}
@@ -271,7 +273,7 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title="Vehicles" count={profile.vehicles.length}>
+        <Section title={m["people_page.vehicles"]()} count={profile.vehicles.length}>
           {profile.vehicles.map((vehicle) => (
             <RelatedRow
               key={vehicle.id}
@@ -284,14 +286,14 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title="Station Diary" count={profile.stationDiaryEntries.length}>
+        <Section title={m["sd_page.title"]()} count={profile.stationDiaryEntries.length}>
           {profile.stationDiaryEntries.map((entry) => (
             <RelatedRow
               key={entry.id}
               to="/sd-log"
               search={{ open: entry.id }}
               title={<RichTextPreview value={entry.content} className="line-clamp-1" />}
-              subtitle={entry.category.replace(/_/g, ' ')}
+              subtitle={stationDiaryCategoryLabel(entry.category)}
               meta={<span className="text-xs text-muted-foreground">{format(entry.createdAt, 'PP')}</span>}
             />
           ))}
@@ -303,7 +305,7 @@ function RouteComponent() {
       </section>
 
       <section className="md:max-w-md">
-        <AttachmentsField entityType={entityTypes.person} entityId={personId} label="Files" />
+        <AttachmentsField entityType={entityTypes.person} entityId={personId} label={m["common.files"]()} />
       </section>
     </article>
   )

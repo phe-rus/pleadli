@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { DEV_API_URL } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
@@ -25,7 +26,7 @@ export async function exportAllMarkdown() {
     const { save } = await import('@tauri-apps/plugin-dialog')
     const path = await save({
       defaultPath: 'pleadli-police-vault.zip',
-      filters: [{ name: 'Zip Archive', extensions: ['zip'] }],
+      filters: [{ name: m["common.zip_archive"](), extensions: ['zip'] }],
     })
     if (typeof path !== 'string') return false
     await invoke('export_all_markdown', { destinationPath: path })
@@ -42,7 +43,7 @@ export async function exportAllXlsx() {
     const { save } = await import('@tauri-apps/plugin-dialog')
     const path = await save({
       defaultPath: 'pleadli-police-data.xlsx',
-      filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }],
+      filters: [{ name: m["common.excel_workbook"](), extensions: ['xlsx'] }],
     })
     if (typeof path !== 'string') return false
     await invoke('export_all_xlsx', { destinationPath: path })
@@ -62,7 +63,7 @@ export async function exportAllDocument(format: DocumentFormat) {
     const { save } = await import('@tauri-apps/plugin-dialog')
     const path = await save({
       defaultPath: `pleadli-police-data.${format}`,
-      filters: [{ name: format === 'pdf' ? 'PDF Document' : 'Word Document', extensions: [format] }],
+      filters: [{ name: format === 'pdf' ? m["common.pdf_document"]() : m["common.word_document"](), extensions: [format] }],
     })
     if (typeof path !== 'string') return false
     await invoke(format === 'pdf' ? 'export_all_pdf' : 'export_all_docx', { destinationPath: path })

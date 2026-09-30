@@ -5,6 +5,7 @@ import { useEffect, type FC, type PropsWithChildren } from 'react'
 import { CenterHeader } from './center-header'
 import { LeftPillar } from './left-pillar'
 import { StatusBar } from './statusbar'
+import { AssistDock } from '@/features/assist/dock'
 import { useSyncActiveTabTitle, useTabActions } from './tab-actions'
 import { identityForLocation, tabFromIdentity } from './tab-identity'
 import { useWorkspace, WorkspaceProvider } from './tabs-store'
@@ -22,7 +23,7 @@ function ActiveTabSync() {
   const kind = typeof search.kind === 'string' ? search.kind : ''
   useEffect(() => {
     const identity = identityForLocation(pathname, { view, kind })
-    if (identity) openTab(tabFromIdentity(identity, { view, kind }))
+    if (identity) openTab(tabFromIdentity(identity))
   }, [pathname, view, kind, openTab])
 
   return null
@@ -77,6 +78,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
               <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto print:overflow-visible">{children}</div>
             </main>
           </div>
+          <AssistDock />
         </div>
         <StatusBar />
       </div>

@@ -6,6 +6,7 @@ import { Field, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useCreateReviewNote } from './queries'
 import { createReviewNoteSchema, type ReviewNote } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type ReviewNoteFormProps = {
   prosecutionFileId: string
@@ -35,11 +36,11 @@ export function ReviewNoteForm({ prosecutionFileId, onSuccess, onDirtyChange }: 
     onSubmit: async ({ value, formApi }) => {
       try {
         const result = await createNote.mutateAsync({ ...value, prosecutionFileId, statementId: null, evidenceItemId: null })
-        t.success('Observation recorded')
+        t.success(m["review_note.form.recorded"]())
         formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error('Could not record observation', { description: 'Please try again.' })
+        t.error(m["review_note.form.record_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -54,20 +55,20 @@ export function ReviewNoteForm({ prosecutionFileId, onSuccess, onDirtyChange }: 
         form.handleSubmit()
       }}
     >
-      <form.AppField name="author">{(f) => <f.input label="Author (optional)" placeholder="Name" />}</form.AppField>
+      <form.AppField name="author">{(f) => <f.input label={m["review_note.form.author_optional"]()} placeholder={m["review_note.form.author_placeholder"]()} />}</form.AppField>
 
       <form.AppField name="note">
         {(f) => (
           <Field>
-            <FieldLabel>Observation</FieldLabel>
-            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder="What did you notice while reviewing this file?" />
+            <FieldLabel>{m["review_note.form.observation"]()}</FieldLabel>
+            <RichTextInput value={f.state.value} onChange={f.handleChange} placeholder={m["review_note.form.observation_placeholder"]()} />
           </Field>
         )}
       </form.AppField>
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label="Add observation" />
+          <form.submit label={m["review_note.form.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

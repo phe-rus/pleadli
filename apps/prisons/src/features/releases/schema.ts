@@ -61,7 +61,7 @@ export type DischargeAssessment = z.infer<typeof dischargeAssessmentSchema>
 
 export const createReleaseSchema = z.object({
   prisonerId: z.string().min(1),
-  releaseType: z.string().min(1, 'Release type is required.'),
+  releaseType: z.string().min(1, { error: () => m.validation_release_type_required() }),
   releasedAt: z.number(),
   orderedBy: z.string(),
   basis: z.string(),

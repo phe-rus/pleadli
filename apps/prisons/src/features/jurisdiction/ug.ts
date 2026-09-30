@@ -1,4 +1,5 @@
 import type { JurisdictionPack } from './pack'
+import { m } from '@/paraglide/messages'
 
 /** Uganda, the one jurisdiction this build has. The regions are the Uganda
  * Prisons Service regions facilities are registered under. The numbering
@@ -28,9 +29,16 @@ export const ugRegions = [
 
 export const ugPack: JurisdictionPack = {
   id: 'ug',
-  name: 'Uganda',
+  get name() {
+    return m.jurisdiction_ug_name()
+  },
   country: 'Uganda',
-  timezone: { id: 'Africa/Kampala', label: 'East Africa Time (UTC+3)' },
+  timezone: {
+    id: 'Africa/Kampala',
+    get label() {
+      return m.jurisdiction_ug_timezone()
+    },
+  },
   regions: ugRegions,
   numbering: { pattern: '{SEQ:4}/{YEAR}', reset: 'yearly', provisional: true },
   examples: { facilityCode: 'UG-LUZ-001', badge: 'UP-0142' },

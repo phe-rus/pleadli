@@ -773,7 +773,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pleadli-vault-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
-        let db = crate::db::connect(dir.join("test.db"), vault_root.clone()).await.unwrap();
+        let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
         let pool = &db.pool;
 
         let case = cases::create_case(pool, &vault_root, case_input("OLD CRB 1/2026")).await.unwrap();
@@ -824,6 +824,7 @@ mod tests {
         assert_eq!(sanitize_folder_name("A: B*?"), "A- B--");
         assert!(resolve_within_vault(&vault_root, "cases/../../secret").is_err());
 
+        db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);
     }
 }

@@ -289,7 +289,7 @@ pub async fn build(pool: &SqlitePool, kind: &str, file: &ProsecutionFile, act: &
         _ => {}
     }
 
-    Ok(DocumentContent { office: OFFICE.to_string(), title: title_for(kind).to_string(), blocks })
+    Ok(DocumentContent { office: OFFICE.to_string(), title: title_for(kind).to_string(), blocks, ..Default::default() })
 }
 
 fn direction_label(kind: &str) -> &'static str {

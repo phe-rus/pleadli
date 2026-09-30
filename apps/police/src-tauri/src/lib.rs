@@ -32,6 +32,9 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        // Installed copies check the public releases for a signed update (see .github/workflows/release.yml).
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_os::init())
@@ -43,7 +46,6 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
-            let db_path = data_dir.join("police.db");
 
             // The structured database stays in the app's own managed data
             // directory — the Police Vault (original files, generated
@@ -66,7 +68,19 @@ pub fn run() {
                 .unwrap_or_else(|_| data_dir.join("vault"))
                 .join("Pleadli Police");
 
-            let db = tauri::async_runtime::block_on(db::connect(db_path, vault_root))?;
+            let db = match tauri::async_runtime::block_on(db::startup(&data_dir, vault_root)) {
+                Ok(db) => db,
+                // Police doesn't yet have a recovery-mode window (the newer
+                // applications do); until it does, both cases stop startup
+                // with a clear log line rather than opening on data that
+                // cannot be trusted, which matches how this app already
+                // treated any database-open failure before encryption.
+                Err(db::StartupError::Recovery(reason)) => {
+                    log::error!("database recovery required: {reason}");
+                    return Err(reason.into());
+                }
+                Err(db::StartupError::Fatal(reason)) => return Err(reason.into()),
+            };
 
             let router = api::router(db.pool.clone(), db.vault_root.clone());
             #[cfg(debug_assertions)]

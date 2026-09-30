@@ -53,7 +53,7 @@ export function TodayBoard({ visits }: { visits: VisitListItem[] }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-medium">{m.visits_today()}</h2>
         <span className="text-xs text-muted-foreground">
-          {m.visits_visit({ length: today.length })}{today.length === 1 ? '' : 's'} · {format(new Date(), 'EEEE d MMMM')}
+          {today.length === 1 ? m.visits_visit_one() : m.visits_visit({ length: today.length })} · {format(new Date(), 'EEEE d MMMM')}
           {closed > 0 && m.visits_refused_cancelled_or_no_show({ closed })}
         </span>
       </div>

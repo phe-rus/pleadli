@@ -108,7 +108,7 @@ export const resolveObligationSchema = z.object({
   key: z.string().min(1),
   kind: z.string().min(1),
   prisonerId: z.string().nullable(),
-  actionTaken: z.string().min(1, 'Record the action taken.'),
+  actionTaken: z.string().min(1, { error: () => m.validation_action_required() }),
 })
 
 export type ResolveObligationInput = z.infer<typeof resolveObligationSchema>

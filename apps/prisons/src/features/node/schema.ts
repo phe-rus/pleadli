@@ -37,8 +37,8 @@ export type BackupSummary = z.infer<typeof backupSummarySchema>
 
 export const saveBackupConfigSchema = z.object({
   backupDir: z.string().nullable(),
-  intervalHours: z.number().int().min(1, 'At least 1 hour.'),
-  retention: z.number().int().min(1, 'Keep at least 1 backup.'),
+  intervalHours: z.number().int().min(1, { error: () => m.validation_interval_min_1() }),
+  retention: z.number().int().min(1, { error: () => m.validation_retention_min_1() }),
   passphrase: z.string().nullable(),
 })
 export type SaveBackupConfigInput = z.infer<typeof saveBackupConfigSchema>
@@ -103,9 +103,9 @@ export const localConnectionSchema = z.object({
 })
 
 export const connectToNodeSchema = z.object({
-  address: z.string().min(1, 'Enter the node address.'),
-  fingerprint: z.string().min(1, 'Enter the fingerprint shown on the node.'),
-  code: z.string().min(1, 'Enter the enrolment code shown on the node.'),
+  address: z.string().min(1, { error: () => m.validation_node_address_required() }),
+  fingerprint: z.string().min(1, { error: () => m.validation_node_fingerprint_required() }),
+  code: z.string().min(1, { error: () => m.validation_node_code_required() }),
 })
 export type ConnectToNodeInput = z.infer<typeof connectToNodeSchema>
 

@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
@@ -15,7 +16,7 @@ import { AddCircleIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useCreateExhibit, useCreateExhibitMovement, useExhibitMovements, useUpdateExhibit } from './queries'
 import { exhibitStatuses, createExhibitSchema, type Exhibit } from './schema'
 
@@ -31,30 +32,30 @@ function ExhibitMovements({ exhibitId }: { exhibitId: string }) {
 
   return (
     <Field>
-      <FieldLabel>Chain of custody</FieldLabel>
+      <FieldLabel>{m["evidence.chain"]()}</FieldLabel>
       {(movements ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground">No movements logged yet.</p>
+        <p className="text-xs text-muted-foreground">{m["evidence.no_movements"]()}</p>
       ) : (
         <div className="flex flex-col gap-1">
-          {movements?.map((m) => (
-            <div key={m.id} className="flex items-center justify-between gap-2 rounded-sm border border-input/40 px-2 py-1.5">
+          {movements?.map((mv) => (
+            <div key={mv.id} className="flex items-center justify-between gap-2 rounded-sm border border-input/40 px-2 py-1.5">
               <span className="text-xs">
-                {m.location}
-                {m.custodianName ? ` · ${m.custodianName}` : ''}
+                {mv.location}
+                {mv.custodianName ? ` · ${mv.custodianName}` : ''}
               </span>
-              <span className="shrink-0 text-xs text-muted-foreground">{format(m.movedAt, 'PP')}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">{format(mv.movedAt, 'PP')}</span>
             </div>
           ))}
         </div>
       )}
       <div className="flex items-center gap-2">
-        <Input placeholder="New location" value={location} onChange={(e) => setLocation(e.target.value)} />
-        <Input placeholder="Custodian" value={custodianName} onChange={(e) => setCustodianName(e.target.value)} />
+        <Input placeholder={m["evidence.new_location"]()} value={location} onChange={(e) => setLocation(e.target.value)} />
+        <Input placeholder={m["evidence.custodian"]()} value={custodianName} onChange={(e) => setCustodianName(e.target.value)} />
         <Button
           type="button"
           size="icon-sm"
           variant="secondary"
-          aria-label="Log movement"
+          aria-label={m["evidence.log_movement"]()}
           disabled={!location.trim() || createMovement.isPending}
           onClick={() => {
             createMovement.mutate(
@@ -119,12 +120,12 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
         const result = exhibit
           ? await updateExhibit.mutateAsync({ id: exhibit.id, input })
           : await createExhibit.mutateAsync(input)
-        t.success(exhibit ? 'Exhibit updated' : 'Exhibit logged')
+        t.success(exhibit ? m["evidence.updated"]() : m["evidence.logged"]())
         if (!exhibit) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(exhibit ? 'Could not update exhibit' : 'Could not log exhibit', {
-          description: 'Please try again.',
+        t.error(exhibit ? m["evidence.update_failed"]() : m["evidence.log_failed"](), {
+          description: m["common.try_again"](),
         })
       }
     },
@@ -142,17 +143,17 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
     >
       <FieldGroup>
         <form.AppField name="description">
-          {(f) => <f.textarea label="Description" placeholder="Nature of the exhibit" />}
+          {(f) => <f.textarea label={m["common.description"]()} placeholder={m["evidence.description_placeholder"]()} />}
         </form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="identificationMark">
-            {(f) => <f.input label="Identification mark" placeholder="Mark placed on the exhibit" />}
+            {(f) => <f.input label={m["evidence.identification_mark"]()} placeholder={m["evidence.identification_placeholder"]()} />}
           </form.AppField>
           <form.AppField name="recoveredAt">
             {(f) => (
               <Field>
-                <FieldLabel>Recovered at</FieldLabel>
+                <FieldLabel>{m["evidence.recovered_at"]()}</FieldLabel>
                 <Input
                   type="datetime-local"
                   value={f.state.value}
@@ -164,22 +165,22 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
         </div>
 
         <form.AppField name="recoveredFromLocation">
-          {(f) => <f.input label="Recovered from" placeholder="Place of recovery" />}
+          {(f) => <f.input label={m["evidence.recovered_from"]()} placeholder={m["evidence.recovered_from_placeholder"]()} />}
         </form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="handedOverBy">
-            {(f) => <f.input label="Handed over by" />}
+            {(f) => <f.input label={m["evidence.handed_over_by"]()} />}
           </form.AppField>
           <form.AppField name="witnesses">
-            {(f) => <f.input label="Witnesses present" />}
+            {(f) => <f.input label={m["evidence.witnesses"]()} />}
           </form.AppField>
         </div>
 
         <form.AppField name="personId">
           {(f) => (
             <Field>
-              <FieldLabel>Related person (optional)</FieldLabel>
+              <FieldLabel>{m["evidence.related_person"]()}</FieldLabel>
               <PersonPicker value={f.state.value} onValueChange={f.handleChange} />
             </Field>
           )}
@@ -187,24 +188,24 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="receivingOfficerName">
-            {(f) => <f.input label="Receiving officer" />}
+            {(f) => <f.input label={m["evidence.receiving_officer"]()} />}
           </form.AppField>
           <form.AppField name="storageLocation">
-            {(f) => <f.input label="Storage location" />}
+            {(f) => <f.input label={m["evidence.storage_location"]()} />}
           </form.AppField>
         </div>
 
         <form.AppField name="status">
           {(f) => (
             <Field>
-              <FieldLabel>Status</FieldLabel>
+              <FieldLabel>{m["common.status"]()}</FieldLabel>
               <Select
                 items={exhibitStatuses}
                 value={f.state.value}
                 onValueChange={(value) => f.handleChange(value ?? f.state.value)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={m["common.select_status"]()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -224,18 +225,18 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
           <form.AppField name="incidentId">
             {(f) => (
               <Field>
-                <FieldLabel>Related incident (optional)</FieldLabel>
+                <FieldLabel>{m["common.related_incident"]()}</FieldLabel>
                 <Select
-                  items={[{ value: '', label: 'None' }, ...incidents.map((i: Incident) => ({ value: i.id, label: i.summary }))]}
+                  items={[{ value: '', label: m["common.none"]() }, ...incidents.map((i: Incident) => ({ value: i.id, label: i.summary }))]}
                   value={f.state.value ?? ''}
                   onValueChange={(value) => f.handleChange(value || null)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None" />
+                    <SelectValue placeholder={m["common.none"]()} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="">{m["common.none"]()}</SelectItem>
                       {incidents.map((i: Incident) => (
                         <SelectItem key={i.id} value={i.id}>
                           {i.summary}
@@ -251,18 +252,18 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
           <form.AppField name="caseId">
             {(f) => (
               <Field>
-                <FieldLabel>Related case (optional)</FieldLabel>
+                <FieldLabel>{m["common.related_case"]()}</FieldLabel>
                 <Select
-                  items={[{ value: '', label: 'None' }, ...cases.map((c: Case) => ({ value: c.id, label: c.reference }))]}
+                  items={[{ value: '', label: m["common.none"]() }, ...cases.map((c: Case) => ({ value: c.id, label: c.reference }))]}
                   value={f.state.value ?? ''}
                   onValueChange={(value) => f.handleChange(value || null)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None" />
+                    <SelectValue placeholder={m["common.none"]()} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="">{m["common.none"]()}</SelectItem>
                       {cases.map((c: Case) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.reference}
@@ -279,7 +280,7 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
         <form.AppField name="notes">
           {(f) => (
             <Field>
-              <FieldLabel>Notes (optional)</FieldLabel>
+              <FieldLabel>{m["common.notes_optional"]()}</FieldLabel>
               <Textarea value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} rows={3} />
             </Field>
           )}
@@ -292,7 +293,7 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={exhibit ? 'Save changes' : 'Log exhibit'} />
+          <form.submit label={exhibit ? m["common.save_changes"]() : m["evidence.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

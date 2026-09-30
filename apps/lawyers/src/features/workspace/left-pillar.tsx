@@ -1,6 +1,9 @@
-import { PanelLeftIcon, JusticeScale01Icon } from '@hugeicons/core-free-icons'
+import { PanelLeftIcon } from '@hugeicons/core-free-icons'
+import { BrandLogo } from '@/features/brand'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
+import { useBrand } from '@/features/installation'
+import * as m from '@/paraglide/messages'
 import { Navigator } from './navigator'
 import { Ribbon } from './ribbon'
 import { useWorkspace } from './tabs-store'
@@ -13,6 +16,7 @@ import { useWorkspace } from './tabs-store'
  * rather than squeezing it. */
 export function LeftPillar() {
   const { leftOpen, setLeftOpen } = useWorkspace()
+  const { data: brand } = useBrand()
 
   return (
     <div className="flex shrink-0 flex-col overflow-hidden border-r border-border/20 bg-background print:hidden">
@@ -21,11 +25,11 @@ export function LeftPillar() {
       <header data-tauri-drag-region className="flex h-9 w-0 min-w-full shrink-0 items-center overflow-hidden border-b border-border/20 bg-background">
         <div data-tauri-drag-region className="flex w-89 shrink-0 items-center">
           <div data-tauri-drag-region className="flex w-11 shrink-0 items-center justify-center">
-            <HugeiconsIcon icon={JusticeScale01Icon} className="size-5 text-primary" />
+            <BrandLogo className="size-6" />
           </div>
           <div data-tauri-drag-region className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
             <span data-tauri-drag-region className="truncate text-sm leading-4 font-semibold">Pleadli Lawyers</span>
-            <span data-tauri-drag-region className="truncate text-xs leading-3.5 text-muted-foreground">Advocate's practice</span>
+            <span data-tauri-drag-region className="truncate text-xs leading-3.5 text-muted-foreground">{brand?.officeName ?? m["workspace.subtitle_default"]()}</span>
           </div>
           <Button
             size="icon-sm"

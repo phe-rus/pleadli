@@ -63,7 +63,7 @@ export function BackupsPanel() {
         )}
         <p>
           {m.node_folder()} <code>{config.effectiveDir}</code>
-          {config.backupDir == null && ' (the default, on this same disk: choose a folder on another drive so a failed disk does not take the backups with it)'}
+          {config.backupDir == null && m.node_default_folder_note()}
         </p>
 
         {backups.length === 0 ? (

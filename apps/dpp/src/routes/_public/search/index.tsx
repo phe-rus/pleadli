@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Planned } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { Tag } from '@/components/status-tag'
@@ -22,17 +23,17 @@ function RouteComponent() {
     <article className="page page-narrow">
       <header className="page-header">
         <div>
-          <h1>Search</h1>
-          <p>Find a file or a person by name, national ID, registration number or reference.</p>
+          <h1>{m["nav.item.search"]()}</h1>
+          <p>{m["page.search.about"]()}</p>
         </div>
       </header>
 
-      <Input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, NIN, registration number, reference" />
+      <Input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={m["page.search.placeholder"]()} />
 
       {query.trim().length === 0 ? (
-        <p>Type to search.</p>
+        <p>{m["page.search.type"]()}</p>
       ) : items.length === 0 ? (
-        <p>No people or files match.</p>
+        <p>{m["page.search.none"]()}</p>
       ) : (
         <RowList>
           {items.map((result) => {
@@ -58,8 +59,8 @@ function RouteComponent() {
         </RowList>
       )}
 
-      <Planned title="Search across the material" covers={['Statements, evidence and proposed charges', 'Decisions and review observations', 'Documents', 'Court case numbers']}>
-        Search covers people and files. The kinds of record below are not searched yet.
+      <Planned title={m["page.search.planned_title"]()} covers={[m["page.search.planned_1"](), m["page.search.planned_2"](), m["page.search.planned_3"](), m["page.search.planned_4"]()]}>
+        {m["page.search.planned_body"]()}
       </Planned>
     </article>
   )

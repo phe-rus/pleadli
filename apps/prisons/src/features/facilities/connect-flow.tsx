@@ -352,7 +352,7 @@ function FacilityStep({
               setFound(null)
               setSearched(false)
             }}
-            placeholder="e.g. UPS-001"
+            placeholder={m.facilities_e_g_ups_001()}
             autoComplete="off"
             spellCheck={false}
           />

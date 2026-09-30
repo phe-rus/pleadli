@@ -11,5 +11,5 @@ export const Route = createFileRoute('/_public/settings/$section')({
 
 function RouteComponent() {
   const { section } = Route.useParams()
-  return <SettingsShell sectionId={isSettingsSection(section) ? section : 'prosecutor'} />
+  return <SettingsShell sectionId={isSettingsSection(section) ? section : 'you'} />
 }

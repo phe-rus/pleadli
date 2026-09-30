@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { useReportDirty } from '@/hooks/use-report-dirty'
@@ -35,9 +36,9 @@ export function StationDiaryEntryForm({ entry, onSuccess, onDirtyChange }: Stati
         : createEntry.mutateAsync(value)
 
       t.promise(submission, {
-        loading: entry ? 'Saving changes…' : 'Saving entry…',
-        success: entry ? 'Entry updated' : 'Entry logged',
-        error: entry ? 'Could not update entry' : 'Could not log entry',
+        loading: entry ? m["diary.saving_changes"]() : m["diary.saving_entry"](),
+        success: entry ? m["diary.updated"]() : m["diary.logged"](),
+        error: entry ? m["diary.update_failed"]() : m["diary.log_failed"](),
       })
 
       try {
@@ -62,17 +63,17 @@ export function StationDiaryEntryForm({ entry, onSuccess, onDirtyChange }: Stati
     >
       <FieldGroup>
         <form.AppField name="category">
-          {(f) => <f.select label="Category" options={[...stationDiaryCategories]} />}
+          {(f) => <f.select label={m["common.category"]()} options={[...stationDiaryCategories]} />}
         </form.AppField>
 
         <form.AppField name="content">
           {(f) => (
             <Field data-invalid={f.state.meta.isTouched && !f.state.meta.isValid}>
-              <FieldLabel>What happened</FieldLabel>
+              <FieldLabel>{m["shift_log.what_happened"]()}</FieldLabel>
               <RichTextInput
                 value={f.state.value}
                 onChange={f.handleChange}
-                placeholder="What happened…"
+                placeholder={m["diary.what_happened_placeholder"]()}
               />
             </Field>
           )}
@@ -81,7 +82,7 @@ export function StationDiaryEntryForm({ entry, onSuccess, onDirtyChange }: Stati
         <form.AppField name="personId">
           {(f) => (
             <Field>
-              <FieldLabel>Related person (optional)</FieldLabel>
+              <FieldLabel>{m["common.related_person"]()}</FieldLabel>
               <PersonPicker value={f.state.value} onValueChange={f.handleChange} />
             </Field>
           )}
@@ -92,7 +93,7 @@ export function StationDiaryEntryForm({ entry, onSuccess, onDirtyChange }: Stati
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={entry ? 'Save changes' : 'Log entry'} />
+          <form.submit label={entry ? m["common.save_changes"]() : m["diary.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

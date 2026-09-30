@@ -5,7 +5,28 @@ import { healthEventTypeLabel, type HealthEvent } from '@/features/health-events
 import { releaseTypeLabel, type Release } from '@/features/releases'
 import { transferDirectionLabel, transferStateLabel, type Transfer } from '@/features/transfers'
 import { visitStatusLabel, visitTypeLabel, type Visit } from '@/features/visits'
+import { inlineLabel } from '@/features/i18n'
 import { m } from '@/paraglide/messages'
+
+/** Display label for a timeline entry's kind code. The code stays the value. */
+export function timelineKindLabel(kind: string) {
+  switch (kind) {
+    case 'Stay':
+      return m.timeline_kind_stay()
+    case 'Court':
+      return m.timeline_kind_court()
+    case 'Visit':
+      return m.timeline_kind_visit()
+    case 'Health':
+      return m.timeline_kind_health()
+    case 'Transfer':
+      return m.timeline_kind_transfer()
+    case 'Release':
+      return m.timeline_kind_release()
+    default:
+      return kind
+  }
+}
 
 export type TimelineEntry = { id: string; at: number; kind: string; title: string; detail: string | null }
 
@@ -32,7 +53,7 @@ export function buildTimeline(input: {
       id: `court-${p.id}`,
       at: p.productionDate,
       kind: 'Court',
-      title: m.prisoners_court_production({ method: productionMethodLabel(p.productionMethod).toLowerCase() }),
+      title: m.prisoners_court_production({ method: inlineLabel(productionMethodLabel(p.productionMethod)) }),
       detail: [p.courtReference, p.outcome ? courtOutcomeLabel(p.outcome) : m.prisoners_scheduled()].filter(Boolean).join(' · '),
     })
   }

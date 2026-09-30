@@ -1,4 +1,7 @@
+import * as m from '@/paraglide/messages'
 import * as z from 'zod'
+import { templatesFor } from '@/features/templates'
+import { activeJurisdiction } from '@/lib/jurisdiction'
 
 const field = z.object({ label: z.string(), value: z.string() })
 
@@ -22,26 +25,38 @@ export const documentSchema = z.object({
   title: z.string(),
   reference: z.string().nullable(),
   status: z.string(),
-  sourceDecisionId: z.string(),
+  sourceDecisionId: z.string().nullable(),
   author: z.string().nullable(),
   preparedAt: z.number(),
   issuedAt: z.number().nullable(),
   contentSha256: z.string().nullable(),
   integrity: z.string(),
-  content: z.object({ office: z.string(), title: z.string(), blocks: z.array(blockSchema) }),
+  content: z.object({
+    office: z.string(),
+    title: z.string(),
+    blocks: z.array(blockSchema),
+    letterhead: z.array(z.string()).optional(),
+    lang: z.string().optional(),
+    signatureImage: z.string().optional(),
+    stampImage: z.string().optional(),
+    verifyCode: z.string().optional(),
+    verifyQr: z.string().optional(),
+  }),
 })
 
 export type DocumentRecord = z.infer<typeof documentSchema>
+export type DocumentContent = DocumentRecord['content']
 
 /** The documents the product documentation names. Everything else is planned. */
 export const documentKinds = [
-  { id: 'charge_sheet', label: 'Charge sheet', about: 'The sanctioned charge sheet, from a decision to sanction, to charge on the Threshold Test, or to amend the charge.' },
-  { id: 'directions_to_police', label: 'Directions to Police', about: 'The directions on a return for further investigation.' },
-  { id: 'decline_reasons', label: 'Written reasons for declining', about: 'The privileged written reasons for a decision to decline to charge.' },
+  { id: 'charge_sheet', get label() { return m["doc.kind.charge_sheet"]() }, get about() { return m["doc.kind.charge_sheet_about"]() } },
+  { id: 'directions_to_police', get label() { return m["capacity.directions"]() }, get about() { return m["doc.kind.directions_about"]() } },
+  { id: 'decline_reasons', get label() { return m["doc.kind.decline_reasons"]() }, get about() { return m["doc.kind.decline_reasons_about"]() } },
 ] as const
 
 export function documentKindLabel(kind: string) {
-  return documentKinds.find((k) => k.id === kind)?.label ?? kind
+  // A document from a template takes its title in the office's country.
+  return documentKinds.find((k) => k.id === kind)?.label ?? templatesFor(activeJurisdiction()).find((t) => t.id === kind)?.title ?? kind
 }
 
 /** The decisions that produce a document (server: `kind_for`). */
@@ -53,8 +68,8 @@ export function decisionDocumentKind(decisionType: string): string | null {
 }
 
 export const exportFormats = [
-  { id: 'docx', label: 'Download DOCX' },
-  { id: 'md', label: 'Download Markdown' },
+  { id: 'docx', label: () => m["doc.download_docx"]() },
+  { id: 'md', label: () => m["doc.download_md"]() },
 ] as const
 
 export type ExportFormat = (typeof exportFormats)[number]['id']

@@ -3,10 +3,11 @@ import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useNavigate } from '@tanstack/react-router'
 import { usePrepareDocument } from './queries'
+import * as m from '@/paraglide/messages'
 
 /** Prepares the document a decision produces (or finds the one that exists)
  * and opens it in the reader. */
-export function PrepareDocumentButton({ decisionId, label = 'Prepare' }: { decisionId: string; label?: string }) {
+export function PrepareDocumentButton({ decisionId, label = m["doc.prepare"]() }: { decisionId: string; label?: string }) {
   const prepare = usePrepareDocument()
   const navigate = useNavigate()
   return (
@@ -17,7 +18,7 @@ export function PrepareDocumentButton({ decisionId, label = 'Prepare' }: { decis
       onClick={() =>
         prepare.mutate(decisionId, {
           onSuccess: (doc) => void navigate({ to: '/documents/$documentId', params: { documentId: doc.id } }),
-          onError: (e) => t.error('Could not prepare the document', { description: e instanceof ApiError ? e.message : 'Please try again.' }),
+          onError: (e) => t.error(m["doc.prepare_failed"](), { description: e instanceof ApiError ? e.message : m["common.try_again"]() }),
         })
       }
     >

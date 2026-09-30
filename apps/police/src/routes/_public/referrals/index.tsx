@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import {
   referralDestinationTypeLabel,
@@ -15,7 +16,7 @@ import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/referrals/')({
@@ -47,7 +48,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["col.id"](),
         cell: ({ row }) => (
           <span
             className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
@@ -57,39 +58,39 @@ function RouteComponent() {
           </span>
         ),
       },
-      { accessorKey: 'caseId', header: 'Case ID' },
-      { accessorKey: 'caseReference', header: 'Case' },
+      { accessorKey: 'caseId', header: m["col.case_id"]() },
+      { accessorKey: 'caseReference', header: m["col.case"]() },
       {
         accessorKey: 'destinationType',
-        header: 'Destination type',
+        header: m["col.destination_type"](),
         cell: ({ getValue }) => referralDestinationTypeLabel(getValue<string>()),
       },
       {
         accessorKey: 'destinationName',
-        header: 'Destination',
+        header: m["col.destination"](),
         cell: ({ row }) => row.original.destinationName ?? '·',
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: m["col.status"](),
         cell: ({ row }) => (
           <Badge variant={statusVariant(row.original.status)}>{referralStatusLabel(row.original.status)}</Badge>
         ),
       },
       {
         accessorKey: 'officerName',
-        header: 'Referring officer',
+        header: m["col.referring_officer"](),
         cell: ({ row }) => row.original.officerName ?? '·',
       },
       {
         accessorKey: 'referredAt',
-        header: 'Referred',
+        header: m["col.referred"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
-      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
       {
         accessorKey: 'createdAt',
-        header: 'Recorded',
+        header: m["col.recorded"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
@@ -100,7 +101,7 @@ function RouteComponent() {
       <section className="flex items-center gap-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-5">
-            <h1>Referrals &amp; Dispatches</h1>
+            <h1>{m["referrals_page.title"]()}</h1>
 
             <Createpanel
               open={addOpen}
@@ -109,17 +110,16 @@ function RouteComponent() {
               trigger={
                 <Button size="sm">
                   <HugeiconsIcon icon={AddCircleIcon} />
-                  Record referral
+                  {m["referrals.submit"]()}
                 </Button>
               }
-              headings={{ title: 'Record referral', description: 'Hand a case to DPP, Courts, or another station.' }}
+              headings={{ title: m["referrals.submit"](), description: m["referrals_page.add_desc"]() }}
             >
               <ReferralForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
             </Createpanel>
           </div>
           <p className="md:max-w-sm">
-            One workflow, not two: case handed elsewhere, tracked here. Emergency/operational dispatch is a
-            different concern this app doesn't model.
+            {m["referrals_page.lead"]()}
           </p>
         </div>
       </section>
@@ -130,7 +130,7 @@ function RouteComponent() {
           if (!open) setEditing(null)
         }}
         isDirty={editDirty}
-        headings={{ title: 'Edit referral', description: 'Update this referral.' }}
+        headings={{ title: m["referrals_page.edit_title"](), description: m["referrals_page.edit_desc"]() }}
       >
         {editing && (
           <ReferralForm
@@ -143,12 +143,12 @@ function RouteComponent() {
       </Createpanel>
 
       <DataTable
-        aria-label="Referrals"
+        aria-label={m["common.referrals"]()}
         data={referrals}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="No referrals recorded yet."
-        searchPlaceholder="Search by case reference or destination…"
+        emptyMessage={m["referrals_page.empty"]()}
+        searchPlaceholder={m["referrals_page.search"]()}
       />
     </article>
   )

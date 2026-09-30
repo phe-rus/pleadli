@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
 import { useNavigate } from '@tanstack/react-router'
@@ -61,17 +62,18 @@ export function CustodyAttentionDialog() {
         {dialogRecord && compliance && (
           <>
             <DialogHeader>
-              <DialogTitle>48-hour custody limit</DialogTitle>
+              <DialogTitle>{m["custody.limit_title"]()}</DialogTitle>
               <DialogDescription>
-                {custodyPersonName(dialogRecord)} is {compliance.isOverdue ? 'past' : 'approaching'} the constitutional
-                custody limit.
+                {compliance.isOverdue
+                  ? m["custody.past_limit"]({ name: custodyPersonName(dialogRecord) })
+                  : m["custody.approaching_limit"]({ name: custodyPersonName(dialogRecord) })}
               </DialogDescription>
             </DialogHeader>
 
             <p className="text-xs text-muted-foreground">
               {compliance.isOverdue
-                ? `${Math.abs(compliance.hoursRemaining).toFixed(1)}h overdue`
-                : `${compliance.hoursRemaining.toFixed(1)}h remaining`}
+                ? m["common.hours_overdue"]({ hours: Math.abs(compliance.hoursRemaining).toFixed(1) })
+                : m["common.hours_remaining"]({ hours: compliance.hoursRemaining.toFixed(1) })}
               {' · '}
               {custodyBasisLabel(compliance.basis)}
             </p>
@@ -85,10 +87,10 @@ export function CustodyAttentionDialog() {
                   setDialogRecord(null)
                 }}
               >
-                Review record
+                {m["custody.review_record"]()}
               </Button>
               <Button type="button" size="sm" variant="secondary" onClick={() => setDialogRecord(null)}>
-                Dismiss
+                {m["common.dismiss"]()}
               </Button>
             </DialogFooter>
           </>

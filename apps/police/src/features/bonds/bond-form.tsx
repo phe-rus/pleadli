@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
@@ -63,11 +64,11 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
         const result = bond
           ? await updateBond.mutateAsync({ id: bond.id, input })
           : await createBond.mutateAsync(input)
-        t.success(bond ? 'Bond updated' : 'Bond granted')
+        t.success(bond ? m["bonds.updated"]() : m["bonds.granted"]())
         if (!bond) formApi.reset()
         onSuccess?.(result)
       } catch {
-        t.error(bond ? 'Could not update bond' : 'Could not grant bond', { description: 'Please try again.' })
+        t.error(bond ? m["bonds.update_failed"]() : m["bonds.grant_failed"](), { description: m["common.try_again"]() })
       }
     },
   })
@@ -86,7 +87,7 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
         <form.AppField name="personId">
           {(f) => (
             <Field>
-              <FieldLabel>Person released on bond</FieldLabel>
+              <FieldLabel>{m["bonds.person"]()}</FieldLabel>
               <PersonPicker value={f.state.value || null} onValueChange={(id) => f.handleChange(id ?? '')} />
             </Field>
           )}
@@ -94,12 +95,12 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="lockUpSerialNumber">
-            {(f) => <f.input label="Lock-up serial number" placeholder="From the PF18 form" />}
+            {(f) => <f.input label={m["bonds.lock_up_serial"]()} placeholder={m["bonds.lock_up_placeholder"]()} />}
           </form.AppField>
           <form.AppField name="grantedAt">
             {(f) => (
               <Field>
-                <FieldLabel>Granted at</FieldLabel>
+                <FieldLabel>{m["bonds.granted_at"]()}</FieldLabel>
                 <Input
                   type="datetime-local"
                   value={f.state.value}
@@ -114,7 +115,7 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
           {(f) => (
             <Field orientation="horizontal">
               <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-              <FieldLabel>Granted with a surety</FieldLabel>
+              <FieldLabel>{m["bonds.with_surety"]()}</FieldLabel>
             </Field>
           )}
         </form.AppField>
@@ -124,10 +125,10 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
             withSurety && (
               <div className="grid grid-cols-2 gap-3">
                 <form.AppField name="suretyName">
-                  {(f) => <f.input label="Surety name" />}
+                  {(f) => <f.input label={m["bonds.surety_name"]()} />}
                 </form.AppField>
                 <form.AppField name="suretyContact">
-                  {(f) => <f.input label="Surety contact" />}
+                  {(f) => <f.input label={m["bonds.surety_contact"]()} />}
                 </form.AppField>
               </div>
             )
@@ -137,27 +138,27 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
         <form.AppField name="reportingSchedule">
           {(f) => (
             <Field>
-              <FieldLabel>Reporting schedule (optional)</FieldLabel>
+              <FieldLabel>{m["bonds.reporting_schedule"]()}</FieldLabel>
               <Input
                 value={f.state.value}
                 onChange={(e) => f.handleChange(e.target.value)}
-                placeholder="e.g. Report every Monday until further notice"
+                placeholder={m["bonds.reporting_placeholder"]()}
               />
-              <FieldDescription>Free text: no standard schedule format was confirmed in research.</FieldDescription>
+              <FieldDescription>{m["bonds.reporting_hint"]()}</FieldDescription>
             </Field>
           )}
         </form.AppField>
 
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="officerId">
-            {(f) => <OfficerPicker label="Granting officer" value={f.state.value} onValueChange={f.handleChange} />}
+            {(f) => <OfficerPicker label={m["bonds.granting_officer"]()} value={f.state.value} onValueChange={f.handleChange} />}
           </form.AppField>
           <form.Subscribe selector={(state) => state.values.officerId}>
             {(officerId) =>
               officerId ? null : (
                 <>
-                <form.AppField name="officerName">{(f) => <f.input label="Name" />}</form.AppField>
-                <form.AppField name="officerRank">{(f) => <f.input label="Rank" />}</form.AppField>
+                <form.AppField name="officerName">{(f) => <f.input label={m["common.name"]()} />}</form.AppField>
+                <form.AppField name="officerRank">{(f) => <f.input label={m["common.rank"]()} />}</form.AppField>
                 </>
               )
             }
@@ -167,10 +168,10 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
         <form.AppField name="status">
           {(f) => (
             <Field>
-              <FieldLabel>Status</FieldLabel>
+              <FieldLabel>{m["common.status"]()}</FieldLabel>
               <Select items={bondStatuses} value={f.state.value} onValueChange={(value) => f.handleChange(value ?? f.state.value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={m["common.select_status"]()} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -190,21 +191,21 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
           <form.AppField name="custodyId">
             {(f) => (
               <Field>
-                <FieldLabel>Related custody record (optional)</FieldLabel>
+                <FieldLabel>{m["bonds.related_custody"]()}</FieldLabel>
                 <Select
                   items={[
-                    { value: '', label: 'None' },
+                    { value: '', label: m["common.none"]() },
                     ...custodyRecords.map((c: CustodyRecord) => ({ value: c.id, label: c.id })),
                   ]}
                   value={f.state.value ?? ''}
                   onValueChange={(value) => f.handleChange(value || null)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None" />
+                    <SelectValue placeholder={m["common.none"]()} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="">{m["common.none"]()}</SelectItem>
                       {custodyRecords.map((c: CustodyRecord) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.id}
@@ -220,18 +221,18 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
           <form.AppField name="caseId">
             {(f) => (
               <Field>
-                <FieldLabel>Related case (optional)</FieldLabel>
+                <FieldLabel>{m["bonds.related_case"]()}</FieldLabel>
                 <Select
-                  items={[{ value: '', label: 'None' }, ...cases.map((c: Case) => ({ value: c.id, label: c.reference }))]}
+                  items={[{ value: '', label: m["common.none"]() }, ...cases.map((c: Case) => ({ value: c.id, label: c.reference }))]}
                   value={f.state.value ?? ''}
                   onValueChange={(value) => f.handleChange(value || null)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None" />
+                    <SelectValue placeholder={m["common.none"]()} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="">{m["common.none"]()}</SelectItem>
                       {cases.map((c: Case) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.reference}
@@ -248,7 +249,7 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
         <form.AppField name="notes">
           {(f) => (
             <Field>
-              <FieldLabel>Notes (optional)</FieldLabel>
+              <FieldLabel>{m["common.notes_optional"]()}</FieldLabel>
               <Textarea value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} rows={3} />
             </Field>
           )}
@@ -259,7 +260,7 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={bond ? 'Save changes' : 'Grant bond'} />
+          <form.submit label={bond ? m["common.save_changes"]() : m["bonds.submit"]()} />
         </form.AppForm>
       </DrawerFooter>
     </form>

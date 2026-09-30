@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Home01Icon, Search01Icon, Settings01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
@@ -34,14 +35,14 @@ export function Ribbon() {
   const station = installation?.mode === 'station'
 
   return (
-    <nav aria-label="Ribbon" className="flex w-11 shrink-0 flex-col items-center gap-1 border-r border-border/20 bg-background py-1.5 print:hidden">
-      <RibbonButton icon={Home01Icon} label="Overview" active={pathname === '/'} onClick={() => void navigate({ to: '/' })} />
-      {station && <RibbonButton icon={Search01Icon} label="Search (Ctrl K)" onClick={() => setCommandOpen(true)} />}
+    <nav aria-label={m["workspace.ribbon"]()} className="flex w-11 shrink-0 flex-col items-center gap-1 border-r border-border/20 bg-background py-1.5 print:hidden">
+      <RibbonButton icon={Home01Icon} label={m["nav.overview"]()} active={pathname === '/'} onClick={() => void navigate({ to: '/' })} />
+      {station && <RibbonButton icon={Search01Icon} label={m["workspace.search_ctrl_k"]()} onClick={() => setCommandOpen(true)} />}
       {station && <QuickActions />}
 
       <div className="flex-1" />
 
-      <RibbonButton icon={Settings01Icon} label="Settings" active={pathname.startsWith('/settings')} onClick={() => void navigate({ to: '/settings' })} />
+      <RibbonButton icon={Settings01Icon} label={m["nav.settings"]()} active={pathname.startsWith('/settings')} onClick={() => void navigate({ to: '/settings' })} />
     </nav>
   )
 }

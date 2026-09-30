@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Download01Icon, PrinterIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
@@ -18,15 +19,15 @@ export function RecordExportActions({ onPrint, onExport, exportPending }: Record
     <div className="flex items-center gap-2">
       <Button type="button" size="sm" variant="secondary" onClick={onPrint}>
         <HugeiconsIcon icon={PrinterIcon} />
-        Print
+        {m["common.print"]()}
       </Button>
       <Button type="button" size="sm" variant="secondary" onClick={() => onExport('pdf')} disabled={exportPending}>
         <HugeiconsIcon icon={Download01Icon} />
-        PDF
+        {m["common.pdf"]()}
       </Button>
       <Button type="button" size="sm" variant="secondary" onClick={() => onExport('docx')} disabled={exportPending}>
         <HugeiconsIcon icon={Download01Icon} />
-        Word
+        {m["common.word"]()}
       </Button>
     </div>
   )

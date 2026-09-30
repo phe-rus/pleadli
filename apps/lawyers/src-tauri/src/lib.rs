@@ -7,12 +7,34 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
 
+/// The router's state: the old PIN lock (it only guards an installation that
+/// is not set up yet) and who is signed in. Under basic or full protection the
+/// app always starts with nobody signed in.
+async fn app_state(pool: sqlx::SqlitePool, vault_root: std::path::PathBuf, data_dir: std::path::PathBuf) -> Result<api::AppState, sqlx::Error> {
+    let security = domain::security::Security::new();
+    security.load(&pool).await?;
+    let legacy_locked = !security.is_installed() && domain::lock::is_enabled(&pool).await?;
+    let network = domain::network::Runtime::load(&pool).await?;
+    Ok(api::AppState {
+        pool,
+        vault_root,
+        lock: std::sync::Arc::new(domain::lock::Runtime::new(legacy_locked)),
+        security: std::sync::Arc::new(security),
+        network: std::sync::Arc::new(network),
+        lan: std::sync::Arc::new(api::Lan::new(data_dir)),
+    })
+}
+
 /// Development only: the API without a window, for driving the real frontend
 /// from a browser or a script. Same router, same migrations, same seed.
 #[cfg(debug_assertions)]
 pub async fn run_headless(data_dir: std::path::PathBuf) -> Result<(), String> {
     let router = match db::startup(&data_dir).await {
-        Ok(db) => api::router(api::AppState { pool: db.pool }),
+        Ok(db) => {
+            let state = app_state(db.pool, db.vault_root, data_dir.clone()).await.map_err(|e| e.to_string())?;
+            tokio::spawn(api::supervise_office(state.clone()));
+            api::router(state)
+        }
         Err(db::StartupError::Recovery(reason)) => api::recovery_router(reason),
         Err(db::StartupError::Fatal(reason)) => return Err(reason),
     };
@@ -20,7 +42,13 @@ pub async fn run_headless(data_dir: std::path::PathBuf) -> Result<(), String> {
     Ok(())
 }
 
+/// Development builds: read the developer's `.env.local` (git-ignored) for an Assist key.
+pub fn load_dev_env() {
+    pleadli_node_core::ai::load_dev_env(concat!(env!("CARGO_MANIFEST_DIR"), "/.env.local"));
+}
+
 pub fn run() {
+    load_dev_env();
     tauri::Builder::default()
         // Single-instance must be the first plugin registered: it has to
         // intercept a second launch before anything else runs. With one SQLite
@@ -41,6 +69,9 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        // Installed copies check the public releases for a signed update (see .github/workflows/release.yml).
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_os::init())
@@ -52,7 +83,12 @@ pub fn run() {
 
             let router = match tauri::async_runtime::block_on(db::startup(&data_dir)) {
                 Ok(db) => {
-                    let router = api::router(api::AppState { pool: db.pool.clone() });
+                    let state = tauri::async_runtime::block_on(app_state(db.pool.clone(), db.vault_root.clone(), data_dir.clone()))?;
+                    tauri::async_runtime::spawn(api::supervise_office(state.clone()));
+                    // Saving a filing pack asks the same "is anyone signed in" as the API.
+                    app.manage(state.security.clone());
+                    app.manage(state.network.clone());
+                    let router = api::router(state);
                     app.manage(db);
                     router
                 }
@@ -110,7 +146,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![commands::api::api_request])
+        .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::export::save_pdf, commands::export::save_export])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

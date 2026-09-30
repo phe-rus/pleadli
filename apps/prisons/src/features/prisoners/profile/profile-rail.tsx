@@ -101,7 +101,7 @@ export function ProfileRail({ prisoner }: { prisoner: Prisoner }) {
 
         <Facts
           items={[
-            { label: m.prisoners_age(), value: age != null ? `${age} years (born ${format(prisoner.dateOfBirth!, 'd MMM yyyy')})` : null },
+            { label: m.prisoners_age(), value: age != null ? m.prisoners_age_born({ age, date: format(prisoner.dateOfBirth!, 'd MMM yyyy') }) : null },
             { label: m.prisoners_sex(), value: lookup(prisonerSexes, prisoner.sex) },
             { label: m.prisoners_nationality(), value: lookup(nationalities, prisoner.nationality) },
             { label: m.prisoners_national_id(), value: prisoner.nationalId },

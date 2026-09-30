@@ -1,5 +1,5 @@
 use argon2::password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
-use argon2::Argon2;
+use argon2::{Algorithm, Argon2, Params, Version};
 use serde::{Deserialize, Serialize};
 use sqlx::{AssertSqlSafe, FromRow, SqlitePool};
 use std::fmt;
@@ -98,9 +98,21 @@ fn blank_to_none(value: &Option<String>) -> Option<String> {
     value.as_ref().map(|v| v.trim().to_string()).filter(|v| !v.is_empty())
 }
 
+/// OWASP's own third listed configuration for Argon2id (the Password Storage
+/// Cheat Sheet lists four; this one trades the default's 19 MiB of memory for
+/// more iterations, same defensive strength, lower peak memory), chosen
+/// because this app runs on officers' own station machines, some of them low
+/// on memory, not a provisioned server. A hash a caller already holds keeps
+/// verifying under whatever cost it was created with (the params are encoded
+/// in the hash string itself); only a password hashed from here on uses this.
+fn argon2() -> Argon2<'static> {
+    let params = Params::new(9_216, 4, 1, None).expect("these Argon2 params are valid");
+    Argon2::new(Algorithm::Argon2id, Version::V0x13, params)
+}
+
 fn hash_password(password: &str) -> Result<String, OfficerError> {
     let salt = SaltString::generate(&mut OsRng);
-    Argon2::default()
+    argon2()
         .hash_password(password.as_bytes(), &salt)
         .map(|hash| hash.to_string())
         .map_err(|e| OfficerError::Hash(e.to_string()))
@@ -110,7 +122,9 @@ pub(crate) fn verify_password(password: &str, hash: &str) -> bool {
     let Ok(parsed) = PasswordHash::new(hash) else {
         return false;
     };
-    Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok()
+    // verify_password reads the cost params encoded in `parsed`, not argon2()'s
+    // own; this instance's params only take effect for a hash created fresh.
+    argon2().verify_password(password.as_bytes(), &parsed).is_ok()
 }
 
 pub async fn create_officer(pool: &SqlitePool, input: CreateOfficerInput) -> Result<Officer, OfficerError> {

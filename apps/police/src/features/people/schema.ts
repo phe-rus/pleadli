@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 // Imported from each domain's own schema module directly, not its feature
 // barrel — several of those barrels re-export a form component that itself
 // imports from '@/features/people', which would make this a circular import.
@@ -28,8 +29,8 @@ export const personSchema = z.object({
 export type Person = z.infer<typeof personSchema>
 
 export const createPersonSchema = z.object({
-  firstName: z.string().min(1, 'First name is required.'),
-  lastName: z.string().min(1, 'Last name is required.'),
+  firstName: z.string().min(1, { error: () => m["validation.first_name_is_required"]() }),
+  lastName: z.string().min(1, { error: () => m["validation.last_name_is_required"]() }),
   otherNames: z.string(),
   phone: z.string(),
   nationalId: z.string(),

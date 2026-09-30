@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import {
   dutyAssignmentsOptions,
@@ -21,7 +22,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 import type { OfficerCheckIn, ShiftHandover } from '@/features/shift-log'
 
@@ -52,11 +53,11 @@ function RouteComponent() {
   const checkInColumns: DataTableColumnDef<OfficerCheckIn>[] = useMemo(() => {
     return [
       selectColumn(),
-      { accessorKey: 'officerName', header: 'Officer' },
-      { accessorKey: 'method', header: 'Method', cell: ({ getValue }) => checkInMethodLabel(getValue<string>()) },
+      { accessorKey: 'officerName', header: m["col.officer"]() },
+      { accessorKey: 'method', header: m["col.method"](), cell: ({ getValue }) => checkInMethodLabel(getValue<string>()) },
       {
         accessorKey: 'checkedInAt',
-        header: 'Checked in',
+        header: m["col.checked_in"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
@@ -67,15 +68,15 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'outgoingOfficerName',
-        header: 'Outgoing',
+        header: m["col.outgoing"](),
         cell: ({ row }) => row.original.outgoingOfficerName ?? '·',
       },
-      { accessorKey: 'incomingOfficerName', header: 'Incoming' },
-      { accessorKey: 'unit', header: 'Unit', cell: ({ row }) => row.original.unit ?? '·' },
-      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      { accessorKey: 'incomingOfficerName', header: m["col.incoming"]() },
+      { accessorKey: 'unit', header: m["col.unit"](), cell: ({ row }) => row.original.unit ?? '·' },
+      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
       {
         accessorKey: 'handedOverAt',
-        header: 'Handed over',
+        header: m["col.handed_over"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
@@ -86,7 +87,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: m["col.id"](),
         cell: ({ row }) => (
           <span
             className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
@@ -96,31 +97,31 @@ function RouteComponent() {
           </span>
         ),
       },
-      { accessorKey: 'officerName', header: 'Officer' },
+      { accessorKey: 'officerName', header: m["col.officer"]() },
       {
         accessorKey: 'officerRank',
-        header: 'Rank',
+        header: m["col.rank"](),
         cell: ({ row }) => row.original.officerRank ?? '·',
       },
       {
         accessorKey: 'unit',
-        header: 'Unit',
+        header: m["col.unit"](),
         cell: ({ row }) => row.original.unit ?? '·',
       },
       {
         accessorKey: 'shiftStart',
-        header: 'Shift start',
+        header: m["col.shift_start"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
       {
         accessorKey: 'shiftEnd',
-        header: 'Shift end',
+        header: m["col.shift_end"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
-      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => row.original.notes ?? '·' },
+      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
       {
         accessorKey: 'createdAt',
-        header: 'Recorded',
+        header: m["col.recorded"](),
         cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
       },
     ]
@@ -131,7 +132,7 @@ function RouteComponent() {
       <section className="flex items-center gap-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <h1>Duty Roster</h1>
+            <h1>{m["roster.title"]()}</h1>
 
             <Createpanel
               open={addOpen}
@@ -139,17 +140,17 @@ function RouteComponent() {
               trigger={
                 <Button size="sm">
                   <HugeiconsIcon icon={AddCircleIcon} />
-                  Add assignment
+                  {m["duty.submit"]()}
                 </Button>
               }
-              headings={{ title: 'Add duty assignment', description: 'Who is on duty, and when.' }}
+              headings={{ title: m["roster.add_title"](), description: m["roster.add_desc"]() }}
             >
               <DutyAssignmentForm onSuccess={() => setAddOpen(false)} />
             </Createpanel>
 
             <Button size="sm" variant="secondary" onClick={() => setCheckInOpen(true)}>
               <HugeiconsIcon icon={LoginCircle01Icon} />
-              Check in
+              {m["shift_log.check_in"]()}
             </Button>
             <CheckInDialog open={checkInOpen} onOpenChange={setCheckInOpen} />
 
@@ -159,15 +160,15 @@ function RouteComponent() {
               trigger={
                 <Button size="sm" variant="secondary">
                   <HugeiconsIcon icon={UserSwitchIcon} />
-                  Log handover
+                  {m["shift_log.submit"]()}
                 </Button>
               }
-              headings={{ title: 'Log shift handover', description: 'Who took over, and what happened.' }}
+              headings={{ title: m["roster.handover_title"](), description: m["roster.handover_desc"]() }}
             >
               <HandoverForm onSuccess={() => setHandoverOpen(false)} />
             </Createpanel>
           </div>
-          <p className="md:max-w-sm">Officer assignments and shift coverage at this station.</p>
+          <p className="md:max-w-sm">{m["roster.lead"]()}</p>
         </div>
       </section>
 
@@ -176,7 +177,7 @@ function RouteComponent() {
         onOpenChange={(open) => {
           if (!open) setEditing(null)
         }}
-        headings={{ title: 'Edit assignment', description: 'Update this duty assignment.' }}
+        headings={{ title: m["roster.edit_title"](), description: m["roster.edit_desc"]() }}
       >
         {editing && (
           <DutyAssignmentForm key={editing.id} assignment={editing} onSuccess={() => setEditing(null)} />
@@ -184,35 +185,35 @@ function RouteComponent() {
       </Createpanel>
 
       <DataTable
-        aria-label="Duty Roster"
+        aria-label={m["roster.title"]()}
         data={assignments}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="No duty assignments yet."
-        searchPlaceholder="Search the roster…"
+        emptyMessage={m["roster.empty"]()}
+        searchPlaceholder={m["roster.search"]()}
       />
 
       <section className="flex flex-col gap-3">
-        <h2>Check-ins</h2>
+        <h2>{m["roster.check_ins"]()}</h2>
         <DataTable
-          aria-label="Check-ins"
+          aria-label={m["roster.check_ins"]()}
           data={checkIns}
           columns={checkInColumns}
           getRowId={(row) => row.id}
-          emptyMessage="No check-ins yet."
-          searchPlaceholder="Search check-ins…"
+          emptyMessage={m["roster.check_ins_empty"]()}
+          searchPlaceholder={m["roster.check_ins_search"]()}
         />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2>Shift Handovers</h2>
+        <h2>{m["roster.handovers"]()}</h2>
         <DataTable
-          aria-label="Shift Handovers"
+          aria-label={m["roster.handovers"]()}
           data={handovers}
           columns={handoverColumns}
           getRowId={(row) => row.id}
-          emptyMessage="No handovers logged yet."
-          searchPlaceholder="Search handovers…"
+          emptyMessage={m["roster.handovers_empty"]()}
+          searchPlaceholder={m["roster.handovers_search"]()}
         />
       </section>
     </article>

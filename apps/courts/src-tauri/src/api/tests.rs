@@ -716,7 +716,7 @@ async fn a_recording_is_saved_in_chained_chunks_and_can_be_played_back_whole() {
     let (status, audio) = get(&app, &format!("/api/recordings/{rec}/audio")).await;
     assert_eq!(status, StatusCode::OK, "{audio}");
     let joined = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, audio["dataBase64"].as_str().unwrap()).unwrap();
-    assert_eq!(joined, b"first-chunk-bytesecond-chunk-bytes");
+    assert_eq!(joined, b"first-chunk-bytessecond-chunk-bytes");
 
     // A new recording can follow (a pause and a restart).
     start_recording(&app, &sitting).await;

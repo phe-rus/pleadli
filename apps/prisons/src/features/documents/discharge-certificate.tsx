@@ -40,7 +40,7 @@ export function DischargeCertificate({ prisonerId, issued }: { prisonerId: strin
             [m.documents_type(), releaseTypeLabel(release.releaseType)],
             [m.documents_ordered_by(), release.orderedBy],
             [m.documents_basis(), release.basis],
-            [m.documents_held(), `${differenceInCalendarDays(release.releasedAt, prisoner.admittedAt)} days, from ${format(prisoner.admittedAt, 'd MMM yyyy')}`],
+            [m.documents_held(), m.documents_held_days({ days: differenceInCalendarDays(release.releasedAt, prisoner.admittedAt), date: format(prisoner.admittedAt, 'd MMM yyyy') })],
             [m.documents_notes(), release.notes],
           ]}
         />

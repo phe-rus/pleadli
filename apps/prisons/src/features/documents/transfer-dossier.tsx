@@ -35,7 +35,7 @@ export function TransferDossier({ transferId, issued }: { transferId: string; is
       <DocSection title={m.documents_the_movement()}>
         <DocFacts
           rows={[
-            [outgoing ? 'To' : m.documents_from(), transfer.otherPrisonName],
+            [outgoing ? m.documents_to() : m.documents_from(), transfer.otherPrisonName],
             [m.documents_ordered_by(), transfer.orderingAuthority],
             [m.documents_order_reference(), transfer.orderReference],
             [m.documents_reason(), transfer.reason],

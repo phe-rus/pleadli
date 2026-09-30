@@ -103,7 +103,7 @@ export function PrisonersPage({ openId }: { openId?: string }) {
       {
         accessorKey: 'highCourtOnlyOffence',
         header: m.route_prisoners_high_court_only(),
-        cell: ({ getValue }) => (getValue<boolean>() ? m.route_prisoners_yes() : 'No'),
+        cell: ({ getValue }) => (getValue<boolean>() ? m.route_prisoners_yes() : m.common_no()),
       },
       { accessorKey: 'currentLocation', header: m.route_prisoners_location(), cell: ({ row }) => row.original.currentLocation ?? '·' },
       { accessorKey: 'admittedAt', header: m.route_prisoners_admitted(), cell: ({ getValue }) => format(getValue<number>(), 'PPp') },

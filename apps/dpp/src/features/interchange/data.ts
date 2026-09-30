@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
 import { api, devInterchangeInviteUrl, devInterchangeOutgoingUrl, seg } from '@/lib/api'
@@ -72,7 +73,7 @@ export async function prepareNotice(decisionId: string) {
 export async function importPackage(file?: File): Promise<ImportOutcome | null> {
   if (isTauri()) {
     const { open } = await import('@tauri-apps/plugin-dialog')
-    const path = await open({ multiple: false, filters: [{ name: 'Pleadli package', extensions: ['pxpkg'] }] })
+    const path = await open({ multiple: false, filters: [{ name: m["interchange.package_filter"](), extensions: ['pxpkg'] }] })
     if (typeof path !== 'string') return null
     return importOutcomeSchema.parse(await invoke('import_interchange_file', { path }))
   }
@@ -88,13 +89,13 @@ export async function saveFile(kind: 'invite' | 'outgoing', id: string): Promise
   if (isTauri()) {
     const { save } = await import('@tauri-apps/plugin-dialog')
     const name = await invoke<string>('interchange_file_name', { kind, id })
-    const path = await save({ defaultPath: name, filters: [{ name: 'Pleadli package', extensions: ['pxpkg'] }] })
+    const path = await save({ defaultPath: name, filters: [{ name: m["interchange.package_filter"](), extensions: ['pxpkg'] }] })
     if (!path) return false
     await invoke('save_interchange_file', { kind, id, path })
     return true
   }
   const response = await fetch(kind === 'invite' ? devInterchangeInviteUrl(id) : devInterchangeOutgoingUrl(id))
-  if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { message?: string } | null)?.message ?? 'The file could not be made.')
+  if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { message?: string } | null)?.message ?? m["interchange.file_failed"]())
   const url = URL.createObjectURL(await response.blob())
   const link = document.createElement('a')
   link.href = url

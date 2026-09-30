@@ -128,7 +128,7 @@ function TransferCard({ transfer, onCancel }: { transfer: Transfer; onCancel: ()
               <span className="truncate text-sm font-medium">{name}</span>
             )}
             <span className="text-xs text-muted-foreground">
-              {out ? 'To' : m.transfers_from()} {transfer.otherPrisonName ?? m.transfers_another_prison()}
+              {out ? m.transfers_to() : m.transfers_from()} {transfer.otherPrisonName ?? m.transfers_another_prison()}
             </span>
           </div>
           <Badge variant={transfer.state === 'arrived' ? 'destructive' : 'outline'} className="shrink-0">

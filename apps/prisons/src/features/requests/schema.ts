@@ -32,8 +32,8 @@ export type PrisonRequest = z.infer<typeof requestSchema>
 
 export const createRequestSchema = z.object({
   prisonerId: z.string().nullable(),
-  category: z.string().min(1, 'Category is required.'),
-  description: z.string().min(1, 'A description is required.'),
+  category: z.string().min(1, { error: () => m.validation_category_required() }),
+  description: z.string().min(1, { error: () => m.validation_description_required() }),
   raisedAt: z.number(),
 })
 

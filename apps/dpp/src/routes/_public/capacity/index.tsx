@@ -1,3 +1,5 @@
+import { formatDate } from '@/lib/dates'
+import { serviceNames } from '@/lib/jurisdiction'
 import { EmptyNote, Planned } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
 import { Tag } from '@/components/status-tag'
@@ -5,9 +7,10 @@ import { decisionTypeLabel } from '@/features/decisions/schema'
 import { useProsecutorProfile } from '@/features/prosecutor-profile'
 import { capacityOptions, useCapacity, useWorkload, workloadOptions, type Spread } from '@/features/workload'
 import { ageLabel, plural } from '@/lib/present'
+import * as m from '@/paraglide/messages'
+import { getLocale } from '@/paraglide/runtime'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
 
 const periods = [3, 6, 12] as const
 type Period = (typeof periods)[number]
@@ -30,13 +33,15 @@ function Bar({ value, max, className }: { value: number; max: number; className?
   )
 }
 
-const monthLabel = (ms: number, short = false) => new Date(ms).toLocaleString('en-GB', { month: 'short', ...(short ? {} : { year: 'numeric' }), timeZone: 'UTC' })
-const days = (value: number | null) => (value === null ? 'none yet' : `${value < 10 ? value.toFixed(1) : Math.round(value)} days`)
-const bandLabels = ['Up to a week', 'Up to two weeks', 'Up to four weeks', 'Longer']
+const monthLabel = (ms: number, short = false) => new Date(ms).toLocaleString(getLocale(), { month: 'short', ...(short ? {} : { year: 'numeric' }), timeZone: 'UTC' })
+const days = (value: number | null) => (value === null ? m["capacity.none_yet"]() : m["capacity.days"]({ days: value < 10 ? value.toFixed(1) : String(Math.round(value)) }))
+const bandLabels = () => [m["capacity.turnaround_band.week"](), m["capacity.turnaround_band.two_weeks"](), m["capacity.turnaround_band.four_weeks"](), m["capacity.turnaround_band.longer"]()]
+
+type CountMessage = (params: { count: number }) => string
 
 /** How long something took, over the period: the middle case, the average, the
  * longest, and how the cases spread. */
-function TurnaroundCard({ title, about, what, spread }: { title: string; about: string; what: string; spread: Spread }) {
+function TurnaroundCard({ title, about, what, spread }: { title: string; about: string; what: [CountMessage, CountMessage]; spread: Spread }) {
   const max = Math.max(1, ...spread.bands)
   return (
     <section className="flex flex-col gap-3 rounded-lg border bg-card p-4">
@@ -45,15 +50,15 @@ function TurnaroundCard({ title, about, what, spread }: { title: string; about: 
         <p>{about}</p>
       </div>
       {spread.count === 0 ? (
-        <p>Nothing to measure in this period yet.</p>
+        <p>{m["capacity.nothing_to_measure"]()}</p>
       ) : (
         <>
           <p>
-            <span className="text-2xl font-semibold text-foreground tabular-nums">{days(spread.medianDays)}</span> in the middle, across {plural(spread.count, what)}. Average {days(spread.meanDays)}, longest {days(spread.longestDays)}.
+            <span className="text-2xl font-semibold text-foreground tabular-nums">{days(spread.medianDays)}</span> {m["capacity.spread"]({ across: plural(spread.count, ...what), average: days(spread.meanDays), longest: days(spread.longestDays) })}
           </p>
           <div className="flex flex-col gap-1.5">
-            {bandLabels.map((label, i) => (
-              <div key={label} className="grid grid-cols-[8rem_1fr_2rem] items-center gap-3">
+            {bandLabels().map((label, i) => (
+              <div key={i} className="grid grid-cols-[8rem_1fr_2rem] items-center gap-3">
                 <span>{label}</span>
                 <Bar value={spread.bands[i]} max={max} />
                 <span className="text-right tabular-nums">{spread.bands[i]}</span>
@@ -66,7 +71,7 @@ function TurnaroundCard({ title, about, what, spread }: { title: string; about: 
   )
 }
 
-function WaitingList({ title, empty, items, tab, unit }: { title: string; empty: string; items: { fileId: string; title: string; reference: string | null; since: number }[]; tab: 'review' | 'decisions'; unit: string }) {
+function WaitingList({ title, empty, items, tab, unit }: { title: string; empty: string; items: { fileId: string; title: string; reference: string | null; since: number }[]; tab: 'review' | 'decisions'; unit: (params: { date: string }) => string }) {
   return (
     <section className="page-section">
       <h3>{title}</h3>
@@ -78,11 +83,11 @@ function WaitingList({ title, empty, items, tab, unit }: { title: string; empty:
             <Row
               key={item.fileId}
               title={item.title}
-              summary={`${item.reference ? `${item.reference}. ` : ''}${unit} ${format(item.since, 'PP')}.`}
+              summary={`${item.reference ? `${item.reference}. ` : ''}${unit({ date: formatDate(item.since) })}`}
               trailing={
                 <>
                   <span className="font-semibold text-foreground tabular-nums">{ageLabel(item.since)}</span>
-                  <Link to="/files/$fileId" params={{ fileId: item.fileId }} search={{ tab }} className="text-primary">Open</Link>
+                  <Link to="/files/$fileId" params={{ fileId: item.fileId }} search={{ tab }} className="text-primary">{m["common.open"]()}</Link>
                 </>
               }
             />
@@ -105,21 +110,21 @@ function RouteComponent() {
 
   const active = workload.awaitingDecision + workload.returned
   const bands = [
-    { label: 'Under a week', value: workload.ageBands.underAWeek },
-    { label: 'One to two weeks', value: workload.ageBands.oneToTwoWeeks },
-    { label: 'Two to four weeks', value: workload.ageBands.twoToFourWeeks },
-    { label: 'Over four weeks', value: workload.ageBands.overFourWeeks },
+    { id: 'week', label: m["capacity.age_band.under_week"](), value: workload.ageBands.underAWeek },
+    { id: 'two', label: m["capacity.age_band.one_to_two"](), value: workload.ageBands.oneToTwoWeeks },
+    { id: 'four', label: m["capacity.age_band.two_to_four"](), value: workload.ageBands.twoToFourWeeks },
+    { id: 'over', label: m["capacity.age_band.over_four"](), value: workload.ageBands.overFourWeeks },
   ]
   const queues = [
-    { label: 'Intake', detail: 'Received, no review recorded', value: workload.intake, view: 'intake' as const },
-    { label: 'In review', detail: 'Awaiting a decision, review under way or resubmitted', value: workload.inReview, view: 'active' as const },
-    { label: 'Returned to Police', detail: 'With Police for further investigation', value: workload.returned, view: 'returned' as const },
-    { label: 'Reopened reviews', detail: 'Concluded decisions brought back for review', value: workload.reopened, view: 'reopened' as const },
-    { label: 'Documents pending', detail: 'Prepared and not yet issued', value: workload.draftDocuments, view: null },
-    { label: 'Concluded', detail: 'The charging decision has been made', value: workload.concluded, view: 'closed' as const },
+    { id: 'intake', label: m["nav.item.intake"](), detail: m["capacity.queue.intake"](), value: workload.intake, view: 'intake' as const },
+    { id: 'review', label: m["capacity.queue.in_review_label"](), detail: m["capacity.queue.in_review"](), value: workload.inReview, view: 'active' as const },
+    { id: 'returned', label: m["nav.item.returned"](), detail: m["capacity.queue.returned"](), value: workload.returned, view: 'returned' as const },
+    { id: 'reopened', label: m["nav.item.reopened"](), detail: m["capacity.queue.reopened"](), value: workload.reopened, view: 'reopened' as const },
+    { id: 'documents', label: m["capacity.queue.documents_label"](), detail: m["capacity.queue.documents"](), value: workload.draftDocuments, view: null },
+    { id: 'concluded', label: m["capacity.queue.concluded_label"](), detail: m["capacity.queue.concluded"](), value: workload.concluded, view: 'closed' as const },
   ]
-  const flowMax = Math.max(1, ...cap.months.flatMap((m) => [m.received, m.filesDecided]))
-  const backlogMax = Math.max(1, ...cap.months.map((m) => m.awaitingAtEnd + m.withPoliceAtEnd))
+  const flowMax = Math.max(1, ...cap.months.flatMap((mo) => [mo.received, mo.filesDecided]))
+  const backlogMax = Math.max(1, ...cap.months.map((mo) => mo.awaitingAtEnd + mo.withPoliceAtEnd))
   const stations = workload.stations
   const answered = cap.directionsMet + cap.directionsNotMet
   const mixMax = Math.max(1, ...cap.decisionMix.map((d) => d.count))
@@ -129,10 +134,10 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Capacity and workload</h1>
-          <p>How much work is sitting with this installation, how it has moved, and where it is concentrated. It measures the work, not the prosecutor.</p>
+          <h1>{m["nav.item.capacity"]()}</h1>
+          <p>{m["capacity.subtitle"]()}</p>
         </div>
-        <nav aria-label="Period" className="page-actions">
+        <nav aria-label={m["capacity.period"]()} className="page-actions">
           {periods.map((p) => (
             <Link
               key={p}
@@ -142,7 +147,7 @@ function RouteComponent() {
               aria-current={p === chosen ? 'page' : undefined}
               className={cn('rounded-md px-2.5 py-1 no-underline', p === chosen ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground')}
             >
-              {p} months
+              {m["capacity.months"]({ count: p })}
             </Link>
           ))}
         </nav>
@@ -150,19 +155,19 @@ function RouteComponent() {
 
       <section className="page-section">
         <div className="section-head">
-          <h2>Queues</h2>
-          <Tag tone="neutral">{plural(active, 'active file')}</Tag>
+          <h2>{m["capacity.queues"]()}</h2>
+          <Tag tone="neutral">{plural(active, m["count.active_file.one"], m["count.active_file.many"])}</Tag>
         </div>
         <RowList>
           {queues.map((queue) => (
             <Row
-              key={queue.label}
+              key={queue.id}
               title={queue.label}
               summary={queue.detail}
               trailing={
                 <>
                   <span className="text-2xl font-semibold tabular-nums">{queue.value}</span>
-                  {queue.view ? <Link to="/files" search={{ view: queue.view }} className="text-primary">Open</Link> : <Link to="/documents" className="text-primary">Open</Link>}
+                  {queue.view ? <Link to="/files" search={{ view: queue.view }} className="text-primary">{m["common.open"]()}</Link> : <Link to="/documents" className="text-primary">{m["common.open"]()}</Link>}
                 </>
               }
             />
@@ -171,77 +176,77 @@ function RouteComponent() {
       </section>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <WaitingList title="Longest waiting on a decision" empty="No file is waiting on a decision." items={cap.longestWaiting} tab="review" unit="Waiting since" />
-        <WaitingList title="Longest with Police" empty="No file is with Police." items={cap.longestWithPolice} tab="decisions" unit="Returned" />
+        <WaitingList title={m["capacity.longest_waiting"]()} empty={m["review_page.empty_any"]()} items={cap.longestWaiting} tab="review" unit={m["capacity.waiting_since"]} />
+        <WaitingList title={m["capacity.longest_with_police"]()} empty={m["capacity.none_with_police"]()} items={cap.longestWithPolice} tab="decisions" unit={m["capacity.returned_on"]} />
       </div>
 
       <section className="page-section">
-        <h2>How the work has moved</h2>
-        <p>By calendar month. A decision about several counts counts once. The last column is this month so far.</p>
+        <h2>{m["capacity.moved"]()}</h2>
+        <p>{m["capacity.moved_hint"]()}</p>
         <div className="no-scrollbar overflow-x-auto">
           <div className="grid min-w-[36rem] gap-y-2" style={{ gridTemplateColumns: `11rem repeat(${cap.months.length}, minmax(3.5rem, 1fr))` }}>
             <span />
-            {cap.months.map((m) => (
-              <span key={m.startsAt} className="text-center text-xs text-muted-foreground">
-                {monthLabel(m.startsAt, chosen > 6)}
-                {m.partial ? ' *' : ''}
+            {cap.months.map((mo) => (
+              <span key={mo.startsAt} className="text-center text-xs text-muted-foreground">
+                {monthLabel(mo.startsAt, chosen > 6)}
+                {mo.partial ? ' *' : ''}
               </span>
             ))}
             {[
-              { label: 'Files received', get: (m: (typeof cap.months)[number]) => m.received, bar: true },
-              { label: 'Files decided', get: (m: (typeof cap.months)[number]) => m.filesDecided, bar: true, muted: true },
-              { label: 'Returned to Police', get: (m: (typeof cap.months)[number]) => m.returned },
-              { label: 'Resubmitted', get: (m: (typeof cap.months)[number]) => m.resubmitted },
-              { label: 'Documents issued', get: (m: (typeof cap.months)[number]) => m.documentsIssued },
+              { id: 'received', label: m["capacity.row.received"](), get: (mo: (typeof cap.months)[number]) => mo.received, bar: true },
+              { id: 'decided', label: m["capacity.row.decided"](), get: (mo: (typeof cap.months)[number]) => mo.filesDecided, bar: true, muted: true },
+              { id: 'returned', label: m["nav.item.returned"](), get: (mo: (typeof cap.months)[number]) => mo.returned },
+              { id: 'resubmitted', label: m["overview.figure.resubmitted"](), get: (mo: (typeof cap.months)[number]) => mo.resubmitted },
+              { id: 'issued', label: m["capacity.row.issued"](), get: (mo: (typeof cap.months)[number]) => mo.documentsIssued },
             ].map((row) => (
-              <div key={row.label} className="contents">
+              <div key={row.id} className="contents">
                 <span>{row.label}</span>
-                {cap.months.map((m) => (
-                  <span key={m.startsAt} className="flex flex-col items-center gap-1 px-1">
-                    <span className="tabular-nums">{row.get(m)}</span>
-                    {row.bar && <Bar value={row.get(m)} max={flowMax} className={row.muted ? 'bg-muted-foreground/40' : undefined} />}
+                {cap.months.map((mo) => (
+                  <span key={mo.startsAt} className="flex flex-col items-center gap-1 px-1">
+                    <span className="tabular-nums">{row.get(mo)}</span>
+                    {row.bar && <Bar value={row.get(mo)} max={flowMax} className={row.muted ? 'bg-muted-foreground/40' : undefined} />}
                   </span>
                 ))}
               </div>
             ))}
-            <span className="border-t pt-2 font-semibold text-foreground">Waiting on a decision, at month end</span>
-            {cap.months.map((m) => (
-              <span key={m.startsAt} className="flex flex-col items-center gap-1 border-t px-1 pt-2">
-                <span className="tabular-nums">{m.awaitingAtEnd}</span>
-                <Bar value={m.awaitingAtEnd} max={backlogMax} />
+            <span className="border-t pt-2 font-semibold text-foreground">{m["capacity.row.waiting_end"]()}</span>
+            {cap.months.map((mo) => (
+              <span key={mo.startsAt} className="flex flex-col items-center gap-1 border-t px-1 pt-2">
+                <span className="tabular-nums">{mo.awaitingAtEnd}</span>
+                <Bar value={mo.awaitingAtEnd} max={backlogMax} />
               </span>
             ))}
-            <span className="font-semibold text-foreground">With Police, at month end</span>
-            {cap.months.map((m) => (
-              <span key={m.startsAt} className="flex flex-col items-center gap-1 px-1">
-                <span className="tabular-nums">{m.withPoliceAtEnd}</span>
-                <Bar value={m.withPoliceAtEnd} max={backlogMax} className="bg-sky-500" />
+            <span className="font-semibold text-foreground">{m["capacity.row.police_end"]()}</span>
+            {cap.months.map((mo) => (
+              <span key={mo.startsAt} className="flex flex-col items-center gap-1 px-1">
+                <span className="tabular-nums">{mo.withPoliceAtEnd}</span>
+                <Bar value={mo.withPoliceAtEnd} max={backlogMax} className="bg-sky-500" />
               </span>
             ))}
           </div>
         </div>
-        <p>Waiting at month end is replayed from each file's referrals, decisions and resubmissions, at the level of the whole file.</p>
+        <p>{m["capacity.replay_hint"]()}</p>
       </section>
 
       <section className="page-section">
-        <h2>How long it takes</h2>
+        <h2>{m["capacity.how_long"]()}</h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <TurnaroundCard title="Referral to first decision" about="From the referral to the first charging decision, for files decided in this period." what="file" spread={cap.turnaround.referralToDecision} />
-          <TurnaroundCard title="Time with Police" about="From a return to the resubmission that answered it." what="return" spread={cap.turnaround.timeWithPolice} />
-          <TurnaroundCard title="Document to issue" about="From a document being prepared to it being issued." what="document" spread={cap.turnaround.documentToIssue} />
+          <TurnaroundCard title={m["capacity.turnaround.referral"]()} about={m["capacity.turnaround.referral_about"]()} what={[m["count.file.one"], m["count.file.many"]]} spread={cap.turnaround.referralToDecision} />
+          <TurnaroundCard title={m["capacity.turnaround.police"]()} about={m["capacity.turnaround.police_about"]()} what={[m["count.return.one"], m["count.return.many"]]} spread={cap.turnaround.timeWithPolice} />
+          <TurnaroundCard title={m["capacity.turnaround.document"]()} about={m["capacity.turnaround.document_about"]()} what={[m["count.document.one"], m["count.document.many"]]} spread={cap.turnaround.documentToIssue} />
         </div>
       </section>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <section className="page-section">
-          <h2>Age of pending work</h2>
-          <p>How long files awaiting a decision have been waiting, from the referral or the latest resubmission.</p>
+          <h2>{m["capacity.age"]()}</h2>
+          <p>{m["capacity.age_hint"]()}</p>
           {workload.awaitingDecision === 0 ? (
-            <EmptyNote>No file is waiting on a decision.</EmptyNote>
+            <EmptyNote>{m["review_page.empty_any"]()}</EmptyNote>
           ) : (
             <div className="flex flex-col gap-3">
               {bands.map((band) => (
-                <div key={band.label} className="grid grid-cols-[9rem_1fr_2rem] items-center gap-3">
+                <div key={band.id} className="grid grid-cols-[9rem_1fr_2rem] items-center gap-3">
                   <span>{band.label}</span>
                   <Bar value={band.value} max={workload.awaitingDecision} />
                   <span className="text-right tabular-nums">{band.value}</span>
@@ -252,10 +257,10 @@ function RouteComponent() {
         </section>
 
         <section className="page-section">
-          <h2>Decisions in this period</h2>
-          <p>By kind. Several counts decided together count once.</p>
+          <h2>{m["capacity.decisions"]()}</h2>
+          <p>{m["capacity.decisions_hint"]()}</p>
           {cap.decisionMix.length === 0 ? (
-            <EmptyNote>No decisions in this period.</EmptyNote>
+            <EmptyNote>{m["capacity.decisions_empty"]()}</EmptyNote>
           ) : (
             <div className="flex flex-col gap-3">
               {cap.decisionMix.map((d) => (
@@ -270,10 +275,10 @@ function RouteComponent() {
         </section>
 
         <section className="page-section">
-          <h2>Where it is concentrated: station</h2>
-          <p>Active files (awaiting a decision or with Police) by the Police station that referred them.</p>
+          <h2>{m["capacity.by_station"]()}</h2>
+          <p>{m["capacity.by_station_hint"]()}</p>
           {stations.length === 0 ? (
-            <EmptyNote>No active files.</EmptyNote>
+            <EmptyNote>{m["capacity.no_active"]()}</EmptyNote>
           ) : (
             <div className="flex flex-col gap-3">
               {stations.map((s) => (
@@ -288,10 +293,10 @@ function RouteComponent() {
         </section>
 
         <section className="page-section">
-          <h2>Where it is concentrated: offence</h2>
-          <p>Proposed charges on active files, by offence.</p>
+          <h2>{m["capacity.by_offence"]()}</h2>
+          <p>{m["capacity.by_offence_hint"]()}</p>
           {cap.byOffence.length === 0 ? (
-            <EmptyNote>No proposed charges on active files.</EmptyNote>
+            <EmptyNote>{m["capacity.by_offence_empty"]()}</EmptyNote>
           ) : (
             <div className="flex flex-col gap-3">
               {cap.byOffence.map((o) => (
@@ -307,32 +312,32 @@ function RouteComponent() {
       </div>
 
       <section className="page-section">
-        <h2>Directions to Police</h2>
+        <h2>{m["capacity.directions"]()}</h2>
         {cap.directionsMet + cap.directionsNotMet + cap.directionsOpen === 0 ? (
-          <EmptyNote>No directions have been given.</EmptyNote>
+          <EmptyNote>{m["capacity.directions_empty"]()}</EmptyNote>
         ) : (
           <p>
-            Of {plural(cap.directionsMet + cap.directionsNotMet + cap.directionsOpen, 'direction')} given, {cap.directionsMet} met, {cap.directionsNotMet} not met and {cap.directionsOpen} still open
-            {answered > 0 ? ` (${Math.round((cap.directionsMet / answered) * 100)}% of those answered were met)` : ''}.
+            {m["capacity.directions_summary"]({ directions: plural(cap.directionsMet + cap.directionsNotMet + cap.directionsOpen, m["count.direction.one"], m["count.direction.many"]), met: cap.directionsMet, not_met: cap.directionsNotMet, open: cap.directionsOpen })}
+            {answered > 0 ? ` ${m["capacity.directions_rate"]({ percent: Math.round((cap.directionsMet / answered) * 100) })}` : ''}
           </p>
         )}
       </section>
 
       <section className="page-section">
-        <h2>By prosecutor</h2>
-        <p>This installation has one prosecutor, so all of the work sits with them.</p>
+        <h2>{m["capacity.by_prosecutor"]()}</h2>
+        <p>{m["capacity.by_prosecutor_hint"]()}</p>
         <RowList>
           <Row
             aligned
-            title={profile?.name ?? 'No prosecutor set'}
-            summary={profile ? (profile.isDpp ? 'Director of Public Prosecutions' : (profile.rank ?? undefined)) : 'Set the prosecutor in Settings so decisions and documents carry a name.'}
+            title={profile?.name ?? m["workspace.profile.none_title"]()}
+            summary={profile ? (profile.isDpp ? m["workspace.profile.dpp"]({ head: serviceNames().head }) : (profile.rank ?? undefined)) : m["capacity.set_prosecutor"]()}
             trailing={<span className="text-2xl font-semibold tabular-nums">{active}</span>}
           />
         </RowList>
       </section>
 
-      <Planned title="Not measured" covers={['Comparison between prosecutors or against a target: none is defined, and none is implied.', 'Court-side timings, until court matters are recorded.']}>
-        Capacity is for seeing how much work there is and where, so it can be planned for.
+      <Planned title={m["capacity.not_measured"]()} covers={[m["capacity.not_measured_target"](), m["capacity.not_measured_court"]()]}>
+        {m["capacity.not_measured_body"]()}
       </Planned>
     </article>
   )

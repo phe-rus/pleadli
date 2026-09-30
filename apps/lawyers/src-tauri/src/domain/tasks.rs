@@ -27,7 +27,7 @@ fn eat() -> FixedOffset {
     FixedOffset::east_opt(3 * 3600).expect("a valid offset")
 }
 
-fn eat_date(ms: i64) -> Option<NaiveDate> {
+pub fn eat_date(ms: i64) -> Option<NaiveDate> {
     chrono::DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&eat()).date_naive())
 }
 

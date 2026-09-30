@@ -5,11 +5,11 @@
 //!
 //! The steps that do not depend on the application live in
 //! `packages/node-core` (`db`); this file keeps the order and what is
-//! Lawyers' own. There is no document vault yet (nothing here stores a file),
-//! and backups, the app lock and restore arrive with the stage that needs them.
+//! Lawyers' own. Papers are sealed in the vault (`<data>/vault`, node-core's
+//! `vault`); backups and restore arrive with the stage that needs them.
 
 use sqlx::sqlite::SqlitePool;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use pleadli_node_core::db as core;
 pub use pleadli_node_core::db::StartupError;
@@ -18,6 +18,7 @@ use crate::domain::keys;
 
 pub struct Db {
     pub pool: SqlitePool,
+    pub vault_root: PathBuf,
 }
 
 const DB_FILE: &str = "lawyers.db";
@@ -38,7 +39,7 @@ pub async fn startup(data_dir: &Path) -> Result<Db, StartupError> {
     #[cfg(debug_assertions)]
     crate::domain::seed::seed_if_empty(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
 
-    Ok(Db { pool })
+    Ok(Db { pool, vault_root: data_dir.join("vault") })
 }
 
 #[cfg(test)]

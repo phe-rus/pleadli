@@ -1,3 +1,5 @@
+import * as m from '@/paraglide/messages'
+import { formatDate } from '@/lib/dates'
 import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
 import { FileStatusTag, Tag } from '@/components/status-tag'
@@ -15,7 +17,6 @@ import { ageLabel } from '@/lib/present'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
 import { useEffect, useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/files/')({
@@ -46,39 +47,39 @@ function RouteComponent() {
     if (open) void navigate({ to: '/files/$fileId', params: { fileId: open }, replace: true })
   }, [open, navigate])
 
-  const columns: DataTableColumnDef<FileSummary>[] = useMemo(
-    () => [
+  const columns: DataTableColumnDef<FileSummary>[] = useMemo<DataTableColumnDef<FileSummary>[]>(() => {
+    const waitingColumn: DataTableColumnDef<FileSummary>[] = waiting
+      ? [
+          {
+            id: 'waiting',
+            header: () => (view === 'returned' ? m["page.files.col.with_police"]() : m["page.files.col.waiting"]()),
+            accessorFn: (row: FileSummary) => row.awaitingSince,
+            cell: ({ row }: { row: { original: FileSummary } }) => ageLabel(view === 'returned' ? (row.original.lastDecisionAt ?? row.original.awaitingSince) : row.original.awaitingSince),
+          },
+        ]
+      : []
+    return [
       selectColumn(),
       {
         accessorKey: 'id',
-        header: 'ID',
+        header: () => m["page.files.col.id"](),
         cell: ({ row }) => (
           <Link to="/files/$fileId" params={{ fileId: row.original.id }} className={cn('inline-block rounded-md bg-primary/15 px-3 py-1 text-xs')}>
             {row.original.id}
           </Link>
         ),
       },
-      { accessorKey: 'title', header: 'Title', cell: ({ row }) => <span className="inline-block max-w-sm truncate">{row.original.title}</span> },
-      { id: 'reference', header: 'Reference', accessorFn: (row) => fileReference(row), cell: ({ row }) => fileReference(row.original) },
-      { accessorKey: 'accused', header: 'Accused', cell: ({ row }) => row.original.accused ?? '·' },
-      { accessorKey: 'policeStation', header: 'Police station', cell: ({ row }) => row.original.policeStation ?? '·' },
-      { accessorKey: 'currentStatus', header: 'Status', cell: ({ row }) => <FileStatusTag status={row.original.currentStatus} /> },
-      ...(waiting
-        ? [
-            {
-              id: 'waiting',
-              header: view === 'returned' ? 'With Police' : 'Waiting',
-              accessorFn: (row: FileSummary) => row.awaitingSince,
-              cell: ({ row }: { row: { original: FileSummary } }) => ageLabel(view === 'returned' ? (row.original.lastDecisionAt ?? row.original.awaitingSince) : row.original.awaitingSince),
-            } satisfies DataTableColumnDef<FileSummary>,
-          ]
-        : []),
-      { accessorKey: 'courtCaseNumber', header: 'Court case no.', cell: ({ row }) => row.original.courtCaseNumber ?? '·' },
-      { accessorKey: 'receivedAt', header: 'Received', cell: ({ getValue }) => format(getValue<number>(), 'PPp') },
-      { accessorKey: 'createdAt', header: 'Recorded', cell: ({ getValue }) => format(getValue<number>(), 'PPp') },
-    ],
-    [view, waiting],
-  )
+      { accessorKey: 'title', header: () => m["page.files.col.title"](), cell: ({ row }) => <span className="inline-block max-w-sm truncate">{row.original.title}</span> },
+      { id: 'reference', header: () => m["page.files.col.reference"](), accessorFn: (row) => fileReference(row), cell: ({ row }) => fileReference(row.original) },
+      { accessorKey: 'accused', header: () => m["page.files.col.accused"](), cell: ({ row }) => row.original.accused ?? '·' },
+      { accessorKey: 'policeStation', header: () => m["page.files.col.station"](), cell: ({ row }) => row.original.policeStation ?? '·' },
+      { accessorKey: 'currentStatus', header: () => m["page.files.col.status"](), cell: ({ row }) => <FileStatusTag status={row.original.currentStatus} /> },
+      ...waitingColumn,
+      { accessorKey: 'courtCaseNumber', header: () => m["page.files.col.court"](), cell: ({ row }) => row.original.courtCaseNumber ?? '·' },
+      { accessorKey: 'receivedAt', header: () => m["page.files.col.received"](), cell: ({ getValue }) => formatDate(getValue<number>(), 'datetime') },
+      { accessorKey: 'createdAt', header: () => m["page.files.col.recorded"](), cell: ({ getValue }) => formatDate(getValue<number>(), 'datetime') },
+    ]
+  }, [view, waiting])
 
   return (
     <article className="page">
@@ -88,13 +89,22 @@ function RouteComponent() {
           <p>{current.about}</p>
         </div>
         <div className="page-actions">
-          <PanelButton label="Open a file" title="Open a file" description="Log a matter referred by Police." variant="default">
-            {({ close, setDirty }) => <ProsecutionFileForm onSuccess={close} onDirtyChange={setDirty} />}
+          <PanelButton label={m["workspace.quick.open_file"]()} title={m["workspace.quick.open_file"]()} description={m["workspace.quick.open_file_description"]()} variant="default">
+            {({ close, setDirty }) => (
+              <ProsecutionFileForm
+                onDirtyChange={setDirty}
+                onSuccess={(file) => {
+                  close()
+                  // A new file opens straight away, on its (empty) folder, ready for the paper.
+                  void navigate({ to: '/files/$fileId', params: { fileId: file.id } })
+                }}
+              />
+            )}
           </PanelButton>
         </div>
       </header>
 
-      <nav aria-label="Views of the register" className="no-scrollbar -mb-2 flex gap-1 overflow-x-auto border-b border-border/60">
+      <nav aria-label={m["page.files.views"]()} className="no-scrollbar -mb-2 flex gap-1 overflow-x-auto border-b border-border/60">
         {fileViews.map((item) => (
           <Link
             key={item.id}
@@ -113,20 +123,20 @@ function RouteComponent() {
       </nav>
 
       {files.length === 0 ? (
-        <EmptyNote>{emptyText[view] ?? 'No files here.'}</EmptyNote>
+        <EmptyNote>{emptyText[view]?.() ?? m["page.files.empty"]()}</EmptyNote>
       ) : (
-        <DataTable aria-label={current.label} data={files} columns={columns} getRowId={(row) => row.id} emptyMessage="No files here." searchPlaceholder="Search this list" />
+        <DataTable aria-label={current.label} data={files} columns={columns} getRowId={(row) => row.id} emptyMessage={m["page.files.empty"]()} searchPlaceholder={m["page.files.search_list"]()} />
       )}
-      {view === 'intake' && files.length > 0 && <Tag tone="open" className="w-fit">Oldest first</Tag>}
+      {view === 'intake' && files.length > 0 && <Tag tone="open" className="w-fit">{m["page.files.oldest_first"]()}</Tag>}
     </article>
   )
 }
 
-const emptyText: Partial<Record<FileViewId, string>> = {
-  reopened: 'No decision is being reopened.',
-  intake: 'Nothing has arrived that is still waiting for a first review.',
-  active: 'No file is being reviewed.',
-  returned: 'No file is with Police.',
-  closed: 'No charging decision has been made yet.',
-  all: 'No files have been opened yet.',
+const emptyText: Partial<Record<FileViewId, () => string>> = {
+  reopened: m["page.files.empty_reopened"],
+  intake: m["page.files.empty_intake"],
+  active: m["page.files.empty_active"],
+  returned: m["page.files.empty_returned"],
+  closed: m["page.files.empty_closed"],
+  all: m["page.files.empty_all"],
 }

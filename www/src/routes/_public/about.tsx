@@ -7,6 +7,16 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/about')({
+  head: () => ({
+    meta: [
+      { title: 'About · Pleadli' },
+      {
+        name: 'description',
+        content:
+          "Pleadli exists to provide the digital infrastructure that makes justice institutions work together without becoming the same institution: software built for each participant's own work, connected only where a legitimate relationship exists.",
+      },
+    ],
+  }),
   component: RouteComponent,
 })
 

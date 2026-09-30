@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { Createpanel } from '@/components/create-panel'
 import { CopyButton } from '@/components/copy-button'
 import { RecordExportActions } from '@/components/record-export-actions'
@@ -25,7 +26,7 @@ import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/_public/investigations/$caseId')({
@@ -46,7 +47,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
         {title} <span className="tabular-nums">({count})</span>
       </h2>
       {count === 0 ? (
-        <p className="text-xs text-muted-foreground">None recorded.</p>
+        <p className="text-xs text-muted-foreground">{m["common.none_recorded"]()}</p>
       ) : (
         <div className="flex flex-col gap-1">{children}</div>
       )}
@@ -101,20 +102,20 @@ function RouteComponent() {
   const handleExport = async (format: 'pdf' | 'docx') => {
     try {
       const found = await exportDocument.mutateAsync(format)
-      if (found) t.success(`${format === 'pdf' ? 'PDF' : 'Word'} document exported`)
+      if (found) t.success(format === 'pdf' ? m["data_io.pdf_exported"]() : m["data_io.word_exported"]())
     } catch {
-      t.error(`Could not export to ${format === 'pdf' ? 'PDF' : 'Word'}`, { description: 'Please try again.' })
+      t.error(format === 'pdf' ? m["data_io.pdf_failed"]() : m["data_io.word_failed"](), { description: m["common.try_again"]() })
     }
   }
 
   const timeline: TimelineEvent[] = [
-    { at: kase.createdAt, label: `Case ${kase.reference} opened` },
-    ...statements.map((s) => ({ at: s.givenAt, label: `Statement taken from ${statementPersonName(s)}` })),
-    ...custodyRecords.map((r) => ({ at: r.arrestedAt, label: `${custodyPersonName(r)} arrested, ${custodyStatusLabel(r.status)}` })),
-    ...bonds.map((b) => ({ at: b.grantedAt, label: `Bond granted for ${bondPersonName(b)}` })),
-    ...exhibits.map((e) => ({ at: e.recoveredAt, label: `Exhibit recovered: ${e.description}` })),
-    ...chargeSheets.map((cs) => ({ at: cs.chargedAt, label: `Charged: ${cs.offence}` })),
-    ...referrals.map((r) => ({ at: r.referredAt, label: `Referred to ${referralDestinationTypeLabel(r.destinationType)}` })),
+    { at: kase.createdAt, label: m["investigation.tl_opened"]({ reference: kase.reference }) },
+    ...statements.map((s) => ({ at: s.givenAt, label: m["investigation.tl_statement"]({ name: statementPersonName(s) }) })),
+    ...custodyRecords.map((r) => ({ at: r.arrestedAt, label: m["investigation.tl_arrested"]({ name: custodyPersonName(r), status: custodyStatusLabel(r.status) }) })),
+    ...bonds.map((b) => ({ at: b.grantedAt, label: m["investigation.tl_bond"]({ name: bondPersonName(b) }) })),
+    ...exhibits.map((e) => ({ at: e.recoveredAt, label: m["investigation.tl_exhibit"]({ description: e.description }) })),
+    ...chargeSheets.map((cs) => ({ at: cs.chargedAt, label: m["investigation.tl_charged"]({ offence: cs.offence }) })),
+    ...referrals.map((r) => ({ at: r.referredAt, label: m["investigation.tl_referred"]({ destination: referralDestinationTypeLabel(r.destinationType) }) })),
   ].sort((a, b) => b.at - a.at)
 
   return (
@@ -124,14 +125,14 @@ function RouteComponent() {
         className="inline-flex w-fit items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
       >
         <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5" />
-        Back to Investigations
+        {m["investigation.back"]()}
       </Link>
 
       <section className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <h1>{kase.reference}</h1>
-            <CopyButton value={kase.reference} label="Copy case reference" />
+            <CopyButton value={kase.reference} label={m["investigation.copy_reference"]()} />
             <Badge variant={kase.status === 'open' ? 'default' : 'secondary'}>{caseStatusLabel(kase.status)}</Badge>
           </div>
           <p className="max-w-lg text-sm text-muted-foreground">{kase.summary}</p>
@@ -150,10 +151,10 @@ function RouteComponent() {
             trigger={
               <Button size="sm" variant="secondary">
                 <HugeiconsIcon icon={Edit02Icon} />
-                Edit case
+                {m["investigation.edit_case"]()}
               </Button>
             }
-            headings={{ title: 'Edit case', description: 'Update this case.' }}
+            headings={{ title: m["intake_page.edit_title"](), description: m["intake_page.edit_desc"]() }}
           >
             <CaseForm case={kase} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
           </Createpanel>
@@ -161,7 +162,7 @@ function RouteComponent() {
       </section>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <Section title="People involved" count={people.length}>
+        <Section title={m["cases.people_involved"]()} count={people.length}>
           {people.map((p) => (
             <Link
               key={p.id}
@@ -175,7 +176,7 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title="Timeline" count={timeline.length}>
+        <Section title={m["investigation.timeline"]()} count={timeline.length}>
           {timeline.map((event, index) => (
             <div key={index} className="flex items-center justify-between gap-3 px-1.5 py-1.5">
               <span className="text-xs">{event.label}</span>
@@ -184,20 +185,20 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title="Statements" count={statements.length}>
+        <Section title={m["nav.statements"]()} count={statements.length}>
           {statements.map((s) => (
             <Row
               key={s.id}
               to="/statements"
               search={{ open: s.id }}
               title={<RichTextPreview value={s.content} className="line-clamp-1" />}
-              subtitle={s.officerName ? `Taken by ${s.officerName}` : undefined}
+              subtitle={s.officerName ? m["investigation.taken_by"]({ name: s.officerName }) : undefined}
               meta={<span className="text-xs text-muted-foreground">{format(s.givenAt, 'PP')}</span>}
             />
           ))}
         </Section>
 
-        <Section title="Custody" count={custodyRecords.length}>
+        <Section title={m["common.custody"]()} count={custodyRecords.length}>
           {custodyRecords.map((record) => {
             const compliance = record.status === 'in_custody' ? custodyCompliance(record) : null
             return (
@@ -211,8 +212,8 @@ function RouteComponent() {
                   compliance ? (
                     <Badge variant={compliance.isOverdue ? 'destructive' : 'secondary'}>
                       {compliance.isOverdue
-                        ? `${Math.abs(compliance.hoursRemaining).toFixed(1)}h overdue`
-                        : `${compliance.hoursRemaining.toFixed(1)}h left`}
+                        ? m["common.hours_overdue"]({ hours: Math.abs(compliance.hoursRemaining).toFixed(1) })
+                        : m["investigation.hours_left"]({ hours: compliance.hoursRemaining.toFixed(1) })}
                     </Badge>
                   ) : (
                     <span className="text-xs text-muted-foreground">{format(record.arrestedAt, 'PP')}</span>
@@ -223,7 +224,7 @@ function RouteComponent() {
           })}
         </Section>
 
-        <Section title="Bonds & sureties" count={bonds.length}>
+        <Section title={m["investigation.bonds_sureties"]()} count={bonds.length}>
           {bonds.map((bond) => (
             <Row
               key={bond.id}
@@ -235,7 +236,7 @@ function RouteComponent() {
             />
           ))}
         </Section>
-        <Section title="Evidence" count={exhibits.length}>
+        <Section title={m["investigation.evidence"]()} count={exhibits.length}>
           {exhibits.map((exhibit) => (
             <Row
               key={exhibit.id}
@@ -248,7 +249,7 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title="Charge sheets" count={chargeSheets.length}>
+        <Section title={m["investigation.charge_sheets"]()} count={chargeSheets.length}>
           {chargeSheets.map((cs) => (
             <Link
               key={cs.id}
@@ -265,7 +266,7 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title="Referrals" count={referrals.length}>
+        <Section title={m["common.referrals"]()} count={referrals.length}>
           {referrals.map((r) => (
             <Row
               key={r.id}
@@ -280,7 +281,7 @@ function RouteComponent() {
       </div>
 
       <section className="md:max-w-md">
-        <AttachmentsField entityType={entityTypes.case} entityId={kase.id} label="Files" />
+        <AttachmentsField entityType={entityTypes.case} entityId={kase.id} label={m["common.files"]()} />
       </section>
     </article>
   )

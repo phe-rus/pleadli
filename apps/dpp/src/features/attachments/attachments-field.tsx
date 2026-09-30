@@ -5,10 +5,11 @@ import { Field, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { isTauri } from '@tauri-apps/api/core'
-import { useRef } from 'react'
-import { openAttachment } from './data'
+import { useRef, useState } from 'react'
+import { DocumentViewer } from '@/components/document-viewer'
 import { useAddAttachment, useAttachments, useDeleteAttachment } from './queries'
 import { formatFileSize, type EntityType } from './schema'
+import * as m from '@/paraglide/messages'
 
 export type AttachmentsFieldProps = {
   entityType: EntityType
@@ -16,18 +17,19 @@ export type AttachmentsFieldProps = {
   label?: string
 }
 
-export function AttachmentsField({ entityType, entityId, label = 'Documents' }: AttachmentsFieldProps) {
+export function AttachmentsField({ entityType, entityId, label }: AttachmentsFieldProps) {
   const id = entityId ?? ''
   const { data: attachments } = useAttachments(entityType, id)
   const addAttachment = useAddAttachment(entityType, id)
   const deleteAttachment = useDeleteAttachment(entityType, id)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [viewing, setViewing] = useState<{ id: string; fileName: string } | null>(null)
 
   if (!entityId) {
     return (
       <Field>
-        <FieldLabel>{label}</FieldLabel>
-        <p className="text-xs text-muted-foreground">Save this record first, then you can attach documents.</p>
+        <FieldLabel>{label ?? m["attachments.label"]()}</FieldLabel>
+        <p className="text-xs text-muted-foreground">{m["attachments.save_first"]()}</p>
       </Field>
     )
   }
@@ -40,7 +42,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
       try {
         await addAttachment.mutateAsync({ path })
       } catch {
-        t.error('Could not add document', { description: 'Please try again.' })
+        t.error(m["attachments.add_failed"](), { description: m["common.try_again"]() })
       }
       return
     }
@@ -54,28 +56,28 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
     try {
       await addAttachment.mutateAsync({ file })
     } catch {
-      t.error('Could not add document', { description: 'Please try again.' })
+      t.error(m["attachments.add_failed"](), { description: m["common.try_again"]() })
     }
   }
 
   return (
     <Field>
       <div className="flex items-center justify-between">
-        <FieldLabel>{label}</FieldLabel>
+        <FieldLabel>{label ?? m["attachments.label"]()}</FieldLabel>
         <Button type="button" size="sm" variant="secondary" onClick={handlePick} disabled={addAttachment.isPending}>
           <HugeiconsIcon icon={Upload01Icon} />
-          Add document
+          {m["attachments.add"]()}
         </Button>
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileInputChange} />
       </div>
 
       {(attachments ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground">No documents attached.</p>
+        <p className="text-xs text-muted-foreground">{m["attachments.none"]()}</p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {attachments?.map((attachment) => (
             <div key={attachment.id} className={cn('flex items-center justify-between gap-2 rounded-sm border border-input/40 px-2 py-1.5')}>
-              <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => openAttachment(attachment)}>
+              <button type="button" className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left" onClick={() => setViewing(attachment)}>
                 <HugeiconsIcon icon={Attachment01Icon} className="size-4 shrink-0 text-muted-foreground" />
                 <span className="min-w-0 truncate text-xs">{attachment.fileName}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">{formatFileSize(attachment.sizeBytes)}</span>
@@ -84,7 +86,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
                 type="button"
                 size="icon-xs"
                 variant="ghost"
-                aria-label="Remove document"
+                aria-label={m["attachments.remove"]()}
                 onClick={() => deleteAttachment.mutate(attachment.id)}
               >
                 <HugeiconsIcon icon={Delete02Icon} />
@@ -93,6 +95,7 @@ export function AttachmentsField({ entityType, entityId, label = 'Documents' }: 
           ))}
         </div>
       )}
+      {viewing && <DocumentViewer attachmentId={viewing.id} title={viewing.fileName} open onOpenChange={(o) => !o && setViewing(null)} />}
     </Field>
   )
 }

@@ -154,7 +154,7 @@ function EstateSettings() {
                       <h4>{f.name}</h4>
                       <p>
                         {f.reportedAt
-                          ? m.numbering_reported({ pattern: f.pattern ?? 'No pattern reported', source: numberingSourceLabel(f.source), reportedAt: format(f.reportedAt, 'PPp') })
+                          ? m.numbering_reported({ pattern: f.pattern ?? m.numbering_no_pattern_reported(), source: numberingSourceLabel(f.source), reportedAt: format(f.reportedAt, 'PPp') })
                           : m.numbering_has_not_fetched_the_defaults_yet()}
                       </p>
                     </div>

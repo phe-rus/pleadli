@@ -4,6 +4,7 @@
 #[cfg(debug_assertions)]
 #[tokio::main]
 async fn main() {
+    dpp_lib::load_dev_env();
     let dir = std::env::args().nth(1).expect("usage: headless <data-dir>");
     if let Err(e) = dpp_lib::run_headless(dir.into()).await {
         eprintln!("headless API failed: {e}");

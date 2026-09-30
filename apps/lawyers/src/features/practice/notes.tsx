@@ -1,38 +1,32 @@
 import { messageOf } from '@/lib/api'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
-import { Textarea } from '@pleadli/ui/textarea'
+import { isRichTextEmpty, RichTextInput, RichTextPreview } from '@pleadli/rich-text'
 import { format } from 'date-fns/format'
 import { useState } from 'react'
 import type { MatterNote } from '../matters/schema'
 import { useAddNote, useRemoveNote, useUpdateNote } from './queries'
 
-/** Writing a note on a matter. Ctrl Enter adds it. */
+/** Writing a note on a matter. Headings and lists are in the toolbar, same as
+ * a filed document; a note is not typically as formal, but an instruction or
+ * an interview record is often long enough to need structure. */
 export function NoteComposer({ matterId }: { matterId: string }) {
   const add = useAddNote()
   const [body, setBody] = useState('')
   const submit = () => {
-    if (!body.trim() || add.isPending) return
+    if (isRichTextEmpty(body) || add.isPending) return
     add.mutate({ matterId, body }, { onSuccess: () => setBody(''), onError: (error) => t.error('Could not add the note', { description: messageOf(error) }) })
   }
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3">
-      <Textarea
+      <RichTextInput
         value={body}
-        rows={3}
-        onChange={(e) => setBody(e.target.value)}
-        onKeyDown={(e) => {
-          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault()
-            submit()
-          }
-        }}
+        editorClassName="min-h-24"
         placeholder="An instruction, an interview, a point to remember."
-        aria-label="Note"
+        onChange={setBody}
       />
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-muted-foreground">Ctrl Enter adds it.</p>
-        <Button size="sm" onClick={submit} disabled={!body.trim() || add.isPending}>
+      <div className="flex items-center justify-end gap-3">
+        <Button size="sm" onClick={submit} disabled={isRichTextEmpty(body) || add.isPending}>
           Add note
         </Button>
       </div>
@@ -52,11 +46,11 @@ export function NoteRow({ note, editable }: { note: MatterNote; editable: boolea
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {editing ? (
           <div className="flex flex-col gap-2">
-            <Textarea value={body} rows={4} onChange={(e) => setBody(e.target.value)} aria-label="Edit the note" />
+            <RichTextInput value={body} editorClassName="min-h-32" onChange={setBody} />
             <div className="flex gap-2">
               <Button
                 size="sm"
-                disabled={!body.trim() || update.isPending}
+                disabled={isRichTextEmpty(body) || update.isPending}
                 onClick={() => update.mutate({ id: note.id, body }, { onSuccess: () => setEditing(false), onError: (error) => t.error('Could not save the note', { description: messageOf(error) }) })}
               >
                 Save
@@ -74,7 +68,7 @@ export function NoteRow({ note, editable }: { note: MatterNote; editable: boolea
             </div>
           </div>
         ) : (
-          <p className="whitespace-pre-wrap">{note.body}</p>
+          <RichTextPreview value={note.body} />
         )}
       </div>
       {editable && !editing && (

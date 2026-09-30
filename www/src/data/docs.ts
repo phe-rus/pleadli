@@ -9,6 +9,9 @@ export const docsNav = [
   { slug: '', title: 'Overview', to: '/docs' },
   { slug: 'how-it-works', title: 'How it works', to: '/docs/how-it-works' },
   { slug: 'applications', title: 'Applications', to: '/docs/applications' },
+  { slug: 'security', title: 'Security', to: '/docs/security' },
+  { slug: 'documents', title: 'Documents', to: '/docs/documents' },
+  { slug: 'ai', title: 'AI', to: '/docs/ai' },
 ] as const
 
 export const orgModel = [
