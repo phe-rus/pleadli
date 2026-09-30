@@ -95,6 +95,18 @@ jobs:
         shell: bash
         run: echo "version=$(node -p "require('./apps/${{ matrix.app }}/src-tauri/tauri.conf.json').version")" >> "$GITHUB_OUTPUT"
 
+      # The releases repository has none of this repository's commits, so the
+      # release (and its tag, on that repository's main) is made there first;
+      # tauri-action then only uploads to it.
+      - name: Make sure the release exists
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          tag="${{ matrix.app }}-v${{ steps.version.outputs.version }}"
+          gh release view "$tag" -R "$RELEASES_REPO" >/dev/null 2>&1 || \
+            gh release create "$tag" -R "$RELEASES_REPO" --target main --title "Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}" --notes "Windows installer for Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}. Installed copies update themselves."
+
       - name: Build, sign and publish
         uses: tauri-apps/tauri-action@v0
         env:
