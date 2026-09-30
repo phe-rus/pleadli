@@ -1,10 +1,10 @@
 import { Menu01Icon, PersonStandingIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { buttonVariants } from '@pleadli/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@pleadli/ui/popover'
 import { Link, useLocation } from '@tanstack/react-router'
 import { cn } from 'cn'
 import { useMemo, useState } from 'react'
-import { buttonVariants } from '@pleadli/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@pleadli/ui/popover'
 
 const navItems = [
   { label: 'Overview', to: '/' },
@@ -34,7 +34,7 @@ export default function Header() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="text-base font-normal"
+                className="text-sm!"
                 activeProps={{ className: 'text-primary font-bold' }}
                 activeOptions={{ exact: item.to === '/' }}
               >

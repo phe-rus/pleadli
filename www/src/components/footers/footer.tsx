@@ -37,9 +37,10 @@ export default function Footer() {
           </nav>
         </div>
 
-        <p className="max-w-sm text-sm text-muted-foreground">
-          Justice requires institutions to work together, without becoming the same institution.
-        </p>
+        <div className="flex max-w-sm flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">Justice, Law and Order Orchestra</p>
+          <p className="text-sm text-muted-foreground">Justice requires institutions to work together, without becoming the same institution.</p>
+        </div>
 
         <p className="border-t border-border/55 pt-6 text-sm text-muted-foreground">
           &copy; {year} Pleadli. All rights reserved.

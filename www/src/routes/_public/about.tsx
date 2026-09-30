@@ -24,7 +24,7 @@ function RouteComponent() {
   return (
     <article className="container flex w-full flex-col gap-5 md:max-w-5xl">
       <section className="flex flex-col gap-5 py-20">
-        <Badge variant="secondary">About</Badge>
+        <Badge variant="secondary">About · Justice, Law and Order Orchestra</Badge>
         <h1 className="text-2xl md:max-w-2xl md:text-6xl!">
           Justice requires institutions to work together, without becoming the same institution.
         </h1>
