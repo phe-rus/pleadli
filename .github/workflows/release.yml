@@ -84,7 +84,9 @@ jobs:
       - name: Fetch cloudflared for Windows
         if: matrix.app == 'police'
         shell: bash
-        run: curl -fsSL -o apps/police/src-tauri/binaries/cloudflared-x86_64-pc-windows-msvc.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
+        run: |
+          mkdir -p apps/police/src-tauri/binaries
+          curl -fsSL -o apps/police/src-tauri/binaries/cloudflared-x86_64-pc-windows-msvc.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
 
       - name: Read version
         id: version
