@@ -93,6 +93,19 @@
       "unanswered_about": "Chaque point de la pièce adverse qui appelle une réponse."
     }
   },
+  "assist_page": {
+    "choose_matter": "Choisir une affaire",
+    "lead": "Aide IA sur une affaire : résumé, chronologie, ce que la partie adverse n'a pas répondu, un premier projet. Elle lit le dossier ; elle ne décide jamais et ne calcule aucun délai.",
+    "no_matters": "Aucune affaire ouverte pour l'instant.",
+    "not_for_role": "L'assistant travaille sur les affaires ; le rôle comptable ne l'utilise pas.",
+    "off_admin": "Choisissez le fournisseur et collez la clé dans Paramètres, Assistant.",
+    "off_ask_admin": "Demandez à un administrateur du cabinet de l'activer.",
+    "off_description": "Il fonctionne avec un fournisseur d'IA choisi par le cabinet (Gemini, OpenRouter, Anthropic ou autre) et la clé du cabinet. Rien n'est envoyé tant qu'un administrateur ne l'a pas activé.",
+    "off_title": "L'assistant est désactivé",
+    "title": "Assistant",
+    "turn_on": "Activer l'assistant",
+    "which_matter": "Affaire"
+  },
   "audit": {
     "action": {
       "assist_settings_changed": "Réglages de l'Assistant modifiés",
@@ -732,6 +745,7 @@
   },
   "nav": {
     "all_matters": "Tous les dossiers",
+    "assist": "Assistant",
     "board": "Tableau",
     "calendar": "Calendrier",
     "clients": "Clients",

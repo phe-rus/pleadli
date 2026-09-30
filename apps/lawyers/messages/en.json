@@ -93,6 +93,19 @@
       "unanswered_about": "Each point in the other side's paper that needs a reply."
     }
   },
+  "assist_page": {
+    "choose_matter": "Choose a matter",
+    "lead": "AI help on a matter: a summary, the chronology, what the other side has not answered, a first draft. It reads the matter's record; it never decides and never counts deadlines.",
+    "no_matters": "No open matter yet.",
+    "not_for_role": "Assist works on matters; the accounts role does not use it.",
+    "off_admin": "Choose the provider and paste the key in Settings, Assist.",
+    "off_ask_admin": "Ask an administrator of the practice to turn it on.",
+    "off_description": "It works with an AI provider the practice chooses (Gemini, OpenRouter, Anthropic or another) and the practice's own key. Nothing is sent anywhere until an administrator turns it on.",
+    "off_title": "Assist is off",
+    "title": "Assist",
+    "turn_on": "Turn on Assist",
+    "which_matter": "Matter"
+  },
   "audit": {
     "action": {
       "assist_settings_changed": "Assist settings changed",
@@ -732,6 +745,7 @@
   },
   "nav": {
     "all_matters": "All matters",
+    "assist": "Assist",
     "board": "Board",
     "calendar": "Calendar",
     "clients": "Clients",

@@ -44,3 +44,4 @@ apps/police/src-tauri/Cargo.lock
 
 # A browser profile created with a literal "~" path; never commit it.
 /~/
+__pycache__/

@@ -1,6 +1,7 @@
 import type { Usage } from '@/features/usages'
 import * as m from '@/paraglide/messages'
 import {
+  AiMagicIcon,
   Analytics01Icon,
   ChartHistogramIcon,
   Stamp01Icon,
@@ -56,6 +57,7 @@ export const lawyersNav: readonly NavItem[] = [
   { get label() { return m["nav.diary"]() }, icon: CalendarCheckOut01Icon, to: '/diary', count: 'notClosed', section: 'practice' },
   { get label() { return m["nav.tasks"]() }, icon: Task01Icon, to: '/tasks', count: 'tasksOverdue', section: 'practice' },
   { get label() { return m["nav.documents"]() }, icon: LegalDocument01Icon, to: '/documents', count: 'draftDocuments', section: 'practice' },
+  { get label() { return m["nav.assist"]() }, icon: AiMagicIcon, to: '/assist', section: 'practice' },
   { get label() { return m["nav.registers"]() }, icon: Stamp01Icon, to: '/registers', section: 'practice', usage: 'oaths' },
 
   { get label() { return m["nav.board"]() }, icon: KanbanIcon, to: '/matters', search: { view: 'board' }, section: 'matters' },

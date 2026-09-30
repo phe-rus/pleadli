@@ -93,6 +93,19 @@
       "unanswered_about": "Kila hoja katika hati ya upande mwingine inayohitaji jibu."
     }
   },
+  "assist_page": {
+    "choose_matter": "Chagua shauri",
+    "lead": "Msaada wa AI kwenye shauri: muhtasari, mfuatano wa matukio, kile upande mwingine haujajibu, rasimu ya kwanza. Unasoma kumbukumbu za shauri; hauamui wala kuhesabu muda wa mwisho.",
+    "no_matters": "Hakuna shauri lililo wazi bado.",
+    "not_for_role": "Msaidizi hufanya kazi kwenye mashauri; nafasi ya uhasibu haiutumii.",
+    "off_admin": "Chagua mtoa huduma na ubandike ufunguo katika Mipangilio, Msaidizi.",
+    "off_ask_admin": "Muombe msimamizi wa ofisi auwashe.",
+    "off_description": "Unafanya kazi na mtoa huduma wa AI ambaye ofisi inachagua (Gemini, OpenRouter, Anthropic au mwingine) na ufunguo wa ofisi yenyewe. Hakuna kinachotumwa popote hadi msimamizi auwashe.",
+    "off_title": "Msaidizi umezimwa",
+    "title": "Msaidizi",
+    "turn_on": "Washa Msaidizi",
+    "which_matter": "Shauri"
+  },
   "audit": {
     "action": {
       "assist_settings_changed": "Mipangilio ya Msaidizi imebadilishwa",
@@ -732,6 +745,7 @@
   },
   "nav": {
     "all_matters": "Mashauri yote",
+    "assist": "Msaidizi",
     "board": "Ubao",
     "calendar": "Kalenda",
     "clients": "Wateja",

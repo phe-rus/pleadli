@@ -93,6 +93,19 @@
       "unanswered_about": "Jeder Punkt im Schriftsatz der Gegenseite, der eine Antwort braucht."
     }
   },
+  "assist_page": {
+    "choose_matter": "Mandat wählen",
+    "lead": "KI-Hilfe zu einem Mandat: Zusammenfassung, Chronologie, was die Gegenseite nicht beantwortet hat, ein erster Entwurf. Sie liest die Akte; sie entscheidet nie und berechnet keine Fristen.",
+    "no_matters": "Noch kein offenes Mandat.",
+    "not_for_role": "Der Assistent arbeitet an Mandaten; die Buchhaltung nutzt ihn nicht.",
+    "off_admin": "Anbieter wählen und Schlüssel unter Einstellungen, Assistent einfügen.",
+    "off_ask_admin": "Bitten Sie eine Administratorin oder einen Administrator der Kanzlei, ihn einzuschalten.",
+    "off_description": "Er arbeitet mit einem KI-Anbieter, den die Kanzlei wählt (Gemini, OpenRouter, Anthropic oder ein anderer), und dem eigenen Schlüssel der Kanzlei. Nichts wird gesendet, bevor eine Administratorin oder ein Administrator ihn einschaltet.",
+    "off_title": "Der Assistent ist aus",
+    "title": "Assistent",
+    "turn_on": "Assistent einschalten",
+    "which_matter": "Mandat"
+  },
   "audit": {
     "action": {
       "assist_settings_changed": "Assistent-Einstellungen geändert",
@@ -732,6 +745,7 @@
   },
   "nav": {
     "all_matters": "Alle Mandate",
+    "assist": "Assistent",
     "board": "Tafel",
     "calendar": "Kalender",
     "clients": "Mandanten",
