@@ -15,12 +15,12 @@ function RouteComponent() {
     <article className="container flex w-full flex-col gap-5 md:max-w-5xl">
       <section className="flex flex-col gap-5 py-16 md:py-20">
         <Badge variant="secondary">Downloads</Badge>
-        <h1 className="text-2xl md:max-w-2xl md:text-5xl!">Not yet publicly distributed.</h1>
+        <h1 className="text-2xl md:max-w-2xl md:text-5xl!">Download Pleadli for Windows.</h1>
         <p className="md:max-w-lg md:text-base!">
-          Every Pleadli desktop application is used in active development and testing today, none
-          are packaged for public download yet. This page will carry real installers, checksums,
-          and release notes once a signed release pipeline exists. Until then, it shows exactly
-          where each application stands.
+          Police, DPP, Lawyers and Prisons have their first Windows release. Once installed, each
+          checks for a signed update and offers to install it; nothing is installed without asking.
+          These are early releases, in active development and not yet field-validated. Courts is
+          not released yet.
         </p>
       </section>
 
@@ -41,10 +41,17 @@ function RouteComponent() {
                 <Badge variant={product.readiness === 'building' ? 'default' : 'secondary'}>
                   {readinessLabel[product.readiness]}
                 </Badge>
-                <Button disabled>
-                  <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
-                  Not available
-                </Button>
+                {product.download.release ? (
+                  <Button nativeButton={false} render={<a href={product.download.release.url} target="_blank" rel="noreferrer" />}>
+                    <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
+                    Windows {product.download.release.version}
+                  </Button>
+                ) : (
+                  <Button disabled>
+                    <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
+                    Not available
+                  </Button>
+                )}
               </div>
             </div>
             <div className="flex items-start gap-2 border-t border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground sm:px-5">
@@ -56,13 +63,13 @@ function RouteComponent() {
       </section>
 
       <section className="flex flex-col gap-3 border-t border-border/60 py-10">
-        <h2 className="text-xl!">What has to exist first</h2>
+        <h2 className="text-xl!">Where the releases stand</h2>
         <ul className="flex flex-col gap-1.5">
           {[
-            'A signed, authenticated release and asset pipeline, not an open upload endpoint.',
-            'Platform detection and installers for Windows and Linux.',
-            'An in-app update check with release notes, not a manual re-download.',
-            'Checksums published alongside every installer.',
+            'Built: Windows installers (.msi and setup .exe), built and published by an automated release workflow.',
+            'Built: automatic updates, signed. An installed copy accepts only an update signed with Pleadli’s key.',
+            'Not yet: code-signed installers. Windows shows “Windows protected your PC” on first install; choose “More info”, then “Run anyway”.',
+            'Not yet: published checksums, Linux and macOS installers, and a release of Pleadli Courts.',
           ].map((item) => (
             <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
               <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground" />

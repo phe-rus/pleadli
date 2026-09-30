@@ -8,7 +8,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
-const defaultTitle = 'Pleadli · Justice infrastructure for Uganda'
+const defaultTitle = 'Pleadli · Justice, Law and Order Orchestra'
 const defaultDescription =
   'Pleadli gives police, prosecutors, courts, lawyers, and prisons software built around their own work, while keeping the matters they legitimately share connected. Purpose-built, offline-first applications for Uganda’s justice system.'
 

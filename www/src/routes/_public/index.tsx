@@ -34,7 +34,7 @@ function RouteComponent() {
       <section className="flex min-h-[70vh] flex-col justify-center gap-5">
         <Badge variant="secondary">
           <HugeiconsIcon icon={JusticeScale01Icon} />
-          Pleadli
+          Pleadli · Justice, Law and Order Orchestra
         </Badge>
 
         <div>
@@ -50,7 +50,10 @@ function RouteComponent() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
-          <Button size="lg" nativeButton={false} render={<Link to="/login" />}>
+          <Button size="lg" nativeButton={false} render={<Link to="/downloads" />}>
+            Download
+          </Button>
+          <Button size="lg" variant="outline" nativeButton={false} render={<Link to="/login" />}>
             Sign in
           </Button>
           <Button size="lg" variant="secondary" nativeButton={false} render={<Link to="/about" />}>

@@ -68,6 +68,8 @@ export interface Product {
   download: {
     platforms: string[]
     state: string
+    /** Where the Windows installer is published (phe-rus/pleadli-releases), once there is one. */
+    release?: { version: string; url: string }
   }
 }
 
@@ -127,7 +129,7 @@ export const products: Product[] = [
       ],
       row: { title: 'R. Okello', meta: 'Held since 07:42, produce by 06:42 tomorrow', pill: 'Approaching limit' },
     },
-    download: { platforms: ['Windows', 'Linux'], state: 'Not yet publicly distributed. Used in active development and testing.' },
+    download: { platforms: ['Windows'], state: 'First Windows release, 0.1.0. Installed copies update themselves. Early: in active development and testing, not yet field-validated.', release: { version: '0.1.0', url: 'https://github.com/phe-rus/pleadli-releases/releases/tag/police-v0.1.0' } },
   },
   {
     slug: 'dpp',
@@ -184,7 +186,7 @@ export const products: Product[] = [
       ],
       row: { title: 'DPP/2026/0143', meta: 'Referred by Central Police Station, 2 days ago', pill: 'Under review' },
     },
-    download: { platforms: ['Windows', 'Linux'], state: 'Not yet publicly distributed. Used in active development and testing.' },
+    download: { platforms: ['Windows'], state: 'First Windows release, 0.1.0. Installed copies update themselves. Early: in active development and testing, not yet field-validated.', release: { version: '0.1.0', url: 'https://github.com/phe-rus/pleadli-releases/releases/tag/dpp-v0.1.0' } },
   },
   {
     slug: 'courts',
@@ -247,32 +249,33 @@ export const products: Product[] = [
     slug: 'lawyers',
     icon: GavelIcon,
     name: 'Pleadli Lawyers',
-    institution: 'Independent advocates and firms',
-    tagline: "An advocate's own practice: matters, drafting, and client work.",
+    institution: 'Advocates, firms, legal aid providers and paralegals',
+    tagline: 'Every kind of legal practice: matters, deadlines, filings, money and registers.',
     readiness: 'early',
     homeFocus: "A lawyer's own practice",
-    homePoints: ['Client & matter intake, representation type', 'Diary with state-funded deadlines tracked automatically', 'Filed documents: bail applications, submissions, advice'],
-    whoFor: ['Individual advocates', 'Small firms'],
+    homePoints: ['Matters of every kind on a board, with court deadlines counted by the rules', 'Sealed filings, PDF and Word export, filing packs', 'Client money kept by the Accounts Rules, fee notes, bills of costs'],
+    whoFor: ['Individual advocates', 'Firms and chambers', 'Legal aid providers', 'Paralegals (who draft, but never sign or file)'],
     problem:
-      'An advocate needs somewhere to hold a matter, its documents, and its deadlines that is theirs alone, with privacy guarantees the other Pleadli applications don’t need in the same way, because privilege is the whole point.',
+      'An advocate needs one place for a matter, its documents, its deadlines and its money that belongs to the practice alone, with privacy the other Pleadli applications do not need in the same way, because privilege is the whole point.',
     usage:
-      "An advocate opens Pleadli Lawyers to see a matter's hearings, tasks, and documents together, records a client's instructions and representation type, and tracks state-funded deadlines automatically rather than by memory.",
-    ownsRecords: ['Client', 'Matter', 'Advocate file', 'Drafts and documents', 'Tasks and deadlines', 'Private notes'],
+      'At setup a practice says whether it works alone or as a firm and which kinds of work it does; the app then shows only those tools. Matters move across a board by stage, deadlines are counted from what happened, documents are drafted, sealed and filed, and client money is kept apart from the practice’s own.',
+    ownsRecords: ['Client', 'Matter and parties', 'Deadlines', 'Drafts, filings and papers', 'Client and office ledgers', 'Fee notes and bills of costs', 'Oaths and notarial registers'],
     workflows: [
-      { title: 'Matter opening', description: 'A client and a matter are recorded once, with the hearings, tasks, and documents that belong to it.' },
-      { title: 'Plea bargain support', description: 'A working model of the plea bargain process, reflecting the actual Judicature (Plea Bargain) Rules, 2016 procedure and forms.' },
-      { title: 'Hearing preparation', description: 'Upcoming hearings, tasks, and notes for a matter are visible together, not scattered across a diary and a notebook.' },
+      { title: 'Matter opening with a conflict check', description: 'A client, the other side and the kind of matter are recorded once; names are checked against existing clients and parties before the matter opens.' },
+      { title: 'Deadlines by the rules', description: 'Recording that a plaint was served or a judgment delivered starts the clocks the Civil Procedure Rules, Court of Appeal Rules and Limitation Act set, with weekend due days flagged.' },
+      { title: 'Filing', description: 'Drafts are sealed with the letterhead, signature, stamp and a verification code, filed together as one pack, and exported as PDF or Word.' },
+      { title: 'Money and costs', description: 'Client money is never paid out beyond what a client holds; fee notes are issued and paid against; bills of costs are priced by the Sixth Schedule for taxation.' },
     ],
-    features: ['Clients and matters', 'Hearings and tasks', 'Notes and documents', 'Plea bargain support', 'Practice overview'],
+    features: ['Board, list and calendar of matters of 13 kinds', 'Court deadline clocks (Uganda)', 'Documents, sealed filings, filing packs, PDF and Word export', 'Papers read by Assist', 'Client ledgers, fee notes, bills of costs', 'Oaths and notarial registers, practising compliance, pro bono hours', 'Statistics', 'A firm on one office network', 'Export of every record', 'English, Kiswahili, German and French'],
     notYetBuilt: [
-      'App lock, OS authentication, and per-matter access control (the most important gap for this specific application)',
-      'Conflict checking, a formal bail-application workflow, trial and witness preparation',
-      'Correspondence tracking, matter closure and archive',
+      'Hearing notices and orders received from Pleadli Courts',
+      'Backups and restore from inside the app',
+      'Deadline rules for countries other than Uganda (the other packs are provisional)',
     ],
-    offline: { state: true, detail: 'Local SQLite, same architectural direction as the rest of the ecosystem.' },
-    security: { state: 'partial', detail: 'The database is SQLCipher-encrypted with a hash-chained audit trail, same as DPP and Courts. What’s missing is the gap that matters most for this specific application: no app lock, no OS authentication, and no per-matter access control yet, so privilege and confidentiality aren’t fully enforced until that lands.' },
-    documents: { state: 'partial', detail: 'Drafts and documents are recorded against a matter, but without the sealed vault or issued-document pipeline DPP and Courts have.' },
-    ai: { state: false, detail: 'Planned: drafting assistance, legal research, matter summaries, and hearing preparation, gated behind the security work above.' },
+    offline: { state: true, detail: 'Local encrypted database. In a firm, one office computer holds the practice and the others join it over the office network; nothing needs the internet.' },
+    security: { state: true, detail: 'Encrypted database, a PIN or password and phone code per person, roles that decide who may sign, file or pay out, a hash-chained audit trail, and certificate-pinned connections between a firm’s computers.' },
+    documents: { state: true, detail: 'Drafts are sealed on filing with letterhead, signature, stamp and a verification code anyone can check; filing packs, PDF and Word export, and every record can be exported.' },
+    ai: { state: 'partial', detail: 'Assist summarises a matter, lays out its chronology, finds what the other side has not answered, drafts, and reads scanned papers. It uses the AI provider and key the practice chooses and is off until an administrator turns it on.' },
     interchange: 'Design fixed, not built: signed filings and applications to Courts, hearing notices and orders from Courts. A lawyer never receives another matter’s record.',
     mockup: {
       subtitle: 'Practice workspace',
@@ -291,7 +294,7 @@ export const products: Product[] = [
       ],
       row: { title: 'Nakato v. Uganda', meta: 'Bail application, trial-readiness certificate due', pill: '2 days left' },
     },
-    download: { platforms: ['Windows', 'Linux'], state: 'Not yet publicly distributed. Early build; treat as unsuitable for real privileged matters until the security work above lands.' },
+    download: { platforms: ['Windows'], state: 'First Windows release, 0.1.0. Installed copies update themselves. Early: not yet field-validated with a practising firm.', release: { version: '0.1.0', url: 'https://github.com/phe-rus/pleadli-releases/releases/tag/lawyers-v0.1.0' } },
   },
   {
     slug: 'prisons',
@@ -348,7 +351,7 @@ export const products: Product[] = [
       ],
       row: { title: 'P. Achen', meta: 'Remand, mandatory-bail threshold in 47h 40m', pill: 'Needs attention' },
     },
-    download: { platforms: ['Windows', 'Linux'], state: 'Not yet publicly distributed. Used in active development and testing.' },
+    download: { platforms: ['Windows'], state: 'First Windows release, 0.1.0. Installed copies update themselves. Early: in active development and testing, not yet field-validated.', release: { version: '0.1.0', url: 'https://github.com/phe-rus/pleadli-releases/releases/tag/prisons-v0.1.0' } },
   },
 ]
 
