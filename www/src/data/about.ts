@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import {
   Database02Icon,
   EyeIcon,
@@ -9,60 +10,57 @@ import {
   Route01Icon,
 } from '@hugeicons/core-free-icons'
 
+/** Text is read through getters, so each request renders in its own language. */
 export const principles = [
   {
+    id: 'identity',
     icon: IdentityCardIcon,
-    title: 'One case, one identity',
-    description: 'A case keeps the same identity from investigation through to custody.',
+    get title() { return m["about.principles.identity.title"]() },
+    get description() { return m["about.principles.identity.body"]() },
   },
   {
+    id: 'owned',
     icon: LockKeyIcon,
-    title: 'Institution-owned records',
-    description: "Each application's records stay with the institution that created them, always.",
+    get title() { return m["about.principles.owned.title"]() },
+    get description() { return m["about.principles.owned.body"]() },
   },
   {
+    id: 'reference',
     icon: EyeIcon,
-    title: 'Referenceable, not visible',
-    description: 'Other applications can reference a case without seeing inside it.',
+    get title() { return m["about.principles.reference.title"]() },
+    get description() { return m["about.principles.reference.body"]() },
   },
 ] as const
 
 export const pillars = [
   {
+    id: 'fragmentation',
     icon: FlowConnectionIcon,
-    title: 'Justice without fragmentation',
-    paragraphs: [
-      'A single matter can pass through police, prosecution, courts, and prisons, and today each of those stages usually runs on its own paperwork, with almost nothing connecting them. The same facts get re-entered at every handoff, and nobody outside one institution can confirm where a case actually stands.',
-      "Pleadli exists so institutions don't have to recreate the same context every time a matter crosses a boundary.",
-    ],
+    get title() { return m["about.pillars.fragmentation.title"]() },
+    get paragraphs() { return [m["about.pillars.fragmentation.p1"](), m["about.pillars.fragmentation.p2"]()] },
   },
   {
+    id: 'centralization',
     icon: Database02Icon,
-    title: 'Connection without centralization',
-    paragraphs: [
-      "Connecting institutions doesn't mean putting all their records into one shared database. A case gets a continuous identity that follows it across the whole process, but what stays separate is who owns the records: police records belong to police, prosecution decisions belong to the DPP, and so on.",
-    ],
+    get title() { return m["about.pillars.centralization.title"]() },
+    get paragraphs() { return [m["about.pillars.centralization.p1"]()] },
   },
   {
+    id: 'purpose',
     icon: Layers01Icon,
-    title: 'Purpose-built software',
-    paragraphs: [
-      'Police software should feel like police software. DPP software should feel like prosecution software. Court software should feel like court software. A lawyer\'s software should feel like legal practice software. Prison software should feel like custody software.',
-      'Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers, and Pleadli Prisons are separate applications, each designed around the work its users actually do, not one dashboard reused everywhere.',
-    ],
+    get title() { return m["about.pillars.purpose.title"]() },
+    get paragraphs() { return [m["about.pillars.purpose.p1"](), m["about.pillars.purpose.p2"]()] },
   },
   {
+    id: 'thread',
     icon: Route01Icon,
-    title: 'One continuous thread',
-    paragraphs: [
-      'Responsibility for a matter moves: from an investigating officer, to a prosecutor, to a court, sometimes to a lawyer representing one side. Pleadli lets the underlying matter keep continuity even as that responsibility, and the professionals involved, change.',
-    ],
+    get title() { return m["about.pillars.thread.title"]() },
+    get paragraphs() { return [m["about.pillars.thread.p1"]()] },
   },
   {
+    id: 'uganda',
     icon: Location01Icon,
-    title: 'Built from Uganda outward',
-    paragraphs: [
-      "Pleadli is starting with Uganda, designed around the justice system as it actually operates here, not a generic template applied to any country.",
-    ],
+    get title() { return m["about.pillars.uganda.title"]() },
+    get paragraphs() { return [m["about.pillars.uganda.p1"]()] },
   },
 ] as const

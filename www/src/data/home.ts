@@ -1,3 +1,5 @@
+import { localized } from '@/lib/localized'
+import { homeText } from './i18n/home'
 import {
   DocumentAttachmentIcon,
   AlarmClockIcon,
@@ -19,14 +21,14 @@ import {
   ShieldEnergyIcon,
 } from '@hugeicons/core-free-icons'
 
-export const adminNavItems = [
+const adminNavItemsBase = [
   { icon: Building02Icon, label: 'Organizations' },
   { icon: FlowConnectionIcon, label: 'Organization units' },
   { icon: UserGroupIcon, label: 'Memberships' },
   { icon: BadgeCheckIcon, label: 'Entitlements' },
 ] as const
 
-export const trustPoints = [
+const trustPointsBase = [
   {
     icon: LockKeyIcon,
     title: 'Encrypted at rest',
@@ -46,7 +48,7 @@ export const trustPoints = [
   },
 ] as const
 
-export const homeStats = [
+const homeStatsBase = [
   {
     value: '48%',
     description: "of Uganda's prison population is on remand, awaiting trial, not convicted.",
@@ -57,7 +59,7 @@ export const homeStats = [
   },
 ] as const
 
-export const homeProblems = [
+const homeProblemsBase = [
   {
     icon: DocumentAttachmentIcon,
     title: 'Repeated data entry',
@@ -78,7 +80,7 @@ export const homeProblems = [
   },
 ] as const
 
-export const caseRecords = {
+const caseRecordsBase = {
   caseId: 'PL-2026-00001180',
   records: [
     {
@@ -114,7 +116,7 @@ export const caseRecords = {
   ],
 } as const
 
-export const applicationSpotlight = [
+const applicationSpotlightBase = [
   {
     icon: Search01Icon,
     name: 'Pleadli Police',
@@ -138,7 +140,7 @@ export const applicationSpotlight = [
   },
 ] as const
 
-export const scalingChains = [
+const scalingChainsBase = [
   {
     title: 'Pleadli Police, for example',
     steps: [
@@ -156,3 +158,11 @@ export const scalingChains = [
     ],
   },
 ] as const
+
+export const getAdminNavItems = () => localized(adminNavItemsBase, homeText.adminNavItems)
+export const getTrustPoints = () => localized(trustPointsBase, homeText.trustPoints)
+export const getHomeStats = () => localized(homeStatsBase, homeText.homeStats)
+export const getHomeProblems = () => localized(homeProblemsBase, homeText.homeProblems)
+export const getCaseRecords = () => localized(caseRecordsBase, homeText.caseRecords)
+export const getApplicationSpotlight = () => localized(applicationSpotlightBase, homeText.applicationSpotlight)
+export const getScalingChains = () => localized(scalingChainsBase, homeText.scalingChains)

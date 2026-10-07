@@ -5,14 +5,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@pleadli/ui/popover'
 import { Link, useLocation } from '@tanstack/react-router'
 import { cn } from 'cn'
 import { useMemo, useState } from 'react'
+import { LanguageSwitch } from '@/components/language-switch'
+import * as m from '@/paraglide/messages'
 
 const navItems = [
-  { label: 'Overview', to: '/' },
-  { label: 'Products', to: '/products' },
-  { label: 'Roadmap', to: '/roadmap' },
-  { label: 'Downloads', to: '/downloads' },
-  { label: 'Docs', to: '/docs' },
-  { label: 'About', to: '/about' },
+  { get label() { return m["nav.overview"]() }, to: '/' },
+  { get label() { return m["nav.products"]() }, to: '/products' },
+  { get label() { return m["nav.roadmap"]() }, to: '/roadmap' },
+  { get label() { return m["nav.downloads"]() }, to: '/downloads' },
+  { get label() { return m["nav.docs"]() }, to: '/docs' },
+  { get label() { return m["nav.about"]() }, to: '/about' },
 ] as const
 
 export default function Header() {
@@ -45,10 +47,11 @@ export default function Header() {
         </div>
 
         <nav className="flex items-center gap-2">
+          <LanguageSwitch />
           <Link to="/login" className={cn(buttonVariants({ variant: 'secondary' }))}>
             <HugeiconsIcon icon={PersonStandingIcon} />
-            <span className="hidden sm:inline">Get started for free</span>
-            <span className="sm:hidden">Sign in</span>
+            <span className="hidden sm:inline">{m["nav.get_started"]()}</span>
+            <span className="sm:hidden">{m["nav.sign_in"]()}</span>
           </Link>
 
           <Popover open={open} onOpenChange={setOpen}>
@@ -56,7 +59,7 @@ export default function Header() {
               render={
                 <button
                   type="button"
-                  aria-label="Open navigation"
+                  aria-label={m["nav.open_menu"]()}
                   className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
                 />
               }

@@ -1,6 +1,6 @@
 import { Badge } from '@pleadli/ui/badge'
 import { Card, CardDescription, CardTitle } from '@pleadli/ui/card'
-import { products } from '@/data/products'
+import { getProducts } from '@/data/products'
 import {
   CheckmarkCircle02Icon,
   CircleIcon,
@@ -10,6 +10,7 @@ import {
   Key01Icon,
   MinusSignCircleIcon,
 } from '@hugeicons/core-free-icons'
+import * as m from '@/paraglide/messages'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { cn } from 'cn'
@@ -19,26 +20,10 @@ export const Route = createFileRoute('/_public/docs/security')({
 })
 
 const shared = [
-  {
-    icon: Database02Icon,
-    title: 'SQLCipher, not plain SQLite',
-    description: 'The local database itself is encrypted at rest, not just individual fields inside it.',
-  },
-  {
-    icon: FolderLockIcon,
-    title: 'A sealed document vault',
-    description: 'Attachments and issued documents are content-addressed and sealed, not stored as loose files on disk.',
-  },
-  {
-    icon: Key01Icon,
-    title: 'An OS-keystore key',
-    description: "The key that unlocks a machine's database lives in that operating system's own keystore, not in a config file or the database itself.",
-  },
-  {
-    icon: FingerPrintIcon,
-    title: 'A hash-chained audit log',
-    description: 'Every sensitive action is appended to a log where each entry is chained to the one before it, so a gap or a rewrite is detectable.',
-  },
+  { id: 'db', icon: Database02Icon, get title() { return m["docs.security.shared.db.title"]() }, get description() { return m["docs.security.shared.db.body"]() } },
+  { id: 'vault', icon: FolderLockIcon, get title() { return m["docs.security.shared.vault.title"]() }, get description() { return m["docs.security.shared.vault.body"]() } },
+  { id: 'key', icon: Key01Icon, get title() { return m["docs.security.shared.key.title"]() }, get description() { return m["docs.security.shared.key.body"]() } },
+  { id: 'audit', icon: FingerPrintIcon, get title() { return m["docs.security.shared.audit.title"]() }, get description() { return m["docs.security.shared.audit.body"]() } },
 ] as const
 
 function StatusIcon({ state }: { state: true | false | 'partial' }) {
@@ -60,19 +45,14 @@ function RouteComponent() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <Badge variant="outline">Security</Badge>
-        <h1 className="text-3xl!">Security is architecture, not a checkbox</h1>
-        <p>
-          Justice-sector records carry real consequences: a leaked statement, an altered custody
-          record, or an unverifiable court order isn't a data-quality problem, it's a rights
-          problem. Where this model is built, it's built into the database and the vault, not
-          added afterward as a permissions flag.
-        </p>
+        <Badge variant="outline">{m["docs.nav.security"]()}</Badge>
+        <h1 className="text-3xl!">{m["docs.security.title"]()}</h1>
+        <p>{m["docs.security.lead"]()}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {shared.map((item) => (
-          <Card key={item.title} className="p-4">
+          <Card key={item.id} className="p-4">
             <HugeiconsIcon icon={item.icon} className="mb-2 text-muted-foreground" />
             <CardTitle>{item.title}</CardTitle>
             <CardDescription className="text-sm">{item.description}</CardDescription>
@@ -81,13 +61,10 @@ function RouteComponent() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-xl!">Where this actually stands, per application</h2>
-        <p className="text-muted-foreground">
-          Four of five applications share this model today through <code>packages/node-core</code>.
-          Police is the one exception, and closing that gap is the next planned security stage.
-        </p>
+        <h2 className="text-xl!">{m["docs.security.per_app_title"]()}</h2>
+        <p className="text-muted-foreground">{m["docs.security.per_app_lead"]()}</p>
         <div className="flex flex-col gap-2">
-          {products.map((product) => (
+          {getProducts().map((product) => (
             <Link
               key={product.slug}
               to="/products/$slug"
@@ -105,15 +82,10 @@ function RouteComponent() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-xl!">What's still genuinely open</h2>
+        <h2 className="text-xl!">{m["docs.security.open_title"]()}</h2>
         <ul className="flex flex-col gap-1.5">
-          {[
-            "Police isn't on the encrypted-database model yet, everything the other four applications already have.",
-            'Lawyers has no app lock, OS authentication, or per-matter access control, the specific privacy controls a practice handling privileged material needs most.',
-            'No application yet distinguishes roles within itself (a judicial officer from a court clerk, for example); anyone with the application installed has full access today.',
-            'Facility-to-facility and cross-institution exchange (Prisons’ pinned-TLS peer sync, the Police↔DPP interchange) has been tested on one machine or in a single test run, never yet between two separately packaged machines in the field.',
-          ].map((item) => (
-            <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+          {[m["docs.security.open.police"](), m["docs.security.open.roles"](), m["docs.security.open.exchange"](), m["docs.security.open.codesign"]()].map((item, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
               <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground" />
               {item}
             </li>
@@ -122,12 +94,8 @@ function RouteComponent() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-xl!">Offline by default</h2>
-        <p>
-          Every Pleadli application is designed to be fully useful with no internet connection at
-          all. Cloud services and cross-institution exchange supplement local work; they are never
-          a requirement for a station, prosecutor, court, advocate, or facility to keep working.
-        </p>
+        <h2 className="text-xl!">{m["docs.security.offline_title"]()}</h2>
+        <p>{m["docs.security.offline_body"]()}</p>
       </div>
     </div>
   )

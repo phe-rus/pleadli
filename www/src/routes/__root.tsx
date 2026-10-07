@@ -1,4 +1,6 @@
 import { ThemeProvider } from '@/components/theme-provider'
+import * as m from '@/paraglide/messages'
+import { getLocale } from '@/paraglide/runtime'
 import type { RouterAppContext } from '@/router'
 import appCss from '@pleadli/ui/globals.css?url'
 import { GooeyToaster } from "@pleadli/ui/goey-toaster"
@@ -8,12 +10,13 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
-const defaultTitle = 'Pleadli · Justice, Law and Order Orchestra'
-const defaultDescription =
-  'Pleadli gives police, prosecutors, courts, lawyers, and prisons software built around their own work, while keeping the matters they legitimately share connected. Purpose-built, offline-first applications for Uganda’s justice system.'
+const ogLocale: Record<string, string> = { en: 'en_UG', sw: 'sw_UG', fr: 'fr_FR', de: 'de_DE' }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
-  head: () => ({
+  head: () => {
+    const defaultTitle = m["site.title"]()
+    const defaultDescription = m["site.description"]()
+    return {
     meta: [
       { charSet: "utf-8" },
       { name: "theme-color", content: "oklch(0.9904 0.0148 94.1935)" },
@@ -26,7 +29,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { property: 'og:site_name', content: 'Pleadli' },
       { property: 'og:title', content: defaultTitle },
       { property: 'og:description', content: defaultDescription },
-      { property: 'og:locale', content: 'en_UG' },
+      { property: 'og:locale', content: ogLocale[getLocale()] ?? 'en_UG' },
       // Twitter
       { name: 'twitter:card', content: 'summary' },
       { name: 'twitter:title', content: defaultTitle },
@@ -42,11 +45,12 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { rel: 'icon', href: '/favicon.png', type: 'image/png' },
       { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
     ],
-  }),
+  }
+  },
   notFoundComponent: () => (
     <main className="container mx-auto p-8 pt-20">
-      <h1 className="mb-3 text-3xl font-bold">Page not found</h1>
-      <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
+      <h1 className="mb-3 text-3xl font-bold">{m["site.not_found"]()}</h1>
+      <p className="text-muted-foreground">{m["site.not_found_body"]()}</p>
     </main>
   ),
   shellComponent: RootDocument,
@@ -54,7 +58,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootDocument() {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={getLocale()} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

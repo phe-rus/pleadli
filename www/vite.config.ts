@@ -17,6 +17,8 @@ const config = defineConfig({
     paraglideVitePlugin({
       project: './project.inlang',
       outdir: './src/paraglide',
+      // The visitor's choice (cookie), else their browser's language, else English.
+      strategy: ['cookie', 'preferredLanguage', 'baseLocale'],
     }),
     tanstackStart(),
     viteReact({ compiler: true }),

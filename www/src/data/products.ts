@@ -1,3 +1,6 @@
+import { localized } from '@/lib/localized'
+import { getLocale } from '@/paraglide/runtime'
+import { platformStoryText, productsText, readinessText } from './i18n/products'
 import {
   Briefcase01Icon,
   CourtHouseIcon,
@@ -14,7 +17,7 @@ import {
 
 export type ReadinessLevel = 'building' | 'early' | 'research'
 
-export const readinessLabel: Record<ReadinessLevel, string> = {
+const readinessLabelBase: Record<ReadinessLevel, string> = {
   building: 'Building now',
   early: 'Early build',
   research: 'Research and design',
@@ -73,7 +76,7 @@ export interface Product {
   }
 }
 
-export const products: Product[] = [
+const productsBase: Product[] = [
   {
     slug: 'police',
     icon: PoliceBadgeIcon,
@@ -103,7 +106,7 @@ export const products: Product[] = [
       'Referrals and dispatch to other stations or DPP',
     ],
     notYetBuilt: [
-      'Encryption at rest (the one application not yet on the shared node-core security model)',
+      'A sealed attachment vault and the hash-chained audit trail the other applications have',
       'An officer-identity and roles model (station node + command structure)',
       'A real document/file-manager view, and AI features of any kind',
     ],
@@ -174,11 +177,10 @@ export const products: Product[] = [
     mockup: {
       subtitle: 'Prosecution workspace',
       sections: [
-        { label: 'Files', items: ['Incoming', 'Active reviews', 'Returned to Police'] },
-        { label: 'Prosecution work', items: ['Charging review', 'Police material', 'Decisions'] },
-        { label: 'Office', items: ['People', 'Police connections'] },
+        { label: 'Main', items: ['Today', 'Cases', 'Calendar', 'Documents', 'Statistics'] },
+        { label: 'More', items: ['Files', 'Charging review', 'Decisions'] },
       ],
-      tab: 'Charging review',
+      tab: 'Cases',
       statusLeft: 'J. Okwir, Senior State Attorney',
       statusRight: '4 files awaiting decision',
       stats: [
@@ -357,11 +359,19 @@ export const products: Product[] = [
   },
 ]
 
-export function productBySlug(slug: string) {
-  return products.find((p) => p.slug === slug)
+/** The products in the visitor's language (read while rendering). */
+export function getProducts(): Product[] {
+  const over = productsText[getLocale()]
+  return productsBase.map((p) => localized(p, { [getLocale()]: over?.[p.slug] }))
 }
 
-export const platformStory = [
+export function productBySlug(slug: string) {
+  return getProducts().find((p) => p.slug === slug)
+}
+
+export const getReadinessLabel = () => localized(readinessLabelBase, readinessText)
+
+const platformStoryBase = [
   {
     icon: Database02Icon,
     title: 'One case, many records',
@@ -372,7 +382,7 @@ export const platformStory = [
     icon: LockKeyIcon,
     title: 'Security is architecture',
     description:
-      'Where built (DPP, Courts, Prisons), every record sits behind an encrypted SQLite database, a sealed document vault, and a hash-chained audit log, not a permissions flag bolted on afterward.',
+      'Where built (DPP, Courts, Lawyers, Prisons), every record sits behind an encrypted SQLite database, a sealed document vault, and a hash-chained audit log, not a permissions flag bolted on afterward.',
   },
   {
     icon: WifiOff02Icon,
@@ -399,3 +409,5 @@ export const platformStory = [
       'Connection between institutions never means universal access. What one application exposes to another is an explicit, permissioned exchange, not a shared database.',
   },
 ]
+
+export const getPlatformStory = () => localized(platformStoryBase, platformStoryText)

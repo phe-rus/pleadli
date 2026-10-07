@@ -1,12 +1,13 @@
+import * as m from '@/paraglide/messages'
 import { Link } from '@tanstack/react-router'
 
 const footerNav = [
-  { label: 'Overview', to: '/' },
-  { label: 'Products', to: '/products' },
-  { label: 'Roadmap', to: '/roadmap' },
-  { label: 'Downloads', to: '/downloads' },
-  { label: 'Docs', to: '/docs' },
-  { label: 'About', to: '/about' },
+  { get label() { return m["nav.overview"]() }, to: '/' },
+  { get label() { return m["nav.products"]() }, to: '/products' },
+  { get label() { return m["nav.roadmap"]() }, to: '/roadmap' },
+  { get label() { return m["nav.downloads"]() }, to: '/downloads' },
+  { get label() { return m["nav.docs"]() }, to: '/docs' },
+  { get label() { return m["nav.about"]() }, to: '/about' },
 ] as const
 
 export default function Footer() {
@@ -32,18 +33,18 @@ export default function Footer() {
               </Link>
             ))}
             <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">
-              Sign in
+              {m["nav.sign_in"]()}
             </Link>
           </nav>
         </div>
 
         <div className="flex max-w-sm flex-col gap-1">
-          <p className="text-sm font-medium text-foreground">Justice, Law and Order Orchestra</p>
-          <p className="text-sm text-muted-foreground">Justice requires institutions to work together, without becoming the same institution.</p>
+          <p className="text-sm font-medium text-foreground">{m["site.slogan"]()}</p>
+          <p className="text-sm text-muted-foreground">{m["site.motto"]()}</p>
         </div>
 
         <p className="border-t border-border/55 pt-6 text-sm text-muted-foreground">
-          &copy; {year} Pleadli. All rights reserved.
+          &copy; {year} Pleadli. {m["site.rights"]()}
         </p>
       </section>
     </footer>

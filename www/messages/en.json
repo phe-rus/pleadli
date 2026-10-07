@@ -1,4 +1,324 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "example_message": "Hello world {username}"
+  "about": {
+    "badge": "About",
+    "first_note": "Pleadli Police and Pleadli DPP were built first because investigation, referral, perusal, and prosecution form a useful early end-to-end connection, not because Courts, Lawyers, and Prisons are later stages of the same product. They are separate applications, each built around its own requirements.",
+    "lead": "Pleadli exists to provide the digital infrastructure that makes that possible: software built for each participant's own work, connected only where a legitimate relationship exists.",
+    "meta_description": "Pleadli exists to provide the digital infrastructure that makes justice institutions work together without becoming the same institution: software built for each participant's own work, connected only where a legitimate relationship exists.",
+    "meta_title": "About · Pleadli",
+    "pillars": {
+      "centralization": {
+        "p1": "Connecting institutions doesn't mean putting all their records into one shared database. A case gets a continuous identity that follows it across the whole process, but what stays separate is who owns the records: police records belong to police, prosecution decisions belong to the DPP, and so on.",
+        "title": "Connection without centralization"
+      },
+      "fragmentation": {
+        "p1": "A single matter can pass through police, prosecution, courts, and prisons, and today each of those stages usually runs on its own paperwork, with almost nothing connecting them. The same facts get re-entered at every handoff, and nobody outside one institution can confirm where a case actually stands.",
+        "p2": "Pleadli exists so institutions don't have to recreate the same context every time a matter crosses a boundary.",
+        "title": "Justice without fragmentation"
+      },
+      "purpose": {
+        "p1": "Police software should feel like police software. DPP software should feel like prosecution software. Court software should feel like court software. A lawyer's software should feel like legal practice software. Prison software should feel like custody software.",
+        "p2": "Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers, and Pleadli Prisons are separate applications, each designed around the work its users actually do, not one dashboard reused everywhere.",
+        "title": "Purpose-built software"
+      },
+      "thread": {
+        "p1": "Responsibility for a matter moves: from an investigating officer, to a prosecutor, to a court, sometimes to a lawyer representing one side. Pleadli lets the underlying matter keep continuity even as that responsibility, and the professionals involved, change.",
+        "title": "One continuous thread"
+      },
+      "uganda": {
+        "p1": "Pleadli is starting with Uganda, designed around the justice system as it actually operates here, not a generic template applied to any country.",
+        "title": "Built from Uganda outward"
+      }
+    },
+    "principles": {
+      "identity": {
+        "body": "A case keeps the same identity from investigation through to custody.",
+        "title": "One case, one identity"
+      },
+      "owned": {
+        "body": "Each application's records stay with the institution that created them, always.",
+        "title": "Institution-owned records"
+      },
+      "reference": {
+        "body": "Other applications can reference a case without seeing inside it.",
+        "title": "Referenceable, not visible"
+      }
+    },
+    "sign_in_body": "Institutional users sign in to Pleadli to manage their organization, structure, and staff.",
+    "sign_in_title": "Sign in to Pleadli"
+  },
+  "docs": {
+    "ai": {
+      "lead": "DPP and Lawyers have Assist today: it summarises, drafts, and reads scanned papers, using the AI provider and key the office or practice chooses. Courts has an honest transcription seam, and Police and Prisons have no AI yet. Wherever AI appears the rule is the same: AI assists, it never becomes the record by itself.",
+      "per_app_title": "Where each application stands",
+      "planned": "Planned for Police and Prisons: transcription, summaries, and correspondence help, behind the same rules.",
+      "privilege": "Where AI touches privileged material, most acutely in Pleadli Lawyers, it inherits the application's own access controls: Assist is off until an administrator turns it on, the key is never shown back, and the accounts role cannot use it.",
+      "rules": {
+        "adopt": "Nothing becomes the record without a person: a draft becomes a document only when someone makes it one, papers Assist has named stay marked unchecked until a person edits them, and Courts' database refuses a machine transcript that nobody has corrected.",
+        "context": "Scoped context: Assist sees the application's own record of the matter, never another institution's records.",
+        "deadlines": "The application counts the law: every deadline Assist mentions is the one the app counted from the rules, not one the model worked out.",
+        "provider": "Provider-agnostic: the office or practice chooses the AI provider and brings its own key. Nothing is hard-coded to one model."
+      },
+      "rules_title": "The rules every Assist follows",
+      "stage": {
+        "generated": {
+          "body": "Produced by a model, not yet looked at by anyone.",
+          "title": "AI generated"
+        },
+        "official": {
+          "body": "What actually counts, legally, once a person has adopted it.",
+          "title": "Official record"
+        },
+        "reviewed": {
+          "body": "A person has read it and either corrected it or accepted it as-is.",
+          "title": "Human reviewed"
+        },
+        "suggested": {
+          "body": "Offered as a draft, clearly marked, sitting next to the real record.",
+          "title": "AI suggested"
+        }
+      },
+      "title": "Assist where it is built, one rule everywhere"
+    },
+    "apps": {
+      "first_body": "Police and DPP sit next to each other in a case's early life, investigation and prosecution, which makes the shared-identity, institution-owned-records model testable end to end without needing every application built first. This was a practical starting point, not a sequence the other applications wait in line behind.",
+      "first_title": "Why Police and DPP first",
+      "lead": "Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers, and Pleadli Prisons are separate applications, each designed around the work its users actually do. They are connected by Pleadli Cloud and by the cases they legitimately share, not merged into one product.",
+      "lead_after": "for a deep page per application.",
+      "products_link": "the full products section",
+      "title": "A family of purpose-built applications",
+      "useful_body": "Each application provides value on its own. A police station can use Pleadli Police to manage its own work whether or not a given case has reached the DPP. An individual lawyer can use Pleadli Lawyers for their own practice with no court connection at all. Interoperability becomes valuable when a legitimate relationship exists, it isn't a requirement for an application to be useful.",
+      "useful_title": "Independently useful"
+    },
+    "documents": {
+      "lead": "A charge sheet, a signed sitting record, or a filed bail application isn't supporting material for a case, it usually is the thing that matters legally. Pleadli treats a document as a first-class object moving through a real pipeline, not a file bolted onto the bottom of a form.",
+      "missing": {
+        "docx": "DOCX import and round-trip editing that preserves page structure, headers, footers, and signatures. Word export exists; bringing a Word file back in does not.",
+        "folders": "A real folder or file-manager view, browsing documents the way a case actually organises them.",
+        "shared": "A shared document architecture across applications; each one currently has its own separate model."
+      },
+      "missing_title": "What no application has yet",
+      "per_app_title": "How far each application actually goes",
+      "steps": {
+        "document": {
+          "body": "The record itself: type, reference number, author, date.",
+          "title": "Document"
+        },
+        "folder": {
+          "body": "Where a document lives, inside the case or matter it belongs to.",
+          "title": "Folder"
+        },
+        "freeze": {
+          "body": "Once issued, the content can no longer change, only be superseded.",
+          "title": "Freeze"
+        },
+        "preview": {
+          "body": "What it will actually look like, not a filename and a download icon.",
+          "title": "Preview"
+        },
+        "sign": {
+          "body": "The point a document becomes an official record, where the law requires that step.",
+          "title": "Sign / issue"
+        },
+        "version": {
+          "body": "What changed and when, without losing what came before.",
+          "title": "Version"
+        }
+      },
+      "title": "Documents are the record, not an attachment",
+      "works_body": "DPP, Courts, and Lawyers issue documents with a real reference number and a cryptographic hash, and freeze them once issued, database-enforced, not just a UI rule. DPP and Lawyers also seal them with signature and stamp and a verification code and QR anyone can check, with PDF and Word export. The folder browser and DOCX import ahead are real work, but they build on a foundation that's already sound.",
+      "works_title": "What already works well"
+    },
+    "how": {
+      "admin_body": "Platform administration manages Pleadli itself, which institutions exist and what they're entitled to use. Institutional administration is scoped to one institution: managing that institution's own units and members does not grant any visibility into another institution's structure.",
+      "admin_title": "Platform vs. institutional administration",
+      "lead": "This is the design principle behind Pleadli, and the part that is already real in the platform's organizational model.",
+      "org": {
+        "entitlement": {
+          "body": "Whether an institution is allowed to use a given Pleadli application at all.",
+          "title": "Entitlement"
+        },
+        "membership": {
+          "body": "Which user belongs to which unit, and their title there.",
+          "title": "Membership"
+        },
+        "organization": {
+          "body": "One row per institution. Flat: Police, DPP, and future institutions sit side by side.",
+          "title": "Organization"
+        },
+        "unit": {
+          "body": "Self-referencing hierarchy within one institution, headquarters down to a station or office.",
+          "title": "Organization unit"
+        }
+      },
+      "principle_p1": "A case should have one continuous identity as it moves between institutions. What stays separate is who owns the records: police records belong to the Uganda Police Force, DPP decisions belong to the DPP. An institution can reference a case without gaining access to another institution's internal records. Referenceability is not the same as visibility.",
+      "principle_p2": "Today the same matter can carry a station CRB number, a separate DPP file number, and a separate court cause number, with no shared thread between them. Closing that gap without collapsing institutional ownership is the actual engineering problem.",
+      "principle_title": "The principle",
+      "real_body": "Case-level work lives inside each application. Underneath them, Pleadli Cloud holds the organizational layer: institutions, their internal structure, and who belongs where.",
+      "real_title": "What's real today: the organizational model",
+      "size_body": "The same organizational model is what lets a Pleadli application serve an individual user, a team, or a larger organization, an individual lawyer and a law firm both use Pleadli Lawyers through the same model, structured differently. The hierarchy shape is up to each organization, Pleadli doesn't assume every institution looks like a police force.",
+      "size_title": "One model, any size",
+      "title": "Shared case identity, institution-owned records"
+    },
+    "index": {
+      "badge": "Documentation",
+      "lead": "This section is for a more technical or institutional-integration reader, not the general marketing pitch. It covers the actual model behind Pleadli and where the platform stands today.",
+      "next_body": "The shared case identity and institution-owned records model, in detail.",
+      "scope_after": "for an honest, per-application breakdown.",
+      "scope_body": "All five applications have real code today, at different levels of maturity. Police, DPP, Lawyers, and Prisons have a first Windows release that updates itself; Courts is not released yet and is the least field-tested. None of them is field-validated yet.",
+      "scope_title": "Current scope",
+      "title": "Pleadli, technically",
+      "what_body": "Pleadli is a family of purpose-built applications, Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers, and Pleadli Prisons, each with its own login, workflows, and records. Pleadli Cloud is the platform underneath all of them: identity, organizations, access, and the shared case identity that connects legitimate relationships across applications.",
+      "what_title": "What Pleadli is"
+    },
+    "nav": {
+      "ai": "AI",
+      "applications": "Applications",
+      "documents": "Documents",
+      "how_it_works": "How it works",
+      "overview": "Overview",
+      "security": "Security"
+    },
+    "products_link": "the products page",
+    "read_more": "Read more",
+    "read_next": "Read next",
+    "security": {
+      "lead": "Justice-sector records carry real consequences: a leaked statement, an altered custody record, or an unverifiable court order isn't a data-quality problem, it's a rights problem. Where this model is built, it's built into the database and the vault, not added afterward as a permissions flag.",
+      "offline_body": "Every Pleadli application is designed to be fully useful with no internet connection at all. Cloud services and cross-institution exchange supplement local work; they are never a requirement for a station, prosecutor, court, advocate, or facility to keep working.",
+      "offline_title": "Offline by default",
+      "open": {
+        "codesign": "The Windows installers are not yet code-signed. Updates are signed, so an installed copy accepts only Pleadli’s own.",
+        "exchange": "Exchange between machines (Prisons’ pinned-TLS facility sync, a Lawyers firm on one office network, the Police↔DPP interchange) has been tested on one machine or in test runs, never yet between separately installed machines in the field.",
+        "police": "Police's attachment vault is not yet sealed under its key, and it does not yet keep the hash-chained audit trail the other four have.",
+        "roles": "Roles are uneven across the applications. Lawyers decides by role who may sign, file, or pay out; the others do not yet draw lines that fine within one office."
+      },
+      "open_title": "What's still genuinely open",
+      "per_app_lead": "DPP, Courts, Lawyers, and Prisons share the full model through the common node-core package. Police has the encrypted database and the same key management, but not yet the sealed vault or the audit chain.",
+      "per_app_title": "Where this actually stands, per application",
+      "shared": {
+        "audit": {
+          "body": "Every sensitive action is appended to a log where each entry is chained to the one before it, so a gap or a rewrite is detectable.",
+          "title": "A hash-chained audit log"
+        },
+        "db": {
+          "body": "The local database itself is encrypted at rest, not just individual fields inside it.",
+          "title": "SQLCipher, not plain SQLite"
+        },
+        "key": {
+          "body": "The key that unlocks a machine's database lives in that operating system's own keystore, not in a config file or the database itself.",
+          "title": "An OS-keystore key"
+        },
+        "vault": {
+          "body": "Attachments and issued documents are content-addressed and sealed, not stored as loose files on disk.",
+          "title": "A sealed document vault"
+        }
+      },
+      "title": "Security is architecture, not a checkbox"
+    },
+    "see": "See"
+  },
+  "downloads": {
+    "lead": "Police, DPP, Lawyers and Prisons have their first Windows release. Once installed, each checks for a signed update and offers to install it; nothing is installed without asking. These are early releases, in active development and not yet field-validated. Courts is not released yet.",
+    "not_available": "Not available",
+    "stand": {
+      "codesign": "Not yet: code-signed installers. Windows shows “Windows protected your PC” on first install; choose “More info”, then “Run anyway”.",
+      "installers": "Built: Windows installers (.msi and setup .exe), built and published by an automated release workflow.",
+      "rest": "Not yet: published checksums, Linux and macOS installers, and a release of Pleadli Courts.",
+      "updates": "Built: automatic updates, signed. An installed copy accepts only an update signed with Pleadli’s key."
+    },
+    "stand_title": "Where the releases stand",
+    "title": "Download Pleadli for Windows."
+  },
+  "home": {
+    "about": "About Pleadli",
+    "apps_lead": "Each Pleadli application is designed around real work, not a generic dashboard reused across institutions.",
+    "apps_note": "Pleadli Police and Pleadli DPP come first because investigation, referral, perusal, and prosecution form a useful early end-to-end connection, not because the other applications are later stages of one product.",
+    "apps_title": "Software for the people who keep justice moving",
+    "case_badge": "Pleadli case",
+    "case_lead": "A case can be referenced by every application that legitimately touches it, without any application gaining access to another's internal records. One case does not mean one shared file. Connection does not mean universal visibility.",
+    "case_title": "One case, many records",
+    "download": "Download",
+    "hero_lead": "Pleadli gives police, prosecutors, courts, lawyers, and prisons software built around their own work, while keeping the matters they legitimately share connected.",
+    "hero_title_1": "Justice requires institutions to work together,",
+    "hero_title_2": "without becoming the same institution.",
+    "learn_more": "Learn more",
+    "mock_new_org": "New organization",
+    "mock_organizations": "Organizations",
+    "platform_lead": "Identity, organizations, access, and provisioning for every Pleadli application live in one place, so each institution manages its own structure without touching another institution's setup.",
+    "platform_title": "One platform underneath",
+    "problems_lead": "Police, prosecution, courts, and prisons each run their own paperwork today, with almost nothing connecting them.",
+    "problems_title": "Justice systems weren't built to talk to each other",
+    "purpose_lead": "Pleadli Police and Pleadli DPP each have their own side of Pleadli, not a shared filter.",
+    "purpose_title": "Purpose-built, not shared",
+    "scale_lead": "The same Pleadli application can serve an individual, a team, or a larger organization. The hierarchy differs by institution, Pleadli doesn't force one shape onto all of them.",
+    "scale_title": "One user, one team, one institution",
+    "signin_lead": "Institutional users sign in to manage their organization, structure, and staff across the applications they use.",
+    "signin_title": "Sign in to Pleadli",
+    "stand_lead": "A live, honestly-scored roadmap across all five applications, and what downloading each one looks like today.",
+    "stand_title": "See where things actually stand",
+    "trust_lead": "Justice-sector records carry real consequences. Security is architecture here, not an afterthought.",
+    "trust_title": "Built for records that matter"
+  },
+  "nav": {
+    "about": "About",
+    "docs": "Docs",
+    "downloads": "Downloads",
+    "get_started": "Get started for free",
+    "language": "Language",
+    "open_menu": "Open navigation",
+    "overview": "Overview",
+    "products": "Products",
+    "roadmap": "Roadmap",
+    "sign_in": "Sign in"
+  },
+  "product": {
+    "ahead": "What's still ahead",
+    "ahead_lead": "Not a hidden roadmap: the specific, named gaps closest to the surface right now.",
+    "and": " and ",
+    "cap_ai": "AI",
+    "cap_documents": "Documents",
+    "cap_offline": "Offline",
+    "cap_security": "Security",
+    "connecting": "Connecting to other applications",
+    "download_title": "Download {name}",
+    "download_windows": "Download for Windows",
+    "features": "Features",
+    "in_use": "In use",
+    "mock_local": "Local",
+    "mock_search": "Search…",
+    "mockup_note": "A stylized representation of the real workspace, built from real navigation and sample data, not a screenshot.",
+    "not_available": "Not available yet",
+    "not_built": "Not built",
+    "others": "Other applications",
+    "owns": "What it owns",
+    "partial": "Partial",
+    "problem": "The problem",
+    "real_today": "Real today",
+    "see_roadmap": "See the roadmap",
+    "stands": "Where it actually stands",
+    "stands_lead": "Honest, capability by capability. Not built is a real answer here, not a gap we hide.",
+    "who_for": "Who it's for",
+    "workflows": "Major workflows",
+    "workflows_lead": "How the application is actually used, not a generic feature list."
+  },
+  "products": {
+    "lead": "Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers, and Pleadli Prisons are separate applications, each designed around the work its own users do. Status below is real, verified against the actual code, not the pitch.",
+    "story_lead": "What's shared underneath every application above, honestly scored.",
+    "story_title": "One platform story, told once",
+    "title": "Five applications, one platform underneath."
+  },
+  "roadmap": {
+    "lead": "An item only moves to \"shipped\" once it has actually run and been verified, not merely written. This page is regenerated from the same audit the team runs against its own code, it isn't marketing copy.",
+    "platform": "Platform",
+    "title": "What's real, what's next, what's still research."
+  },
+  "site": {
+    "description": "Pleadli gives police, prosecutors, courts, lawyers, and prisons software built around their own work, while keeping the matters they legitimately share connected. Purpose-built, offline-first applications for Uganda’s justice system.",
+    "motto": "Justice requires institutions to work together, without becoming the same institution.",
+    "not_found": "Page not found",
+    "not_found_body": "The page you're looking for doesn't exist.",
+    "rights": "All rights reserved.",
+    "slogan": "Justice, Law and Order Orchestra",
+    "title": "Pleadli · Justice, Law and Order Orchestra"
+  }
 }

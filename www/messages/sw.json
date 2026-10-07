@@ -1,4 +1,324 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "example_message": "Habari {username}"
+  "about": {
+    "badge": "Kuhusu",
+    "first_note": "Pleadli Police na Pleadli DPP zilijengwa kwanza kwa sababu upelelezi, upelekaji, upitiaji na mashtaka huunda muunganiko mzuri wa mwanzo hadi mwisho, si kwa sababu Courts, Lawyers na Prisons ni hatua za baadaye za bidhaa ile ile. Ni programu tofauti, kila moja imejengwa kuzunguka mahitaji yake.",
+    "lead": "Pleadli ipo kutoa miundombinu ya kidijitali inayowezesha hilo: programu iliyojengwa kwa kazi ya kila mshiriki, ikiunganishwa pale tu uhusiano halali upo.",
+    "meta_description": "Pleadli ipo kutoa miundombinu ya kidijitali inayowezesha taasisi za haki kufanya kazi pamoja bila kuwa taasisi moja: programu iliyojengwa kwa kazi ya kila mshiriki, ikiunganishwa pale tu uhusiano halali upo.",
+    "meta_title": "Kuhusu · Pleadli",
+    "pillars": {
+      "centralization": {
+        "p1": "Kuunganisha taasisi hakumaanishi kuweka kumbukumbu zao zote kwenye hifadhidata moja ya pamoja. Shauri hupata utambulisho endelevu unaolifuata katika mchakato mzima, lakini kinachobaki tofauti ni nani anamiliki kumbukumbu: kumbukumbu za polisi ni za polisi, maamuzi ya mashtaka ni ya DPP, na kadhalika.",
+        "title": "Muunganiko bila kuweka kila kitu kati"
+      },
+      "fragmentation": {
+        "p1": "Shauri moja linaweza kupita polisi, mashtaka, mahakama na magereza, na leo kila hatua kati ya hizo kwa kawaida huendeshwa kwa makaratasi yake, bila karibu chochote kinachoziunganisha. Ukweli ule ule huandikwa upya kila linapokabidhiwa, na hakuna aliye nje ya taasisi moja anayeweza kuthibitisha shauri limefikia wapi.",
+        "p2": "Pleadli ipo ili taasisi zisilazimike kuunda upya muktadha ule ule kila shauri linapovuka mpaka.",
+        "title": "Haki bila mgawanyiko"
+      },
+      "purpose": {
+        "p1": "Programu ya polisi inapaswa kuhisi kama programu ya polisi. Programu ya DPP inapaswa kuhisi kama programu ya mashtaka. Programu ya mahakama inapaswa kuhisi kama programu ya mahakama. Programu ya wakili inapaswa kuhisi kama programu ya uwakili. Programu ya magereza inapaswa kuhisi kama programu ya ulinzi wa wafungwa.",
+        "p2": "Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers na Pleadli Prisons ni programu tofauti, kila moja imeundwa kuzunguka kazi wanayofanya watumiaji wake kweli, si dashibodi moja inayotumika kila mahali.",
+        "title": "Programu iliyojengwa kwa kusudi lake"
+      },
+      "thread": {
+        "p1": "Wajibu wa shauri huhama: kutoka kwa afisa mpelelezi, kwenda kwa mwendesha mashtaka, kwenda mahakamani, wakati mwingine kwa wakili anayewakilisha upande mmoja. Pleadli huruhusu shauri lenyewe kubaki na mwendelezo hata wajibu huo, na wataalamu wanaohusika, wanapobadilika.",
+        "title": "Uzi mmoja endelevu"
+      },
+      "uganda": {
+        "p1": "Pleadli inaanza na Uganda, imeundwa kuzunguka mfumo wa haki jinsi unavyofanya kazi hapa kweli, si kiolezo cha jumla kinachowekwa kwa nchi yoyote.",
+        "title": "Imejengwa kuanzia Uganda kwenda nje"
+      }
+    },
+    "principles": {
+      "identity": {
+        "body": "Shauri hubaki na utambulisho ule ule tangu upelelezi hadi kizuizini.",
+        "title": "Shauri moja, utambulisho mmoja"
+      },
+      "owned": {
+        "body": "Kumbukumbu za kila programu hubaki kwa taasisi iliyoziunda, daima.",
+        "title": "Kumbukumbu zinazomilikiwa na taasisi"
+      },
+      "reference": {
+        "body": "Programu nyingine zinaweza kurejelea shauri bila kuona ndani yake.",
+        "title": "Hurejelewa, haionekani"
+      }
+    },
+    "sign_in_body": "Watumiaji wa taasisi huingia kwenye Pleadli kusimamia shirika lao, muundo wake na wafanyakazi.",
+    "sign_in_title": "Ingia kwenye Pleadli"
+  },
+  "docs": {
+    "ai": {
+      "lead": "DPP na Lawyers zina Assist leo: hufupisha, huandaa rasimu, na husoma karatasi zilizochanganuliwa, kwa kutumia mtoa huduma wa AI na ufunguo ambao ofisi au kampuni huchagua. Courts ina kiungo cha unukuzi kilicho wazi kuhusu kutokuwepo kwake, na Police na Prisons bado hazina AI. Popote AI inapotokea kanuni ni moja: AI husaidia, haiwi kumbukumbu yenyewe kamwe.",
+      "per_app_title": "Kila programu imefikia wapi",
+      "planned": "Imepangwa kwa Police na Prisons: unukuzi, muhtasari, na msaada wa barua, chini ya kanuni hizo hizo.",
+      "privilege": "Pale AI inapogusa taarifa za siri za kitaaluma, hasa katika Pleadli Lawyers, hurithi udhibiti wa ufikiaji wa programu yenyewe: Assist imezimwa hadi msimamizi aiwashe, ufunguo hauonyeshwi tena, na jukumu la uhasibu haliwezi kuitumia.",
+      "rules": {
+        "adopt": "Hakuna kinachokuwa kumbukumbu bila mtu: rasimu huwa hati tu mtu anapoifanya kuwa hati, karatasi ambazo Assist imezipa majina hubaki na alama ya kutokaguliwa hadi mtu azihariri, na hifadhidata ya Courts hukataa nakala ya mashine ambayo hakuna aliyeirekebisha.",
+        "context": "Muktadha wenye mipaka: Assist huona kumbukumbu za programu yenyewe kuhusu shauri, kamwe si kumbukumbu za taasisi nyingine.",
+        "deadlines": "Programu ndiyo huhesabu sheria: kila tarehe ya mwisho ambayo Assist hutaja ni ile ambayo programu imehesabu kutoka kwa kanuni, si ile ambayo modeli imekisia.",
+        "provider": "Haitegemei mtoa huduma mmoja: ofisi au kampuni huchagua mtoa huduma wa AI na huleta ufunguo wake. Hakuna kinachofungwa kwa modeli moja."
+      },
+      "rules_title": "Kanuni ambazo kila Assist hufuata",
+      "stage": {
+        "generated": {
+          "body": "Imetolewa na modeli, bado haijatazamwa na mtu yeyote.",
+          "title": "Imetengenezwa na AI"
+        },
+        "official": {
+          "body": "Kinachohesabika kisheria, mara mtu anapokikubali.",
+          "title": "Kumbukumbu rasmi"
+        },
+        "reviewed": {
+          "body": "Mtu ameisoma na ama ameirekebisha au ameikubali ilivyo.",
+          "title": "Imepitiwa na mtu"
+        },
+        "suggested": {
+          "body": "Imetolewa kama rasimu, imewekwa alama wazi, kando ya kumbukumbu halisi.",
+          "title": "Imependekezwa na AI"
+        }
+      },
+      "title": "Assist pale ilipojengwa, kanuni moja kila mahali"
+    },
+    "apps": {
+      "first_body": "Police na DPP hukaa karibu katika maisha ya mwanzo ya shauri, upelelezi na mashtaka, jambo linalowezesha mfumo wa utambulisho wa pamoja na kumbukumbu za taasisi kujaribiwa mwanzo hadi mwisho bila kuhitaji programu zote kujengwa kwanza. Hii ilikuwa mahali pa kuanzia pa kivitendo, si mfuatano ambao programu nyingine zinaungoja.",
+      "first_title": "Kwa nini Police na DPP kwanza",
+      "lead": "Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers na Pleadli Prisons ni programu tofauti, kila moja imeundwa kuzunguka kazi wanayofanya watumiaji wake kweli. Zimeunganishwa na Pleadli Cloud na kwa mashauri wanayoshiriki kihalali, hazijaunganishwa kuwa bidhaa moja.",
+      "lead_after": "kwa ukurasa wa kina wa kila programu.",
+      "products_link": "sehemu kamili ya bidhaa",
+      "title": "Familia ya programu zilizojengwa kwa kusudi",
+      "useful_body": "Kila programu ina thamani yake yenyewe. Kituo cha polisi kinaweza kutumia Pleadli Police kusimamia kazi yake iwe shauri fulani limefika DPP au la. Wakili mmoja anaweza kutumia Pleadli Lawyers kwa uwakili wake bila muunganiko wowote na mahakama. Kufanya kazi pamoja kuna thamani pale uhusiano halali upo, si sharti la programu kuwa na manufaa.",
+      "useful_title": "Inafaa kivyake"
+    },
+    "documents": {
+      "lead": "Hati ya mashtaka, kumbukumbu ya kikao iliyotiwa saini, au ombi la dhamana lililowasilishwa si nyenzo za ziada za shauri; mara nyingi ndicho kinachohesabika kisheria. Pleadli huichukulia hati kama kitu cha daraja la kwanza kinachopitia mchakato halisi, si faili lililobandikwa chini ya fomu.",
+      "missing": {
+        "docx": "Kuingiza DOCX na kuhariri kwenda na kurudi huku muundo wa kurasa, vichwa, vijachini na saini vikihifadhiwa. Kuhamisha kwenda Word kupo; kurudisha faili la Word ndani hakupo.",
+        "folders": "Mwonekano halisi wa folda au msimamizi wa faili, kuvinjari nyaraka jinsi shauri linavyozipanga kweli.",
+        "shared": "Muundo wa pamoja wa nyaraka kati ya programu; kwa sasa kila moja ina mfumo wake tofauti."
+      },
+      "missing_title": "Kisichokuwa kwenye programu yoyote bado",
+      "per_app_title": "Kila programu imefika wapi kweli",
+      "steps": {
+        "document": {
+          "body": "Kumbukumbu yenyewe: aina, namba ya kumbukumbu, mwandishi, tarehe.",
+          "title": "Hati"
+        },
+        "folder": {
+          "body": "Mahali hati inapokaa, ndani ya shauri linalohusika.",
+          "title": "Folda"
+        },
+        "freeze": {
+          "body": "Ikishatolewa, maudhui hayawezi kubadilika tena, yanaweza tu kubadilishwa na mengine.",
+          "title": "Funga"
+        },
+        "preview": {
+          "body": "Itakavyoonekana kweli, si jina la faili na alama ya kupakua.",
+          "title": "Onyesho"
+        },
+        "sign": {
+          "body": "Pale hati inapokuwa kumbukumbu rasmi, pale sheria inapotaka hatua hiyo.",
+          "title": "Tia saini / toa"
+        },
+        "version": {
+          "body": "Kilichobadilika na lini, bila kupoteza kilichotangulia.",
+          "title": "Toleo"
+        }
+      },
+      "title": "Nyaraka ndizo kumbukumbu, si kiambatisho",
+      "works_body": "DPP, Courts na Lawyers hutoa nyaraka zenye namba halisi ya kumbukumbu na hash ya kisimbuzi, na huzifunga zikishatolewa, kwa hifadhidata, si kanuni ya skrini tu. DPP na Lawyers pia huzifunga kwa saini na muhuri na msimbo wa uthibitisho na QR ambayo yeyote anaweza kukagua, pamoja na kuhamisha kwenda PDF na Word. Kivinjari cha folda na kuingiza DOCX vilivyo mbele ni kazi halisi, lakini vinajengwa juu ya msingi ulio imara tayari.",
+      "works_title": "Kinachofanya kazi vizuri tayari"
+    },
+    "how": {
+      "admin_body": "Usimamizi wa jukwaa husimamia Pleadli yenyewe, taasisi zipi zipo na zinaruhusiwa kutumia nini. Usimamizi wa taasisi umewekewa mipaka ya taasisi moja: kusimamia vitengo na wanachama wa taasisi hiyo hakutoi uwezo wowote wa kuona muundo wa taasisi nyingine.",
+      "admin_title": "Usimamizi wa jukwaa dhidi ya usimamizi wa taasisi",
+      "lead": "Hii ndiyo kanuni ya muundo nyuma ya Pleadli, na sehemu ambayo tayari ni halisi katika mfumo wa mashirika wa jukwaa.",
+      "org": {
+        "entitlement": {
+          "body": "Kama taasisi inaruhusiwa kutumia programu fulani ya Pleadli kabisa.",
+          "title": "Haki ya matumizi"
+        },
+        "membership": {
+          "body": "Mtumiaji yupi yuko kitengo kipi, na cheo chake hapo.",
+          "title": "Uanachama"
+        },
+        "organization": {
+          "body": "Safu moja kwa kila taasisi. Bapa: Polisi, DPP na taasisi za baadaye hukaa bega kwa bega.",
+          "title": "Shirika"
+        },
+        "unit": {
+          "body": "Ngazi zinazojirejelea ndani ya taasisi moja, kuanzia makao makuu hadi kituo au ofisi.",
+          "title": "Kitengo cha shirika"
+        }
+      },
+      "principle_p1": "Shauri linapaswa kuwa na utambulisho mmoja endelevu linapohama kati ya taasisi. Kinachobaki tofauti ni nani anamiliki kumbukumbu: kumbukumbu za polisi ni za Jeshi la Polisi la Uganda, maamuzi ya DPP ni ya DPP. Taasisi inaweza kurejelea shauri bila kupata kumbukumbu za ndani za taasisi nyingine. Kurejelewa si sawa na kuonekana.",
+      "principle_p2": "Leo shauri moja linaweza kuwa na namba ya CRB ya kituo, namba tofauti ya jalada la DPP, na namba tofauti ya kesi mahakamani, bila uzi wowote wa pamoja kati yao. Kuziba pengo hilo bila kuvunja umiliki wa taasisi ndiyo changamoto halisi ya kihandisi.",
+      "principle_title": "Kanuni",
+      "real_body": "Kazi ya kila shauri iko ndani ya kila programu. Chini yake, Pleadli Cloud inashikilia tabaka la mashirika: taasisi, muundo wake wa ndani, na nani yuko wapi.",
+      "real_title": "Kilicho halisi leo: mfumo wa mashirika",
+      "size_body": "Mfumo huo huo wa mashirika ndio unaoruhusu programu ya Pleadli kumhudumia mtumiaji mmoja, timu, au shirika kubwa; wakili mmoja na kampuni ya mawakili wote hutumia Pleadli Lawyers kupitia mfumo huo huo, uliopangwa tofauti. Umbo la ngazi ni la kila shirika kuamua; Pleadli haidhanii kila taasisi inafanana na jeshi la polisi.",
+      "size_title": "Mfumo mmoja, ukubwa wowote",
+      "title": "Utambulisho wa pamoja wa shauri, kumbukumbu za taasisi"
+    },
+    "index": {
+      "badge": "Nyaraka",
+      "lead": "Sehemu hii ni kwa msomaji wa kiufundi au anayeshughulikia kuunganisha taasisi, si maelezo ya jumla ya matangazo. Inaeleza mfumo halisi nyuma ya Pleadli na jukwaa limefikia wapi leo.",
+      "next_body": "Utambulisho wa pamoja wa shauri na mfumo wa kumbukumbu zinazomilikiwa na taasisi, kwa undani.",
+      "scope_after": "kwa maelezo ya kweli, programu moja moja.",
+      "scope_body": "Programu zote tano zina msimbo halisi leo, katika viwango tofauti vya ukomavu. Police, DPP, Lawyers na Prisons zina toleo la kwanza la Windows linalojisasisha; Courts bado haijatolewa na ndiyo iliyojaribiwa kidogo zaidi kazini. Hakuna hata moja iliyothibitishwa kazini bado.",
+      "scope_title": "Hali ya sasa",
+      "title": "Pleadli, kiufundi",
+      "what_body": "Pleadli ni familia ya programu zilizojengwa kwa kusudi maalum, Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers na Pleadli Prisons, kila moja ikiwa na kuingia kwake, mitiririko yake ya kazi na kumbukumbu zake. Pleadli Cloud ni jukwaa lililo chini ya zote: utambulisho, mashirika, ruhusa, na utambulisho wa pamoja wa shauri unaounganisha mahusiano halali kati ya programu.",
+      "what_title": "Pleadli ni nini"
+    },
+    "nav": {
+      "ai": "AI",
+      "applications": "Programu",
+      "documents": "Nyaraka",
+      "how_it_works": "Jinsi inavyofanya kazi",
+      "overview": "Muhtasari",
+      "security": "Usalama"
+    },
+    "products_link": "ukurasa wa bidhaa",
+    "read_more": "Soma zaidi",
+    "read_next": "Soma inayofuata",
+    "security": {
+      "lead": "Kumbukumbu za sekta ya haki zina madhara halisi: maelezo yaliyovuja, kumbukumbu ya kizuizini iliyobadilishwa, au amri ya mahakama isiyothibitishika si tatizo la ubora wa data, ni tatizo la haki za binadamu. Pale mfumo huu umejengwa, umejengwa ndani ya hifadhidata na hazina, si kuongezwa baadaye kama alama ya ruhusa.",
+      "offline_body": "Kila programu ya Pleadli imeundwa kufaa kikamilifu bila mtandao wowote. Huduma za wingu na ubadilishanaji kati ya taasisi huongeza kazi ya ndani; si sharti kamwe kwa kituo, mwendesha mashtaka, mahakama, wakili au gereza kuendelea kufanya kazi.",
+      "offline_title": "Bila mtandao kwa chaguo-msingi",
+      "open": {
+        "codesign": "Visakinishi vya Windows bado havijatiwa saini ya msimbo. Masasisho yametiwa saini, hivyo nakala iliyosakinishwa hupokea tu yale ya Pleadli.",
+        "exchange": "Ubadilishanaji kati ya kompyuta (usawazishaji wa vituo wa Prisons kwa TLS iliyobanwa, kampuni ya Lawyers kwenye mtandao mmoja wa ofisi, ubadilishanaji wa Police↔DPP) umejaribiwa kwenye kompyuta moja au katika majaribio, bado haujajaribiwa kati ya kompyuta zilizosakinishwa kando kazini.",
+        "police": "Hazina ya viambatisho ya Police bado haijafungwa chini ya ufunguo wake, na bado haina kumbukumbu ya ukaguzi iliyofungamanishwa ambayo nyingine nne zinazo.",
+        "roles": "Majukumu hayalingani kati ya programu. Lawyers huamua kwa jukumu nani anaweza kutia saini, kuwasilisha au kulipa; nyingine bado hazijaweka mipaka hiyo kwa undani ndani ya ofisi moja."
+      },
+      "open_title": "Kilicho bado wazi kweli",
+      "per_app_lead": "DPP, Courts, Lawyers na Prisons hushiriki mfumo kamili kupitia kifurushi cha pamoja cha node-core. Police ina hifadhidata iliyosimbwa na usimamizi ule ule wa funguo, lakini bado haina hazina iliyofungwa wala mnyororo wa ukaguzi.",
+      "per_app_title": "Hali halisi, programu moja moja",
+      "shared": {
+        "audit": {
+          "body": "Kila kitendo nyeti huongezwa kwenye kumbukumbu ambapo kila ingizo limefungamanishwa na lililotangulia, hivyo pengo au uandishi upya hugundulika.",
+          "title": "Kumbukumbu ya ukaguzi iliyofungamanishwa"
+        },
+        "db": {
+          "body": "Hifadhidata ya ndani yenyewe imesimbwa ikiwa imehifadhiwa, si sehemu moja moja ndani yake tu.",
+          "title": "SQLCipher, si SQLite tupu"
+        },
+        "key": {
+          "body": "Ufunguo unaofungua hifadhidata ya kompyuta huishi ndani ya hifadhi ya funguo ya mfumo wa uendeshaji, si kwenye faili la mipangilio wala ndani ya hifadhidata.",
+          "title": "Ufunguo katika hifadhi ya mfumo"
+        },
+        "vault": {
+          "body": "Viambatisho na nyaraka zilizotolewa hutambuliwa kwa maudhui yake na kufungwa, si kuhifadhiwa kama faili zilizolegea kwenye diski.",
+          "title": "Hazina ya nyaraka iliyofungwa"
+        }
+      },
+      "title": "Usalama ni muundo, si kisanduku cha kuweka alama"
+    },
+    "see": "Tazama"
+  },
+  "downloads": {
+    "lead": "Police, DPP, Lawyers na Prisons zina toleo lao la kwanza la Windows. Ikishasakinishwa, kila moja hutafuta sasisho lililotiwa saini na hukuomba kulisakinisha; hakuna kinachosakinishwa bila kuuliza. Haya ni matoleo ya mapema, yanaendelea kuundwa na bado hayajathibitishwa kazini. Courts bado haijatolewa.",
+    "not_available": "Haipatikani",
+    "stand": {
+      "codesign": "Bado: visakinishi vilivyotiwa saini ya msimbo. Windows huonyesha “Windows protected your PC” mara ya kwanza; chagua “More info”, kisha “Run anyway”.",
+      "installers": "Imejengwa: visakinishi vya Windows (.msi na setup .exe), vinavyojengwa na kuchapishwa na mtiririko wa kiotomatiki wa matoleo.",
+      "rest": "Bado: checksum zilizochapishwa, visakinishi vya Linux na macOS, na toleo la Pleadli Courts.",
+      "updates": "Imejengwa: masasisho ya kiotomatiki yaliyotiwa saini. Nakala iliyosakinishwa hupokea tu sasisho lililotiwa saini kwa ufunguo wa Pleadli."
+    },
+    "stand_title": "Matoleo yamefikia wapi",
+    "title": "Pakua Pleadli kwa Windows."
+  },
+  "home": {
+    "about": "Kuhusu Pleadli",
+    "apps_lead": "Kila programu ya Pleadli imeundwa kuzunguka kazi halisi, si dashibodi ya jumla inayotumiwa na taasisi zote.",
+    "apps_note": "Pleadli Police na Pleadli DPP zinakuja kwanza kwa sababu upelelezi, upelekaji, uchunguzi wa jalada na mashtaka vinaunda muunganiko wa mwanzo wenye manufaa, si kwa sababu programu nyingine ni hatua za baadaye za bidhaa moja.",
+    "apps_title": "Programu kwa watu wanaofanya haki isonge",
+    "case_badge": "Shauri la Pleadli",
+    "case_lead": "Shauri linaweza kurejelewa na kila programu inayolihusu kihalali, bila programu yoyote kupata kumbukumbu za ndani za nyingine. Shauri moja halimaanishi jalada moja la pamoja. Kuunganishwa hakumaanishi kila mtu kuona kila kitu.",
+    "case_title": "Shauri moja, kumbukumbu nyingi",
+    "download": "Pakua",
+    "hero_lead": "Pleadli inazipa polisi, waendesha mashtaka, mahakama, mawakili na magereza programu iliyojengwa kuzunguka kazi yao wenyewe, huku ikiunganisha mashauri wanayoshiriki kihalali.",
+    "hero_title_1": "Haki inahitaji taasisi kufanya kazi pamoja,",
+    "hero_title_2": "bila kuwa taasisi moja.",
+    "learn_more": "Soma zaidi",
+    "mock_new_org": "Shirika jipya",
+    "mock_organizations": "Mashirika",
+    "platform_lead": "Utambulisho, mashirika, ruhusa na utoaji wa kila programu ya Pleadli viko mahali pamoja, ili kila taasisi isimamie muundo wake bila kugusa mipangilio ya taasisi nyingine.",
+    "platform_title": "Jukwaa moja chini yake",
+    "problems_lead": "Polisi, mashtaka, mahakama na magereza kila moja inaendesha makaratasi yake leo, bila karibu chochote kinachoviunganisha.",
+    "problems_title": "Mifumo ya haki haikujengwa kuwasiliana",
+    "purpose_lead": "Pleadli Police na Pleadli DPP kila moja ina upande wake wa Pleadli, si kichujio cha pamoja.",
+    "purpose_title": "Imejengwa kwa kusudi, si ya pamoja",
+    "scale_lead": "Programu ile ile ya Pleadli inaweza kumhudumia mtu mmoja, timu au shirika kubwa. Mpangilio hutofautiana kwa taasisi, Pleadli hailazimishi umbo moja kwa wote.",
+    "scale_title": "Mtumiaji mmoja, timu moja, taasisi moja",
+    "signin_lead": "Watumiaji wa taasisi huingia ili kusimamia shirika lao, muundo na wafanyakazi katika programu wanazotumia.",
+    "signin_title": "Ingia kwenye Pleadli",
+    "stand_lead": "Ramani ya kazi iliyo hai na ya ukweli kwa programu zote tano, na jinsi kupakua kila moja kulivyo leo.",
+    "stand_title": "Ona hali halisi ilivyo",
+    "trust_lead": "Kumbukumbu za sekta ya haki zina madhara halisi. Usalama hapa ni msingi wa muundo, si nyongeza ya baadaye.",
+    "trust_title": "Imejengwa kwa kumbukumbu zenye uzito"
+  },
+  "nav": {
+    "about": "Kuhusu",
+    "docs": "Nyaraka",
+    "downloads": "Vipakuliwa",
+    "get_started": "Anza bure",
+    "language": "Lugha",
+    "open_menu": "Fungua menyu",
+    "overview": "Muhtasari",
+    "products": "Bidhaa",
+    "roadmap": "Ramani ya kazi",
+    "sign_in": "Ingia"
+  },
+  "product": {
+    "ahead": "Kinachobaki",
+    "ahead_lead": "Si ramani iliyofichwa: mapengo mahususi, yenye majina, yaliyo karibu zaidi sasa.",
+    "and": " na ",
+    "cap_ai": "AI",
+    "cap_documents": "Nyaraka",
+    "cap_offline": "Bila mtandao",
+    "cap_security": "Usalama",
+    "connecting": "Kuunganishwa na programu nyingine",
+    "download_title": "Pakua {name}",
+    "download_windows": "Pakua kwa Windows",
+    "features": "Vipengele",
+    "in_use": "Inavyotumika",
+    "mock_local": "Ndani",
+    "mock_search": "Tafuta…",
+    "mockup_note": "Mfano wa eneo halisi la kazi, uliojengwa kwa menyu halisi na data ya mfano, si picha ya skrini.",
+    "not_available": "Bado haipatikani",
+    "not_built": "Haijajengwa",
+    "others": "Programu nyingine",
+    "owns": "Inamiliki nini",
+    "partial": "Sehemu",
+    "problem": "Tatizo",
+    "real_today": "Ipo leo",
+    "see_roadmap": "Tazama ramani ya kazi",
+    "stands": "Hali halisi ilivyo",
+    "stands_lead": "Kwa ukweli, uwezo kwa uwezo. Haijajengwa ni jibu la kweli hapa, si pengo tunaloficha.",
+    "who_for": "Ni kwa ajili ya nani",
+    "workflows": "Mtiririko mkuu wa kazi",
+    "workflows_lead": "Jinsi programu inavyotumika kweli, si orodha ya jumla ya vipengele."
+  },
+  "products": {
+    "lead": "Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers na Pleadli Prisons ni programu tofauti, kila moja imeundwa kuzunguka kazi ya watumiaji wake. Hali iliyo hapa chini ni ya kweli, imethibitishwa dhidi ya msimbo halisi, si maneno ya mauzo.",
+    "story_lead": "Kinachoshirikiwa chini ya kila programu hapo juu, kwa tathmini ya ukweli.",
+    "story_title": "Hadithi moja ya jukwaa, inayosimuliwa mara moja",
+    "title": "Programu tano, jukwaa moja chini yake."
+  },
+  "roadmap": {
+    "lead": "Kipengele huhamia \"imetolewa\" tu kikishaendeshwa na kuthibitishwa kweli, si kuandikwa tu. Ukurasa huu hutokana na ukaguzi ule ule ambao timu hufanya dhidi ya msimbo wake, si maneno ya matangazo.",
+    "platform": "Jukwaa",
+    "title": "Kilicho halisi, kinachofuata, na kilicho bado utafiti."
+  },
+  "site": {
+    "description": "Pleadli inazipa polisi, waendesha mashtaka, mahakama, mawakili na magereza programu iliyojengwa kuzunguka kazi yao wenyewe, huku ikiunganisha mashauri wanayoshiriki kihalali. Programu maalum zinazofanya kazi bila mtandao kwa mfumo wa haki wa Uganda.",
+    "motto": "Haki inahitaji taasisi kufanya kazi pamoja, bila kuwa taasisi moja.",
+    "not_found": "Ukurasa haupatikani",
+    "not_found_body": "Ukurasa unaoutafuta haupo.",
+    "rights": "Haki zote zimehifadhiwa.",
+    "slogan": "Okestra ya Haki, Sheria na Utulivu",
+    "title": "Pleadli · Okestra ya Haki, Sheria na Utulivu"
+  }
 }

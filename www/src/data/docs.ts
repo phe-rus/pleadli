@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import {
   Briefcase01Icon,
   FlowConnectionIcon,
@@ -5,35 +6,39 @@ import {
   UserGroupIcon,
 } from '@hugeicons/core-free-icons'
 
+/** Text is read through getters, so each request renders in its own language. */
 export const docsNav = [
-  { slug: '', title: 'Overview', to: '/docs' },
-  { slug: 'how-it-works', title: 'How it works', to: '/docs/how-it-works' },
-  { slug: 'applications', title: 'Applications', to: '/docs/applications' },
-  { slug: 'security', title: 'Security', to: '/docs/security' },
-  { slug: 'documents', title: 'Documents', to: '/docs/documents' },
-  { slug: 'ai', title: 'AI', to: '/docs/ai' },
+  { slug: '', get title() { return m["docs.nav.overview"]() }, to: '/docs' },
+  { slug: 'how-it-works', get title() { return m["docs.nav.how_it_works"]() }, to: '/docs/how-it-works' },
+  { slug: 'applications', get title() { return m["docs.nav.applications"]() }, to: '/docs/applications' },
+  { slug: 'security', get title() { return m["docs.nav.security"]() }, to: '/docs/security' },
+  { slug: 'documents', get title() { return m["docs.nav.documents"]() }, to: '/docs/documents' },
+  { slug: 'ai', get title() { return m["docs.nav.ai"]() }, to: '/docs/ai' },
 ] as const
 
 export const orgModel = [
   {
+    id: 'organization',
     icon: FlowConnectionIcon,
-    title: 'Organization',
-    description: 'One row per institution. Flat: Police, DPP, and future institutions sit side by side.',
+    get title() { return m["docs.how.org.organization.title"]() },
+    get description() { return m["docs.how.org.organization.body"]() },
   },
   {
+    id: 'unit',
     icon: PoliceBadgeIcon,
-    title: 'Organization unit',
-    description:
-      'Self-referencing hierarchy within one institution, headquarters down to a station or office.',
+    get title() { return m["docs.how.org.unit.title"]() },
+    get description() { return m["docs.how.org.unit.body"]() },
   },
   {
+    id: 'membership',
     icon: UserGroupIcon,
-    title: 'Membership',
-    description: 'Which user belongs to which unit, and their title there.',
+    get title() { return m["docs.how.org.membership.title"]() },
+    get description() { return m["docs.how.org.membership.body"]() },
   },
   {
+    id: 'entitlement',
     icon: Briefcase01Icon,
-    title: 'Entitlement',
-    description: 'Whether an institution is allowed to use a given Pleadli application at all.',
+    get title() { return m["docs.how.org.entitlement.title"]() },
+    get description() { return m["docs.how.org.entitlement.body"]() },
   },
 ] as const

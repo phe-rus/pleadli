@@ -1,3 +1,5 @@
+import { localized } from '@/lib/localized'
+import { roadmapStatusText, roadmapText } from './i18n/roadmap'
 export type RoadmapStatus = 'done' | 'in-progress' | 'planned' | 'research'
 
 export interface RoadmapItem {
@@ -7,7 +9,7 @@ export interface RoadmapItem {
   note: string
 }
 
-export const roadmapStatusLabel: Record<RoadmapStatus, string> = {
+const roadmapStatusLabelBase: Record<RoadmapStatus, string> = {
   done: 'Shipped',
   'in-progress': 'In progress',
   planned: 'Planned',
@@ -20,7 +22,7 @@ export const roadmapStatusOrder: RoadmapStatus[] = ['done', 'in-progress', 'plan
  * Kept honest on purpose: an item only moves to "done" once it has been run
  * and verified, not merely written. See each application's page for detail.
  */
-export const roadmap: RoadmapItem[] = [
+const roadmapBase: RoadmapItem[] = [
   { title: 'Windows installers for Police, DPP, Lawyers and Prisons', application: 'Platform', status: 'done', note: 'Version 0.1.0, built and published by an automated release workflow. Not yet code-signed.' },
   { title: 'Signed automatic updates', application: 'Platform', status: 'done', note: 'Installed copies check for an update signed with Pleadli’s key and ask before installing. The first update round trip has not happened yet.' },
   { title: 'One first-launch setup: country, language, office, protection, colour and logo, first people', application: 'Platform', status: 'done', note: 'Shared by DPP and Lawyers. Police and Prisons move onto it next.' },
@@ -63,3 +65,6 @@ export const roadmap: RoadmapItem[] = [
 
   { title: 'Pleadli Cloud public site and lean admin (this site)', application: 'Platform', status: 'in-progress', note: 'Downloads live; four languages.' },
 ]
+
+export const getRoadmap = () => localized(roadmapBase, roadmapText)
+export const getRoadmapStatusLabel = () => localized(roadmapStatusLabelBase, roadmapStatusText)
