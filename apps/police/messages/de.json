@@ -1478,5 +1478,86 @@
     "bonds": "Kautionen",
     "diary_entries": "Wachbucheinträge",
     "statement": "Aussage"
+  },
+  "paper": {
+    "preview": "Vorschau",
+    "edit": "Bearbeiten",
+    "print": "Drucken oder als PDF speichern",
+    "word": "Als Word speichern",
+    "print_hint": "Wählen Sie im Druckfenster „Als PDF speichern“, um ein PDF zu behalten.",
+    "verify_line": "Dieses Papier mit seinem Code prüfen",
+    "changed": "Seit dem letzten Druck geändert",
+    "last_printed": "Zuletzt gedruckt am {when}",
+    "saving": "Papier wird vorbereitet",
+    "failed": "Das Papier konnte nicht vorbereitet werden",
+    "open_word": "In Word öffnen",
+    "open_libre": "In LibreOffice öffnen",
+    "print_hint_windows": "Um ein PDF zu behalten, wählen Sie „Microsoft Print to PDF“ als Drucker.",
+    "tabs": {
+      "details": "Dokumentdetails",
+      "history": "Verlauf",
+      "related": "Zugehörige Dokumente",
+      "citations": "Zitate"
+    },
+    "latest": "Dies ist die neueste Fassung dieses Papiers.",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "no_history": "Dieses Papier hat die Stelle noch nicht verlassen. Bei jedem Drucken oder Speichern wird die Fassung hier aufbewahrt.",
+    "read_version": "Diese Fassung lesen",
+    "printed_by": "Gedruckt von {who}",
+    "no_related": "Keine anderen Papiere dieser Akte gehören zu diesem.",
+    "cites": "Dieses Papier zitiert",
+    "cited_by": "Zitiert von",
+    "no_citations": "In diesem Papier wird kein Gesetz und kein anderes Papier genannt.",
+    "detail": {
+      "reference": "Aktenzeichen",
+      "file": "Akte",
+      "kind": "Art",
+      "made_by": "Abgegeben von",
+      "date": "Datum",
+      "status": "Status",
+      "received": "Von der Polizei erhalten",
+      "counts": "Anklagepunkte"
+    },
+    "binder": {
+      "title": "Papiere in diesem Fall",
+      "statements": "Aussagen",
+      "exhibits": "Beweisstücke",
+      "charge_sheets": "Anklageblätter",
+      "empty": "Noch keine Papiere in diesem Fall. Erfassen Sie eine Aussage, ein Beweisstück oder eine Anklage.",
+      "open_full": "Auf eigener Seite öffnen"
+    },
+    "police": {
+      "statement_title": "Aussage",
+      "maker": "Unterschrift der aussagenden Person",
+      "recorded_by": "Aufgenommen von",
+      "case": "Fall",
+      "exhibit_title": "Eintrag im Asservatenregister",
+      "recovered": "Sichergestellt",
+      "status": "Status",
+      "charge_sheet_title": "Anklageblatt",
+      "made_by": "Abgegeben von",
+      "date": "Datum",
+      "station": "Wache",
+      "handed_over_by": "Übergeben von",
+      "witnesses": "Zeugen",
+      "stored_at": "Aufbewahrt in"
+    },
+    "open_elsewhere": "In anderem Programm öffnen"
+  },
+  "seal": {
+    "draw": "Hier unterschreiben",
+    "pad_hint": "Mit Stift, Finger oder Maus unterschreiben",
+    "pad_clear": "Löschen",
+    "pad_done": "Diese Unterschrift verwenden"
+  },
+  "verify": {
+    "paper_hint": "Ein aus der App gedrucktes Papier trägt nur einen Code: Geben Sie ihn allein ein, um es zu prüfen.",
+    "paper_genuine": "Echt. Dieses Papier wurde von {by} am {date} gedruckt. Vergleichen Sie es Wort für Wort mit dem Wortlaut unten.",
+    "someone": "jemandem in dieser Stelle",
+    "not_found": "Hier wurde kein Schriftstück mit dieser Referenz ausgefertigt.",
+    "check": "Prüfen",
+    "code": "Code",
+    "title": "Schriftstück prüfen"
   }
 }

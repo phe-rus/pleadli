@@ -1478,5 +1478,86 @@
     "bonds": "Dhamana",
     "diary_entries": "Maingizo ya kitabu cha matukio",
     "statement": "Maelezo"
+  },
+  "paper": {
+    "preview": "Onyesho",
+    "edit": "Hariri",
+    "print": "Chapisha au hifadhi kama PDF",
+    "word": "Hifadhi kama Word",
+    "print_hint": "Chagua \"Save as PDF\" kwenye dirisha la kuchapisha ili kupata PDF.",
+    "verify_line": "Hakiki karatasi hii kwa msimbo wake",
+    "changed": "Imebadilika tangu ilipochapishwa mara ya mwisho",
+    "last_printed": "Ilichapishwa mwisho {when}",
+    "saving": "Inaandaa karatasi",
+    "failed": "Karatasi haikuweza kuandaliwa",
+    "open_word": "Fungua kwa Word",
+    "open_libre": "Fungua kwa LibreOffice",
+    "print_hint_windows": "Ili kupata PDF, chagua \"Microsoft Print to PDF\" kama printa.",
+    "tabs": {
+      "details": "Maelezo ya hati",
+      "history": "Historia",
+      "related": "Hati zinazohusiana",
+      "citations": "Marejeo"
+    },
+    "latest": "Hili ndilo toleo la karibuni la karatasi hii.",
+    "copy": "Nakili",
+    "copied": "Imenakiliwa",
+    "no_history": "Karatasi hii bado haijatoka ofisini. Kila inapochapishwa au kuhifadhiwa, toleo huhifadhiwa hapa.",
+    "read_version": "Soma toleo hili",
+    "printed_by": "Imechapishwa na {who}",
+    "no_related": "Hakuna karatasi nyingine katika jalada hili zinazohusiana na hii.",
+    "cites": "Karatasi hii inarejelea",
+    "cited_by": "Imerejelewa na",
+    "no_citations": "Hakuna sheria wala karatasi nyingine iliyotajwa katika karatasi hii.",
+    "detail": {
+      "reference": "Kumbukumbu",
+      "file": "Jalada",
+      "kind": "Aina",
+      "made_by": "Imetolewa na",
+      "date": "Tarehe",
+      "status": "Hali",
+      "received": "Imepokelewa kutoka Polisi",
+      "counts": "Mashtaka"
+    },
+    "binder": {
+      "title": "Karatasi katika kesi hii",
+      "statements": "Maelezo",
+      "exhibits": "Vielelezo",
+      "charge_sheets": "Hati za mashtaka",
+      "empty": "Bado hakuna karatasi katika kesi hii. Rekodi maelezo, kielelezo au shtaka.",
+      "open_full": "Fungua kwenye ukurasa wake"
+    },
+    "police": {
+      "statement_title": "Maelezo",
+      "maker": "Saini ya mtoa maelezo",
+      "recorded_by": "Imeandikwa na",
+      "case": "Kesi",
+      "exhibit_title": "Ingizo la rejista ya vielelezo",
+      "recovered": "Kilipatikana",
+      "status": "Hali",
+      "charge_sheet_title": "Hati ya mashtaka",
+      "made_by": "Imetolewa na",
+      "date": "Tarehe",
+      "station": "Kituo",
+      "handed_over_by": "Kilikabidhiwa na",
+      "witnesses": "Mashahidi",
+      "stored_at": "Kimehifadhiwa"
+    },
+    "open_elsewhere": "Fungua kwa programu nyingine"
+  },
+  "seal": {
+    "draw": "Saini hapa",
+    "pad_hint": "Saini kwa kalamu, kidole au kipanya",
+    "pad_clear": "Futa",
+    "pad_done": "Tumia saini hii"
+  },
+  "verify": {
+    "paper_hint": "Karatasi iliyochapishwa kutoka programu ina msimbo tu: andika msimbo pekee ili kuihakiki.",
+    "paper_genuine": "Halisi. Karatasi hii ilichapishwa na {by} tarehe {date}. Linganisha neno kwa neno na maneno yaliyo hapa chini.",
+    "someone": "mtu wa ofisi hii",
+    "not_found": "Hakuna hati yenye rejea hii iliyotolewa hapa.",
+    "check": "Hakiki",
+    "code": "Nambari",
+    "title": "Hakiki hati"
   }
 }

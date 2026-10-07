@@ -3,6 +3,7 @@ import { Createpanel } from '@/components/create-panel'
 import { CopyButton } from '@/components/copy-button'
 import { RecordExportActions } from '@/components/record-export-actions'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
+import { CaseBinder } from '@/features/paper/case-binder'
 import {
   caseRoleLabel,
   caseStatusLabel,
@@ -14,13 +15,10 @@ import {
 } from '@/features/cases'
 import { bondPersonName, bondStatusLabel } from '@/features/bonds/schema'
 import { custodyCompliance, custodyPersonName, custodyStatusLabel } from '@/features/custody/schema'
-import { exhibitStatusLabel } from '@/features/evidence/schema'
-import { chargeSheetAccusedName } from '@/features/legal-forms/schema'
 import { referralDestinationTypeLabel, referralStatusLabel } from '@/features/referrals/schema'
 import { statementPersonName } from '@/features/statements/schema'
 import { ArrowLeft01Icon, Edit02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { RichTextPreview } from '@pleadli/rich-text'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
@@ -185,18 +183,6 @@ function RouteComponent() {
           ))}
         </Section>
 
-        <Section title={m["nav.statements"]()} count={statements.length}>
-          {statements.map((s) => (
-            <Row
-              key={s.id}
-              to="/statements"
-              search={{ open: s.id }}
-              title={<RichTextPreview value={s.content} className="line-clamp-1" />}
-              subtitle={s.officerName ? m["investigation.taken_by"]({ name: s.officerName }) : undefined}
-              meta={<span className="text-xs text-muted-foreground">{format(s.givenAt, 'PP')}</span>}
-            />
-          ))}
-        </Section>
 
         <Section title={m["common.custody"]()} count={custodyRecords.length}>
           {custodyRecords.map((record) => {
@@ -236,35 +222,7 @@ function RouteComponent() {
             />
           ))}
         </Section>
-        <Section title={m["investigation.evidence"]()} count={exhibits.length}>
-          {exhibits.map((exhibit) => (
-            <Row
-              key={exhibit.id}
-              to="/evidence"
-              search={{ open: exhibit.id }}
-              title={exhibit.description}
-              subtitle={exhibitStatusLabel(exhibit.status)}
-              meta={<span className="text-xs text-muted-foreground">{format(exhibit.recoveredAt, 'PP')}</span>}
-            />
-          ))}
-        </Section>
 
-        <Section title={m["investigation.charge_sheets"]()} count={chargeSheets.length}>
-          {chargeSheets.map((cs) => (
-            <Link
-              key={cs.id}
-              to="/legal-forms/$chargeSheetId"
-              params={{ chargeSheetId: cs.id }}
-              className="flex items-center justify-between gap-3 rounded-md px-1.5 py-1.5 transition-colors hover:bg-muted/60"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium">{cs.offence}</p>
-                <p className="truncate text-xs text-muted-foreground">{chargeSheetAccusedName(cs) ?? '·'}</p>
-              </div>
-              <span className="shrink-0 text-xs text-muted-foreground">{format(cs.chargedAt, 'PP')}</span>
-            </Link>
-          ))}
-        </Section>
 
         <Section title={m["common.referrals"]()} count={referrals.length}>
           {referrals.map((r) => (
@@ -279,6 +237,8 @@ function RouteComponent() {
           ))}
         </Section>
       </div>
+
+      <CaseBinder reference={kase.reference} summary={kase.summary} statements={statements} exhibits={exhibits} chargeSheets={chargeSheets} />
 
       <section className="md:max-w-md">
         <AttachmentsField entityType={entityTypes.case} entityId={kase.id} label={m["common.files"]()} />

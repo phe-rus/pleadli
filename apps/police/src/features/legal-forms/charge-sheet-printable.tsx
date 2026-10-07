@@ -5,11 +5,11 @@ import type { ChargeSheet } from './schema'
 
 /** The PF 53 charge card, shared by the interactive charge sheet page
  * and its `/print` route, so the two never drift apart. */
-export function ChargeSheetPrintable({ chargeSheet }: { chargeSheet: ChargeSheet }) {
+export function ChargeSheetPrintable({ chargeSheet, bare = false }: { chargeSheet: ChargeSheet; bare?: boolean }) {
   const accusedName = chargeSheetAccusedName(chargeSheet)
 
   return (
-    <div className="mx-auto w-full max-w-2xl rounded-md border border-border/60 bg-card p-8 text-sm leading-relaxed print:rounded-none print:border-none">
+    <div className={bare ? 'text-sm leading-relaxed' : 'mx-auto w-full max-w-2xl rounded-md border border-border/60 bg-card p-8 text-sm leading-relaxed print:rounded-none print:border-none'}>
       <header className="mb-6 text-center">
         <p className="text-xs tracking-wide text-muted-foreground uppercase">{m["charge_sheet.force"]()}</p>
         <h1 className="text-base font-semibold tracking-wide uppercase">{m["charge_sheet.heading"]()}</h1>

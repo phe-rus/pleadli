@@ -1478,5 +1478,86 @@
     "bonds": "Bonds",
     "diary_entries": "Station diary entries",
     "statement": "Statement"
+  },
+  "paper": {
+    "preview": "Preview",
+    "edit": "Edit",
+    "print": "Print or save as PDF",
+    "word": "Save as Word",
+    "print_hint": "Choose \"Save as PDF\" in the print window to keep a PDF.",
+    "verify_line": "Check this paper with its code",
+    "changed": "Changed since it was last printed",
+    "last_printed": "Last printed {when}",
+    "saving": "Preparing the paper",
+    "failed": "The paper could not be prepared",
+    "open_word": "Open in Word",
+    "open_libre": "Open in LibreOffice",
+    "print_hint_windows": "To keep a PDF, choose \"Microsoft Print to PDF\" as the printer.",
+    "tabs": {
+      "details": "Document detail",
+      "history": "History",
+      "related": "Related documents",
+      "citations": "Citations"
+    },
+    "latest": "This is the latest version of this paper.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "no_history": "This paper has not left the office yet. Each time it is printed or saved, the version is kept here.",
+    "read_version": "Read this version",
+    "printed_by": "Printed by {who}",
+    "no_related": "No other papers on this file belong with this one.",
+    "cites": "This paper cites",
+    "cited_by": "Cited by",
+    "no_citations": "No law or other paper is named in this paper.",
+    "detail": {
+      "reference": "Reference",
+      "file": "File",
+      "kind": "Kind",
+      "made_by": "Made by",
+      "date": "Date",
+      "status": "Status",
+      "received": "Received from Police",
+      "counts": "Counts"
+    },
+    "binder": {
+      "title": "Papers in this case",
+      "statements": "Statements",
+      "exhibits": "Exhibits",
+      "charge_sheets": "Charge sheets",
+      "empty": "No papers in this case yet. Record a statement, an exhibit or a charge.",
+      "open_full": "Open on its own page"
+    },
+    "police": {
+      "statement_title": "Statement",
+      "maker": "Signature of maker",
+      "recorded_by": "Recorded by",
+      "case": "Case",
+      "exhibit_title": "Exhibit register entry",
+      "recovered": "Recovered",
+      "status": "Status",
+      "charge_sheet_title": "Charge sheet",
+      "made_by": "Made by",
+      "date": "Date",
+      "station": "Station",
+      "handed_over_by": "Handed over by",
+      "witnesses": "Witnesses",
+      "stored_at": "Stored at"
+    },
+    "open_elsewhere": "Open in another program"
+  },
+  "seal": {
+    "draw": "Sign here",
+    "pad_hint": "Sign with a pen, a finger or the mouse",
+    "pad_clear": "Clear",
+    "pad_done": "Use this signature"
+  },
+  "verify": {
+    "paper_hint": "A paper printed from the app carries only a code: type it alone to check it.",
+    "paper_genuine": "Genuine. This paper was printed by {by} on {date}. Compare it word for word with the wording below.",
+    "someone": "someone in this office",
+    "not_found": "No document with this reference was issued here.",
+    "check": "Check",
+    "code": "Code",
+    "title": "Verify a document"
   }
 }

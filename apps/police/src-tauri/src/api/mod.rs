@@ -10,7 +10,7 @@ pub mod session;
 
 use axum::{
     body::Body,
-    extract::{Multipart, Path, Query, State},
+    extract::{Extension, Multipart, Path, Query, State},
     http::{header, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, post, put},
@@ -816,6 +816,65 @@ async fn create_statement_handler(
         .map_err(internal_error)
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrintInput {
+    entity_type: String,
+    entity_id: String,
+    reference: Option<String>,
+    title: String,
+    body: String,
+}
+
+/// A paper is leaving the station: its wording is recorded under the code printed on it.
+async fn stamp_paper(State(state): State<AppState>, Extension(actor): Extension<crate::domain::sessions::Actor>, Json(input): Json<PrintInput>) -> Result<Json<pleadli_node_core::paper::Stamp>, ApiError> {
+    if input.body.trim().is_empty() || input.body.len() > 2_000_000 {
+        return Err((StatusCode::UNPROCESSABLE_ENTITY, "This paper has no wording to record.".into()));
+    }
+    let who = match &actor.rank {
+        Some(rank) => format!("{rank} {}", actor.name),
+        None => actor.name.clone(),
+    };
+    pleadli_node_core::paper::stamp(
+        &state.pool,
+        pleadli_node_core::paper::PaperInput {
+            entity_type: &input.entity_type,
+            entity_id: &input.entity_id,
+            reference: input.reference.as_deref(),
+            title: &input.title,
+            body: &input.body,
+            printed_by: Some(&who),
+        },
+    )
+    .await
+    .map(Json)
+    .map_err(internal_error)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrintEntityQuery {
+    entity_type: String,
+    entity_id: String,
+}
+
+async fn last_paper_print(State(state): State<AppState>, Query(q): Query<PrintEntityQuery>) -> Result<Json<Option<pleadli_node_core::paper::PaperPrint>>, ApiError> {
+    pleadli_node_core::paper::last_print(&state.pool, &q.entity_type, &q.entity_id).await.map(Json).map_err(internal_error)
+}
+
+async fn paper_history(State(state): State<AppState>, Query(q): Query<PrintEntityQuery>) -> Result<Json<Vec<pleadli_node_core::paper::PaperPrint>>, ApiError> {
+    pleadli_node_core::paper::history(&state.pool, &q.entity_type, &q.entity_id).await.map(Json).map_err(internal_error)
+}
+
+#[derive(Deserialize)]
+struct PrintVerifyQuery {
+    code: String,
+}
+
+async fn verify_paper(State(state): State<AppState>, Query(q): Query<PrintVerifyQuery>) -> Result<Json<Option<pleadli_node_core::paper::PaperPrint>>, ApiError> {
+    pleadli_node_core::paper::verify(&state.pool, &q.code).await.map(Json).map_err(internal_error)
+}
+
 async fn update_statement_handler(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -1275,6 +1334,10 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/cases/{id}/export/{format}", get(export_case_document_handler))
         .route("/statements", post(create_statement_handler).get(list_statements_handler))
         .route("/statements/{id}", put(update_statement_handler))
+        .route("/prints", post(stamp_paper))
+        .route("/prints/last", get(last_paper_print))
+        .route("/prints/history", get(paper_history))
+        .route("/prints/verify", get(verify_paper))
         .route("/custody", post(create_custody_record_handler).get(list_custody_records_handler))
         .route("/custody/{id}", put(update_custody_record_handler))
         .route("/bonds", post(create_bond_handler).get(list_bonds_handler))

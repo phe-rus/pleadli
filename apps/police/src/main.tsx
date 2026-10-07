@@ -1,5 +1,6 @@
 import { Loaders } from '@/components/loaders'
 import { ThemeProvider } from '@/components/theme-provider'
+import { PaperProvider } from '@/features/paper/provider'
 import { LanguageSelect, LocaleBoundary } from '@/features/i18n'
 import { SessionGate } from '@/features/session'
 import { Queryprovider, queryContext } from '@/lib/query-context'
@@ -70,7 +71,9 @@ if (!rootElement.innerHTML) {
                     too, and the switcher is there from the very first screen. */}
                 <LocaleBoundary>
                     <SessionGate onChange={() => void router.invalidate()}>
-                        <RouterProvider router={router} />
+                        <PaperProvider>
+                            <RouterProvider router={router} />
+                        </PaperProvider>
                     </SessionGate>
                 </LocaleBoundary>
                 <LanguageSelect />

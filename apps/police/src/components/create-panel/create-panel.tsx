@@ -40,7 +40,7 @@ export const Createpanel: FC<createPanelProps> = ({
     return (
         <Drawer open={open} onOpenChange={handleOpenChange} swipeDirection="right">
             {trigger && <DrawerTrigger render={trigger} />}
-            <DrawerContent className='bg-background!'>
+            <DrawerContent className='bg-card!'>
                 <DrawerHeader className='gap-0!'>
                     <DrawerTitle>{headings.title}</DrawerTitle>
                     <DrawerDescription className='md:max-w-sm'>{headings.description}</DrawerDescription>
