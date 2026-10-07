@@ -28,6 +28,7 @@ use crate::domain::statistics::{self, Statistics};
 use crate::domain::money::{self, ClientMoney, ClientPosition, EntryInput, FeeNote, FeeNoteInput, FeeNoteSummary, LedgerEntry};
 use crate::domain::papers::{self, AddInput as PaperAdd, EditInput as PaperEdit, Paper};
 use crate::domain::clients::{self, Client, ClientInput, ClientSummary};
+use crate::domain::criminal;
 use crate::domain::clocks::{self, EventInput, MatterClocks, MatterEvent, PracticeClock};
 use crate::domain::documents::{self, CreateInput as DocumentCreate, Document, DocumentSummary, FileInput, UpdateInput as DocumentUpdate, Verification as DocumentVerification};
 use crate::domain::filings::{self, Filing, FilingInput, ServiceInput};
@@ -622,6 +623,71 @@ struct StageInput {
     stage: String,
 }
 
+async fn criminal_register(State(s): State<AppState>) -> ApiResult<Vec<criminal::CriminalRow>> {
+    Ok(Json(criminal::register(&s.pool).await?))
+}
+
+async fn set_custody_dates(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<criminal::CustodyDates>) -> Result<StatusCode, ApiError> {
+    criminal::set_custody_dates(&s.pool, &id, input).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrintInput {
+    entity_type: String,
+    entity_id: String,
+    reference: Option<String>,
+    title: String,
+    body: String,
+}
+
+/// A paper is leaving the application: its wording is recorded under the code printed on it.
+async fn stamp_paper(State(s): State<AppState>, Json(input): Json<PrintInput>) -> ApiResult<pleadli_node_core::paper::Stamp> {
+    if input.body.trim().is_empty() || input.body.len() > 2_000_000 {
+        return Err(DomainError::Invalid("This paper has no wording to record.".into()).into());
+    }
+    let who = crate::domain::request::actor().map(|a| a.name);
+    let stamp = pleadli_node_core::paper::stamp(
+        &s.pool,
+        pleadli_node_core::paper::PaperInput {
+            entity_type: &input.entity_type,
+            entity_id: &input.entity_id,
+            reference: input.reference.as_deref(),
+            title: &input.title,
+            body: &input.body,
+            printed_by: who.as_deref(),
+        },
+    )
+    .await
+    .map_err(DomainError::from)?;
+    Ok(Json(stamp))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrintEntityQuery {
+    entity_type: String,
+    entity_id: String,
+}
+
+async fn last_paper_print(State(s): State<AppState>, Query(q): Query<PrintEntityQuery>) -> ApiResult<Option<pleadli_node_core::paper::PaperPrint>> {
+    Ok(Json(pleadli_node_core::paper::last_print(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?))
+}
+
+async fn paper_history(State(s): State<AppState>, Query(q): Query<PrintEntityQuery>) -> ApiResult<Vec<pleadli_node_core::paper::PaperPrint>> {
+    Ok(Json(pleadli_node_core::paper::history(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?))
+}
+
+#[derive(Deserialize)]
+struct PrintVerifyQuery {
+    code: String,
+}
+
+async fn verify_paper(State(s): State<AppState>, Query(q): Query<PrintVerifyQuery>) -> ApiResult<Option<pleadli_node_core::paper::PaperPrint>> {
+    Ok(Json(pleadli_node_core::paper::verify(&s.pool, &q.code).await.map_err(DomainError::from)?))
+}
+
 async fn set_stage(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<StageInput>) -> ApiResult<Matter> {
     Ok(Json(matters::set_stage(&s.pool, &id, &input.stage).await?))
 }
@@ -1142,6 +1208,12 @@ pub fn core(state: AppState) -> Router {
         .route("/matters/{id}/time", post(add_time))
         .route("/matters/{id}/plea", get(get_plea).put(save_plea))
         .route("/matters/{id}/stage", put(set_stage))
+        .route("/matters/{id}/custody-dates", put(set_custody_dates))
+        .route("/criminal-register", get(criminal_register))
+        .route("/prints", post(stamp_paper))
+        .route("/prints/last", get(last_paper_print))
+        .route("/prints/history", get(paper_history))
+        .route("/prints/verify", get(verify_paper))
         .route("/matters/{id}/parties", post(add_party))
         .route("/parties/{id}", put(update_party).delete(remove_party))
         .route("/matter-types", get(list_matter_types))

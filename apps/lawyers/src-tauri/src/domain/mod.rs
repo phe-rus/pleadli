@@ -3,6 +3,7 @@ pub mod audit;
 pub mod bills;
 pub mod clients;
 pub mod clocks;
+pub mod criminal;
 pub mod compliance;
 pub mod costs_scale;
 pub mod documents;

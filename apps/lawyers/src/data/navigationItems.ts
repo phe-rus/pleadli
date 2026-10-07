@@ -17,6 +17,8 @@ import {
   Settings01Icon,
   Task01Icon,
   UserGroupIcon,
+  JusticeScale01Icon,
+  UserAdd01Icon,
 } from '@hugeicons/core-free-icons'
 
 export type NavIcon = typeof DashboardBrowsingIcon
@@ -52,6 +54,7 @@ export const navSections: readonly { id: NavSection; readonly label: string }[] 
  * are not here until they exist. */
 export const lawyersNav: readonly NavItem[] = [
   { get label() { return m["nav.today"]() }, icon: DashboardBrowsingIcon, to: '/', exact: true },
+  { get label() { return m["nav.services"]() }, icon: UserAdd01Icon, to: '/services' },
 
   { get label() { return m["nav.calendar"]() }, icon: Calendar03Icon, to: '/calendar', section: 'practice' },
   { get label() { return m["nav.diary"]() }, icon: CalendarCheckOut01Icon, to: '/diary', count: 'notClosed', section: 'practice' },
@@ -61,6 +64,7 @@ export const lawyersNav: readonly NavItem[] = [
   { get label() { return m["nav.registers"]() }, icon: Stamp01Icon, to: '/registers', section: 'practice', usage: 'oaths' },
 
   { get label() { return m["nav.board"]() }, icon: KanbanIcon, to: '/matters', search: { view: 'board' }, section: 'matters' },
+  { get label() { return m["nav.criminal"]() }, icon: JusticeScale01Icon, to: '/criminal', section: 'matters', usage: 'criminal' },
   { get label() { return m["nav.open_matters"]() }, icon: FolderViewIcon, to: '/matters', search: { view: 'open' }, section: 'matters' },
   { get label() { return m["nav.no_hearing"]() }, icon: Analytics01Icon, to: '/matters', search: { view: 'no_hearing' }, count: 'noHearing', section: 'matters' },
   { get label() { return m["nav.closed"]() }, icon: Files01Icon, to: '/matters', search: { view: 'closed' }, section: 'matters' },

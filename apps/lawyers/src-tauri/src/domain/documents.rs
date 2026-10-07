@@ -19,7 +19,7 @@ use pleadli_node_core::db::begin_write;
 /// The kinds of document, each with its heading. The templates that start them
 /// are the frontend's (features/templates), per usage; the headings are the
 /// words of the court's own language as the practice files them.
-pub const KINDS: [(&str, &str); 21] = [
+pub const KINDS: [(&str, &str); 29] = [
     ("plaint", "PLAINT"),
     ("written_statement_of_defence", "WRITTEN STATEMENT OF DEFENCE"),
     ("reply", "REPLY TO THE WRITTEN STATEMENT OF DEFENCE"),
@@ -39,6 +39,14 @@ pub const KINDS: [(&str, &str); 21] = [
     ("legal_opinion", "LEGAL OPINION"),
     ("referral_letter", "LETTER OF REFERRAL"),
     ("letter", "LETTER"),
+    ("engagement_letter", "ENGAGEMENT LETTER"),
+    ("progress_letter", "PROGRESS OF YOUR MATTER"),
+    ("registrar_letter", "LETTER TO THE REGISTRAR"),
+    ("deed_poll", "DEED POLL"),
+    ("name_change_notice", "NOTICE OF CHANGE OF NAME"),
+    ("police_bond_letter", "REQUEST FOR POLICE BOND"),
+    ("family_meeting_minutes", "MINUTES OF THE FAMILY MEETING"),
+    ("administrator_general_letter", "LETTER TO THE ADMINISTRATOR GENERAL"),
     ("advice", "ADVICE"),
     ("general", "DOCUMENT"),
 ];

@@ -53,15 +53,19 @@ function RouteComponent() {
     () => [
       selectColumn(),
       {
-        accessorKey: 'id',
-        header: 'ID',
-        cell: ({ row }) => (
-          <Link to="/matters/$matterId" params={{ matterId: row.original.id }} className={cn('inline-block rounded-md bg-primary/15 px-3 py-1 text-xs')}>
-            {row.original.id}
-          </Link>
-        ),
+        accessorKey: 'title',
+        header: m["matter.col.title"](),
+        cell: ({ row }) => {
+          const refs = [row.original.courtNumber, row.original.ourRef].filter(Boolean).join(' · ')
+          return (
+            <Link to="/matters/$matterId" params={{ matterId: row.original.id }} className="flex max-w-md flex-col no-underline">
+              <span className="truncate font-medium text-foreground">{row.original.title}</span>
+              {refs && <span className="truncate text-muted-foreground">{refs}</span>}
+            </Link>
+          )
+        },
       },
-      { accessorKey: 'title', header: m["matter.col.title"](), cell: ({ row }) => <span className="inline-block max-w-sm truncate">{row.original.title}</span> },
+      { accessorKey: 'id', header: 'ID' },
       { accessorKey: 'matterType', header: m["matter.col.type"](), cell: ({ row }) => matterTypeLabel(row.original.matterType) },
       { accessorKey: 'stage', header: m["matter.col.stage"](), cell: ({ row }) => stageLabel(row.original.stage) },
       { accessorKey: 'clientName', header: m["matter.col.client"]() },
@@ -153,7 +157,7 @@ function RouteComponent() {
       ) : matters.length === 0 ? (
         <EmptyNote>{emptyText[view]()}</EmptyNote>
       ) : (
-        <DataTable aria-label={current.label} data={matters} columns={columns} getRowId={(row) => row.id} emptyMessage={m["matter.empty.list"]()} searchPlaceholder={m["matter.search_list"]()} />
+        <DataTable aria-label={current.label} data={matters} columns={columns} getRowId={(row) => row.id} initialHidden={['id', 'ourRef', 'courtNumber', 'offence', 'engagement', 'outcome', 'openTasks', 'createdAt']} emptyMessage={m["matter.empty.list"]()} searchPlaceholder={m["matter.search_list"]()} />
       )}
     </article>
   )

@@ -1,3 +1,4 @@
+import { SignaturePad } from '@pleadli/paper'
 import { parseShillings, ugx, useSetHourlyRate } from '@/features/money/data'
 import { RowList, Row } from '@/components/operational-row'
 import { SettingsCard } from '@/components/settings-card'
@@ -199,8 +200,9 @@ export function YouPane() {
 
 /** An image kept for sealing what is filed: a person's signature, or the
  * practice's stamp. PNG or JPG (a PDF can carry those), at most 400 KB. */
-function SealCard({ title, description, image, canChange, onSave }: { title: string; description: string; image: string | null | undefined; canChange: boolean; onSave: (image: string | null) => Promise<unknown> }) {
+function SealCard({ title, description, image, canChange, onSave, drawable = false }: { title: string; description: string; image: string | null | undefined; canChange: boolean; onSave: (image: string | null) => Promise<unknown>; drawable?: boolean }) {
   const file = useRef<HTMLInputElement>(null)
+  const [signing, setSigning] = useState(false)
   const queryClient = useQueryClient()
   const save = async (next: string | null) => {
     try {
@@ -242,7 +244,12 @@ function SealCard({ title, description, image, canChange, onSave }: { title: str
                 reader.readAsDataURL(chosen)
               }}
             />
-            <Button type="button" size="sm" onClick={() => file.current?.click()}>
+            {drawable && (
+              <Button type="button" size="sm" disabled={signing} onClick={() => setSigning(true)}>
+                {m["seal.draw"]()}
+              </Button>
+            )}
+            <Button type="button" size="sm" variant={drawable ? 'outline' : 'default'} onClick={() => file.current?.click()}>
               {image ? m["seal.replace"]() : m["seal.upload"]()}
             </Button>
           </div>
@@ -252,6 +259,16 @@ function SealCard({ title, description, image, canChange, onSave }: { title: str
       <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border bg-white p-2">
         {image ? <img src={image} alt="" className="max-h-full object-contain" /> : <span className="text-muted-foreground">{m["seal.none"]()}</span>}
       </div>
+      {signing && (
+        <SignaturePad
+          labels={{ hint: m["seal.pad_hint"](), clear: m["seal.pad_clear"](), done: m["seal.pad_done"](), cancel: m["common.cancel"]() }}
+          onCancel={() => setSigning(false)}
+          onDone={(png) => {
+            setSigning(false)
+            void save(png)
+          }}
+        />
+      )}
     </SettingsCard>
   )
 }
@@ -351,6 +368,7 @@ function SignatureCard() {
       description={actor.role === 'advocate' ? m["seal.signature_description"]() : m["seal.signature_other"]()}
       image={seals?.signature}
       canChange
+      drawable
       onSave={setSignature}
     />
   )

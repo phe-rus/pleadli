@@ -1,5 +1,6 @@
 import { Loaders } from '@/components/loaders'
 import { ThemeProvider } from '@/components/theme-provider'
+import { PaperProvider } from '@/features/paper/provider'
 import { AppGate } from '@/features/app-gate'
 import { LanguageSelect, LocaleBoundary } from '@/features/i18n'
 import { RecoveryGate } from '@/features/system'
@@ -70,7 +71,9 @@ if (!rootElement.innerHTML) {
                 <RecoveryGate>
                     <AppGate onUnlocked={() => void router.invalidate()}>
                         <LocaleBoundary>
-                            <RouterProvider router={router} />
+                            <PaperProvider>
+                                <RouterProvider router={router} />
+                            </PaperProvider>
                         </LocaleBoundary>
                     </AppGate>
                     <LanguageSelect />

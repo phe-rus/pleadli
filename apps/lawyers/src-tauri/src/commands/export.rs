@@ -40,6 +40,9 @@ pub async fn save_export(security: State<'_, Arc<Security>>, network: State<'_, 
         "pdf" => bytes.starts_with(b"%PDF"),
         "docx" | "zip" => bytes.starts_with(b"PK\x03\x04"),
         "json" => bytes.first().is_some_and(|b| *b == b'{' || *b == b'['),
+        // A paper saved for Word: a web page Word opens as a document.
+        "doc" => bytes.starts_with(b"<html"),
+        "csv" => std::str::from_utf8(&bytes).is_ok(),
         "png" => bytes.starts_with(b"\x89PNG"),
         "jpg" => bytes.starts_with(&[0xFF, 0xD8, 0xFF]),
         "webp" => bytes.len() > 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP",
@@ -49,4 +52,29 @@ pub async fn save_export(security: State<'_, Arc<Security>>, network: State<'_, 
         return Err("That file is not what it says it is.".into());
     }
     std::fs::write(&path, bytes).map_err(|e| e.to_string())
+}
+
+/// Which office programs this computer has (Word, Excel, LibreOffice).
+#[tauri::command]
+pub async fn office_apps() -> pleadli_node_core::office::OfficeApps {
+    pleadli_node_core::office::detect()
+}
+
+/// A copy of a paper in the temporary folder, opened in the program the
+/// system uses for it (Word for a .doc where Office is installed).
+#[tauri::command]
+pub async fn open_paper_file(security: State<'_, Arc<Security>>, network: State<'_, Arc<Network>>, name: String, data: String) -> Result<(), String> {
+    if !may_save(&security, &network) {
+        return Err("Sign in to open a paper.".into());
+    }
+    let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
+    if !bytes.starts_with(b"<html") && !bytes.starts_with(b"%PDF") {
+        return Err("Only a paper can be opened this way.".into());
+    }
+    let safe: String = name.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '.' { c } else { '-' }).collect();
+    let dir = std::env::temp_dir().join("pleadli-lawyers");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(safe);
+    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    tauri_plugin_opener::open_path(&path, None::<&str>).map_err(|e| e.to_string())
 }

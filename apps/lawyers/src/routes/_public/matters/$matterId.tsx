@@ -11,17 +11,17 @@ import { FilingsSection } from '@/features/filings'
 import { PapersSection } from '@/features/papers'
 import { MoneySection } from '@/features/money'
 import { custodyLabel } from '@/features/clients'
-import { DocumentCreateForm, documentKindLabel } from '@/features/documents'
+import { DocumentCreateForm, MatterPapers } from '@/features/documents'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
 import { HearingActions, HearingForm, hearingStatusLabels, purposeLabel, reasonLabel, responsibleLabel, type Hearing } from '@/features/hearings'
 import { inCourt, matterTypeLabel } from '@/features/matter-types'
 import { CloseMatterForm, engagementLabel, levelLabel, MatterForm, matterOptions, PartiesSection, PleaForm, pleaStatusLabel, StageStepper, useMatter, useReopenMatter } from '@/features/matters'
 import { durationText, NoteComposer, NoteRow, TimeForm, useRemoveTime } from '@/features/practice'
 import { TaskForm, TaskRow } from '@/features/tasks'
 import { ApiError, messageOf } from '@/lib/api'
-import { plural } from '@/lib/present'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
-import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
 import { useState } from 'react'
@@ -38,14 +38,13 @@ export const Route = createFileRoute('/_public/matters/$matterId')({
   component: RouteComponent,
 })
 
-const openLink = 'text-primary'
 const hearingTone = { scheduled: 'open', attended: 'done', adjourned: 'waiting', missed: 'urgent', cancelled: 'stopped' } as const
 
 function hearingSummary(h: Hearing) {
   const bits: (string | null)[] = [h.courtroom]
   if (h.status === 'adjourned' && h.adjournReason) {
     bits.push(`${reasonLabel(h.adjournReason)}${h.adjournResponsible ? `, ${responsibleLabel(h.adjournResponsible).toLowerCase()}` : ''}`)
-    bits.push(h.nextDate ? `Adjourned to ${format(h.nextDate, 'PP')}` : 'Date to be fixed')
+    bits.push(h.nextDate ? m_["mp.adjourned_to"]({ date: format(h.nextDate, 'PP') }) : m_["mp.date_to_fix"]())
     bits.push(h.outcome)
   } else {
     bits.push(h.outcome, h.note)
@@ -75,16 +74,16 @@ function RouteComponent() {
   const court = inCourt(m.matterType)
 
   const facts: [string, string | null][] = [
-    ['Client', detail.client.name],
-    ['Kind of matter', matterTypeLabel(m.matterType)],
-    ['Custody', criminal && detail.client.custody ? `${custodyLabel(detail.client.custody)}${detail.client.custodyPlace ? `, ${detail.client.custodyPlace}` : ''}` : null],
-    ['Acting', `${engagementLabel(m.engagement)}${m.appointedOn ? `, appointed ${format(m.appointedOn, 'PP')}` : ''}`],
-    ['Your reference', m.ourRef],
-    ['Court', [m.courtName, m.courtLevel ? levelLabel(m.courtLevel) : null].filter(Boolean).join(', ') || null],
-    ['Offence', m.offence],
-    ['Next hearing', !court ? null : listed[0] ? `${format(listed[0].at, 'PPp')}, ${purposeLabel(listed[0].purpose).toLowerCase()}` : open ? 'None listed' : null],
-    ['Outcome', m.outcome],
-    ['Notes', m.notes],
+    [m_["mp.fact.client"](), detail.client.name],
+    [m_["mp.fact.kind"](), matterTypeLabel(m.matterType)],
+    [m_["mp.fact.custody"](), criminal && detail.client.custody ? `${custodyLabel(detail.client.custody)}${detail.client.custodyPlace ? `, ${detail.client.custodyPlace}` : ''}` : null],
+    [m_["mp.fact.acting"](), `${engagementLabel(m.engagement)}${m.appointedOn ? `, ${m_["mp.fact.appointed"]({ date: format(m.appointedOn, 'PP') })}` : ''}`],
+    [m_["mp.fact.reference"](), m.ourRef],
+    [m_["mp.fact.court"](), [m.courtName, m.courtLevel ? levelLabel(m.courtLevel) : null].filter(Boolean).join(', ') || null],
+    [m_["mp.fact.offence"](), m.offence],
+    [m_["mp.fact.next_hearing"](), !court ? null : listed[0] ? `${format(listed[0].at, 'PPp')}, ${purposeLabel(listed[0].purpose).toLowerCase()}` : open ? m_["mp.fact.none_listed"]() : null],
+    [m_["mp.fact.outcome"](), m.outcome],
+    [m_["mp.fact.notes"](), m.notes],
   ]
 
   return (
@@ -92,21 +91,21 @@ function RouteComponent() {
       <header className="page-header">
         <div>
           <h1>{m.courtNumber ?? m.title}</h1>
-          <p>{m.courtNumber ? m.title : court ? 'No court number recorded' : matterTypeLabel(m.matterType)}</p>
+          <p>{m.courtNumber ? m.title : court ? m_["mp.no_court_number"]() : matterTypeLabel(m.matterType)}</p>
         </div>
         <div className="page-actions">
-          {open ? court && !listed.length ? <Tag tone="urgent">No hearing listed</Tag> : <Tag tone="open">Open</Tag> : <Tag tone="done">Closed</Tag>}
-          <PanelButton label="Edit" title="Edit the matter" description="Correct the details, or how you came to act." variant="secondary" icon={false}>
+          {open ? court && !listed.length ? <Tag tone="urgent">{m_["mp.no_hearing_listed"]()}</Tag> : <Tag tone="open">{m_["mp.open"]()}</Tag> : <Tag tone="done">{m_["mp.closed"]()}</Tag>}
+          <PanelButton label={m_["mp.edit"]()} title={m_["mp.edit_title"]()} description={m_["mp.edit_description"]()} variant="secondary" icon={false}>
             {({ close, setDirty: report }) => <MatterForm existing={m} onSuccess={close} onDirtyChange={report} />}
           </PanelButton>
           {open ? (
             <>
               {court && (
-                <PanelButton label="List a hearing" title="List a hearing" description="Put a hearing in your diary.">
+                <PanelButton label={m_["mp.list_hearing"]()} title={m_["mp.list_hearing"]()} description={m_["mp.list_hearing_description"]()}>
                   {({ close, setDirty: report }) => <HearingForm matterId={matterId} onSuccess={close} onDirtyChange={report} />}
                 </PanelButton>
               )}
-              <PanelButton label="Draft a document" title="Draft a document" description="Starts a draft. You write it in its own page.">
+              <PanelButton label={m_["mp.draft_document"]()} title={m_["mp.draft_document"]()} description={m_["mp.draft_document_description"]()}>
                 {({ close, setDirty: report }) => (
                   <DocumentCreateForm
                     matterId={matterId}
@@ -122,16 +121,16 @@ function RouteComponent() {
                 {() => <AssistPanel matterId={matterId} />}
               </PanelButton>
               <Button size="sm" variant="secondary" onClick={() => setClosing(true)}>
-                Close
+                {m_["mp.close"]()}
               </Button>
             </>
           ) : (
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => reopen.mutate(matterId, { onSuccess: () => t.success('Matter reopened'), onError: (error) => t.error('Could not reopen the matter', { description: messageOf(error) }) })}
+              onClick={() => reopen.mutate(matterId, { onSuccess: () => t.success(m_["mp.reopened"]()), onError: (error) => t.error(m_["mp.reopen_failed"](), { description: messageOf(error) }) })}
             >
-              Reopen
+              {m_["mp.reopen"]()}
             </Button>
           )}
         </div>
@@ -139,27 +138,42 @@ function RouteComponent() {
 
       <StageStepper matter={m} />
 
-      <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+      <dl className="grid grid-cols-1 gap-x-8 gap-y-4 rounded-xl border bg-card p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
         {facts
           .filter(([, value]) => value)
           .map(([label, value]) => (
             <div key={label} className="flex flex-col">
-              <dt className="text-xs text-muted-foreground">{label}</dt>
-              <dd className="whitespace-pre-wrap">{value}</dd>
+              <dt className="m-0 text-xs text-muted-foreground">{label}</dt>
+              <dd className="m-0 ps-0 whitespace-pre-wrap text-foreground">{value}</dd>
             </div>
           ))}
       </dl>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-8">
-          {court && (
+      <MatterPapers matterId={matterId} matterType={m.matterType} stage={m.stage} documents={detail.documents} open={open} matterTitle={m.courtNumber ? `${m.courtNumber}, ${m.title}` : m.title} clientName={detail.client.name} />
+
+      <Tabs defaultValue={court ? 'hearings' : 'received'}>
+        <TabsList className="flex-wrap">
+          {court && <TabsTrigger value="hearings">{m_["mp.tab.hearings"]()}</TabsTrigger>}
+          <TabsTrigger value="deadlines">{m_["mp.tab.deadlines"]()}</TabsTrigger>
+          <TabsTrigger value="parties">{m_["mp.tab.parties"]()}</TabsTrigger>
+          <TabsTrigger value="received">{m_["mp.tab.received"]()}</TabsTrigger>
+          <TabsTrigger value="notes">{m_["mp.tab.notes"]()}</TabsTrigger>
+          <TabsTrigger value="tasks">{m_["mp.tab.tasks"]()}</TabsTrigger>
+          <TabsTrigger value="money">{m_["mp.tab.money"]()}</TabsTrigger>
+          {court && <TabsTrigger value="filings">{m_["mp.tab.filings"]()}</TabsTrigger>}
+          {criminal && <TabsTrigger value="plea">{m_["mp.tab.plea"]()}</TabsTrigger>}
+          <TabsTrigger value="time">{m_["mp.tab.time"]()}</TabsTrigger>
+          <TabsTrigger value="history">{m_["mp.tab.history"]()}</TabsTrigger>
+        </TabsList>
+        {court && <TabsContent value="hearings" className="pt-4">
+
           <section aria-labelledby="hearings" className="page-section">
             <div className="section-head">
-              <h2 id="hearings">Hearings</h2>
-              {detail.hearings.length > 0 && <Tag tone="neutral">{plural(detail.hearings.length, 'hearing')}</Tag>}
+              <h2 id="hearings">{m_["mp.hearings"]()}</h2>
+              {detail.hearings.length > 0 && <Tag tone="neutral">{m_["mp.hearings_count"]({ count: String(detail.hearings.length) })}</Tag>}
             </div>
             {detail.hearings.length === 0 ? (
-              <EmptyNote>No hearing has been listed for this matter.</EmptyNote>
+              <EmptyNote>{m_["mp.no_hearings"]()}</EmptyNote>
             ) : (
               <RowList>
                 {detail.hearings.map((h) => (
@@ -181,19 +195,19 @@ function RouteComponent() {
               </RowList>
             )}
           </section>
-          )}
-
-          <DeadlinesSection matterId={matterId} open={open} clocks={detail.clocks} />
-
-          <PartiesSection matter={m} parties={detail.parties} />
-
-          <section aria-labelledby="notes" className="page-section">
+          
+        </TabsContent>}
+        <TabsContent value="deadlines" className="pt-4"><DeadlinesSection matterId={matterId} open={open} clocks={detail.clocks} /></TabsContent>
+        <TabsContent value="parties" className="pt-4"><PartiesSection matter={m} parties={detail.parties} /></TabsContent>
+        <TabsContent value="received" className="pt-4"><PapersSection matterId={matterId} open={open} /></TabsContent>
+        <TabsContent value="notes" className="pt-4">
+<section aria-labelledby="notes" className="page-section">
             <div className="section-head">
-              <h2 id="notes">Notes</h2>
+              <h2 id="notes">{m_["mp.notes"]()}</h2>
             </div>
             {open && <NoteComposer matterId={matterId} />}
             {detail.notes.length === 0 ? (
-              <EmptyNote>No note has been written on this matter.</EmptyNote>
+              <EmptyNote>{m_["mp.no_notes"]()}</EmptyNote>
             ) : (
               <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
                 {detail.notes.map((note) => (
@@ -202,52 +216,19 @@ function RouteComponent() {
               </div>
             )}
           </section>
-
-          <section aria-labelledby="documents" className="page-section">
-            <h2 id="documents">Documents</h2>
-            {detail.documents.length === 0 ? (
-              <EmptyNote>No document has been drafted for this matter.</EmptyNote>
-            ) : (
-              <RowList>
-                {detail.documents.map((d) => (
-                  <Row
-                    key={d.id}
-                    aligned
-                    title={
-                      <Link to="/documents/$documentId" params={{ documentId: d.id }} className="text-foreground">
-                        {d.reference ?? d.title}
-                      </Link>
-                    }
-                    summary={`${documentKindLabel(d.kind)}${d.status === 'filed' && d.filedOn ? `, filed ${format(d.filedOn, 'PP')}` : ', draft'}.`}
-                    trailing={
-                      <>
-                        {d.status === 'filed' ? <Tag tone="done">Filed</Tag> : <Tag tone="open">Draft</Tag>}
-                        <Link to="/documents/$documentId" params={{ documentId: d.id }} className={openLink}>Open</Link>
-                      </>
-                    }
-                  />
-                ))}
-              </RowList>
-            )}
-          </section>
-
-          <PapersSection matterId={matterId} open={open} />
-          <MoneySection matterId={matterId} clientId={m.clientId} engagement={m.engagement} open={open} />
-          <FilingsSection matterId={matterId} matterTitle={m.courtNumber ? `${m.courtNumber}, ${m.title}` : m.title} court={m.courtName} open={open} filings={detail.filings} documents={detail.documents} />
-        </div>
-
-        <div className="flex flex-col gap-8">
-          <section aria-labelledby="tasks" className="page-section">
+        </TabsContent>
+        <TabsContent value="tasks" className="pt-4">
+<section aria-labelledby="tasks" className="page-section">
             <div className="section-head">
-              <h2 id="tasks">Tasks</h2>
+              <h2 id="tasks">{m_["mp.tasks"]()}</h2>
               {open && (
-                <PanelButton label="Add" title="Add a task" description="Something to do on this matter." variant="ghost">
+                <PanelButton label={m_["mp.add"]()} title={m_["mp.add_task"]()} description={m_["mp.add_task_description"]()} variant="ghost">
                   {({ close, setDirty: report }) => <TaskForm matterId={matterId} onSuccess={close} onDirtyChange={report} />}
                 </PanelButton>
               )}
             </div>
             {detail.tasks.length === 0 ? (
-              <EmptyNote>No task on this matter.</EmptyNote>
+              <EmptyNote>{m_["mp.no_tasks"]()}</EmptyNote>
             ) : (
               <RowList>
                 {[...openTasks, ...detail.tasks.filter((task) => task.doneAt != null)].map((task) => (
@@ -256,19 +237,22 @@ function RouteComponent() {
               </RowList>
             )}
           </section>
+        </TabsContent>
+        <TabsContent value="money" className="pt-4"><MoneySection matterId={matterId} clientId={m.clientId} engagement={m.engagement} open={open} /></TabsContent>
+        {court && <TabsContent value="filings" className="pt-4"><FilingsSection matterId={matterId} matterTitle={m.courtNumber ? `${m.courtNumber}, ${m.title}` : m.title} court={m.courtName} open={open} filings={detail.filings} documents={detail.documents} /></TabsContent>}
+        {criminal && <TabsContent value="plea" className="pt-4">
 
-          {criminal && (
           <section aria-labelledby="plea" className="page-section">
             <div className="section-head">
-              <h2 id="plea">Plea negotiation</h2>
+              <h2 id="plea">{m_["mp.plea"]()}</h2>
               {open && (
-                <PanelButton label={detail.plea ? 'Update' : 'Record'} title="Plea negotiation" description="Your side of a plea negotiation, and the steps it needs." variant="ghost" icon={false}>
+                <PanelButton label={detail.plea ? m_["mp.update"]() : m_["mp.record"]()} title={m_["mp.plea"]()} description={m_["mp.plea_description"]()} variant="ghost" icon={false}>
                   {({ close, setDirty: report }) => <PleaForm matterId={matterId} existing={detail.plea} onSuccess={close} onDirtyChange={report} />}
                 </PanelButton>
               )}
             </div>
             {!detail.plea ? (
-              <EmptyNote>No plea negotiation is recorded. It is recorded only if one is being considered.</EmptyNote>
+              <EmptyNote>{m_["mp.no_plea"]()}</EmptyNote>
             ) : (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
@@ -277,32 +261,33 @@ function RouteComponent() {
                 {detail.plea.summary && <p className="whitespace-pre-wrap">{detail.plea.summary}</p>}
                 {detail.plea.explainedOn && (
                   <p className="text-muted-foreground">
-                    Explained to the accused on {format(detail.plea.explainedOn, 'PP')}
-                    {detail.plea.explainedBy ? `, by ${detail.plea.explainedBy === 'advocate' ? 'the advocate' : 'a justice of the peace'}` : ''}.
+                    {m_["mp.plea_explained"]({ date: format(detail.plea.explainedOn, 'PP') })}
+                    {detail.plea.explainedBy ? `, ${detail.plea.explainedBy === 'advocate' ? m_["mp.plea_by_advocate"]() : m_["mp.plea_by_jp"]()}` : ''}.
                   </p>
                 )}
-                {detail.plea.signedOn && <p className="text-muted-foreground">Signed on {format(detail.plea.signedOn, 'PP')}.</p>}
-                {detail.plea.confirmedOn && <p className="text-muted-foreground">Confirmed before the court on {format(detail.plea.confirmedOn, 'PP')}.</p>}
-                {detail.plea.abandonedReason && <p className="text-muted-foreground">Abandoned: {detail.plea.abandonedReason}</p>}
+                {detail.plea.signedOn && <p className="text-muted-foreground">{m_["mp.plea_signed"]({ date: format(detail.plea.signedOn, 'PP') })}</p>}
+                {detail.plea.confirmedOn && <p className="text-muted-foreground">{m_["mp.plea_confirmed"]({ date: format(detail.plea.confirmedOn, 'PP') })}</p>}
+                {detail.plea.abandonedReason && <p className="text-muted-foreground">{m_["mp.plea_abandoned"]({ reason: detail.plea.abandonedReason })}</p>}
               </div>
             )}
           </section>
-          )}
-
-          <section aria-labelledby="time" className="page-section">
+          
+        </TabsContent>}
+        <TabsContent value="time" className="pt-4">
+<section aria-labelledby="time" className="page-section">
             <div className="section-head">
-              <h2 id="time">Time</h2>
+              <h2 id="time">{m_["mp.time"]()}</h2>
               {open && (
-                <PanelButton label="Record" title="Record time" description="Time you spent on this matter." variant="ghost" icon={false}>
+                <PanelButton label={m_["mp.record"]()} title={m_["mp.record_time"]()} description={m_["mp.record_time_description"]()} variant="ghost" icon={false}>
                   {({ close, setDirty: report }) => <TimeForm matterId={matterId} onSuccess={close} onDirtyChange={report} />}
                 </PanelButton>
               )}
             </div>
             {detail.time.length === 0 ? (
-              <EmptyNote>No time has been recorded on this matter.</EmptyNote>
+              <EmptyNote>{m_["mp.no_time"]()}</EmptyNote>
             ) : (
               <>
-                <p className="text-muted-foreground">{durationText(minutes)} in all.</p>
+                <p className="text-muted-foreground">{m_["mp.time_total"]({ duration: durationText(minutes) })}</p>
                 <RowList>
                   {detail.time.slice(0, 8).map((e) => (
                     <Row
@@ -314,8 +299,8 @@ function RouteComponent() {
                         <>
                           <Tag tone="neutral">{durationText(e.minutes)}</Tag>
                           {open && (
-                            <Button size="sm" variant="ghost" onClick={() => removeTime.mutate(e.id, { onError: (error) => t.error('Could not remove it', { description: messageOf(error) }) })}>
-                              Remove
+                            <Button size="sm" variant="ghost" onClick={() => removeTime.mutate(e.id, { onError: (error) => t.error(m_["mp.remove_failed"](), { description: messageOf(error) }) })}>
+                              {m_["mp.remove"]()}
                             </Button>
                           )}
                         </>
@@ -326,11 +311,12 @@ function RouteComponent() {
               </>
             )}
           </section>
-
-          <section aria-labelledby="history" className="page-section">
-            <h2 id="history">History of this matter</h2>
+        </TabsContent>
+        <TabsContent value="history" className="pt-4">
+<section aria-labelledby="history" className="page-section">
+            <h2 id="history">{m_["mp.history"]()}</h2>
             {!history || history.length === 0 ? (
-              <EmptyNote>Nothing has been recorded yet.</EmptyNote>
+              <EmptyNote>{m_["mp.no_history"]()}</EmptyNote>
             ) : (
               <RowList>
                 {history.map((entry) => (
@@ -339,8 +325,8 @@ function RouteComponent() {
               </RowList>
             )}
           </section>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <Createpanel
         open={closing}
@@ -351,7 +337,7 @@ function RouteComponent() {
           }
         }}
         isDirty={dirty}
-        headings={{ title: 'Close the matter', description: 'Record how it ended. It can be reopened later.' }}
+        headings={{ title: m_["mp.close_title"](), description: m_["mp.close_description"]() }}
       >
         <CloseMatterForm matterId={matterId} onDirtyChange={setDirty} onSuccess={() => setClosing(false)} />
       </Createpanel>

@@ -29,7 +29,7 @@ S.update({
 "template.blank": ("Blank page", "Ukurasa mtupu", "Leere Seite", "Page blanche"),
 "document.form.template": ("Start from", "Anza na", "Beginnen mit", "Partir de"),
 "document.form.template_hint": ("Filled in from the matter: the court, the number and the parties. A working template, not a prescribed form: edit it before filing.", "Imejazwa kutoka kwenye shauri: mahakama, namba na wahusika. Ni kiolezo cha kazi, si fomu rasmi: ihariri kabla ya kuwasilisha.", "Aus dem Mandat ausgefüllt: Gericht, Aktenzeichen und Parteien. Eine Arbeitsvorlage, kein amtliches Formular: vor dem Einreichen bearbeiten.", "Rempli d'après le dossier : juridiction, numéro et parties. Un modèle de travail, pas un formulaire officiel : à revoir avant dépôt."),
-"document.form.title": ("Title (optional)", "Kichwa (si lazima)", "Titel (optional)", "Intitulé (facultatif)"),
+"document.form.title": ("Title", "Kichwa", "Titel", "Intitulé"),
 "document.form.title_placeholder": ("The template gives one", "Kiolezo kinatoa kimoja", "Die Vorlage gibt einen vor", "Le modèle en propose un"),
 "document.form.title_required": ("Give the document a title.", "Ipe hati kichwa.", "Geben Sie dem Dokument einen Titel.", "Donnez un intitulé au document."),
 "document.form.start": ("Start draft", "Anza rasimu", "Entwurf beginnen", "Commencer le brouillon"),

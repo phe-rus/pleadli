@@ -43,7 +43,7 @@ S = {
 "event.record_title": ("Record what happened", "Andika kilichotokea", "Erfassen, was geschah", "Noter ce qui s'est passé"),
 "event.what": ("What happened", "Kilichotokea", "Was geschah", "Ce qui s'est passé"),
 "event.on": ("On", "Tarehe", "Am", "Le"),
-"event.note": ("Note (optional)", "Maelezo (si lazima)", "Notiz (optional)", "Note (facultatif)"),
+"event.note": ("Note", "Maelezo", "Notiz", "Note"),
 "event.record": ("Record", "Andika", "Erfassen", "Enregistrer"),
 "event.recorded": ("{event} recorded", "{event} kimeandikwa", "{event} erfasst", "{event} enregistré"),
 "event.record_failed": ("Could not record it", "Imeshindwa kuandika", "Konnte nicht erfasst werden", "Impossible de l'enregistrer"),

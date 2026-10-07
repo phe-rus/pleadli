@@ -4,7 +4,6 @@ import { EmptyNote } from '@/components/planned'
 import { Tag } from '@/components/status-tag'
 import { ClientForm, clientsOptions, custodyLabel, useClients, type ClientSummary } from '@/features/clients'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
-import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
@@ -27,15 +26,16 @@ function RouteComponent() {
     () => [
       selectColumn(),
       {
-        accessorKey: 'id',
-        header: 'ID',
+        accessorKey: 'name',
+        header: 'Name',
         cell: ({ row }) => (
-          <button type="button" onClick={() => setEditing(row.original)} className={cn('inline-block cursor-pointer rounded-md bg-primary/15 px-3 py-1 text-xs')}>
-            {row.original.id}
+          <button type="button" onClick={() => setEditing(row.original)} className="flex cursor-pointer flex-col text-start">
+            <span className="font-medium text-foreground">{row.original.name}</span>
+            {row.original.phone && <span className="text-muted-foreground">{row.original.phone}</span>}
           </button>
         ),
       },
-      { accessorKey: 'name', header: 'Name' },
+      { accessorKey: 'id', header: 'ID' },
       { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => row.original.phone ?? '·' },
       { accessorKey: 'address', header: 'Address', cell: ({ row }) => row.original.address ?? '·' },
       {
@@ -76,7 +76,7 @@ function RouteComponent() {
       {clients.length === 0 ? (
         <EmptyNote>You have no clients yet. Add one, then open a matter for them.</EmptyNote>
       ) : (
-        <DataTable aria-label="Clients" data={clients} columns={columns} getRowId={(row) => row.id} emptyMessage="No clients." searchPlaceholder="Search clients" />
+        <DataTable aria-label="Clients" data={clients} columns={columns} getRowId={(row) => row.id} initialHidden={['id', 'phone', 'notes', 'createdAt']} emptyMessage="No clients." searchPlaceholder="Search clients" />
       )}
 
       <Createpanel

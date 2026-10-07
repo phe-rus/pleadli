@@ -2,7 +2,6 @@ import { EmptyNote } from '@/components/planned'
 import { Tag } from '@/components/status-tag'
 import { documentKindLabel, documentsOptions, useDocuments, VerifyCard, type DocumentSummary } from '@/features/documents'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
-import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useMemo } from 'react'
@@ -23,16 +22,17 @@ function RouteComponent() {
     () => [
       selectColumn(),
       {
-        accessorKey: 'id',
-        header: 'ID',
+        accessorKey: 'title',
+        header: 'Title',
         cell: ({ row }) => (
-          <Link to="/documents/$documentId" params={{ documentId: row.original.id }} className={cn('inline-block rounded-md bg-primary/15 px-3 py-1 text-xs')}>
-            {row.original.id}
+          <Link to="/documents/$documentId" params={{ documentId: row.original.id }} className="flex max-w-md flex-col no-underline">
+            <span className="truncate font-medium text-foreground">{row.original.title}</span>
+            {row.original.reference && <span className="truncate text-muted-foreground">{row.original.reference}</span>}
           </Link>
         ),
       },
+      { accessorKey: 'id', header: 'ID' },
       { accessorKey: 'reference', header: 'Reference', cell: ({ row }) => row.original.reference ?? '·' },
-      { accessorKey: 'title', header: 'Title' },
       { accessorKey: 'kind', header: 'Kind', cell: ({ row }) => documentKindLabel(row.original.kind) },
       {
         id: 'matter',
@@ -67,7 +67,7 @@ function RouteComponent() {
       {documents.length === 0 ? (
         <EmptyNote>No document has been drafted yet. Open a matter and choose Draft a document.</EmptyNote>
       ) : (
-        <DataTable aria-label="Documents" data={documents} columns={columns} getRowId={(row) => row.id} emptyMessage="No documents." searchPlaceholder="Search documents" />
+        <DataTable aria-label="Documents" data={documents} columns={columns} getRowId={(row) => row.id} initialHidden={['id', 'reference', 'updatedAt']} emptyMessage="No documents." searchPlaceholder="Search documents" />
       )}
     </article>
   )

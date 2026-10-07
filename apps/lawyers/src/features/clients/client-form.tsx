@@ -1,3 +1,4 @@
+import { FormSection } from '@/components/form-section'
 import { messageOf } from '@/lib/api'
 import { useReportDirty } from '@/hooks/use-report-dirty'
 import { useAppForm } from '@pleadli/forms-tables/forms'
@@ -61,31 +62,39 @@ export function ClientForm({ existing, onSuccess, onDirtyChange }: { existing?: 
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="flex flex-1 flex-col gap-5 overflow-y-auto p-4"
       onSubmit={(event) => {
         event.preventDefault()
         void form.handleSubmit()
       }}
     >
-      <form.AppField name="kind">
-        {(f) => <f.select label={m["client.form.kind"]()} options={clientKinds.map((k) => ({ value: k, label: k === 'person' ? m["client.kind.person"]() : m["client.kind.organisation"]() }))} />}
-      </form.AppField>
-      <form.AppField name="name">{(f) => <f.input label={m["client.form.name"]()} />}</form.AppField>
-      <form.AppField name="phone">{(f) => <f.input label={m["client.form.phone"]()} />}</form.AppField>
-      <form.AppField name="email">{(f) => <f.input label={m["client.form.email"]()} type="email" />}</form.AppField>
-      <form.AppField name="address">{(f) => <f.input label={m["client.form.address"]()} />}</form.AppField>
-      <form.Subscribe selector={(state) => [state.values.kind, state.values.custody] as const}>
-        {([kind, custody]) =>
-          criminal &&
-          kind === 'person' && (
-            <>
-              <form.AppField name="custody">{(f) => <f.select label={m["client.form.custody"]()} options={custodyOptions.map((c) => ({ value: c.id, label: c.label }))} placeholder={m["matter.form.not_recorded"]()} />}</form.AppField>
-              {(custody === 'remanded' || custody === 'serving') && <form.AppField name="custodyPlace">{(f) => <f.input label={m["client.form.held_at"]()} placeholder={m["client.form.held_at_placeholder"]()} />}</form.AppField>}
-            </>
-          )
-        }
-      </form.Subscribe>
-      <form.AppField name="notes">{(f) => <f.textarea label={m["client.form.notes"]()} rows={3} />}</form.AppField>
+      <FormSection title={m["client.form.section.who"]()}>
+        <form.AppField name="kind">
+          {(f) => <f.select label={m["client.form.kind"]()} options={clientKinds.map((k) => ({ value: k, label: k === 'person' ? m["client.kind.person"]() : m["client.kind.organisation"]() }))} />}
+        </form.AppField>
+        <form.AppField name="name">{(f) => <f.input label={m["client.form.name"]()} />}</form.AppField>
+        <form.Subscribe selector={(state) => [state.values.kind, state.values.custody] as const}>
+          {([kind, custody]) =>
+            criminal &&
+            kind === 'person' && (
+              <>
+                <form.AppField name="custody">{(f) => <f.select label={m["client.form.custody"]()} options={custodyOptions.map((c) => ({ value: c.id, label: c.label }))} placeholder={m["matter.form.not_recorded"]()} />}</form.AppField>
+                {(custody === 'remanded' || custody === 'serving') && <form.AppField name="custodyPlace">{(f) => <f.input label={m["client.form.held_at"]()} placeholder={m["client.form.held_at_placeholder"]()} />}</form.AppField>}
+              </>
+            )
+          }
+        </form.Subscribe>
+      </FormSection>
+      <FormSection title={m["client.form.section.contact"]()}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <form.AppField name="phone">{(f) => <f.input label={m["client.form.phone"]()} type="tel" />}</form.AppField>
+          <form.AppField name="email">{(f) => <f.input label={m["client.form.email"]()} type="email" />}</form.AppField>
+        </div>
+        <form.AppField name="address">{(f) => <f.input label={m["client.form.address"]()} />}</form.AppField>
+      </FormSection>
+      <FormSection title={m["matter.form.section.notes"]()}>
+        <form.AppField name="notes">{(f) => <f.textarea label={m["client.form.notes"]()} rows={3} />}</form.AppField>
+      </FormSection>
       <DrawerFooter>
         <form.AppForm>
           <form.submit label={existing ? m["matter.form.save"]() : m["client.form.add"]()} />

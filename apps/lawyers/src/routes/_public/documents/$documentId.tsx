@@ -7,7 +7,8 @@ import { ApiError, messageOf } from '@/lib/api'
 import * as m from '@/paraglide/messages'
 import { PrinterIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { RichTextInput, richTextToPlainText } from '@pleadli/rich-text'
+import { RichTextInput, RichTextPreview, richTextToPlainText } from '@pleadli/rich-text'
+import { displayCode, PaperPage, PaperTabs, printSheet } from '@pleadli/paper'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
@@ -43,6 +44,12 @@ function RouteComponent() {
   const canFile = useActor()?.role === 'advocate'
   const [title, setTitle] = useState(document?.title ?? '')
   const bodyRef = useRef(document?.body ?? '')
+  const [body, setBody] = useState(document?.body ?? '')
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const [sheetText, setSheetText] = useState('')
+  useEffect(() => {
+    setSheetText(sheetRef.current?.innerText ?? '')
+  }, [document])
   const [saved, setSaved] = useState<Saved>('idle')
   const dirty = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -54,13 +61,13 @@ function RouteComponent() {
     dirty.current = false
     setSaved('saving')
     try {
-      await updateDocument(documentId, { title: latest.current.title.trim() || 'Untitled', body: bodyRef.current })
+      await updateDocument(documentId, { title: latest.current.title.trim() || m["doc_page.untitled"](), body: bodyRef.current })
       setSaved('saved')
       return true
     } catch (error) {
       dirty.current = true
       setSaved('failed')
-      t.error('The draft could not be saved', { description: messageOf(error) })
+      t.error(m["doc_page.save_failed"](), { description: messageOf(error) })
       return false
     }
   }, [documentId])
@@ -90,7 +97,7 @@ function RouteComponent() {
         <div>
           <h1>{document.reference ?? document.title}</h1>
           <p>
-            {documentKindLabel(document.kind)} in{' '}
+            {m["doc_page.in_matter"]({ kind: documentKindLabel(document.kind) })}{' '}
             <Link to="/matters/$matterId" params={{ matterId: document.matterId }} className="text-foreground">
               {document.courtNumber ? `${document.courtNumber}, ` : ''}
               {document.matterTitle}
@@ -101,26 +108,26 @@ function RouteComponent() {
         <div className="page-actions">
           {draft ? (
             <>
-              <Tag tone="open">Draft</Tag>
-              <Tag tone="stopped">{saved === 'saving' ? 'Saving…' : saved === 'saved' ? 'Saved' : saved === 'failed' ? 'Not saved' : 'Saves as you write'}</Tag>
+              <Tag tone="open">{m["mp.draft"]()}</Tag>
+              <Tag tone="stopped">{saved === 'saving' ? m["doc_page.saving"]() : saved === 'saved' ? m["doc_page.saved"]() : saved === 'failed' ? m["doc_page.not_saved"]() : m["doc_page.saves_as_you_write"]()}</Tag>
               <DocumentExport get={() => ({ ...document, title: latest.current.title.trim() || document.title, body: bodyRef.current })} beforeExport={save} />
               <Button
                 size="sm"
                 variant="secondary"
                 onClick={() => {
-                  if (!window.confirm('Discard this draft?')) return
+                  if (!window.confirm(m["doc_page.discard_confirm"]())) return
                   dirty.current = false
                   clearTimeout(timer.current)
                   discard.mutate(document.id, {
                     onSuccess: () => {
-                      t.success('Draft discarded')
+                      t.success(m["doc_page.discarded"]())
                       void navigate({ to: '/documents' })
                     },
-                    onError: (error) => t.error('Could not discard the draft', { description: messageOf(error) }),
+                    onError: (error) => t.error(m["doc_page.discard_failed"](), { description: messageOf(error) }),
                   })
                 }}
               >
-                Discard
+                {m["doc_page.discard"]()}
               </Button>
               {canFile ? (
                 <Button
@@ -130,7 +137,7 @@ function RouteComponent() {
                     if (await save()) setFiling(true)
                   }}
                 >
-                  File
+                  {m["doc_page.file"]()}
                 </Button>
               ) : (
                 // Only an advocate files in the practice's name (Advocates Act ss.64, 66, 67);
@@ -142,11 +149,11 @@ function RouteComponent() {
             </>
           ) : (
             <>
-              {document.intact === false ? <Tag tone="urgent">Changed since filing</Tag> : <Tag tone="done">Filed, unchanged</Tag>}
+              {document.intact === false ? <Tag tone="urgent">{m["doc_page.changed_since_filing"]()}</Tag> : <Tag tone="done">{m["doc_page.filed_unchanged"]()}</Tag>}
               <DocumentExport get={() => document} />
-              <Button size="sm" variant="secondary" onClick={() => window.print()}>
+              <Button size="sm" variant="secondary" onClick={() => { const el = sheetRef.current?.querySelector<HTMLElement>('[data-document-sheet]'); if (el) void printSheet(el); else window.print() }}>
                 <HugeiconsIcon icon={PrinterIcon} />
-                Print
+                {m["doc_page.print"]()}
               </Button>
             </>
           )}
@@ -154,56 +161,82 @@ function RouteComponent() {
       </header>
 
       {draft ? (
-        <div className="grid grid-cols-1 gap-8">
-          <section aria-label="The document" className="flex flex-col gap-4">
-            <Field>
-              <FieldLabel>Title</FieldLabel>
-              <Input
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value)
-                  latest.current = { ...latest.current, title: e.target.value }
-                  touch()
-                }}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>Text</FieldLabel>
-              <RichTextInput
-                value={document.body}
-                editorClassName="min-h-[28rem] max-h-[60vh]"
-                placeholder="Write the document. Headings and lists are in the toolbar."
-                onChange={(json) => {
-                  bodyRef.current = richTextToPlainText(json).trim() ? json : ''
-                  touch()
-                }}
-              />
-            </Field>
-          </section>
-        </div>
+        <PaperPage
+          entityType="document"
+          entityId={document.id}
+          title={title.trim() || document.title}
+          head={
+            <header className="mb-6 flex flex-col items-center gap-0.5 text-center">
+              {document.courtNumber && <p className="font-semibold uppercase">{document.courtNumber}</p>}
+              <p className="font-semibold uppercase">{document.matterTitle}</p>
+            </header>
+          }
+          details={[
+            { label: m["paper.detail.kind"](), value: documentKindLabel(document.kind) },
+            { label: m["paper.detail.file"](), value: `${document.courtNumber ? `${document.courtNumber}, ` : ''}${document.matterTitle}` },
+            { label: m["paper.detail.status"](), value: m["document.draft"]() },
+          ]}
+          events={[{ at: document.createdAt, label: m["document.drafted"]() }]}
+          defaultMode={richTextToPlainText(document.body).trim() ? 'preview' : 'edit'}
+          edit={
+            <section aria-label="The document" className="flex flex-col gap-4">
+              <Field>
+                <FieldLabel>{m["doc_page.title"]()}</FieldLabel>
+                <Input
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value)
+                    latest.current = { ...latest.current, title: e.target.value }
+                    touch()
+                  }}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>{m["doc_page.text"]()}</FieldLabel>
+                <RichTextInput
+                  value={body}
+                  editorClassName="min-h-[28rem] max-h-[60vh]"
+                  placeholder={m["doc_page.placeholder"]()}
+                  onChange={(json) => {
+                    bodyRef.current = richTextToPlainText(json).trim() ? json : ''
+                    setBody(bodyRef.current)
+                    touch()
+                  }}
+                />
+              </Field>
+            </section>
+          }
+        >
+          <RichTextPreview value={body} />
+        </PaperPage>
       ) : (
         <>
-          <DocumentSheet document={document} />
-          <section className="page-section print:hidden">
-            <h2>Record</h2>
-            <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-              <div className="flex flex-col">
-                <dt className="text-xs text-muted-foreground">Filed</dt>
-                <dd>
-                  {document.filedOn ? format(document.filedOn, 'PP') : '·'} by {document.filedBy ?? '·'}
-                  {document.filedWith ? `, with ${document.filedWith}` : ''}
-                </dd>
-              </div>
-              <div className="flex flex-col">
-                <dt className="text-xs text-muted-foreground">SHA-256 of the text as filed</dt>
-                <dd className="break-all">{document.contentSha256}</dd>
-              </div>
-            </dl>
-          </section>
+          <div className="print:hidden">
+            <PaperTabs
+              entityType="document"
+              entityId={document.id}
+              wording={sheetText}
+              details={[
+                ...(document.reference ? [{ label: m["paper.detail.reference"](), value: document.reference, copy: document.reference }] : []),
+                { label: m["paper.detail.kind"](), value: documentKindLabel(document.kind) },
+                { label: m["paper.detail.file"](), value: `${document.courtNumber ? `${document.courtNumber}, ` : ''}${document.matterTitle}` },
+                { label: m["document.filed_label"](), value: `${document.filedOn ? format(document.filedOn, 'PP') : '·'}${document.filedBy ? `, ${document.filedBy}` : ''}${document.filedWith ? `, ${document.filedWith}` : ''}` },
+                ...(document.content?.verifyCode ? [{ label: m["paper.verify_line"](), value: displayCode(document.content.verifyCode), copy: displayCode(document.content.verifyCode) }] : []),
+                { label: m["document.sha_label"](), value: <span className="break-all font-mono text-xs">{document.contentSha256}</span> },
+              ]}
+              events={[
+                { at: document.createdAt, label: m["document.drafted"]() },
+                ...(document.filedAt ? [{ at: document.filedAt, label: `${m["document.filed_label"]()} ${document.reference ?? ''}`, by: document.filedBy }] : []),
+              ]}
+            />
+          </div>
+          <div ref={sheetRef}>
+            <DocumentSheet document={document} />
+          </div>
         </>
       )}
 
-      <Createpanel open={filing} onOpenChange={setFiling} headings={{ title: 'File the document', description: 'Give the day it was filed, and with whom.' }}>
+      <Createpanel open={filing} onOpenChange={setFiling} headings={{ title: m["doc_page.file_title"](), description: m["doc_page.file_description"]() }}>
         <FileForm document={document} onSuccess={() => setFiling(false)} />
       </Createpanel>
     </article>

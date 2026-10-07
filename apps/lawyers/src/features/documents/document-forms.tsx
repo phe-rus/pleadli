@@ -33,6 +33,16 @@ export function useTemplateContext(matterId: string) {
     advocate: actor?.name ?? '',
     today: legalDate(Date.now()),
     matterType,
+    offence: detail?.matter.offence ?? '',
+    ourRef: detail?.matter.ourRef ?? '',
+    nextHearing: (() => {
+      const next = detail?.hearings.filter((h) => h.status === 'scheduled').sort((a, b) => a.at - b.at)[0]
+      return next ? legalDate(next.at) : ''
+    })(),
+    remandDays: (() => {
+      const r = detail?.matter
+      return r?.remandedOn ? Math.floor(((r.committedOn ?? Date.now()) - r.remandedOn) / 86_400_000) : null
+    })(),
   })
   return { offered, context }
 }

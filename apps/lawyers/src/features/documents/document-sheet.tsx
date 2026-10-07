@@ -1,6 +1,7 @@
 import * as m from '@/paraglide/messages'
 import { RichTextPreview, richTextToPlainText } from '@pleadli/rich-text'
 import type { LawyerDocument } from './schema'
+import { displayCode } from '@pleadli/paper'
 
 /** A filed document as a sheet of paper: the practice's letterhead, the text
  * exactly as it was filed, the date, the advocate's signature and the
@@ -60,7 +61,7 @@ export function DocumentSheet({ document }: { document: LawyerDocument }) {
           {content.verifyCode && (
             <>
               {' · '}
-              {m["document.verify_code"]()} {content.verifyCode}
+              {m["document.verify_code"]()} {displayCode(content.verifyCode)}
             </>
           )}
         </span>

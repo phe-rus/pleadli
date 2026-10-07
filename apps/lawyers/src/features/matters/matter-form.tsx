@@ -1,4 +1,5 @@
 import { DateField } from '@/components/date-field'
+import { FormSection } from '@/components/form-section'
 import { messageOf } from '@/lib/api'
 import { fromDateInput, toIsoDay } from '@/lib/day'
 import { useReportDirty } from '@/hooks/use-report-dirty'
@@ -18,7 +19,7 @@ import { engagements, levels, matterFormSchema, type Matter } from './schema'
  * appointment at the expense of the state brings dated duties, tracked as
  * tasks. The reference is your own; the court number is the court's. As the
  * client and the other side are named, the conflict check runs on each. */
-export function MatterForm({ existing, defaultClientId, onSuccess, onDirtyChange }: { existing?: Matter; defaultClientId?: string; onSuccess?: (matter: Matter) => void; onDirtyChange?: (dirty: boolean) => void }) {
+export function MatterForm({ existing, defaultClientId, defaultMatterType, onSuccess, onDirtyChange }: { existing?: Matter; defaultClientId?: string; defaultMatterType?: string; onSuccess?: (matter: Matter) => void; onDirtyChange?: (dirty: boolean) => void }) {
   const create = useCreateMatter()
   const update = useUpdateMatter()
   const addParty = useAddParty()
@@ -27,7 +28,7 @@ export function MatterForm({ existing, defaultClientId, onSuccess, onDirtyChange
 
   const form = useAppForm({
     defaultValues: {
-      matterType: existing?.matterType ?? types[0]?.id ?? '',
+      matterType: existing?.matterType ?? (defaultMatterType && types.some((t) => t.id === defaultMatterType) ? defaultMatterType : undefined) ?? types[0]?.id ?? '',
       clientId: existing?.clientId ?? defaultClientId ?? '',
       title: existing?.title ?? '',
       otherSide: '',
@@ -81,54 +82,69 @@ export function MatterForm({ existing, defaultClientId, onSuccess, onDirtyChange
 
   return (
     <form
-      className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+      className="flex flex-1 flex-col gap-5 overflow-y-auto p-4"
       onSubmit={(event) => {
         event.preventDefault()
         void form.handleSubmit()
       }}
     >
-      {!existing && (
-        <form.AppField name="matterType">
-          {(f) => <f.select label={m["matter.form.type"]()} options={types.map((ty) => ({ value: ty.id, label: matterTypeLabel(ty.id) }))} placeholder={m["matter.form.type_placeholder"]()} />}
-        </form.AppField>
-      )}
-      {!existing && types.length === 0 && <p className="text-muted-foreground">{m["matter.form.no_types"]()}</p>}
-      {choices.length === 0 && <p className="text-muted-foreground">{m["matter.form.no_clients"]()}</p>}
-      <form.AppField name="clientId">{(f) => <f.select label={m["matter.form.client"]()} options={choices} placeholder={m["matter.form.client_placeholder"]()} />}</form.AppField>
-      {!existing && <form.Subscribe selector={(state) => state.values.clientId}>{(id) => id && <ConflictCheck name={clientName(id)} asClient />}</form.Subscribe>}
-      <form.AppField name="title">{(f) => <f.input label={m["matter.form.title"]()} placeholder={m["matter.form.title_placeholder"]()} />}</form.AppField>
-      {!existing && (
-        <>
-          <form.AppField name="otherSide">{(f) => <f.input label={m["matter.form.other_side"]()} placeholder={m["matter.form.other_side_placeholder"]()} />}</form.AppField>
-          <form.Subscribe selector={(state) => state.values.otherSide}>{(name) => <ConflictCheck name={name} />}</form.Subscribe>
-        </>
-      )}
-      <form.AppField name="engagement">{(f) => <f.select label={m["matter.form.engagement"]()} options={engagements.map((e) => ({ value: e.id, label: e.label }))} />}</form.AppField>
-      <form.Subscribe selector={(state) => state.values.engagement}>
-        {(engagement) =>
-          engagement === 'state_appointed' && (
-            <form.AppField name="appointedOn">
-              {(f) => <DateField label={m["matter.form.appointed_on"]()} value={f.state.value} onChange={f.handleChange} description={m["matter.form.appointed_on_hint"]()} />}
-            </form.AppField>
+      <FormSection title={m["matter.form.section.matter"]()}>
+        {!existing && (
+          <form.AppField name="matterType">
+            {(f) => <f.select label={m["matter.form.type"]()} options={types.map((ty) => ({ value: ty.id, label: matterTypeLabel(ty.id) }))} placeholder={m["matter.form.type_placeholder"]()} />}
+          </form.AppField>
+        )}
+        {!existing && types.length === 0 && <p className="text-muted-foreground">{m["matter.form.no_types"]()}</p>}
+        {choices.length === 0 && <p className="text-muted-foreground">{m["matter.form.no_clients"]()}</p>}
+        <form.AppField name="clientId">{(f) => <f.select label={m["matter.form.client"]()} options={choices} placeholder={m["matter.form.client_placeholder"]()} />}</form.AppField>
+        {!existing && <form.Subscribe selector={(state) => state.values.clientId}>{(id) => id && <ConflictCheck name={clientName(id)} asClient />}</form.Subscribe>}
+        <form.AppField name="title">{(f) => <f.input label={m["matter.form.title"]()} placeholder={m["matter.form.title_placeholder"]()} />}</form.AppField>
+        {!existing && (
+          <>
+            <form.AppField name="otherSide">{(f) => <f.input label={m["matter.form.other_side"]()} placeholder={m["matter.form.other_side_placeholder"]()} />}</form.AppField>
+            <form.Subscribe selector={(state) => state.values.otherSide}>{(name) => <ConflictCheck name={name} />}</form.Subscribe>
+          </>
+        )}
+      </FormSection>
+
+      <FormSection title={m["matter.form.section.acting"]()}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <form.AppField name="engagement">{(f) => <f.select label={m["matter.form.engagement"]()} options={engagements.map((e) => ({ value: e.id, label: e.label }))} />}</form.AppField>
+          <form.AppField name="ourRef">{(f) => <f.input label={m["matter.form.our_ref"]()} placeholder={m["matter.form.our_ref_placeholder"]()} />}</form.AppField>
+        </div>
+        <form.Subscribe selector={(state) => state.values.engagement}>
+          {(engagement) =>
+            engagement === 'state_appointed' && (
+              <form.AppField name="appointedOn">
+                {(f) => <DateField label={m["matter.form.appointed_on"]()} value={f.state.value} onChange={f.handleChange} description={m["matter.form.appointed_on_hint"]()} />}
+              </form.AppField>
+            )
+          }
+        </form.Subscribe>
+      </FormSection>
+
+      <form.Subscribe selector={(state) => state.values.matterType}>
+        {(type) =>
+          (inCourt(type) || type === 'criminal_defence' || type === 'private_prosecution') && (
+            <FormSection title={m["matter.form.section.court"]()}>
+              {inCourt(type) && (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <form.AppField name="courtNumber">{(f) => <f.input label={m["matter.form.court_number"]()} placeholder={type === 'criminal_defence' ? 'CRB 214/2026' : 'HCCS 88/2026'} />}</form.AppField>
+                    <form.AppField name="courtLevel">{(f) => <f.select label={m["matter.form.court_level"]()} options={levels.map((l) => ({ value: l.id, label: l.label }))} placeholder={m["matter.form.not_recorded"]()} />}</form.AppField>
+                  </div>
+                  <form.AppField name="courtName">{(f) => <f.input label={m["matter.form.court_name"]()} />}</form.AppField>
+                </>
+              )}
+              {(type === 'criminal_defence' || type === 'private_prosecution') && <form.AppField name="offence">{(f) => <f.input label={m["matter.form.offence"]()} />}</form.AppField>}
+            </FormSection>
           )
         }
       </form.Subscribe>
-      <form.AppField name="ourRef">{(f) => <f.input label={m["matter.form.our_ref"]()} placeholder={m["matter.form.our_ref_placeholder"]()} />}</form.AppField>
-      <form.Subscribe selector={(state) => state.values.matterType}>
-        {(type) => (
-          <>
-            {inCourt(type) && (
-              <>
-                <form.AppField name="courtNumber">{(f) => <f.input label={m["matter.form.court_number"]()} placeholder={type === 'criminal_defence' ? 'CRB 214/2026' : 'HCCS 88/2026'} />}</form.AppField>
-                <form.AppField name="courtName">{(f) => <f.input label={m["matter.form.court_name"]()} />}</form.AppField>
-                <form.AppField name="courtLevel">{(f) => <f.select label={m["matter.form.court_level"]()} options={levels.map((l) => ({ value: l.id, label: l.label }))} placeholder={m["matter.form.not_recorded"]()} />}</form.AppField>
-              </>
-            )}
-            {(type === 'criminal_defence' || type === 'private_prosecution') && <form.AppField name="offence">{(f) => <f.input label={m["matter.form.offence"]()} />}</form.AppField>}
-          </>
-        )}
-      </form.Subscribe>
-      <form.AppField name="notes">{(f) => <f.textarea label={m["matter.form.notes"]()} rows={3} />}</form.AppField>
+
+      <FormSection title={m["matter.form.section.notes"]()}>
+        <form.AppField name="notes">{(f) => <f.textarea label={m["matter.form.notes"]()} rows={3} />}</form.AppField>
+      </FormSection>
       <DrawerFooter>
         <form.AppForm>
           <form.submit label={existing ? m["matter.form.save"]() : m["matter.form.open"]()} />

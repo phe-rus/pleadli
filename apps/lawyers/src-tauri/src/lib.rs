@@ -83,6 +83,13 @@ pub fn run() {
 
             let router = match tauri::async_runtime::block_on(db::startup(&data_dir)) {
                 Ok(db) => {
+                    #[cfg(debug_assertions)]
+                    if let Ok(pin) = std::env::var("PLEADLI_DEV_RESET_PINS") {
+                        match tauri::async_runtime::block_on(domain::staff::dev_reset_pins(&db.pool, &pin)) {
+                            Ok(names) => log::warn!("development: PIN set to {pin} for {}", names.join(", ")),
+                            Err(e) => log::error!("development: PIN reset failed: {e}"),
+                        }
+                    }
                     let state = tauri::async_runtime::block_on(app_state(db.pool.clone(), db.vault_root.clone(), data_dir.clone()))?;
                     tauri::async_runtime::spawn(api::supervise_office(state.clone()));
                     // Saving a filing pack asks the same "is anyone signed in" as the API.
@@ -146,7 +153,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::export::save_pdf, commands::export::save_export])
+        .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::export::save_pdf, commands::export::save_export, commands::export::office_apps, commands::export::open_paper_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

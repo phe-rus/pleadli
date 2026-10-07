@@ -34,6 +34,12 @@ export type TemplateContext = {
   today: string
   /** The kind of matter: the client's side follows it. */
   matterType: string
+  offence: string
+  ourRef: string
+  /** "14th day of October, 2026", or empty. */
+  nextHearing: string
+  /** Whole days the client has been on remand on this charge, when recorded. */
+  remandDays: number | null
 }
 
 export type Template = {
@@ -348,7 +354,7 @@ export const templates: readonly Template[] = [
       doc([
         ...caption(c, 'CRIMINAL CASE', 'UGANDA', c.client, 'PROSECUTOR', 'ACCUSED'),
         h('APPLICATION FOR BAIL'),
-        p(`The applicant, ${c.client}, charged with ____, applies to be released on bail pending trial on the following grounds:`),
+        p(`The applicant, ${c.client}, charged with ${c.offence || '____'}, applies to be released on bail pending trial on the following grounds:`),
         ol(['The applicant has a fixed place of abode at ____.', 'The applicant has substantial sureties who are ready to stand for him/her: ____.', 'The applicant is presumed innocent (Article 28(3)(a) of the Constitution) and undertakes to appear whenever required.', '____']),
         ...signOff(c, 'APPLICANT'),
       ]),
@@ -363,7 +369,7 @@ export const templates: readonly Template[] = [
       doc([
         ...caption(c, 'CRIMINAL CASE', 'UGANDA', c.client, 'PROSECUTOR', 'ACCUSED'),
         h('SUBMISSIONS IN MITIGATION'),
-        ol([`${c.client} is a first offender aged ____.`, 'He/she has readily pleaded guilty and saved the court\'s time.', 'He/she has spent ____ on remand, which the court is asked to take into account.', 'He/she has dependants: ____.', '____']),
+        ol([`${c.client} is a first offender aged ____.`, 'He/she has readily pleaded guilty and saved the court\'s time.', `He/she has spent ${c.remandDays != null ? `${c.remandDays} days` : '____'} on remand, which the court is asked to take into account (Article 23(8) of the Constitution).`, 'He/she has dependants: ____.', '____']),
         p('We pray for a lenient sentence.'),
         ...signOff(c, 'ACCUSED'),
       ]),
@@ -430,6 +436,195 @@ export const templates: readonly Template[] = [
       ]),
   },
   {
+    id: 'engagement_letter',
+    kind: 'engagement_letter',
+    for: ['*'],
+    label: () => m["template.engagement_letter"](),
+    title: (c) => `Engagement letter: ${c.client}`,
+    body: (c) =>
+      doc([
+        p(`Date: ${c.today}`),
+        p(`Our ref: ${c.ourRef || '____'}`),
+        p(`To: ${c.client}`),
+        bold(`RE: YOUR INSTRUCTIONS${c.offence ? `: ${c.offence.toUpperCase()}` : ''}`),
+        p('Thank you for instructing us. This letter sets out what we will do for you, who will do it, how our fees are worked out and what we need from you.'),
+        h('What we will do', 3),
+        p('____'),
+        h('Who will handle your matter', 3),
+        p(`${c.advocate || '____'}, advocate, will be responsible for your matter.`),
+        h('Our fees', 3),
+        p('Our fees are ____ (an agreed fee, or charged at ____ per hour), together with court fees and other disbursements. We will ask for a deposit of ____ before we begin. You will receive a fee note for every payment.'),
+        h('What we need from you', 3),
+        ol(['All the papers you hold about this matter.', 'Prompt answers when we ask for instructions.', 'To tell us at once if anything changes.']),
+        h('Confidentiality', 3),
+        p('What you tell us is confidential and privileged, and will not be shared without your consent unless the law requires it.'),
+        p('Please sign and return a copy of this letter to confirm these terms.'),
+        p('Yours faithfully,'),
+        p(`${c.firm || c.advocate}`),
+        p(),
+        p('I accept these terms: ____________________   Date: ____'),
+      ]),
+  },
+  {
+    id: 'progress_letter',
+    kind: 'progress_letter',
+    for: ['*'],
+    label: () => m["template.progress_letter"](),
+    title: (c) => `Progress of your matter: ${c.client}`,
+    body: (c) =>
+      doc([
+        p(`Date: ${c.today}`),
+        p(`Our ref: ${c.ourRef || '____'}`),
+        p(`To: ${c.client}`),
+        bold(`RE: ${c.courtNumber ? `${c.courtNumber}, ` : ''}${c.client.toUpperCase()}${c.otherSide ? ` v ${c.otherSide.toUpperCase()}` : ''}`),
+        p('We write to update you on your matter.'),
+        h('What has happened', 3),
+        p('____'),
+        h('What happens next', 3),
+        p(c.nextHearing ? `The matter comes up next on the ${c.nextHearing} at ${c.court || '____'}.` : 'No date has yet been fixed. We will tell you as soon as one is.'),
+        h('What we need from you', 3),
+        p('____'),
+        p('Yours faithfully,'),
+        p(`${c.firm || c.advocate}`),
+      ]),
+  },
+  {
+    id: 'registrar_letter',
+    kind: 'registrar_letter',
+    for: [...CIVIL_COURT, 'criminal_defence', 'appeal', 'private_prosecution'],
+    label: () => m["template.registrar_letter"](),
+    title: (c) => `Letter to the Registrar: ${c.courtNumber || c.client}`,
+    body: (c) =>
+      doc([
+        p(`Date: ${c.today}`),
+        p(`Our ref: ${c.ourRef || '____'}`),
+        p(`The Registrar,`),
+        p(`${c.court || '____'}`),
+        bold(`RE: ${c.courtNumber || '____'}, ${c.client.toUpperCase()}${c.otherSide ? ` v ${c.otherSide.toUpperCase()}` : ''}`),
+        p('We act for ____ in the above matter and write to request:'),
+        ol(['that the matter be fixed for hearing on a date convenient to the court; or', 'certified copies of the record of proceedings and the judgment, for the purposes of appeal.', '____']),
+        p('We undertake to pay the prescribed fees.'),
+        p('Yours faithfully,'),
+        p(`${c.firm || c.advocate}`),
+        p(`c.c. ${c.otherSide || '____'}`),
+      ]),
+  },
+  {
+    id: 'deed_poll',
+    kind: 'deed_poll',
+    for: ['advice', 'legal_aid_case'],
+    label: () => m["template.deed_poll"](),
+    title: (c) => `Deed poll: change of name of ${c.client}`,
+    body: (c) =>
+      doc([
+        bold('THE REPUBLIC OF UGANDA'),
+        bold('IN THE MATTER OF THE REGISTRATION OF DOCUMENTS ACT, CAP. 81'),
+        bold('AND IN THE MATTER OF THE OATHS ACT, CAP. 19'),
+        bold(`AND IN THE MATTER OF A CHANGE OF NAME BY ${c.client.toUpperCase() || '____'}`),
+        h('DEED POLL'),
+        p(`BY THIS DEED POLL I, ${c.client || '____'}, of ____, a citizen of Uganda, formerly known as ____ (the former name), now wholly renounce, relinquish and abandon the use of my said former name and assume and adopt the name ${c.client || '____'} in its place.`),
+        ol([
+          'I shall at all times hereafter in all records, deeds and writings, and in all actions and proceedings and in all dealings and transactions, describe myself by the name I have assumed.',
+          'I authorise and require all persons to designate and address me by that name only.',
+          'I make this change for good reasons and not to defraud, avoid any obligation or mislead anyone: ____.',
+        ]),
+        p(`IN WITNESS WHEREOF I have signed this deed poll this ${c.today}.`),
+        p(),
+        p('SIGNED by the said ____ (formerly ____)   ____________________'),
+        p('in the presence of:   ____________________ (name, address, signature of witness)'),
+        p(),
+        p(`SWORN at ____ this ${c.today}, before me:`),
+        p('____________________'),
+        p('COMMISSIONER FOR OATHS'),
+        p(),
+        p(`Drawn and filed by: ${c.firm || c.advocate}, ${c.address || '____'}`),
+      ]),
+  },
+  {
+    id: 'name_change_notice',
+    kind: 'name_change_notice',
+    for: ['advice', 'legal_aid_case'],
+    label: () => m["template.name_change_notice"](),
+    title: (c) => `Gazette notice: change of name of ${c.client}`,
+    body: (c) =>
+      doc([
+        bold('NOTICE OF CHANGE OF NAME'),
+        p(`Notice is given that by a deed poll dated ____ and registered with the Uganda Registration Services Bureau as instrument No. ____ on ____, I, ${c.client || '____'}, formerly known as ____, of ____, renounced and abandoned the use of my former name and assumed the name ${c.client || '____'}, by which I shall be known from now on.`),
+        p(`Dated at ____ this ${c.today}.`),
+        p(`${c.client || '____'}`),
+        p(`c/o ${c.firm || c.advocate}, ${c.address || '____'}`),
+      ]),
+  },
+  {
+    id: 'police_bond_letter',
+    kind: 'police_bond_letter',
+    for: ['criminal_defence', 'legal_aid_case'],
+    label: () => m["template.police_bond_letter"](),
+    title: (c) => `Request for police bond: ${c.client}`,
+    body: (c) =>
+      doc([
+        p(`Date: ${c.today}`),
+        p(`Our ref: ${c.ourRef || '____'}`),
+        p('The Officer in Charge,'),
+        p('____ Police Station'),
+        bold(`RE: REQUEST FOR RELEASE ON POLICE BOND OF ${c.client.toUpperCase() || '____'}, REF. ${c.courtNumber || 'SD/CRB ____'}`),
+        p(`We act for ${c.client || '____'}, who was arrested on ____ and is held at your station${c.offence ? ` in connection with ${c.offence}` : ''}.`),
+        p('Under Article 23(4)(b) of the Constitution a person arrested on suspicion of an offence must be brought before a court within 48 hours, and section 25 of the Police Act allows release on police bond, with or without a surety, while inquiries continue. Police bond is free of charge.'),
+        p('We request that our client be released on police bond on the following terms:'),
+        ol(['Our client has a fixed place of abode at ____.', 'The surety is ____, of ____, telephone ____, National ID No. ____ (copy attached).', 'Our client undertakes to report to the station whenever required.']),
+        p('If our client is not released, we ask that he/she be produced before a court within the time the Constitution allows.'),
+        p('Yours faithfully,'),
+        p(`${c.firm || c.advocate}`),
+        p(`${c.address || ''}`),
+      ]),
+  },
+  {
+    id: 'family_meeting_minutes',
+    kind: 'family_meeting_minutes',
+    for: ['succession', 'family_case', 'legal_aid_case'],
+    label: () => m["template.family_meeting_minutes"](),
+    title: (c) => `Minutes of the family meeting: estate of the late ____ (${c.client})`,
+    body: (c) =>
+      doc([
+        bold('MINUTES OF A FAMILY MEETING OF THE FAMILY OF THE LATE ____'),
+        p('Held at ____ on ____, starting at ____.'),
+        h('Present', 3),
+        ol(['____ (relationship to the deceased)', '____', '____']),
+        h('1. The death', 3),
+        p('The meeting noted that ____ died on ____ at ____ without leaving a will, survived by ____.'),
+        h('2. The estate', 3),
+        p('The property known to the family: ____.'),
+        h('3. Who will apply', 3),
+        p(`The meeting agreed that ${c.client || '____'} and ____ apply for letters of administration to the estate, and that the Administrator General be asked for a certificate of no objection.`),
+        h('4. Close', 3),
+        p('There being no other business, the meeting closed at ____.'),
+        p(),
+        p('Chairperson: ____________________   Secretary: ____________________'),
+        p('Signatures of those present: ____'),
+      ]),
+  },
+  {
+    id: 'administrator_general_letter',
+    kind: 'administrator_general_letter',
+    for: ['succession', 'legal_aid_case'],
+    label: () => m["template.administrator_general_letter"](),
+    title: (c) => `Letter to the Administrator General: ${c.client}`,
+    body: (c) =>
+      doc([
+        p(`Date: ${c.today}`),
+        p(`Our ref: ${c.ourRef || '____'}`),
+        p('The Administrator General,'),
+        p('Ministry of Justice and Constitutional Affairs, ____'),
+        bold('RE: REPORT OF DEATH AND REQUEST FOR A CERTIFICATE OF NO OBJECTION: ESTATE OF THE LATE ____'),
+        p(`We act for ${c.client || '____'}, ____ (relationship) of the late ____, who died on ____ at ____ without leaving a will.`),
+        p('The family met on ____ and agreed that our client and ____ apply for letters of administration. We enclose:'),
+        ol(['A copy of the death certificate.', 'The minutes of the family meeting.', 'Copies of the National IDs of the proposed administrators.', 'A list of the known property of the estate.']),
+        p('We request a certificate of no objection so that the proposed administrators may petition the High Court for letters of administration.'),
+        p('Yours faithfully,'),
+        p(`${c.firm || c.advocate}`),
+      ]),
+  },
+  {
     id: 'letter',
     kind: 'letter',
     for: ['*'],
@@ -462,7 +657,10 @@ export function legalDate(ms: number) {
 }
 
 /** Kinds that go to a person, not a court: no caption, a letter's close. */
-const OUT_OF_COURT = new Set(['demand_letter', 'government_notice', 'sale_agreement', 'legal_opinion', 'referral_letter', 'letter', 'general'])
+/** Letters from the practice: the only papers headed with its letterhead. */
+export const LETTERS = new Set(['demand_letter', 'government_notice', 'referral_letter', 'letter', 'legal_opinion', 'engagement_letter', 'progress_letter', 'registrar_letter', 'police_bond_letter', 'administrator_general_letter'])
+
+export const OUT_OF_COURT = new Set(['demand_letter', 'government_notice', 'sale_agreement', 'legal_opinion', 'referral_letter', 'letter', 'general', 'engagement_letter', 'progress_letter', 'registrar_letter', 'deed_poll', 'name_change_notice', 'police_bond_letter', 'family_meeting_minutes', 'administrator_general_letter'])
 
 /** A document from paragraphs Assist drafted: the caption and sign-off are the
  * app's, the numbered paragraphs Assist's, for the advocate to edit. */
@@ -472,4 +670,37 @@ export function assistDraftBody(c: TemplateContext, kind: string, heading: strin
   }
   const { caption: head, ours } = sides(c)
   return doc([...head, h(heading.toUpperCase()), ol(paragraphs), ...signOff(c, ours)])
+}
+
+/** What a matter of this kind usually needs at this stage, first in the list
+ * of papers to prepare. The rest of the templates follow. */
+const NEEDS: Record<string, Record<string, readonly string[]>> = {
+  criminal_defence: {
+    instructions: ['engagement_letter', 'letter'],
+    custody_bail: ['bail_application', 'affidavit', 'progress_letter'],
+    plea_disclosure: ['letter', 'progress_letter'],
+    trial: ['submissions', 'list_of_authorities', 'registrar_letter', 'progress_letter'],
+    sentence: ['mitigation', 'progress_letter'],
+    appeal: ['notice_of_appeal', 'registrar_letter', 'memorandum_of_appeal'],
+  },
+  appeal: {
+    notice: ['notice_of_appeal', 'registrar_letter'],
+    record: ['registrar_letter', 'letter'],
+    memorandum: ['memorandum_of_appeal'],
+    hearing: ['submissions', 'list_of_authorities'],
+    judgment: ['progress_letter'],
+  },
+}
+const CIVIL_NEEDS: Record<string, readonly string[]> = {
+  instructions: ['engagement_letter', 'demand_letter', 'government_notice'],
+  pleadings: ['plaint', 'written_statement_of_defence', 'reply', 'affidavit_of_service'],
+  mediation: ['progress_letter', 'letter'],
+  hearing: ['submissions', 'list_of_authorities', 'registrar_letter'],
+  judgment: ['progress_letter', 'notice_of_appeal', 'registrar_letter'],
+  order: ['progress_letter', 'registrar_letter'],
+}
+
+export function templatesNeeded(offered: readonly Template[], matterType: string, stage: string) {
+  const ids = NEEDS[matterType]?.[stage] ?? CIVIL_NEEDS[stage] ?? ['engagement_letter', 'letter']
+  return ids.map((id) => offered.find((t) => t.id === id)).filter((t): t is Template => !!t)
 }

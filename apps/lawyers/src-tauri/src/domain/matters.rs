@@ -24,6 +24,8 @@ pub struct Matter {
     pub offence: Option<String>,
     pub engagement: String,
     pub appointed_on: Option<i64>,
+    pub remanded_on: Option<i64>,
+    pub committed_on: Option<i64>,
     pub matter_type: String,
     pub stage: String,
     pub status: String,
@@ -104,7 +106,7 @@ fn check(input: &MatterInput) -> Result<Checked, DomainError> {
     Ok(Checked { title, our_ref: clean(input.our_ref.clone()), level, appointed_on })
 }
 
-const COLUMNS: &str = "id, client_id, title, our_ref, court_number, court_name, court_level, offence, engagement, appointed_on, matter_type, stage, status, outcome, closed_at, notes, created_at, updated_at";
+const COLUMNS: &str = "id, client_id, title, our_ref, court_number, court_name, court_level, offence, engagement, appointed_on, remanded_on, committed_on, matter_type, stage, status, outcome, closed_at, notes, created_at, updated_at";
 
 pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Matter>, sqlx::Error> {
     sqlx::query_as::<_, Matter>(sqlx::AssertSqlSafe(format!("SELECT {COLUMNS} FROM matters WHERE id = ?"))).bind(id).fetch_optional(pool).await

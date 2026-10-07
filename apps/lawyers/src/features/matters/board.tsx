@@ -1,4 +1,8 @@
 import { EmptyNote } from '@/components/planned'
+import { MoreHorizontalIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Button } from '@pleadli/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@pleadli/ui/dropdown-menu'
 import { matterTypeLabel, stageLabel, type MatterType } from '@/features/matter-types'
 import { messageOf } from '@/lib/api'
 import * as m from '@/paraglide/messages'
@@ -61,31 +65,39 @@ export function MatterBoard({ type, matters }: { type: MatterType; matters: Matt
                   e.dataTransfer.setData('text/plain', matter.id)
                   e.dataTransfer.effectAllowed = 'move'
                 }}
-                className="flex cursor-grab flex-col gap-1 rounded-lg border border-border bg-card p-3 shadow-xs active:cursor-grabbing"
+                className="flex cursor-grab flex-col gap-1 rounded-lg border border-border bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
               >
-                <Link to="/matters/$matterId" params={{ matterId: matter.id }} className="font-medium text-foreground no-underline hover:underline">
-                  {matter.courtNumber ?? matter.ourRef ?? matter.title}
+                {(matter.courtNumber || matter.ourRef) && <p className="m-0 text-xs text-muted-foreground">{matter.courtNumber ?? matter.ourRef}</p>}
+                <Link to="/matters/$matterId" params={{ matterId: matter.id }} className="line-clamp-2 font-medium text-foreground no-underline hover:underline">
+                  {matter.title}
                 </Link>
-                <p className="line-clamp-2 text-muted-foreground">{matter.courtNumber || matter.ourRef ? matter.title : matter.clientName}</p>
-                <p className="text-muted-foreground">
-                  {matter.nextHearingAt ? m["board.next_hearing"]({ when: format(matter.nextHearingAt, 'd MMM') }) : matter.clientName}
-                  {matter.openTasks > 0 && ` · ${m["board.open_tasks"]({ count: matter.openTasks })}`}
-                </p>
-                <label className="mt-1 flex items-center gap-2 text-muted-foreground">
-                  <span className="sr-only">{m["board.move_to"]()}</span>
-                  <select
-                    aria-label={m["board.move_to"]()}
-                    value={matter.stage}
-                    onChange={(e) => move(matter, e.target.value)}
-                    className="h-7 w-full rounded-md border border-input bg-transparent px-1.5"
-                  >
-                    {type.stages.map((s) => (
-                      <option key={s} value={s}>
-                        {stageLabel(s)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2">
+                  <p className="m-0 min-w-0 truncate text-xs text-muted-foreground">
+                    {matter.nextHearingAt ? m["board.next_hearing"]({ when: format(matter.nextHearingAt, 'd MMM') }) : matter.clientName}
+                    {matter.openTasks > 0 && ` · ${m["board.open_tasks"]({ count: matter.openTasks })}`}
+                  </p>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button size="icon-sm" variant="ghost" aria-label={m["board.move_to"]()} title={m["board.move_to"]()}>
+                          <HugeiconsIcon icon={MoreHorizontalIcon} />
+                        </Button>
+                      }
+                    />
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>{m["board.move_to"]()}</DropdownMenuLabel>
+                        {type.stages
+                          .filter((s) => s !== matter.stage)
+                          .map((s) => (
+                            <DropdownMenuItem key={s} onClick={() => move(matter, s)}>
+                              {stageLabel(s)}
+                            </DropdownMenuItem>
+                          ))}
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </article>
             ))}
           </section>

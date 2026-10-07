@@ -1,6 +1,8 @@
 import { SettingsCard } from '@/components/settings-card'
 import { formatDay } from '@/lib/dates'
-import { messageOf } from '@/lib/api'
+import { api, messageOf } from '@/lib/api'
+
+type PaperPrint = { code: string; title: string; body: string; printedBy: string | null; printedAt: number }
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
 import { Input } from '@pleadli/ui/input'
@@ -14,6 +16,7 @@ export function VerifyCard() {
   const [reference, setReference] = useState('')
   const [code, setCode] = useState('')
   const [result, setResult] = useState<DocumentVerification | null>(null)
+  const [printed, setPrinted] = useState<PaperPrint | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const text = (r: DocumentVerification) =>
     ({
@@ -29,14 +32,18 @@ export function VerifyCard() {
       onSubmit={async (e) => {
         e.preventDefault()
         setError(null)
+        setResult(null)
+        setPrinted(undefined)
         try {
-          setResult(await verifyDocument(reference, code))
+          // A filed document has a reference and a code; any other paper printed from the app carries its code alone.
+          if (reference.trim()) setResult(await verifyDocument(reference, code))
+          else setPrinted((await api('GET', '/api/prints/verify', { query: { code } })) as PaperPrint | null)
         } catch (err) {
           setError(messageOf(err))
         }
       }}
       action={
-        <Button type="submit" size="sm" disabled={!reference.trim() || !code.trim()}>
+        <Button type="submit" size="sm" disabled={!code.trim()}>
           {m["verify.check"]()}
         </Button>
       }
@@ -49,6 +56,19 @@ export function VerifyCard() {
         <p role="status" className={result.result === 'genuine' ? 'text-emerald-700 dark:text-emerald-300' : 'not-typeset text-destructive'}>
           {text(result)}
         </p>
+      )}
+      <p className="text-xs text-muted-foreground">{m["verify.paper_hint"]()}</p>
+      {printed === null && <p role="status" className="not-typeset text-destructive">{m["verify.not_found"]()}</p>}
+      {printed && (
+        <div className="flex flex-col gap-2">
+          <p role="status" className="text-emerald-700 dark:text-emerald-300">
+            {m["verify.paper_genuine"]({ by: printed.printedBy ?? m["verify.someone"](), date: formatDay(printed.printedAt) })}
+          </p>
+          <article className="paper w-full p-6 font-serif text-sm leading-relaxed whitespace-pre-wrap">
+            <p className="mb-3 text-center font-semibold uppercase">{printed.title}</p>
+            {printed.body}
+          </article>
+        </div>
       )}
       {error && <p role="alert" className="not-typeset text-destructive">{error}</p>}
     </SettingsCard>

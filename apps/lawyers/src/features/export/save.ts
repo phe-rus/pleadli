@@ -1,10 +1,12 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
 
-export type ExportKind = 'pdf' | 'docx' | 'zip' | 'json' | 'png' | 'jpg' | 'webp'
+export type ExportKind = 'pdf' | 'docx' | 'doc' | 'csv' | 'zip' | 'json' | 'png' | 'jpg' | 'webp'
 
 const TYPES: Record<ExportKind, { name: string; mime: string }> = {
   pdf: { name: 'PDF', mime: 'application/pdf' },
   docx: { name: 'Word document', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+  doc: { name: 'Word document', mime: 'application/msword' },
+  csv: { name: 'CSV', mime: 'text/csv' },
   zip: { name: 'ZIP archive', mime: 'application/zip' },
   json: { name: 'JSON', mime: 'application/json' },
   png: { name: 'PNG image', mime: 'image/png' },

@@ -43,6 +43,8 @@ export const matterSchema = z.object({
   offence: z.string().nullable(),
   engagement: z.string(),
   appointedOn: z.number().nullable(),
+  remandedOn: z.number().nullable().catch(null),
+  committedOn: z.number().nullable().catch(null),
   matterType: z.string(),
   stage: z.string(),
   status: z.string(),

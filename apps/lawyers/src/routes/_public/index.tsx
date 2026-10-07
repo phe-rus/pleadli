@@ -1,3 +1,6 @@
+import { formatDay, formatTime, formatWeekday } from '@/lib/dates'
+import { getLocale } from '@/paraglide/runtime'
+import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { AlertBanner } from '@/components/alert-banner'
 import { Sparkline } from '@/components/charts/sparkline'
@@ -9,13 +12,11 @@ import { PracticeDeadlines } from '@/features/clocks'
 import { HearingActions, purposeLabel, reasonLabel, type DiaryRow } from '@/features/hearings'
 import { MatterForm } from '@/features/matters'
 import { overviewOptions, useOverview, type Attention } from '@/features/overview'
-import { plural } from '@/lib/present'
 import { weeklyBuckets } from '@/lib/weekly-buckets'
 import { AlarmClockIcon, CalendarCheckOut01Icon, FolderViewIcon, LegalDocument01Icon } from '@hugeicons/core-free-icons'
 import { Badge } from '@pleadli/ui/badge'
 import { Card, CardContent } from '@pleadli/ui/card'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
 import { useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/')({
@@ -31,15 +32,15 @@ function describe(item: Attention) {
   const at = item.at
   switch (item.kind) {
     case 'hearing_not_closed':
-      return { tone: 'urgent' as const, tag: 'Not closed', text: `The hearing of ${at ? format(at, 'PP') : 'an earlier date'} was never closed. Record that you attended, or that it was adjourned, missed or cancelled.` }
+      return { tone: 'urgent' as const, tag: m["today.att.not_closed"](), text: m["today.att.not_closed_text"]({ date: at ? formatDay(at) : m["today.att.earlier_date"]() }) }
     case 'no_hearing':
-      return { tone: 'open' as const, tag: 'No hearing listed', text: `Nothing is in the diary.${at ? ` The last hearing was on ${format(at, 'PP')}.` : ''}` }
+      return { tone: 'open' as const, tag: m["today.no_hearing_listed"](), text: `${m["today.att.no_hearing_text"]()}${at ? ` ${m["today.att.last_hearing"]({ date: formatDay(at) })}` : ''}` }
     case 'task_overdue':
-      return { tone: 'urgent' as const, tag: 'Overdue', text: `${item.detail ?? 'A task'} was due ${at ? format(at, 'PP') : 'earlier'}.` }
+      return { tone: 'urgent' as const, tag: m["today.att.overdue"](), text: m["today.att.was_due"]({ task: item.detail ?? m["today.att.a_task"](), date: at ? formatDay(at) : m["today.att.earlier_date"]() }) }
     case 'task_soon':
-      return { tone: 'open' as const, tag: 'Due soon', text: `${item.detail ?? 'A task'} is due ${at ? format(at, 'EEE d MMM') : 'soon'}.` }
+      return { tone: 'open' as const, tag: m["today.att.due_soon"](), text: m["today.att.is_due"]({ task: item.detail ?? m["today.att.a_task"](), date: at ? formatWeekday(at) : '' }) }
     case 'plea_unconfirmed':
-      return { tone: 'open' as const, tag: 'Plea agreed', text: `An agreement was reached${at ? ` and signed on ${format(at, 'PP')}` : ''} and is not yet confirmed before the court.` }
+      return { tone: 'open' as const, tag: m["today.att.plea_agreed"](), text: at ? m["today.att.plea_signed_text"]({ date: formatDay(at) }) : m["today.att.plea_text"]() }
   }
 }
 
@@ -52,19 +53,19 @@ function HearingLine({ row }: { row: DiaryRow }) {
       aligned
       title={
         <>
-          {format(row.at, 'HH:mm')}{' '}
+          {formatTime(row.at)}{' '}
           <Link to="/matters/$matterId" params={{ matterId: row.matterId }} className="text-foreground">
             {row.courtNumber ? `${row.courtNumber}, ` : ''}
             {row.matterTitle}
           </Link>
         </>
       }
-      summary={`${purposeLabel(row.purpose)}${row.courtroom ? `, ${row.courtroom}` : ''}. ${row.clientName}${remanded ? ', on remand' : ''}.`}
+      summary={`${purposeLabel(row.purpose)}${row.courtroom ? `, ${row.courtroom}` : ''}. ${row.clientName}${remanded ? `, ${m["today.on_remand"]()}` : ''}.`}
       trailing={
         row.status === 'scheduled' ? (
           <HearingActions hearing={row} matterId={row.matterId} />
         ) : (
-          <Tag tone={row.status === 'attended' ? 'done' : row.status === 'missed' ? 'urgent' : 'waiting'}>{row.status === 'attended' ? 'Attended' : row.status === 'missed' ? 'Missed' : 'Adjourned'}</Tag>
+          <Tag tone={row.status === 'attended' ? 'done' : row.status === 'missed' ? 'urgent' : 'waiting'}>{row.status === 'attended' ? m["today.attended"]() : row.status === 'missed' ? m["today.missed"]() : m["today.adjourned"]()}</Tag>
         )
       }
     />
@@ -84,23 +85,23 @@ function RouteComponent() {
   return (
     <article className="page">
       {urgent.length > 0 && (
-        <AlertBanner tone="urgent" title="Left open" action={<Link to="/tasks" className={openLink}>Tasks</Link>}>
-          {plural(urgent.length, 'item')} past a day that is fixed: a hearing not closed, or a task overdue.
+        <AlertBanner tone="urgent" title={m["today.left_open"]()} action={<Link to="/tasks" className={openLink}>{m["today.tasks"]()}</Link>}>
+          {m["today.left_open_body"]({ count: String(urgent.length) })}
         </AlertBanner>
       )}
       {counts.noHearing > 0 && (
-        <AlertBanner tone="attention" title="No hearing listed" action={<Link to="/matters" search={{ view: 'no_hearing' }} className={openLink}>Open the list</Link>}>
-          {plural(counts.noHearing, 'open matter')} with nothing in the diary.
+        <AlertBanner tone="attention" title={m["today.no_hearing_listed"]()} action={<Link to="/matters" search={{ view: 'no_hearing' }} className={openLink}>{m["today.open_list"]()}</Link>}>
+          {m["today.no_hearing_body"]({ count: String(counts.noHearing) })}
         </AlertBanner>
       )}
 
       <header className="page-header">
         <div>
-          <h1>Today</h1>
-          <p>{format(new Date(), 'EEEE d MMMM yyyy')}. What is in your diary, what is due, and what has been left open.</p>
+          <h1>{m["today.title"]()}</h1>
+          <p>{new Intl.DateTimeFormat(getLocale(), { dateStyle: 'full' }).format(new Date())}. {m["today.lead"]()}</p>
         </div>
         <div className="page-actions">
-          <PanelButton label="Open a matter" title="Open a matter" description="A client, and the matter you are acting in for them." variant="default">
+          <PanelButton label={m["today.open_matter"]()} title={m["today.open_matter"]()} description={m["today.open_matter_description"]()} variant="default">
             {({ close, setDirty }) => <MatterForm onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>
@@ -108,23 +109,23 @@ function RouteComponent() {
 
       <section aria-label="Figures" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile
-          label="Hearings today"
+          label={m["today.hearings_today"]()}
           icon={CalendarCheckOut01Icon}
           tint="primary"
           value={counts.hearingsToday}
           meta={counts.notClosed > 0 && <Badge variant="destructive">{counts.notClosed} not closed</Badge>}
-          caption={counts.hearingsToday === 0 ? 'Nothing is in the diary for today' : 'In your diary for today'}
+          caption={counts.hearingsToday === 0 ? m["today.nothing_today"]() : m["today.in_diary_today"]()}
         />
-        <StatTile label="Open matters" icon={FolderViewIcon} tint="emerald" value={counts.openMatters} meta={<Badge variant="secondary">{counts.noHearing} with no hearing</Badge>} caption="Matters you are acting in" />
+        <StatTile label={m["today.open_matters"]()} icon={FolderViewIcon} tint="emerald" value={counts.openMatters} meta={<Badge variant="secondary">{m["today.with_no_hearing"]({ count: String(counts.noHearing) })}</Badge>} caption={m["today.matters_acting"]()} />
         <StatTile
-          label="Tasks"
+          label={m["today.tasks"]()}
           icon={AlarmClockIcon}
           tint={counts.tasksOverdue > 0 ? 'rose' : 'amber'}
           value={counts.tasksOpen}
-          meta={<Badge variant={counts.tasksOverdue > 0 ? 'destructive' : 'secondary'}>{counts.tasksOverdue > 0 ? `${counts.tasksOverdue} overdue` : 'None overdue'}</Badge>}
-          caption="Open tasks, yours and the state-funded scheme's"
+          meta={<Badge variant={counts.tasksOverdue > 0 ? 'destructive' : 'secondary'}>{counts.tasksOverdue > 0 ? m["today.overdue_count"]({ count: String(counts.tasksOverdue) }) : m["today.none_overdue"]()}</Badge>}
+          caption={m["today.tasks_caption"]()}
         />
-        <StatTile label="Drafts" icon={LegalDocument01Icon} tint="amber" value={counts.draftDocuments} meta={<Badge variant="secondary">Not filed</Badge>} caption="Documents drafted and not yet filed" />
+        <StatTile label={m["today.drafts"]()} icon={LegalDocument01Icon} tint="amber" value={counts.draftDocuments} meta={<Badge variant="secondary">{m["today.not_filed"]()}</Badge>} caption={m["today.drafts_caption"]()} />
       </section>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -133,19 +134,19 @@ function RouteComponent() {
 
           <section aria-labelledby="listed" className="page-section">
             <div className="section-head">
-              <h2 id="listed">In court today</h2>
+              <h2 id="listed">{m["today.in_court"]()}</h2>
               <Link to="/diary" className={openLink}>Diary</Link>
             </div>
-            {hearings.length === 0 ? <EmptyNote>Nothing is in the diary for today.</EmptyNote> : <RowList>{hearings.map((h) => <HearingLine key={h.id} row={h} />)}</RowList>}
+            {hearings.length === 0 ? <EmptyNote>{m["today.nothing_today_full"]()}</EmptyNote> : <RowList>{hearings.map((h) => <HearingLine key={h.id} row={h} />)}</RowList>}
           </section>
 
           <section aria-labelledby="attention" className="page-section">
             <div className="section-head">
-              <h2 id="attention">Needs attention</h2>
-              {attention.length > 0 && <Tag tone="open">{plural(attention.length, 'item')}</Tag>}
+              <h2 id="attention">{m["today.attention"]()}</h2>
+              {attention.length > 0 && <Tag tone="open">{m["today.items_count"]({ count: String(attention.length) })}</Tag>}
             </div>
             {attention.length === 0 ? (
-              <EmptyNote>Nothing needs attention. Every hearing is closed, every open matter has a hearing listed, and no task is due.</EmptyNote>
+              <EmptyNote>{m["today.nothing_attention"]()}</EmptyNote>
             ) : (
               <RowList>
                 {attention.map((item, index) => {
@@ -154,7 +155,7 @@ function RouteComponent() {
                     <Row
                       key={`${item.kind}:${item.refId ?? item.matterId}:${index}`}
                       marker={d.tone}
-                      title={item.matterTitle ? `${item.courtNumber ? `${item.courtNumber}, ` : ''}${item.matterTitle}` : 'A task with no matter'}
+                      title={item.matterTitle ? `${item.courtNumber ? `${item.courtNumber}, ` : ''}${item.matterTitle}` : m["today.task_no_matter"]()}
                       summary={d.text}
                       trailing={
                         <>
@@ -174,16 +175,16 @@ function RouteComponent() {
 
         <div className="flex flex-col gap-8">
           <section aria-labelledby="upcoming" className="page-section">
-            <h2 id="upcoming">The week ahead</h2>
+            <h2 id="upcoming">{m["today.week_ahead"]()}</h2>
             {upcoming.length === 0 ? (
-              <EmptyNote>Nothing is listed for the next seven days.</EmptyNote>
+              <EmptyNote>{m["today.nothing_week"]()}</EmptyNote>
             ) : (
               <RowList>
                 {upcoming.map((h) => (
                   <Row
                     key={h.id}
                     aligned
-                    title={`${format(h.at, 'EEE d MMM, HH:mm')}`}
+                    title={`${formatWeekday(h.at)}, ${formatTime(h.at)}`}
                     summary={
                       <Link to="/matters/$matterId" params={{ matterId: h.matterId }} className="text-foreground">
                         {h.courtNumber ? `${h.courtNumber}, ` : ''}
@@ -197,11 +198,11 @@ function RouteComponent() {
           </section>
 
           <section aria-labelledby="trend" className="page-section">
-            <h2 id="trend">Adjournments, last 8 weeks</h2>
+            <h2 id="trend">{m["today.trend"]()}</h2>
             <Card className="p-0">
               <CardContent className="p-0">
                 <div className="flex justify-between p-5">
-                  <p className="tabular-nums">{plural(today.recentAdjournments.length, 'adjournment')}</p>
+                  <p className="tabular-nums">{m["today.adjournments_count"]({ count: String(today.recentAdjournments.length) })}</p>
                   <p className="tabular-nums">Peak: {peak}/wk</p>
                 </div>
                 <Sparkline data={buckets} />
@@ -210,9 +211,9 @@ function RouteComponent() {
           </section>
 
           <section aria-labelledby="reasons" className="page-section">
-            <h2 id="reasons">Why hearings were adjourned</h2>
+            <h2 id="reasons">{m["today.reasons"]()}</h2>
             {today.reasonCounts.length === 0 ? (
-              <EmptyNote>No hearing has been adjourned in this period.</EmptyNote>
+              <EmptyNote>{m["today.no_adjournments"]()}</EmptyNote>
             ) : (
               <RowList>
                 {today.reasonCounts.map((r) => (
