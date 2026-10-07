@@ -1019,7 +1019,17 @@
     "others_need_new": "Wengine wote wanahitaji PIN mpya kutoka kwako kwenye Watu kabla ya kuingia.",
     "title": "Kuingia",
     "your_new_password": "Nenosiri lako jipya",
-    "your_new_pin": "PIN yako mpya"
+    "your_new_pin": "PIN yako mpya",
+    "require": "Omba kuingia programu inapofunguliwa",
+    "method": "Ingia kwa",
+    "method_pin": "PIN",
+    "method_full": "Nenosiri na msimbo wa simu",
+    "turn_on": "Washa",
+    "turn_off": "Zima",
+    "apply": "Tumia",
+    "cancel": "Ghairi",
+    "away": "Ukiwa mbali",
+    "sign_out_now": "Toka sasa"
   },
   "referral": {
     "resubmission": {
@@ -1610,7 +1620,7 @@
       "key_removed": "Ufunguo umeondolewa",
       "remove_key": "Ondoa ufunguo",
       "model": "Modeli",
-      "point_sent_any": "Maandishi ya jalada, na skani inazosoma, hutumwa kwa mtoa huduma uliyemchagua hapa chini. Hakuna kingine kinachoondoka kwenye kompyuta hii.",
+      "point_sent_any": "Maandishi ya jalada, na skani inazosoma, hutumwa kwa huduma iliyochaguliwa. Hakuna kingine kinachoondoka kwenye kompyuta hii.",
       "provider_title": "Mtoa huduma",
       "provider_body": "Chagua mmoja na ubandike ufunguo wake. Funguo huhifadhiwa kwa usalama kwenye kompyuta hii na hazionyeshwi tena.",
       "provider_changed": "Msaidizi sasa anatumia {name}",
@@ -1624,7 +1634,14 @@
       "model_fixed": "Msaidizi atatumia {model} kila mara",
       "auto_first": "Otomatiki: ya kwanza",
       "auto_backup": "Otomatiki: akiba {n}",
-      "in_use": "Inatumika"
+      "in_use": "Inatumika",
+      "model_in_chat": "Chagua modeli ndani ya Msaidizi wenyewe. Kiotomatiki, modeli inayopendekezwa na mtoa huduma, ndiyo chaguo-msingi.",
+      "service": "Huduma",
+      "key_label": "Ufunguo",
+      "change_key": "Badilisha",
+      "allow_to": "Ruhusu karatasi za jalada kwenda kwa {name}",
+      "allow": "Ruhusu",
+      "cancel": "Ghairi"
     },
     "ask": {
       "missing": "Nini kinakosekana kwenye jalada hili?",
@@ -1654,6 +1671,40 @@
       "anthropic": "Claude, kutoka Anthropic. Hodari kwa kusoma nyaraka ndefu za kisheria.",
       "other_label": "Seva yako",
       "other": "Modeli kwenye kompyuta hii (Ollama) au seva ya serikali."
+    },
+    "model": {
+      "label": "Modeli",
+      "auto": "Kiotomatiki (inapendekezwa)",
+      "auto_with": "Kiotomatiki · {model}"
+    },
+    "local": {
+      "about": "Modeli huria ya bure kutoka Google inayofanya kazi hapa. Hakuna kinachotoka kwenye kompyuta hii.",
+      "allow": "Ruhusu Msaidizi kusoma karatasi za jalada kwenye kompyuta hii",
+      "download": "Pakua",
+      "downloaded": "Imepakuliwa",
+      "downloading": "Inapakua {model}…",
+      "engine": "Ollama",
+      "failed": "Imeshindikana",
+      "getting_installer": "Inapata kisakinishi cha Ollama kutoka ollama.com…",
+      "in_use": "Imepakuliwa, na Msaidizi anaitumia.",
+      "install": "Sakinisha",
+      "installed_not_running": "Imesakinishwa, haifanyi kazi.",
+      "installer_open": "Kisakinishi kimefunguka. Kimalize, kisha urudi hapa.",
+      "job_failed": "Haikukamilika.",
+      "memory": "Kompyuta hii ina kumbukumbu ya GB {memory}: {model} (★) inaifaa.",
+      "model": "Modeli",
+      "not_installed": "Programu ya bure inayoendesha modeli. Isakinishe mara moja.",
+      "note": "Bure na faragha: karatasi zinasomwa kwenye kompyuta hii na haziendi popote. Majibu huja polepole kuliko huduma ya mtandaoni, na si makini sana kwa karatasi ndefu.",
+      "now_using": "Msaidizi sasa anatumia {model}",
+      "of": "GB {done} kati ya {total}",
+      "ready": "Tayari",
+      "running": "Inafanya kazi (toleo {version}). Inaendesha modeli kwenye kompyuta hii.",
+      "service": "Kwenye kompyuta hii (Gemma, faragha)",
+      "size": "Takriban GB {size} kupakua, mara moja.",
+      "start": "Anzisha",
+      "title": "Kwenye kompyuta hii",
+      "use": "Itumie",
+      "verifying": "Inakagua upakuaji…"
     }
   },
   "board": {
@@ -2204,5 +2255,24 @@
     "edit_description": "Badilisha kilichoandikwa.",
     "empty": "Bado hakuna aliyeandikwa.",
     "search": "Tafuta watu…"
+  },
+  "update": {
+    "about": "Toleo lililo kwenye kompyuta hii, na kupata linalofuata.",
+    "auto": "Pakua masasisho kiotomatiki",
+    "auto_hint": "Masasisho yamesainiwa na Pleadli na hukaguliwa kabla ya kusakinishwa. Programu inaanza upya pale tu unaposema.",
+    "available": "Toleo {version} linapatikana",
+    "browser": "Masasisho huja na programu ya kompyuta. Kwenye kivinjari hakuna cha kusasisha.",
+    "check": "Kagua sasa",
+    "checked_at": "Ilikaguliwa mara ya mwisho saa {time}.",
+    "checking": "Inatafuta sasisho…",
+    "current": "Pleadli DPP iko katika toleo jipya",
+    "downloading": "Inapakua sasisho… {percent}%",
+    "failed": "Sasisho halikuweza kukaguliwa au kusakinishwa",
+    "get": "Sasisha sasa",
+    "not_checked": "Bado halijakaguliwa",
+    "ready": "Toleo {version} liko tayari. Anzisha upya kukamilisha.",
+    "restart": "Anzisha upya",
+    "title": "Sasisho la programu",
+    "version": "Toleo"
   }
 }

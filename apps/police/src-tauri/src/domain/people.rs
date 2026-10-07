@@ -256,6 +256,15 @@ pub struct PersonProfile {
     pub charge_sheets: Vec<ChargeSheet>,
     pub vehicles: Vec<Vehicle>,
     pub attachments: Vec<Attachment>,
+    /// What the person is in each of their cases (suspect, complainant...).
+    pub case_roles: Vec<CaseRole>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct CaseRole {
+    pub case_id: String,
+    pub role: String,
 }
 
 pub async fn get_person_profile(pool: &SqlitePool, id: &str) -> Result<Option<PersonProfile>, sqlx::Error> {
@@ -273,6 +282,10 @@ pub async fn get_person_profile(pool: &SqlitePool, id: &str) -> Result<Option<Pe
     let charge_sheets = charge_sheets::list_for_person(pool, id).await?;
     let vehicles = vehicles::list_for_person(pool, id).await?;
     let attachments = attachments::list_attachments(pool, "person", id).await?;
+    let case_roles = sqlx::query_as::<_, CaseRole>("SELECT case_id, role FROM case_people WHERE person_id = ?")
+        .bind(id)
+        .fetch_all(pool)
+        .await?;
 
     Ok(Some(PersonProfile {
         person,
@@ -286,6 +299,7 @@ pub async fn get_person_profile(pool: &SqlitePool, id: &str) -> Result<Option<Pe
         charge_sheets,
         vehicles,
         attachments,
+        case_roles,
     }))
 }
 

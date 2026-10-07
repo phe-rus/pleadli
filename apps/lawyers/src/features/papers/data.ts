@@ -1,3 +1,4 @@
+import { assistModel } from '@/features/assist/model-choice'
 import { api, seg } from '@/lib/api'
 import { getLocale } from '@/paraglide/runtime'
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query'
@@ -54,4 +55,4 @@ export const useAddPaper = () =>
 export const useEditPaper = () => useMutation({ mutationFn: async (v: { id: string; input: PaperEdit }) => paperSchema.parse(await api('PUT', `/api/papers/${seg(v.id)}`, { body: v.input })) })
 export const useRemovePaper = () => useMutation({ mutationFn: (id: string) => api('DELETE', `/api/papers/${seg(id)}`) })
 export const useReadPapers = () =>
-  useMutation({ mutationFn: async (v: { matterId: string; paperIds: string[] }) => readSchema.parse(await api('POST', `/api/matters/${seg(v.matterId)}/papers/read`, { body: { paperIds: v.paperIds, language: getLocale() } })) })
+  useMutation({ mutationFn: async (v: { matterId: string; paperIds: string[] }) => readSchema.parse(await api('POST', `/api/matters/${seg(v.matterId)}/papers/read`, { body: { paperIds: v.paperIds, language: getLocale(), model: assistModel() || undefined } })) })

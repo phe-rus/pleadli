@@ -985,10 +985,12 @@ struct BriefRequest {
     file_id: String,
     #[serde(default)]
     context: CountryContext,
+    #[serde(default)]
+    model: Option<String>,
 }
 
 async fn create_brief(State(s): State<AppState>, Json(r): Json<BriefRequest>) -> ApiResult<assist::Brief> {
-    Ok(Json(assist::brief(&s.pool, &r.file_id, &r.context, actor_name(&s).as_deref()).await?))
+    Ok(Json(assist::brief(&s.pool, &r.file_id, &r.context, r.model.as_deref(), actor_name(&s).as_deref()).await?))
 }
 
 async fn latest_brief(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Option<assist::Brief>> {
@@ -1002,14 +1004,52 @@ struct ArrangeRequest {
     attachment_ids: Vec<String>,
     #[serde(default)]
     context: CountryContext,
+    #[serde(default)]
+    model: Option<String>,
 }
 
 async fn arrange_scans(State(s): State<AppState>, Json(r): Json<ArrangeRequest>) -> ApiResult<assist::Arranged> {
-    Ok(Json(assist::arrange(&s.pool, &s.vault_root, &r.file_id, &r.attachment_ids, &r.context, actor_name(&s).as_deref()).await?))
+    Ok(Json(assist::arrange(&s.pool, &s.vault_root, &r.file_id, &r.attachment_ids, &r.context, r.model.as_deref(), actor_name(&s).as_deref()).await?))
 }
 
 async fn assist_log(State(s): State<AppState>) -> ApiResult<Vec<assist::LogEntry>> {
     Ok(Json(assist::recent_log(&s.pool, 50).await?))
+}
+
+// ---------------------------------------------------------------- Assist on this computer
+
+use pleadli_node_core::local_ai;
+
+fn local_err(e: pleadli_node_core::ai::AiError) -> ApiError {
+    DomainError::Invalid(e.0).into()
+}
+
+async fn local_status(State(s): State<AppState>) -> ApiResult<local_ai::LocalStatus> {
+    let _ = &s;
+    Ok(Json(local_ai::status().await))
+}
+
+async fn local_install(State(s): State<AppState>) -> ApiResult<local_ai::LocalStatus> {
+    require_admin(&s)?;
+    local_ai::install().map_err(local_err)?;
+    Ok(Json(local_ai::status().await))
+}
+
+async fn local_start(State(s): State<AppState>) -> ApiResult<local_ai::LocalStatus> {
+    let _ = &s;
+    local_ai::start().await.map_err(local_err)?;
+    Ok(Json(local_ai::status().await))
+}
+
+#[derive(Deserialize)]
+struct LocalPull {
+    model: String,
+}
+
+async fn local_pull(State(s): State<AppState>, Json(input): Json<LocalPull>) -> ApiResult<local_ai::LocalStatus> {
+    require_admin(&s)?;
+    local_ai::pull(&input.model).map_err(local_err)?;
+    Ok(Json(local_ai::status().await))
 }
 
 async fn assist_models(State(s): State<AppState>) -> ApiResult<Vec<crate::domain::ai::ModelInfo>> {
@@ -1280,6 +1320,10 @@ pub fn router(state: AppState) -> Router {
         .route("/assist/arrange", post(arrange_scans))
         .route("/assist/log", get(assist_log))
         .route("/assist/models", get(assist_models))
+        .route("/assist/local", get(local_status))
+        .route("/assist/local/install", post(local_install))
+        .route("/assist/local/start", post(local_start))
+        .route("/assist/local/pull", post(local_pull))
         .route("/assist/chat", post(assist_chat))
         .route("/cases/board", get(case_board))
         .route("/prosecution-files/{id}/stage", axum::routing::put(set_file_stage))

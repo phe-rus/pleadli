@@ -76,8 +76,13 @@ pub async fn startup(data_dir: &Path, vault_root: PathBuf) -> Result<Db, Startup
         .await
         .map_err(|e| StartupError::Fatal(format!("could not normalise vault paths: {e}")))?;
 
+    // Sample records for the everyday development copy only: a test
+    // installation in its own folder (`dev_data_dir`) starts empty, as a real
+    // one does, so what it shows is only what was entered into it.
     #[cfg(debug_assertions)]
-    seed_debug_data(&pool, &vault_root).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
+    if crate::dev_data_dir().is_none() {
+        seed_debug_data(&pool, &vault_root).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
+    }
 
     Ok(Db { pool, vault_root })
 }

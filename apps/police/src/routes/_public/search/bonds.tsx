@@ -1,168 +1,117 @@
 import * as m from '@/paraglide/messages'
-import { Createpanel } from '@/components/create-panel'
+import { PanelButton } from '@/components/add-panel'
 import { BondForm, bondPersonName, bondsOptions, bondStatusLabel, useBonds, type Bond } from '@/features/bonds'
-import { AddCircleIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
-import { Button } from '@pleadli/ui/button'
-import { cn } from '@pleadli/ui/lib/utils'
-import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
-import { createFileRoute } from '@tanstack/react-router'
+import { RecordList } from '@/features/paper/record-list'
+import { RecordPaper } from '@/features/paper/record-paper'
+import { PersonIdentity } from '@/features/people'
 import { format } from '@/lib/date'
-import { useMemo, useState } from 'react'
+import { AlarmClockIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { PaperField, SignatureLine } from '@pleadli/paper'
+import { Segmented } from '@pleadli/ui/segmented'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+
+type View = 'active' | 'all'
 
 export const Route = createFileRoute('/_public/search/bonds')({
-  validateSearch: (search: Record<string, unknown>): { open?: string } =>
-    typeof search.open === 'string' ? { open: search.open } : {},
+  validateSearch: (search: Record<string, unknown>): { open?: string; view?: View } => ({
+    ...(typeof search.open === 'string' ? { open: search.open } : {}),
+    ...(search.view === 'all' ? { view: 'all' as const } : {}),
+  }),
   loader: async ({ context }) => {
     await context.queryClient.query({ ...bondsOptions(''), staleTime: 'static' })
   },
   component: RouteComponent,
 })
 
-function RouteComponent() {
-  const { open: openId } = Route.useSearch()
-  const [addOpen, setAddOpen] = useState(false)
-  const [addDirty, setAddDirty] = useState(false)
-  const [editing, setEditing] = useState<Bond | null>(null)
-  const [editDirty, setEditDirty] = useState(false)
-  const { data: bonds } = useBonds('')
-  useDeepLinkRecord(bonds, openId, setEditing)
+/** The bond as the form the person signs (PF 18): who is released, on what
+ * terms, who stands surety, and when they must report. */
+function BondPaper({ bond }: { bond: Bond }) {
+  const officer = [bond.officerRank, bond.officerName].filter(Boolean).join(' ')
+  return (
+    <RecordPaper
+      entityType="bond"
+      entityId={bond.id}
+      reference={bond.lockUpSerialNumber ?? bond.caseReference}
+      title={m["bonds_page.paper_title"]()}
+      details={[
+        { label: m["custody_page.person"](), value: bondPersonName(bond) },
+        { label: m["bonds.granted_at"](), value: format(bond.grantedAt, 'PPp') },
+        { label: m["col.status"](), value: bondStatusLabel(bond.status) },
+        ...(bond.caseReference ? [{ label: m["nav.cases"](), value: bond.caseReference, copy: bond.caseReference }] : []),
+        ...(bond.lockUpSerialNumber ? [{ label: m["bonds.lock_up_serial"](), value: bond.lockUpSerialNumber }] : []),
+      ]}
+      events={[{ at: bond.grantedAt, label: m["bonds.granted"](), by: officer || null }]}
+      edit={(done) => <BondForm key={bond.id} bond={bond} onSuccess={done} />}
+    >
+      <PersonIdentity personId={bond.personId} />
+      <section className="mb-5 flex flex-col gap-0.5">
+        <PaperField label={m["bonds.granted_at"]()}>{format(bond.grantedAt, 'PPPPp')}</PaperField>
+        {bond.caseReference && <PaperField label={m["nav.cases"]()}>{bond.caseReference}</PaperField>}
+        {bond.lockUpSerialNumber && <PaperField label={m["bonds.lock_up_serial"]()}>{bond.lockUpSerialNumber}</PaperField>}
+        <PaperField label={m["bonds_page.surety"]()}>{bond.withSurety ? [bond.suretyName, bond.suretyContact].filter(Boolean).join(', ') : m["bonds_page.own_recognisance"]()}</PaperField>
+        {bond.reportingSchedule && <PaperField label={m["bonds_page.reporting"]()}>{bond.reportingSchedule}</PaperField>}
+        <PaperField label={m["col.status"]()}>{bondStatusLabel(bond.status)}</PaperField>
+      </section>
+      {bond.notes && <p className="whitespace-pre-wrap">{bond.notes}</p>}
+      <section className="mt-12 flex flex-wrap justify-between gap-8">
+        <SignatureLine name={bondPersonName(bond)} caption={m["bonds_page.released_person"]()} />
+        {bond.withSurety && <SignatureLine name={bond.suretyName} caption={m["bonds_page.surety"]()} />}
+        <SignatureLine name={officer || null} caption={m["bonds.granting_officer"]()} />
+      </section>
+    </RecordPaper>
+  )
+}
 
-  const columns: DataTableColumnDef<Bond>[] = useMemo(() => {
-    return [
-      selectColumn(),
-      {
-        accessorKey: 'id',
-        header: m["col.id"](),
-        cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setEditing(row.original)}
-          >
-            {row.original.id}
-          </span>
-        ),
-      },
-      { accessorKey: 'personId', header: m["col.person_id"]() },
-      {
-        id: 'person',
-        accessorFn: (row) => bondPersonName(row),
-        header: m["col.person"](),
-      },
-      { accessorKey: 'personFirstName', header: m["col.first_name"]() },
-      { accessorKey: 'personLastName', header: m["col.last_name"]() },
-      {
-        accessorKey: 'personOtherNames',
-        header: m["col.other_names"](),
-        cell: ({ row }) => row.original.personOtherNames ?? '·',
-      },
-      { accessorKey: 'custodyId', header: m["col.custody_id"](), cell: ({ row }) => row.original.custodyId ?? '·' },
-      { accessorKey: 'caseId', header: m["col.case_id"](), cell: ({ row }) => row.original.caseId ?? '·' },
-      {
-        accessorKey: 'caseReference',
-        header: m["col.case"](),
-        cell: ({ row }) => row.original.caseReference ?? '·',
-      },
-      {
-        accessorKey: 'lockUpSerialNumber',
-        header: m["col.lock_up_serial_no"](),
-        cell: ({ row }) => row.original.lockUpSerialNumber ?? '·',
-      },
-      {
-        accessorKey: 'withSurety',
-        header: m["col.surety"](),
-        cell: ({ row }) => (row.original.withSurety ? row.original.suretyName ?? m["common.yes"]() : m["common.none"]()),
-      },
-      { accessorKey: 'suretyName', header: m["col.surety_name"](), cell: ({ row }) => row.original.suretyName ?? '·' },
-      {
-        accessorKey: 'suretyContact',
-        header: m["col.surety_contact"](),
-        cell: ({ row }) => row.original.suretyContact ?? '·',
-      },
-      {
-        accessorKey: 'reportingSchedule',
-        header: m["col.reporting"](),
-        cell: ({ row }) => row.original.reportingSchedule ?? '·',
-      },
-      {
-        id: 'grantingOfficer',
-        accessorFn: (row) => [row.officerRank, row.officerName].filter(Boolean).join(' '),
-        header: m["col.granting_officer"](),
-        cell: ({ getValue }) => getValue<string>() || '·',
-      },
-      { accessorKey: 'officerName', header: m["col.officer_name"](), cell: ({ row }) => row.original.officerName ?? '·' },
-      { accessorKey: 'officerRank', header: m["col.officer_rank"](), cell: ({ row }) => row.original.officerRank ?? '·' },
-      {
-        accessorKey: 'status',
-        header: m["col.status"](),
-        cell: ({ row }) => bondStatusLabel(row.original.status),
-      },
-      {
-        accessorKey: 'grantedAt',
-        header: m["col.granted"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
-      {
-        accessorKey: 'createdAt',
-        header: m["col.recorded"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-    ]
-  }, [])
+/** Police bonds: who is out on one now, and every bond before. */
+function RouteComponent() {
+  const { open, view = 'active' } = Route.useSearch()
+  const navigate = useNavigate()
+  const { data: bonds } = useBonds('')
+  const shown = view === 'active' ? bonds.filter((b) => b.status === 'active') : bonds
+  const active = bonds.filter((b) => b.status === 'active').length
+  const go = (next: { view?: View; open?: string | null }) => {
+    const v = next.view ?? view
+    const o = next.open === undefined ? open : next.open
+    void navigate({ to: '/search/bonds', search: { ...(v === 'all' ? { view: v } : {}), ...(o ? { open: o } : {}) }, replace: true })
+  }
 
   return (
     <article className="page">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-5">
-            <h1>{m["bonds_page.title"]()}</h1>
-
-            <Createpanel
-              open={addOpen}
-              onOpenChange={setAddOpen}
-              isDirty={addDirty}
-              trigger={
-                <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
-                  {m["bonds.submit"]()}
-                </Button>
-              }
-              headings={{ title: m["bonds.submit"](), description: m["bonds_page.add_desc"]() }}
-            >
-              <BondForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
-            </Createpanel>
-          </div>
-          <p className="md:max-w-sm">{m["bonds_page.lead"]()}</p>
+      <header className="page-header">
+        <div>
+          <h1>{m["nav.bonds_and_sureties"]()}</h1>
+          <p>{active === 1 ? m["bonds_page.active_one"]() : m["bonds_page.active_n"]({ count: active })}</p>
         </div>
-      </section>
-
-      <Createpanel
-        open={editing !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditing(null)
-        }}
-        isDirty={editDirty}
-        headings={{ title: m["bonds_page.edit_title"](), description: m["bonds_page.edit_desc"]() }}
-      >
-        {editing && (
-          <BondForm
-            key={editing.id}
-            bond={editing}
-            onSuccess={() => setEditing(null)}
-            onDirtyChange={setEditDirty}
+        <div className="page-actions">
+          <Segmented
+            label={m["custody_page.view"]()}
+            value={view}
+            onChange={(v) => go({ view: v, open: null })}
+            items={[
+              { value: 'active', label: m["bonds_page.out_on_bond"]() },
+              { value: 'all', label: m["custody_page.all_records"]() },
+            ]}
           />
-        )}
-      </Createpanel>
+          <PanelButton label={m["bonds.submit"]()} title={m["bonds.submit"]()} description={m["bonds_page.add_desc"]()} variant="default">
+            {({ close, setDirty }) => <BondForm onSuccess={close} onDirtyChange={setDirty} />}
+          </PanelButton>
+        </div>
+      </header>
 
-      <DataTable
-        aria-label={m["bonds_page.table"]()}
-        data={bonds}
-        columns={columns}
-        getRowId={(row) => row.id}
-        emptyMessage={m["bonds_page.empty"]()}
+      <RecordList
+        items={shown}
+        date={(b) => b.grantedAt}
+        label={(b) => bondPersonName(b)}
+        detail={(b) => [format(b.grantedAt, 'd MMM yyyy'), b.withSurety ? b.suretyName : m["bonds_page.own_recognisance"](), b.reportingSchedule, view === 'all' ? bondStatusLabel(b.status) : null].filter(Boolean).join(' · ')}
+        searchText={(b) => [bondPersonName(b), b.suretyName ?? '', b.caseReference ?? '', b.lockUpSerialNumber ?? ''].join(' ')}
+        paper={(b) => <BondPaper bond={b} />}
+        windowTitle={(b) => bondPersonName(b)}
+        empty={view === 'active' ? m["bonds_page.none_active"]() : m["bonds_page.empty"]()}
+        emptyIcon={<HugeiconsIcon icon={AlarmClockIcon} />}
         searchPlaceholder={m["bonds_page.search"]()}
+        opened={open ?? null}
+        onOpened={(id) => go({ open: id })}
       />
     </article>
   )

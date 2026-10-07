@@ -1,3 +1,4 @@
+import { PasswordField } from '@pleadli/ui/pin-field'
 import { formatDate } from '@/lib/dates'
 import { productName } from '@/lib/jurisdiction'
 import { Controls } from '@/components/toolbar/controls'
@@ -60,12 +61,9 @@ export function LockScreen({ retryAfter, onUnlocked }: { retryAfter: number; onU
           }
         }}
       >
-        <Input type="password" autoFocus autoComplete="current-password" aria-label={m["security.gate.passphrase"]()} placeholder={m["security.gate.passphrase"]()} value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
-        {error && <p role="alert" className="not-typeset text-destructive">{error}</p>}
-        {!error && retryAfter > 0 && <p role="status">{m["security.gate.retry"]({ seconds: retryAfter })}</p>}
-        <Button type="submit" disabled={busy || passphrase.length === 0}>
-          {m["security.gate.unlock"]()}
-        </Button>
+        <PasswordField autoFocus autoComplete="current-password" aria-label={m["security.gate.passphrase"]()} placeholder={m["security.gate.passphrase"]()} value={passphrase} busy={busy} error={error} onChange={(e) => setPassphrase(e.target.value)} />
+        {error && <p role="alert" className="not-typeset text-center text-[0.8125rem] text-destructive">{error}</p>}
+        {!error && retryAfter > 0 && <p role="status" className="text-center text-[0.8125rem]">{m["security.gate.retry"]({ seconds: retryAfter })}</p>}
       </form>
       <p>{m["security.gate.explainer"]()}</p>
     </Centered>

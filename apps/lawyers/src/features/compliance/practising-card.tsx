@@ -1,4 +1,4 @@
-import { SettingsCard } from '@/components/settings-card'
+import { SettingsCard, SettingsRow } from '@/components/settings-card'
 import { Tag, type Tone } from '@/components/status-tag'
 import { useSessionStatus } from '@/features/installation'
 import { messageOf } from '@/lib/api'
@@ -8,7 +8,7 @@ import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { complianceOptions, useSaveCompliance, type CertificateState } from './data'
 
 const certificateTone: Record<CertificateState, Tone> = { missing: 'planned', valid: 'done', soon: 'open', expired: 'urgent' }
@@ -22,17 +22,6 @@ export function CertificateTag({ state }: { state: CertificateState }) {
 
 const day = (ms: number | null) => (ms ? toIsoDay(ms) : '')
 
-/** The same label, control and hint shape as every other Settings card. */
-function Field({ label, hint, children }: { label: string; hint?: string; children: (id: string) => ReactNode }) {
-  const id = useId()
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id}>{label}</label>
-      {children(id)}
-      {hint && <p className="text-muted-foreground">{hint}</p>}
-    </div>
-  )
-}
 
 /** The signed-in advocate's own practising details. The register checks
  * them, and the Statistics page shows everyone's. */
@@ -91,19 +80,19 @@ export function PractisingCard() {
         </Button>
       }
     >
-      <Field label={m["compliance.number"]()}>{(id) => <Input id={id} value={number} onChange={(e) => setNumber(e.target.value)} />}</Field>
-      <Field label={m["compliance.expires"]()} hint={m["compliance.expires_hint"]()}>
+      <SettingsRow label={m["compliance.number"]()}>{(id) => <Input id={id} value={number} onChange={(e) => setNumber(e.target.value)} />}</SettingsRow>
+      <SettingsRow label={m["compliance.expires"]()} hint={m["compliance.expires_hint"]()}>
         {(id) => <Input id={id} type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />}
-      </Field>
-      <Field label={m["compliance.uls"]()} hint={m["compliance.uls_hint"]()}>
+      </SettingsRow>
+      <SettingsRow label={m["compliance.uls"]()} hint={m["compliance.uls_hint"]()}>
         {(id) => <Input id={id} inputMode="numeric" maxLength={4} placeholder={String(new Date().getFullYear())} value={uls} onChange={(e) => setUls(e.target.value.replace(/\D/g, ''))} />}
-      </Field>
-      <Field label={m["compliance.commissioner"]()} hint={m["compliance.commissioner_hint"]()}>
+      </SettingsRow>
+      <SettingsRow label={m["compliance.commissioner"]()} hint={m["compliance.commissioner_hint"]()}>
         {(id) => <Input id={id} type="date" value={commissioner} onChange={(e) => setCommissioner(e.target.value)} />}
-      </Field>
-      <Field label={m["compliance.notary"]()} hint={m["compliance.notary_hint"]()}>
+      </SettingsRow>
+      <SettingsRow label={m["compliance.notary"]()} hint={m["compliance.notary_hint"]()}>
         {(id) => <Input id={id} type="date" value={notary} onChange={(e) => setNotary(e.target.value)} />}
-      </Field>
+      </SettingsRow>
     </SettingsCard>
   )
 }

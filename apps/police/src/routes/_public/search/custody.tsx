@@ -1,193 +1,204 @@
 import * as m from '@/paraglide/messages'
-import { Createpanel } from '@/components/create-panel'
+import { PanelButton } from '@/components/add-panel'
+import { EmptyNote } from '@/components/planned'
 import {
+  custodyBasisLabel,
   custodyCompliance,
   custodyPersonName,
   custodyRecordsOptions,
-  custodyStatusLabel,
-  CustodyBoard,
   CustodyRecordForm,
+  custodyStatusLabel,
   useCustodyRecords,
   type CustodyRecord,
 } from '@/features/custody'
-import { AddCircleIcon } from '@hugeicons/core-free-icons'
+import { RecordList } from '@/features/paper/record-list'
+import { personProfileOptions, PersonIdentity } from '@/features/people'
+import { PersonAvatar } from '@/components/person-avatar'
+import { useQuery } from '@tanstack/react-query'
+import { PaperWindow, RecordPaper } from '@/features/paper/record-paper'
+import { format, formatDistanceToNowStrict } from '@/lib/date'
+import { CellsIcon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
-import { Badge } from '@pleadli/ui/badge'
-import { Button } from '@pleadli/ui/button'
+import { PaperField, SignatureLine } from '@pleadli/paper'
+import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { cn } from '@pleadli/ui/lib/utils'
-import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
-import { createFileRoute } from '@tanstack/react-router'
-import { format } from '@/lib/date'
-import { useMemo, useState } from 'react'
+import { Segmented } from '@pleadli/ui/segmented'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+
+type View = 'cells' | 'all'
 
 export const Route = createFileRoute('/_public/search/custody')({
-  validateSearch: (search: Record<string, unknown>): { open?: string } =>
-    typeof search.open === 'string' ? { open: search.open } : {},
+  validateSearch: (search: Record<string, unknown>): { open?: string; view?: View } => ({
+    ...(typeof search.open === 'string' ? { open: search.open } : {}),
+    ...(search.view === 'all' ? { view: 'all' as const } : {}),
+  }),
   loader: async ({ context }) => {
     await context.queryClient.query({ ...custodyRecordsOptions(''), staleTime: 'static' })
   },
   component: RouteComponent,
 })
 
-function ComplianceBadge({ record }: { record: CustodyRecord }) {
-  if (record.status !== 'in_custody') return <span>·</span>
-  const compliance = custodyCompliance(record)
-  const hours = Math.abs(compliance.hoursRemaining).toFixed(1)
+/** The person's own headshot beside their name in the cells list. */
+function CellsFace({ personId, name }: { personId: string; name: string }) {
+  const { data: profile } = useQuery(personProfileOptions(personId))
+  return <PersonAvatar name={name} headshotAttachmentId={profile?.person.headshotAttachmentId} size="sm" />
+}
+
+/** Past this many hours before the limit a person is marked as due. */
+const NEAR_HOURS = 6
+
+function remaining(hours: number) {
+  const abs = Math.abs(hours)
+  if (abs < 1) return m["custody.minutes"]({ count: Math.max(1, Math.round(abs * 60)) })
+  if (abs < 48) return Math.round(abs) === 1 ? m["custody.hour_one"]() : m["custody.hours"]({ count: Math.round(abs) })
+  const days = Math.floor(abs / 24)
+  const rest = Math.round(abs - days * 24)
+  const dayText = days === 1 ? m["custody.day_one"]() : m["custody.days"]({ count: days })
+  return rest > 0 ? m["custody.and_hours"]({ days: dayText, hours: rest }) : dayText
+}
+
+/** The custody record as the cells book keeps it, with the time limit worked
+ * out from the arrest (never typed). */
+function CustodyPaper({ record }: { record: CustodyRecord }) {
+  const name = custodyPersonName(record)
+  const limit = custodyCompliance(record)
+  const inCells = record.status === 'in_custody'
   return (
-    <Badge variant={compliance.isOverdue ? 'destructive' : compliance.hoursRemaining < 6 ? 'default' : 'secondary'}>
-      {compliance.isOverdue ? m["common.hours_overdue"]({ hours }) : m["investigation.hours_left"]({ hours })}
-    </Badge>
+    <RecordPaper
+      entityType="custody_record"
+      entityId={record.id}
+      reference={record.caseReference}
+      title={m["custody_page.paper_title"]()}
+      details={[
+        { label: m["custody_page.person"](), value: name },
+        { label: m["custody_page.arrested"](), value: format(record.arrestedAt, 'PPp') },
+        ...(record.location ? [{ label: m["custody_page.where"](), value: record.location }] : []),
+        ...(record.caseReference ? [{ label: m["nav.cases"](), value: record.caseReference, copy: record.caseReference }] : []),
+        { label: m["col.status"](), value: custodyStatusLabel(record.status) },
+      ]}
+      events={[
+        { at: record.arrestedAt, label: m["custody_page.arrested"]() },
+        ...(record.transferredAt ? [{ at: record.transferredAt, label: m["custody_page.transferred"]() }] : []),
+        ...(record.releasedAt ? [{ at: record.releasedAt, label: custodyStatusLabel(record.status) }] : []),
+      ]}
+      edit={(done) => <CustodyRecordForm key={record.id} record={record} onSuccess={done} />}
+    >
+      <PersonIdentity personId={record.personId} />
+      <section className="mb-5 flex flex-col gap-0.5">
+        <PaperField label={m["custody_page.arrested"]()}>{format(record.arrestedAt, 'PPPPp')}</PaperField>
+        {record.location && <PaperField label={m["custody_page.where"]()}>{record.location}</PaperField>}
+        {record.caseReference && <PaperField label={m["nav.cases"]()}>{record.caseReference}</PaperField>}
+        {record.crossJurisdictionTransfer && <PaperField label={m["custody_page.transferred"]()}>{record.transferredAt ? format(record.transferredAt, 'PPp') : m["custody_page.not_yet"]()}</PaperField>}
+        <PaperField label={m["custody_page.limit"]()}>{`${format(limit.deadline, 'PPPPp')} (${custodyBasisLabel(limit.basis)})`}</PaperField>
+        <PaperField label={m["col.status"]()}>{custodyStatusLabel(record.status)}</PaperField>
+        {record.releasedAt && <PaperField label={m["custody_page.left_cells"]()}>{format(record.releasedAt, 'PPp')}</PaperField>}
+      </section>
+      {inCells && (
+        <p>
+          <strong>{limit.isOverdue ? m["custody.past_by"]({ time: remaining(limit.hoursRemaining) }) : m["custody.left"]({ time: remaining(limit.hoursRemaining) })}</strong>
+        </p>
+      )}
+      {record.notes && <p className="whitespace-pre-wrap">{record.notes}</p>}
+      <section className="mt-12 flex flex-wrap justify-between gap-8">
+        <SignatureLine caption={m["custody_page.booking_officer"]()} />
+        <SignatureLine caption={m["custody_page.cells_officer"]()} />
+      </section>
+    </RecordPaper>
   )
 }
 
+/**
+ * Who is in the cells, soonest limit first, and every custody record before.
+ * The limit is worked out from the arrest each time the page is drawn; a
+ * person turns red only when near it or past it.
+ */
 function RouteComponent() {
-  const { open: openId } = Route.useSearch()
-  const [addOpen, setAddOpen] = useState(false)
-  const [addDirty, setAddDirty] = useState(false)
-  const [editing, setEditing] = useState<CustodyRecord | null>(null)
-  const [editDirty, setEditDirty] = useState(false)
+  const { open, view = 'cells' } = Route.useSearch()
+  const navigate = useNavigate()
   const { data: records } = useCustodyRecords('')
-  useDeepLinkRecord(records, openId, setEditing)
+  const setOpen = (id: string | null) => void navigate({ to: '/search/custody', search: { ...(view === 'all' ? { view } : {}), ...(id ? { open: id } : {}) }, replace: true })
 
-  const columns: DataTableColumnDef<CustodyRecord>[] = useMemo(() => {
-    return [
-      selectColumn(),
-      {
-        accessorKey: 'id',
-        header: m["col.id"](),
-        cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setEditing(row.original)}
-          >
-            {row.original.id}
-          </span>
-        ),
-      },
-      { accessorKey: 'personId', header: m["col.person_id"]() },
-      {
-        id: 'person',
-        accessorFn: (row) => custodyPersonName(row),
-        header: m["col.person"](),
-      },
-      { accessorKey: 'personFirstName', header: m["col.first_name"]() },
-      { accessorKey: 'personLastName', header: m["col.last_name"]() },
-      {
-        accessorKey: 'personOtherNames',
-        header: m["col.other_names"](),
-        cell: ({ row }) => row.original.personOtherNames ?? '·',
-      },
-      { accessorKey: 'incidentId', header: m["col.incident_id"](), cell: ({ row }) => row.original.incidentId ?? '·' },
-      { accessorKey: 'caseId', header: m["col.case_id"](), cell: ({ row }) => row.original.caseId ?? '·' },
-      {
-        accessorKey: 'caseReference',
-        header: m["col.case"](),
-        cell: ({ row }) => row.original.caseReference ?? '·',
-      },
-      {
-        accessorKey: 'location',
-        header: m["col.location"](),
-        cell: ({ row }) => row.original.location ?? '·',
-      },
-      {
-        accessorKey: 'arrestedAt',
-        header: m["col.arrested"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-      {
-        accessorKey: 'crossJurisdictionTransfer',
-        header: m["col.cross_jurisdiction"](),
-        cell: ({ row }) => (row.original.crossJurisdictionTransfer ? m["common.yes"]() : m["common.no"]()),
-      },
-      {
-        accessorKey: 'transferredAt',
-        header: m["col.transferred"](),
-        cell: ({ row }) => (row.original.transferredAt ? format(row.original.transferredAt, 'PPp') : '·'),
-      },
-      {
-        accessorKey: 'status',
-        header: m["col.status"](),
-        cell: ({ row }) => custodyStatusLabel(row.original.status),
-      },
-      {
-        id: 'compliance',
-        header: m["col.48h_status"](),
-        cell: ({ row }) => <ComplianceBadge record={row.original} />,
-      },
-      {
-        accessorKey: 'releasedAt',
-        header: m["col.released"](),
-        cell: ({ row }) => (row.original.releasedAt ? format(row.original.releasedAt, 'PPp') : '·'),
-      },
-      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
-      {
-        accessorKey: 'createdAt',
-        header: m["col.recorded"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-    ]
-  }, [])
+  const inCells = records
+    .filter((r) => r.status === 'in_custody')
+    .map((record) => ({ record, limit: custodyCompliance(record) }))
+    .sort((a, b) => a.limit.deadline - b.limit.deadline)
+  const due = inCells.filter(({ limit }) => limit.isOverdue || limit.hoursRemaining <= NEAR_HOURS).length
+  const current = view === 'cells' && open ? records.find((r) => r.id === open) : undefined
 
   return (
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["common.custody"]()}</h1>
-          <p>{m["custody_page.lead"]()}</p>
+          <h1>{m["nav.in_custody"]()}</h1>
+          <p>
+            {inCells.length === 1 ? m["custody_page.in_cells_one"]() : m["custody_page.in_cells_n"]({ count: inCells.length })}
+            {due > 0 ? ` · ${m["custody_page.due"]({ count: due })}` : ''}
+          </p>
         </div>
         <div className="page-actions">
-          <Createpanel
-            open={addOpen}
-            onOpenChange={setAddOpen}
-            isDirty={addDirty}
-            trigger={
-              <Button size="sm">
-                <HugeiconsIcon icon={AddCircleIcon} />
-                {m["custody_page.new"]()}
-              </Button>
-            }
-            headings={{ title: m["custody_page.new"](), description: m["custody_page.new_desc"]() }}
-          >
-            <CustodyRecordForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
-          </Createpanel>
+          <Segmented
+            label={m["custody_page.view"]()}
+            value={view}
+            onChange={(v) => void navigate({ to: '/search/custody', search: v === 'all' ? { view: v } : {}, replace: true })}
+            items={[
+              { value: 'cells', label: m["custody_page.in_the_cells"]() },
+              { value: 'all', label: m["custody_page.all_records"]() },
+            ]}
+          />
+          <PanelButton label={m["custody_page.new"]()} title={m["custody_page.new"]()} description={m["custody_page.new_desc"]()} variant="default">
+            {({ close, setDirty }) => <CustodyRecordForm onSuccess={close} onDirtyChange={setDirty} />}
+          </PanelButton>
         </div>
       </header>
 
-      <section aria-labelledby="in-cells" className="page-section">
-        <h2 id="in-cells">{m["custody_page.in_cells"]()}</h2>
-        <CustodyBoard records={records} onOpen={setEditing} />
-      </section>
+      {view === 'cells' ? (
+        inCells.length === 0 ? (
+          <EmptyNote icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} />}>{m["custody.nobody"]()}</EmptyNote>
+        ) : (
+          <Group>
+            {inCells.map(({ record, limit }) => {
+              const past = limit.isOverdue
+              const near = !past && limit.hoursRemaining <= NEAR_HOURS
+              return (
+                <GroupRow
+                  key={record.id}
+                  icon={<CellsFace personId={record.personId} name={custodyPersonName(record)} />}
+                  label={custodyPersonName(record)}
+                  detail={[m["custody.arrested_summary"]({ when: formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true }) }), record.location, record.caseReference].filter(Boolean).join(' · ')}
+                  value={
+                    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium tabular-nums', past ? 'bg-destructive text-white' : near ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300' : 'text-muted-foreground')}>
+                      {past ? m["custody.past_by"]({ time: remaining(limit.hoursRemaining) }) : m["custody.left"]({ time: remaining(limit.hoursRemaining) })}
+                    </span>
+                  }
+                  chevron
+                  onClick={() => setOpen(record.id)}
+                />
+              )
+            })}
+          </Group>
+        )
+      ) : (
+        <RecordList
+          items={records}
+          date={(r) => r.arrestedAt}
+          label={(r) => custodyPersonName(r)}
+          detail={(r) => [format(r.arrestedAt, 'd MMM, HH:mm'), custodyStatusLabel(r.status), r.caseReference].filter(Boolean).join(' · ')}
+          searchText={(r) => [custodyPersonName(r), r.location ?? '', r.caseReference ?? '', custodyStatusLabel(r.status)].join(' ')}
+          paper={(r) => <CustodyPaper record={r} />}
+          windowTitle={(r) => custodyPersonName(r)}
+          empty={m["custody_page.empty"]()}
+          emptyIcon={<HugeiconsIcon icon={CellsIcon} />}
+          searchPlaceholder={m["custody_page.search"]()}
+          opened={open ?? null}
+          onOpened={setOpen}
+        />
+      )}
 
-      <Createpanel
-        open={editing !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditing(null)
-        }}
-        isDirty={editDirty}
-        headings={{ title: m["custody_page.edit_title"](), description: m["custody_page.edit_desc"]() }}
-      >
-        {editing && (
-          <CustodyRecordForm
-            key={editing.id}
-            record={editing}
-            onSuccess={() => setEditing(null)}
-            onDirtyChange={setEditDirty}
-          />
-        )}
-      </Createpanel>
-
-      <section aria-labelledby="all-records" className="page-section">
-        <h2 id="all-records">{m["custody_page.all"]()}</h2>
-      <DataTable
-        aria-label={m["custody_page.table"]()}
-        data={records}
-        columns={columns}
-        getRowId={(row) => row.id}
-        emptyMessage={m["custody_page.empty"]()}
-        searchPlaceholder={m["custody_page.search"]()}
-      />
-      </section>
+      {current && (
+        <PaperWindow open onOpenChange={(o) => !o && setOpen(null)} title={custodyPersonName(current)}>
+          <CustodyPaper record={current} />
+        </PaperWindow>
+      )}
     </article>
   )
 }

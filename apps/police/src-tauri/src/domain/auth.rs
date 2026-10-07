@@ -3,6 +3,10 @@
 //! * A **Station** starts on **badge only**: the badge identifies who is at the
 //!   keyboard, and is not a secret. An administrator may require passwords.
 //! * A **Command** always needs badge **and** password.
+//! * An **administrator** always needs a password, on a Station on badges too:
+//!   the badge is not a secret, and an administrator can change everything.
+//!   One who has none yet (a station set up before this rule) chooses it at
+//!   their next sign-in, once; after that it is asked every time.
 //!
 //! Wrong passwords slow that badge down. Every sign-in, refusal, sign-out and
 //! change of policy is written to `auth_events`.
@@ -99,7 +103,12 @@ pub async fn sign_in(pool: &SqlitePool, input: SignInInput) -> Result<(String, O
     }
 
     let mode = installation::effective_auth_mode(pool).await?;
-    if mode == "password" {
+    let is_admin = officer.role == "admin";
+    if is_admin && mode != "password" && input.password.as_deref().unwrap_or_default().is_empty() {
+        let first = !officers::has_password(pool, &officer.id).await?;
+        return Err(DomainError::NeedsPassword(if first { "choose_password" } else { "password" }));
+    }
+    if mode == "password" || is_admin {
         let supplied = input.password.as_deref().unwrap_or_default();
         if !officers::password_matches(pool, &officer.id, supplied).await? {
             note_wrong(badge);
@@ -110,7 +119,36 @@ pub async fn sign_in(pool: &SqlitePool, input: SignInInput) -> Result<(String, O
     clear_wrong(badge);
 
     let token = sessions::create(pool, &officer.id).await?;
-    record_event(pool, Some(&officer), Some(badge), "sign_in", Some(if mode == "password" { "Badge and password" } else { "Badge only" })).await?;
+    record_event(pool, Some(&officer), Some(badge), "sign_in", Some(if mode == "password" || is_admin { "Badge and password" } else { "Badge only" })).await?;
+    Ok((token, officer))
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FirstPasswordInput {
+    pub badge_number: String,
+    pub password: String,
+}
+
+/// An administrator with no password yet chooses one and is signed in. Only
+/// ever for an active administrator who has none: once set, this is refused
+/// and the password is asked like any other.
+pub async fn choose_first_password(pool: &SqlitePool, input: FirstPasswordInput) -> Result<(String, Officer), DomainError> {
+    let badge = input.badge_number.trim();
+    let officer = officers::get_officer_by_badge(pool, badge).await?.filter(|o| o.active && o.role == "admin");
+    let Some(officer) = officer else {
+        return Err(DomainError::Unauthorized(REFUSED.to_string()));
+    };
+    if officers::has_password(pool, &officer.id).await? {
+        return Err(DomainError::Unauthorized(REFUSED.to_string()));
+    }
+    if input.password.trim().chars().count() < 8 {
+        return Err(DomainError::rejected("A password of at least 8 characters is needed."));
+    }
+    officers::set_password(pool, &officer.id, input.password.trim()).await?;
+    let token = sessions::create(pool, &officer.id).await?;
+    record_event(pool, Some(&officer), Some(badge), "password_chosen", Some("Administrator chose a first password")).await?;
+    record_event(pool, Some(&officer), Some(badge), "sign_in", Some("Badge and password")).await?;
     Ok((token, officer))
 }
 

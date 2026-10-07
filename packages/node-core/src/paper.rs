@@ -162,6 +162,19 @@ pub async fn last_print(pool: &SqlitePool, entity_type: &str, entity_id: &str) -
 }
 
 /// Every version of this record that left the application, newest first.
+/// The latest version of every paper that has left the office, newest first:
+/// the office's library of what it has put on paper.
+pub async fn library(pool: &SqlitePool, limit: i64) -> Result<Vec<PaperPrint>, sqlx::Error> {
+    sqlx::query_as::<_, PaperPrint>(
+        "SELECT p.* FROM paper_prints p
+         WHERE p.printed_at = (SELECT MAX(q.printed_at) FROM paper_prints q WHERE q.entity_type = p.entity_type AND q.entity_id = p.entity_id)
+         ORDER BY p.printed_at DESC LIMIT ?",
+    )
+    .bind(limit)
+    .fetch_all(pool)
+    .await
+}
+
 pub async fn history(pool: &SqlitePool, entity_type: &str, entity_id: &str) -> Result<Vec<PaperPrint>, sqlx::Error> {
     sqlx::query_as::<_, PaperPrint>("SELECT * FROM paper_prints WHERE entity_type = ? AND entity_id = ? ORDER BY printed_at DESC")
         .bind(entity_type)

@@ -351,7 +351,11 @@ fn guess_mime(extension: &str) -> &'static str {
         "pdf" => "application/pdf",
         "doc" => "application/msword",
         "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "txt" => "text/plain",
+        "txt" | "log" => "text/plain",
+        "md" | "markdown" => "text/markdown",
+        "csv" => "text/csv",
+        "json" => "application/json",
+        "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         _ => "application/octet-stream",
     }
 }
@@ -521,12 +525,18 @@ pub async fn resolve_entity_route(pool: &SqlitePool, entity_type: &str, entity_i
         "incident" => format!("/incidents?open={entity_id}"),
         "statement" => format!("/statements?open={entity_id}"),
         "custody_record" => format!("/search/custody?open={entity_id}"),
-        "bond" => format!("/search/bonds?open={entity_id}"),
+        "bond" => format!("/search/bonds?view=all&open={entity_id}"),
         "station_diary_entry" => format!("/sd-log?open={entity_id}"),
         "duty_assignment" => format!("/roster?open={entity_id}"),
         "exhibit" => format!("/evidence?open={entity_id}"),
         "charge_sheet" => format!("/legal-forms?open={entity_id}"),
-        "referral" => format!("/referrals?open={entity_id}"),
+        "referral" => format!("/referrals?view=all&open={entity_id}"),
+        "vehicle" => format!("/vehicles?open={entity_id}"),
+        "station_diary_day" => "/sd-log".to_string(),
+        "officer" => format!("/station/officers?open={entity_id}"),
+        "nominal_roll" => "/station/officers".to_string(),
+        "duty_roster_day" => "/roster?view=week".to_string(),
+        "shift_handover" | "officer_check_in" => format!("/roster?view=book&open={entity_id}"),
         "station_asset" => {
             let category: Option<String> = sqlx::query_scalar("SELECT category FROM station_assets WHERE id = ?")
                 .bind(entity_id)
@@ -602,6 +612,35 @@ pub struct VaultEntry {
     pub entity_type: Option<String>,
     pub entity_id: Option<String>,
     pub mime_type: Option<String>,
+    /// What a person calls the file: a record's own title (the first heading
+    /// of its Markdown), else nothing and the window names it.
+    pub title: Option<String>,
+    /// For a folder, how many things are directly inside it.
+    pub item_count: Option<i64>,
+}
+
+/// The first `# heading` of a Markdown file, read from its first few lines.
+fn markdown_title(path: &Path) -> Option<String> {
+    use std::io::Read;
+    let mut head = vec![0u8; 2048];
+    let n = std::fs::File::open(path).ok()?.read(&mut head).ok()?;
+    String::from_utf8_lossy(&head[..n])
+        .lines()
+        .find_map(|line| line.strip_prefix("# ").map(|t| t.trim().to_string()))
+        .filter(|t| !t.is_empty())
+}
+
+/// A record file the app wrote is named `<type>-<id>.md`; this reads the two
+/// back, so the window can open the record the file belongs to.
+fn record_of_file(name: &str) -> Option<(String, String)> {
+    let stem = name.strip_suffix(".md")?;
+    if stem.len() < 38 {
+        return None;
+    }
+    let (kind, id) = stem.split_at(stem.len() - 36);
+    let kind = kind.strip_suffix('-')?;
+    uuid::Uuid::parse_str(id).ok()?;
+    Some((kind.to_string(), id.to_string()))
 }
 
 /// Rejects `.`, `..`, and empty segments outright rather than resolving
@@ -669,6 +708,8 @@ pub async fn list_vault_directory(
                 entity_type: None,
                 entity_id: None,
                 mime_type: None,
+                title: None,
+                item_count: std::fs::read_dir(&path).ok().map(|d| d.count() as i64),
             });
             continue;
         }
@@ -700,18 +741,25 @@ pub async fn list_vault_directory(
                 entity_type: Some(a.entity_type),
                 entity_id: Some(a.entity_id),
                 mime_type: Some(a.mime_type),
+                title: None,
+                item_count: None,
             },
-            None => VaultEntry {
-                name: raw_name,
-                relative_path: relative,
-                is_dir: false,
-                size_bytes,
-                modified_at,
-                attachment_id: None,
-                entity_type: None,
-                entity_id: None,
-                mime_type: None,
-            },
+            None => {
+                let record = record_of_file(&raw_name);
+                VaultEntry {
+                    title: if raw_name.ends_with(".md") { markdown_title(&path) } else { None },
+                    name: raw_name,
+                    relative_path: relative,
+                    is_dir: false,
+                    size_bytes,
+                    modified_at,
+                    attachment_id: None,
+                    entity_type: record.as_ref().map(|(kind, _)| kind.clone()),
+                    entity_id: record.map(|(_, id)| id),
+                    mime_type: None,
+                    item_count: None,
+                }
+            }
         });
     }
 
@@ -732,6 +780,18 @@ pub async fn get_attachment_data_url(pool: &SqlitePool, vault_root: &Path, id: &
     use base64::Engine;
     let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
     Ok(Some(format!("data:{};base64,{}", attachment.mime_type, encoded)))
+}
+
+/// Any file of the vault as a `data:` URL, named by its place in the vault,
+/// so the app can show it in its own viewer rather than another program.
+/// Files the app wrote itself (a person's record, a handover note) have no
+/// attachment row, which is why this goes by path.
+pub fn read_vault_file(vault_root: &Path, relative_path: &str) -> Result<String, AttachmentError> {
+    let path = absolute_path(vault_root, relative_path.trim_start_matches('/'))?;
+    let bytes = std::fs::read(&path)?;
+    let mime = guess_mime(path.extension().and_then(|e| e.to_str()).unwrap_or(""));
+    use base64::Engine;
+    Ok(format!("data:{};base64,{}", mime, base64::engine::general_purpose::STANDARD.encode(bytes)))
 }
 
 pub async fn delete_attachment(pool: &SqlitePool, vault_root: &Path, id: &str) -> Result<(), AttachmentError> {

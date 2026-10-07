@@ -802,8 +802,45 @@ async fn put_assist_settings(State(s): State<AppState>, Json(input): Json<Assist
     Ok(Json(assist::save_settings(&s.pool, input, &admin.name).await?))
 }
 
-async fn assist_models(State(s): State<AppState>) -> ApiResult<Vec<pleadli_node_core::ai::ModelInfo>> {
+// ---------------------------------------------------------------- Assist on this computer
+
+use pleadli_node_core::local_ai;
+
+fn local_err(e: pleadli_node_core::ai::AiError) -> ApiError {
+    DomainError::Invalid(e.0).into()
+}
+
+async fn local_status(State(s): State<AppState>) -> ApiResult<local_ai::LocalStatus> {
+    s.security.actor().ok_or_else(|| forbidden("Nobody is signed in."))?;
+    Ok(Json(local_ai::status().await))
+}
+
+async fn local_install(State(s): State<AppState>) -> ApiResult<local_ai::LocalStatus> {
     require_admin(&s)?;
+    local_ai::install().map_err(local_err)?;
+    Ok(Json(local_ai::status().await))
+}
+
+async fn local_start(State(s): State<AppState>) -> ApiResult<local_ai::LocalStatus> {
+    s.security.actor().ok_or_else(|| forbidden("Nobody is signed in."))?;
+    local_ai::start().await.map_err(local_err)?;
+    Ok(Json(local_ai::status().await))
+}
+
+#[derive(Deserialize)]
+struct LocalPull {
+    model: String,
+}
+
+async fn local_pull(State(s): State<AppState>, Json(input): Json<LocalPull>) -> ApiResult<local_ai::LocalStatus> {
+    require_admin(&s)?;
+    local_ai::pull(&input.model).map_err(local_err)?;
+    Ok(Json(local_ai::status().await))
+}
+
+async fn assist_models(State(s): State<AppState>) -> ApiResult<Vec<pleadli_node_core::ai::ModelInfo>> {
+    // Anyone signed in may see the models: the chat lets each person choose one.
+    s.security.actor().ok_or_else(|| forbidden("Nobody is signed in."))?;
     Ok(Json(assist::models(&s.pool).await?))
 }
 
@@ -1115,11 +1152,12 @@ async fn remove_paper(State(s): State<AppState>, Path(id): Path<String>) -> Resu
 struct ReadPapersInput {
     paper_ids: Vec<String>,
     language: Option<String>,
+    model: Option<String>,
 }
 
 async fn read_papers(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<ReadPapersInput>) -> ApiResult<assist::PapersRead> {
     let actor = matter_worker(&s)?;
-    Ok(Json(assist::read_papers(&s.pool, &s.vault_root, &id, &input.paper_ids, input.language.as_deref(), &actor).await?))
+    Ok(Json(assist::read_papers(&s.pool, &s.vault_root, &id, &input.paper_ids, input.language.as_deref(), input.model.as_deref(), &actor).await?))
 }
 
 #[derive(Serialize)]
@@ -1253,6 +1291,10 @@ pub fn core(state: AppState) -> Router {
         .route("/documents/verify", post(verify_document))
         .route("/assist/settings", get(get_assist_settings).put(put_assist_settings))
         .route("/assist/models", get(assist_models))
+        .route("/assist/local", get(local_status))
+        .route("/assist/local/install", post(local_install))
+        .route("/assist/local/start", post(local_start))
+        .route("/assist/local/pull", post(local_pull))
         .route("/matters/{id}/assist", post(ask_assist))
         .route("/matters/{id}/papers", get(list_papers).post(add_paper).layer(DefaultBodyLimit::max(40 * 1024 * 1024)))
         .route("/matters/{id}/papers/read", post(read_papers))

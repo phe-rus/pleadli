@@ -4,7 +4,21 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
 /** Where the development listener answers, for the plain browser dev server. A
  * release build has no listener: the webview reaches the router through the one
  * `api_request` command instead. */
-export const DEV_API_URL = 'http://127.0.0.1:47821/api'
+export const DEV_API_URL = `http://127.0.0.1:${devApiPort()}/api`
+
+/** The browser dev page talks to the everyday development copy on 47821;
+ * opening it with `?api=47841` points this tab at another installation on
+ * this machine (the test station and command of scripts/test-network). The
+ * choice lasts for the tab. */
+function devApiPort() {
+  try {
+    const asked = new URLSearchParams(window.location.search).get('api')
+    if (asked && /^\d{4,5}$/.test(asked)) sessionStorage.setItem('pleadli:police:api-port', asked)
+    return sessionStorage.getItem('pleadli:police:api-port') ?? '47821'
+  } catch {
+    return '47821'
+  }
+}
 
 const TOKEN_KEY = 'pleadli:police:session'
 

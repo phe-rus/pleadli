@@ -1,19 +1,20 @@
-import { Row, RowList } from '@/components/operational-row'
 import { EmptyNote } from '@/components/planned'
-import { StatTile } from '@/components/stat-tile'
-import { Tag } from '@/components/status-tag'
 import { engagementLabel } from '@/features/matters'
 import { durationText, timeOptions, useTime } from '@/features/practice'
+import { formatDay } from '@/lib/dates'
 import { DAY_MS, startOfDay } from '@/lib/day'
-import { AlarmClockIcon, FolderViewIcon } from '@hugeicons/core-free-icons'
-import { cn } from '@pleadli/ui/lib/utils'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import * as m from '@/paraglide/messages'
+import { Clock01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Group, GroupRow } from '@pleadli/ui/grouped'
+import { Segmented } from '@pleadli/ui/segmented'
+import { Stat } from '@pleadli/ui/stat'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 
 const periods = [
-  { id: '30', days: 30, label: 'Last 30 days' },
-  { id: '90', days: 90, label: 'Last 90 days' },
-  { id: '365', days: 365, label: 'Last year' },
+  { id: '30', days: 30, label: () => m["time.period.30"]() },
+  { id: '90', days: 90, label: () => m["time.period.90"]() },
+  { id: '365', days: 365, label: () => m["time.period.365"]() },
 ] as const
 type PeriodId = (typeof periods)[number]['id']
 const isPeriod = (value: unknown): value is PeriodId => periods.some((p) => p.id === value)
@@ -37,6 +38,7 @@ export const Route = createFileRoute('/_public/time/')({
  * of it is billed depends on how you came to act (private time is; state-funded
  * work is paid by the Rules' schedule; pro bono is not), and nothing is priced. */
 function RouteComponent() {
+  const navigate = useNavigate({ from: Route.fullPath })
   const { period = '30' } = Route.useSearch()
   const current = periods.find((p) => p.id === period) ?? periods[0]
   const { from, to } = range(current.days)
@@ -44,83 +46,70 @@ function RouteComponent() {
   const total = entries.reduce((sum, e) => sum + e.minutes, 0)
   const byMatter = new Map<string, { title: string; engagement: string | null; minutes: number }>()
   for (const e of entries) {
-    const key = e.matterId
-    const slot = byMatter.get(key) ?? { title: e.courtNumber ?? e.matterTitle ?? 'Matter', engagement: e.engagement, minutes: 0 }
+    const slot = byMatter.get(e.matterId) ?? { title: e.courtNumber ?? e.matterTitle ?? m["time.a_matter"](), engagement: e.engagement, minutes: 0 }
     slot.minutes += e.minutes
-    byMatter.set(key, slot)
+    byMatter.set(e.matterId, slot)
   }
 
   return (
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Time</h1>
-          <p>Time you recorded on matters. Record it from a matter.</p>
+          <h1>{m["nav.time"]()}</h1>
+          <p>{m["time.lead"]()}</p>
+        </div>
+        <div className="page-actions">
+          <Segmented
+            label={m["time.period_label"]()}
+            value={period}
+            onChange={(p) => void navigate({ search: { period: p }, replace: true })}
+            items={periods.map((p) => ({ value: p.id, label: p.label() }))}
+          />
         </div>
       </header>
 
-      <nav aria-label="Period" className="no-scrollbar -mb-2 flex gap-1 overflow-x-auto border-b border-border/60">
-        {periods.map((item) => (
-          <Link
-            key={item.id}
-            to="/time"
-            search={{ period: item.id }}
-            replace
-            aria-current={item.id === period ? 'page' : undefined}
-            className={cn(
-              'relative shrink-0 px-3 py-1.5 no-underline',
-              item.id === period ? 'text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary' : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      {entries.length === 0 ? (
+        <EmptyNote icon={<HugeiconsIcon icon={Clock01Icon} />}>{m["time.none"]()}</EmptyNote>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Stat label={m["time.recorded"]()} value={durationText(total)} hint={m["time.entries_count"]({ count: String(entries.length) })} />
+            <Stat label={m["time.matters"]()} value={byMatter.size} />
+          </div>
 
-      <section aria-label="Figures" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatTile label="Time recorded" icon={AlarmClockIcon} tint="primary" value={durationText(total)} caption={`${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} in this period`} />
-        <StatTile label="Matters" icon={FolderViewIcon} tint="emerald" value={byMatter.size} caption="With time recorded in this period" />
-      </section>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <section aria-labelledby="by-matter" className="page-section">
-          <h2 id="by-matter">By matter</h2>
-          {byMatter.size === 0 ? (
-            <EmptyNote>No time was recorded in this period.</EmptyNote>
-          ) : (
-            <RowList>
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+            <Group title={m["time.by_matter"]()}>
               {[...byMatter.entries()]
                 .sort((a, b) => b[1].minutes - a[1].minutes)
                 .map(([matterId, slot]) => (
-                  <Row
+                  <GroupRow
                     key={matterId}
-                    aligned
-                    title={
-                      <Link to="/matters/$matterId" params={{ matterId }} className="text-foreground">
-                        {slot.title}
+                    label={slot.title}
+                    detail={slot.engagement ? engagementLabel(slot.engagement) : undefined}
+                    value={<span className="tabular-nums">{durationText(slot.minutes)}</span>}
+                    chevron
+                    render={({ className, children }) => (
+                      <Link to="/matters/$matterId" params={{ matterId }} className={className}>
+                        {children}
                       </Link>
-                    }
-                    summary={slot.engagement ? engagementLabel(slot.engagement) : undefined}
-                    trailing={<Tag tone="neutral">{durationText(slot.minutes)}</Tag>}
+                    )}
                   />
                 ))}
-            </RowList>
-          )}
-        </section>
+            </Group>
 
-        <section aria-labelledby="entries" className="page-section">
-          <h2 id="entries">Entries</h2>
-          {entries.length === 0 ? (
-            <EmptyNote>Nothing to show.</EmptyNote>
-          ) : (
-            <RowList>
+            <Group title={m["time.entries"]()}>
               {entries.map((e) => (
-                <Row key={e.id} aligned title={e.description} summary={`${format(e.workedOn, 'd MMM yyyy')}. ${e.courtNumber ?? e.matterTitle ?? ''}`} trailing={<Tag tone="neutral">{durationText(e.minutes)}</Tag>} />
+                <GroupRow
+                  key={e.id}
+                  label={e.description}
+                  detail={`${formatDay(e.workedOn)} · ${e.courtNumber ?? e.matterTitle ?? ''}`}
+                  value={<span className="tabular-nums">{durationText(e.minutes)}</span>}
+                />
               ))}
-            </RowList>
-          )}
-        </section>
-      </div>
+            </Group>
+          </div>
+        </>
+      )}
     </article>
   )
 }

@@ -5,6 +5,41 @@
       "close": "Fermer l'assistant",
       "on_matter": "Sur ce dossier"
     },
+    "local": {
+      "about": "Un modèle ouvert et gratuit de Google qui tourne ici. Rien ne quitte cet ordinateur.",
+      "allow": "Laisser l'assistant lire les pièces d'un dossier sur cet ordinateur",
+      "download": "Télécharger",
+      "downloaded": "Téléchargé",
+      "downloading": "Téléchargement de {model}…",
+      "engine": "Ollama",
+      "failed": "Impossible",
+      "getting_installer": "Récupération de l'installateur d'Ollama sur ollama.com…",
+      "in_use": "Téléchargé, et l'assistant l'utilise.",
+      "install": "Installer",
+      "installed_not_running": "Installé, à l'arrêt.",
+      "installer_open": "L'installateur est ouvert. Terminez-le, puis revenez ici.",
+      "job_failed": "Cela n'a pas abouti.",
+      "memory": "Cet ordinateur a {memory} Go de mémoire : {model} (★) lui convient.",
+      "model": "Modèle",
+      "not_installed": "Le programme gratuit qui fait tourner le modèle. Installez-le une fois.",
+      "note": "Gratuit et privé : les pièces sont lues sur cet ordinateur et ne vont nulle part. Les réponses viennent plus lentement qu'avec un service en ligne, et sont moins fines sur les longues pièces.",
+      "now_using": "L'assistant utilise maintenant {model}",
+      "of": "{done} sur {total} Go",
+      "ready": "Prêt",
+      "running": "En marche (version {version}). Il fait tourner le modèle sur cet ordinateur.",
+      "service": "Sur cet ordinateur (Gemma, privé)",
+      "size": "Environ {size} Go à télécharger, une fois.",
+      "start": "Démarrer",
+      "title": "Sur cet ordinateur",
+      "use": "L'utiliser",
+      "verifying": "Vérification du téléchargement…"
+    },
+    "model": {
+      "auto": "Automatique (recommandé)",
+      "auto_with": "Automatique · {model}",
+      "free": "gratuit",
+      "label": "Modèle"
+    },
     "panel": {
       "answer": "Réponse de l'Assistant",
       "ask": "Demander à l'Assistant",
@@ -40,10 +75,13 @@
     },
     "settings": {
       "agree": "Je comprends, et ce cabinet peut envoyer les pièces d'un dossier au fournisseur quand quelqu'un le demande.",
+      "allow": "Autoriser",
+      "allow_to": "Autoriser l'envoi des pièces d'un dossier à {name}",
       "auto_backup": "Automatique : secours {n}",
       "auto_first": "Automatique : premier",
       "auto_model": "Choisir le modèle automatiquement",
       "base_url": "Adresse du serveur",
+      "change_key": "Changer",
       "confirm": "Confirmer et activer",
       "confirmed": "Confirmé",
       "confirmed_by": "Confirmé par {name} le {date}.",
@@ -51,6 +89,7 @@
       "in_use": "Utilisé",
       "key": "Nouvelle clé",
       "key_env": "Clé de développement {hint}",
+      "key_label": "Clé",
       "key_missing": "Aucune clé",
       "key_placeholder": "Collez la clé",
       "key_removed": "Clé supprimée",
@@ -59,6 +98,7 @@
       "loading_models": "Interrogation du fournisseur...",
       "model_body": "Automatique choisit le meilleur modèle général actuel dans la liste du fournisseur, et passe au suivant s'il est occupé.",
       "model_fixed": "L'assistant utilisera toujours {model}",
+      "model_in_chat": "Choisissez le modèle dans l'assistant lui-même. Automatique, le modèle recommandé par le fournisseur, est le choix par défaut.",
       "model_title": "Modèle",
       "needs": "À configurer",
       "not_confirmed": "Non confirmé",
@@ -66,12 +106,13 @@
       "point_decide": "Ce qu'écrit l'Assistant est un projet. Un avocat le vérifie, et ne signe et ne dépose que ce qu'il a lu.",
       "point_free": "Avec une clé gratuite, le fournisseur peut conserver ce qu'il reçoit et des personnes peuvent le lire. Les pièces des clients sont confidentielles : utilisez un compte payant sans entraînement sur vos données.",
       "point_logged": "Chaque demande est enregistrée : qui a demandé, pour quel dossier, pour quoi et quand.",
-      "point_sent_any": "Quand quelqu'un le demande, le dossier et le document choisi partent chez le fournisseur ci-dessous pour être lus. Rien d'autre ne quitte cet ordinateur.",
+      "point_sent_any": "Quand quelqu'un le demande, le dossier et le document choisi partent chez le service choisi pour être lus. Rien d'autre ne quitte cet ordinateur.",
       "provider_body": "Choisissez-en un et collez sa clé. Les clés sont gardées chiffrées sur cet ordinateur et jamais réaffichées.",
       "provider_changed": "L'assistant utilise désormais {name}",
       "provider_title": "Fournisseur",
       "ready": "Prêt",
       "remove_key": "Supprimer la clé",
+      "service": "Service",
       "show_models": "Voir les modèles du fournisseur",
       "title": "Assistant",
       "turned_off": "L'assistant est désactivé",
@@ -295,8 +336,28 @@
       "person": "Une personne"
     }
   },
+  "clients": {
+    "col": {
+      "added": "Ajouté",
+      "address": "Adresse",
+      "custody": "Détention",
+      "id": "ID",
+      "matters": "Dossiers",
+      "name": "Nom",
+      "notes": "Notes",
+      "open": "Ouverts",
+      "phone": "Téléphone"
+    },
+    "edit_description": "Changez ses coordonnées, ou son lieu de détention.",
+    "edit_title": "Modifier le client",
+    "lead": "Les personnes que vous représentez, et où un client accusé est détenu.",
+    "no_match": "Aucun client.",
+    "none": "Vous n'avez pas encore de client. Ajoutez-en un, puis ouvrez-lui un dossier.",
+    "search": "Chercher des clients"
+  },
   "clock": {
     "by": "Avant le {day}",
+    "case_management_checklist": "Déposer la liste de mise en état",
     "complete_adr": "Achever la médiation",
     "count": "{count} en cours",
     "enforce_judgment": "Exécuter le jugement",
@@ -309,6 +370,8 @@
     "not_researched": "Les délais de ce pays ne sont pas encore connus. Rien n'est compté plutôt que d'appliquer ceux d'un autre pays.",
     "notice_of_appeal": "Déposer la déclaration d'appel",
     "notice_to_government": "Assigner l'État après le préavis de 45 jours",
+    "notice_to_government_30": "Assigner l'État après le préavis de 30 jours",
+    "notice_to_government_90": "Assigner l'État après le préavis de 90 jours",
     "reply_to_application": "Répondre à la requête",
     "reply_to_counterclaim": "Répondre à la demande reconventionnelle",
     "reply_to_defence": "Répliquer à la défense",
@@ -322,6 +385,7 @@
       "waiting": "Attendre : {when}"
     },
     "summons_for_directions": "Demander la mise en état",
+    "summons_validity": "Signifier l'assignation pendant sa validité",
     "title": "Délais",
     "today_title": "Délais en cours",
     "weekend": "tombe un week-end : vérifiez s'il est reporté"
@@ -516,12 +580,14 @@
   "event": {
     "adr_completed": "Médiation achevée",
     "adr_ordered": "Médiation ordonnée",
+    "appearance_entered": "Constitution déposée pour le client",
     "application_reply_filed": "Réponse à la requête déposée",
     "application_served_on_us": "Requête signifiée au client",
     "cause_of_action_contract": "Fait générateur (contrat)",
     "cause_of_action_injury": "Dommage corporel survenu",
     "cause_of_action_land": "Droit de revendiquer le terrain né",
     "cause_of_action_tort": "Fait générateur (délit)",
+    "checklist_filed": "Liste de mise en état déposée",
     "counterclaim_received": "Demande reconventionnelle reçue",
     "decision_delivered": "Décision rendue",
     "defence_filed": "Défense déposée",
@@ -535,6 +601,7 @@
     "note": "Note",
     "notice_of_appeal_lodged": "Déclaration d'appel déposée",
     "on": "Le",
+    "pleadings_closed": "Clôture des écritures",
     "record": "Enregistrer",
     "record_failed": "Impossible de l'enregistrer",
     "record_title": "Noter ce qui s'est passé",
@@ -674,6 +741,23 @@
     "description": "Figure en tête de tout ce que le cabinet dépose et envoie, et donne l'adresse du rédacteur exigée par la loi.",
     "hint": "Les changements s'appliquent aux prochains dépôts.",
     "title": "En-tête"
+  },
+  "lock": {
+    "back": "Retour",
+    "code_note": "Votre code PIN a été réinitialisé. Gardez ce nouveau code en lieu sûr : il remplace l'ancien et ne sera plus affiché.",
+    "continue": "Continuer",
+    "enter_pin": "Saisissez votre code PIN.",
+    "enter_recovery": "Saisissez votre code de récupération et un nouveau code PIN.",
+    "forgot": "Code PIN oublié ?",
+    "new_pin": "Nouveau code PIN",
+    "pin": "Code PIN",
+    "recovery_code": "Code de récupération",
+    "reset": "Réinitialiser le code PIN",
+    "reset_failed": "Impossible de réinitialiser votre code PIN",
+    "title": "Pleadli Lawyers est verrouillé",
+    "unlock_failed": "Impossible de déverrouiller",
+    "wait": "Patientez {seconds} s",
+    "your_code": "Votre code de récupération"
   },
   "matter": {
     "col": {
@@ -891,7 +975,7 @@
       "paid": "Payée"
     },
     "time_to_bill": "Temps à facturer",
-    "title": "Finances",
+    "title": "Comptabilité",
     "total": "Total {amount}",
     "unbilled_hours": "{hours} h non facturées",
     "what": "Ce qui s'est passé"
@@ -974,10 +1058,10 @@
     "reopened": "Dossier rouvert",
     "sections": "Sections du dossier",
     "seg": {
-      "activity": "Activité",
+      "activity": "Historique du dossier",
       "matter": "Le dossier",
-      "money": "Argent et temps",
-      "notes": "Notes",
+      "money": "Comptes et temps",
+      "notes": "Notes de diligence",
       "papers": "Pièces"
     },
     "tab": {
@@ -1002,16 +1086,16 @@
   "nav": {
     "all_matters": "Tous les dossiers",
     "assist": "Assistant",
-    "board": "Tableau",
-    "calendar": "Calendrier",
+    "board": "Par étape",
+    "calendar": "Agenda",
     "clients": "Clients",
-    "closed": "Clos",
+    "closed": "Dossiers clos",
     "criminal": "Registre pénal",
     "diary": "Agenda",
     "documents": "Documents",
-    "money": "Finances",
-    "no_hearing": "Sans date d'audience",
-    "open_matters": "Dossiers ouverts",
+    "money": "Comptabilité",
+    "no_hearing": "Sans prochaine date",
+    "open_matters": "Dossiers en cours",
     "pinned": "Épinglés",
     "recent": "Récents",
     "registers": "Registres",
@@ -1020,15 +1104,15 @@
       "office": "Bureau",
       "practice": "Cabinet"
     },
-    "services": "Services au guichet",
+    "services": "Actes non contentieux",
     "settings": "Réglages",
-    "statistics": "Statistiques",
+    "statistics": "Rapport du cabinet",
     "tab": {
       "document": "Document",
       "matter": "Dossier"
     },
-    "tasks": "Tâches",
-    "time": "Temps",
+    "tasks": "Rappels",
+    "time": "Feuilles de temps",
     "today": "Aujourd'hui"
   },
   "network": {
@@ -1300,8 +1384,11 @@
     "title": "Parties"
   },
   "protection": {
+    "apply": "Appliquer",
+    "away": "En votre absence",
     "basic": "Code PIN pour chacun",
     "basic_about": "Chaque personne se connecte avec son propre code PIN à 6 chiffres.",
+    "cancel": "Annuler",
     "change": "Modifier",
     "change_hint": "Le changement déconnecte toutes les autres personnes.",
     "changed": "Protection désormais : {level}",
@@ -1313,10 +1400,17 @@
     "idle_hour": "1 heure",
     "idle_minutes": "{count} minutes",
     "idle_never": "Jamais",
+    "method": "Se connecter avec",
+    "method_full": "Mot de passe et code du téléphone",
+    "method_pin": "Code PIN",
     "none": "Sans connexion",
     "none_about": "L'application s'ouvre directement. Pour une seule personne sur son propre ordinateur.",
     "others_need_new": "Les autres devront recevoir de vous un nouveau code PIN dans Personnes avant de se connecter.",
+    "require": "Demander la connexion à l'ouverture",
+    "sign_out_now": "Se déconnecter maintenant",
     "title": "Connexion",
+    "turn_off": "Désactiver",
+    "turn_on": "Activer",
     "your_new_password": "Votre nouveau mot de passe",
     "your_new_pin": "Votre nouveau code PIN"
   },
@@ -1422,6 +1516,7 @@
   },
   "settings": {
     "about": {
+      "appearance": "L'apparence de Pleadli sur cet ordinateur, et sa langue.",
       "assist": "Si l'Assistant aide sur les dossiers ici, et quel fournisseur les lit.",
       "network": "Si cet ordinateur travaille seul, est l'ordinateur du cabinet auquel les autres se joignent, ou est joint à l'un d'eux.",
       "people": "Qui utilise cette copie, et ce que la loi permet à chacun de faire.",
@@ -1431,6 +1526,13 @@
       "you": "Votre nom figure au journal pour ce que vous faites et, pour un avocat, sous ce qui est déposé."
     },
     "admin_only": "Seul un administrateur peut modifier ceci.",
+    "appearance": {
+      "auto": "Automatique",
+      "dark": "Sombre",
+      "language": "Langue",
+      "light": "Clair",
+      "theme": "Apparence"
+    },
     "lead": "Vous, votre cabinet, les personnes qui y travaillent, et sa protection.",
     "owner": {
       "computer": "Cet ordinateur",
@@ -1474,6 +1576,7 @@
     "save_failed": "Enregistrement impossible",
     "saved": "Enregistré",
     "section": {
+      "appearance": "Apparence",
       "network": "Réseau",
       "people": "Personnes",
       "practice": "Cabinet",
@@ -1668,7 +1771,7 @@
     "registers": "Registres cette année",
     "time": "Temps saisi",
     "time_caption": "Sur tous les dossiers, facturés ou non",
-    "title": "Statistiques",
+    "title": "Rapport du cabinet",
     "uls_paid": "Cotisation {year} payée",
     "uls_unknown": "Cotisation non renseignée",
     "year": "Année"
@@ -1718,7 +1821,7 @@
       "sign_commission": "Le client signe l'acte et le jure devant un Commissioner for Oaths",
       "transfer": "Déposer le transfert et payer le droit de timbre"
     },
-    "title": "Services au guichet",
+    "title": "Actes non contentieux",
     "turn_on": "Activez le travail « {kind} » dans les Réglages pour proposer ce service.",
     "turn_on_now": "Activer et utiliser",
     "what_happens": "Ce qui se passe",
@@ -1732,6 +1835,43 @@
       "police": "Poste de police",
       "practice": "Au cabinet"
     }
+  },
+  "tasks": {
+    "add": "Ajouter un rappel",
+    "add_description": "Une chose à rappeler un jour donné, avec ou sans dossier.",
+    "due": "Pour le {date}",
+    "edit": "Modifier",
+    "edit_description": "Changez la tâche ou son échéance.",
+    "edit_title": "Modifier la tâche",
+    "form": {
+      "add": "Ajouter",
+      "added": "Tâche ajoutée",
+      "detail": "Détail (facultatif)",
+      "due": "Échéance (facultatif)",
+      "needs_title": "Une tâche a besoin d'un titre.",
+      "save": "Enregistrer",
+      "save_failed": "Impossible d'enregistrer la tâche",
+      "task": "Rappeler",
+      "task_placeholder": "Entendre le deuxième témoin",
+      "updated": "Tâche mise à jour"
+    },
+    "lead": "Ce qui revient, le plus proche d'abord. Les obligations d'une commission d'office sont ajoutées pour vous.",
+    "mark_done": "Fait",
+    "no_due": "Sans échéance.",
+    "none_done": "Aucune tâche terminée pour l'instant.",
+    "none_due": "Rien à rappeler. Ajoutez un rappel, ou ouvrez une commission d'office pour voir ses obligations.",
+    "overdue": "En retard",
+    "remove": "Retirer",
+    "remove_failed": "Impossible de retirer la tâche",
+    "reopen": "Rouvrir",
+    "state_duty": "Obligation commise d'office",
+    "update_failed": "Impossible de mettre à jour la tâche",
+    "view": {
+      "all": "Toutes",
+      "done": "Faites",
+      "open": "À faire"
+    },
+    "views": "Quelles tâches"
   },
   "template": {
     "administrator_general_letter": "Lettre à l'Administrateur général",
@@ -1762,6 +1902,33 @@
     "sale_agreement": "Contrat de vente de terrain",
     "submissions": "Conclusions écrites",
     "written_statement_of_defence": "Conclusions en défense"
+  },
+  "time": {
+    "a_matter": "Un dossier",
+    "by_matter": "Par dossier",
+    "entries": "Saisies",
+    "entries_count": "{count} saisies",
+    "form": {
+      "bad_duration": "Indiquez le temps en minutes, ou comme 1h30.",
+      "day": "Jour",
+      "failed": "Impossible de saisir le temps",
+      "for": "À quoi il a servi",
+      "needs_description": "Dites à quoi le temps a servi.",
+      "recorded": "Temps saisi",
+      "submit": "Saisir le temps",
+      "time": "Temps",
+      "time_placeholder": "1h30, 90 ou 45m"
+    },
+    "lead": "Le temps saisi sur les dossiers. Saisissez-le depuis le dossier.",
+    "matters": "Dossiers",
+    "none": "Aucun temps saisi sur cette période.",
+    "period": {
+      "30": "30 jours",
+      "365": "Un an",
+      "90": "90 jours"
+    },
+    "period_label": "Période",
+    "recorded": "Temps saisi"
   },
   "today": {
     "adjourned": "Renvoyée",
@@ -1819,6 +1986,25 @@
     "trend": "Renvois, 8 dernières semaines",
     "week_ahead": "La semaine à venir",
     "with_no_hearing": "Sans audience : {count}"
+  },
+  "update": {
+    "about": "La version sur cet ordinateur, et l'obtention de la suivante.",
+    "auto": "Télécharger les mises à jour automatiquement",
+    "auto_hint": "Les mises à jour sont signées par Pleadli et vérifiées avant l'installation. L'application ne redémarre que lorsque vous le décidez.",
+    "available": "La version {version} est disponible",
+    "browser": "Les mises à jour viennent avec l'application de bureau. Dans un navigateur, il n'y a rien à mettre à jour.",
+    "check": "Vérifier",
+    "checked_at": "Dernière vérification à {time}.",
+    "checking": "Recherche d'une mise à jour…",
+    "current": "Pleadli Lawyers est à jour",
+    "downloading": "Téléchargement de la mise à jour… {percent} %",
+    "failed": "La mise à jour n'a pas pu être vérifiée ou installée",
+    "get": "Mettre à jour",
+    "not_checked": "Pas encore vérifié",
+    "ready": "La version {version} est prête. Redémarrez pour terminer.",
+    "restart": "Redémarrer",
+    "title": "Mise à jour",
+    "version": "Version"
   },
   "usage": {
     "advisory": {
@@ -1916,7 +2102,7 @@
       "previous": "Onglet précédent"
     },
     "view": {
-      "board": "Tableau",
+      "board": "Par étape",
       "list": "Liste"
     },
     "window": "Fenêtre"

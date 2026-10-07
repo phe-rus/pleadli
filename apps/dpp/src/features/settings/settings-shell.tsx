@@ -4,11 +4,11 @@ import { BackupPane } from '@/features/security/settings-panes'
 import { useSecurityStatus } from '@/features/security'
 import * as m from '@/paraglide/messages'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Building03Icon, CloudUploadIcon, LegalDocument01Icon, Notification03Icon, PaintBoardIcon, SparklesIcon, SquareLock02Icon, UserGroupIcon, UserIcon } from '@hugeicons/core-free-icons'
+import { Building03Icon, CloudUploadIcon, LegalDocument01Icon, Notification03Icon, PaintBoardIcon, Download04Icon, SparklesIcon, SquareLock02Icon, UserGroupIcon, UserIcon } from '@hugeicons/core-free-icons'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import { AppearancePane, LicencePane, NotificationsPane, OfficePane, PeoplePane, ProtectionPane, YouPane } from './panes'
+import { AppearancePane, UpdatesPane, LicencePane, NotificationsPane, OfficePane, PeoplePane, ProtectionPane, YouPane } from './panes'
 
 /** Settings, grouped by who owns each choice, so it is always clear whether a
  * change is yours, the whole office's (the administrator's) or only this
@@ -17,7 +17,7 @@ import { AppearancePane, LicencePane, NotificationsPane, OfficePane, PeoplePane,
 const groups = [
   { id: 'you', sections: ['you'] },
   { id: 'office', sections: ['office', 'people', 'protection', 'assist'] },
-  { id: 'computer', sections: ['appearance', 'notifications', 'backup'] },
+  { id: 'computer', sections: ['appearance', 'notifications', 'backup', 'updates'] },
   { id: 'about', sections: ['licence'] },
 ] as const
 
@@ -46,6 +46,7 @@ const sectionText: Record<SettingsSectionId, { label: () => string; about: () =>
   appearance: { label: m["settings.nav.appearance"], about: m["settings.about.appearance"] },
   notifications: { label: m["settings.nav.notifications"], about: m["settings.about.notifications"] },
   backup: { label: m["settings.nav.backup"], about: m["settings.about.backup"] },
+  updates: { label: m["update.title"], about: m["update.about"] },
   licence: { label: m["settings.nav.licence"], about: m["settings.about.licence"] },
 }
 
@@ -59,6 +60,7 @@ const sectionIcon: Record<SettingsSectionId, { icon: typeof UserIcon; tone?: str
   appearance: { icon: PaintBoardIcon, tone: 'orange' },
   notifications: { icon: Notification03Icon, tone: 'red' },
   backup: { icon: CloudUploadIcon, tone: 'green' },
+  updates: { icon: Download04Icon },
   licence: { icon: LegalDocument01Icon, tone: 'gray' },
 }
 
@@ -84,6 +86,7 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
   appearance: () => <AppearancePane />,
   notifications: () => <NotificationsPane />,
   backup: () => <BackupPane />,
+  updates: () => <UpdatesPane />,
   licence: () => <LicencePane />,
 }
 

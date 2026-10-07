@@ -1,3 +1,4 @@
+import { assistModel } from '@/features/assist/model-choice'
 import { PaperTabs, printSheet, SignaturePad, type PaperLink } from '@pleadli/paper'
 import { Segmented } from '@pleadli/ui/segmented'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
@@ -136,7 +137,7 @@ export function DocumentReader({ id, embedded = false, links }: { id: string; em
       const before = doc.content.blocks.slice(Math.max(0, index - 3), index).map((b) => ('text' in b ? b.text : '')).join('\n')
       const current = doc.content.blocks[index]
       const ask = `Write the paragraph of "${doc.content.title}" that comes after:\n${before}\n\nWhat is there now: ${'text' in current ? current.text : ''}\n\nWrite it in ${doc.content.lang === 'fr' ? 'French' : doc.content.lang === 'sw' ? 'Swahili' : 'English'}, in the formal style of this document, from the facts of the file only. Reply with the paragraph text alone.`
-      const reply = await api('POST', '/api/assist/chat', { body: { messages: [{ role: 'user', content: ask }], fileId: doc.prosecutionFileId, place: 'a document being drafted', context: assistContext(doc.prosecutionFileId) } })
+      const reply = await api('POST', '/api/assist/chat', { body: { messages: [{ role: 'user', content: ask }], fileId: doc.prosecutionFileId, place: 'a document being drafted', context: assistContext(doc.prosecutionFileId), model: assistModel() || undefined } })
       const text = String((reply as { text?: string }).text ?? '').trim()
       if (text) change({ ...doc.content, blocks: doc.content.blocks.map((b, i) => (i === index && b.type === 'paragraph' ? { ...b, text } : b)) })
     } catch (e) {

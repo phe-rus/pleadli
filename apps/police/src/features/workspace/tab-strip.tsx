@@ -1,4 +1,4 @@
-import * as m from '@/paraglide/messages'
+import { shortcut } from '@/lib/platform'
 import { PinIcon, XIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -7,12 +7,13 @@ import { useTabActions } from './tab-actions'
 import { tabIcon } from './tab-icon'
 import { tabLabel } from './tab-identity'
 import { useWorkspace, type WorkspaceTab } from './tabs-store'
+import * as m from '@/paraglide/messages'
 
 const iconButton =
   'flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground'
 
-/** One open tab. The label is the tab's saved title (a case reference or a
- * person's name once it has loaded). Unpinned tabs show pin and close on hover; a pinned tab keeps
+/** One open tab. The label is the tab's saved title (a file's title once it
+ * has loaded). Unpinned tabs show pin and close on hover; a pinned tab keeps
  * its pin showing and cannot be closed until unpinned. Dragging a tab onto
  * another reorders them. */
 function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: string | null; onDragging: (key: string | null) => void }) {
@@ -21,6 +22,7 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
   const active = activeKey === tab.key
   const pinned = tab.pinned === true
   const fixed = tab.kind === 'overview'
+  const title = tabLabel(tab)
 
   return (
     <div
@@ -41,14 +43,13 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
       }}
       data-active={active || undefined}
       className={cn(
-        // Tabs share the strip like a browser's: they open long and give way
-        // evenly as they multiply, down to a readable minimum.
-        'group/tab relative flex h-8 min-w-28 items-center gap-1.5 rounded-t-lg pr-1.5 pl-3 text-sm whitespace-nowrap select-none',
-        fixed ? 'flex-[0_1_9rem]' : 'flex-[0_1_15rem]',
+        // Tabs share the toolbar the way Safari's do: rounded, centred in the
+        // bar, giving way evenly as they multiply. The one in view is lifted
+        // onto white; the others are only text until the pointer is on them.
+        'group/tab relative flex h-7.5 min-w-24 items-center gap-1 rounded-lg pr-1 pl-2.5 text-[0.8125rem] whitespace-nowrap select-none',
+        fixed ? 'flex-none' : 'flex-[0_1_13rem]',
         'transition-colors duration-100 motion-reduce:transition-none',
-        active
-          ? 'bg-secondary text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary'
-          : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
+        active ? 'bg-background font-medium text-foreground shadow-xs ring-1 ring-black/[0.06] dark:bg-foreground/10' : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
         dragging === tab.key && 'opacity-50',
       )}
     >
@@ -58,16 +59,17 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
         aria-selected={active}
         tabIndex={active ? 0 : -1}
         onClick={() => activate(tab)}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        title={title}
+        className="flex min-w-0 flex-1 cursor-default items-center gap-1.5 rounded-sm py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
-        <HugeiconsIcon icon={tabIcon(tab)} className="size-4 shrink-0" />
-        <span className="truncate">{tabLabel(tab)}</span>
+        <HugeiconsIcon icon={tabIcon(tab)} className="size-3.5 shrink-0 opacity-70" />
+        <span className="truncate">{title}</span>
       </button>
       {!fixed && (
         <>
           <button
             type="button"
-            aria-label={pinned ? m["workspace.unpin_tab"]({ title: tabLabel(tab) }) : m["workspace.pin_tab"]({ title: tabLabel(tab) })}
+            aria-label={pinned ? m["workspace.unpin_tab"]({ title }) : m["workspace.pin_tab"]({ title })}
             title={pinned ? m["workspace.unpin"]() : m["workspace.pin"]()}
             onClick={() => togglePinned(tab.key)}
             className={cn(iconButton, !pinned && 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100')}
@@ -77,8 +79,8 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
           {!pinned && (
             <button
               type="button"
-              aria-label={m["workspace.close_tab"]({ title: tabLabel(tab) })}
-              title={m["workspace.close_ctrl_w"]()}
+              aria-label={m["workspace.close_tab"]({ title })}
+              title={m["workspace.close_with"]({ key: shortcut("W") })}
               onClick={() => close(tab.key)}
               className={cn(iconButton, 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100', active && 'opacity-70')}
             >
@@ -91,8 +93,7 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
   )
 }
 
-/** Every open area and record as a tab standing on the bottom of the centre
- * header, five at most. Overview leads, pinned. The empty stretch after the
+/** Every open area and file as a tab in the centre header, five at most. Overview leads, pinned. The empty stretch after the
  * last tab is the window's drag handle. */
 export function TabStrip() {
   const { tabs, activeKey } = useWorkspace()
@@ -104,13 +105,14 @@ export function TabStrip() {
   }, [activeKey, tabs.length])
 
   return (
-    <div data-tauri-drag-region className="flex min-w-0 flex-1 items-end self-stretch">
-      <div ref={listRef} role="tablist" aria-label={m["workspace.open_tabs"]()} className="no-scrollbar flex min-w-0 items-end gap-1 overflow-x-auto pl-2">
+    <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center self-stretch">
+      {/* The list takes the whole strip so tabs keep their full width until
+          they really run out of room; its empty end is the drag handle. */}
+      <div ref={listRef} data-tauri-drag-region role="tablist" aria-label={m["workspace.open_tabs"]()} className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 self-stretch overflow-x-auto px-2">
         {tabs.map((tab) => (
           <TabItem key={tab.key} tab={tab} dragging={dragging} onDragging={setDragging} />
         ))}
       </div>
-      <div data-tauri-drag-region className="h-full min-w-6 flex-1" />
     </div>
   )
 }

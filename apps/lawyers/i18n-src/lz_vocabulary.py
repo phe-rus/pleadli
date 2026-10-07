@@ -1,0 +1,35 @@
+# Lawyers in the words of an East African advocate's office (2026-10-07, user's
+# go-ahead). Loaded last (the "lz" name sorts after every other part), so these
+# override the first, software-sounding labels. Sidebar names are page titles.
+# key -> (en, sw, fr).
+S = {
+"nav.calendar": ("Diary", "Shajara", "Agenda"),
+"nav.diary": ("Diary", "Shajara", "Agenda"),
+"nav.tasks": ("Bring-ups", "Vikumbusho", "Rappels"),
+"nav.open_matters": ("Active files", "Majalada yanayoendelea", "Dossiers en cours"),
+"nav.no_hearing": ("No next date", "Hayana tarehe ijayo", "Sans prochaine date"),
+"nav.closed": ("Closed files", "Majalada yaliyofungwa", "Dossiers clos"),
+"nav.all_matters": ("All files", "Majalada yote", "Tous les dossiers"),
+"nav.section.matters": ("Files", "Majalada", "Dossiers"),
+"nav.services": ("Non-contentious work", "Kazi zisizo za kesi", "Actes non contentieux"),
+"nav.money": ("Accounts", "Hesabu", "Comptabilité"),
+"nav.time": ("Time sheets", "Rekodi za muda", "Feuilles de temps"),
+"nav.statistics": ("Practice report", "Ripoti ya ofisi", "Rapport du cabinet"),
+"nav.board": ("By stage", "Kwa hatua", "Par étape"),
+"mp.seg.matter": ("The file", "Jalada", "Le dossier"),
+"mp.seg.notes": ("Attendance notes", "Kumbukumbu za mahudhurio", "Notes de diligence"),
+"mp.seg.activity": ("File history", "Historia ya jalada", "Historique du dossier"),
+"mp.seg.money": ("Accounts and time", "Hesabu na muda", "Comptes et temps"),
+"money.title": ("Accounts", "Hesabu", "Comptabilité"),
+"stats.title": ("Practice report", "Ripoti ya ofisi", "Rapport du cabinet"),
+"svc.title": ("Non-contentious work", "Kazi zisizo za kesi", "Actes non contentieux"),
+"time.matters": ("Files", "Majalada", "Dossiers"),
+"workspace.view.board": ("By stage", "Kwa hatua", "Par étape"),
+"tasks.add": ("Add a bring-up", "Ongeza kikumbusho", "Ajouter un rappel"),
+"tasks.add_description": ("Something to bring up on a day, with or without a file.", "Jambo la kukumbushwa siku fulani, likiwa na jalada au bila.", "Une chose à rappeler un jour donné, avec ou sans dossier."),
+"tasks.lead": ("What comes up, earliest first. Duties of a state brief are added for you.", "Kinachokuja, cha mapema kwanza. Majukumu ya kesi ya serikali yanaongezwa kwa ajili yako.", "Ce qui revient, le plus proche d'abord. Les obligations d'une commission d'office sont ajoutées pour vous."),
+"tasks.none_due": ("Nothing to bring up. Add a bring-up, or open a state brief to see its duties.", "Hakuna cha kukumbushwa. Ongeza kikumbusho, au fungua kesi ya serikali kuona majukumu yake.", "Rien à rappeler. Ajoutez un rappel, ou ouvrez une commission d'office pour voir ses obligations."),
+"tasks.form.task": ("Bring up", "Kumbusha", "Rappeler"),
+"tasks.form.add": ("Add", "Ongeza", "Ajouter"),
+"time.lead": ("Time recorded on files. Record it from the file.", "Muda uliorekodiwa kwenye majalada. Urekodi kutoka kwenye jalada.", "Le temps saisi sur les dossiers. Saisissez-le depuis le dossier."),
+}

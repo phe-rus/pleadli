@@ -2,7 +2,7 @@ import { SettingsCard } from '@/components/settings-card'
 import { Tag } from '@/components/status-tag'
 import * as m from '@/paraglide/messages'
 import { cn } from '@pleadli/ui/lib/utils'
-import { AiMagicIcon, Building03Icon, Route01Icon, SecurityLockIcon, UserCircleIcon, UserGroupIcon, Wifi01Icon } from '@hugeicons/core-free-icons'
+import { AiMagicIcon, Building03Icon, PaintBoardIcon, Download04Icon, Route01Icon, SecurityLockIcon, UserCircleIcon, UserGroupIcon, Wifi01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -10,9 +10,9 @@ import type { ReactNode } from 'react'
 type NavIcon = typeof UserCircleIcon
 import { AssistPane } from '@/features/assist/assist-settings'
 import { NetworkPane } from '@/features/network'
-import { PeoplePane, PracticePane, SecurityPane, YouPane } from './panes'
+import { AppearancePane, UpdatesPane, PeoplePane, PracticePane, SecurityPane, YouPane } from './panes'
 
-const sectionIds = ['you', 'practice', 'people', 'assist', 'security', 'network', 'roadmap'] as const
+const sectionIds = ['you', 'practice', 'people', 'assist', 'appearance', 'security', 'network', 'updates', 'roadmap'] as const
 export type SettingsSectionId = (typeof sectionIds)[number]
 
 const icons: Record<SettingsSectionId, NavIcon> = {
@@ -20,8 +20,10 @@ const icons: Record<SettingsSectionId, NavIcon> = {
   practice: Building03Icon,
   people: UserGroupIcon,
   assist: AiMagicIcon,
+  appearance: PaintBoardIcon,
   security: SecurityLockIcon,
   network: Wifi01Icon,
+  updates: Download04Icon,
   roadmap: Route01Icon,
 }
 
@@ -30,13 +32,15 @@ const sections: readonly { id: SettingsSectionId; label: () => string; owner: ()
   { id: 'practice', label: () => m["settings.section.practice"](), owner: () => m["settings.owner.practice"](), about: () => m["settings.about.practice"]() },
   { id: 'people', label: () => m["settings.section.people"](), owner: () => m["settings.owner.practice"](), about: () => m["settings.about.people"]() },
   { id: 'assist', label: () => m["assist.settings.title"](), owner: () => m["settings.owner.practice"](), about: () => m["settings.about.assist"]() },
+  { id: 'appearance', label: () => m["settings.section.appearance"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.appearance"]() },
   { id: 'security', label: () => m["settings.section.security"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.security"]() },
   { id: 'network', label: () => m["settings.section.network"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.network"]() },
+  { id: 'updates', label: () => m["update.title"](), owner: () => m["settings.owner.computer"](), about: () => m["update.about"]() },
   { id: 'roadmap', label: () => m["settings.section.roadmap"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.roadmap"]() },
 ]
 
 /** The list in groups by who owns each choice: you, the practice, this computer, and what is to come. */
-const groups = [['you'], ['practice', 'people', 'assist'], ['security', 'network'], ['roadmap']].map((ids) => ids.map((id) => sections.find((s) => s.id === id)!))
+const groups = [['you'], ['practice', 'people', 'assist'], ['appearance', 'security', 'network', 'updates'], ['roadmap']].map((ids) => ids.map((id) => sections.find((s) => s.id === id)!))
 
 export function isSettingsSection(value: unknown): value is SettingsSectionId {
   return sectionIds.includes(value as SettingsSectionId)
@@ -75,8 +79,10 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
   practice: () => <PracticePane />,
   people: () => <PeoplePane />,
   assist: () => <AssistPane />,
+  appearance: () => <AppearancePane />,
   security: () => <SecurityPane />,
   network: () => <NetworkPane />,
+  updates: () => <UpdatesPane />,
   roadmap: () => <RoadmapPane />,
 }
 
@@ -122,13 +128,10 @@ export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
           ))}
         </nav>
 
-        <section aria-labelledby="settings-section" className="flex w-full min-w-0 flex-col gap-5">
+        <section aria-labelledby="settings-section" className="flex w-full min-w-0 flex-col gap-7">
           <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 id="settings-section">{current.label()}</h2>
-              <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-xs text-muted-foreground">{current.owner()}</span>
-            </div>
-            <p>{current.about()}</p>
+            <h2 id="settings-section">{current.label()}</h2>
+            <p className="text-muted-foreground">{current.about()}</p>
           </div>
           {panes[current.id]()}
         </section>

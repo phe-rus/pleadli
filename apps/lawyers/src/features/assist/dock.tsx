@@ -10,7 +10,8 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { useActor } from '@/features/installation'
 import { useState, useSyncExternalStore } from 'react'
 import { AssistPanel } from './assist-panel'
-import { useAssistSettings } from './queries'
+import { setAssistModel, useAssistModel } from './model-choice'
+import { useAssistModels, useAssistSettings } from './queries'
 
 // ---------------------------------------------------------------- open or closed, everywhere
 
@@ -76,6 +77,38 @@ function MatterPicker({ value, onChange }: { value: string; onChange: (id: strin
   )
 }
 
+/** Which model answers, chosen where the asking happens. Automatic (the
+ * provider's recommended model, with backups) is the default; anyone may pick
+ * another from the provider's own list, and it stays chosen on this computer. */
+function ModelPicker({ provider }: { provider: string }) {
+  const chosen = useAssistModel()
+  const { data: models = [], isLoading } = useAssistModels(true, provider)
+  const best = models.find((x) => x.rank === 1)
+  const sorted = [...models].sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99) || a.label.localeCompare(b.label))
+  const items = [
+    { value: 'auto', label: best ? m["assist.model.auto_with"]({ model: best.label }) : m["assist.model.auto"]() },
+    ...(chosen && !models.some((x) => x.id === chosen) ? [{ value: chosen, label: chosen }] : []),
+    ...sorted.map((x) => ({ value: x.id, label: x.free ? `${x.label} · ${m["assist.model.free"]()}` : x.label })),
+  ]
+  return (
+    <Select items={items} value={chosen || 'auto'} onValueChange={(v) => setAssistModel(!v || v === 'auto' ? '' : String(v))}>
+      <SelectTrigger size="sm" aria-label={m["assist.model.label"]()} className="h-7 max-w-[12rem] min-w-0 rounded-full border-0 bg-foreground/[0.05] px-2.5 text-xs shadow-none">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="max-h-80">
+        <SelectGroup>
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+          {isLoading && <p className="px-2 py-1.5 text-xs text-muted-foreground">{m["assist.settings.loading_models"]()}</p>}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  )
+}
+
 /** Assist, docked on the right of every screen and opened from the title bar.
  * On a matter (or one of its documents) it works on that matter; elsewhere it
  * asks which. */
@@ -89,14 +122,17 @@ export function AssistDock() {
   return (
     <aside aria-label={m["nav.assist"]()} className="flex w-[24rem] shrink-0 flex-col gap-3 overflow-y-auto border-l border-border/40 bg-background p-3 print:hidden">
       <header className="flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-base">
+        <h2 className="flex shrink-0 items-center gap-2 text-base">
           <HugeiconsIcon icon={SparklesIcon} className="size-5 text-primary" />
           {m["nav.assist"]()}
           {inView && <span className="text-xs font-normal text-muted-foreground">{m["assist.dock.on_matter"]()}</span>}
         </h2>
+        <div className="flex min-w-0 items-center gap-1">
+          {settings?.ready && <ModelPicker provider={settings.provider} />}
         <Button size="icon-sm" variant="ghost" onClick={() => setAssistOpen(false)} aria-label={m["assist.dock.close"]()} title={m["assist.dock.close"]()}>
           <HugeiconsIcon icon={Cancel01Icon} />
         </Button>
+        </div>
       </header>
       {settings?.ready && !inView && <MatterPicker value={picked} onChange={setPicked} />}
       {matterId ? <AssistPanel key={matterId} matterId={matterId} /> : !settings?.ready && <AssistPanelOff />}

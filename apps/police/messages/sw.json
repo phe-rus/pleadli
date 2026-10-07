@@ -148,7 +148,8 @@
   "window": {
     "minimize": "Punguza",
     "maximize": "Panua",
-    "close": "Funga"
+    "close": "Funga",
+    "controls": "Vidhibiti vya dirisha"
   },
   "nav": {
     "overview": "Muhtasari",
@@ -158,7 +159,7 @@
     "incidents": "Matukio",
     "case_intake": "Upokeaji wa kesi",
     "custody": "Mahabusu",
-    "bonds_and_sureties": "Dhamana na wadhamini",
+    "bonds_and_sureties": "Dhamana za polisi",
     "investigations": "Upelelezi",
     "statements": "Maelezo",
     "evidence_and_exhibits": "Ushahidi na vielelezo",
@@ -168,7 +169,7 @@
     "people": "Watu",
     "vehicles": "Magari",
     "armory": "Ghala la silaha",
-    "impounded_assets": "Mali zilizokamatwa",
+    "impounded_assets": "Mali iliyokamatwa",
     "reports": "Ripoti",
     "station_profile": "Wasifu wa kituo",
     "officers": "Maafisa",
@@ -179,7 +180,14 @@
     "station_administration": "Utawala wa kituo",
     "logs": "Kumbukumbu",
     "stations": "Vituo",
-    "command_profile": "Wasifu wa kamandi"
+    "command_profile": "Wasifu wa kamandi",
+    "today": "Leo",
+    "documents": "Nyaraka",
+    "in_custody": "Walio mahabusu",
+    "cases": "Kesi",
+    "exhibits": "Vielelezo",
+    "charge_sheets": "Hati za mashtaka",
+    "statistics": "Takwimu"
   },
   "nav_sections": {
     "front_desk": "Mapokezi",
@@ -187,7 +195,10 @@
     "investigations": "Upelelezi",
     "station": "Kituo",
     "administration": "Utawala",
-    "command": "Kamandi"
+    "command": "Kamandi",
+    "cells": "Mahabusu",
+    "cases": "Kesi",
+    "case_papers": "Nyaraka za kesi"
   },
   "attachments": {
     "label": "Viambatisho",
@@ -286,7 +297,30 @@
     "related_incident": "Tukio linalohusika (si lazima)",
     "people_involved": "Watu wanaohusika",
     "add_person": "Ongeza mtu kwenye kesi",
-    "submit": "Fungua kesi"
+    "submit": "Fungua kesi",
+    "folder": {
+      "investigating": "Zinachunguzwa",
+      "dpp": "Kwa DPP",
+      "closed": "Zilizofungwa",
+      "all": "Kesi zote"
+    },
+    "count_one": "Kesi 1",
+    "count": "Kesi {count}",
+    "people_one": "Mtu 1",
+    "people": "Watu {count}",
+    "no_match": "Hakuna kesi inayolingana na “{query}”.",
+    "folder_about": {
+      "investigating": "zilizo wazi na bado ziko kituoni",
+      "dpp": "zimetumwa kwa DPP, zinasubiri jibu",
+      "closed": "zilizokamilika",
+      "all": "kila kesi katika Kitabu cha Kumbukumbu za Uhalifu"
+    },
+    "folder_empty": {
+      "investigating": "Hakuna kesi inayochunguzwa.",
+      "dpp": "Hakuna kesi inayosubiri DPP.",
+      "closed": "Hakuna kesi iliyofungwa bado.",
+      "all": "Hakuna kesi iliyofunguliwa bado."
+    }
   },
   "command": {
     "fallback_name": "Kamandi",
@@ -612,10 +646,11 @@
     "new_password": "Nenosiri jipya",
     "remote_password": "Nenosiri la kuingia kwa mbali",
     "keep_password": "Acha wazi ili kubaki na nenosiri la sasa",
-    "password_hint": "Nenosiri humwezesha afisa huyu kuingia kupitia ufikiaji wa mbali kwa simu. Linahitaji namba ya beji. Liache wazi kwa afisa anayeonekana kwenye daftari tu.",
+    "password_hint": "Msimamizi huingia kwa nenosiri kila mara, kwa sababu anaweza kubadilisha kila kitu. Kwa maafisa wengine nenosiri si lazima: huwawezesha kuingia kwa simu, na huulizwa kwenye kompyuta hii kituo kinapohitaji nenosiri. Linahitaji namba ya beji.",
     "active": "Yupo kituoni hiki kwa sasa (zima kwa afisa aliyeondoka)",
     "submit": "Ongeza afisa",
-    "not_on_books": "Mtu asiye kwenye daftari la kituo"
+    "not_on_books": "Mtu asiye kwenye daftari la kituo",
+    "admin_needs_password": "Msimamizi anahitaji nenosiri lake mwenyewe."
   },
   "backup": {
     "responding": "{name} anaitikia.",
@@ -655,7 +690,7 @@
     "not_configured": "Kituo bado hakijasanidiwa",
     "title": "Muhtasari wa Kituo",
     "on_duty": "/ {total} Maafisa Kazini",
-    "new_sd": "Ingizo Jipya la SD",
+    "new_sd": "Ingizo jipya",
     "new_sd_title": "Ingizo jipya la kitabu cha matukio",
     "new_sd_desc": "Rekodi shughuli za mapokezi au za zamu.",
     "cell_lockup": "Mahabusu",
@@ -709,7 +744,7 @@
     "destination_placeholder": "mf. Mwanasheria wa Serikali Mkazi, Buganda Road",
     "referred_at": "Ilipelekwa saa",
     "referring_officer": "Afisa aliyepeleka",
-    "submit": "Rekodi rufaa",
+    "submit": "Peleka kesi",
     "destination": {
       "dpp_resident_state_attorney": "DPP (Mwanasheria wa Serikali Mkazi)",
       "courts": "Mahakama",
@@ -787,7 +822,16 @@
     "badge_desc": "{name}: andika namba yako ya beji. Inaonyesha nani yuko kwenye kibodi; si siri.",
     "failed": "Imeshindwa kukuingiza.",
     "recent": "Beji za karibuni",
-    "signing_in": "Inaingia…"
+    "signing_in": "Inaingia…",
+    "badge": "Beji {badge}",
+    "someone_else": "Mtu mwingine",
+    "back_to_faces": "Chagua kutoka kwa maafisa wa meza hii",
+    "other_officer": "Afisa mwingine",
+    "choose_lead": "Wewe ni msimamizi hapa. Chagua nenosiri: kuanzia sasa litaulizwa kila unapoingia.",
+    "choose_new": "Nenosiri jipya",
+    "choose_again": "Liandike tena",
+    "choose_short": "Tumia herufi 8 au zaidi.",
+    "choose_mismatch": "Manenosiri mawili hayafanani."
   },
   "onboarding": {
     "title": "Andaa usakinishaji huu",
@@ -812,7 +856,7 @@
     "continue": "Endelea",
     "who_runs": "Nani anakiendesha",
     "who_runs_password": "Msimamizi wa kwanza. Kila mtu hapa huingia kwa namba ya beji na nenosiri.",
-    "who_runs_badge": "Msimamizi wa kwanza. Maafisa huingia kwa namba ya beji; msimamizi anaweza kudai manenosiri baadaye, kwenye Mipangilio.",
+    "who_runs_badge": "Msimamizi wa kwanza, anayeingia kwa namba ya beji na nenosiri. Maafisa wengine huingia kwa namba ya beji; msimamizi anaweza kuwataka wote watumie nenosiri baadaye, kwenye Mipangilio.",
     "err_station_name": "Kituo kinahitaji jina.",
     "submit_station": "Andaa kituo",
     "name_station": "Kipe kituo jina",
@@ -979,7 +1023,7 @@
     "search_hint": "Tafuta watu, kesi, kumbukumbu",
     "pinned": "Zilizobandikwa",
     "recent": "Za karibuni",
-    "quick_actions": "Vitendo vya haraka",
+    "quick_actions": "Mpya",
     "find": "Tafuta",
     "search": "Tafuta",
     "shortcut_k": "Ctrl K",
@@ -1003,7 +1047,11 @@
     "pin": "Bandika",
     "close_tab": "Funga {title}",
     "close_ctrl_w": "Funga (Ctrl W)",
-    "open_tabs": "Vichupo vilivyo wazi"
+    "open_tabs": "Vichupo vilivyo wazi",
+    "places": "Maeneo",
+    "close_with": "Funga ({key})",
+    "previous_tab_with": "Kichupo kilichotangulia ({key})",
+    "next_tab_with": "Kichupo kinachofuata ({key})"
   },
   "quick": {
     "diary_title": "Ingizo la kitabu cha matukio",
@@ -1143,26 +1191,37 @@
     "edit_title": "Hariri kielelezo",
     "edit_desc": "Sasisha kielelezo hiki na daftari lake la uhifadhi.",
     "table": "Vielelezo",
-    "empty": "Bado hakuna vielelezo vilivyorekodiwa.",
-    "search": "Tafuta vielelezo kwa maelezo, alama ya utambulisho, au mahali pa kuhifadhi…"
+    "empty": "Hakuna kielelezo kilichoandikwa bado.",
+    "search": "Tafuta kwa maelezo, alama au mahali kilipohifadhiwa"
   },
   "incidents_page": {
     "add_desc": "Kilichotokea, lini, na wapi.",
     "lead": "Jambo lililotokea au kuripotiwa.",
     "edit_title": "Hariri tukio",
     "edit_desc": "Sasisha kilichorekodiwa.",
-    "empty": "Bado hakuna matukio yaliyorekodiwa.",
-    "search": "Tafuta matukio…"
+    "empty": "Hakuna tukio lililoripotiwa bado.",
+    "search": "Tafuta matukio",
+    "paper_title": "Taarifa ya Tukio",
+    "what": "Kilichotokea",
+    "when": "Lini",
+    "where": "Wapi",
+    "reported_by": "Aliyeripoti",
+    "happened": "Kilitokea",
+    "recorded": "Kiliandikwa",
+    "recording_officer": "Afisa anayeandika taarifa",
+    "count_one": "Tukio 1",
+    "count": "Matukio {count}",
+    "new": "Ripoti tukio"
   },
   "intake_page": {
     "title": "Upokeaji wa Kesi",
-    "add_desc": "Anza kushughulikia jambo rasmi.",
+    "add_desc": "Kesi itachukua namba inayofuata katika Kitabu cha Kumbukumbu za Uhalifu usipoipa namba.",
     "lead": "Ushughulikiaji rasmi wa polisi wa jambo: kipengele kimoja kati ya vingi, si mzizi ambao kila kitu kingine kinategemea.",
     "edit_title": "Hariri kesi",
     "edit_desc": "Sasisha kesi hii.",
     "table": "Kesi",
     "empty": "Bado hakuna kesi zilizofunguliwa.",
-    "search": "Tafuta kesi…"
+    "search": "Tafuta kesi"
   },
   "investigation": {
     "tl_opened": "Kesi {reference} imefunguliwa",
@@ -1188,13 +1247,17 @@
     "back": "Rudi kwenye Hati za Mashtaka na Fomu",
     "view": "Tazama hati ya mashtaka",
     "title": "Hati za Mashtaka na Fomu",
-    "add_desc": "PF53, inayotengenezwa kutoka data iliyomo tayari katika Pleadli.",
+    "add_desc": "Mshtakiwa na kesi vinatoka kwenye kumbukumbu; wewe unaongeza kosa, kifungu na maelezo.",
     "lead": "Inatengenezwa kutoka data ya Kesi na Mtu iliyomo tayari kwenye mfumo. Kosa, kifungu cha sheria na maelezo ya kosa pekee ndiyo mapya.",
     "edit_title": "Hariri hati ya mashtaka",
     "edit_desc": "Sasisha hati hii ya mashtaka.",
     "table": "Hati za mashtaka",
-    "empty": "Bado hakuna hati za mashtaka zilizoandaliwa.",
-    "search": "Tafuta kwa kosa, kumbukumbu ya kesi, au mshtakiwa…"
+    "empty": "Hakuna hati ya mashtaka iliyoandaliwa bado.",
+    "search": "Tafuta kwa kosa, kesi au mshtakiwa",
+    "count_one": "Hati 1 ya mashtaka",
+    "count": "Hati {count} za mashtaka",
+    "new": "Andaa hati ya mashtaka",
+    "accused": "Mshtakiwa"
   },
   "logs": {
     "active": "Inaendelea",
@@ -1226,12 +1289,22 @@
   },
   "referrals_page": {
     "title": "Rufaa na Utumaji",
-    "add_desc": "Kabidhi kesi kwa DPP, Mahakama, au kituo kingine.",
+    "add_desc": "Peleka jalada la kesi kwa DPP, mahakama au kituo kingine.",
     "lead": "Mtiririko mmoja, si miwili: kesi inakabidhiwa mahali pengine, inafuatiliwa hapa. Utumaji wa dharura/kiutendaji ni suala tofauti ambalo programu hii haishughulikii.",
     "edit_title": "Hariri rufaa",
     "edit_desc": "Sasisha rufaa hii.",
-    "empty": "Bado hakuna rufaa zilizorekodiwa.",
-    "search": "Tafuta kwa kumbukumbu ya kesi au mahali ilipopelekwa…"
+    "empty": "Hakuna kesi iliyopelekwa bado.",
+    "search": "Tafuta rufaa",
+    "paper_title": "Barua ya Kupeleka Jalada",
+    "to": "Imepelekwa kwa",
+    "to_x": "Kwa {destination}",
+    "sent": "Imetumwa",
+    "covering": "Jalada la kesi {reference} linapelekwa kwa {destination} kwa ajili ya kupitiwa na ushauri.",
+    "waiting_one": "Rufaa 1 inasubiri jibu",
+    "waiting_n": "Rufaa {count} zinasubiri jibu",
+    "none_waiting": "Hakuna kinachosubiri jibu.",
+    "open_case": "Kesi",
+    "covering_plain": "Jalada la kesi {reference} linapelekwa kwa {destination}."
   },
   "reports": {
     "this_week": "wiki hii, kati ya wiki {weeks} zinazoonyeshwa",
@@ -1243,7 +1316,7 @@
     "intake_desc": "Kesi zilizofunguliwa kwa wiki, wiki {weeks} zilizopita.",
     "custody_desc": "Ukamataji uliorekodiwa kwa wiki, wiki {weeks} zilizopita.",
     "statements_desc": "Maelezo yaliyochukuliwa kwa wiki, wiki {weeks} zilizopita.",
-    "also": "Pia inafuatiliwa",
+    "also": "Pia katika kipindi hiki",
     "bonds_granted": "Dhamana zilizotolewa",
     "evidence_recovered": "Ushahidi uliopatikana",
     "breakdown": "Mgawanyo wa sasa",
@@ -1259,8 +1332,24 @@
     "referrals_status_desc": "Rufaa zote, matokeo ya sasa.",
     "referrals_dest": "Rufaa kwa mahali zilipopelekwa",
     "referrals_dest_desc": "Mahali kesi zilipopelekwa.",
-    "top_offences": "Makosa yanayoshtakiwa zaidi",
-    "top_offences_desc": "Makosa yanayojitokeza zaidi kwenye hati za mashtaka."
+    "top_offences": "Makosa yaliyoshtakiwa",
+    "top_offences_desc": "Makosa yanayojitokeza zaidi kwenye hati za mashtaka.",
+    "subtitle": "Jinsi kazi ya kituo ilivyokwenda, na hali ilivyo sasa. Imehesabiwa kutoka kwenye kumbukumbu.",
+    "period": "Kipindi",
+    "period_4w": "Wiki 4",
+    "period_3m": "Miezi 3",
+    "period_12m": "Miezi 12",
+    "diary_entries": "Maingizo ya kitabu",
+    "cases_opened": "Kesi zilizofunguliwa",
+    "arrests": "Waliokamatwa",
+    "week_by_week": "Wiki kwa wiki",
+    "month_by_month": "Mwezi kwa mwezi",
+    "flow_hint": "Kilichofika kituoni, ukilinganisha na kilichokuwa kesi.",
+    "top_offences_hint": "Katika hati zote za mashtaka, yanayotokea zaidi kwanza.",
+    "no_offences": "Hakuna aliyeshtakiwa bado.",
+    "standing": "Hali ilivyo sasa",
+    "custody_records": "Mahabusu",
+    "referred_to": "Zimepelekwa kwa"
   },
   "roster": {
     "title": "Ratiba ya Zamu",
@@ -1287,8 +1376,21 @@
     "lead": "Shughuli za kituo, zinarekodiwa zinapotokea. Maingizo mengi hubaki kuwa ya taarifa tu.",
     "edit_title": "Hariri ingizo la kitabu cha matukio",
     "edit_desc": "Sasisha kilichorekodiwa.",
-    "empty": "Bado hakuna maingizo yaliyorekodiwa.",
-    "search": "Tafuta kwenye kitabu cha matukio…"
+    "empty": "Hakuna kilichoandikwa kwenye kitabu bado.",
+    "search": "Tafuta katika kitabu",
+    "yesterday": "Jana",
+    "entry_title": "Ingizo la Kitabu cha Matukio",
+    "number": "Namba ya SD",
+    "time": "Saa",
+    "date": "Tarehe",
+    "entries": "Maingizo",
+    "officer_signs": "Afisa anayeandika",
+    "officer_in_charge": "Afisa mkuu wa kituo",
+    "day_title": "Kitabu cha Matukio, {date}",
+    "particulars": "Maelezo",
+    "count_one": "Ingizo 1",
+    "count": "Maingizo {count}",
+    "print_day": "Chapisha ukurasa"
   },
   "search_page": {
     "people_desc": "Kila mtu anayejulikana na kituo hiki",
@@ -1305,29 +1407,54 @@
   },
   "bonds_page": {
     "title": "Dhamana na wadhamini",
-    "add_desc": "Rekodi dhamana ya polisi, kwa sehemu zile zile za fomu ya PF18.",
+    "add_desc": "Mwachilie mtu kwa dhamana ya polisi, akiwa na mdhamini au bila.",
     "lead": "Dhamana ya polisi, tofauti na dhamana ya mahakama: inatolewa hapa, si na hakimu.",
     "edit_title": "Hariri dhamana",
     "edit_desc": "Sasisha dhamana hii.",
     "table": "Dhamana",
-    "empty": "Bado hakuna dhamana zilizotolewa.",
-    "search": "Tafuta dhamana…"
+    "empty": "Hakuna dhamana iliyotolewa bado.",
+    "search": "Tafuta dhamana",
+    "paper_title": "Dhamana ya Polisi",
+    "surety": "Mdhamini",
+    "own_recognisance": "Kwa dhamana yake mwenyewe",
+    "reporting": "Kuripoti kituoni",
+    "released_person": "Aliyeachiliwa kwa dhamana",
+    "active_one": "Mtu 1 yuko nje kwa dhamana",
+    "active_n": "Watu {count} wako nje kwa dhamana",
+    "out_on_bond": "Nje kwa dhamana",
+    "none_active": "Hakuna aliye nje kwa dhamana."
   },
   "custody_page": {
     "lead": "Nani yuko mahabusu, kikomo cha karibu zaidi kwanza. Kila kikomo kinakokotolewa kutoka muda wa kukamatwa ukurasa huu unapoonyeshwa, hakihifadhiwi, kwa hiyo hakiwezi kupitwa na wakati.",
-    "new": "Rekodi mpya ya mahabusu",
-    "new_desc": "Rekodi ukamataji na uanze kuhesabu saa 48.",
+    "new": "Mwandikishe mtu",
+    "new_desc": "Andika ukamataji. Muda wa saa 48 unaanza wakati wa kukamatwa.",
     "in_cells": "Walio mahabusu sasa",
     "edit_title": "Hariri rekodi ya mahabusu",
     "edit_desc": "Sasisha rekodi hii ya mahabusu.",
     "all": "Rekodi zote za mahabusu",
     "table": "Rekodi za mahabusu",
-    "empty": "Bado hakuna rekodi za mahabusu.",
-    "search": "Tafuta rekodi za mahabusu"
+    "empty": "Hakuna aliyeandikishwa bado.",
+    "search": "Tafuta kumbukumbu za mahabusu",
+    "paper_title": "Kumbukumbu ya Mahabusu",
+    "person": "Mtu",
+    "arrested": "Alikamatwa",
+    "where": "Wapi",
+    "transferred": "Alihamishwa",
+    "not_yet": "Bado",
+    "limit": "Lazima afikishwe mahakamani au aachiliwe kabla ya",
+    "left_cells": "Alitoka mahabusu",
+    "booking_officer": "Afisa anayemwandikisha",
+    "cells_officer": "Afisa mkuu wa mahabusu",
+    "in_cells_one": "Mtu 1 mahabusu",
+    "in_cells_n": "Watu {count} mahabusu",
+    "due": "{count} wanakaribia au wamepita muda",
+    "view": "Onyesha",
+    "in_the_cells": "Mahabusu sasa",
+    "all_records": "Kumbukumbu zote"
   },
   "files": {
     "open_record_aria": "Fungua rekodi ambayo faili hii ni yake",
-    "open_record": "Fungua rekodi",
+    "open_record": "Fungua kumbukumbu",
     "open_failed": "Imeshindwa kufungua rekodi ambayo faili hii ni yake",
     "folder": "Folda",
     "file": "Faili",
@@ -1338,12 +1465,32 @@
     "vault": "Hifadhi ya Polisi",
     "table": "Yaliyomo kwenye folda ya hifadhi",
     "empty": "Folda hii haina kitu.",
-    "search": "Tafuta kwenye folda hii…"
+    "search": "Tafuta katika folda hii",
+    "case_documents": "Kumbukumbu ya kesi",
+    "stores": "Stoo",
+    "check_ins": "Kuingia kazini kwa maafisa",
+    "indexes": "Faharasa",
+    "where": "Ulipo",
+    "lead_short": "Kila kitu kilicho kwenye kumbukumbu za kituo, kwa kesi, mtu na rejista.",
+    "items_one": "Kitu 1",
+    "items": "Vitu {count}",
+    "no_match": "Hakuna kinacholingana na “{query}”.",
+    "more": "Zaidi",
+    "view": "Tazama",
+    "subtitle": "Nyaraka {papers} · Faili {files}",
+    "papers": "Nyaraka",
+    "files": "Faili",
+    "station_folder": "Folda ya kituo",
+    "station_folder_about": "Kumbukumbu za kituo kama faili kwenye kompyuta hii.",
+    "search_papers": "Tafuta nyaraka kwa jina, namba au msimbo",
+    "search_files": "Tafuta faili kwa jina",
+    "no_papers": "Hakuna kilichochapishwa bado. Nyaraka inaonekana hapa ikishachapishwa au kuhifadhiwa kama Word.",
+    "no_files": "Hakuna picha, skani au faili iliyoambatishwa bado."
   },
   "people_page": {
     "lead": "Tafuta mtu, au mwongeze ikiwa bado hajulikani kwenye mfumo.",
-    "empty": "Bado hakuna watu waliorekodiwa.",
-    "search": "Tafuta watu kwa jina, simu, au kitambulisho cha taifa…",
+    "empty": "Hakuna mtu aliyeandikwa bado.",
+    "search": "Tafuta kwa jina, simu au kitambulisho",
     "back": "Rudi kwenye Watu",
     "phone": "Simu: {value}",
     "nin": "NIN / Kitambulisho cha Taifa: {value}",
@@ -1356,7 +1503,21 @@
     "people_involved": "watu {count} wanahusika",
     "with_surety": "Na mdhamini",
     "no_surety": "Bila mdhamini",
-    "vehicles": "Magari"
+    "vehicles": "Magari",
+    "print_profile": "Chapisha wasifu",
+    "save_pdf": "Hifadhi kama PDF",
+    "save_word": "Hifadhi kama Word",
+    "sections": "Sehemu",
+    "about": "Kuhusu",
+    "history": "Historia",
+    "files": "Picha na faili",
+    "particulars": "Taarifa binafsi",
+    "not_recorded": "Haijaandikwa",
+    "first_recorded": "Aliandikwa mara ya kwanza",
+    "photographs": "Picha za utambulisho",
+    "no_history": "Kituo hakina kumbukumbu nyingine kuhusu mtu huyu.",
+    "count_one": "Mtu 1",
+    "count": "Watu {count}"
   },
   "brand": {
     "title": "Nembo",
@@ -1411,15 +1572,54 @@
     "tab_command": "Kamandi",
     "tab_network": "Mtandao",
     "tab_data": "Data",
-    "tab_about": "Kuhusu"
+    "tab_about": "Kuhusu",
+    "group": {
+      "station": "Kituo hiki",
+      "command": "Kamandi hii",
+      "computer": "Kompyuta hii",
+      "about": "Kuhusu"
+    },
+    "nav": {
+      "station": "Kituo",
+      "remote": "Simu na ufikiaji wa mbali",
+      "records": "Kumbukumbu na kumbukumbu za matukio",
+      "notifications": "Arifa"
+    },
+    "about": {
+      "station": "Jina na nembo ya kituo, vinavyochapishwa kwenye kila nyaraka.",
+      "sign_in": "Jinsi maafisa wanavyoingia kituoni.",
+      "command": "Kamandi ambayo kituo hiki kinaripoti kwake.",
+      "stations": "Vituo vinavyoripoti kwa kamandi hii.",
+      "remote": "Ruhusu simu za maafisa kufikia kituo, kwenye mtandao wake au kutoka nje.",
+      "records": "Ingiza kumbukumbu, toa nakala, na kumbukumbu za uwajibikaji.",
+      "appearance": "Jinsi programu inavyoonekana kwenye kompyuta hii, na lugha yake.",
+      "notifications": "Arifa ambazo kompyuta hii inaonyesha.",
+      "about": "Toleo la Pleadli Police kwenye kompyuta hii."
+    },
+    "station": {
+      "identity": "Utambulisho",
+      "identity_about": "Kama unavyoonekana juu ya kila nyaraka.",
+      "name": "Jina",
+      "edit": "Hariri wasifu wa kituo"
+    },
+    "records": {
+      "logs": "Kumbukumbu za matukio"
+    },
+    "theme_light": "Mwanga",
+    "theme_dark": "Giza",
+    "theme_auto": "Kiotomatiki",
+    "desktop_only": "Arifa zinaonyeshwa na programu ya kompyuta."
   },
   "statements_page": {
     "add_desc": "Kilichosemwa, na nani, na kilichukuliwa na nani.",
     "lead": "Rekodi kamili zenye uwajibikaji wake, si maandishi yaliyoambatishwa kwenye kesi.",
     "edit_title": "Hariri maelezo",
     "edit_desc": "Sasisha maelezo haya.",
-    "empty": "Bado hakuna maelezo yaliyorekodiwa.",
-    "search": "Tafuta maelezo…"
+    "empty": "Hakuna maelezo yaliyochukuliwa bado.",
+    "search": "Tafuta maelezo",
+    "count_one": "Maelezo 1",
+    "count": "Maelezo {count}",
+    "new": "Chukua maelezo"
   },
   "station_page": {
     "title": "Utawala wa kituo",
@@ -1437,7 +1637,20 @@
     "edit_title": "Hariri afisa",
     "edit_desc": "Sasisha afisa huyu.",
     "empty": "Bado hakuna maafisa walioongezwa.",
-    "search": "Tafuta kwa jina, cheo, wadhifa au namba ya beji"
+    "search": "Tafuta maafisa",
+    "paper_title": "Kumbukumbu ya afisa",
+    "in_this_app": "Katika programu hii",
+    "joined_books": "Ameandikwa kwenye vitabu vya kituo",
+    "phone_sign_in": "Huingia kwa simu",
+    "duty_coming": "Zamu za wiki hii",
+    "roll_title": "Orodha ya majina ya maafisa",
+    "no": "Na.",
+    "signature": "Sahihi",
+    "no_rank": "Cheo hakijatajwa",
+    "count": "{here} wako kituoni",
+    "count_left": "{here} wako kituoni, {left} wameondoka",
+    "print_roll": "Chapisha orodha ya maafisa",
+    "on_duty_until": "Zamuni hadi {time}"
   },
   "profile_page": {
     "title": "Wasifu wa Kituo",
@@ -1457,17 +1670,36 @@
     "items": "vitu {count}",
     "table": "Mali zote za kituo",
     "search": "Tafuta kwenye silaha na mali zilizokamatwa…",
-    "armory_desc": "Silaha na vifaa vinavyoshikiliwa na kituo.",
-    "armory_add": "Ongeza kitu cha ghala la silaha",
-    "impounded_desc": "Mali iliyokamatwa na kushikiliwa na kituo.",
-    "impounded_add": "Ongeza mali iliyokamatwa"
+    "armory_desc": "Silaha, risasi na vifaa vinavyoshikiliwa na kituo.",
+    "armory_add": "Ongeza kwenye ghala la silaha",
+    "impounded_desc": "Mali ambayo kituo kimechukua na kushikilia.",
+    "impounded_add": "Kamata mali",
+    "armory_paper": "Ingizo la Rejista ya Silaha",
+    "impounded_paper": "Kumbukumbu ya Mali Iliyokamatwa",
+    "item": "Kitu",
+    "entered": "Kiliingizwa kwenye rejista",
+    "taken_from": "Ilichukuliwa kwa",
+    "person": "Mtu",
+    "store_officer": "Afisa mkuu wa stoo",
+    "in_store_count": "{count} stoo kati ya {total}",
+    "issued_out": "Zimetolewa",
+    "gone": "Zimeachiliwa au kuondolewa",
+    "empty": "Hakuna kilichoingizwa bado.",
+    "search_here": "Tafuta kwa kitu, namba au anayeshikilia"
   },
   "vehicles_page": {
     "add_desc": "Rekodi namba ya gari, na mmiliki wake ikiwa anajulikana.",
     "lead": "Mtafute mtu kwa gari lake, au gari kwa namba yake.",
     "edit_title": "Hariri gari",
-    "empty": "Bado hakuna magari yaliyorekodiwa.",
-    "search": "Tafuta kwa namba, aina, au modeli…"
+    "empty": "Hakuna gari lililoandikwa bado.",
+    "search": "Tafuta kwa namba, aina au mmiliki",
+    "paper_title": "Kumbukumbu ya Gari",
+    "vehicle": "Gari",
+    "owner": "Mmiliki",
+    "owner_unknown": "Hajulikani",
+    "recorded": "Liliandikwa",
+    "count_one": "Gari 1",
+    "count": "Magari {count}"
   },
   "print": {
     "back": "← Rudi",
@@ -1543,7 +1775,10 @@
       "witnesses": "Mashahidi",
       "stored_at": "Kimehifadhiwa"
     },
-    "open_elsewhere": "Fungua kwa programu nyingine"
+    "open_elsewhere": "Fungua kwa programu nyingine",
+    "write": "Andika",
+    "clear_writing": "Futa mwandiko",
+    "write_hint": "Andika kwenye karatasi kwa kalamu ya kidijitali, kidole au kipanya. Inabaki kwenye nakala ya kituo na kuchapishwa nayo."
   },
   "seal": {
     "draw": "Saini hapa",
@@ -1559,5 +1794,165 @@
     "check": "Hakiki",
     "code": "Nambari",
     "title": "Hakiki hati"
+  },
+  "today": {
+    "diary_today": "Maingizo ya leo",
+    "on_duty": "Walio kazini sasa",
+    "cannot_wait": "Haiwezi kusubiri",
+    "backup_respond": "Afisa ameomba msaada. Fungua ujibu.",
+    "limit_past": "Muda umepita kwa {time}. Alikamatwa {arrested}.",
+    "limit_near": "Zimebaki {time}. Lazima afikishwe mahakamani au aachiliwe kabla ya {deadline}.",
+    "waiting_reply": "Zinasubiri jibu",
+    "referred_to": "Imetumwa kwa {destination} {when}",
+    "just_happened": "Yaliyotokea sasa hivi"
+  },
+  "viewer": {
+    "no_preview": "Faili ya aina hii haiwezi kuonyeshwa hapa. Ifungue kwa programu yake kupitia menyu.",
+    "cannot_show": "Faili hii haikuweza kusomwa.",
+    "open_outside": "Fungua kwa programu nyingine",
+    "full": "Skrini nzima",
+    "exit_full": "Toka skrini nzima",
+    "close": "Funga"
+  },
+  "identity": {
+    "no_photo": "Hakuna picha",
+    "name": "Jina",
+    "national_id": "Kitambulisho (NIN)",
+    "phone": "Simu",
+    "address": "Anwani",
+    "pose": {
+      "front": "Angalia kamera, kichwa sawa, macho wazi.",
+      "left": "Geuka upande wa kushoto wa uso uangalie kamera.",
+      "right": "Geuka upande wa kulia wa uso uangalie kamera.",
+      "back": "Geuka, nyuma ya kichwa kuelekea kamera."
+    },
+    "no_camera": "Hakuna kamera iliyopatikana. Chagua picha kutoka kwenye faili.",
+    "step": "Hatua {step} kati ya {total}",
+    "skip": "Ruka",
+    "retake": "Piga tena",
+    "use": "Tumia picha",
+    "take": "Piga picha",
+    "from_file": "Kutoka faili",
+    "take_photos": "Piga picha",
+    "take_missing": "Piga {count} zinazokosekana",
+    "retake_all": "Piga tena",
+    "replace": "Piga tena {view}",
+    "use_phone": "Tumia simu badala yake",
+    "phone_title": "Piga kwa simu",
+    "phone_lead": "Changanua msimbo kwa simu iliyo kwenye mtandao wa kituo.",
+    "no_camera_phone": "Kompyuta hii haina kamera. Changanua msimbo kwa simu iliyo kwenye mtandao wa kituo.",
+    "phone_how": "Fungua kamera ya simu na uielekeze kwenye msimbo. Kila picha inaonekana hapa mara inapopigwa.",
+    "phone_failed": "Kiungo hakikuweza kutengenezwa.",
+    "done": "Imekamilika",
+    "finish": "Maliza"
+  },
+  "exhibits_page": {
+    "count_one": "Kielelezo 1",
+    "count": "Vielelezo {count}",
+    "new": "Andika kielelezo",
+    "from_person": "Kilipatikana kwa"
+  },
+  "person": {
+    "nin": "NIN",
+    "now": {
+      "in_cells": "Mahabusu",
+      "arrested": "Alikamatwa {when} {where}",
+      "by": "Mahakamani au aachiliwe kabla ya {deadline}",
+      "on_bond": "Nje kwa dhamana ya polisi",
+      "surety": "Mdhamini: {name}"
+    },
+    "latest": "Karibuni",
+    "see_all": "Ona yote",
+    "tab": {
+      "overview": "Muhtasari",
+      "timeline": "Mfululizo",
+      "photos": "Picha",
+      "files": "Faili"
+    },
+    "chip": {
+      "in_cells": "Mahabusu · zimebaki {left}",
+      "past_limit": "Mahabusu · muda umepita",
+      "on_bond": "Nje kwa dhamana ya polisi",
+      "suspect_one": "Mshukiwa katika kesi iliyo wazi",
+      "suspect_n": "Mshukiwa katika kesi {count} zilizo wazi"
+    },
+    "action": {
+      "custody": "Fungua kumbukumbu ya mahabusu"
+    },
+    "event": {
+      "arrested": "Alikamatwa",
+      "bond": "Aliachiliwa kwa dhamana ya polisi",
+      "statement": "Alitoa maelezo",
+      "charged": "Alishtakiwa kwa {offence}",
+      "exhibit": "Kielelezo: {item}",
+      "vehicle": "Gari {plate}",
+      "case": "Ametajwa katika kesi {reference}"
+    },
+    "now_title": "Sasa"
+  },
+  "update": {
+    "about": "Toleo lililo kwenye kompyuta hii, na kupata linalofuata.",
+    "auto": "Pakua masasisho kiotomatiki",
+    "auto_hint": "Masasisho yamesainiwa na Pleadli na hukaguliwa kabla ya kusakinishwa. Programu inaanza upya pale tu unaposema.",
+    "available": "Toleo {version} linapatikana",
+    "browser": "Masasisho huja na programu ya kompyuta. Kwenye kivinjari hakuna cha kusasisha.",
+    "check": "Kagua sasa",
+    "checked_at": "Ilikaguliwa mara ya mwisho saa {time}.",
+    "checking": "Inatafuta sasisho…",
+    "current": "Pleadli Police iko katika toleo jipya",
+    "downloading": "Inapakua sasisho… {percent}%",
+    "failed": "Sasisho halikuweza kukaguliwa au kusakinishwa",
+    "get": "Sasisha sasa",
+    "not_checked": "Bado halijakaguliwa",
+    "ready": "Toleo {version} liko tayari. Anzisha upya kukamilisha.",
+    "restart": "Anzisha upya",
+    "title": "Sasisho la programu",
+    "version": "Toleo"
+  },
+  "roster_page": {
+    "detail_title": "Zamu ya kazi",
+    "duty": "Kazi",
+    "from": "Kuanzia",
+    "to": "Hadi",
+    "rostered": "Amewekwa kwenye ratiba",
+    "officer_signs": "Afisa wa zamu",
+    "duty_officer": "Afisa msimamizi wa zamu",
+    "day_title": "Ratiba ya zamu ya {date}",
+    "officers": "Maafisa",
+    "hours": "Saa",
+    "booked_on": "Ameripoti",
+    "handover_title": "Kukabidhi kituo",
+    "time": "Muda",
+    "handed_over_by": "Amekabidhiwa na",
+    "taken_over_by": "Amepokelewa na",
+    "booked_on_title": "Ameripoti kazini",
+    "how": "Kwa njia gani",
+    "no_one_now": "Hakuna aliye zamuni sasa hivi",
+    "on_duty_count": "{count} wako zamuni sasa",
+    "now": "Sasa",
+    "week": "Wiki",
+    "book": "Kitabu",
+    "put_on_duty": "Weka zamuni",
+    "book_on": "Ripoti afisa kazini",
+    "hand_over": "Kabidhi kituo",
+    "on_duty_now": "Walio zamuni sasa",
+    "until": "hadi {time}",
+    "booked_on_at": "Aliripoti {time}",
+    "not_booked_on": "Hajaripoti",
+    "coming_on": "Wanaoingia zamuni",
+    "tomorrow": "Kesho",
+    "last_handover": "Makabidhiano ya mwisho",
+    "taken_over": "{name} amepokea zamu",
+    "from_name": "kutoka kwa {name}",
+    "previous_week": "Wiki iliyopita",
+    "next_week": "Wiki ijayo",
+    "this_week": "Wiki hii",
+    "week_empty": "Hakuna aliye kwenye ratiba wiki hii.",
+    "print_day": "Chapisha siku",
+    "booked_on_name": "{name} ameripoti",
+    "book_empty": "Bado hakuna aliyeripoti wala kukabidhi.",
+    "book_search": "Tafuta kwenye kitabu",
+    "span": "{from} hadi {to}",
+    "empty": "Bado hakuna aliye kwenye ratiba. Weka afisa zamuni ili kuianza."
   }
 }

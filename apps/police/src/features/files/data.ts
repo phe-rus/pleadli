@@ -27,3 +27,11 @@ export async function revealVaultEntry(entry: VaultEntry) {
   if (!isTauri()) return
   await invoke('reveal_vault_path', { relativePath: entry.relativePath })
 }
+
+/** A file of the vault as a `data:` URL, for the app's own viewer. */
+export async function readVaultFile(relativePath: string): Promise<string> {
+  if (isTauri()) return z.string().parse(await invoke('read_vault_file', { relativePath }))
+  const response = await fetch(`${DEV_SERVER_URL}/vault/file?relativePath=${encodeURIComponent(relativePath)}`)
+  if (!response.ok) throw new Error(await response.text())
+  return z.string().parse(await response.json())
+}

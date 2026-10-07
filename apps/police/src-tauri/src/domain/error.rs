@@ -16,6 +16,9 @@ pub enum DomainError {
     Conflict(String),
     /// Too many wrong attempts; try again later (429).
     Slow(String),
+    /// This officer must give a password before signing in (428). The body is
+    /// `password`, or `choose_password` for an administrator who has none yet.
+    NeedsPassword(&'static str),
     Db(sqlx::Error),
 }
 
@@ -33,6 +36,7 @@ impl fmt::Display for DomainError {
             | DomainError::NotFound(m)
             | DomainError::Conflict(m)
             | DomainError::Slow(m) => write!(f, "{m}"),
+            DomainError::NeedsPassword(m) => write!(f, "{m}"),
             DomainError::Db(e) => write!(f, "{e}"),
         }
     }

@@ -13,7 +13,8 @@ export function useGo() {
   const navigate = useNavigate()
   return useCallback(
     (to: string) => {
-      void navigate({ to: to.split('?')[0] as never })
+      const [path, query = ''] = to.split('?')
+      void navigate({ to: path as never, search: Object.fromEntries(new URLSearchParams(query)) as never })
     },
     [navigate],
   )

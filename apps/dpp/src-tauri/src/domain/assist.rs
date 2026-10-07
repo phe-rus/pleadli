@@ -234,6 +234,15 @@ pub fn load_dev_env() {
 // ---------------------------------------------------------------- the engine
 
 /// The provider, key and model settings, or why Assist cannot run.
+/// The provider and key with the model a person chose for one request, if any.
+pub async fn engine_for(pool: &SqlitePool, chosen: Option<&str>) -> Result<Engine, DomainError> {
+    let mut e = engine(pool).await?;
+    if let Some(model) = chosen.map(str::trim).filter(|m| !m.is_empty()) {
+        e.fixed_model = Some(model.to_string());
+    }
+    Ok(e)
+}
+
 pub async fn engine(pool: &SqlitePool) -> Result<Engine, DomainError> {
     let r = row(pool).await?;
     if r.mode == "off" {
@@ -485,8 +494,8 @@ pub struct Brief {
     pub brief: Value,
 }
 
-pub async fn brief(pool: &SqlitePool, file_id: &str, context: &CountryContext, actor: Option<&str>) -> Result<Brief, DomainError> {
-    let e = engine(pool).await?;
+pub async fn brief(pool: &SqlitePool, file_id: &str, context: &CountryContext, model: Option<&str>, actor: Option<&str>) -> Result<Brief, DomainError> {
+    let e = engine_for(pool, model).await?;
     let text = file_text(pool, file_id).await?;
     let system = format!("{RULES}\n{}", country_lines(context));
     let result = ai::generate_json(&e, &system, &[Part::Text(format!("Prepare a brief on this file.\n\n{text}"))], &brief_schema()).await;
@@ -588,12 +597,13 @@ pub async fn arrange(
     file_id: &str,
     attachment_ids: &[String],
     context: &CountryContext,
+    model: Option<&str>,
     actor: Option<&str>,
 ) -> Result<Arranged, DomainError> {
     if attachment_ids.is_empty() {
         return invalid("Choose the scans to read.");
     }
-    let e = engine(pool).await?;
+    let e = engine_for(pool, model).await?;
     let mut parts = vec![Part::Text(format!(
         "These are {} scanned or photographed documents from one criminal case file. Split them into the separate documents they contain \
          (each statement, report, form, letter or exhibit list is one document), in the order they appear. For each, give where it sits \

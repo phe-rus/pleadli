@@ -1,3 +1,4 @@
+import { assistModel } from './model-choice'
 import * as z from 'zod'
 import { api } from '@/lib/api'
 import { fileItemSchema } from '@/features/file-index/data'
@@ -97,6 +98,6 @@ export type AssistSettingsChange = {
 }
 export const saveAssistSettings = async (change: AssistSettingsChange) => assistSettingsSchema.parse(await api('PUT', '/api/assist/settings', { body: change }))
 export const getLatestBrief = async (fileId: string) => briefSchema.nullable().parse(await api('GET', '/api/assist/brief', { query: { fileId } }))
-export const requestBrief = async (fileId: string, context: CountryContext) => briefSchema.parse(await api('POST', '/api/assist/brief', { body: { fileId, context } }))
+export const requestBrief = async (fileId: string, context: CountryContext) => briefSchema.parse(await api('POST', '/api/assist/brief', { body: { fileId, context, model: assistModel() || undefined } }))
 export const arrangeScans = async (fileId: string, attachmentIds: string[], context: CountryContext) =>
-  arrangedSchema.parse(await api('POST', '/api/assist/arrange', { body: { fileId, attachmentIds, context } }))
+  arrangedSchema.parse(await api('POST', '/api/assist/arrange', { body: { fileId, attachmentIds, context, model: assistModel() || undefined } }))

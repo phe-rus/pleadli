@@ -1,19 +1,19 @@
-import { SettingsCard } from '@/components/settings-card'
+import { SettingsCard, SettingsRow } from '@/components/settings-card'
 import { Tag } from '@/components/status-tag'
 import { useJurisdiction } from '@/features/installation'
 import { useSecurityStatus } from '@/features/security'
 import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
-import { Checkbox } from '@pleadli/ui/checkbox'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
-import { cn } from '@pleadli/ui/lib/utils'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { Switch } from '@pleadli/ui/switch'
 import { Textarea } from '@pleadli/ui/textarea'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { addLaw, deleteLaw, listLaws, listModels, syncLaws, type Provider } from './data'
+import { addLaw, deleteLaw, listLaws, syncLaws, type Provider } from './data'
+import { isLocal, LOCAL_BASE_URL, LocalModel } from './local-model'
 import { useAssistSettings, useSaveAssistSettings } from './queries'
 
 const providers: { id: Provider; label: () => string; about: () => string; keyUrl?: string }[] = [
@@ -23,174 +23,153 @@ const providers: { id: Provider; label: () => string; about: () => string; keyUr
   { id: 'openai_compatible', label: m["assist.provider.other_label"], about: m["assist.provider.other"] },
 ]
 
-/** Settings > Assist. Off until an administrator turns it on and confirms, in
- * so many words, that turning it on sends file contents to the provider. The
- * provider is one choice; the model is chosen automatically from the
- * provider's own list unless someone fixes one. Keys are never shown again. */
+/** Settings > Assist, kept to what an office decides once: whether to use it,
+ * whose service it uses with which key, and that a file may go there. Which
+ * model answers is chosen in Assist itself, by whoever is asking. Keys are
+ * kept locked on this computer and never come back. */
 export function AssistPane() {
   const { data: status } = useSecurityStatus()
   const isAdmin = status?.actor?.role === 'administrator'
   const { data: s } = useAssistSettings()
   const save = useSaveAssistSettings()
   const [key, setKey] = useState('')
+  const [editingKey, setEditingKey] = useState(false)
   const [baseUrl, setBaseUrl] = useState<string | null>(null)
-  const [agree, setAgree] = useState(false)
-  const [showModels, setShowModels] = useState(false)
-  const models = useQuery({ queryKey: ['assist', 'models', s?.provider, s?.keyHint], queryFn: listModels, enabled: showModels && Boolean(s?.ready), staleTime: 10 * 60_000 })
   if (!s) return null
   const on = s.mode !== 'off'
+  // "On this computer" is the own-server provider pointed at Ollama on this machine.
+  const local = s.provider === 'openai_compatible' && isLocal(s.baseUrl)
+  const provider = providers.find((p) => p.id === s.provider) ?? providers[0]
+  const serviceName = local ? m["assist.local.service"]() : provider.label()
+  const items = [{ value: 'local', label: m["assist.local.service"]() }, ...providers.map((p) => ({ value: p.id as string, label: p.label() }))]
 
   const apply = (change: Parameters<typeof save.mutate>[0], done?: string) =>
     save.mutate(change, {
       onSuccess: () => done && t.success(done),
       onError: (e) => t.error(m["settings.save_failed"](), { description: e.message }),
     })
+  const saveKey = () => {
+    apply({ mode: 'institution_key', apiKey: key.trim() }, m["settings.saved"]())
+    setKey('')
+    setEditingKey(false)
+  }
 
   return (
     <>
-      <SettingsCard
-        title={m["assist.settings.title"]()}
-        badge={<Tag tone={s.ready ? 'done' : on ? 'open' : 'neutral'}>{s.ready ? m["assist.settings.ready"]() : on ? m["assist.settings.needs"]() : m["assist.settings.off"]()}</Tag>}
-        description={m["assist.settings.description"]()}
-        hint={isAdmin ? m["settings.office.everyone_sees"]() : m["settings.admin_only"]()}
-      >
-        <label className="flex items-center justify-between gap-4">
-          <span>{m["assist.settings.use"]()}</span>
+      <SettingsCard hint={isAdmin ? m["assist.settings.description"]() : m["settings.admin_only"]()}>
+        <SettingsRow label={m["assist.settings.use"]()}>
           <Switch
             checked={on}
             disabled={!isAdmin || save.isPending}
+            aria-label={m["assist.settings.use"]()}
             onCheckedChange={(checked) => apply({ mode: checked ? 'institution_key' : 'off' }, checked ? m["assist.settings.turned_on"]() : m["assist.settings.turned_off"]())}
           />
-        </label>
+        </SettingsRow>
       </SettingsCard>
+
+      {on && (
+        <SettingsCard title={m["assist.settings.provider_title"]()} hint={m["assist.settings.model_in_chat"]()}>
+          <SettingsRow label={m["assist.settings.service"]()} hint={local ? m["assist.local.about"]() : provider.about()}>
+            <Select
+              items={items}
+              value={local ? 'local' : s.provider}
+              disabled={!isAdmin}
+              onValueChange={(v) => {
+                if (!v || v === (local ? 'local' : s.provider)) return
+                if (v === 'local') apply({ mode: 'institution_key', provider: 'openai_compatible', baseUrl: LOCAL_BASE_URL, autoModel: true }, m["assist.settings.provider_changed"]({ name: m["assist.local.service"]() }))
+                else apply({ mode: 'institution_key', provider: v as Provider, autoModel: true, ...(v === 'openai_compatible' && local ? { baseUrl: '' } : {}) }, m["assist.settings.provider_changed"]({ name: providers.find((p) => p.id === v)!.label() }))
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-56" aria-label={m["assist.settings.service"]()}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {items.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </SettingsRow>
+
+          {s.provider === 'openai_compatible' && !local && (
+            <SettingsRow label={m["assist.settings.base_url"]()}>
+              <Input
+                value={baseUrl ?? s.baseUrl ?? ''}
+                disabled={!isAdmin}
+                placeholder="http://localhost:11434/v1"
+                onChange={(e) => setBaseUrl(e.target.value)}
+                onBlur={() => baseUrl !== null && baseUrl !== (s.baseUrl ?? '') && apply({ mode: 'institution_key', baseUrl }, m["settings.saved"]())}
+              />
+            </SettingsRow>
+          )}
+
+          {!local && (
+          <SettingsRow label={m["assist.settings.key_label"]()} hint={provider.keyUrl ? m["assist.settings.key_where"]({ url: provider.keyUrl }) : undefined}>
+            {s.keySource && !editingKey ? (
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground tabular-nums">{s.keyHint}</span>
+                {isAdmin && (
+                  <Button type="button" size="sm" variant="outline" onClick={() => setEditingKey(true)}>
+                    {m["assist.settings.change_key"]()}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <form
+                className="flex w-full items-center gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (key.trim()) saveKey()
+                }}
+              >
+                <Input type="password" autoComplete="off" value={key} disabled={!isAdmin} placeholder={m["assist.settings.key_placeholder"]()} onChange={(e) => setKey(e.target.value)} />
+                <Button type="submit" size="sm" disabled={!isAdmin || !key.trim() || save.isPending}>
+                  {m["settings.save"]()}
+                </Button>
+              </form>
+            )}
+          </SettingsRow>
+          )}
+          {s.keySource === 'settings' && isAdmin && editingKey && !local && (
+            <div className="flex justify-between">
+              <Button type="button" size="sm" variant="ghost" onClick={() => setEditingKey(false)}>
+                {m["assist.settings.cancel"]()}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => { apply({ mode: 'institution_key', apiKey: '' }, m["assist.settings.key_removed"]()); setEditingKey(false) }}>
+                {m["assist.settings.remove_key"]()}
+              </Button>
+            </div>
+          )}
+        </SettingsCard>
+      )}
+
+      {on && local && <LocalModel isAdmin={isAdmin} chosenModel={s.autoModel ? '' : s.model} onUse={(model) => apply({ mode: 'institution_key', model, autoModel: false }, m["assist.local.now_using"]({ model }))} />}
 
       {on && (
         <SettingsCard
           title={m["assist.settings.where_title"]()}
-          badge={s.acknowledgedAt ? <Tag tone="done">{m["assist.settings.confirmed"]()}</Tag> : <Tag tone="urgent">{m["assist.settings.not_confirmed"]()}</Tag>}
-          description={m["assist.settings.where_body"]()}
-          hint={s.acknowledgedAt ? m["assist.settings.confirmed_by"]({ name: s.acknowledgedBy ?? '', date: formatDate(s.acknowledgedAt) }) : undefined}
-          action={
-            !s.acknowledgedAt &&
-            isAdmin && (
-              <Button size="sm" disabled={!agree || save.isPending} onClick={() => apply({ mode: 'institution_key', acknowledge: true }, m["assist.settings.turned_on"]())}>
-                {m["assist.settings.confirm"]()}
-              </Button>
-            )
+          hint={
+            <>
+              {m["assist.settings.point_sent_any"]()} {m["assist.settings.point_free"]()} {m["assist.settings.point_logged"]()}
+            </>
           }
         >
-          <ul className="flex flex-col gap-1 pl-4 text-muted-foreground">
-            <li>{m["assist.settings.point_sent_any"]()}</li>
-            <li>{m["assist.settings.point_free"]()}</li>
-            <li>{m["assist.settings.point_logged"]()}</li>
-            <li>{m["assist.settings.point_decide"]()}</li>
-          </ul>
-          {!s.acknowledgedAt && isAdmin && (
-            <label className="flex items-start gap-2">
-              <Checkbox checked={agree} onCheckedChange={(v) => setAgree(v === true)} className="mt-0.5" />
-              <span>{m["assist.settings.agree"]()}</span>
-            </label>
-          )}
-        </SettingsCard>
-      )}
-
-      {on && (
-        <SettingsCard
-          title={m["assist.settings.provider_title"]()}
-          badge={
-            s.keySource ? (
-              <Tag tone="done">{s.keySource === 'environment' ? m["assist.settings.key_env"]({ hint: s.keyHint ?? '' }) : m["assist.settings.key_set"]({ hint: s.keyHint ?? '' })}</Tag>
+          <SettingsRow
+            label={local ? m["assist.local.allow"]() : m["assist.settings.allow_to"]({ name: serviceName })}
+            hint={s.acknowledgedAt ? m["assist.settings.confirmed_by"]({ name: s.acknowledgedBy ?? '', date: formatDate(s.acknowledgedAt) }) : m["assist.settings.point_decide"]()}
+          >
+            {s.acknowledgedAt ? (
+              <span className="text-muted-foreground">{m["assist.settings.confirmed"]()}</span>
             ) : (
-              <Tag tone="urgent">{m["assist.settings.key_missing"]()}</Tag>
-            )
-          }
-          description={m["assist.settings.provider_body"]()}
-          onSubmit={(e) => {
-            e.preventDefault()
-            apply({ mode: 'institution_key', apiKey: key.trim() || undefined, baseUrl: baseUrl ?? undefined }, m["settings.saved"]())
-            setKey('')
-          }}
-          action={
-            isAdmin && (
-              <Button type="submit" size="sm" disabled={save.isPending || (!key.trim() && baseUrl === null)}>
-                {m["settings.save"]()}
+              <Button size="sm" disabled={!isAdmin || save.isPending} onClick={() => apply({ mode: 'institution_key', acknowledge: true }, m["assist.settings.turned_on"]())}>
+                {m["assist.settings.allow"]()}
               </Button>
-            )
-          }
-        >
-          <div role="radiogroup" className="grid gap-2 sm:grid-cols-2">
-            {providers.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                role="radio"
-                aria-checked={s.provider === p.id}
-                disabled={!isAdmin}
-                onClick={() => p.id !== s.provider && apply({ mode: 'institution_key', provider: p.id, autoModel: true }, m["assist.settings.provider_changed"]({ name: p.label() }))}
-                className={cn('flex cursor-pointer flex-col gap-0.5 rounded-xl p-3 text-left ring-1 transition-colors', s.provider === p.id ? 'bg-primary/5 ring-primary' : 'ring-border hover:bg-secondary/50')}
-              >
-                <strong>{p.label()}</strong>
-                <span className="text-xs text-muted-foreground">{p.about()}</span>
-              </button>
-            ))}
-          </div>
-          {s.provider === 'openai_compatible' && (
-            <label className="flex flex-col gap-1.5">
-              <span>{m["assist.settings.base_url"]()}</span>
-              <Input value={baseUrl ?? s.baseUrl ?? ''} disabled={!isAdmin} placeholder="http://localhost:11434/v1" onChange={(e) => setBaseUrl(e.target.value)} />
-            </label>
-          )}
-          <label className="flex flex-col gap-1.5">
-            <span>{m["assist.settings.key"]()}</span>
-            <Input type="password" autoComplete="off" value={key} disabled={!isAdmin} placeholder={s.keyHint ?? m["assist.settings.key_placeholder"]()} onChange={(e) => setKey(e.target.value)} />
-            {providers.find((p) => p.id === s.provider)?.keyUrl && (
-              <span className="text-xs text-muted-foreground">{m["assist.settings.key_where"]({ url: providers.find((p) => p.id === s.provider)!.keyUrl! })}</span>
             )}
-          </label>
-          {s.keySource === 'settings' && isAdmin && (
-            <Button type="button" size="sm" variant="ghost" className="w-fit text-destructive" onClick={() => apply({ mode: 'institution_key', apiKey: '' }, m["assist.settings.key_removed"]())}>
-              {m["assist.settings.remove_key"]()}
-            </Button>
-          )}
-        </SettingsCard>
-      )}
-
-      {on && (
-        <SettingsCard title={m["assist.settings.model_title"]()} description={m["assist.settings.model_body"]()}>
-          <label className="flex items-center justify-between gap-4">
-            <span>{m["assist.settings.auto_model"]()}</span>
-            <Switch checked={s.autoModel} disabled={!isAdmin} onCheckedChange={(v) => apply({ mode: 'institution_key', autoModel: v })} />
-          </label>
-          {!showModels ? (
-            <Button type="button" size="sm" variant="secondary" className="w-fit" disabled={!s.ready} onClick={() => setShowModels(true)}>
-              {m["assist.settings.show_models"]()}
-            </Button>
-          ) : models.isLoading ? (
-            <p className="text-muted-foreground">{m["assist.settings.loading_models"]()}</p>
-          ) : models.isError ? (
-            <p className="not-typeset text-destructive">{models.error.message}</p>
-          ) : (
-            <ul className="flex max-h-72 list-none flex-col gap-0.5 overflow-y-auto p-0">
-              {[...(models.data ?? [])]
-                .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99))
-                .map((x) => {
-                  const chosen = !s.autoModel && s.model === x.id
-                  return (
-                    <li key={x.id}>
-                      <button
-                        type="button"
-                        disabled={!isAdmin}
-                        onClick={() => apply({ mode: 'institution_key', model: x.id, autoModel: false }, m["assist.settings.model_fixed"]({ model: x.label }))}
-                        className={cn('flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-secondary/60', chosen && 'bg-primary/5 ring-1 ring-primary/40')}
-                      >
-                        <span className="min-w-0 truncate">{x.label}</span>
-                        {x.rank && s.autoModel ? <span className="shrink-0 text-xs text-primary">{x.rank === 1 ? m["assist.settings.auto_first"]() : m["assist.settings.auto_backup"]({ n: x.rank })}</span> : chosen ? <span className="shrink-0 text-xs text-primary">{m["assist.settings.in_use"]()}</span> : null}
-                      </button>
-                    </li>
-                  )
-                })}
-            </ul>
-          )}
+          </SettingsRow>
         </SettingsCard>
       )}
 

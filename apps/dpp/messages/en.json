@@ -1019,7 +1019,17 @@
     "others_need_new": "Everyone else needs a new PIN from you in People before they can sign in.",
     "title": "Sign-in",
     "your_new_password": "Your new password",
-    "your_new_pin": "Your new PIN"
+    "your_new_pin": "Your new PIN",
+    "require": "Ask for sign-in when the app opens",
+    "method": "Sign in with",
+    "method_pin": "PIN",
+    "method_full": "Password and phone code",
+    "turn_on": "Turn on",
+    "turn_off": "Turn off",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "away": "When you are away",
+    "sign_out_now": "Sign out now"
   },
   "referral": {
     "resubmission": {
@@ -1610,7 +1620,7 @@
       "key_removed": "Key removed",
       "remove_key": "Remove the key",
       "model": "Model",
-      "point_sent_any": "The text of the file, and any scans it reads, go to the provider chosen below to be read. Nothing else leaves this computer.",
+      "point_sent_any": "The text of the file, and any scans it reads, go to the chosen service to be read. Nothing else leaves this computer.",
       "provider_title": "Provider",
       "provider_body": "Pick one and paste its key. Keys are kept locked on this computer and never shown again.",
       "provider_changed": "Assist now uses {name}",
@@ -1624,7 +1634,14 @@
       "model_fixed": "Assist will always use {model}",
       "auto_first": "Automatic: first",
       "auto_backup": "Automatic: backup {n}",
-      "in_use": "In use"
+      "in_use": "In use",
+      "model_in_chat": "Choose the model in Assist itself. Automatic, the provider's recommended model, is the default.",
+      "service": "Service",
+      "key_label": "Key",
+      "change_key": "Change",
+      "allow_to": "Allow a file's papers to go to {name}",
+      "allow": "Allow",
+      "cancel": "Cancel"
     },
     "ask": {
       "missing": "What is missing from this file?",
@@ -1654,6 +1671,40 @@
       "anthropic": "Claude, from Anthropic. Strong at long legal reading.",
       "other_label": "Own server",
       "other": "A model on this computer (Ollama) or a government server."
+    },
+    "model": {
+      "label": "Model",
+      "auto": "Automatic (recommended)",
+      "auto_with": "Automatic · {model}"
+    },
+    "local": {
+      "about": "A free, open model from Google that runs here. Nothing leaves this computer.",
+      "allow": "Let Assist read a file's papers on this computer",
+      "download": "Download",
+      "downloaded": "Downloaded",
+      "downloading": "Downloading {model}…",
+      "engine": "Ollama",
+      "failed": "Could not do that",
+      "getting_installer": "Getting the Ollama installer from ollama.com…",
+      "in_use": "Downloaded, and Assist uses it.",
+      "install": "Install",
+      "installed_not_running": "Installed, not running.",
+      "installer_open": "The installer is open. Finish it, then come back here.",
+      "job_failed": "It did not finish.",
+      "memory": "This computer has {memory} GB of memory: {model} (★) suits it.",
+      "model": "Model",
+      "not_installed": "The free program that runs the model. Install it once.",
+      "note": "Free and private: papers are read on this computer and go nowhere. Answers come more slowly than from an online service, and are less sharp on long papers.",
+      "now_using": "Assist now uses {model}",
+      "of": "{done} of {total} GB",
+      "ready": "Ready",
+      "running": "Running (version {version}). It runs the model on this computer.",
+      "service": "On this computer (Gemma, private)",
+      "size": "About {size} GB to download, once.",
+      "start": "Start",
+      "title": "On this computer",
+      "use": "Use it",
+      "verifying": "Checking the download…"
     }
   },
   "board": {
@@ -2204,5 +2255,24 @@
     "edit_description": "Change what was recorded.",
     "empty": "No one recorded yet.",
     "search": "Search people…"
+  },
+  "update": {
+    "about": "The version on this computer, and getting the next one.",
+    "auto": "Download updates automatically",
+    "auto_hint": "Updates are signed by Pleadli and checked before they install. The app restarts only when you say.",
+    "available": "Version {version} is available",
+    "browser": "Updates come with the desktop app. In a browser there is nothing to update.",
+    "check": "Check now",
+    "checked_at": "Last checked at {time}.",
+    "checking": "Checking for an update…",
+    "current": "Pleadli DPP is up to date",
+    "downloading": "Downloading the update… {percent}%",
+    "failed": "The update could not be checked or installed",
+    "get": "Update now",
+    "not_checked": "Not checked yet",
+    "ready": "Version {version} is ready. Restart to finish.",
+    "restart": "Restart",
+    "title": "Software update",
+    "version": "Version"
   }
 }

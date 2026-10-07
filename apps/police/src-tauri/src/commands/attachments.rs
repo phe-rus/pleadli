@@ -92,6 +92,12 @@ pub async fn open_attachment(_who: super::api::SignedIn, app: tauri::AppHandle, 
     app.opener().open_path(path.to_string_lossy(), None::<&str>).map_err(|e| e.to_string())
 }
 
+/// Reads a file of the vault for the app's own viewer.
+#[tauri::command]
+pub async fn read_vault_file(_who: super::api::SignedIn, state: State<'_, Db>, relative_path: String) -> Result<String, String> {
+    attachments::read_vault_file(&state.vault_root, &relative_path).map_err(|e| e.to_string())
+}
+
 /// Opens a file of the vault, named by its path relative to the vault root.
 #[tauri::command]
 pub async fn open_vault_path(_who: super::api::SignedIn, app: tauri::AppHandle, state: State<'_, Db>, relative_path: String) -> Result<(), String> {

@@ -149,11 +149,13 @@ export function ServicesDesk() {
     }
   }
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1>{m["svc.title"]()}</h1>
-        <p className="text-muted-foreground">{m["svc.lead"]()}</p>
-      </div>
+    <>
+      <header className="page-header">
+        <div>
+          <h1>{m["svc.title"]()}</h1>
+          <p>{m["svc.lead"]()}</p>
+        </div>
+      </header>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {services.map((svc) => {
           const on = enabled.some((e) => e.id === svc.matterType)
@@ -186,6 +188,6 @@ export function ServicesDesk() {
           <StartService service={open} onDone={() => setOpen(null)} />
         </Createpanel>
       )}
-    </div>
+    </>
   )
 }

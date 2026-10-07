@@ -1,145 +1,54 @@
 import * as m from '@/paraglide/messages'
-import { Createpanel } from '@/components/create-panel'
-import { statementsOptions, StatementForm, statementPersonName, useStatements, type Statement } from '@/features/statements'
-import { RichTextPreview } from '@pleadli/rich-text'
-import { AddCircleIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
-import { Button } from '@pleadli/ui/button'
-import { cn } from '@pleadli/ui/lib/utils'
-import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
-import { createFileRoute } from '@tanstack/react-router'
+import { PanelButton } from '@/components/add-panel'
+import { StatementPaper } from '@/features/paper/case-papers'
+import { RecordList } from '@/features/paper/record-list'
+import { statementsOptions, StatementForm, statementPersonName, useStatements } from '@/features/statements'
 import { format } from '@/lib/date'
-import { useMemo, useState } from 'react'
+import { Mic01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { richTextToPlainText } from '@pleadli/rich-text'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/statements/')({
-  validateSearch: (search: Record<string, unknown>): { open?: string } =>
-    typeof search.open === 'string' ? { open: search.open } : {},
+  validateSearch: (search: Record<string, unknown>): { open?: string } => (typeof search.open === 'string' ? { open: search.open } : {}),
   loader: async ({ context }) => {
     await context.queryClient.query({ ...statementsOptions(''), staleTime: 'static' })
   },
   component: RouteComponent,
 })
 
+/** Every statement taken at the station, by month; each opens as the signed statement. */
 function RouteComponent() {
-  const { open: openId } = Route.useSearch()
-  const [addOpen, setAddOpen] = useState(false)
-  const [addDirty, setAddDirty] = useState(false)
-  const [editing, setEditing] = useState<Statement | null>(null)
-  const [editDirty, setEditDirty] = useState(false)
+  const { open } = Route.useSearch()
+  const navigate = useNavigate()
   const { data: statements } = useStatements('')
-  useDeepLinkRecord(statements, openId, setEditing)
-
-  const columns: DataTableColumnDef<Statement>[] = useMemo(() => {
-    return [
-      selectColumn(),
-      {
-        accessorKey: 'id',
-        header: m["col.id"](),
-        cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setEditing(row.original)}
-          >
-            {row.original.id}
-          </span>
-        ),
-      },
-      { accessorKey: 'personId', header: m["col.person_id"]() },
-      {
-        id: 'person',
-        accessorFn: (row) => statementPersonName(row),
-        header: m["col.given_by"](),
-      },
-      { accessorKey: 'personFirstName', header: m["col.first_name"]() },
-      { accessorKey: 'personLastName', header: m["col.last_name"]() },
-      {
-        accessorKey: 'personOtherNames',
-        header: m["col.other_names"](),
-        cell: ({ row }) => row.original.personOtherNames ?? '·',
-      },
-      {
-        accessorKey: 'content',
-        header: m["col.statement"](),
-        cell: ({ getValue }) => (
-          <RichTextPreview value={getValue<string>()} className="line-clamp-2 max-w-sm" />
-        ),
-      },
-      { accessorKey: 'caseId', header: m["col.case_id"](), cell: ({ row }) => row.original.caseId ?? '·' },
-      {
-        accessorKey: 'caseReference',
-        header: m["col.case"](),
-        cell: ({ row }) => row.original.caseReference ?? '·',
-      },
-      {
-        accessorKey: 'officerName',
-        header: m["col.taken_by"](),
-        cell: ({ row }) => row.original.officerName ?? '·',
-      },
-      {
-        accessorKey: 'givenAt',
-        header: m["col.given"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: m["col.recorded"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-    ]
-  }, [])
 
   return (
     <article className="page">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-5">
-            <h1>{m["nav.statements"]()}</h1>
-
-            <Createpanel
-              open={addOpen}
-              onOpenChange={setAddOpen}
-              isDirty={addDirty}
-              trigger={
-                <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
-                  {m["statements.submit"]()}
-                </Button>
-              }
-              headings={{ title: m["statements.submit"](), description: m["statements_page.add_desc"]() }}
-            >
-              <StatementForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
-            </Createpanel>
-          </div>
-          <p className="md:max-w-sm">{m["statements_page.lead"]()}</p>
+      <header className="page-header">
+        <div>
+          <h1>{m["nav.statements"]()}</h1>
+          <p>{statements.length === 1 ? m["statements_page.count_one"]() : m["statements_page.count"]({ count: statements.length })}</p>
         </div>
-      </section>
-
-      <Createpanel
-        open={editing !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditing(null)
-        }}
-        isDirty={editDirty}
-        headings={{ title: m["statements_page.edit_title"](), description: m["statements_page.edit_desc"]() }}
-      >
-        {editing && (
-          <StatementForm
-            key={editing.id}
-            statement={editing}
-            onSuccess={() => setEditing(null)}
-            onDirtyChange={setEditDirty}
-          />
-        )}
-      </Createpanel>
-
-      <DataTable
-        aria-label={m["nav.statements"]()}
-        data={statements}
-        columns={columns}
-        getRowId={(row) => row.id}
-        emptyMessage={m["statements_page.empty"]()}
+        <div className="page-actions">
+          <PanelButton label={m["statements_page.new"]()} title={m["statements_page.new"]()} description={m["statements_page.add_desc"]()} variant="default">
+            {({ close, setDirty }) => <StatementForm onSuccess={close} onDirtyChange={setDirty} />}
+          </PanelButton>
+        </div>
+      </header>
+      <RecordList
+        items={statements}
+        date={(s) => s.givenAt}
+        label={(s) => statementPersonName(s)}
+        detail={(s) => [format(s.givenAt, 'd MMM, HH:mm'), s.caseReference, s.officerName ? m["investigation.taken_by"]({ name: s.officerName }) : null].filter(Boolean).join(' · ')}
+        searchText={(s) => [statementPersonName(s), s.caseReference ?? '', s.officerName ?? '', richTextToPlainText(s.content)].join(' ')}
+        paper={(s) => <StatementPaper statement={s} />}
+        windowTitle={(s) => statementPersonName(s)}
+        empty={m["statements_page.empty"]()}
+        emptyIcon={<HugeiconsIcon icon={Mic01Icon} />}
         searchPlaceholder={m["statements_page.search"]()}
+        opened={open ?? null}
+        onOpened={(id) => void navigate({ to: '/statements', search: id ? { open: id } : {}, replace: true })}
       />
     </article>
   )

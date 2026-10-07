@@ -1,3 +1,6 @@
+import { assistModel, setAssistModel, useAssistModel } from './model-choice'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
+import { listModels } from './data'
 import { api } from '@/lib/api'
 import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
@@ -85,7 +88,7 @@ function connection(fileId: string | null, place: string, model: { current: stri
     const messageId = crypto.randomUUID()
     yield { type: EventType.RUN_STARTED, runId, threadId } as StreamChunk
     try {
-      const reply = replySchema.parse(await api('POST', '/api/assist/chat', { body: { messages: plain(messages), fileId, place, context: assistContext(fileId) } }))
+      const reply = replySchema.parse(await api('POST', '/api/assist/chat', { body: { messages: plain(messages), fileId, place, context: assistContext(fileId), model: assistModel() || undefined } }))
       model.current = reply.model
       yield { type: EventType.TEXT_MESSAGE_START, messageId, role: 'assistant' } as StreamChunk
       yield { type: EventType.TEXT_MESSAGE_CONTENT, messageId, delta: reply.text } as StreamChunk
@@ -211,6 +214,37 @@ function Conversation({ fileId, place }: { fileId: string | null; place: string 
   )
 }
 
+/** Which model answers, chosen where the asking happens. Automatic (the
+ * provider's recommended model, with backups) is the default; anyone may pick
+ * another from the provider's own list, and it stays chosen on this computer. */
+function ModelPicker({ provider }: { provider: string }) {
+  const chosen = useAssistModel()
+  const { data: models = [] } = useQuery({ queryKey: ['assist', 'models', provider], queryFn: listModels, staleTime: 30 * 60_000, retry: false })
+  const best = models.find((x) => x.rank === 1)
+  const sorted = [...models].sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99) || a.label.localeCompare(b.label))
+  const items = [
+    { value: 'auto', label: best ? m["assist.model.auto_with"]({ model: best.label }) : m["assist.model.auto"]() },
+    ...(chosen && !models.some((x) => x.id === chosen) ? [{ value: chosen, label: chosen }] : []),
+    ...sorted.map((x) => ({ value: x.id, label: x.label })),
+  ]
+  return (
+    <Select items={items} value={chosen || 'auto'} onValueChange={(v) => setAssistModel(!v || v === 'auto' ? '' : String(v))}>
+      <SelectTrigger size="sm" aria-label={m["assist.model.label"]()} className="h-7 max-w-[12rem] min-w-0 rounded-full border-0 bg-foreground/[0.05] px-2.5 text-xs shadow-none">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="max-h-80">
+        <SelectGroup>
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  )
+}
+
 /** Assist, docked on the right of every screen, opened from the ribbon. It
  * knows where the prosecutor is: on a file it reads that file (with the law
  * and the office's history); elsewhere it answers about the office and the
@@ -223,14 +257,17 @@ export function AssistDock() {
   return (
     <aside aria-label={m["assist.title"]()} className="flex w-[24rem] shrink-0 flex-col gap-3 border-l border-border/40 bg-background p-3 print:hidden">
       <header className="flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-base">
+        <h2 className="flex shrink-0 items-center gap-2 text-base">
           <HugeiconsIcon icon={SparklesIcon} className="size-5 text-primary" />
           {m["assist.title"]()}
           <span className="text-xs font-normal text-muted-foreground">{fileId ? m["assist.dock.on_file"]() : m["assist.dock.on_office"]()}</span>
         </h2>
-        <Button size="icon-sm" variant="ghost" onClick={() => setAssistOpen(false)} aria-label={m["board.close"]()}>
-          <HugeiconsIcon icon={Cancel01Icon} />
-        </Button>
+        <div className="flex min-w-0 items-center gap-1">
+          {settings?.ready && <ModelPicker provider={settings.provider} />}
+          <Button size="icon-sm" variant="ghost" onClick={() => setAssistOpen(false)} aria-label={m["board.close"]()}>
+            <HugeiconsIcon icon={Cancel01Icon} />
+          </Button>
+        </div>
       </header>
       {!settings?.ready ? (
         <div className="flex flex-col gap-3 rounded-2xl bg-secondary/50 p-4">

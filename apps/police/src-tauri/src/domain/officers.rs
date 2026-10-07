@@ -127,12 +127,18 @@ pub(crate) fn verify_password(password: &str, hash: &str) -> bool {
     argon2().verify_password(password.as_bytes(), &parsed).is_ok()
 }
 
+/// An administrator can change everything, so is never badge-only.
+const ADMIN_NEEDS_PASSWORD: &str = "An administrator needs a password of their own.";
+
 pub async fn create_officer(pool: &SqlitePool, input: CreateOfficerInput) -> Result<Officer, OfficerError> {
     let id = Uuid::new_v4().to_string();
     let badge = blank_to_none(&input.badge_number);
     let password = blank_to_none(&input.password);
     if password.is_some() && badge.is_none() {
         return Err(OfficerError::Invalid("An officer needs a badge number to sign in.".to_string()));
+    }
+    if input.role == "admin" && password.is_none() {
+        return Err(OfficerError::Invalid(ADMIN_NEEDS_PASSWORD.to_string()));
     }
     let password_hash = password.as_deref().map(hash_password).transpose()?;
 
@@ -158,6 +164,9 @@ pub async fn create_officer(pool: &SqlitePool, input: CreateOfficerInput) -> Res
 pub async fn update_officer(pool: &SqlitePool, id: &str, input: UpdateOfficerInput) -> Result<Officer, OfficerError> {
     let badge = blank_to_none(&input.badge_number);
     let password = blank_to_none(&input.password);
+    if input.role == "admin" && password.is_none() && !has_password(pool, id).await? {
+        return Err(OfficerError::Invalid(ADMIN_NEEDS_PASSWORD.to_string()));
+    }
     if let Some(password) = &password {
         if badge.is_none() {
             return Err(OfficerError::Invalid("An officer needs a badge number to sign in.".to_string()));
@@ -227,6 +236,13 @@ pub(crate) async fn write_officer_markdown(pool: &SqlitePool, vault_root: &Path,
             log::warn!("failed to write officer markdown: {e}");
         }
     }
+}
+
+/// Sets an officer's password (the caller has checked who may).
+pub async fn set_password(pool: &SqlitePool, officer_id: &str, password: &str) -> Result<(), OfficerError> {
+    let hash = hash_password(password)?;
+    sqlx::query("UPDATE officers SET password_hash = ? WHERE id = ?").bind(&hash).bind(officer_id).execute(pool).await?;
+    Ok(())
 }
 
 /// Whether an officer has a password at all.

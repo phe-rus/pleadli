@@ -5,7 +5,8 @@ import { messageOf } from '@/lib/api'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { formatWeekday } from '@/lib/dates'
+import * as m from '@/paraglide/messages'
 import { TaskForm } from './task-form'
 import { useRemoveTask, useSetTaskDone } from './queries'
 import type { Task } from './schema'
@@ -26,7 +27,7 @@ export function TaskRow({ task, showMatter = true }: { task: Task; showMatter?: 
       title={task.title}
       summary={
         <>
-          {task.dueOn ? `Due ${format(task.dueOn, 'EEE d MMM yyyy')}. ` : 'No due day. '}
+          {task.dueOn ? `${m["tasks.due"]({ date: formatWeekday(task.dueOn) })}. ` : `${m["tasks.no_due"]()} `}
           {showMatter && task.matterId && (
             <>
               <Link to="/matters/$matterId" params={{ matterId: task.matterId }} className="text-foreground">
@@ -40,24 +41,24 @@ export function TaskRow({ task, showMatter = true }: { task: Task; showMatter?: 
       }
       trailing={
         <>
-          {rule && <Tag tone="waiting">State-funded duty</Tag>}
-          {overdue && <Tag tone="urgent">Overdue</Tag>}
+          {rule && <Tag tone="waiting">{m["tasks.state_duty"]()}</Tag>}
+          {overdue && <Tag tone="urgent">{m["tasks.overdue"]()}</Tag>}
           {!rule && task.doneAt == null && (
-            <PanelButton label="Edit" title="Edit the task" description="Change the task or its due day." variant="ghost" icon={false}>
+            <PanelButton label={m["tasks.edit"]()} title={m["tasks.edit_title"]()} description={m["tasks.edit_description"]()} variant="ghost" icon={false}>
               {({ close, setDirty }) => <TaskForm existing={task} onSuccess={close} onDirtyChange={setDirty} />}
             </PanelButton>
           )}
           {!rule && (
-            <Button size="sm" variant="ghost" onClick={() => remove.mutate(task.id, { onError: (error) => t.error('Could not remove the task', { description: messageOf(error) }) })}>
-              Remove
+            <Button size="sm" variant="ghost" onClick={() => remove.mutate(task.id, { onError: (error) => t.error(m["tasks.remove_failed"](), { description: messageOf(error) }) })}>
+              {m["tasks.remove"]()}
             </Button>
           )}
           <Button
             size="sm"
             variant={task.doneAt == null ? 'secondary' : 'ghost'}
-            onClick={() => done.mutate({ id: task.id, done: task.doneAt == null }, { onError: (error) => t.error('Could not update the task', { description: messageOf(error) }) })}
+            onClick={() => done.mutate({ id: task.id, done: task.doneAt == null }, { onError: (error) => t.error(m["tasks.update_failed"](), { description: messageOf(error) }) })}
           >
-            {task.doneAt == null ? 'Done' : 'Reopen'}
+            {task.doneAt == null ? m["tasks.mark_done"]() : m["tasks.reopen"]()}
           </Button>
         </>
       }

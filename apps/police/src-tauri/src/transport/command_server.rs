@@ -77,16 +77,17 @@ pub fn router(pool: SqlitePool) -> Router {
 pub async fn run(pool: SqlitePool) {
     loop {
         if matches!(installation::mode(&pool).await, Ok(Some(mode)) if mode == "command") {
-            match tokio::net::TcpListener::bind(("0.0.0.0", PORT)).await {
+            let port = crate::port_from_env("PLEADLI_COMMAND_PORT", PORT);
+            match tokio::net::TcpListener::bind(("0.0.0.0", port)).await {
                 Ok(listener) => {
-                    log::info!("command listener on port {PORT}");
+                    log::info!("command listener on port {port}");
                     let app = router(pool.clone()).into_make_service_with_connect_info::<SocketAddr>();
                     if let Err(e) = axum::serve(listener, app).await {
                         log::warn!("command listener stopped: {e}");
                     }
                     return;
                 }
-                Err(e) => log::warn!("could not open the command listener on port {PORT}: {e}"),
+                Err(e) => log::warn!("could not open the command listener on port {port}: {e}"),
             }
         }
         tokio::time::sleep(Duration::from_secs(5)).await;

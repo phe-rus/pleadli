@@ -38,6 +38,11 @@ export async function signIn(input: SignInInput) {
   keepBrowserToken(await api('/auth/sign-in', { method: 'POST', body: JSON.stringify(body) }))
 }
 
+/** An administrator with no password yet chooses one, and is signed in. */
+export async function chooseFirstPassword(input: { badgeNumber: string; password: string }) {
+  keepBrowserToken(await api('/auth/first-password', { method: 'POST', body: JSON.stringify({ badgeNumber: input.badgeNumber.trim(), password: input.password }) }))
+}
+
 export async function signOut() {
   try {
     await api('/auth/sign-out', { method: 'POST' })

@@ -304,7 +304,7 @@ function SetupWizard({
             stepId="administrator"
             icon={withPassword ? LockKeyholeIcon : UserAdd01Icon}
             title={m["onboarding.who_runs"]()}
-            description={withPassword ? m["onboarding.who_runs_password"]() : m["onboarding.who_runs_badge"]()}
+            description={mode === 'command' ? m["onboarding.who_runs_password"]() : m["onboarding.who_runs_badge"]()}
             onBack={() => setIndex(index - 1)}
             error={error}
             action={{ label: submitLabel, busy, onSubmit: () => void finish() }}
@@ -330,7 +330,7 @@ function StationSetup({ installation, onBack, onDone }: { installation: Installa
       installation={installation}
       administrator={administrator}
       setAdministrator={setAdministrator}
-      withPassword={false}
+      withPassword
       validate={() => (stationName.trim() ? null : m["onboarding.err_station_name"]())}
       submit={() => setupStation({ stationName, region, district, division, administrator })}
       submitLabel={m["onboarding.submit_station"]()}

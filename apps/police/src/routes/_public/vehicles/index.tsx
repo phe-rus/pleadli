@@ -1,124 +1,87 @@
 import * as m from '@/paraglide/messages'
-import { Createpanel } from '@/components/create-panel'
-import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
-import { useVehicles, vehicleOwnerName, vehiclesOptions, VehicleForm, type Vehicle } from '@/features/vehicles'
-import { AddCircleIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
-import { Button } from '@pleadli/ui/button'
-import { cn } from '@pleadli/ui/lib/utils'
-import { createFileRoute } from '@tanstack/react-router'
+import { PanelButton } from '@/components/add-panel'
+import { RecordList } from '@/features/paper/record-list'
+import { RecordPaper } from '@/features/paper/record-paper'
+import { useVehicles, VehicleForm, vehicleOwnerName, vehiclesOptions, type Vehicle } from '@/features/vehicles'
 import { format } from '@/lib/date'
-import { useMemo, useState } from 'react'
+import { Car01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { PaperField } from '@pleadli/paper'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/vehicles/')({
-  validateSearch: (search: Record<string, unknown>): { open?: string } =>
-    typeof search.open === 'string' ? { open: search.open } : {},
+  validateSearch: (search: Record<string, unknown>): { open?: string } => (typeof search.open === 'string' ? { open: search.open } : {}),
   loader: async ({ context }) => {
     await context.queryClient.query({ ...vehiclesOptions(''), staleTime: 'static' })
   },
   component: RouteComponent,
 })
 
-function RouteComponent() {
-  const { open: openId } = Route.useSearch()
-  const [addOpen, setAddOpen] = useState(false)
-  const [editing, setEditing] = useState<Vehicle | null>(null)
-  const { data: vehicles } = useVehicles('')
-  useDeepLinkRecord(vehicles, openId, setEditing)
+const describe = (v: Vehicle) => [v.color, v.make, v.model].filter(Boolean).join(' ')
 
-  const columns: DataTableColumnDef<Vehicle>[] = useMemo(() => {
-    return [
-      selectColumn(),
-      {
-        accessorKey: 'id',
-        header: m["col.id"](),
-        cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setEditing(row.original)}
-          >
-            {row.original.id}
-          </span>
-        ),
-      },
-      { accessorKey: 'plateNumber', header: m["col.plate_number"]() },
-      { accessorKey: 'make', header: m["col.make"](), cell: ({ row }) => row.original.make ?? '·' },
-      { accessorKey: 'model', header: m["col.model"](), cell: ({ row }) => row.original.model ?? '·' },
-      { accessorKey: 'color', header: m["col.color"](), cell: ({ row }) => row.original.color ?? '·' },
-      { accessorKey: 'ownerPersonId', header: m["col.owner_id"](), cell: ({ row }) => row.original.ownerPersonId ?? '·' },
-      {
-        id: 'owner',
-        accessorFn: (row) => vehicleOwnerName(row) ?? '',
-        header: m["col.owner"](),
-        cell: ({ getValue }) => getValue<string>() || '·',
-      },
-      {
-        accessorKey: 'ownerFirstName',
-        header: m["col.owner_first_name"](),
-        cell: ({ row }) => row.original.ownerFirstName ?? '·',
-      },
-      {
-        accessorKey: 'ownerLastName',
-        header: m["col.owner_last_name"](),
-        cell: ({ row }) => row.original.ownerLastName ?? '·',
-      },
-      {
-        accessorKey: 'ownerOtherNames',
-        header: m["col.owner_other_names"](),
-        cell: ({ row }) => row.original.ownerOtherNames ?? '·',
-      },
-      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
-      {
-        accessorKey: 'createdAt',
-        header: m["col.logged"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-    ]
-  }, [])
+function VehiclePaper({ vehicle }: { vehicle: Vehicle }) {
+  const owner = vehicleOwnerName(vehicle)
+  return (
+    <RecordPaper
+      entityType="vehicle"
+      entityId={vehicle.id}
+      reference={vehicle.plateNumber}
+      title={m["vehicles_page.paper_title"]()}
+      details={[
+        { label: m["vehicles.plate"](), value: vehicle.plateNumber, copy: vehicle.plateNumber },
+        ...(describe(vehicle) ? [{ label: m["vehicles_page.vehicle"](), value: describe(vehicle) }] : []),
+        ...(owner ? [{ label: m["vehicles_page.owner"](), value: owner }] : []),
+      ]}
+      events={[{ at: vehicle.createdAt, label: m["vehicles_page.recorded"]() }]}
+      edit={(done) => <VehicleForm key={vehicle.id} vehicle={vehicle} onSuccess={done} />}
+    >
+      <h2>{vehicle.plateNumber}</h2>
+      <section className="mb-5 flex flex-col gap-0.5">
+        {vehicle.make && <PaperField label={m["vehicles.make"]()}>{vehicle.make}</PaperField>}
+        {vehicle.model && <PaperField label={m["vehicles.model"]()}>{vehicle.model}</PaperField>}
+        {vehicle.color && <PaperField label={m["vehicles.color"]()}>{vehicle.color}</PaperField>}
+        <PaperField label={m["vehicles_page.owner"]()}>{owner ?? m["vehicles_page.owner_unknown"]()}</PaperField>
+        <PaperField label={m["vehicles_page.recorded"]()}>{format(vehicle.createdAt, 'PP')}</PaperField>
+      </section>
+      {vehicle.notes && <p className="whitespace-pre-wrap">{vehicle.notes}</p>}
+    </RecordPaper>
+  )
+}
+
+/** Vehicles the station knows of, by plate, each with its owner where known. */
+function RouteComponent() {
+  const { open } = Route.useSearch()
+  const navigate = useNavigate()
+  const { data: vehicles } = useVehicles('')
 
   return (
     <article className="page">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-5">
-            <h1>{m["nav.vehicles"]()}</h1>
-
-            <Createpanel
-              open={addOpen}
-              onOpenChange={setAddOpen}
-              trigger={
-                <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
-                  {m["vehicles.submit"]()}
-                </Button>
-              }
-              headings={{ title: m["vehicles.submit"](), description: m["vehicles_page.add_desc"]() }}
-            >
-              <VehicleForm onSuccess={() => setAddOpen(false)} />
-            </Createpanel>
-          </div>
-          <p className="md:max-w-sm">{m["vehicles_page.lead"]()}</p>
+      <header className="page-header">
+        <div>
+          <h1>{m["nav.vehicles"]()}</h1>
+          <p>{vehicles.length === 1 ? m["vehicles_page.count_one"]() : m["vehicles_page.count"]({ count: vehicles.length })}</p>
         </div>
-      </section>
+        <div className="page-actions">
+          <PanelButton label={m["vehicles.submit"]()} title={m["vehicles.submit"]()} description={m["vehicles_page.add_desc"]()} variant="default">
+            {({ close }) => <VehicleForm onSuccess={close} />}
+          </PanelButton>
+        </div>
+      </header>
 
-      <Createpanel
-        open={editing !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditing(null)
-        }}
-        headings={{ title: m["vehicles_page.edit_title"](), description: m["common.update_record"]() }}
-      >
-        {editing && <VehicleForm key={editing.id} vehicle={editing} onSuccess={() => setEditing(null)} />}
-      </Createpanel>
-
-      <DataTable
-        aria-label={m["nav.vehicles"]()}
-        data={vehicles}
-        columns={columns}
-        getRowId={(row) => row.id}
-        emptyMessage={m["vehicles_page.empty"]()}
+      <RecordList
+        items={vehicles}
+        groupBy="none"
+        date={(v) => v.createdAt}
+        label={(v) => <span className="font-medium tracking-wide">{v.plateNumber}</span>}
+        detail={(v) => [describe(v), vehicleOwnerName(v)].filter(Boolean).join(' · ')}
+        searchText={(v) => [v.plateNumber, describe(v), vehicleOwnerName(v) ?? ''].join(' ')}
+        paper={(v) => <VehiclePaper vehicle={v} />}
+        windowTitle={(v) => v.plateNumber}
+        empty={m["vehicles_page.empty"]()}
+        emptyIcon={<HugeiconsIcon icon={Car01Icon} />}
         searchPlaceholder={m["vehicles_page.search"]()}
+        opened={open ?? null}
+        onOpened={(id) => void navigate({ to: '/vehicles', search: id ? { open: id } : {}, replace: true })}
       />
     </article>
   )

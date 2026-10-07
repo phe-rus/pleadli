@@ -4,7 +4,7 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useState, type ReactNode } from 'react'
 import { SETUP_MESSAGES } from './messages'
-import { TextField } from './parts'
+import { PasswordField, PinField } from '@pleadli/ui/pin-field'
 import type { Locale, SecondFactorEnrolment } from './types'
 
 export type SignInPerson = {
@@ -61,6 +61,8 @@ export function SignInScreen({
   const [enrolment, setEnrolment] = useState<SecondFactorEnrolment | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Bumped on every failed attempt, so the field shakes even on the same error twice.
+  const [failures, setFailures] = useState(0)
 
   const reset = () => {
     setChosen(null)
@@ -71,15 +73,18 @@ export function SignInScreen({
     setError(null)
   }
 
-  const submit = async () => {
-    if (!chosen) return
+  // The digits are passed in when the last one completes the field, before state has caught up.
+  const submit = async (given?: { secret?: string; code?: string }) => {
+    if (!chosen || busy) return
+    const secretNow = given?.secret ?? secret
+    const codeNow = given?.code ?? code
     setBusy(true)
     setError(null)
     try {
       const result = await onSignIn({
         staffId: chosen.id,
-        secret,
-        code: phase === 'secret' ? undefined : code,
+        secret: secretNow,
+        code: phase === 'secret' ? undefined : codeNow,
         enrolSecret: phase === 'enrol' ? enrolment?.secret : undefined,
       })
       if (result.status === 'code') setPhase('code')
@@ -89,6 +94,7 @@ export function SignInScreen({
       }
     } catch (e) {
       setError(describeError?.(e) ?? t.signin_failed)
+      setFailures((n) => n + 1)
       if (phase !== 'secret') setCode('')
       else if (chosen.secretKind === 'pin') setSecret('')
     } finally {
@@ -99,38 +105,43 @@ export function SignInScreen({
   const pin = chosen?.secretKind === 'pin'
   const ready = phase === 'secret' ? (pin ? /^\d{6}$/.test(secret) : secret.length > 0) : /^\d{6}$/.test(code)
 
+  const avatar = (person: SignInPerson, size: 'lg' | 'xl') => (
+    <span className={cn('flex shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-primary/80 to-primary font-medium text-primary-foreground shadow-sm', size === 'xl' ? 'size-24 text-3xl' : 'size-16 text-xl')}>{initials(person.name)}</span>
+  )
+
   return (
     <div className="typeset fixed inset-0 z-50 flex flex-col bg-background">
       <header data-tauri-drag-region className="flex h-12 shrink-0 items-center justify-end px-4">
         {windowControls}
       </header>
-      <main className="flex flex-1 items-center justify-center overflow-y-auto px-6 pb-16">
-        <div className="flex w-full max-w-sm flex-col items-center gap-8 text-center">
-          <div className="flex flex-col items-center gap-3">
-            <img src={logo} alt="" className="size-20 object-contain" draggable={false} />
+      <main className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 pb-16">
+        <div className="flex w-full max-w-2xl flex-col items-center gap-10 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <img src={logo} alt="" className="size-14 object-contain" draggable={false} />
             <div>
-              <h1>{productName}</h1>
-              {officeName && <p className="text-muted-foreground">{officeName}</p>}
+              <p className="font-semibold text-foreground">{productName}</p>
+              {officeName && <p className="text-[0.8125rem] text-muted-foreground">{officeName}</p>}
             </div>
           </div>
 
           {people.length === 0 ? (
             <p className="text-muted-foreground">{t.signin_no_people}</p>
           ) : !chosen ? (
-            <section className="flex w-full flex-col gap-3">
-              <h2 className="text-muted-foreground">{t.signin_who}</h2>
-              <ul className="not-typeset flex list-none flex-col gap-2 p-0">
+            // Who is signing in: faces side by side, the name under each, as a Mac's login window.
+            <section className="flex w-full flex-col items-center gap-6">
+              <h1 className="text-[1.375rem]">{t.signin_who}</h1>
+              <ul className="not-typeset flex list-none flex-wrap justify-center gap-x-6 gap-y-5 p-0">
                 {people.map((p) => (
                   <li key={p.id}>
                     <button
                       type="button"
                       onClick={() => setChosen(p)}
-                      className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors outline-none hover:border-foreground/20 focus-visible:ring-2 focus-visible:ring-ring/40"
+                      className="group flex w-28 cursor-pointer flex-col items-center gap-2 rounded-2xl p-2 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                     >
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">{initials(p.name)}</span>
-                      <span className="flex min-w-0 flex-col">
-                        <strong className="truncate">{p.name}</strong>
-                        {p.rank && <span className="truncate text-muted-foreground">{p.rank}</span>}
+                      <span className="transition-transform duration-150 group-hover:scale-105 group-active:scale-95">{avatar(p, 'lg')}</span>
+                      <span className="flex w-full min-w-0 flex-col">
+                        <span className="truncate text-[0.875rem] font-medium text-foreground">{p.name}</span>
+                        {p.rank && <span className="truncate text-xs text-muted-foreground">{p.rank}</span>}
                       </span>
                     </button>
                   </li>
@@ -139,39 +150,54 @@ export function SignInScreen({
             </section>
           ) : (
             <form
-              className="flex w-full flex-col gap-4 text-left"
+              className="flex w-full max-w-xs flex-col items-center gap-5"
               onSubmit={(e) => {
                 e.preventDefault()
-                if (ready && !busy) void submit()
+                if (ready) void submit()
               }}
             >
-              <div className="flex items-center gap-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">{initials(chosen.name)}</span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <strong className="truncate">{chosen.name}</strong>
-                  {chosen.rank && <span className="truncate text-muted-foreground">{chosen.rank}</span>}
+              <div className="flex flex-col items-center gap-3">
+                {avatar(chosen, 'xl')}
+                <div className="flex flex-col">
+                  <strong className="text-[1.0625rem]">{chosen.name}</strong>
+                  {chosen.rank && <span className="text-[0.8125rem] text-muted-foreground">{chosen.rank}</span>}
                 </div>
-                {people.length > 1 && (
-                  <Button type="button" variant="ghost" size="lg" className="h-9 rounded-lg px-3" onClick={reset}>
-                    <HugeiconsIcon icon={ArrowLeft01Icon} />
-                    {t.signin_not_you}
-                  </Button>
-                )}
               </div>
 
-              {phase === 'secret' && (
-                <TextField
-                  key={chosen.id}
-                  label={pin ? t.pin : t.password}
-                  type="password"
-                  inputMode={pin ? 'numeric' : undefined}
-                  maxLength={pin ? 6 : undefined}
-                  autoComplete="current-password"
-                  autoFocus
-                  value={secret}
-                  onChange={(e) => setSecret(pin ? e.target.value.replace(/\D/g, '') : e.target.value)}
-                />
-              )}
+              {phase === 'secret' &&
+                (pin ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="text-[0.8125rem] text-muted-foreground">{t.pin}</p>
+                    <PinField
+                      key={chosen.id}
+                      label={t.pin}
+                      value={secret}
+                      onChange={(v) => {
+                        setSecret(v)
+                        setError(null)
+                      }}
+                      onComplete={(v) => void submit({ secret: v })}
+                      autoFocus
+                      disabled={busy}
+                      error={failures}
+                    />
+                  </div>
+                ) : (
+                  <PasswordField
+                    key={chosen.id}
+                    placeholder={t.password}
+                    aria-label={t.password}
+                    autoComplete="current-password"
+                    autoFocus
+                    value={secret}
+                    busy={busy}
+                    error={failures}
+                    onChange={(e) => {
+                      setSecret(e.target.value)
+                      setError(null)
+                    }}
+                  />
+                ))}
 
               {phase === 'enrol' && enrolment && (
                 <div className="flex flex-col gap-3">
@@ -186,25 +212,34 @@ export function SignInScreen({
               )}
 
               {phase !== 'secret' && (
-                <TextField
-                  label={t.factor_code}
-                  hint={phase === 'code' ? t.signin_code_lead : undefined}
-                  inputMode="numeric"
-                  maxLength={6}
-                  autoComplete="one-time-code"
-                  autoFocus
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                />
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-[0.8125rem] text-muted-foreground">{phase === 'code' ? t.signin_code_lead : t.factor_code}</p>
+                  <PinField
+                    masked={false}
+                    label={t.factor_code}
+                    value={code}
+                    onChange={(v) => {
+                      setCode(v)
+                      setError(null)
+                    }}
+                    onComplete={(v) => void submit({ code: v })}
+                    autoFocus
+                    disabled={busy}
+                    error={failures}
+                  />
+                </div>
               )}
 
-              <p role="alert" className={cn('not-typeset min-h-5 text-destructive', !error && retryAfterSeconds === 0 && 'invisible')}>
-                {error ?? (retryAfterSeconds > 0 ? `${t.signin_failed} (${retryAfterSeconds}s)` : '')}
+              <p role="alert" className={cn('not-typeset min-h-5 text-[0.8125rem] text-destructive', !error && !busy && retryAfterSeconds === 0 && 'invisible')}>
+                {busy ? t.signin_busy : (error ?? (retryAfterSeconds > 0 ? `${t.signin_failed} (${retryAfterSeconds}s)` : ''))}
               </p>
 
-              <Button type="submit" size="lg" className="h-10 rounded-lg" disabled={!ready || busy}>
-                {busy ? t.signin_busy : t.signin_submit}
-              </Button>
+              {people.length > 1 && (
+                <Button type="button" variant="ghost" size="sm" className="rounded-full text-muted-foreground" onClick={reset}>
+                  <HugeiconsIcon icon={ArrowLeft01Icon} />
+                  {t.signin_not_you}
+                </Button>
+              )}
             </form>
           )}
         </div>

@@ -34,7 +34,7 @@ const quickLinks = () =>
     { icon: UserIcon, label: m["nav.people"](), to: '/search/people', description: m["search_page.people_desc"]() },
     { icon: CellsIcon, label: m["search_page.cells"](), to: '/search/custody', description: m["search_page.cells_desc"]() },
     { icon: File02Icon, label: m["nav.bonds_and_sureties"](), to: '/search/bonds', description: m["search_page.bonds_desc"]() },
-    { icon: FolderViewIcon, label: m["nav.case_intake"](), to: '/intake', description: m["search_page.intake_desc"]() },
+    { icon: FolderViewIcon, label: m["nav.cases"](), to: '/investigations', description: m["search_page.intake_desc"]() },
     { icon: SirenIcon, label: m["nav.incidents"](), to: '/incidents', description: m["search_page.incidents_desc"]() },
     { icon: Notebook01Icon, label: m["nav.station_diary"](), to: '/sd-log', description: m["search_page.diary_desc"]() },
     { icon: Mic01Icon, label: m["nav.statements"](), to: '/statements', description: m["search_page.statements_desc"]() },

@@ -6,6 +6,8 @@
 
 #[cfg(feature = "ai")]
 pub mod ai;
+#[cfg(feature = "ai")]
+pub mod local_ai;
 pub mod audit;
 pub mod db;
 pub mod keys;

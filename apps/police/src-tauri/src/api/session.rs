@@ -24,6 +24,7 @@ pub fn domain_error(err: DomainError) -> ApiError {
         DomainError::NotFound(_) => StatusCode::NOT_FOUND,
         DomainError::Conflict(_) => StatusCode::CONFLICT,
         DomainError::Slow(_) => StatusCode::TOO_MANY_REQUESTS,
+        DomainError::NeedsPassword(_) => StatusCode::PRECONDITION_REQUIRED,
         DomainError::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
     };
     (status, err.to_string())
@@ -43,7 +44,7 @@ fn bearer(headers: &HeaderMap) -> Option<String> {
 fn is_public(method: &Method, path: &str) -> bool {
     matches!(
         (method.as_str(), path),
-        ("GET", "/api/system/state") | ("POST", "/api/system/onboarding/station") | ("POST", "/api/system/onboarding/command") | ("POST", "/api/auth/sign-in")
+        ("GET", "/api/system/state") | ("POST", "/api/system/onboarding/station") | ("POST", "/api/system/onboarding/command") | ("POST", "/api/auth/sign-in") | ("POST", "/api/auth/first-password")
     )
 }
 
@@ -149,6 +150,11 @@ pub async fn dev_mode(State(state): State<AppState>, Extension(actor): Extension
 
 pub async fn sign_in(State(state): State<AppState>, Json(input): Json<SignInInput>) -> Result<Json<SignedIn>, ApiError> {
     let (token, officer) = auth::sign_in(&state.pool, input).await.map_err(domain_error)?;
+    Ok(Json(SignedIn { token, officer }))
+}
+
+pub async fn first_password(State(state): State<AppState>, Json(input): Json<auth::FirstPasswordInput>) -> Result<Json<SignedIn>, ApiError> {
+    let (token, officer) = auth::choose_first_password(&state.pool, input).await.map_err(domain_error)?;
     Ok(Json(SignedIn { token, officer }))
 }
 

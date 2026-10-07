@@ -12,16 +12,21 @@ use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
 
 pub fn run() {
-    tauri::Builder::default()
-        // Single-instance must be the first plugin registered — it needs
-        // to intercept a second launch before anything else runs. With
-        // one SQLite file as the only datastore, a second window writing
-        // concurrently is a real corruption risk, not a cosmetic one.
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+    let mut builder = tauri::Builder::default();
+    // Single-instance must be the first plugin registered — it needs
+    // to intercept a second launch before anything else runs. With
+    // one SQLite file as the only datastore, a second window writing
+    // concurrently is a real corruption risk, not a cosmetic one. A second
+    // installation with its own data (`dev_data_dir`) is not a second window
+    // on the same file, so it opens on its own.
+    if dev_data_dir().is_none() {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("police") {
                 let _ = window.set_focus();
             }
-        }))
+        }));
+    }
+    builder
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)
@@ -44,7 +49,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
-            let data_dir = app.path().app_data_dir()?;
+            let dev_dir = dev_data_dir();
+            let data_dir = match &dev_dir {
+                Some(dir) => dir.clone(),
+                None => app.path().app_data_dir()?,
+            };
             std::fs::create_dir_all(&data_dir)?;
 
             // The structured database stays in the app's own managed data
@@ -61,12 +70,16 @@ pub fn run() {
             // gap, not a rare edge case, so it falls back to the user's
             // home directory, and finally to the app's own data directory,
             // rather than crashing app setup entirely.
-            let vault_root = app
+            let vault_root = if dev_dir.is_some() {
+                data_dir.join("vault")
+            } else {
+                app
                 .path()
                 .document_dir()
                 .or_else(|_| app.path().home_dir().map(|home| home.join("Documents")))
                 .unwrap_or_else(|_| data_dir.join("vault"))
-                .join("Pleadli Police");
+                .join("Pleadli Police")
+            };
 
             let db = match tauri::async_runtime::block_on(db::startup(&data_dir, vault_root)) {
                 Ok(db) => db,
@@ -191,6 +204,7 @@ pub fn run() {
             commands::attachments::get_attachment_data_url,
             commands::attachments::open_attachment,
             commands::attachments::open_vault_path,
+            commands::attachments::read_vault_file,
             commands::attachments::reveal_vault_path,
             commands::network::get_remote_access_status,
             commands::network::set_remote_access_enabled,
@@ -217,4 +231,28 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// A second installation on this machine, to run a station and a command (or
+/// two stations) side by side while developing: its own database and vault in
+/// the folder `PLEADLI_DATA_DIR` names. Debug builds only; an installed copy
+/// always uses its own managed data folder.
+#[cfg(debug_assertions)]
+pub(crate) fn dev_data_dir() -> Option<std::path::PathBuf> {
+    std::env::var_os("PLEADLI_DATA_DIR").filter(|v| !v.is_empty()).map(std::path::PathBuf::from)
+}
+
+#[cfg(not(debug_assertions))]
+pub(crate) fn dev_data_dir() -> Option<std::path::PathBuf> {
+    None
+}
+
+/// A port from the environment in debug builds (a second installation beside
+/// the first), the fixed one otherwise.
+pub(crate) fn port_from_env(name: &str, default: u16) -> u16 {
+    if cfg!(debug_assertions) {
+        std::env::var(name).ok().and_then(|p| p.parse().ok()).unwrap_or(default)
+    } else {
+        default
+    }
 }

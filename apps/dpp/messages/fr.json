@@ -1019,7 +1019,17 @@
     "others_need_new": "Les autres devront recevoir de vous un nouveau code PIN dans Personnes avant de se connecter.",
     "title": "Connexion",
     "your_new_password": "Votre nouveau mot de passe",
-    "your_new_pin": "Votre nouveau code PIN"
+    "your_new_pin": "Votre nouveau code PIN",
+    "require": "Demander la connexion à l'ouverture",
+    "method": "Se connecter avec",
+    "method_pin": "Code PIN",
+    "method_full": "Mot de passe et code du téléphone",
+    "turn_on": "Activer",
+    "turn_off": "Désactiver",
+    "apply": "Appliquer",
+    "cancel": "Annuler",
+    "away": "En votre absence",
+    "sign_out_now": "Se déconnecter maintenant"
   },
   "referral": {
     "resubmission": {
@@ -1610,7 +1620,7 @@
       "key_removed": "Clé supprimée",
       "remove_key": "Supprimer la clé",
       "model": "Modèle",
-      "point_sent_any": "Le texte du dossier et les scans lus partent chez le fournisseur choisi ci-dessous. Rien d'autre ne quitte cet ordinateur.",
+      "point_sent_any": "Le texte du dossier et les scans lus partent chez le service choisi. Rien d'autre ne quitte cet ordinateur.",
       "provider_title": "Fournisseur",
       "provider_body": "Choisissez-en un et collez sa clé. Les clés sont gardées chiffrées sur cet ordinateur et jamais réaffichées.",
       "provider_changed": "L'assistant utilise désormais {name}",
@@ -1624,7 +1634,14 @@
       "model_fixed": "L'assistant utilisera toujours {model}",
       "auto_first": "Automatique : premier",
       "auto_backup": "Automatique : secours {n}",
-      "in_use": "Utilisé"
+      "in_use": "Utilisé",
+      "model_in_chat": "Choisissez le modèle dans l'assistant lui-même. Automatique, le modèle recommandé par le fournisseur, est le choix par défaut.",
+      "service": "Service",
+      "key_label": "Clé",
+      "change_key": "Changer",
+      "allow_to": "Autoriser l'envoi des pièces d'un dossier à {name}",
+      "allow": "Autoriser",
+      "cancel": "Annuler"
     },
     "ask": {
       "missing": "Que manque-t-il à ce dossier ?",
@@ -1654,6 +1671,40 @@
       "anthropic": "Claude, d'Anthropic. Solide pour la lecture juridique longue.",
       "other_label": "Serveur propre",
       "other": "Un modèle sur cet ordinateur (Ollama) ou un serveur de l'État."
+    },
+    "model": {
+      "label": "Modèle",
+      "auto": "Automatique (recommandé)",
+      "auto_with": "Automatique · {model}"
+    },
+    "local": {
+      "about": "Un modèle ouvert et gratuit de Google qui tourne ici. Rien ne quitte cet ordinateur.",
+      "allow": "Laisser l'assistant lire les pièces d'un dossier sur cet ordinateur",
+      "download": "Télécharger",
+      "downloaded": "Téléchargé",
+      "downloading": "Téléchargement de {model}…",
+      "engine": "Ollama",
+      "failed": "Impossible",
+      "getting_installer": "Récupération de l'installateur d'Ollama sur ollama.com…",
+      "in_use": "Téléchargé, et l'assistant l'utilise.",
+      "install": "Installer",
+      "installed_not_running": "Installé, à l'arrêt.",
+      "installer_open": "L'installateur est ouvert. Terminez-le, puis revenez ici.",
+      "job_failed": "Cela n'a pas abouti.",
+      "memory": "Cet ordinateur a {memory} Go de mémoire : {model} (★) lui convient.",
+      "model": "Modèle",
+      "not_installed": "Le programme gratuit qui fait tourner le modèle. Installez-le une fois.",
+      "note": "Gratuit et privé : les pièces sont lues sur cet ordinateur et ne vont nulle part. Les réponses viennent plus lentement qu'avec un service en ligne, et sont moins fines sur les longues pièces.",
+      "now_using": "L'assistant utilise maintenant {model}",
+      "of": "{done} sur {total} Go",
+      "ready": "Prêt",
+      "running": "En marche (version {version}). Il fait tourner le modèle sur cet ordinateur.",
+      "service": "Sur cet ordinateur (Gemma, privé)",
+      "size": "Environ {size} Go à télécharger, une fois.",
+      "start": "Démarrer",
+      "title": "Sur cet ordinateur",
+      "use": "L'utiliser",
+      "verifying": "Vérification du téléchargement…"
     }
   },
   "board": {
@@ -2204,5 +2255,24 @@
     "edit_description": "Modifier ce qui a été enregistré.",
     "empty": "Personne n’est encore enregistré.",
     "search": "Rechercher des personnes…"
+  },
+  "update": {
+    "about": "La version sur cet ordinateur, et l'obtention de la suivante.",
+    "auto": "Télécharger les mises à jour automatiquement",
+    "auto_hint": "Les mises à jour sont signées par Pleadli et vérifiées avant l'installation. L'application ne redémarre que lorsque vous le décidez.",
+    "available": "La version {version} est disponible",
+    "browser": "Les mises à jour viennent avec l'application de bureau. Dans un navigateur, il n'y a rien à mettre à jour.",
+    "check": "Vérifier",
+    "checked_at": "Dernière vérification à {time}.",
+    "checking": "Recherche d'une mise à jour…",
+    "current": "Pleadli DPP est à jour",
+    "downloading": "Téléchargement de la mise à jour… {percent} %",
+    "failed": "La mise à jour n'a pas pu être vérifiée ou installée",
+    "get": "Mettre à jour",
+    "not_checked": "Pas encore vérifié",
+    "ready": "La version {version} est prête. Redémarrez pour terminer.",
+    "restart": "Redémarrer",
+    "title": "Mise à jour",
+    "version": "Version"
   }
 }

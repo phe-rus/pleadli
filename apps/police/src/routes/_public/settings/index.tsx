@@ -1,6 +1,15 @@
+import { Group, GroupRow } from '@pleadli/ui/grouped'
+import { SettingsCard, SettingsRow } from '@/components/settings-card'
+import { useTheme } from '@/components/theme-provider'
+import { useStationProfile } from '@/features/station-admin'
+import { autoUpdate, checkNow, download as downloadUpdate, restart as restartApp, setAutoUpdate, useUpdateState } from '@/lib/updater'
+import { Building06Icon, Database01Icon, Download04Icon, InformationCircleIcon, Notification03Icon, PaintBoardIcon, Share08Icon, SmartPhone01Icon, SquareLock02Icon, UserIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Segmented } from '@pleadli/ui/segmented'
+import { cn } from '@pleadli/ui/lib/utils'
+import type { ReactNode } from 'react'
 import * as m from '@/paraglide/messages'
-import { SettingsTable, type SettingsRow } from '@/components/settings-table'
-import { Toggletheme } from '@/components/toggle-theme'
+import { SettingsTable, type SettingsRow as TableRow } from '@/components/settings-table'
 import { LogoCard, type LogoCardLabels } from '@/features/brand'
 import { changeLocale, localeNames, selectableLocales, useLocale } from '@/features/i18n'
 import { isCustodyAlertsEnabled, setCustodyAlertsEnabled } from '@/hooks/use-custody-deadline-alerts'
@@ -23,21 +32,21 @@ import { Badge } from '@pleadli/ui/badge'
 import { Button, buttonVariants } from '@pleadli/ui/button'
 import { FieldDescription, FieldGroup } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { Switch } from '@pleadli/ui/switch'
 import { ConnectionSettings } from '@/features/command-link'
 import { ListenerCard } from '@/features/command'
 import { DevModeSwitch, SignInSettings, useInstallation } from '@/features/session'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from '@/lib/date'
 import { useEffect, useState } from 'react'
 
+type Section = 'station' | 'sign-in' | 'command' | 'remote' | 'records' | 'appearance' | 'notifications' | 'updates' | 'about'
+const SECTIONS: Section[] = ['station', 'sign-in', 'command', 'remote', 'records', 'appearance', 'notifications', 'updates', 'about']
+
 export const Route = createFileRoute('/_public/settings/')({
-  validateSearch: (search: Record<string, unknown>): { tab?: string } =>
-    typeof search.tab === 'string' ? { tab: search.tab } : {},
+  validateSearch: (search: Record<string, unknown>): { section?: Section } => (SECTIONS.includes(search.section as Section) ? { section: search.section as Section } : {}),
   loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.query({ ...remoteAccessStatusOptions(), staleTime: 'static' }),
@@ -83,80 +92,6 @@ function logoCardLabels(): LogoCardLabels {
   }
 }
 
-/** Language names are shown in their own language, so each one reads the same
- * whatever language is chosen now. */
-function LanguageSelectField() {
-  const locale = useLocale()
-  const languageOptions = selectableLocales.map((value) => ({ value, label: localeNames[value] }))
-  return (
-    <Select items={languageOptions} value={locale} onValueChange={(value) => value && changeLocale(String(value))}>
-      <SelectTrigger size="sm" className="max-w-xs">
-        <SelectValue placeholder={localeNames[locale]} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          {languageOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
-  )
-}
-
-function GeneralTab() {
-  const [alertsEnabled, setAlertsEnabled] = useState(isCustodyAlertsEnabled)
-
-  const rows: SettingsRow[] = [
-    {
-      key: 'language',
-      label: m["settings.language"](),
-      description: m["settings.language_desc"](),
-      control: <LanguageSelectField />,
-    },
-    {
-      key: 'appearance',
-      label: m["settings.appearance"](),
-      description: m["settings.appearance_desc"](),
-      control: <Toggletheme />,
-    },
-    {
-      key: 'custody-alerts',
-      label: m["settings.custody_alerts"](),
-      description: m["settings.custody_alerts_desc"](),
-      control: (
-        <Switch
-          checked={alertsEnabled}
-          onCheckedChange={(checked) => {
-            setCustodyAlertsEnabled(checked)
-            setAlertsEnabled(checked)
-          }}
-          disabled={!isTauri()}
-        />
-      ),
-    },
-    ...(import.meta.env.DEV
-      ? [
-          {
-            key: 'dev-mode',
-            label: m["settings.dev_mode"](),
-            description: m["settings.dev_mode_desc"](),
-            control: <DevModeSwitch />,
-          },
-        ]
-      : []),
-  ]
-
-  return (
-    <div className="flex flex-col gap-6 md:max-w-lg">
-      <LogoCard labels={logoCardLabels()} />
-      <SettingsTable rows={rows} />
-    </div>
-  )
-}
-
 function CloudflareForm() {
   const { data: config } = useCloudflareConfig()
   const saveConfig = useSaveCloudflareConfig()
@@ -180,7 +115,7 @@ function CloudflareForm() {
 
   return (
     <form
-      className="flex flex-col gap-4 md:max-w-lg"
+      className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault()
         form.handleSubmit()
@@ -225,7 +160,7 @@ function NetworkTab() {
   const [showQr, setShowQr] = useState(false)
   const { data: qr } = useLocalPairingQr(showQr && status.enabled)
 
-  const rows: SettingsRow[] = [
+  const rows: TableRow[] = [
     {
       key: 'remote-access',
       label: m["nav.remote_access"](),
@@ -262,20 +197,20 @@ function NetworkTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      <SettingsTable rows={rows} className="md:max-w-lg" />
+      <SettingsTable rows={rows} />
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-medium text-muted-foreground">{m["settings.tunnel"]()}</h2>
           {tunnel && <Badge variant="secondary">{m["settings.tunnel_active"]({ host: tunnel.hostname })}</Badge>}
         </div>
-        <p className="text-xs text-muted-foreground md:max-w-lg">
+        <p className="text-xs text-muted-foreground">
           {m["settings.tunnel_desc"]()}
         </p>
         <CloudflareForm />
       </div>
 
-      <div className="flex items-center justify-between md:max-w-lg">
+      <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">{m["settings.remote_logged"]({ count: log.length })}</p>
         <Link to="/logs/remote-access" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
           {m["settings.view_logs"]()}
@@ -295,71 +230,238 @@ function DataTab() {
   )
 }
 
-function AboutTab() {
+function AppInfo() {
   const info = useAppInfo()
   return (
-    <div className="flex flex-col gap-1">
-      <p>{m["settings.about_lead"]()}</p>
-      <p className="text-xs text-muted-foreground">
-        {m["settings.about_body"]()}
-      </p>
-      {info && (
-        <p className="text-xs text-muted-foreground">
-          {m["settings.version"]({ version: info.version, platform: info.platform, arch: info.arch, date: format(Date.now(), 'PPP') })}
-        </p>
-      )}
-    </div>
+    <SettingsCard hint={m["settings.about_body"]()}>
+      <SettingsRow label={m["workspace.product"]()} hint={m["settings.about_lead"]()}>
+        <span className="text-muted-foreground tabular-nums">{info ? `${info.version} · ${info.platform} ${info.arch}` : '·'}</span>
+      </SettingsRow>
+    </SettingsCard>
   )
 }
 
+function StationPane() {
+  const { data: profile } = useStationProfile()
+  return (
+    <>
+      <SettingsCard title={m["settings.station.identity"]()} description={m["settings.station.identity_about"]()}>
+        <SettingsRow label={m["settings.station.name"]()}>
+          <span className="text-muted-foreground">{profile?.name || m["people_page.not_recorded"]()}</span>
+        </SettingsRow>
+        <SettingsRow label={m["identity.address"]()}>
+          <span className="text-muted-foreground">{profile?.address || m["people_page.not_recorded"]()}</span>
+        </SettingsRow>
+        <div className="flex justify-end py-2.5!">
+          <Link to="/station/profile" className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+            {m["settings.station.edit"]()}
+          </Link>
+        </div>
+      </SettingsCard>
+      <LogoCard labels={logoCardLabels()} />
+    </>
+  )
+}
+
+function AppearancePane() {
+  const { theme = 'system', setTheme } = useTheme()
+  const locale = useLocale()
+  return (
+    <SettingsCard>
+      <SettingsRow label={m["settings.appearance"]()} hint={m["settings.appearance_desc"]()}>
+        <Segmented
+          label={m["settings.appearance"]()}
+          value={(['light', 'dark', 'system'].includes(theme) ? theme : 'system') as 'light' | 'dark' | 'system'}
+          onChange={setTheme}
+          items={[
+            { value: 'light', label: m["settings.theme_light"]() },
+            { value: 'dark', label: m["settings.theme_dark"]() },
+            { value: 'system', label: m["settings.theme_auto"]() },
+          ]}
+        />
+      </SettingsRow>
+      <SettingsRow label={m["settings.language"]()} hint={m["settings.language_desc"]()}>
+        <Segmented label={m["settings.language"]()} value={locale} onChange={(l) => changeLocale(l)} items={selectableLocales.map((l) => ({ value: l, label: localeNames[l] }))} />
+      </SettingsRow>
+    </SettingsCard>
+  )
+}
+
+function NotificationsPane() {
+  const [alertsEnabled, setAlertsEnabled] = useState(isCustodyAlertsEnabled)
+  return (
+    <SettingsCard hint={isTauri() ? undefined : m["settings.desktop_only"]()}>
+      <SettingsRow label={m["settings.custody_alerts"]()} hint={m["settings.custody_alerts_desc"]()}>
+        <Switch
+          checked={alertsEnabled}
+          onCheckedChange={(checked) => {
+            setCustodyAlertsEnabled(checked)
+            setAlertsEnabled(checked)
+          }}
+          disabled={!isTauri()}
+        />
+      </SettingsRow>
+      {import.meta.env.DEV && (
+        <SettingsRow label={m["settings.dev_mode"]()} hint={m["settings.dev_mode_desc"]()}>
+          <DevModeSwitch />
+        </SettingsRow>
+      )}
+    </SettingsCard>
+  )
+}
+
+function UpdatesPane() {
+  const u = useUpdateState()
+  const auto = autoUpdate()
+  if (u.phase === 'unsupported') {
+    return (
+      <SettingsCard>
+        <SettingsRow label={m["update.title"]()} hint={m["update.browser"]()}>
+          <span />
+        </SettingsRow>
+      </SettingsCard>
+    )
+  }
+  const status =
+    u.phase === 'checking'
+      ? m["update.checking"]()
+      : u.phase === 'current'
+        ? m["update.current"]()
+        : u.phase === 'available'
+          ? m["update.available"]({ version: u.version ?? '' })
+          : u.phase === 'downloading'
+            ? m["update.downloading"]({ percent: String(Math.round(u.progress * 100)) })
+            : u.phase === 'ready'
+              ? m["update.ready"]({ version: u.version ?? '' })
+              : u.phase === 'failed'
+                ? m["update.failed"]()
+                : m["update.not_checked"]()
+  return (
+    <>
+      <SettingsCard hint={u.phase === 'failed' && u.error ? u.error : u.checkedAt ? m["update.checked_at"]({ time: format(u.checkedAt, 'HH:mm') }) : undefined}>
+        <SettingsRow label={m["update.version"]()}>
+          <span className="text-muted-foreground tabular-nums">{u.current ?? '·'}</span>
+        </SettingsRow>
+        <SettingsRow label={status}>
+          {u.phase === 'available' ? (
+            <Button size="sm" onClick={() => void downloadUpdate()}>
+              {m["update.get"]()}
+            </Button>
+          ) : u.phase === 'ready' ? (
+            <Button size="sm" onClick={() => void restartApp()}>
+              {m["update.restart"]()}
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" disabled={u.phase === 'checking' || u.phase === 'downloading'} onClick={() => void checkNow(true)}>
+              {m["update.check"]()}
+            </Button>
+          )}
+        </SettingsRow>
+      </SettingsCard>
+      <SettingsCard hint={m["update.auto_hint"]()}>
+        <SettingsRow label={m["update.auto"]()}>
+          <Switch checked={auto} onCheckedChange={setAutoUpdate} aria-label={m["update.auto"]()} />
+        </SettingsRow>
+      </SettingsCard>
+    </>
+  )
+}
+
+function RecordsPane() {
+  return (
+    <>
+      <Group title={m["settings.records.logs"]()}>
+        <GroupRow label={m["nav.backup_requests"]()} chevron render={({ className, children }) => <Link to="/logs/backup-alerts" className={className}>{children}</Link>} />
+        <GroupRow label={m["nav.remote_access"]()} chevron render={({ className, children }) => <Link to="/logs/remote-access" className={className}>{children}</Link>} />
+      </Group>
+      <DataTab />
+    </>
+  )
+}
+
+/** Settings as System Settings lays them out: a quiet list of sections on the
+ * left, grouped by whose choice it is (the station's, or this computer's), and
+ * one pane on the right. The section is in the address, so it can be linked. */
 function RouteComponent() {
-  const { tab } = Route.useSearch()
+  const { section } = Route.useSearch()
   const navigate = Route.useNavigate()
   const { data: installation } = useInstallation()
   const command = installation?.mode === 'command'
 
+  const groups: { id: string; label: string; sections: Section[] }[] = [
+    { id: 'station', label: command ? m["settings.group.command"]() : m["settings.group.station"](), sections: command ? ['station', 'sign-in', 'command'] : ['station', 'sign-in', 'command', 'remote', 'records'] },
+    { id: 'computer', label: m["settings.group.computer"](), sections: ['appearance', 'notifications', 'updates'] },
+    { id: 'about', label: m["settings.group.about"](), sections: ['about'] },
+  ]
+  const visible = groups.flatMap((g) => g.sections)
+  const current: Section = section && visible.includes(section) ? section : 'station'
+
+  const text: Record<Section, { label: string; about: string; icon: typeof UserIcon }> = {
+    station: { label: command ? m["nav.command_profile"]() : m["settings.nav.station"](), about: m["settings.about.station"](), icon: Building06Icon },
+    'sign-in': { label: m["settings.tab_sign_in"](), about: m["settings.about.sign_in"](), icon: SquareLock02Icon },
+    command: { label: command ? m["settings.tab_stations"]() : m["settings.tab_command"](), about: command ? m["settings.about.stations"]() : m["settings.about.command"](), icon: Share08Icon },
+    remote: { label: m["settings.nav.remote"](), about: m["settings.about.remote"](), icon: SmartPhone01Icon },
+    records: { label: m["settings.nav.records"](), about: m["settings.about.records"](), icon: Database01Icon },
+    appearance: { label: m["settings.appearance"](), about: m["settings.about.appearance"](), icon: PaintBoardIcon },
+    notifications: { label: m["settings.nav.notifications"](), about: m["settings.about.notifications"](), icon: Notification03Icon },
+    updates: { label: m["update.title"](), about: m["update.about"](), icon: Download04Icon },
+    about: { label: m["settings.tab_about"](), about: m["settings.about.about"](), icon: InformationCircleIcon },
+  }
+
+  const panes: Record<Section, () => ReactNode> = {
+    station: () => <StationPane />,
+    'sign-in': () => <SignInSettings />,
+    command: () => (command ? <ListenerCard /> : <ConnectionSettings />),
+    remote: () => <NetworkTab />,
+    records: () => <RecordsPane />,
+    appearance: () => <AppearancePane />,
+    notifications: () => <NotificationsPane />,
+    updates: () => <UpdatesPane />,
+    about: () => <AppInfo />,
+  }
+
   return (
     <article className="page">
-      <section className="flex flex-col">
-        <h1>{m["nav.settings"]()}</h1>
-        <p>{m["settings.lead"]()}</p>
-      </section>
+      <header className="page-header">
+        <div>
+          <h1>{m["nav.settings"]()}</h1>
+        </div>
+      </header>
 
-      <Tabs
-        value={tab ?? 'general'}
-        onValueChange={(value) => navigate({ search: { tab: value === 'general' ? undefined : String(value) } })}
-      >
-        <TabsList variant="line">
-          <TabsTrigger value="general">{m["settings.tab_general"]()}</TabsTrigger>
-          <TabsTrigger value="sign-in">{m["settings.tab_sign_in"]()}</TabsTrigger>
-          {command ? <TabsTrigger value="command">{m["settings.tab_stations"]()}</TabsTrigger> : <TabsTrigger value="connection">{m["settings.tab_command"]()}</TabsTrigger>}
-          {!command && <TabsTrigger value="network">{m["settings.tab_network"]()}</TabsTrigger>}
-          {!command && <TabsTrigger value="data">{m["settings.tab_data"]()}</TabsTrigger>}
-          <TabsTrigger value="about">{m["settings.tab_about"]()}</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col gap-6 md:flex-row md:gap-10">
+        <nav aria-label={m["nav.settings"]()} className="flex shrink-0 flex-col gap-4 md:w-56">
+          {groups.map((g) => (
+            <div key={g.id} role="group" aria-label={g.label} className="flex flex-col gap-px">
+              {g.sections.map((id) => {
+                const active = id === current
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => void navigate({ search: id === 'station' ? {} : { section: id }, replace: true })}
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-[0.8125rem] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none',
+                      active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-foreground/5',
+                    )}
+                  >
+                    <HugeiconsIcon icon={text[id].icon} className={cn('size-4 shrink-0', active ? 'text-primary-foreground' : 'text-muted-foreground')} />
+                    {text[id].label}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </nav>
 
-        <TabsContent value="general" className="pt-4">
-          <GeneralTab />
-        </TabsContent>
-        <TabsContent value="sign-in" className="pt-4 md:max-w-xl">
-          <SignInSettings />
-        </TabsContent>
-        <TabsContent value="connection" className="pt-4 md:max-w-xl">
-          <ConnectionSettings />
-        </TabsContent>
-        <TabsContent value="command" className="pt-4 md:max-w-xl">
-          <ListenerCard />
-        </TabsContent>
-        <TabsContent value="network" className="pt-4">
-          <NetworkTab />
-        </TabsContent>
-        <TabsContent value="data" className="pt-4">
-          <DataTab />
-        </TabsContent>
-        <TabsContent value="about" className="pt-4">
-          <AboutTab />
-        </TabsContent>
-      </Tabs>
+        <section aria-labelledby="settings-section" className="flex w-full min-w-0 flex-col gap-5">
+          <div className="flex flex-col gap-1">
+            <h2 id="settings-section">{text[current].label}</h2>
+            <p className="text-muted-foreground">{text[current].about}</p>
+          </div>
+          {panes[current]()}
+        </section>
+      </div>
     </article>
   )
 }

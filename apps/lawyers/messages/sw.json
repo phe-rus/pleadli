@@ -5,6 +5,41 @@
       "close": "Funga Msaidizi",
       "on_matter": "Kwenye shauri hili"
     },
+    "local": {
+      "about": "Modeli huria ya bure kutoka Google inayofanya kazi hapa. Hakuna kinachotoka kwenye kompyuta hii.",
+      "allow": "Ruhusu Msaidizi kusoma karatasi za shauri kwenye kompyuta hii",
+      "download": "Pakua",
+      "downloaded": "Imepakuliwa",
+      "downloading": "Inapakua {model}…",
+      "engine": "Ollama",
+      "failed": "Imeshindikana",
+      "getting_installer": "Inapata kisakinishi cha Ollama kutoka ollama.com…",
+      "in_use": "Imepakuliwa, na Msaidizi anaitumia.",
+      "install": "Sakinisha",
+      "installed_not_running": "Imesakinishwa, haifanyi kazi.",
+      "installer_open": "Kisakinishi kimefunguka. Kimalize, kisha urudi hapa.",
+      "job_failed": "Haikukamilika.",
+      "memory": "Kompyuta hii ina kumbukumbu ya GB {memory}: {model} (★) inaifaa.",
+      "model": "Modeli",
+      "not_installed": "Programu ya bure inayoendesha modeli. Isakinishe mara moja.",
+      "note": "Bure na faragha: karatasi zinasomwa kwenye kompyuta hii na haziendi popote. Majibu huja polepole kuliko huduma ya mtandaoni, na si makini sana kwa karatasi ndefu.",
+      "now_using": "Msaidizi sasa anatumia {model}",
+      "of": "GB {done} kati ya {total}",
+      "ready": "Tayari",
+      "running": "Inafanya kazi (toleo {version}). Inaendesha modeli kwenye kompyuta hii.",
+      "service": "Kwenye kompyuta hii (Gemma, faragha)",
+      "size": "Takriban GB {size} kupakua, mara moja.",
+      "start": "Anzisha",
+      "title": "Kwenye kompyuta hii",
+      "use": "Itumie",
+      "verifying": "Inakagua upakuaji…"
+    },
+    "model": {
+      "auto": "Kiotomatiki (inapendekezwa)",
+      "auto_with": "Kiotomatiki · {model}",
+      "free": "bure",
+      "label": "Modeli"
+    },
     "panel": {
       "answer": "Jibu la Msaidizi",
       "ask": "Uliza Msaidizi",
@@ -40,10 +75,13 @@
     },
     "settings": {
       "agree": "Ninaelewa, na ofisi hii inaweza kutuma nyaraka za shauri kwa mtoa huduma mtu anapouliza.",
+      "allow": "Ruhusu",
+      "allow_to": "Ruhusu karatasi za shauri kwenda kwa {name}",
       "auto_backup": "Otomatiki: akiba {n}",
       "auto_first": "Otomatiki: ya kwanza",
       "auto_model": "Chagua modeli kiotomatiki",
       "base_url": "Anwani ya seva",
+      "change_key": "Badilisha",
       "confirm": "Thibitisha na uwashe",
       "confirmed": "Imethibitishwa",
       "confirmed_by": "Imethibitishwa na {name} tarehe {date}.",
@@ -51,6 +89,7 @@
       "in_use": "Inatumika",
       "key": "Ufunguo mpya",
       "key_env": "Ufunguo wa majaribio {hint}",
+      "key_label": "Ufunguo",
       "key_missing": "Hakuna ufunguo",
       "key_placeholder": "Bandika ufunguo",
       "key_removed": "Ufunguo umeondolewa",
@@ -59,6 +98,7 @@
       "loading_models": "Inamuuliza mtoa huduma...",
       "model_body": "Otomatiki huchagua modeli bora ya sasa kutoka orodha ya mtoa huduma, na hutumia inayofuata ikiwa ina shughuli.",
       "model_fixed": "Msaidizi atatumia {model} kila mara",
+      "model_in_chat": "Chagua modeli ndani ya Msaidizi wenyewe. Kiotomatiki, modeli inayopendekezwa na mtoa huduma, ndiyo chaguo-msingi.",
       "model_title": "Modeli",
       "needs": "Inahitaji kusanidiwa",
       "not_confirmed": "Haijathibitishwa",
@@ -66,12 +106,13 @@
       "point_decide": "Anachoandika Msaidizi ni rasimu. Wakili huikagua, na husaini na kuwasilisha tu alichosoma.",
       "point_free": "Kwa ufunguo wa bure mtoa huduma anaweza kuhifadhi anachotumiwa na watu huko wanaweza kukisoma. Nyaraka za mteja ni za siri: tumia akaunti ya kulipia isiyofunza kwa data yako.",
       "point_logged": "Kila ombi linarekodiwa: nani aliuliza, kwa shauri lipi, kwa nini, na lini.",
-      "point_sent_any": "Mtu anapouliza, kumbukumbu za shauri na hati iliyochaguliwa huenda kwa mtoa huduma aliye hapa chini kusomwa. Hakuna kingine kinachotoka kwenye kompyuta hii.",
+      "point_sent_any": "Mtu anapouliza, kumbukumbu za shauri na hati iliyochaguliwa huenda kwa huduma iliyochaguliwa kusomwa. Hakuna kingine kinachotoka kwenye kompyuta hii.",
       "provider_body": "Chagua mmoja na ubandike ufunguo wake. Funguo huhifadhiwa kwa usalama kwenye kompyuta hii na hazionyeshwi tena.",
       "provider_changed": "Msaidizi sasa anatumia {name}",
       "provider_title": "Mtoa huduma",
       "ready": "Tayari",
       "remove_key": "Ondoa ufunguo",
+      "service": "Huduma",
       "show_models": "Onyesha modeli za mtoa huduma",
       "title": "Msaidizi",
       "turned_off": "Msaidizi umezimwa",
@@ -295,8 +336,28 @@
       "person": "Mtu"
     }
   },
+  "clients": {
+    "col": {
+      "added": "Iliongezwa",
+      "address": "Anwani",
+      "custody": "Kizuizini",
+      "id": "Kitambulisho",
+      "matters": "Mashauri",
+      "name": "Jina",
+      "notes": "Maelezo",
+      "open": "Wazi",
+      "phone": "Simu"
+    },
+    "edit_description": "Badilisha taarifa zao, au mahali wanaposhikiliwa.",
+    "edit_title": "Hariri mteja",
+    "lead": "Watu unaowawakilisha, na mahali mteja mshtakiwa anashikiliwa.",
+    "no_match": "Hakuna wateja.",
+    "none": "Bado huna wateja. Ongeza mmoja, kisha mfungulie shauri.",
+    "search": "Tafuta wateja"
+  },
   "clock": {
     "by": "Kufikia {day}",
+    "case_management_checklist": "Wasilisha orodha ya usimamizi wa kesi",
     "complete_adr": "Kamilisha usuluhishi",
     "count": "{count} zinaendelea",
     "enforce_judgment": "Tekeleza hukumu",
@@ -309,6 +370,8 @@
     "not_researched": "Muda wa mwisho wa nchi hii bado haujawekwa. Hakuna kinachohesabiwa badala ya kuhesabu wa nchi nyingine.",
     "notice_of_appeal": "Wasilisha notisi ya rufaa",
     "notice_to_government": "Shtaki Serikali baada ya notisi ya siku 45",
+    "notice_to_government_30": "Shtaki Serikali baada ya notisi ya siku 30",
+    "notice_to_government_90": "Shtaki Serikali baada ya notisi ya siku 90",
     "reply_to_application": "Jibu maombi",
     "reply_to_counterclaim": "Jibu dai la kupinga",
     "reply_to_defence": "Jibu utetezi",
@@ -322,6 +385,7 @@
       "waiting": "Subiri: {when}"
     },
     "summons_for_directions": "Omba wito wa maelekezo",
+    "summons_validity": "Peleka wito wakati bado ni halali",
     "title": "Muda wa mwisho",
     "today_title": "Muda unaoendelea",
     "weekend": "inaangukia wikendi: hakikisha kama inasogea"
@@ -516,12 +580,14 @@
   "event": {
     "adr_completed": "Usuluhishi umekamilika",
     "adr_ordered": "Usuluhishi umeamriwa",
+    "appearance_entered": "Hati ya kuhudhuria imewasilishwa kwa mteja",
     "application_reply_filed": "Jibu la maombi limewasilishwa",
     "application_served_on_us": "Maombi yamekabidhiwa kwa mteja",
     "cause_of_action_contract": "Chanzo cha madai kilitokea (mkataba)",
     "cause_of_action_injury": "Majeraha ya mtu yalitokea",
     "cause_of_action_land": "Haki ya kurejesha ardhi ilitokea",
     "cause_of_action_tort": "Chanzo cha madai kilitokea (dhuluma)",
+    "checklist_filed": "Orodha ya usimamizi wa kesi imewasilishwa",
     "counterclaim_received": "Dai la kupinga limepokelewa",
     "decision_delivered": "Uamuzi umetolewa",
     "defence_filed": "Utetezi umewasilishwa",
@@ -535,6 +601,7 @@
     "note": "Maelezo",
     "notice_of_appeal_lodged": "Notisi ya rufaa imewasilishwa",
     "on": "Tarehe",
+    "pleadings_closed": "Hati za madai zimefungwa",
     "record": "Andika",
     "record_failed": "Imeshindwa kuandika",
     "record_title": "Andika kilichotokea",
@@ -674,6 +741,23 @@
     "description": "Kinaongoza kila kinachowasilishwa na kutumwa, na ndiyo anwani ya mwandishi inayotakiwa na sheria.",
     "hint": "Mabadiliko yanahusu kinachowasilishwa kuanzia sasa.",
     "title": "Kichwa cha barua"
+  },
+  "lock": {
+    "back": "Rudi",
+    "code_note": "PIN yako imewekwa upya. Hifadhi msimbo huu mpya mahali salama: unachukua nafasi ya ule wa zamani na hautaonyeshwa tena.",
+    "continue": "Endelea",
+    "enter_pin": "Weka PIN yako.",
+    "enter_recovery": "Weka msimbo wako wa kurejesha na PIN mpya.",
+    "forgot": "Umesahau PIN yako?",
+    "new_pin": "PIN mpya",
+    "pin": "PIN",
+    "recovery_code": "Msimbo wa kurejesha",
+    "reset": "Weka upya PIN",
+    "reset_failed": "Imeshindikana kuweka upya PIN yako",
+    "title": "Pleadli Lawyers imefungwa",
+    "unlock_failed": "Imeshindikana kufungua",
+    "wait": "Subiri sekunde {seconds}",
+    "your_code": "Msimbo wako wa kurejesha"
   },
   "matter": {
     "col": {
@@ -891,7 +975,7 @@
       "paid": "Imelipwa"
     },
     "time_to_bill": "Muda wa kudai",
-    "title": "Fedha",
+    "title": "Hesabu",
     "total": "Jumla {amount}",
     "unbilled_hours": "Saa {hours} hazijadaiwa",
     "what": "Nini kimetokea"
@@ -974,10 +1058,10 @@
     "reopened": "Shauri limefunguliwa tena",
     "sections": "Sehemu za shauri",
     "seg": {
-      "activity": "Shughuli",
-      "matter": "Shauri",
-      "money": "Fedha na muda",
-      "notes": "Maelezo",
+      "activity": "Historia ya jalada",
+      "matter": "Jalada",
+      "money": "Hesabu na muda",
+      "notes": "Kumbukumbu za mahudhurio",
       "papers": "Karatasi"
     },
     "tab": {
@@ -1000,35 +1084,35 @@
     "write": "Andika kwenye ukurasa wake"
   },
   "nav": {
-    "all_matters": "Mashauri yote",
+    "all_matters": "Majalada yote",
     "assist": "Msaidizi",
-    "board": "Ubao",
-    "calendar": "Kalenda",
+    "board": "Kwa hatua",
+    "calendar": "Shajara",
     "clients": "Wateja",
-    "closed": "Yaliyofungwa",
+    "closed": "Majalada yaliyofungwa",
     "criminal": "Rejista ya jinai",
     "diary": "Shajara",
     "documents": "Nyaraka",
-    "money": "Fedha",
-    "no_hearing": "Linahitaji tarehe",
-    "open_matters": "Mashauri yaliyo wazi",
+    "money": "Hesabu",
+    "no_hearing": "Hayana tarehe ijayo",
+    "open_matters": "Majalada yanayoendelea",
     "pinned": "Zilizobandikwa",
     "recent": "Za karibuni",
     "registers": "Rejista",
     "section": {
-      "matters": "Mashauri",
+      "matters": "Majalada",
       "office": "Utawala",
       "practice": "Ofisi"
     },
-    "services": "Huduma za wateja wanaofika",
+    "services": "Kazi zisizo za kesi",
     "settings": "Mipangilio",
-    "statistics": "Takwimu",
+    "statistics": "Ripoti ya ofisi",
     "tab": {
       "document": "Hati",
       "matter": "Shauri"
     },
-    "tasks": "Kazi",
-    "time": "Muda",
+    "tasks": "Vikumbusho",
+    "time": "Rekodi za muda",
     "today": "Leo"
   },
   "network": {
@@ -1300,8 +1384,11 @@
     "title": "Wahusika"
   },
   "protection": {
+    "apply": "Tumia",
+    "away": "Ukiwa mbali",
     "basic": "PIN kwa kila mtu",
     "basic_about": "Kila mtu huingia kwa PIN yake ya tarakimu 6.",
+    "cancel": "Ghairi",
     "change": "Badilisha",
     "change_hint": "Kubadilisha huwatoa watu wengine wote.",
     "changed": "Ulinzi sasa ni: {level}",
@@ -1313,10 +1400,17 @@
     "idle_hour": "Saa 1",
     "idle_minutes": "Dakika {count}",
     "idle_never": "Kamwe",
+    "method": "Ingia kwa",
+    "method_full": "Nenosiri na msimbo wa simu",
+    "method_pin": "PIN",
     "none": "Bila kuingia",
     "none_about": "Programu hufunguka mara moja. Kwa mtu mmoja kwenye kompyuta anayoitumia peke yake.",
     "others_need_new": "Wengine wote wanahitaji PIN mpya kutoka kwako kwenye Watu kabla ya kuingia.",
+    "require": "Omba kuingia programu inapofunguliwa",
+    "sign_out_now": "Toka sasa",
     "title": "Kuingia",
+    "turn_off": "Zima",
+    "turn_on": "Washa",
     "your_new_password": "Nenosiri lako jipya",
     "your_new_pin": "PIN yako mpya"
   },
@@ -1422,6 +1516,7 @@
   },
   "settings": {
     "about": {
+      "appearance": "Jinsi Pleadli inavyoonekana kwenye kompyuta hii, na lugha inayotumia.",
       "assist": "Kama Msaidizi unasaidia na mashauri hapa, na mtoa huduma yupi anayasoma.",
       "network": "Kama kompyuta hii inafanya kazi peke yake, ni kompyuta ya ofisi ambayo kompyuta nyingine za kampuni zinaunganishwa nayo, au imeunganishwa na moja.",
       "people": "Nani anatumia nakala hii, na sheria inamruhusu kila mmoja kufanya nini.",
@@ -1431,6 +1526,13 @@
       "you": "Jina lako ndilo linaloonekana kwenye kumbukumbu, na kwa wakili, ndilo linalotia sahihi kinachowasilishwa."
     },
     "admin_only": "Ni msimamizi tu anayeweza kubadilisha hili.",
+    "appearance": {
+      "auto": "Kiotomatiki",
+      "dark": "Giza",
+      "language": "Lugha",
+      "light": "Mwanga",
+      "theme": "Mwonekano"
+    },
     "lead": "Wewe, ofisi yako, watu walioko ndani, na jinsi inavyolindwa.",
     "owner": {
       "computer": "Kompyuta hii",
@@ -1474,6 +1576,7 @@
     "save_failed": "Haikuweza kuhifadhiwa",
     "saved": "Imehifadhiwa",
     "section": {
+      "appearance": "Mwonekano",
       "network": "Mtandao",
       "people": "Watu",
       "practice": "Ofisi ya uwakili",
@@ -1668,7 +1771,7 @@
     "registers": "Rejista mwaka huu",
     "time": "Muda uliorekodiwa",
     "time_caption": "Kwenye kila shauri, limetozwa au la",
-    "title": "Takwimu",
+    "title": "Ripoti ya ofisi",
     "uls_paid": "Ada ya {year} imelipwa",
     "uls_unknown": "Ada haijarekodiwa",
     "year": "Mwaka"
@@ -1718,7 +1821,7 @@
       "sign_commission": "Mteja asaini hati na kuiapisha mbele ya Kamishna wa Viapo",
       "transfer": "Wasilisha uhamisho na ulipe ushuru wa stempu"
     },
-    "title": "Huduma za wateja wanaofika",
+    "title": "Kazi zisizo za kesi",
     "turn_on": "Washa kazi ya {kind} katika Mipangilio ili kutoa huduma hii.",
     "turn_on_now": "Washa na utumie",
     "what_happens": "Kinachofanyika",
@@ -1732,6 +1835,43 @@
       "police": "Kituo cha polisi",
       "practice": "Ofisini"
     }
+  },
+  "tasks": {
+    "add": "Ongeza kikumbusho",
+    "add_description": "Jambo la kukumbushwa siku fulani, likiwa na jalada au bila.",
+    "due": "Inatakiwa {date}",
+    "edit": "Hariri",
+    "edit_description": "Badilisha kazi au siku yake.",
+    "edit_title": "Hariri kazi",
+    "form": {
+      "add": "Ongeza",
+      "added": "Kazi imeongezwa",
+      "detail": "Maelezo (si lazima)",
+      "due": "Siku (si lazima)",
+      "needs_title": "Kazi inahitaji jina.",
+      "save": "Hifadhi mabadiliko",
+      "save_failed": "Imeshindikana kuhifadhi kazi",
+      "task": "Kumbusha",
+      "task_placeholder": "Mhoji shahidi wa pili",
+      "updated": "Kazi imesasishwa"
+    },
+    "lead": "Kinachokuja, cha mapema kwanza. Majukumu ya kesi ya serikali yanaongezwa kwa ajili yako.",
+    "mark_done": "Imekamilika",
+    "no_due": "Haina siku maalum.",
+    "none_done": "Bado hakuna kazi iliyokamilika.",
+    "none_due": "Hakuna cha kukumbushwa. Ongeza kikumbusho, au fungua kesi ya serikali kuona majukumu yake.",
+    "overdue": "Imechelewa",
+    "remove": "Ondoa",
+    "remove_failed": "Imeshindikana kuondoa kazi",
+    "reopen": "Fungua tena",
+    "state_duty": "Jukumu la kesi ya serikali",
+    "update_failed": "Imeshindikana kusasisha kazi",
+    "view": {
+      "all": "Zote",
+      "done": "Zimekamilika",
+      "open": "Za kufanya"
+    },
+    "views": "Kazi zipi"
   },
   "template": {
     "administrator_general_letter": "Barua kwa Msimamizi Mkuu",
@@ -1762,6 +1902,33 @@
     "sale_agreement": "Mkataba wa mauzo ya ardhi",
     "submissions": "Hoja za maandishi",
     "written_statement_of_defence": "Maelezo ya utetezi"
+  },
+  "time": {
+    "a_matter": "Shauri",
+    "by_matter": "Kwa shauri",
+    "entries": "Maingizo",
+    "entries_count": "Maingizo {count}",
+    "form": {
+      "bad_duration": "Andika muda kwa dakika, au kama 1h30.",
+      "day": "Siku",
+      "failed": "Imeshindikana kurekodi muda",
+      "for": "Ulikuwa kwa ajili ya nini",
+      "needs_description": "Eleza muda ulitumika kwa nini.",
+      "recorded": "Muda umerekodiwa",
+      "submit": "Rekodi muda",
+      "time": "Muda",
+      "time_placeholder": "1h30, 90 au 45m"
+    },
+    "lead": "Muda uliorekodiwa kwenye majalada. Urekodi kutoka kwenye jalada.",
+    "matters": "Majalada",
+    "none": "Hakuna muda uliorekodiwa katika kipindi hiki.",
+    "period": {
+      "30": "Siku 30",
+      "365": "Mwaka",
+      "90": "Siku 90"
+    },
+    "period_label": "Kipindi",
+    "recorded": "Muda uliorekodiwa"
   },
   "today": {
     "adjourned": "Iliahirishwa",
@@ -1819,6 +1986,25 @@
     "trend": "Kuahirishwa, wiki 8 zilizopita",
     "week_ahead": "Wiki ijayo",
     "with_no_hearing": "Bila usikilizaji: {count}"
+  },
+  "update": {
+    "about": "Toleo lililo kwenye kompyuta hii, na kupata linalofuata.",
+    "auto": "Pakua masasisho kiotomatiki",
+    "auto_hint": "Masasisho yamesainiwa na Pleadli na hukaguliwa kabla ya kusakinishwa. Programu inaanza upya pale tu unaposema.",
+    "available": "Toleo {version} linapatikana",
+    "browser": "Masasisho huja na programu ya kompyuta. Kwenye kivinjari hakuna cha kusasisha.",
+    "check": "Kagua sasa",
+    "checked_at": "Ilikaguliwa mara ya mwisho saa {time}.",
+    "checking": "Inatafuta sasisho…",
+    "current": "Pleadli Lawyers iko katika toleo jipya",
+    "downloading": "Inapakua sasisho… {percent}%",
+    "failed": "Sasisho halikuweza kukaguliwa au kusakinishwa",
+    "get": "Sasisha sasa",
+    "not_checked": "Bado halijakaguliwa",
+    "ready": "Toleo {version} liko tayari. Anzisha upya kukamilisha.",
+    "restart": "Anzisha upya",
+    "title": "Sasisho la programu",
+    "version": "Toleo"
   },
   "usage": {
     "advisory": {
@@ -1916,7 +2102,7 @@
       "previous": "Kichupo kilichopita"
     },
     "view": {
-      "board": "Ubao",
+      "board": "Kwa hatua",
       "list": "Orodha"
     },
     "window": "Dirisha"

@@ -44,4 +44,4 @@ export function LocaleBoundary({ children }: { children: ReactNode }) {
   }, [locale])
   return <Fragment key={locale}>{children}</Fragment>
 }
-export { LanguageSelect } from './language-select'
+export { LanguageSelect, StatusBarLanguageSelect } from './language-select'

@@ -6,6 +6,7 @@ import { useReportDirty } from '@/hooks/use-report-dirty'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
 import { t } from '@pleadli/ui/goey-toaster'
+import * as m from '@/paraglide/messages'
 import { useCreateTask, useUpdateTask } from './queries'
 import type { Task } from './schema'
 
@@ -16,17 +17,17 @@ export function TaskForm({ matterId = null, existing, onSuccess, onDirtyChange }
   const update = useUpdateTask()
   const form = useAppForm({
     defaultValues: { title: existing?.title ?? '', detail: existing?.detail ?? '', dueOn: existing?.dueOn ? toIsoDay(existing.dueOn) : '' },
-    validators: { onSubmit: ({ value }) => (value.title.trim() ? undefined : 'A task needs a title.') },
+    validators: { onSubmit: ({ value }) => (value.title.trim() ? undefined : m["tasks.form.needs_title"]()) },
     onSubmit: async ({ value, formApi }) => {
       const input = { matterId: existing?.matterId ?? matterId, title: value.title, detail: value.detail.trim() || null, dueOn: fromDateInput(value.dueOn) }
       try {
         if (existing) await update.mutateAsync({ id: existing.id, input })
         else await create.mutateAsync(input)
-        t.success(existing ? 'Task updated' : 'Task added')
+        t.success(existing ? m["tasks.form.updated"]() : m["tasks.form.added"]())
         if (!existing) formApi.reset()
         onSuccess?.()
       } catch (error) {
-        t.error('Could not save the task', { description: messageOf(error) })
+        t.error(m["tasks.form.save_failed"](), { description: messageOf(error) })
       }
     },
   })
@@ -40,11 +41,11 @@ export function TaskForm({ matterId = null, existing, onSuccess, onDirtyChange }
         void form.handleSubmit()
       }}
     >
-      <form.AppField name="title">{(f) => <f.input label="Task" placeholder="Interview the second witness" />}</form.AppField>
-      <form.AppField name="dueOn">{(f) => <DateField label="Due (optional)" value={f.state.value} onChange={f.handleChange} />}</form.AppField>
-      <form.AppField name="detail">{(f) => <f.textarea label="Detail (optional)" rows={3} />}</form.AppField>
+      <form.AppField name="title">{(f) => <f.input label={m["tasks.form.task"]()} placeholder={m["tasks.form.task_placeholder"]()} />}</form.AppField>
+      <form.AppField name="dueOn">{(f) => <DateField label={m["tasks.form.due"]()} value={f.state.value} onChange={f.handleChange} />}</form.AppField>
+      <form.AppField name="detail">{(f) => <f.textarea label={m["tasks.form.detail"]()} rows={3} />}</form.AppField>
       <DrawerFooter>
-        <SubmitButton form={form} label={existing ? 'Save changes' : 'Add task'} />
+        <SubmitButton form={form} label={existing ? m["tasks.form.save"]() : m["tasks.form.add"]()} />
       </DrawerFooter>
     </form>
   )

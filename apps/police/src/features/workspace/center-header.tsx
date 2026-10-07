@@ -1,51 +1,55 @@
 import * as m from '@/paraglide/messages'
 import { Controls } from '@/components/toolbar/controls'
-import { Toggletheme } from '@/components/toggle-theme'
-import { ArrowLeft01Icon, ArrowRight01Icon, PanelLeftIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Button } from '@pleadli/ui/button'
+import { SidebarToggle } from '@/components/toolbar/sidebar-toggle'
 import { ActivityToasts } from '@/features/activity'
 import { CustodyAttentionDialog } from '@/features/custody'
 import { BackupDispatchIndicator } from '@/features/officers'
-import { DevModeSwitch } from '@/features/session'
+import { DevModeSwitch, useInstallation } from '@/features/session'
+import { shortcut } from '@/lib/platform'
+import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Button } from '@pleadli/ui/button'
 import { TabStrip } from './tab-strip'
 import { useTabActions } from './tab-actions'
 import { useWorkspace } from './tabs-store'
 
-/** The header of the centre column: the tabs, and the tools that belong to the
- * whole window. It is the width of the content beneath it, so it follows the
- * sidebar folding. The window buttons sit at its right end. */
+/** The header of the centre column, translucent over the page: the tabs, then
+ * the few things that belong to the whole window. A backup call or a custody
+ * deadline shows here only while it is live. With the sidebar folded, the
+ * window buttons and the sidebar button come here. */
 export function CenterHeader() {
   const { tabs, leftOpen, setLeftOpen } = useWorkspace()
   const { cycle } = useTabActions()
   const hasSeveral = tabs.length > 1
+  const station = useInstallation().data?.mode === 'station'
 
   return (
-    <header data-tauri-drag-region className="relative flex h-9 shrink-0 items-center border-b border-border/20 bg-background print:hidden">
-      {/* The way back to the sidebar once it is folded; while it is open the
-          control is in its own header. */}
+    <header data-tauri-drag-region className="relative flex h-12 shrink-0 items-center border-b border-border/40 bg-background/80 backdrop-blur-xl print:hidden">
       {!leftOpen && (
-        <Button size="icon-sm" variant="ghost" onClick={() => setLeftOpen(true)} aria-label={m["workspace.show_sidebar"]()} title={m["workspace.show_sidebar"]()} className="ml-2 cursor-pointer">
-          <HugeiconsIcon icon={PanelLeftIcon} className="size-4" />
-        </Button>
+        <div className="flex shrink-0 items-center gap-3 ps-4 pe-2">
+          <Controls />
+          <SidebarToggle open={false} onToggle={() => setLeftOpen(true)} />
+        </div>
       )}
 
       <TabStrip />
 
       <nav aria-label={m["workspace.window"]()} data-tauri-drag-region className="relative z-10 flex shrink-0 items-center gap-1 pr-2 pl-1">
-        <Button size="icon-sm" variant="ghost" disabled={!hasSeveral} onClick={() => cycle(-1)} aria-label={m["workspace.previous_tab"]()} title={m["workspace.previous_tab_title"]()} className="cursor-pointer">
+        {/* A station's own alerts; a command holds none of these records. */}
+        {station && (
+          <>
+            <BackupDispatchIndicator />
+            <CustodyAttentionDialog />
+            <ActivityToasts />
+          </>
+        )}
+        {import.meta.env.DEV && <DevModeSwitch compact />}
+        <Button size="icon-sm" variant="ghost" disabled={!hasSeveral} onClick={() => cycle(-1)} aria-label={m["workspace.previous_tab"]()} title={m["workspace.previous_tab_with"]({ key: shortcut('⇧Tab') })} className="cursor-pointer">
           <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
         </Button>
-        <Button size="icon-sm" variant="ghost" disabled={!hasSeveral} onClick={() => cycle(1)} aria-label={m["workspace.next_tab"]()} title={m["workspace.next_tab_title"]()} className="cursor-pointer">
+        <Button size="icon-sm" variant="ghost" disabled={!hasSeveral} onClick={() => cycle(1)} aria-label={m["workspace.next_tab"]()} title={m["workspace.next_tab_with"]({ key: shortcut('Tab') })} className="cursor-pointer">
           <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
         </Button>
-        <span className="mx-1 h-4 w-px bg-border/60" aria-hidden />
-        <BackupDispatchIndicator />
-        <CustodyAttentionDialog />
-        <ActivityToasts />
-        {import.meta.env.DEV && <DevModeSwitch compact />}
-        <Toggletheme />
-        <Controls />
       </nav>
     </header>
   )

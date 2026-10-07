@@ -1,4 +1,7 @@
-import { SettingsCard } from '@/components/settings-card'
+import { SettingsCard, SettingsRow } from '@/components/settings-card'
+import { PinField } from '@pleadli/ui/pin-field'
+import { Segmented } from '@pleadli/ui/segmented'
+import { autoUpdate, checkNow, download as downloadUpdate, restart as restartApp, setAutoUpdate, useUpdateState } from '@/lib/updater'
 import { serviceNames } from '@/lib/jurisdiction'
 import { Tag } from '@/components/status-tag'
 import { RowList, Row } from '@/components/operational-row'
@@ -35,7 +38,7 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { Switch } from '@pleadli/ui/switch'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const say = (error: unknown) => (error instanceof ApiError ? error.message : m["common.try_again"]())
 
@@ -46,22 +49,6 @@ function useIsAdmin() {
   return status?.actor?.role === 'administrator'
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  const id = useId()
-  return (
-    // A row, as System Settings lays one out: the label on the left, the
-    // control on the right, the note under the control. Stacks on a narrow window.
-    <div className="grid grid-cols-1 items-center gap-x-6 gap-y-1.5 sm:grid-cols-[11rem_minmax(0,1fr)]">
-      <label htmlFor={id} className="text-[0.8125rem] sm:text-right">
-        {label}
-      </label>
-      <div id={id} className="flex min-w-0 flex-col">
-        {children}
-      </div>
-      {hint && <p className="text-[0.8125rem] text-muted-foreground sm:col-start-2">{hint}</p>}
-    </div>
-  )
-}
 
 function Choose<T extends string>({ value, items, onChange, disabled }: { value: T; items: { value: T; label: string }[]; onChange: (v: T) => void; disabled?: boolean }) {
   return (
@@ -84,18 +71,9 @@ function Choose<T extends string>({ value, items, onChange, disabled }: { value:
 
 /** A PIN field or a password field, whichever the protection level asks for. */
 function SecretInput({ level, value, onChange, placeholder }: { level: 'basic' | 'full'; value: string; onChange: (v: string) => void; placeholder?: string }) {
-  const pin = level === 'basic'
-  return (
-    <Input
-      type="password"
-      inputMode={pin ? 'numeric' : undefined}
-      maxLength={pin ? 6 : undefined}
-      autoComplete="new-password"
-      placeholder={placeholder ?? (pin ? m["staff.pin_placeholder"]() : m["staff.password_placeholder"]())}
-      value={value}
-      onChange={(e) => onChange(pin ? e.target.value.replace(/\D/g, '') : e.target.value)}
-    />
-  )
+  // A PIN shows as six places that fill as it is typed, so the count is never a guess.
+  if (level === 'basic') return <PinField label={placeholder ?? m["staff.pin_placeholder"]()} value={value} onChange={onChange} autoComplete="new-password" />
+  return <Input type="password" autoComplete="new-password" className="rounded-lg" placeholder={placeholder ?? m["staff.password_placeholder"]()} value={value} onChange={(e) => onChange(e.target.value)} />
 }
 
 const secretOk = (level: 'basic' | 'full', v: string) => (level === 'basic' ? /^\d{6}$/.test(v) : v.length >= 12)
@@ -142,12 +120,12 @@ export function YouPane() {
           </Button>
         }
       >
-        <Field label={m["staff.name"]()}>
+        <SettingsRow label={m["staff.name"]()}>
           <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
-        </Field>
-        <Field label={m["staff.rank"]()}>
+        </SettingsRow>
+        <SettingsRow label={m["staff.rank"]()}>
           <Input value={rank} onChange={(e) => setRank(e.target.value)} placeholder={m["staff.rank_placeholder"]({ rank: serviceNames().rankExample ?? '...' })} />
-        </Field>
+        </SettingsRow>
         <label className="flex items-start justify-between gap-4">
           <span className="flex flex-col gap-1">
             <strong>{m["staff.flag.is_dpp"]({ head: serviceNames().head })}</strong>
@@ -256,20 +234,20 @@ export function OfficePane() {
           )
         }
       >
-        <Field label={m["settings.office.name"]()}>
+        <SettingsRow label={m["settings.office.name"]()}>
           <Input value={officeName} disabled={!isAdmin} onChange={(e) => setOfficeName(e.target.value)} />
-        </Field>
+        </SettingsRow>
         {install.model === 'office' && country && (
-          <Field label={country.regionLabel[locale]}>
+          <SettingsRow label={country.regionLabel[locale]}>
             {country.regions.length > 0 ? (
               <Choose value={region} disabled={!isAdmin} items={country.regions.map((r) => ({ value: r, label: r }))} onChange={setRegion} />
             ) : (
               <Input value={region} disabled={!isAdmin} onChange={(e) => setRegion(e.target.value)} />
             )}
-          </Field>
+          </SettingsRow>
         )}
         {import.meta.env.DEV && isAdmin ? (
-          <Field label={m["settings.office.country"]()} hint={m["settings.office.country_dev_hint"]()}>
+          <SettingsRow label={m["settings.office.country"]()} hint={m["settings.office.country_dev_hint"]()}>
             <Choose
               value={install.jurisdiction}
               items={COUNTRIES.map((c) => ({ value: c.code, label: c.name[locale] }))}
@@ -288,15 +266,15 @@ export function OfficePane() {
                 }
               }}
             />
-          </Field>
+          </SettingsRow>
         ) : (
-          <Field label={m["settings.office.country"]()} hint={m["settings.office.country_hint"]()}>
+          <SettingsRow label={m["settings.office.country"]()} hint={m["settings.office.country_hint"]()}>
             <Input value={country?.name[locale] ?? install.jurisdiction} disabled />
-          </Field>
+          </SettingsRow>
         )}
-        <Field label={m["settings.office.language"]()} hint={m["settings.office.language_hint"]()}>
+        <SettingsRow label={m["settings.office.language"]()} hint={m["settings.office.language_hint"]()}>
           <Choose value={language} disabled={!isAdmin} items={selectableLocales.map((l) => ({ value: l, label: localeNames[l] }))} onChange={setLanguage} />
-        </Field>
+        </SettingsRow>
 
         <div className="flex items-center gap-4 border-t pt-4">
           <div className="flex size-20 shrink-0 items-center justify-center rounded-xl border border-border bg-white p-2">
@@ -378,16 +356,16 @@ function PersonEditor({ person, level, onDone }: { person: Staff; level: 'none' 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label={m["staff.name"]()}>
+        <SettingsRow label={m["staff.name"]()}>
           <Input value={name} onChange={(e) => setName(e.target.value)} />
-        </Field>
-        <Field label={m["staff.rank"]()}>
+        </SettingsRow>
+        <SettingsRow label={m["staff.rank"]()}>
           <Input value={rank} onChange={(e) => setRank(e.target.value)} />
-        </Field>
+        </SettingsRow>
       </div>
-      <Field label={m["staff.role_label"]()}>
+      <SettingsRow label={m["staff.role_label"]()}>
         <Choose value={role} items={staffRoles.map((r) => ({ value: r, label: roleLabel(r) }))} onChange={setRole} />
-      </Field>
+      </SettingsRow>
       <label className="flex items-center justify-between gap-4">
         <span>{m["staff.flag.is_dpp"]({ head: serviceNames().head })}</span>
         <Switch checked={isDpp} onCheckedChange={setIsDpp} />
@@ -498,19 +476,19 @@ function AddPerson({ level, onDone }: { level: 'none' | 'basic' | 'full'; onDone
         </div>
       }
     >
-      <Field label={m["staff.name"]()}>
+      <SettingsRow label={m["staff.name"]()}>
         <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-      </Field>
-      <Field label={m["staff.rank"]()}>
+      </SettingsRow>
+      <SettingsRow label={m["staff.rank"]()}>
         <Input value={rank} onChange={(e) => setRank(e.target.value)} placeholder={m["staff.rank_placeholder"]({ rank: serviceNames().rankExample ?? '...' })} />
-      </Field>
-      <Field label={m["staff.role_label"]()}>
+      </SettingsRow>
+      <SettingsRow label={m["staff.role_label"]()}>
         <Choose value={role} items={staffRoles.map((r) => ({ value: r, label: roleLabel(r) }))} onChange={setRole} />
-      </Field>
+      </SettingsRow>
       {level !== 'none' && (
-        <Field label={level === 'basic' ? m["staff.first_pin"]() : m["staff.first_password"]()}>
+        <SettingsRow label={level === 'basic' ? m["staff.first_pin"]() : m["staff.first_password"]()}>
           <SecretInput level={level} value={secret} onChange={setSecret} />
-        </Field>
+        </SettingsRow>
       )}
     </SettingsCard>
   )
@@ -588,15 +566,16 @@ export function ProtectionPane() {
   const needsSecret = next !== 'none'
   const ready = next !== level && (!needsSecret || secretOk(next, secret))
 
+  const on = next !== 'none'
+  const changing = next !== level
   return (
     <>
       <SettingsCard
         title={m["protection.title"]()}
-        badge={<Tag tone={level === 'none' ? 'open' : 'done'}>{levelText[level]}</Tag>}
-        description={levelAbout[level]}
-        hint={isAdmin ? m["protection.change_hint"]() : m["settings.admin_only"]()}
+        hint={changing && isAdmin ? m["protection.change_hint"]() : !isAdmin ? m["settings.admin_only"]() : levelAbout[next]}
         onSubmit={async (e) => {
           e.preventDefault()
+          if (!ready) return
           setBusy(true)
           try {
             await setProtection(next, needsSecret ? secret : null)
@@ -611,42 +590,45 @@ export function ProtectionPane() {
           }
         }}
         action={
-          isAdmin && (
-            <Button type="submit" size="sm" disabled={!ready || busy}>
-              {m["protection.change"]()}
-            </Button>
+          isAdmin &&
+          changing && (
+            <>
+              <Button type="button" size="sm" variant="ghost" onClick={() => { setNext(level); setSecret('') }}>
+                {m["protection.cancel"]()}
+              </Button>
+              <Button type="submit" size="sm" disabled={!ready || busy}>
+                {level === 'none' ? m["protection.turn_on"]() : next === 'none' ? m["protection.turn_off"]() : m["protection.apply"]()}
+              </Button>
+            </>
           )
         }
       >
-        {isAdmin && (
-          <>
-            <div role="radiogroup" aria-label={m["protection.title"]()} className="flex flex-col gap-2">
-              {(['none', 'basic', 'full'] as const).map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  role="radio"
-                  aria-checked={next === l}
-                  onClick={() => setNext(l)}
-                  className={cn('flex flex-col items-start gap-0.5 rounded-lg border p-3 text-left transition-colors', next === l ? 'border-primary ring-1 ring-primary' : 'border-border hover:border-foreground/20')}
-                >
-                  <strong>{levelText[l]}</strong>
-                  <span className="text-muted-foreground">{levelAbout[l]}</span>
-                </button>
-              ))}
-            </div>
-            {needsSecret && next !== level && (
-              <Field label={next === 'basic' ? m["protection.your_new_pin"]() : m["protection.your_new_password"]()} hint={next === 'full' ? m["protection.full_next_sign_in"]() : m["protection.others_need_new"]()}>
-                <SecretInput level={next} value={secret} onChange={setSecret} />
-              </Field>
-            )}
-          </>
+        <SettingsRow label={m["protection.require"]()}>
+          <Switch checked={on} disabled={!isAdmin} onCheckedChange={(checked) => setNext(checked ? (level === 'none' ? 'basic' : level) : 'none')} aria-label={m["protection.require"]()} />
+        </SettingsRow>
+        {on && (
+          <SettingsRow label={m["protection.method"]()}>
+            <Segmented
+              label={m["protection.method"]()}
+              value={next as 'basic' | 'full'}
+              onChange={(v) => isAdmin && setNext(v)}
+              items={[
+                { value: 'basic', label: m["protection.method_pin"]() },
+                { value: 'full', label: m["protection.method_full"]() },
+              ]}
+            />
+          </SettingsRow>
+        )}
+        {isAdmin && needsSecret && changing && (
+          <SettingsRow label={next === 'basic' ? m["protection.your_new_pin"]() : m["protection.your_new_password"]()} hint={next === 'full' ? m["protection.full_next_sign_in"]() : m["protection.others_need_new"]()}>
+            <SecretInput level={next} value={secret} onChange={setSecret} />
+          </SettingsRow>
         )}
       </SettingsCard>
 
       {level !== 'none' && (
-        <SettingsCard title={m["protection.idle"]()} description={m["protection.idle_description"]()}>
-          <div className="flex items-center justify-between gap-3">
+        <SettingsCard title={m["protection.away"]()}>
+          <SettingsRow label={m["protection.idle"]()} hint={m["protection.idle_description"]()}>
             <select
               className="h-8 rounded-md border border-input bg-input/20 px-2"
               value={status.idleMinutes}
@@ -659,10 +641,12 @@ export function ProtectionPane() {
                 </option>
               ))}
             </select>
+          </SettingsRow>
+          <SettingsRow label={m["protection.sign_out_now"]()}>
             <Button size="sm" variant="outline" onClick={() => void lockNow().then(refresh)}>
               {m["workspace.sign_out"]()}
             </Button>
-          </div>
+          </SettingsRow>
         </SettingsCard>
       )}
 
@@ -744,6 +728,72 @@ export function LicencePane() {
             </section>
           ))}
         </article>
+      </SettingsCard>
+    </>
+  )
+}
+
+/** Settings > Software update, as on a Mac: the version this computer runs,
+ * whether a newer one is out, and whether updates download by themselves.
+ * Updates come signed from Pleadli's release feed; the app restarts only
+ * when the person says. In a browser there is nothing to update. */
+export function UpdatesPane() {
+  const u = useUpdateState()
+  const auto = autoUpdate()
+  if (u.phase === 'unsupported') {
+    return (
+      <SettingsCard>
+        <SettingsRow label={m["update.title"]()} hint={m["update.browser"]()}>
+          <span />
+        </SettingsRow>
+      </SettingsCard>
+    )
+  }
+  const status =
+    u.phase === 'checking'
+      ? m["update.checking"]()
+      : u.phase === 'current'
+        ? m["update.current"]()
+        : u.phase === 'available'
+          ? m["update.available"]({ version: u.version ?? '' })
+          : u.phase === 'downloading'
+            ? m["update.downloading"]({ percent: String(Math.round(u.progress * 100)) })
+            : u.phase === 'ready'
+              ? m["update.ready"]({ version: u.version ?? '' })
+              : u.phase === 'failed'
+                ? m["update.failed"]()
+                : m["update.not_checked"]()
+  return (
+    <>
+      <SettingsCard hint={u.phase === 'failed' && u.error ? u.error : u.checkedAt ? m["update.checked_at"]({ time: formatDate(u.checkedAt, 'time') }) : undefined}>
+        <SettingsRow label={m["update.version"]()}>
+          <span className="text-muted-foreground tabular-nums">{u.current ?? '·'}</span>
+        </SettingsRow>
+        <SettingsRow label={status}>
+          {u.phase === 'available' ? (
+            <Button size="sm" onClick={() => void downloadUpdate()}>
+              {m["update.get"]()}
+            </Button>
+          ) : u.phase === 'ready' ? (
+            <Button size="sm" onClick={() => void restartApp()}>
+              {m["update.restart"]()}
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" disabled={u.phase === 'checking' || u.phase === 'downloading'} onClick={() => void checkNow(true)}>
+              {m["update.check"]()}
+            </Button>
+          )}
+        </SettingsRow>
+        {u.phase === 'downloading' && (
+          <div className="h-1.5 overflow-hidden rounded-full bg-foreground/[0.08] py-0!">
+            <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${Math.round(u.progress * 100)}%` }} />
+          </div>
+        )}
+      </SettingsCard>
+      <SettingsCard hint={m["update.auto_hint"]()}>
+        <SettingsRow label={m["update.auto"]()}>
+          <Switch checked={auto} onCheckedChange={setAutoUpdate} aria-label={m["update.auto"]()} />
+        </SettingsRow>
       </SettingsCard>
     </>
   )

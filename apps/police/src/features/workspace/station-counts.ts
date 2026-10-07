@@ -1,4 +1,5 @@
 import { casesOptions } from '@/features/cases/queries'
+import { caseFolderOf } from '@/features/cases/folders'
 import { custodyRecordsOptions } from '@/features/custody/queries'
 import { custodyCompliance } from '@/features/custody/schema'
 import { referralsOptions } from '@/features/referrals/queries'
@@ -17,6 +18,9 @@ export type StationCounts = {
   custodyDue: number
   openCases: number
   referralsPending: number
+  /** Cases by folder: what the station is investigating, and what waits on the DPP. */
+  investigating: number
+  withDpp: number
 }
 
 /** The figures the sidebar and status bar carry, read from the records the
@@ -38,5 +42,7 @@ export function useStationCounts(): StationCounts | undefined {
     custodyDue: inCustody.filter((record) => custodyCompliance(record).hoursRemaining <= DUE_WITHIN_HOURS).length,
     openCases: cases.filter((c) => c.status === 'open').length,
     referralsPending: referrals.filter((r) => r.status === 'pending').length,
+    investigating: cases.filter((c) => caseFolderOf(c, referrals) === 'investigating').length,
+    withDpp: cases.filter((c) => caseFolderOf(c, referrals) === 'dpp').length,
   }
 }

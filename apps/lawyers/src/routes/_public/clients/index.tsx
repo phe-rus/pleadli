@@ -3,9 +3,12 @@ import { Createpanel } from '@/components/create-panel'
 import { EmptyNote } from '@/components/planned'
 import { Tag } from '@/components/status-tag'
 import { ClientForm, clientsOptions, custodyLabel, useClients, type ClientSummary } from '@/features/clients'
+import * as m from '@/paraglide/messages'
+import { UserGroupIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { formatDay } from '@/lib/dates'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/clients/')({
@@ -27,7 +30,7 @@ function RouteComponent() {
       selectColumn(),
       {
         accessorKey: 'name',
-        header: 'Name',
+        header: m["clients.col.name"](),
         cell: ({ row }) => (
           <button type="button" onClick={() => setEditing(row.original)} className="flex cursor-pointer flex-col text-start">
             <span className="font-medium text-foreground">{row.original.name}</span>
@@ -35,12 +38,12 @@ function RouteComponent() {
           </button>
         ),
       },
-      { accessorKey: 'id', header: 'ID' },
-      { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => row.original.phone ?? '·' },
-      { accessorKey: 'address', header: 'Address', cell: ({ row }) => row.original.address ?? '·' },
+      { accessorKey: 'id', header: m["clients.col.id"]() },
+      { accessorKey: 'phone', header: m["clients.col.phone"](), cell: ({ row }) => row.original.phone ?? '·' },
+      { accessorKey: 'address', header: m["clients.col.address"](), cell: ({ row }) => row.original.address ?? '·' },
       {
         accessorKey: 'custody',
-        header: 'Custody',
+        header: m["clients.col.custody"](),
         cell: ({ row }) =>
           row.original.custody ? (
             <Tag tone={row.original.custody === 'at_liberty' ? 'done' : 'waiting'}>
@@ -51,10 +54,10 @@ function RouteComponent() {
             '·'
           ),
       },
-      { accessorKey: 'matters', header: 'Matters' },
-      { accessorKey: 'openMatters', header: 'Open' },
-      { accessorKey: 'notes', header: 'Notes', cell: ({ row }) => <span className="inline-block max-w-xs truncate">{row.original.notes ?? '·'}</span> },
-      { accessorKey: 'createdAt', header: 'Added', cell: ({ getValue }) => format(getValue<number>(), 'PPp') },
+      { accessorKey: 'matters', header: m["clients.col.matters"]() },
+      { accessorKey: 'openMatters', header: m["clients.col.open"]() },
+      { accessorKey: 'notes', header: m["clients.col.notes"](), cell: ({ row }) => <span className="inline-block max-w-xs truncate">{row.original.notes ?? '·'}</span> },
+      { accessorKey: 'createdAt', header: m["clients.col.added"](), cell: ({ getValue }) => formatDay(getValue<number>()) },
     ],
     [],
   )
@@ -63,20 +66,20 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>Clients</h1>
-          <p>The people you act for, and where an accused client is held.</p>
+          <h1>{m["nav.clients"]()}</h1>
+          <p>{m["clients.lead"]()}</p>
         </div>
         <div className="page-actions">
-          <PanelButton label="Add a client" title="Add a client" description="Someone you act for." variant="default">
+          <PanelButton label={m["workspace.quick.add_client"]()} title={m["workspace.quick.add_client"]()} description={m["workspace.quick.add_client_about"]()} variant="default">
             {({ close, setDirty: report }) => <ClientForm onSuccess={close} onDirtyChange={report} />}
           </PanelButton>
         </div>
       </header>
 
       {clients.length === 0 ? (
-        <EmptyNote>You have no clients yet. Add one, then open a matter for them.</EmptyNote>
+        <EmptyNote icon={<HugeiconsIcon icon={UserGroupIcon} />}>{m["clients.none"]()}</EmptyNote>
       ) : (
-        <DataTable aria-label="Clients" data={clients} columns={columns} getRowId={(row) => row.id} initialHidden={['id', 'phone', 'notes', 'createdAt']} emptyMessage="No clients." searchPlaceholder="Search clients" />
+        <DataTable aria-label={m["nav.clients"]()} data={clients} columns={columns} getRowId={(row) => row.id} initialHidden={['id', 'phone', 'notes', 'createdAt']} emptyMessage={m["clients.no_match"]()} searchPlaceholder={m["clients.search"]()} />
       )}
 
       <Createpanel
@@ -88,7 +91,7 @@ function RouteComponent() {
           }
         }}
         isDirty={dirty}
-        headings={{ title: 'Edit the client', description: 'Change their details, or where they are held.' }}
+        headings={{ title: m["clients.edit_title"](), description: m["clients.edit_description"]() }}
       >
         {editing && <ClientForm existing={editing} onDirtyChange={setDirty} onSuccess={() => setEditing(null)} />}
       </Createpanel>

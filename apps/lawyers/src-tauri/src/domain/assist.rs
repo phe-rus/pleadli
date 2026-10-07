@@ -185,6 +185,15 @@ pub async fn save_settings(pool: &SqlitePool, input: AssistSettingsInput, actor:
     Ok(settings(pool).await?)
 }
 
+/// The provider and key with the model a person chose for one request, if any.
+async fn engine_for(pool: &SqlitePool, chosen: Option<&str>) -> Result<Engine, DomainError> {
+    let mut e = engine(pool).await?;
+    if let Some(model) = chosen.map(str::trim).filter(|m| !m.is_empty()) {
+        e.fixed_model = Some(model.to_string());
+    }
+    Ok(e)
+}
+
 /// The provider, key and model, or why Assist cannot run.
 async fn engine(pool: &SqlitePool) -> Result<Engine, DomainError> {
     let r = row(pool).await?;
@@ -247,6 +256,8 @@ pub struct AskInput {
     pub messages: Vec<ChatMessage>,
     /// The language the person reads ("en", "sw", "fr").
     pub language: Option<String>,
+    /// The model chosen in the chat for this request; none means the default.
+    pub model: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -471,7 +482,7 @@ pub async fn ask(pool: &SqlitePool, matter_id: &str, input: AskInput, actor: &su
         return invalid("Unknown Assist task.");
     }
     let matter = matters::get(pool, matter_id).await?.ok_or_else(|| DomainError::NotFound("No such matter.".into()))?;
-    let e = engine(pool).await?;
+    let e = engine_for(pool, input.model.as_deref()).await?;
     let country = installation::get(pool).await?.map(|i| i.jurisdiction).unwrap_or_default();
     let lang = language_name(input.language.as_deref());
     let context = matter_context(pool, &matter).await?;
@@ -585,7 +596,7 @@ fn schema_read() -> Value {
 /// Assist reads papers: names, kinds, dates, who they are from, a summary and
 /// the text, written onto each paper as unchecked; and the steps it saw that
 /// this matter's deadlines turn on, proposed for a person to record.
-pub async fn read_papers(pool: &SqlitePool, vault_root: &std::path::Path, matter_id: &str, paper_ids: &[String], language: Option<&str>, actor: &super::staff::Actor) -> Result<PapersRead, DomainError> {
+pub async fn read_papers(pool: &SqlitePool, vault_root: &std::path::Path, matter_id: &str, paper_ids: &[String], language: Option<&str>, model: Option<&str>, actor: &super::staff::Actor) -> Result<PapersRead, DomainError> {
     if actor.role == "accounts" {
         return Err(DomainError::Forbidden("Assist works on matters: ask an advocate or a paralegal.".into()));
     }
@@ -596,7 +607,7 @@ pub async fn read_papers(pool: &SqlitePool, vault_root: &std::path::Path, matter
         return invalid("Read at most six papers at a time.");
     }
     let matter = matters::get(pool, matter_id).await?.ok_or_else(|| DomainError::NotFound("No such matter.".into()))?;
-    let e = engine(pool).await?;
+    let e = engine_for(pool, model).await?;
     let mut parts = Vec::new();
     let mut total = 0usize;
     for (i, id) in paper_ids.iter().enumerate() {

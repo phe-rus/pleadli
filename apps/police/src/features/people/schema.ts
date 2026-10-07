@@ -54,6 +54,7 @@ export const personProfileSchema = z.object({
   chargeSheets: z.array(chargeSheetSchema),
   vehicles: z.array(vehicleSchema),
   attachments: z.array(attachmentSchema),
+  caseRoles: z.array(z.object({ caseId: z.string(), role: z.string() })).default([]),
 })
 
 export type PersonProfile = z.infer<typeof personProfileSchema>

@@ -12,6 +12,10 @@ import { PaperSheet, printSheet } from '@pleadli/paper'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@pleadli/ui/dropdown-menu'
+import { Segmented } from '@pleadli/ui/segmented'
+import { MoreHorizontalIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -208,31 +212,32 @@ export function CriminalRegister() {
   const select = 'h-8 rounded-md border border-input bg-background px-2 text-sm'
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <>
+      <header className="page-header">
         <div>
           <h1>{m["criminal.title"]()}</h1>
-          <p className="text-muted-foreground">{m["criminal.lead"]()}</p>
+          <p>{m["criminal.lead"]()}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div role="radiogroup" className="inline-flex rounded-lg border border-border/70 p-0.5">
-            {(['table', 'cards'] as const).map((v) => (
-              <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => setView(v)} className={cn('cursor-pointer rounded-md px-3 py-1 text-sm', view === v ? 'bg-secondary font-medium' : 'text-muted-foreground')}>
-                {v === 'table' ? m["criminal.table"]() : m["criminal.cards"]()}
-              </button>
-            ))}
-          </div>
-          <Button size="sm" variant="outline" onClick={exportCsv}>
-            {m["criminal.export"]()}
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => listSheet.current && void printSheet(listSheet.current)}>
-            {m["criminal.print"]()}
-          </Button>
+        <div className="page-actions">
+          <Segmented label={m["criminal.title"]()} value={view} onChange={setView} items={[{ value: 'table', label: m["criminal.table"]() }, { value: 'cards', label: m["criminal.cards"]() }]} />
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button size="icon-sm" variant="ghost" aria-label={m["mp.more"]()} title={m["mp.more"]()} className="cursor-pointer">
+                  <HugeiconsIcon icon={MoreHorizontalIcon} />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={exportCsv}>{m["criminal.export"]()}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => listSheet.current && void printSheet(listSheet.current)}>{m["criminal.print"]()}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <PanelButton label={m["criminal.new"]()} title={m["criminal.new"]()} description={m["criminal.lead"]()} variant="default">
             {({ close, setDirty }) => <MatterForm defaultMatterType="criminal_defence" onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>
-      </div>
+      </header>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {[{ id: 'all', label: m["criminal.all"](), count: open.length }, ...STAGES.map((s) => ({ id: s, label: stageLabel(s), count: open.filter((r) => r.stage === s).length }))].map((card) => (
@@ -384,6 +389,6 @@ export function CriminalRegister() {
       </div>
 
       {current && <CasePanel key={current.id} row={current} onClose={() => setOpenId(null)} />}
-    </div>
+    </>
   )
 }

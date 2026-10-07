@@ -97,7 +97,14 @@ export function OfficerForm({ officer, onSuccess, onDirtyChange }: OfficerFormPr
 
         <form.AppField name="notes">{(f) => <f.textarea label={m["common.notes"]()} />}</form.AppField>
 
-        <form.AppField name="password">
+        <form.AppField
+          name="password"
+          validators={{
+            // An administrator can change everything, so is never badge-only.
+            onSubmit: ({ value, fieldApi }) =>
+              fieldApi.form.getFieldValue('role') === 'admin' && !value.trim() && !officer?.hasSignIn ? m["officers.admin_needs_password"]() : undefined,
+          }}
+        >
           {(f) => (
             <f.input
               type="password"

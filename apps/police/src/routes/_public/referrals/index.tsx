@@ -1,154 +1,115 @@
 import * as m from '@/paraglide/messages'
-import { Createpanel } from '@/components/create-panel'
-import {
-  referralDestinationTypeLabel,
-  referralsOptions,
-  referralStatusLabel,
-  ReferralForm,
-  useReferrals,
-  type Referral,
-} from '@/features/referrals'
-import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
-import { AddCircleIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
-import { Badge } from '@pleadli/ui/badge'
-import { Button } from '@pleadli/ui/button'
-import { cn } from '@pleadli/ui/lib/utils'
-import { createFileRoute } from '@tanstack/react-router'
+import { PanelButton } from '@/components/add-panel'
+import { RecordList } from '@/features/paper/record-list'
+import { RecordPaper } from '@/features/paper/record-paper'
+import { ReferralForm, referralDestinationTypeLabel, referralsOptions, referralStatusLabel, useReferrals, type Referral } from '@/features/referrals'
 import { format } from '@/lib/date'
-import { useMemo, useState } from 'react'
+import { Share08Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { PaperField, SignatureLine } from '@pleadli/paper'
+import { Segmented } from '@pleadli/ui/segmented'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+
+type View = 'waiting' | 'all'
 
 export const Route = createFileRoute('/_public/referrals/')({
-  validateSearch: (search: Record<string, unknown>): { open?: string } =>
-    typeof search.open === 'string' ? { open: search.open } : {},
+  validateSearch: (search: Record<string, unknown>): { open?: string; view?: View } => ({
+    ...(typeof search.open === 'string' ? { open: search.open } : {}),
+    ...(search.view === 'all' ? { view: 'all' as const } : {}),
+  }),
   loader: async ({ context }) => {
     await context.queryClient.query({ ...referralsOptions(''), staleTime: 'static' })
   },
   component: RouteComponent,
 })
 
-function statusVariant(status: string): 'default' | 'secondary' | 'destructive' {
-  if (status === 'accepted') return 'default'
-  if (status === 'rejected') return 'destructive'
-  return 'secondary'
+const destination = (r: Referral) => r.destinationName || referralDestinationTypeLabel(r.destinationType)
+
+/** The covering letter a case file leaves the station with. */
+function ReferralPaper({ referral }: { referral: Referral }) {
+  return (
+    <RecordPaper
+      entityType="referral"
+      entityId={referral.id}
+      reference={referral.caseReference}
+      title={m["referrals_page.paper_title"]()}
+      details={[
+        { label: m["nav.cases"](), value: referral.caseReference, copy: referral.caseReference },
+        { label: m["referrals_page.to"](), value: destination(referral) },
+        { label: m["referrals.referred_at"](), value: format(referral.referredAt, 'PPp') },
+        { label: m["col.status"](), value: referralStatusLabel(referral.status) },
+      ]}
+      events={[{ at: referral.referredAt, label: m["referrals_page.sent"](), by: referral.officerName }]}
+      edit={(done) => <ReferralForm key={referral.id} referral={referral} onSuccess={done} />}
+    >
+      <section className="mb-5 flex flex-col gap-0.5">
+        <PaperField label={m["referrals_page.to"]()}>{`${destination(referral)} (${referralDestinationTypeLabel(referral.destinationType)})`}</PaperField>
+        <PaperField label={m["nav.cases"]()}>{referral.caseReference}</PaperField>
+        <PaperField label={m["referrals.referred_at"]()}>{format(referral.referredAt, 'PPPP')}</PaperField>
+        <PaperField label={m["col.status"]()}>{referralStatusLabel(referral.status)}</PaperField>
+      </section>
+      <p>{(referral.destinationType === 'dpp' ? m["referrals_page.covering"] : m["referrals_page.covering_plain"])({ reference: referral.caseReference, destination: destination(referral) })}</p>
+      {referral.notes && <p className="whitespace-pre-wrap">{referral.notes}</p>}
+      <section className="mt-12 flex justify-end">
+        <SignatureLine name={referral.officerName} caption={m["referrals.referring_officer"]()} />
+      </section>
+    </RecordPaper>
+  )
 }
 
+/** Case files sent out of the station: what still waits for a reply, and every referral before. */
 function RouteComponent() {
-  const { open: openId } = Route.useSearch()
-  const [addOpen, setAddOpen] = useState(false)
-  const [addDirty, setAddDirty] = useState(false)
-  const [editing, setEditing] = useState<Referral | null>(null)
-  const [editDirty, setEditDirty] = useState(false)
+  const { open, view = 'waiting' } = Route.useSearch()
+  const navigate = useNavigate()
   const { data: referrals } = useReferrals('')
-  useDeepLinkRecord(referrals, openId, setEditing)
-
-  const columns: DataTableColumnDef<Referral>[] = useMemo(() => {
-    return [
-      selectColumn(),
-      {
-        accessorKey: 'id',
-        header: m["col.id"](),
-        cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setEditing(row.original)}
-          >
-            {row.original.id}
-          </span>
-        ),
-      },
-      { accessorKey: 'caseId', header: m["col.case_id"]() },
-      { accessorKey: 'caseReference', header: m["col.case"]() },
-      {
-        accessorKey: 'destinationType',
-        header: m["col.destination_type"](),
-        cell: ({ getValue }) => referralDestinationTypeLabel(getValue<string>()),
-      },
-      {
-        accessorKey: 'destinationName',
-        header: m["col.destination"](),
-        cell: ({ row }) => row.original.destinationName ?? '·',
-      },
-      {
-        accessorKey: 'status',
-        header: m["col.status"](),
-        cell: ({ row }) => (
-          <Badge variant={statusVariant(row.original.status)}>{referralStatusLabel(row.original.status)}</Badge>
-        ),
-      },
-      {
-        accessorKey: 'officerName',
-        header: m["col.referring_officer"](),
-        cell: ({ row }) => row.original.officerName ?? '·',
-      },
-      {
-        accessorKey: 'referredAt',
-        header: m["col.referred"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-      { accessorKey: 'notes', header: m["col.notes"](), cell: ({ row }) => row.original.notes ?? '·' },
-      {
-        accessorKey: 'createdAt',
-        header: m["col.recorded"](),
-        cell: ({ getValue }) => format(getValue<number>(), 'PPp'),
-      },
-    ]
-  }, [])
+  const waiting = referrals.filter((r) => r.status === 'pending')
+  const go = (next: { view?: View; open?: string | null }) => {
+    const v = next.view ?? view
+    const o = next.open === undefined ? open : next.open
+    void navigate({ to: '/referrals', search: { ...(v === 'all' ? { view: v } : {}), ...(o ? { open: o } : {}) }, replace: true })
+  }
 
   return (
     <article className="page">
-      <section className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-5">
-            <h1>{m["referrals_page.title"]()}</h1>
-
-            <Createpanel
-              open={addOpen}
-              onOpenChange={setAddOpen}
-              isDirty={addDirty}
-              trigger={
-                <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
-                  {m["referrals.submit"]()}
-                </Button>
-              }
-              headings={{ title: m["referrals.submit"](), description: m["referrals_page.add_desc"]() }}
-            >
-              <ReferralForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
-            </Createpanel>
-          </div>
-          <p className="md:max-w-sm">
-            {m["referrals_page.lead"]()}
-          </p>
+      <header className="page-header">
+        <div>
+          <h1>{m["nav.referrals"]()}</h1>
+          <p>{waiting.length === 1 ? m["referrals_page.waiting_one"]() : m["referrals_page.waiting_n"]({ count: waiting.length })}</p>
         </div>
-      </section>
-
-      <Createpanel
-        open={editing !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditing(null)
-        }}
-        isDirty={editDirty}
-        headings={{ title: m["referrals_page.edit_title"](), description: m["referrals_page.edit_desc"]() }}
-      >
-        {editing && (
-          <ReferralForm
-            key={editing.id}
-            referral={editing}
-            onSuccess={() => setEditing(null)}
-            onDirtyChange={setEditDirty}
+        <div className="page-actions">
+          <Segmented
+            label={m["custody_page.view"]()}
+            value={view}
+            onChange={(v) => go({ view: v, open: null })}
+            items={[
+              { value: 'waiting', label: m["today.waiting_reply"]() },
+              { value: 'all', label: m["custody_page.all_records"]() },
+            ]}
           />
-        )}
-      </Createpanel>
+          <PanelButton label={m["referrals.submit"]()} title={m["referrals.submit"]()} description={m["referrals_page.add_desc"]()} variant="default">
+            {({ close, setDirty }) => <ReferralForm onSuccess={close} onDirtyChange={setDirty} />}
+          </PanelButton>
+        </div>
+      </header>
 
-      <DataTable
-        aria-label={m["common.referrals"]()}
-        data={referrals}
-        columns={columns}
-        getRowId={(row) => row.id}
-        emptyMessage={m["referrals_page.empty"]()}
+      <RecordList
+        items={view === 'waiting' ? waiting : referrals}
+        date={(r) => r.referredAt}
+        label={(r) => r.caseReference}
+        detail={(r) => [m["referrals_page.to_x"]({ destination: destination(r) }), format(r.referredAt, 'd MMM yyyy'), view === 'all' ? referralStatusLabel(r.status) : null].filter(Boolean).join(' · ')}
+        value={(r) => (
+          <Link to="/investigations/$caseId" params={{ caseId: r.caseId }} onClick={(event) => event.stopPropagation()} className="text-[0.8125rem]">
+            {m["referrals_page.open_case"]()}
+          </Link>
+        )}
+        searchText={(r) => [r.caseReference, destination(r), r.officerName ?? ''].join(' ')}
+        paper={(r) => <ReferralPaper referral={r} />}
+        windowTitle={(r) => r.caseReference}
+        empty={view === 'waiting' ? m["referrals_page.none_waiting"]() : m["referrals_page.empty"]()}
+        emptyIcon={<HugeiconsIcon icon={Share08Icon} />}
         searchPlaceholder={m["referrals_page.search"]()}
+        opened={open ?? null}
+        onOpened={(id) => go({ open: id })}
       />
     </article>
   )

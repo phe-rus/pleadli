@@ -91,7 +91,8 @@ pub struct AdministratorInput {
     pub name: Option<String>,
     pub rank: Option<String>,
     pub badge_number: String,
-    /// Required for a Command; ignored for a Station, which starts on badge only.
+    /// Required, at least 8 characters: an administrator always signs in with a
+    /// password, on a Station on badges too.
     pub password: Option<String>,
 }
 
@@ -178,7 +179,7 @@ pub async fn setup_station(pool: &SqlitePool, input: StationSetupInput) -> Resul
     if name.is_empty() {
         return Err(DomainError::rejected("The station needs a name."));
     }
-    let admin = make_administrator(pool, &input.administrator, false).await?;
+    let admin = make_administrator(pool, &input.administrator, true).await?;
 
     sqlx::query(
         "INSERT INTO station_profile (id, name) VALUES ('default', ?)

@@ -642,6 +642,9 @@ pub struct ChatInput {
     pub place: Option<String>,
     #[serde(default)]
     pub context: CountryContext,
+    /// The model chosen in the chat; none means the default.
+    #[serde(default)]
+    pub model: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -661,7 +664,7 @@ pub async fn chat(pool: &SqlitePool, input: ChatInput, actor: Option<&str>) -> R
     if input.messages.is_empty() {
         return invalid("Say something first.");
     }
-    let e = assist::engine(pool).await?;
+    let e = assist::engine_for(pool, input.model.as_deref()).await?;
     let mut system = match &input.file_id {
         Some(id) => {
             let (system, file) = full_context(pool, id, &input.context).await?;

@@ -446,6 +446,52 @@ async fn set_person_photo_handler(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 
+#[derive(Deserialize)]
+struct CapturedPhoto {
+    angle: String,
+    /// The picture as base64 (a JPEG from the camera, or a file read in the window).
+    data: String,
+}
+
+/// A photograph taken with the camera in the window, sent as data rather than
+/// as a file on disk; stored the same way as a picked file.
+async fn capture_person_photo_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<CapturedPhoto>,
+) -> Result<Json<Attachment>, ApiError> {
+    if !people::PHOTO_ANGLES.contains(&input.angle.as_str()) {
+        return Err((StatusCode::BAD_REQUEST, "Invalid photo angle.".to_string()));
+    }
+    use base64::Engine;
+    let raw = input.data.split_once(',').map(|(_, b)| b).unwrap_or(&input.data);
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(raw)
+        .map_err(|_| (StatusCode::BAD_REQUEST, "That picture could not be read.".to_string()))?;
+    if bytes.len() > 15_000_000 {
+        return Err((StatusCode::PAYLOAD_TOO_LARGE, "That picture is too large.".to_string()));
+    }
+    let file_name = format!("{}.jpg", input.angle);
+    people::set_photo(&state.pool, &state.vault_root, &id, &input.angle, &file_name, &bytes)
+        .await
+        .map(Json)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
+/// Opens a link a phone on the station network uses to take this person's
+/// photographs, for a desk with no camera.
+async fn open_phone_capture_handler(State(state): State<AppState>, Path(id): Path<String>) -> Result<Json<serde_json::Value>, ApiError> {
+    let link = crate::transport::phone_capture::open(state.pool.clone(), state.vault_root.clone(), &id)
+        .await
+        .map_err(|e| (StatusCode::SERVICE_UNAVAILABLE, e))?;
+    Ok(Json(serde_json::json!({ "token": link.token, "url": link.url, "qrSvg": link.qr_svg, "expiresInSecs": link.expires_in_secs })))
+}
+
+async fn close_phone_capture_handler(Path(token): Path<String>) -> StatusCode {
+    crate::transport::phone_capture::close(&token);
+    StatusCode::NO_CONTENT
+}
+
 async fn clear_person_photo_handler(
     State(state): State<AppState>,
     Path((id, angle)): Path<(String, String)>,
@@ -866,6 +912,51 @@ async fn paper_history(State(state): State<AppState>, Query(q): Query<PrintEntit
     pleadli_node_core::paper::history(&state.pool, &q.entity_type, &q.entity_id).await.map(Json).map_err(internal_error)
 }
 
+/// Every paper the station has printed or saved, latest version of each, with
+/// where its record lives so the window can open it.
+async fn paper_library(State(state): State<AppState>) -> Result<Json<Vec<serde_json::Value>>, ApiError> {
+    let prints = pleadli_node_core::paper::library(&state.pool, 1000).await.map_err(internal_error)?;
+    let mut out = Vec::with_capacity(prints.len());
+    for p in prints {
+        let route = crate::domain::attachments::resolve_entity_route(&state.pool, &p.entity_type, &p.entity_id).await.map_err(internal_error)?;
+        out.push(serde_json::json!({
+            "code": p.code,
+            "entityType": p.entity_type,
+            "entityId": p.entity_id,
+            "reference": p.reference,
+            "title": p.title,
+            "printedBy": p.printed_by,
+            "printedAt": p.printed_at,
+            "route": route,
+        }));
+    }
+    Ok(Json(out))
+}
+
+/// The handwriting kept on one paper (pen, finger or mouse), if any.
+async fn get_paper_ink(State(state): State<AppState>, Query(q): Query<PrintEntityQuery>) -> Result<Json<Option<String>>, ApiError> {
+    pleadli_node_core::paper::ink(&state.pool, &q.entity_type, &q.entity_id).await.map(Json).map_err(internal_error)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InkInput {
+    entity_type: String,
+    entity_id: String,
+    ink: Option<String>,
+}
+
+/// Keeps (or clears) the handwriting on one paper, under the officer who wrote it.
+async fn put_paper_ink(State(state): State<AppState>, Extension(actor): Extension<crate::domain::sessions::Actor>, Json(input): Json<InkInput>) -> Result<StatusCode, ApiError> {
+    if input.ink.as_ref().is_some_and(|i| i.len() > 4_000_000) {
+        return Err((StatusCode::UNPROCESSABLE_ENTITY, "There is too much writing on this paper to keep.".into()));
+    }
+    pleadli_node_core::paper::set_ink(&state.pool, &input.entity_type, &input.entity_id, input.ink.as_deref(), Some(actor.name.as_str()))
+        .await
+        .map_err(internal_error)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 #[derive(Deserialize)]
 struct PrintVerifyQuery {
     code: String,
@@ -1010,6 +1101,15 @@ async fn list_vault_directory_handler(
 ) -> Result<Json<Vec<VaultEntry>>, ApiError> {
     attachments::list_vault_directory(&state.pool, &state.vault_root, &params.relative_path)
         .await
+        .map(Json)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
+async fn read_vault_file_handler(
+    State(state): State<AppState>,
+    Query(params): Query<VaultDirectoryQuery>,
+) -> Result<Json<String>, ApiError> {
+    attachments::read_vault_file(&state.vault_root, &params.relative_path)
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
@@ -1290,6 +1390,7 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/system/onboarding/station", post(session::onboard_station))
         .route("/system/onboarding/command", post(session::onboard_command))
         .route("/auth/sign-in", post(session::sign_in))
+        .route("/auth/first-password", post(session::first_password))
         .route("/auth/sign-out", post(session::sign_out))
         .route("/auth/me", get(session::me))
         .route("/auth/policy", get(session::get_policy).put(session::save_policy))
@@ -1313,6 +1414,9 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         )
         .route("/people/{id}/photos", post(set_person_photo_handler))
         .route("/people/{id}/photos/{angle}", delete(clear_person_photo_handler))
+        .route("/people/{id}/photos/capture", post(capture_person_photo_handler))
+        .route("/people/{id}/photos/phone", post(open_phone_capture_handler))
+        .route("/phone-capture/{token}", delete(close_phone_capture_handler))
         .route("/people/{id}/export/{format}", get(export_person_document_handler))
         .route(
             "/station-diary",
@@ -1338,6 +1442,8 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/prints/last", get(last_paper_print))
         .route("/prints/history", get(paper_history))
         .route("/prints/verify", get(verify_paper))
+        .route("/prints/ink", get(get_paper_ink).put(put_paper_ink))
+        .route("/prints/library", get(paper_library))
         .route("/custody", post(create_custody_record_handler).get(list_custody_records_handler))
         .route("/custody/{id}", put(update_custody_record_handler))
         .route("/bonds", post(create_bond_handler).get(list_bonds_handler))
@@ -1361,6 +1467,7 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/attachments/all", get(list_all_attachments_handler))
         .route("/attachments/route", get(get_attachment_route_handler))
         .route("/vault", get(list_vault_directory_handler))
+        .route("/vault/file", get(read_vault_file_handler))
         .route("/attachments/{id}", delete(delete_attachment_handler))
         .route("/attachments/{id}/file", get(get_attachment_file_handler))
         .route("/officers", post(create_officer_handler).get(list_officers_handler))
@@ -1417,7 +1524,7 @@ pub fn router(pool: SqlitePool, vault_root: PathBuf) -> Router {
 pub async fn serve_dev(app: Router) {
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
-    let listener = tokio::net::TcpListener::bind(("127.0.0.1", DEV_PORT))
+    let listener = tokio::net::TcpListener::bind(("127.0.0.1", crate::port_from_env("PLEADLI_DEV_PORT", DEV_PORT)))
         .await
         .expect("bind local dev server port");
 
@@ -1556,6 +1663,43 @@ mod tests {
         let _ = std::fs::remove_dir_all(dir);
     }
 
+    /// A call whose answer is plain text (refusals carry their reason as text).
+    async fn call_text(app: &axum::Router, method: Method, path: &str, body: Value) -> (StatusCode, String) {
+        let request = Request::builder().method(method).uri(path).header("content-type", "application/json").body(Body::from(body.to_string())).unwrap();
+        let response = app.clone().oneshot(request).await.unwrap();
+        let status = response.status();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        (status, String::from_utf8_lossy(&bytes).to_string())
+    }
+
+    /// A station set up before administrators needed a password: the
+    /// administrator chooses one at the next sign-in, once, and from then on
+    /// it is asked like any other.
+    #[tokio::test]
+    async fn an_administrator_without_a_password_chooses_one_once() {
+        let (app, db, dir) = fresh_app().await;
+        let setup = json!({ "stationName": "Old Station", "region": null, "district": null, "division": null,
+            "administrator": { "existingOfficerId": null, "name": "Ada Admin", "rank": null, "badgeNumber": "A1", "password": "correct-horse-1" } });
+        assert_eq!(call_as(&app, None, Method::POST, "/api/system/onboarding/station", Some(setup)).await.0, StatusCode::OK);
+        sqlx::query("UPDATE officers SET password_hash = NULL WHERE badge_number = 'A1'").execute(&db.pool).await.unwrap();
+
+        let (status, body) = call_text(&app, Method::POST, "/api/auth/sign-in", json!({ "badgeNumber": "A1" })).await;
+        assert_eq!((status, body.as_str()), (StatusCode::PRECONDITION_REQUIRED, "choose_password"));
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/first-password", Some(json!({ "badgeNumber": "A1", "password": "short" }))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/first-password", Some(json!({ "badgeNumber": "NOPE", "password": "long-enough-1" }))).await.0, StatusCode::UNAUTHORIZED);
+        let (status, signed_in) = call_as(&app, None, Method::POST, "/api/auth/first-password", Some(json!({ "badgeNumber": "A1", "password": "long-enough-1" }))).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(signed_in["token"].is_string());
+
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/first-password", Some(json!({ "badgeNumber": "A1", "password": "someone-else-1" }))).await.0, StatusCode::UNAUTHORIZED, "only once");
+        let (status, body) = call_text(&app, Method::POST, "/api/auth/sign-in", json!({ "badgeNumber": "A1" })).await;
+        assert_eq!((status, body.as_str()), (StatusCode::PRECONDITION_REQUIRED, "password"));
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "A1", "password": "long-enough-1" }))).await.0, StatusCode::OK);
+
+        db.pool.close().await;
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
     async fn call_as(app: &Router, token: Option<&str>, method: Method, path: &str, body: Option<Value>) -> (StatusCode, Value) {
         let mut builder = Request::builder().method(method).uri(path).header(header::CONTENT_TYPE, "application/json");
         if let Some(token) = token {
@@ -1589,8 +1733,12 @@ mod tests {
         assert_eq!(state["installed"], false);
         assert_eq!(call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "A1" }))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
 
-        let setup = json!({ "stationName": "Test Station", "region": null, "district": null, "division": null,
+        // The administrator always has a password, on a station on badges too.
+        let no_password = json!({ "stationName": "Test Station", "region": null, "district": null, "division": null,
             "administrator": { "existingOfficerId": null, "name": "Ada Admin", "rank": "Inspector", "badgeNumber": "A1", "password": null } });
+        assert_eq!(call_as(&app, None, Method::POST, "/api/system/onboarding/station", Some(no_password)).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+        let setup = json!({ "stationName": "Test Station", "region": null, "district": null, "division": null,
+            "administrator": { "existingOfficerId": null, "name": "Ada Admin", "rank": "Inspector", "badgeNumber": "A1", "password": "correct-horse-1" } });
         let (status, signed_in) = call_as(&app, None, Method::POST, "/api/system/onboarding/station", Some(setup.clone())).await;
         assert_eq!(status, StatusCode::OK);
         let admin_token = signed_in["token"].as_str().unwrap().to_string();
@@ -1601,30 +1749,31 @@ mod tests {
         assert_eq!(state["mode"], "station");
         assert_eq!(state["authMode"], "badge_only");
 
-        // Badge only: the badge alone signs in, in any case; an unknown badge does not.
-        let (status, lower) = call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "a1" }))).await;
+        // Badge only does not reach an administrator: one click on their face
+        // is answered "password needed", and only the right one signs in.
+        let (status, body) = call_text(&app, Method::POST, "/api/auth/sign-in", json!({ "badgeNumber": "a1" })).await;
+        assert_eq!((status, body.as_str()), (StatusCode::PRECONDITION_REQUIRED, "password"));
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "A1", "password": "wrong-one" }))).await.0, StatusCode::UNAUTHORIZED);
+        let (status, lower) = call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "a1", "password": "correct-horse-1" }))).await;
         assert_eq!(status, StatusCode::OK);
         assert!(lower["token"].is_string());
         assert_eq!(call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "NOPE" }))).await.0, StatusCode::UNAUTHORIZED);
+        // The first-password door is shut for an administrator who has one.
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/first-password", Some(json!({ "badgeNumber": "A1", "password": "taken-over-1" }))).await.0, StatusCode::UNAUTHORIZED);
 
-        // An ordinary officer signs in but cannot change policy or officers.
+        // An ordinary officer signs in by badge alone but cannot change policy or officers,
+        // and nobody is made an administrator without a password.
         let colleague = json!({ "name": "Ben Officer", "role": "officer", "badgeNumber": "B2", "password": null, "personId": null });
         assert_eq!(call_as(&app, Some(&admin_token), Method::POST, "/api/officers", Some(colleague)).await.0, StatusCode::OK);
+        assert_eq!(call_as(&app, Some(&admin_token), Method::POST, "/api/officers", Some(json!({ "name": "Y", "role": "admin", "badgeNumber": "Y1", "password": null, "personId": null }))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
         let (_, ben) = call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "B2" }))).await;
         let ben_token = ben["token"].as_str().unwrap().to_string();
         let policy = json!({ "mode": "password", "idleTimeoutMinutes": 240 });
         assert_eq!(call_as(&app, Some(&ben_token), Method::PUT, "/api/auth/policy", Some(policy.clone())).await.0, StatusCode::FORBIDDEN);
         assert_eq!(call_as(&app, Some(&ben_token), Method::POST, "/api/officers", Some(json!({ "name": "X", "role": "admin", "badgeNumber": "X1", "password": null, "personId": null }))).await.0, StatusCode::FORBIDDEN);
-
-        // The administrator cannot lock themselves out: they need a password first.
-        assert_eq!(call_as(&app, Some(&admin_token), Method::PUT, "/api/auth/policy", Some(policy.clone())).await.0, StatusCode::UNPROCESSABLE_ENTITY);
-        let (_, me) = call_as(&app, Some(&admin_token), Method::GET, "/api/auth/me", None).await;
-        let set_password = json!({ "name": "Ada Admin", "rank": "Inspector", "post": null, "role": "admin", "active": true, "badgeNumber": "A1", "notes": null, "personId": null, "password": "correct-horse-1" });
-        assert_eq!(call_as(&app, Some(&admin_token), Method::PUT, &format!("/api/officers/{}", me["officerId"].as_str().unwrap()), Some(set_password)).await.0, StatusCode::OK);
-        // Changing a password ends that officer's sessions everywhere.
-        assert_eq!(call_as(&app, Some(&admin_token), Method::GET, "/api/custody", None).await.0, StatusCode::UNAUTHORIZED);
-        let (_, again) = call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "A1" }))).await;
-        let admin_token = again["token"].as_str().unwrap().to_string();
+        let (_, ben_me) = call_as(&app, Some(&ben_token), Method::GET, "/api/auth/me", None).await;
+        let promote = json!({ "name": "Ben Officer", "rank": null, "post": null, "role": "admin", "active": true, "badgeNumber": "B2", "notes": null, "personId": null, "password": null });
+        assert_eq!(call_as(&app, Some(&admin_token), Method::PUT, &format!("/api/officers/{}", ben_me["officerId"].as_str().unwrap()), Some(promote)).await.0, StatusCode::UNPROCESSABLE_ENTITY, "promoted without a password");
 
         assert_eq!(call_as(&app, Some(&admin_token), Method::PUT, "/api/auth/policy", Some(policy)).await.0, StatusCode::OK);
         assert_eq!(call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "A1" }))).await.0, StatusCode::UNAUTHORIZED, "the badge alone no longer works");

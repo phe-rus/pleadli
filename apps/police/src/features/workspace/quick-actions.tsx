@@ -5,7 +5,7 @@ import { CustodyRecordForm } from '@/features/custody'
 import { IncidentForm } from '@/features/incidents'
 import { PersonForm } from '@/features/people'
 import { StationDiaryEntryForm } from '@/features/station-diary'
-import { AddCircleIcon, BinocularsIcon, CellsIcon, Notebook01Icon, Search01Icon, SirenIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
+import { Add01Icon, AddCircleIcon, BinocularsIcon, CellsIcon, Notebook01Icon, Search01Icon, SirenIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import {
@@ -21,6 +21,7 @@ import {
 import { useNavigate } from '@tanstack/react-router'
 import { Suspense, useState, type ReactNode } from 'react'
 import { useWorkspace } from './tabs-store'
+import { shortcut } from '@/lib/platform'
 
 type Panel = 'diary' | 'incident' | 'case' | 'custody' | 'person' | null
 
@@ -33,7 +34,7 @@ const panels = (): Record<Exclude<Panel, null>, { title: string; description: st
   person: { title: m["quick.person_title"](), description: m["quick.person_desc"]() },
 })
 
-/** The ribbon's second control: what an officer most often needs to start.
+/** The "+" beside search: what an officer most often needs to start.
  * Finding something, then the records that begin work. Not a navigation menu:
  * the areas live in the sidebar. A new case opens its own workspace once it is
  * saved. */
@@ -75,18 +76,18 @@ export function QuickActions() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button size="icon" variant="ghost" aria-label={m["workspace.quick_actions"]()} title={m["workspace.quick_actions"]()} className="cursor-pointer">
-              <HugeiconsIcon icon={AddCircleIcon} />
+            <Button size="icon-sm" variant="ghost" aria-label={m["workspace.quick_actions"]()} title={m["workspace.quick_actions"]()} className="size-7.5 shrink-0 cursor-pointer rounded-lg">
+              <HugeiconsIcon icon={Add01Icon} className="size-4" />
             </Button>
           }
         />
-        <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-60">
+        <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="w-60">
           <DropdownMenuGroup>
             <DropdownMenuLabel>{m["workspace.find"]()}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setCommandOpen(true)}>
               <HugeiconsIcon icon={Search01Icon} />
               {m["workspace.search"]()}
-              <DropdownMenuShortcut>{m["workspace.shortcut_k"]()}</DropdownMenuShortcut>
+              <DropdownMenuShortcut>{shortcut('K')}</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

@@ -71,7 +71,7 @@ Built in one pass, checked by two router tests (sign-in and policy; a command re
 
 Decisions taken that you did not spell out:
 - An existing installation (one with officers and no `installation` row) is asked to set up on first launch and to choose which existing officer is the administrator, who needs a badge number.
-- On a Station in badge-only mode an administrator signs in by badge alone too, because the first administrator has no password yet. Turning passwords on is refused unless the administrator making the change already has one.
+- ~~On a Station in badge-only mode an administrator signs in by badge alone too.~~ **Reversed 2026-10-07:** an administrator always needs a password, on a badge-only station too (anyone at the desk could otherwise open the whole station as the administrator with one click). Setup always asks for it; an administrator with none (stations set up before) chooses one at their next sign-in, once (`POST /api/auth/first-password`, answered 428 `choose_password`/`password` by sign-in); nobody is made or promoted to administrator without one. Ordinary officers stay badge-only.
 - Station numbers are `ST-0001` in the order stations are registered (provisional; the force's numbering is not verified).
 - "Silent" means no report for 15 minutes; a station reports at least every 5.
 - A Command is one level: it does not report upward.

@@ -12,7 +12,7 @@ export type TabIdentity =
   | { kind: 'case' | 'person' | 'chargesheet'; key: string; recordId: string; to: string }
 
 /** Which tab, if any, a location is open as. Nothing is guessed. */
-export function identityForLocation(pathname: string): TabIdentity | null {
+export function identityForLocation(pathname: string, search: { view?: string } = {}): TabIdentity | null {
   const path = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname
   if (path === '/') return { kind: 'overview', key: 'overview', to: '/' }
 
@@ -25,6 +25,8 @@ export function identityForLocation(pathname: string): TabIdentity | null {
   const sheetMatch = /^\/legal-forms\/([^/]+)$/.exec(path)
   if (sheetMatch) return { kind: 'chargesheet', key: `chargesheet:${sheetMatch[1]}`, recordId: sheetMatch[1], to: path }
 
+  // The case folders are one tab, which remembers the folder it was left on.
+  if (path === '/investigations') return { kind: 'area', key: `area:${path}`, to: search.view ? `${path}?view=${search.view}` : path }
   if (areaMeta(path)) return { kind: 'area', key: `area:${path}`, to: path }
   return null
 }
@@ -32,7 +34,7 @@ export function identityForLocation(pathname: string): TabIdentity | null {
 function titleFor(identity: TabIdentity): string {
   switch (identity.kind) {
     case 'overview':
-      return m["nav.overview"]()
+      return m["nav.today"]()
     case 'case':
       return m["workspace.tab_case"]()
     case 'person':
@@ -49,7 +51,7 @@ function titleFor(identity: TabIdentity): string {
  * the language it was opened in; a record keeps its own saved name (a case
  * reference, a person's name). */
 export function tabLabel(tab: { kind: WorkspaceTab['kind']; to: string; title: string }): string {
-  if (tab.kind === 'overview') return m["nav.overview"]()
+  if (tab.kind === 'overview') return m["nav.today"]()
   if (tab.kind === 'area') return areaMeta(tab.to.split('?')[0])?.label ?? tab.title
   return tab.title
 }

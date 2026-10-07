@@ -29,6 +29,7 @@ use pleadli_node_core::db::begin_write;
 #[derive(Clone, Copy)]
 pub enum Span {
     Days(i64),
+    Months(u32),
     Years(u32),
 }
 
@@ -79,10 +80,60 @@ pub const UGANDA: &[Rule] = &[
     Rule { key: "enforce_judgment", starts: "judgment_enforceable", span: Span::Years(12), kind: Kind::Deadline, satisfied_by: &["execution_started"], applies_to: &["civil_suit", "government_suit", "employment_claim", "family_case"], cite: "Limitation Act s.3(3)" },
 ];
 
+/// Kenya, read from the texts on Kenya Law (new.kenyalaw.org) on 2026-10-07 [P]:
+/// the Civil Procedure Rules 2010 (revised to 31 December 2022), the Court of
+/// Appeal Rules 2022 (L.N. 40/2022), the Limitation of Actions Act (Cap. 22),
+/// the Public Authorities Limitation Act (Cap. 39) and the Government
+/// Proceedings Act (Cap. 40). Appearance is "within the time prescribed in the
+/// summons" (O.6 r.1, never under ten days, O.5 r.1(4)), so it is not counted;
+/// the defence runs from the appearance. Opposing an application is counted
+/// back from the hearing day (O.51 r.14(2)), which this list does not hold yet.
+pub const KENYA: &[Rule] = &[
+    Rule { key: "summons_validity", starts: "summons_issued", span: Span::Months(12), kind: Kind::Deadline, satisfied_by: &["summons_served"], applies_to: LITIGATION, cite: "CPR O.5 r.2(1)" },
+    Rule { key: "file_defence", starts: "appearance_entered", span: Span::Days(14), kind: Kind::Deadline, satisfied_by: &["defence_filed"], applies_to: LITIGATION, cite: "CPR O.7 r.1" },
+    Rule { key: "reply_to_defence", starts: "defence_received", span: Span::Days(14), kind: Kind::Deadline, satisfied_by: &["reply_filed"], applies_to: LITIGATION, cite: "CPR O.7 r.17(1)" },
+    Rule { key: "reply_to_counterclaim", starts: "counterclaim_received", span: Span::Days(15), kind: Kind::Deadline, satisfied_by: &["reply_filed"], applies_to: LITIGATION, cite: "CPR O.7 r.11" },
+    Rule { key: "case_management_checklist", starts: "pleadings_closed", span: Span::Days(14), kind: Kind::Deadline, satisfied_by: &["checklist_filed"], applies_to: LITIGATION, cite: "CPR O.11 r.2(1); close of pleadings O.2 r.13" },
+    Rule { key: "notice_of_appeal", starts: "decision_delivered", span: Span::Days(14), kind: Kind::Deadline, satisfied_by: &["notice_of_appeal_lodged"], applies_to: APPEALABLE, cite: "Court of Appeal Rules 2022 r.77(2)" },
+    Rule { key: "criminal_notice_of_appeal", starts: "decision_delivered", span: Span::Days(14), kind: Kind::Deadline, satisfied_by: &["notice_of_appeal_lodged"], applies_to: &["criminal_defence"], cite: "Court of Appeal Rules 2022 r.61(1)" },
+    Rule { key: "memorandum_of_appeal", starts: "notice_of_appeal_lodged", span: Span::Days(60), kind: Kind::Deadline, satisfied_by: &["memorandum_lodged"], applies_to: &["civil_suit", "application", "government_suit", "employment_claim", "family_case", "succession", "appeal"], cite: "Court of Appeal Rules 2022 r.84(1)" },
+    Rule { key: "notice_to_government_30", starts: "government_notice_served", span: Span::Days(30), kind: Kind::Earliest, satisfied_by: &["suit_filed"], applies_to: &["government_suit"], cite: "Government Proceedings Act s.13A(1)" },
+    Rule { key: "limitation_contract", starts: "cause_of_action_contract", span: Span::Years(6), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["civil_suit", "employment_claim"], cite: "Limitation of Actions Act s.4(1)(a)" },
+    Rule { key: "limitation_tort", starts: "cause_of_action_tort", span: Span::Years(3), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["civil_suit"], cite: "Limitation of Actions Act s.4(2)" },
+    Rule { key: "limitation_injury", starts: "cause_of_action_injury", span: Span::Years(3), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["civil_suit"], cite: "Limitation of Actions Act s.4(2)" },
+    Rule { key: "limitation_land", starts: "cause_of_action_land", span: Span::Years(12), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["civil_suit"], cite: "Limitation of Actions Act s.7" },
+    Rule { key: "limitation_government_contract", starts: "cause_of_action_contract", span: Span::Years(3), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["government_suit"], cite: "Public Authorities Limitation Act s.3(2)" },
+    Rule { key: "limitation_government_tort", starts: "cause_of_action_tort", span: Span::Months(12), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["government_suit"], cite: "Public Authorities Limitation Act s.3(1)" },
+    Rule { key: "limitation_government_injury", starts: "cause_of_action_injury", span: Span::Months(12), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["government_suit"], cite: "Public Authorities Limitation Act s.3(1)" },
+    Rule { key: "enforce_judgment", starts: "judgment_enforceable", span: Span::Years(12), kind: Kind::Deadline, satisfied_by: &["execution_started"], applies_to: &["civil_suit", "government_suit", "employment_claim", "family_case"], cite: "Limitation of Actions Act s.4(4)" },
+];
+
+/// Tanzania (Mainland), read on 2026-10-07 [P] from the Civil Procedure Code
+/// (Amendment of the First Schedule) Rules, G.N. 381 of 2019; the Tanzania
+/// Court of Appeal Rules, 2009 (G.N. 368/2009; periods confirmed unchanged by
+/// G.N. 344/2019 in later judgments [S]); the Law of Limitation Act (Cap. 89
+/// R.E. 2019, Schedule); and the Government Proceedings Act (Cap. 5, s.6(2)).
+/// The Limitation Act sets no shorter period for suing Government, so a
+/// Government suit gets the 90-day notice and no limitation of its own here.
+pub const TANZANIA: &[Rule] = &[
+    Rule { key: "file_defence", starts: "served_with_summons", span: Span::Days(21), kind: Kind::Deadline, satisfied_by: &["defence_filed"], applies_to: LITIGATION, cite: "CPC O.VIII r.1(1) (G.N. 381/2019)" },
+    Rule { key: "notice_of_appeal", starts: "decision_delivered", span: Span::Days(30), kind: Kind::Deadline, satisfied_by: &["notice_of_appeal_lodged"], applies_to: APPEALABLE, cite: "Court of Appeal Rules 2009 r.83(2)" },
+    Rule { key: "criminal_notice_of_appeal", starts: "decision_delivered", span: Span::Days(30), kind: Kind::Deadline, satisfied_by: &["notice_of_appeal_lodged"], applies_to: &["criminal_defence"], cite: "Court of Appeal Rules 2009 r.68(1)" },
+    Rule { key: "memorandum_of_appeal", starts: "notice_of_appeal_lodged", span: Span::Days(60), kind: Kind::Deadline, satisfied_by: &["memorandum_lodged"], applies_to: &["civil_suit", "application", "government_suit", "employment_claim", "family_case", "succession", "appeal"], cite: "Court of Appeal Rules 2009 r.90(1)" },
+    Rule { key: "notice_to_government_90", starts: "government_notice_served", span: Span::Days(90), kind: Kind::Earliest, satisfied_by: &["suit_filed"], applies_to: &["government_suit"], cite: "Government Proceedings Act s.6(2)" },
+    Rule { key: "limitation_contract", starts: "cause_of_action_contract", span: Span::Years(6), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["civil_suit", "employment_claim"], cite: "Law of Limitation Act, Sch. Pt I item 7" },
+    Rule { key: "limitation_tort", starts: "cause_of_action_tort", span: Span::Years(3), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["civil_suit"], cite: "Law of Limitation Act, Sch. Pt I item 6" },
+    Rule { key: "limitation_injury", starts: "cause_of_action_injury", span: Span::Years(3), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["civil_suit"], cite: "Law of Limitation Act, Sch. Pt I item 6" },
+    Rule { key: "limitation_land", starts: "cause_of_action_land", span: Span::Years(12), kind: Kind::Deadline, satisfied_by: &["suit_filed"], applies_to: &["civil_suit"], cite: "Law of Limitation Act, Sch. Pt I item 22" },
+    Rule { key: "enforce_judgment", starts: "judgment_enforceable", span: Span::Years(12), kind: Kind::Deadline, satisfied_by: &["execution_started"], applies_to: &["civil_suit", "government_suit", "employment_claim", "family_case"], cite: "Law of Limitation Act, Sch. Pt III item 20" },
+];
+
 /// The rules of a country, when they have been read. None: not researched.
 pub fn rules_for(jurisdiction: &str) -> Option<&'static [Rule]> {
     match jurisdiction {
         "ug" => Some(UGANDA),
+        "ke" => Some(KENYA),
+        "tz" => Some(TANZANIA),
         _ => None,
     }
 }
@@ -145,6 +196,7 @@ fn due(started_on: i64, span: Span) -> i64 {
     let Some(date) = eat_date(started_on) else { return started_on };
     let end = match span {
         Span::Days(n) => date + Duration::days(n),
+        Span::Months(mo) => date.checked_add_months(Months::new(mo)).unwrap_or(date),
         Span::Years(y) => date.checked_add_months(Months::new(12 * y)).unwrap_or(date),
     };
     day_start(end)
@@ -351,7 +403,7 @@ mod tests {
     #[test]
     fn only_rules_read_are_held_and_every_event_belongs_to_a_kind() {
         assert!(rules_for("ug").is_some());
-        assert!(rules_for("ke").is_none(), "no country gets Uganda's periods by mistake");
+        assert!(rules_for("rw").is_none(), "no country gets another's periods by mistake");
         assert!(events_for(UGANDA, "civil_suit").contains(&"served_with_summons"));
         assert!(events_for(UGANDA, "advice").is_empty(), "advice has no court deadlines");
         for rule in UGANDA {

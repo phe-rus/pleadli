@@ -5,6 +5,41 @@
       "close": "Close Assist",
       "on_matter": "On this matter"
     },
+    "local": {
+      "about": "A free, open model from Google that runs here. Nothing leaves this computer.",
+      "allow": "Let Assist read a matter's papers on this computer",
+      "download": "Download",
+      "downloaded": "Downloaded",
+      "downloading": "Downloading {model}…",
+      "engine": "Ollama",
+      "failed": "Could not do that",
+      "getting_installer": "Getting the Ollama installer from ollama.com…",
+      "in_use": "Downloaded, and Assist uses it.",
+      "install": "Install",
+      "installed_not_running": "Installed, not running.",
+      "installer_open": "The installer is open. Finish it, then come back here.",
+      "job_failed": "It did not finish.",
+      "memory": "This computer has {memory} GB of memory: {model} (★) suits it.",
+      "model": "Model",
+      "not_installed": "The free program that runs the model. Install it once.",
+      "note": "Free and private: papers are read on this computer and go nowhere. Answers come more slowly than from an online service, and are less sharp on long papers.",
+      "now_using": "Assist now uses {model}",
+      "of": "{done} of {total} GB",
+      "ready": "Ready",
+      "running": "Running (version {version}). It runs the model on this computer.",
+      "service": "On this computer (Gemma, private)",
+      "size": "About {size} GB to download, once.",
+      "start": "Start",
+      "title": "On this computer",
+      "use": "Use it",
+      "verifying": "Checking the download…"
+    },
+    "model": {
+      "auto": "Automatic (recommended)",
+      "auto_with": "Automatic · {model}",
+      "free": "free",
+      "label": "Model"
+    },
     "panel": {
       "answer": "Assist's answer",
       "ask": "Ask Assist",
@@ -40,10 +75,13 @@
     },
     "settings": {
       "agree": "I understand, and this practice may send a matter's papers to the provider when someone asks.",
+      "allow": "Allow",
+      "allow_to": "Allow a matter's papers to go to {name}",
       "auto_backup": "Automatic: backup {n}",
       "auto_first": "Automatic: first",
       "auto_model": "Choose the model automatically",
       "base_url": "Server address",
+      "change_key": "Change",
       "confirm": "Confirm and turn on",
       "confirmed": "Confirmed",
       "confirmed_by": "Confirmed by {name} on {date}.",
@@ -51,6 +89,7 @@
       "in_use": "In use",
       "key": "New key",
       "key_env": "Development key {hint}",
+      "key_label": "Key",
       "key_missing": "No key",
       "key_placeholder": "Paste the key",
       "key_removed": "Key removed",
@@ -59,6 +98,7 @@
       "loading_models": "Asking the provider...",
       "model_body": "Automatic picks the provider's current best general model from its own list, and falls back to the next one when it is busy.",
       "model_fixed": "Assist will always use {model}",
+      "model_in_chat": "Choose the model in Assist itself. Automatic, the provider's recommended model, is the default.",
       "model_title": "Model",
       "needs": "Needs setting up",
       "not_confirmed": "Not confirmed",
@@ -66,12 +106,13 @@
       "point_decide": "What Assist writes is a draft. An advocate checks it, and signs and files only what they have read.",
       "point_free": "On a free key the provider may keep what it is sent and people there may read it. Client papers are privileged: use a paid account with no training on your data.",
       "point_logged": "Every request is recorded: who asked, on which matter, for what, and when.",
-      "point_sent_any": "When someone asks, the matter's record and the document chosen go to the provider below to be read. Nothing else leaves this computer.",
+      "point_sent_any": "When someone asks, the matter's record and the document chosen go to the chosen service to be read. Nothing else leaves this computer.",
       "provider_body": "Pick one and paste its key. Keys are kept locked on this computer and never shown again.",
       "provider_changed": "Assist now uses {name}",
       "provider_title": "Provider",
       "ready": "Ready",
       "remove_key": "Remove the key",
+      "service": "Service",
       "show_models": "Show the provider's models",
       "title": "Assist",
       "turned_off": "Assist is off",
@@ -295,8 +336,28 @@
       "person": "A person"
     }
   },
+  "clients": {
+    "col": {
+      "added": "Added",
+      "address": "Address",
+      "custody": "Custody",
+      "id": "ID",
+      "matters": "Matters",
+      "name": "Name",
+      "notes": "Notes",
+      "open": "Open",
+      "phone": "Phone"
+    },
+    "edit_description": "Change their details, or where they are held.",
+    "edit_title": "Edit the client",
+    "lead": "The people you act for, and where an accused client is held.",
+    "no_match": "No clients.",
+    "none": "You have no clients yet. Add one, then open a matter for them.",
+    "search": "Search clients"
+  },
   "clock": {
     "by": "By {day}",
+    "case_management_checklist": "File the case management checklist",
     "complete_adr": "Complete mediation",
     "count": "{count} running",
     "enforce_judgment": "Enforce the judgment",
@@ -309,6 +370,8 @@
     "not_researched": "The deadlines of this country are not held yet. Nothing is counted rather than counting another country's.",
     "notice_of_appeal": "Lodge notice of appeal",
     "notice_to_government": "Sue Government after the 45-day notice",
+    "notice_to_government_30": "Sue Government after the 30-day notice",
+    "notice_to_government_90": "Sue Government after the 90-day notice",
     "reply_to_application": "Reply to the application",
     "reply_to_counterclaim": "Reply to the counterclaim",
     "reply_to_defence": "Reply to the defence",
@@ -322,6 +385,7 @@
       "waiting": "Wait: {when}"
     },
     "summons_for_directions": "Take out summons for directions",
+    "summons_validity": "Serve the summons while it is valid",
     "title": "Deadlines",
     "today_title": "Deadlines running",
     "weekend": "falls on a weekend: check whether it moves"
@@ -516,12 +580,14 @@
   "event": {
     "adr_completed": "Mediation completed",
     "adr_ordered": "Mediation ordered",
+    "appearance_entered": "Appearance entered for the client",
     "application_reply_filed": "Reply to the application filed",
     "application_served_on_us": "Application served on the client",
     "cause_of_action_contract": "Cause of action arose (contract)",
     "cause_of_action_injury": "Personal injury happened",
     "cause_of_action_land": "Right to recover land arose",
     "cause_of_action_tort": "Cause of action arose (tort)",
+    "checklist_filed": "Case management checklist filed",
     "counterclaim_received": "Counterclaim received",
     "decision_delivered": "Decision delivered",
     "defence_filed": "Defence filed",
@@ -535,6 +601,7 @@
     "note": "Note",
     "notice_of_appeal_lodged": "Notice of appeal lodged",
     "on": "On",
+    "pleadings_closed": "Pleadings closed",
     "record": "Record",
     "record_failed": "Could not record it",
     "record_title": "Record what happened",
@@ -674,6 +741,23 @@
     "description": "Heads everything the practice files and sends, and is the drawer's address the law asks for.",
     "hint": "Changes apply to what is filed from now on.",
     "title": "Letterhead"
+  },
+  "lock": {
+    "back": "Back",
+    "code_note": "Your PIN was reset. Keep this new code somewhere safe: it replaces the old one and will not be shown again.",
+    "continue": "Continue",
+    "enter_pin": "Enter your PIN.",
+    "enter_recovery": "Enter your recovery code and a new PIN.",
+    "forgot": "Forgot your PIN?",
+    "new_pin": "New PIN",
+    "pin": "PIN",
+    "recovery_code": "Recovery code",
+    "reset": "Reset PIN",
+    "reset_failed": "Could not reset your PIN",
+    "title": "Pleadli Lawyers is locked",
+    "unlock_failed": "Could not unlock",
+    "wait": "Wait {seconds} s",
+    "your_code": "Your recovery code"
   },
   "matter": {
     "col": {
@@ -891,7 +975,7 @@
       "paid": "Paid"
     },
     "time_to_bill": "Time to bill",
-    "title": "Money",
+    "title": "Accounts",
     "total": "Total {amount}",
     "unbilled_hours": "{hours} h not billed",
     "what": "What happened"
@@ -974,10 +1058,10 @@
     "reopened": "Matter reopened",
     "sections": "Matter sections",
     "seg": {
-      "activity": "Activity",
-      "matter": "The matter",
-      "money": "Money and time",
-      "notes": "Notes",
+      "activity": "File history",
+      "matter": "The file",
+      "money": "Accounts and time",
+      "notes": "Attendance notes",
       "papers": "Papers"
     },
     "tab": {
@@ -1000,35 +1084,35 @@
     "write": "Write on its own page"
   },
   "nav": {
-    "all_matters": "All matters",
+    "all_matters": "All files",
     "assist": "Assist",
-    "board": "Board",
-    "calendar": "Calendar",
+    "board": "By stage",
+    "calendar": "Diary",
     "clients": "Clients",
-    "closed": "Closed",
+    "closed": "Closed files",
     "criminal": "Criminal register",
     "diary": "Diary",
     "documents": "Documents",
-    "money": "Money",
-    "no_hearing": "Needs a date",
-    "open_matters": "Open matters",
+    "money": "Accounts",
+    "no_hearing": "No next date",
+    "open_matters": "Active files",
     "pinned": "Pinned",
     "recent": "Recent",
     "registers": "Registers",
     "section": {
-      "matters": "Matters",
+      "matters": "Files",
       "office": "Office",
       "practice": "Practice"
     },
-    "services": "Walk-in services",
+    "services": "Non-contentious work",
     "settings": "Settings",
-    "statistics": "Statistics",
+    "statistics": "Practice report",
     "tab": {
       "document": "Document",
       "matter": "Matter"
     },
-    "tasks": "Tasks",
-    "time": "Time",
+    "tasks": "Bring-ups",
+    "time": "Time sheets",
     "today": "Today"
   },
   "network": {
@@ -1300,8 +1384,11 @@
     "title": "Parties"
   },
   "protection": {
+    "apply": "Apply",
+    "away": "When you are away",
     "basic": "PIN for everyone",
     "basic_about": "Each person signs in with their own 6-digit PIN.",
+    "cancel": "Cancel",
     "change": "Change",
     "change_hint": "Changing it signs everyone else out.",
     "changed": "Protection is now: {level}",
@@ -1313,10 +1400,17 @@
     "idle_hour": "1 hour",
     "idle_minutes": "{count} minutes",
     "idle_never": "Never",
+    "method": "Sign in with",
+    "method_full": "Password and phone code",
+    "method_pin": "PIN",
     "none": "No sign-in",
     "none_about": "The app opens straight away. For one person on a computer only they use.",
     "others_need_new": "Everyone else needs a new PIN from you in People before they can sign in.",
+    "require": "Ask for sign-in when the app opens",
+    "sign_out_now": "Sign out now",
     "title": "Sign-in",
+    "turn_off": "Turn off",
+    "turn_on": "Turn on",
     "your_new_password": "Your new password",
     "your_new_pin": "Your new PIN"
   },
@@ -1422,6 +1516,7 @@
   },
   "settings": {
     "about": {
+      "appearance": "How Pleadli looks on this computer, and the language it speaks.",
       "assist": "Whether Assist helps with matters here, and which provider reads them.",
       "network": "Whether this computer works alone, is the office computer the firm's other computers join, or is joined to one.",
       "people": "Who uses this copy, and what the law lets each of them do.",
@@ -1431,6 +1526,13 @@
       "you": "Your name is who the record shows acting, and, for an advocate, who signs what is filed."
     },
     "admin_only": "Only an administrator can change this.",
+    "appearance": {
+      "auto": "Automatic",
+      "dark": "Dark",
+      "language": "Language",
+      "light": "Light",
+      "theme": "Appearance"
+    },
     "lead": "You, your practice, the people in it, and how it is protected.",
     "owner": {
       "computer": "This computer",
@@ -1474,6 +1576,7 @@
     "save_failed": "Could not save",
     "saved": "Saved",
     "section": {
+      "appearance": "Appearance",
       "network": "Network",
       "people": "People",
       "practice": "Practice",
@@ -1668,7 +1771,7 @@
     "registers": "Registers this year",
     "time": "Time recorded",
     "time_caption": "On every matter, billed or not",
-    "title": "Statistics",
+    "title": "Practice report",
     "uls_paid": "Subscription {year} paid",
     "uls_unknown": "Subscription not recorded",
     "year": "Year"
@@ -1718,7 +1821,7 @@
       "sign_commission": "Client signs the deed poll and swears it before a Commissioner for Oaths",
       "transfer": "Lodge the transfer and pay the stamp duty"
     },
-    "title": "Walk-in services",
+    "title": "Non-contentious work",
     "turn_on": "Turn on {kind} work in Settings to offer this.",
     "turn_on_now": "Turn on and use",
     "what_happens": "What happens",
@@ -1732,6 +1835,43 @@
       "police": "Police station",
       "practice": "At the practice"
     }
+  },
+  "tasks": {
+    "add": "Add a bring-up",
+    "add_description": "Something to bring up on a day, with or without a file.",
+    "due": "Due {date}",
+    "edit": "Edit",
+    "edit_description": "Change the task or its due day.",
+    "edit_title": "Edit the task",
+    "form": {
+      "add": "Add",
+      "added": "Task added",
+      "detail": "Detail (optional)",
+      "due": "Due (optional)",
+      "needs_title": "A task needs a title.",
+      "save": "Save changes",
+      "save_failed": "Could not save the task",
+      "task": "Bring up",
+      "task_placeholder": "Interview the second witness",
+      "updated": "Task updated"
+    },
+    "lead": "What comes up, earliest first. Duties of a state brief are added for you.",
+    "mark_done": "Done",
+    "no_due": "No due day.",
+    "none_done": "No task has been finished yet.",
+    "none_due": "Nothing to bring up. Add a bring-up, or open a state brief to see its duties.",
+    "overdue": "Overdue",
+    "remove": "Remove",
+    "remove_failed": "Could not remove the task",
+    "reopen": "Reopen",
+    "state_duty": "State brief duty",
+    "update_failed": "Could not update the task",
+    "view": {
+      "all": "All",
+      "done": "Done",
+      "open": "To do"
+    },
+    "views": "Which tasks"
   },
   "template": {
     "administrator_general_letter": "Letter to the Administrator General",
@@ -1762,6 +1902,33 @@
     "sale_agreement": "Agreement for sale of land",
     "submissions": "Written submissions",
     "written_statement_of_defence": "Written statement of defence"
+  },
+  "time": {
+    "a_matter": "A matter",
+    "by_matter": "By matter",
+    "entries": "Entries",
+    "entries_count": "{count} entries",
+    "form": {
+      "bad_duration": "Give the time as minutes, or like 1h30.",
+      "day": "Day",
+      "failed": "Could not record the time",
+      "for": "What it was for",
+      "needs_description": "Say what the time was spent on.",
+      "recorded": "Time recorded",
+      "submit": "Record time",
+      "time": "Time",
+      "time_placeholder": "1h30, 90 or 45m"
+    },
+    "lead": "Time recorded on files. Record it from the file.",
+    "matters": "Files",
+    "none": "No time was recorded in this period.",
+    "period": {
+      "30": "30 days",
+      "365": "A year",
+      "90": "90 days"
+    },
+    "period_label": "Period",
+    "recorded": "Time recorded"
   },
   "today": {
     "adjourned": "Adjourned",
@@ -1819,6 +1986,25 @@
     "trend": "Adjournments, last 8 weeks",
     "week_ahead": "The week ahead",
     "with_no_hearing": "With no hearing: {count}"
+  },
+  "update": {
+    "about": "The version on this computer, and getting the next one.",
+    "auto": "Download updates automatically",
+    "auto_hint": "Updates are signed by Pleadli and checked before they install. The app restarts only when you say.",
+    "available": "Version {version} is available",
+    "browser": "Updates come with the desktop app. In a browser there is nothing to update.",
+    "check": "Check now",
+    "checked_at": "Last checked at {time}.",
+    "checking": "Checking for an update…",
+    "current": "Pleadli Lawyers is up to date",
+    "downloading": "Downloading the update… {percent}%",
+    "failed": "The update could not be checked or installed",
+    "get": "Update now",
+    "not_checked": "Not checked yet",
+    "ready": "Version {version} is ready. Restart to finish.",
+    "restart": "Restart",
+    "title": "Software update",
+    "version": "Version"
   },
   "usage": {
     "advisory": {
@@ -1916,7 +2102,7 @@
       "previous": "Previous tab"
     },
     "view": {
-      "board": "Board",
+      "board": "By stage",
       "list": "List"
     },
     "window": "Window"

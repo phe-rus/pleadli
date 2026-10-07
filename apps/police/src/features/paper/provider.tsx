@@ -34,6 +34,10 @@ const app: PaperApp = {
   stamp: (input) => api('/prints', { method: 'POST', body: JSON.stringify(input) }) as Promise<PaperStamp>,
   lastPrint: (entityType, entityId) => api(`/prints/last?${q({ entityType, entityId })}`),
   history: (entityType, entityId) => api(`/prints/history?${q({ entityType, entityId })}`),
+  ink: {
+    load: (entityType, entityId) => api(`/prints/ink?${q({ entityType, entityId })}`) as Promise<string | null>,
+    save: (entityType, entityId, ink) => api('/prints/ink', { method: 'PUT', body: JSON.stringify({ entityType, entityId, ink }) }).then(() => undefined),
+  },
   saveFile,
   office: async () => (isTauri() ? ((await invoke('office_apps')) as OfficeApps) : { os: 'linux', word: false, excel: false, libreOffice: false }),
   openFile: async (name, bytes) => {
@@ -44,6 +48,9 @@ const app: PaperApp = {
     return {
       preview: m["paper.preview"](),
       edit: m["paper.edit"](),
+      write: m["paper.write"](),
+      clearWriting: m["paper.clear_writing"](),
+      writeHint: m["paper.write_hint"](),
       print: m["paper.print"](),
       word: m["paper.word"](),
       printHint: m["paper.print_hint"](),

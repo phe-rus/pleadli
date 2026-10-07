@@ -46,6 +46,8 @@ export type AskInput = {
   rule?: string
   messages?: { role: 'user' | 'assistant'; content: string }[]
   language?: string
+  /** A model chosen in the chat; none means Automatic. */
+  model?: string
 }
 
 const pointSchema = z.object({ date: z.string().nullish(), text: z.string(), source: z.string().nullish() })

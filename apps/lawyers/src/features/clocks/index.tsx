@@ -87,11 +87,18 @@ const eventLabels: Record<string, () => string> = {
   cause_of_action_land: () => m["event.cause_of_action_land"](),
   judgment_enforceable: () => m["event.judgment_enforceable"](),
   execution_started: () => m["event.execution_started"](),
+  appearance_entered: () => m["event.appearance_entered"](),
+  pleadings_closed: () => m["event.pleadings_closed"](),
+  checklist_filed: () => m["event.checklist_filed"](),
 }
 export const eventLabel = (kind: string) => eventLabels[kind]?.() ?? kind
 
 const ruleLabels: Record<string, () => string> = {
   serve_summons: () => m["clock.serve_summons"](),
+  summons_validity: () => m["clock.summons_validity"](),
+  case_management_checklist: () => m["clock.case_management_checklist"](),
+  notice_to_government_30: () => m["clock.notice_to_government_30"](),
+  notice_to_government_90: () => m["clock.notice_to_government_90"](),
   file_defence: () => m["clock.file_defence"](),
   reply_to_defence: () => m["clock.reply_to_defence"](),
   reply_to_counterclaim: () => m["clock.reply_to_counterclaim"](),

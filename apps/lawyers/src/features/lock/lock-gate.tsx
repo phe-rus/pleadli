@@ -1,3 +1,4 @@
+import * as m from '@/paraglide/messages'
 import { messageOf } from '@/lib/api'
 import { LockKeyIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -6,46 +7,31 @@ import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { PropsWithChildren, useState } from 'react'
 import { useLockStatus, useRecoverPin, useUnlock } from './queries'
-import { recoverSchema, unlockSchema } from './schema'
+import { recoverSchema } from './schema'
+import { PinField } from '@pleadli/ui/pin-field'
 import { useIdleLock } from './use-idle-lock'
 
 function UnlockForm({ cooldownRemaining }: { cooldownRemaining: number | null }) {
   const unlockMutation = useUnlock()
-  const form = useAppForm({
-    defaultValues: { pin: '' },
-    validators: {
-      onSubmit: ({ value }) => {
-        const parsed = unlockSchema.safeParse(value)
-        return parsed.success ? undefined : parsed.error.issues[0]?.message
-      },
-    },
-    onSubmit: async ({ value, formApi }) => {
-      try {
-        await unlockMutation.mutateAsync(value)
-        formApi.reset()
-      } catch (error) {
-        t.error('Could not unlock', { description: messageOf(error) })
-      }
-    },
-  })
+  const [pin, setPin] = useState('')
+  const [failures, setFailures] = useState(0)
+  const unlock = async (value: string) => {
+    try {
+      await unlockMutation.mutateAsync({ pin: value })
+    } catch (error) {
+      setFailures((n) => n + 1)
+      t.error(m["lock.unlock_failed"](), { description: messageOf(error) })
+    } finally {
+      setPin('')
+    }
+  }
 
+  // Six places that fill as the PIN is typed; the sixth unlocks, as on an iPhone.
   return (
-    <form
-      className="flex w-full max-w-xs flex-col gap-4"
-      onSubmit={(event) => {
-        event.preventDefault()
-        void form.handleSubmit()
-      }}
-    >
-      <form.AppField name="pin">{(f) => <f.input label="PIN" type="password" autoFocus />}</form.AppField>
-      <form.Subscribe selector={(state) => [state.isSubmitting] as const}>
-        {([submitting]) => (
-          <Button type="submit" disabled={submitting || cooldownRemaining != null}>
-            {cooldownRemaining != null ? `Wait ${cooldownRemaining}s` : 'Unlock'}
-          </Button>
-        )}
-      </form.Subscribe>
-    </form>
+    <div className="flex flex-col items-center gap-3">
+      <PinField label={m["lock.pin"]()} value={pin} onChange={setPin} onComplete={(v) => void unlock(v)} autoFocus disabled={unlockMutation.isPending || cooldownRemaining != null} error={failures} />
+      <p className="min-h-5 text-[0.8125rem] text-muted-foreground">{cooldownRemaining != null ? m["lock.wait"]({ seconds: String(cooldownRemaining) }) : ''}</p>
+    </div>
   )
 }
 
@@ -64,7 +50,7 @@ function RecoverForm({ onRecovered }: { onRecovered: (recoveryCode: string) => v
         const result = await recoverMutation.mutateAsync(value)
         onRecovered(result.recoveryCode)
       } catch (error) {
-        t.error('Could not reset your PIN', { description: messageOf(error) })
+        t.error(m["lock.reset_failed"](), { description: messageOf(error) })
       }
     },
   })
@@ -77,12 +63,12 @@ function RecoverForm({ onRecovered }: { onRecovered: (recoveryCode: string) => v
         void form.handleSubmit()
       }}
     >
-      <form.AppField name="recoveryCode">{(f) => <f.input label="Recovery code" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" />}</form.AppField>
-      <form.AppField name="newPin">{(f) => <f.input label="New PIN" type="password" />}</form.AppField>
+      <form.AppField name="recoveryCode">{(f) => <f.input label={m["lock.recovery_code"]()} placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" />}</form.AppField>
+      <form.AppField name="newPin">{(f) => <f.input label={m["lock.new_pin"]()} type="password" />}</form.AppField>
       <form.Subscribe selector={(state) => [state.isSubmitting] as const}>
         {([submitting]) => (
           <Button type="submit" disabled={submitting}>
-            Reset PIN
+            {m["lock.reset"]()}
           </Button>
         )}
       </form.Subscribe>
@@ -115,14 +101,14 @@ export function LockGate({ children }: PropsWithChildren) {
     return (
       <article className="flex h-svh w-full flex-col items-center justify-center gap-6 bg-background">
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-xl">Your recovery code</h1>
+          <h1 className="text-xl">{m["lock.your_code"]()}</h1>
           <p className="max-w-xs text-sm text-muted-foreground">
-            Your PIN was reset. Save this new code somewhere safe, it replaces the old one and will not be shown again.
+            {m["lock.code_note"]()}
           </p>
         </div>
         <div className="rounded-md border bg-muted/40 p-3 font-mono text-sm">{newRecoveryCode}</div>
         <Button type="button" onClick={() => setMode('unlock')}>
-          Continue to unlock
+          {m["lock.continue"]()}
         </Button>
       </article>
     )
@@ -132,8 +118,8 @@ export function LockGate({ children }: PropsWithChildren) {
     <article className="flex h-svh w-full flex-col items-center justify-center gap-6 bg-background">
       <div className="flex flex-col items-center gap-2">
         <HugeiconsIcon icon={LockKeyIcon} className="size-10 text-muted-foreground" />
-        <h1 className="text-xl">Pleadli Lawyers is locked</h1>
-        <p className="text-sm text-muted-foreground">{mode === 'recover' ? 'Enter your recovery code and a new PIN.' : 'Enter your PIN to continue.'}</p>
+        <h1 className="text-xl">{m["lock.title"]()}</h1>
+        <p className="text-sm text-muted-foreground">{mode === 'recover' ? m["lock.enter_recovery"]() : m["lock.enter_pin"]()}</p>
       </div>
       {mode === 'recover' ? (
         <RecoverForm
@@ -146,7 +132,7 @@ export function LockGate({ children }: PropsWithChildren) {
         <UnlockForm cooldownRemaining={status.cooldownRemaining} />
       )}
       <Button type="button" variant="ghost" size="sm" onClick={() => setMode(mode === 'recover' ? 'unlock' : 'recover')}>
-        {mode === 'recover' ? 'Back to PIN entry' : 'Forgot your PIN?'}
+        {mode === 'recover' ? m["lock.back"]() : m["lock.forgot"]()}
       </Button>
     </article>
   )

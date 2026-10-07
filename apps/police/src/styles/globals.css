@@ -33,10 +33,12 @@
 /* ---------- Page rhythm ----------
    Every route is one <article class="page"> made of a <header class="page-header">
    followed by <section class="page-section"> blocks. Spacing lives here, once.
-   Use `page page-narrow` for reading-width pages (procedures, forms). */
+   Every page is the same width; there is no narrow variant. */
 @utility page {
   width: 100%;
-  max-width: var(--page-max, 90rem);
+  /* One width for every page, as a Mac app keeps one: the content never jumps
+     as you move between places. */
+  max-width: 72rem;
   margin-inline: auto;
   padding-inline: 1rem;
   padding-block: 1.25rem 4rem;
@@ -91,8 +93,10 @@
   }
 }
 
+/* Kept so older markup still compiles: every page now has the same width.
+   (Tailwind needs a property in every utility, so it restates the one width.) */
 @utility page-narrow {
-  --page-max: 52rem;
+  max-width: 72rem;
 }
 
 @utility page-header {
@@ -158,4 +162,47 @@
   }
 }
 
+/* A sheet of paper: always light, whatever the theme, so a document reads on
+ * screen the way it will print. The variables re-point the global typography
+ * (which reads them) at black on white. */
+.paper {
+  --foreground: #000;
+  --color-foreground: #000;
+  --muted-foreground: #3f3f46;
+  --border: #000;
+  --muted: #f4f4f5;
+  color-scheme: light;
+  background: #fff;
+  color: #000;
+  border: 1px solid #d4d4d8;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  min-height: 297mm;
+}
 
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm 22mm;
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 9pt;
+    }
+  }
+
+  .paper {
+    border: 0;
+    box-shadow: none;
+    min-height: 0;
+  }
+}
+
+/* Printing from the file viewer prints the file, not the app behind it. */
+@media print {
+  body:has([data-print-viewer]) #root {
+    display: none;
+  }
+  [data-print-viewer] {
+    position: static !important;
+    transform: none !important;
+  }
+}

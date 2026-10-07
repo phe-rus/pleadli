@@ -86,7 +86,7 @@ pub struct ApiResponse {
 
 /// Paths whose success starts a session (the response carries the token).
 fn starts_session(path: &str) -> bool {
-    matches!(path, "/api/auth/sign-in" | "/api/system/onboarding/station" | "/api/system/onboarding/command")
+    matches!(path, "/api/auth/sign-in" | "/api/auth/first-password" | "/api/system/onboarding/station" | "/api/system/onboarding/command")
 }
 
 #[tauri::command]
