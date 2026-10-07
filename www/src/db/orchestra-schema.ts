@@ -72,6 +72,9 @@ export const computer = sqliteTable(
     trialStartedAt: integer('trial_started_at', { mode: 'timestamp_ms' }).notNull(),
     firstSeenAt: integer('first_seen_at', { mode: 'timestamp_ms' }).notNull(),
     lastSeenAt: integer('last_seen_at', { mode: 'timestamp_ms' }).notNull(),
+    // SHA-256 of the secret handed to the app when it activated a licence; the
+    // app shows it on every later call that speaks for its institution.
+    tokenHash: text('token_hash'),
   },
   (t) => [uniqueIndex('computer_device_app').on(t.deviceHash, t.application), index('computer_org').on(t.organizationId)],
 )
@@ -124,4 +127,53 @@ export const supportReport = sqliteTable(
     repliedBy: text('replied_by'),
   },
   (t) => [index('support_report_status').on(t.status, t.createdAt)],
+)
+
+/** The fingerprint of a paper an app issued (charge sheet, bond, order): its
+ * verification code, reference, kind, issuing office and date, and hashes of
+ * the content. Never the content. Read by the public pleadli.com/verify page. */
+export const paper = sqliteTable(
+  'paper',
+  {
+    id: text('id').primaryKey(),
+    code: text('code').notNull().unique(),
+    reference: text('reference').notNull(),
+    kind: text('kind').notNull(),
+    application: text('application').notNull(),
+    organizationId: text('organization_id').notNull().references(() => organization.id, { onDelete: 'cascade' }),
+    office: text('office').notNull(), // the issuing office's Orchestra address
+    computerId: text('computer_id').references(() => computer.id, { onDelete: 'set null' }),
+    contentSha256: text('content_sha256').notNull(),
+    fileSha256: text('file_sha256'), // the exported PDF, when the app sent one
+    issuedAt: integer('issued_at', { mode: 'timestamp_ms' }).notNull(),
+    withdrawnAt: integer('withdrawn_at', { mode: 'timestamp_ms' }),
+    withdrawnReason: text('withdrawn_reason'),
+    recordedAt: integer('recorded_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (t) => [index('paper_org').on(t.organizationId, t.issuedAt)],
+)
+
+/** A code given to the person concerned in a case (on a receipt or a bond) to
+ * follow its stage on pleadli.com/track, like a parcel. Holds no names. */
+export const trackingCode = sqliteTable('tracking_code', {
+  code: text('code').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organization.id, { onDelete: 'cascade' }),
+  computerId: text('computer_id').references(() => computer.id, { onDelete: 'set null' }),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+})
+
+/** One step of a tracked case: a stage from a fixed list, the office it is
+ * with, and the next date if there is one. A fixed list keeps names out. */
+export const trackingEvent = sqliteTable(
+  'tracking_event',
+  {
+    id: text('id').primaryKey(),
+    code: text('code').notNull().references(() => trackingCode.code, { onDelete: 'cascade' }),
+    stage: text('stage').notNull(),
+    office: text('office'), // Orchestra address of the office the case is with
+    at: integer('at', { mode: 'timestamp_ms' }).notNull(),
+    nextAt: integer('next_at', { mode: 'timestamp_ms' }),
+    recordedAt: integer('recorded_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (t) => [index('tracking_event_code').on(t.code, t.at)],
 )
