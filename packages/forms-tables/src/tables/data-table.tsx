@@ -134,6 +134,8 @@ type DataTableProps<TData extends RowData> = {
   /** A summary row rendered inside the table's own <tfoot>, below the data rows — e.g. a totals line. Gets the visible column count for its colSpan. */
   footer?: (columnCount: number) => ReactNode
   customSearchbar?: (props: CustomSearchbarProps<TData>) => React.ReactNode
+  /** Column ids that start hidden; the reader can still show them from Columns. */
+  initialHidden?: string[]
 }
 
 /**
@@ -153,13 +155,16 @@ export function DataTable<TData extends RowData>({
   onSelectedRowsChange,
   footer,
   customSearchbar,
+  initialHidden,
   "aria-label": ariaLabel,
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState("")
   const [sorting, setSorting] = useState<SortingState>([])
   const tt = tableText()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>(() =>
+    Object.fromEntries((initialHidden ?? []).map((id) => [id, false]))
+  )
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -392,7 +397,7 @@ export function DataTable<TData extends RowData>({
         </div>
       )}
 
-      <div className={cn(
+      <div data-slot="data-table-frame" className={cn(
         'relative border border-muted/35 rounded-sm',
         'overflow-hidden!'
       )}>
@@ -457,7 +462,7 @@ export function DataTable<TData extends RowData>({
                     onSelectedRowsChange(selectedRows)
                   }}
                 >
-                  {row.getAllCells().map((cell) => (
+                  {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>

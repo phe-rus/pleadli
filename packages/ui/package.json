@@ -40,6 +40,7 @@
   },
   "exports": {
     "./globals.css": "./src/styles/globals.css",
+    "./workspace.css": "./src/styles/workspace.css",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./*": "./src/components/*.tsx"

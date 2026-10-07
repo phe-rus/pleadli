@@ -23,6 +23,8 @@ chacha20poly1305 = { version = "0.10", features = ["stream"] }
 sqlx = { version = "0.9", default-features = false, features = ["sqlite", "runtime-tokio", "migrate", "derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 log = "0.4"
+# The QR printed beside a paper's verification code.
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 # The database is encrypted at rest: this swaps sqlx's bundled SQLite for SQLCipher
 # (with OpenSSL built in, so the installer needs nothing on the target machine).
 libsqlite3-sys = { version = "0.37", features = ["bundled-sqlcipher-vendored-openssl"] }

@@ -292,6 +292,14 @@
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  /* Control density. Compact by default; an app sets roomier values on its own :root. */
+  --ui-text: 0.75rem;
+  --table-text: 0.75rem;
+  --control-h: 1.75rem;
+  --control-h-sm: 1.5rem;
+  --control-h-lg: 2rem;
+  --control-px: 0.5rem;
+  --control-px-lg: 0.625rem;
 }
 
 .dark {

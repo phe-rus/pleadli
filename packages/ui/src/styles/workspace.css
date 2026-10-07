@@ -1,0 +1,121 @@
+/* The Pleadli workspace look, shared by every app: a soft off-white page with
+   what you work on (cards, lists, panels, forms) lifted onto white with a gentle
+   shadow, rounded corners, crisp neutral ink, and comfortable controls.
+   Import after globals.css. Each app keeps its own accent (--primary, --ring,
+   --sidebar-primary, charts) in its own stylesheet; setup may replace it. */
+:root {
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --background: oklch(0.982 0.003 255);
+  --foreground: oklch(0.21 0.015 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.015 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.015 260);
+  --secondary: oklch(0.955 0.006 255);
+  --secondary-foreground: oklch(0.25 0.015 260);
+  --muted: oklch(0.955 0.006 255);
+  --muted-foreground: oklch(0.5 0.018 258);
+  --accent: oklch(0.955 0.006 255);
+  --accent-foreground: oklch(0.21 0.015 260);
+  --destructive: oklch(0.577 0.215 27.3);
+  --border: oklch(0.915 0.006 255);
+  --input: oklch(0.88 0.008 255);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.982 0.003 255);
+  --sidebar-foreground: oklch(0.3 0.015 260);
+  --sidebar-accent: oklch(1 0 0);
+  --sidebar-accent-foreground: oklch(0.21 0.015 260);
+  --sidebar-border: oklch(0.915 0.006 255);
+  --shadow-xs: 0 1px 2px oklch(0.3 0.02 260 / 0.05);
+  --shadow-sm: 0 1px 2px oklch(0.3 0.02 260 / 0.05), 0 1px 3px oklch(0.3 0.02 260 / 0.06);
+  --shadow-md: 0 2px 4px oklch(0.3 0.02 260 / 0.04), 0 4px 12px oklch(0.3 0.02 260 / 0.07);
+  --shadow-lg: 0 4px 8px oklch(0.3 0.02 260 / 0.04), 0 12px 32px oklch(0.3 0.02 260 / 0.1);
+  --ui-text: 0.875rem;
+  --table-text: 0.875rem;
+  --control-h: 2.25rem;
+  --control-h-sm: 2rem;
+  --control-h-lg: 2.5rem;
+  --control-px: 0.875rem;
+  --control-px-lg: 1.125rem;
+}
+
+.dark {
+  --background: oklch(0.17 0.008 260);
+  --foreground: oklch(0.96 0.004 255);
+  --card: oklch(0.215 0.01 260);
+  --card-foreground: oklch(0.96 0.004 255);
+  --popover: oklch(0.235 0.01 260);
+  --popover-foreground: oklch(0.96 0.004 255);
+  --secondary: oklch(0.27 0.01 260);
+  --secondary-foreground: oklch(0.96 0.004 255);
+  --muted: oklch(0.27 0.01 260);
+  --muted-foreground: oklch(0.7 0.012 258);
+  --accent: oklch(0.27 0.01 260);
+  --accent-foreground: oklch(0.96 0.004 255);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --sidebar: oklch(0.17 0.008 260);
+  --sidebar-foreground: oklch(0.88 0.006 255);
+  --sidebar-accent: oklch(0.235 0.01 260);
+  --sidebar-accent-foreground: oklch(0.96 0.004 255);
+  --sidebar-border: oklch(1 0 0 / 9%);
+}
+
+/* ---------- Surfaces ----------
+   What you work on is lifted onto white: cards, lists and tables, inputs. */
+[data-slot="card"] {
+  box-shadow: var(--shadow-sm);
+  --tw-ring-color: color-mix(in oklab, var(--border) 90%, transparent);
+}
+
+[data-slot="input"]:not([data-slot="input-group"] *),
+[data-slot="textarea"],
+[data-slot="input-group"],
+[data-slot="select-trigger"] {
+  background-color: var(--card);
+  box-shadow: var(--shadow-xs);
+}
+
+[data-slot="button"] {
+  font-weight: 550;
+}
+
+/* Side panels are white sheets over the page. */
+[data-slot="drawer-popup"] {
+  background-color: var(--card);
+}
+
+[data-slot="data-table-frame"] {
+  background: var(--card);
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+[data-slot="data-table-frame"] [data-slot="table-head"] {
+  height: 2.5rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  background: color-mix(in oklab, var(--muted) 55%, var(--card));
+}
+
+[data-slot="data-table-frame"] [data-slot="table-cell"] {
+  padding-block: 0.625rem;
+}
+
+[data-slot="data-table-frame"] [data-slot="table-row"] {
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+.dark [data-slot="input"]:not([data-slot="input-group"] *),
+.dark [data-slot="textarea"],
+.dark [data-slot="input-group"],
+.dark [data-slot="select-trigger"] {
+  background-color: color-mix(in oklab, var(--card) 70%, var(--background));
+}
+
+/* A paper is serif throughout: its headings follow the sheet, not the app. */
+.paper :is(h1, h2, h3, h4, h5, h6) {
+  font-family: inherit;
+}
