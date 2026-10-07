@@ -1114,6 +1114,65 @@ async fn delete_custody(State(s): State<AppState>, Path(id): Path<String>) -> Re
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrintInput {
+    entity_type: String,
+    entity_id: String,
+    reference: Option<String>,
+    title: String,
+    body: String,
+}
+
+/// A paper is leaving the application: its wording is recorded under the
+/// code printed on it.
+async fn stamp_paper(State(s): State<AppState>, Json(input): Json<PrintInput>) -> ApiResult<pleadli_node_core::paper::Stamp> {
+    if input.body.trim().is_empty() || input.body.len() > 2_000_000 {
+        return Err(DomainError::Invalid("This paper has no wording to record.".into()).into());
+    }
+    let actor = s.security.actor();
+    let stamp = pleadli_node_core::paper::stamp(
+        &s.pool,
+        pleadli_node_core::paper::PaperInput {
+            entity_type: &input.entity_type,
+            entity_id: &input.entity_id,
+            reference: input.reference.as_deref(),
+            title: &input.title,
+            body: &input.body,
+            printed_by: actor.as_ref().map(|a| a.name.as_str()),
+        },
+    )
+    .await
+    .map_err(DomainError::from)?;
+    Ok(Json(stamp))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LastPrintQuery {
+    entity_type: String,
+    entity_id: String,
+}
+
+async fn last_paper_print(State(s): State<AppState>, Query(q): Query<LastPrintQuery>) -> ApiResult<Option<pleadli_node_core::paper::PaperPrint>> {
+    let print = pleadli_node_core::paper::last_print(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?;
+    Ok(Json(print))
+}
+
+async fn paper_history(State(s): State<AppState>, Query(q): Query<LastPrintQuery>) -> ApiResult<Vec<pleadli_node_core::paper::PaperPrint>> {
+    Ok(Json(pleadli_node_core::paper::history(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?))
+}
+
+#[derive(Deserialize)]
+struct PrintVerifyQuery {
+    code: String,
+}
+
+/// Anyone holding a paper types its code and reads what was printed.
+async fn verify_paper(State(s): State<AppState>, Query(q): Query<PrintVerifyQuery>) -> ApiResult<Option<pleadli_node_core::paper::PaperPrint>> {
+    Ok(Json(pleadli_node_core::paper::verify(&s.pool, &q.code).await.map_err(DomainError::from)?))
+}
+
 pub fn router(state: AppState) -> Router {
     let api = Router::new()
         .route("/people", post(create_person).get(search_people))
@@ -1137,6 +1196,10 @@ pub fn router(state: AppState) -> Router {
         .route("/documents/{id}/issue", post(issue_document))
         .route("/documents/draft", post(draft_document))
         .route("/documents/verify", get(verify_document))
+        .route("/prints", post(stamp_paper))
+        .route("/prints/last", get(last_paper_print))
+        .route("/prints/history", get(paper_history))
+        .route("/prints/verify", get(verify_paper))
         .route("/documents/{id}/content", axum::routing::put(update_document_content))
         .route("/seals", get(get_seals))
         .route("/seals/signature", axum::routing::put(set_my_signature))

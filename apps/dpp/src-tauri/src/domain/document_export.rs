@@ -124,7 +124,7 @@ pub fn docx(doc: &Document) -> Result<Vec<u8>, String> {
         }
     }
 
-    let verify = doc.content.verify_code.as_ref().map(|c| format!("  |  Verification {c}")).unwrap_or_default();
+    let verify = doc.content.verify_code.as_ref().map(|c| format!("  |  Verification {}", pleadli_node_core::paper::display(c))).unwrap_or_default();
     d = d.footer(Footer::new().add_paragraph(Paragraph::new().align(AlignmentType::Center).add_run(text(&format!("{}  |  {}{verify}", doc.content.office, status_line(doc))).size(16))));
 
     let mut buffer = std::io::Cursor::new(Vec::new());

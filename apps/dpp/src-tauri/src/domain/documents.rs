@@ -346,7 +346,9 @@ pub async fn verify(pool: &SqlitePool, reference: &str, code: &str) -> Result<Ve
         return Ok(Verification { found: false, genuine: false, title: None, file_title: None, author: None, issued_at: None });
     };
     let doc = get(pool, &id).await?;
-    let genuine = doc.integrity == "intact" && doc.content.verify_code.as_deref().is_some_and(|c| c.eq_ignore_ascii_case(code.trim()));
+    // A typed code may carry the dashes it is printed with, spaces or lower case.
+    let typed = pleadli_node_core::paper::normalise(code);
+    let genuine = doc.integrity == "intact" && doc.content.verify_code.as_deref().is_some_and(|c| pleadli_node_core::paper::normalise(c) == typed);
     Ok(Verification { found: true, genuine, title: Some(doc.title), file_title: Some(doc.file_title), author: doc.author, issued_at: doc.issued_at })
 }
 

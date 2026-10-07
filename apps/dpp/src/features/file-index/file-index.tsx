@@ -25,11 +25,11 @@ export const kindLabel = (kind: string) => {
 const selectClass = 'h-9 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
 const pages = (i: FileItem) => (i.pageFrom && i.pageTo ? i.pageTo - i.pageFrom + 1 : 1)
 
-type Group = { key: string; code: string | null; title: string; items: FileItem[] }
+export type Group = { key: string; code: string | null; title: string; items: FileItem[] }
 
 /** The file's sections in the country's order; a country without a known
  * order groups by kind of document. Items keep their own order within. */
-function groups(country: Country | undefined, items: FileItem[]): Group[] {
+export function groups(country: Country | undefined, items: FileItem[]): Group[] {
   const sections = country?.fileSections?.sections
   if (sections) {
     const placed = new Set<string>()
@@ -45,7 +45,7 @@ function groups(country: Country | undefined, items: FileItem[]): Group[] {
   return DOC_KINDS.map((k) => ({ key: k.id, code: null, title: packText(k.label), items: items.filter((i) => i.kind === k.id) })).filter((g) => g.items.length > 0)
 }
 
-function KindSelect({ value, onChange }: { value: string; onChange: (kind: string) => void }) {
+export function KindSelect({ value, onChange }: { value: string; onChange: (kind: string) => void }) {
   const country = useJurisdiction()
   return (
     <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
@@ -64,7 +64,7 @@ function KindSelect({ value, onChange }: { value: string; onChange: (kind: strin
 
 /** Record a document straight into the file, with no paper behind it: a
  * statement taken down, a minute, a note of a call. */
-function TypedEntry({ fileId, onDone }: { fileId: string; onDone: () => void }) {
+export function TypedEntry({ fileId, onDone }: { fileId: string; onDone: () => void }) {
   const [kind, setKind] = useState('witness_statement')
   const [title, setTitle] = useState('')
   const [day, setDay] = useState('')

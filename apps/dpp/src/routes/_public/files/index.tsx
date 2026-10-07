@@ -61,15 +61,16 @@ function RouteComponent() {
     return [
       selectColumn(),
       {
-        accessorKey: 'id',
-        header: () => m["page.files.col.id"](),
+        accessorKey: 'title',
+        header: () => m["page.files.col.title"](),
         cell: ({ row }) => (
-          <Link to="/files/$fileId" params={{ fileId: row.original.id }} className={cn('inline-block rounded-md bg-primary/15 px-3 py-1 text-xs')}>
-            {row.original.id}
+          <Link to="/files/$fileId" params={{ fileId: row.original.id }} className="flex max-w-md flex-col no-underline">
+            <span className="truncate font-medium text-foreground">{row.original.title}</span>
+            <span className="truncate text-muted-foreground">{fileReference(row.original)}</span>
           </Link>
         ),
       },
-      { accessorKey: 'title', header: () => m["page.files.col.title"](), cell: ({ row }) => <span className="inline-block max-w-sm truncate">{row.original.title}</span> },
+      { accessorKey: 'id', header: () => m["page.files.col.id"]() },
       { id: 'reference', header: () => m["page.files.col.reference"](), accessorFn: (row) => fileReference(row), cell: ({ row }) => fileReference(row.original) },
       { accessorKey: 'accused', header: () => m["page.files.col.accused"](), cell: ({ row }) => row.original.accused ?? '·' },
       { accessorKey: 'policeStation', header: () => m["page.files.col.station"](), cell: ({ row }) => row.original.policeStation ?? '·' },
@@ -125,7 +126,7 @@ function RouteComponent() {
       {files.length === 0 ? (
         <EmptyNote>{emptyText[view]?.() ?? m["page.files.empty"]()}</EmptyNote>
       ) : (
-        <DataTable aria-label={current.label} data={files} columns={columns} getRowId={(row) => row.id} emptyMessage={m["page.files.empty"]()} searchPlaceholder={m["page.files.search_list"]()} />
+        <DataTable aria-label={current.label} data={files} columns={columns} getRowId={(row) => row.id} initialHidden={['id', 'reference', 'createdAt']} emptyMessage={m["page.files.empty"]()} searchPlaceholder={m["page.files.search_list"]()} />
       )}
       {view === 'intake' && files.length > 0 && <Tag tone="open" className="w-fit">{m["page.files.oldest_first"]()}</Tag>}
     </article>

@@ -10,6 +10,8 @@ import type { Template, TemplateContext } from './types'
 
 const DASH = '....................'
 const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+const firstParagraph = (text: string) => text.split(/\n\n/)[0].trim()
+const firstSentence = (text: string) => (text.match(/^.*?[.!?](\s|$)/)?.[0] ?? text).trim()
 const roman = (n: number) => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n - 1] ?? String(n)
 
 function header(ctx: TemplateContext, extra: { label: string; value: string }[] = []): Block {
@@ -80,21 +82,59 @@ export const ugandaTemplates: Template[] = [
     ],
   },
   {
+    id: 'indictment',
+    title: 'Indictment',
+    about: 'The charge for trial in the High Court, in the name of the Director of Public Prosecutions (Trial on Indictments Act, ss. 23, 24, 27, 28).',
+    lang: 'en',
+    forDecisions: ['committal_venue_high_court', 'sanction'],
+    build: (ctx) => {
+      const accused = ctx.accused.length ? ctx.accused : [DASH]
+      const charges = ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, particulars: DASH, accused: null }]
+      const arising = [ctx.file.courtCaseNumber, ctx.file.policeReference].filter(Boolean).join('; ')
+      return [
+        { type: 'heading', text: `In the High Court of Uganda at ${DASH}` },
+        { type: 'heading', text: `Criminal Session Case No. ${DASH} of ${new Date(ctx.today).getFullYear()}` },
+        ...(arising ? [{ type: 'note', text: `Arising from ${arising}` } as Block] : []),
+        { type: 'heading', text: `Uganda versus ${accused.join(', ')}` },
+        // s.28(1): the commencement, with the blanks the registry fills.
+        { type: 'paragraph', text: `In the High Court of Uganda at ${DASH} the ${DASH} day of ${DASH}, 20..., at the sessions held at ${DASH}, the court is informed by the Director of Public Prosecutions that ${accused.join(', ')} ${accused.length > 1 ? 'are' : 'is'} charged with the following ${charges.length > 1 ? 'offences' : 'offence'}:` },
+        // s.24(2): more than one offence, each in its own count.
+        ...charges.flatMap((c, i): Block[] => [
+          ...(charges.length > 1 ? [{ type: 'heading', text: `Count ${roman(i + 1)}` } as Block] : []),
+          { type: 'fields', rows: [{ label: 'Statement of offence', value: `${c.offence}${c.section ? `, contrary to ${c.section}` : ''}` }] },
+          { type: 'paragraph', text: `Particulars of offence: ${c.particulars ? firstParagraph(c.particulars) : DASH}` },
+        ]),
+        // s.27: in the name of, and signed for, the Director of Public Prosecutions.
+        signature(ctx, `Dated at ${DASH} this ${day(ctx.today)}`, 'for Director of Public Prosecutions'),
+      ]
+    },
+  },
+  {
     id: 'summary_of_case',
     title: 'Summary of the Case',
-    about: 'Filed with the indictment on committal to the High Court (Magistrates Courts Act, s. 168).',
+    about: 'Filed with the indictment on committal to the High Court (Magistrates Courts Act, s. 168). Drafted from the statements on the file.',
     lang: 'en',
     forDecisions: ['committal_venue_high_court'],
-    build: (ctx) => [
-      header(ctx),
-      { type: 'heading', text: `Uganda versus ${ctx.accused.join(', ') || DASH}` },
-      { type: 'heading', text: 'Summary of the case' },
-      { type: 'paragraph', text: 'Write the facts the prosecution will prove, in numbered paragraphs, with enough particulars to give the accused reasonable information about the offence.' },
-      { type: 'heading', text: 'Witnesses' },
-      { type: 'list', ordered: true, items: [...ctx.complainants, ...ctx.witnesses].map((w) => ({ title: null, text: w })) },
-      { type: 'heading', text: 'Exhibits' },
-      { type: 'list', ordered: true, items: (ctx.exhibits.length ? ctx.exhibits : [DASH]).map((e) => ({ title: null, text: e })) },
-      signature(ctx, 'Signed', `for the Director of Public Prosecutions, ${day(ctx.today)}`),
-    ],
+    build: (ctx) => {
+      const accused = ctx.accused.join(', ') || DASH
+      const charge = ctx.charges[0]
+      let n = 1
+      const para = (text: string): Block => ({ type: 'paragraph', text: `${n++}. ${text}` })
+      return [
+        header(ctx),
+        { type: 'heading', text: `Uganda versus ${accused}` },
+        { type: 'heading', text: 'Summary of the case' },
+        para(charge ? `The accused, ${accused}, is indicted with the offence of ${charge.offence}${charge.section ? ` contrary to ${charge.section}` : ''}. ${charge.particulars ? `The particulars are that ${firstParagraph(charge.particulars)}` : ''}` : `The accused, ${accused}, is indicted with ${DASH}.`),
+        // One paragraph per witness, from the words of their statement: the
+        // State Attorney shortens them on the page, or asks Assist to.
+        ...ctx.statements.map((st, i) => para(`PW${i + 1}, ${st.name} (${st.role.toLowerCase()}), in a statement made on ${day(st.madeOn)}, says: "${st.text.replace(/\n\n/g, ' ') || DASH}"`)),
+        ...ctx.evidence.filter((e) => e.description).map((e) => para(`${e.mark ? `${e.mark}: ` : ''}${firstParagraph(e.description)}`)),
+        { type: 'heading', text: 'Witnesses' },
+        { type: 'list', ordered: false, items: (ctx.statements.length ? ctx.statements.map((st, i) => `PW${i + 1}. ${st.name}, ${st.role.toLowerCase()}`) : [...ctx.complainants, ...ctx.witnesses]).map((w) => ({ title: null, text: w })) },
+        { type: 'heading', text: 'Exhibits' },
+        { type: 'list', ordered: true, items: [...ctx.evidence.map((e) => `${e.mark ? `${e.mark}, ` : ''}${e.kind.toLowerCase()}: ${firstSentence(e.description) || DASH}`), ...ctx.exhibits].concat(ctx.evidence.length || ctx.exhibits.length ? [] : [DASH]).map((e) => ({ title: null, text: e })) },
+        signature(ctx, 'Signed', `for the Director of Public Prosecutions, ${day(ctx.today)}`),
+      ]
+    },
   },
 ]

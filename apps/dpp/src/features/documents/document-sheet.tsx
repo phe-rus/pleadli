@@ -3,6 +3,7 @@ import * as m from '@/paraglide/messages'
 import { Add01Icon, Delete02Icon, SparklesIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
+import { displayCode } from '@pleadli/paper'
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { Block, DocumentContent, DocumentRecord } from './schema'
 
@@ -215,7 +216,7 @@ export function DocumentSheet({
               <div className="text-right text-[0.625rem] leading-tight text-muted-foreground">
                 <p>{content.lang === 'fr' ? 'Vérifiable auprès du parquet émetteur' : m["doc.verify_label"]()}</p>
                 <p className="font-mono text-xs text-foreground">{document.reference}</p>
-                <p className="font-mono text-xs text-foreground">{content.verifyCode}</p>
+                <p className="font-mono text-xs text-foreground">{content.verifyCode ? displayCode(content.verifyCode) : null}</p>
               </div>
               <div className="size-20 bg-white p-1 [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: content.verifyQr }} />
             </div>

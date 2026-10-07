@@ -1902,7 +1902,11 @@
     "stamp_title": "Dienststempel",
     "too_big": "Das Bild ist größer als 400 KB.",
     "upload": "Bild hochladen",
-    "wrong_type": "Bitte ein PNG- oder JPEG-Bild verwenden."
+    "wrong_type": "Bitte ein PNG- oder JPEG-Bild verwenden.",
+    "draw": "Hier unterschreiben",
+    "pad_hint": "Mit Stift, Finger oder Maus unterschreiben",
+    "pad_clear": "Löschen",
+    "pad_done": "Diese Unterschrift verwenden"
   },
   "verify": {
     "check": "Prüfen",
@@ -1912,6 +1916,93 @@
     "mismatch": "Ein Schriftstück mit dieser Referenz existiert, aber der Code passt nicht oder der Datensatz wurde verändert. Das Papier als unecht behandeln.",
     "not_found": "Hier wurde kein Schriftstück mit dieser Referenz ausgefertigt.",
     "reference": "Referenz, z. B. STA-2026-0001",
-    "title": "Schriftstück prüfen"
+    "title": "Schriftstück prüfen",
+    "paper_genuine": "Echt. Dieses Papier wurde von {by} am {date} gedruckt. Vergleichen Sie es Wort für Wort mit dem Wortlaut unten.",
+    "paper_hint": "Ein aus der App gedrucktes Papier trägt nur einen Code: Geben Sie ihn allein ein, um es zu prüfen.",
+    "someone": "jemandem in dieser Stelle"
+  },
+  "paper": {
+    "preview": "Vorschau",
+    "edit": "Bearbeiten",
+    "print": "Drucken oder als PDF speichern",
+    "word": "Als Word speichern",
+    "print_hint": "Wählen Sie im Druckfenster „Als PDF speichern“, um ein PDF zu behalten.",
+    "verify_line": "Dieses Papier mit seinem Code prüfen",
+    "changed": "Seit dem letzten Druck geändert",
+    "last_printed": "Zuletzt gedruckt am {when}",
+    "saving": "Papier wird vorbereitet",
+    "failed": "Das Papier konnte nicht vorbereitet werden",
+    "binder": {
+      "papers": "Papiere in dieser Akte",
+      "received": "Wie von der Polizei erhalten. Von dieser Stelle nicht verändert.",
+      "attached": "An dieses Papier angehängt",
+      "open_outside": "In eigenem Programm öffnen",
+      "empty": "Noch keine Papiere. Fügen Sie hinzu, was die Polizei geschickt hat, oder importieren Sie die Papiere.",
+      "prepared": "Von dieser Stelle erstellt",
+      "from_police": "Von der Polizei erhalten"
+    },
+    "refs": {
+      "police": "Polizeiaktenzeichen",
+      "office": "Akte der Staatsanwaltschaft",
+      "court": "Gerichtsverfahren",
+      "station": "Wache"
+    },
+    "statement": {
+      "name": "Name",
+      "made_on": "Abgegeben am",
+      "maker": "Unterschrift der aussagenden Person",
+      "recorder": "Aufgenommen von",
+      "source": "Quelle",
+      "no_text": "Der Wortlaut dieser Aussage steht im angehängten Scan.",
+      "title": {
+        "witness": "Zeugenaussage",
+        "accused": "Aussage des Beschuldigten nach Belehrung",
+        "arresting_officer": "Aussage des festnehmenden Beamten",
+        "investigating_officer": "Aussage des Ermittlungsbeamten",
+        "complainant": "Aussage des Anzeigeerstatters"
+      }
+    },
+    "evidence": {
+      "title": "Beweisstück",
+      "category": "Art",
+      "mark": "Kennzeichnung",
+      "description": "Beschreibung"
+    },
+    "charges": {
+      "title": "Von der Polizei vorgeschlagene Anklagepunkte",
+      "count": "Anklagepunkt {n}",
+      "statement": "Bezeichnung der Straftat",
+      "particulars": "Einzelheiten der Straftat"
+    },
+    "open_word": "In Word öffnen",
+    "open_libre": "In LibreOffice öffnen",
+    "print_hint_windows": "Um ein PDF zu behalten, wählen Sie „Microsoft Print to PDF“ als Drucker.",
+    "tabs": {
+      "details": "Dokumentdetails",
+      "history": "Verlauf",
+      "related": "Zugehörige Dokumente",
+      "citations": "Zitate"
+    },
+    "latest": "Dies ist die neueste Fassung dieses Papiers.",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "no_history": "Dieses Papier hat die Stelle noch nicht verlassen. Bei jedem Drucken oder Speichern wird die Fassung hier aufbewahrt.",
+    "read_version": "Diese Fassung lesen",
+    "printed_by": "Gedruckt von {who}",
+    "no_related": "Keine anderen Papiere dieser Akte gehören zu diesem.",
+    "cites": "Dieses Papier zitiert",
+    "cited_by": "Zitiert von",
+    "no_citations": "In diesem Papier wird kein Gesetz und kein anderes Papier genannt.",
+    "detail": {
+      "reference": "Aktenzeichen",
+      "file": "Akte",
+      "kind": "Art",
+      "made_by": "Abgegeben von",
+      "date": "Datum",
+      "status": "Status",
+      "received": "Von der Polizei erhalten",
+      "counts": "Anklagepunkte"
+    },
+    "open_elsewhere": "In anderem Programm öffnen"
   }
 }

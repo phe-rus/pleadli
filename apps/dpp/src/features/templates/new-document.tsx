@@ -43,12 +43,15 @@ export function NewDocumentButton({
   decisionKind,
   variant = 'secondary',
   mode = 'decision',
+  onMade,
 }: {
   fileId: string
   decisionId: string | null
   decisionKind: string | null
   variant?: 'default' | 'secondary' | 'ghost'
   mode?: 'decision' | 'custody'
+  /** Given: the new draft is handed here instead of opening on its own page. */
+  onMade?: (documentId: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const country = useJurisdiction()
@@ -63,8 +66,11 @@ export function NewDocumentButton({
         type="button"
         disabled={pending}
         onClick={async () => {
-          const doc = await make(tpl, decisionId)
-          if (doc) setOpen(false)
+          const doc = await make(tpl, decisionId, !onMade)
+          if (doc) {
+            setOpen(false)
+            onMade?.(doc.id)
+          }
         }}
         className="flex w-full cursor-pointer items-start gap-3 rounded-xl p-3 text-left ring-1 ring-border/60 transition-colors hover:bg-secondary/50"
       >

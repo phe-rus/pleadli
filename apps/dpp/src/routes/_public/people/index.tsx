@@ -32,18 +32,17 @@ function RouteComponent() {
     return [
       selectColumn(),
       {
-        accessorKey: 'id',
-        header: 'ID',
+        id: 'name',
+        accessorFn: (row) => personFullName(row),
+        header: 'Name',
         cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setEditingPerson(row.original)}
-          >
-            {row.original.id}
-          </span>
+          <button type="button" onClick={() => setEditingPerson(row.original)} className="flex cursor-pointer flex-col text-start">
+            <span className="font-medium text-foreground">{personFullName(row.original)}</span>
+            {row.original.phone && <span className="text-muted-foreground">{row.original.phone}</span>}
+          </button>
         ),
       },
-      { id: 'name', accessorFn: (row) => personFullName(row), header: 'Name' },
+      { accessorKey: 'id', header: 'ID' },
       { accessorKey: 'otherNames', header: 'Other names', cell: ({ row }) => row.original.otherNames ?? '·' },
       { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => row.original.phone ?? '·' },
       { accessorKey: 'nationalId', header: 'National ID', cell: ({ row }) => row.original.nationalId ?? '·' },

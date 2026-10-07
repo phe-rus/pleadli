@@ -1,6 +1,7 @@
 import { Loaders } from '@/components/loaders'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AppGate } from '@/features/app-gate'
+import { PaperProvider } from '@/features/paper/provider'
 import { LanguageSelect, LocaleBoundary } from '@/features/i18n'
 import { Queryprovider, queryContext } from '@/lib/query-context'
 import "@/styles/globals.css"
@@ -68,7 +69,9 @@ if (!rootElement.innerHTML) {
             <Queryprovider query={queryContext()}>
                 <AppGate onUnlocked={() => void router.invalidate()}>
                     <LocaleBoundary>
-                        <RouterProvider router={router} />
+                        <PaperProvider>
+                            <RouterProvider router={router} />
+                        </PaperProvider>
                     </LocaleBoundary>
                 </AppGate>
                 <LanguageSelect />

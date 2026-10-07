@@ -20,12 +20,12 @@ import { RichTextPreview } from '@pleadli/rich-text'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
-import { ChronologyPanel, DocumentsPanel } from './decision-panels'
+import { ChronologyPanel } from './decision-panels'
 import { hearingKindLabel, useHearings } from '@/features/court'
 import { FileTasks } from '@/features/board'
-import { FileIndex, useFileItems } from '@/features/file-index'
+import { useFileItems } from '@/features/file-index'
 import { CaseTab } from '@/features/pipeline'
-import { MaterialPanel } from './material-panel'
+import { FileBinder } from '@/features/paper/file-binder'
 import { filePersonRoles } from '@/features/prosecution-files/schema'
 import * as m from '@/paraglide/messages'
 
@@ -189,22 +189,15 @@ export function FileWorkspace({ fileId, tab }: { fileId: string; tab: FileTabId 
       {canonicalTab(tab) === 'case' && <CaseTab file={file} />}
       {canonicalTab(tab) === 'papers' && (
         <div className="flex flex-col gap-8">
-          <FileIndex fileId={fileId} />
+          <FileBinder fileId={fileId} />
           <Fold title={m["file_tab.details"]()}>
             <FilePanel fileId={fileId} />
-          </Fold>
-          <Fold title={m["nav.item.police_material"]()}>
-            <MaterialPanel fileId={fileId} />
           </Fold>
         </div>
       )}
       {canonicalTab(tab) === 'activity' && (
         <div className="flex flex-col gap-8">
           <ChronologyPanel fileId={fileId} />
-          <section className="page-section">
-            <h2>{m["nav.item.documents"]()}</h2>
-            <DocumentsPanel fileId={fileId} />
-          </section>
         </div>
       )}
     </article>

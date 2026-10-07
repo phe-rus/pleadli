@@ -1902,7 +1902,11 @@
     "stamp_title": "Cachet du bureau",
     "too_big": "L'image dépasse 400 Ko.",
     "upload": "Choisir une image",
-    "wrong_type": "Utilisez une image PNG ou JPEG."
+    "wrong_type": "Utilisez une image PNG ou JPEG.",
+    "draw": "Signer ici",
+    "pad_hint": "Signez avec un stylet, le doigt ou la souris",
+    "pad_clear": "Effacer",
+    "pad_done": "Utiliser cette signature"
   },
   "verify": {
     "check": "Vérifier",
@@ -1912,6 +1916,93 @@
     "mismatch": "Un acte porte cette référence, mais le code ne correspond pas ou l'enregistrement a été modifié. Considérez le papier comme non authentique.",
     "not_found": "Aucun acte portant cette référence n'a été émis ici.",
     "reference": "Référence, p. ex. PARQUET-2026-0001",
-    "title": "Vérifier un acte"
+    "title": "Vérifier un acte",
+    "paper_genuine": "Authentique. Ce document a été imprimé par {by} le {date}. Comparez-le mot pour mot avec le texte ci-dessous.",
+    "paper_hint": "Un document imprimé depuis l'application porte seulement un code : saisissez-le seul pour le vérifier.",
+    "someone": "une personne de ce bureau"
+  },
+  "paper": {
+    "preview": "Aperçu",
+    "edit": "Modifier",
+    "print": "Imprimer ou enregistrer en PDF",
+    "word": "Enregistrer en Word",
+    "print_hint": "Choisissez « Enregistrer au format PDF » dans la fenêtre d'impression pour garder un PDF.",
+    "verify_line": "Vérifiez ce document avec son code",
+    "changed": "Modifié depuis la dernière impression",
+    "last_printed": "Imprimé pour la dernière fois le {when}",
+    "saving": "Préparation du document",
+    "failed": "Le document n'a pas pu être préparé",
+    "binder": {
+      "papers": "Pièces du dossier",
+      "received": "Tel que reçu de la police. Non modifié par ce bureau.",
+      "attached": "Joint à ce document",
+      "open_outside": "Ouvrir dans son programme",
+      "empty": "Aucune pièce pour l'instant. Ajoutez ce que la police a envoyé, ou importez les pièces.",
+      "prepared": "Préparé par ce bureau",
+      "from_police": "Reçu de la police"
+    },
+    "refs": {
+      "police": "Référence police",
+      "office": "Dossier du parquet",
+      "court": "Affaire au tribunal",
+      "station": "Poste"
+    },
+    "statement": {
+      "name": "Nom",
+      "made_on": "Faite le",
+      "maker": "Signature du déclarant",
+      "recorder": "Recueillie par",
+      "source": "Source",
+      "no_text": "Le texte de cette déclaration figure dans la copie jointe.",
+      "title": {
+        "witness": "Déclaration de témoin",
+        "accused": "Déclaration de l'accusé après mise en garde",
+        "arresting_officer": "Déclaration de l'officier ayant procédé à l'arrestation",
+        "investigating_officer": "Déclaration de l'enquêteur",
+        "complainant": "Déclaration du plaignant"
+      }
+    },
+    "evidence": {
+      "title": "Pièce à conviction",
+      "category": "Nature",
+      "mark": "Marque d'identification",
+      "description": "Description"
+    },
+    "charges": {
+      "title": "Charges proposées par la police",
+      "count": "Chef d'accusation {n}",
+      "statement": "Exposé de l'infraction",
+      "particulars": "Détails de l'infraction"
+    },
+    "open_word": "Ouvrir dans Word",
+    "open_libre": "Ouvrir dans LibreOffice",
+    "print_hint_windows": "Pour garder un PDF, choisissez « Microsoft Print to PDF » comme imprimante.",
+    "tabs": {
+      "details": "Détails du document",
+      "history": "Historique",
+      "related": "Documents liés",
+      "citations": "Citations"
+    },
+    "latest": "Ceci est la dernière version de ce document.",
+    "copy": "Copier",
+    "copied": "Copié",
+    "no_history": "Ce document n'a pas encore quitté le bureau. À chaque impression ou enregistrement, la version est conservée ici.",
+    "read_version": "Lire cette version",
+    "printed_by": "Imprimé par {who}",
+    "no_related": "Aucune autre pièce du dossier ne se rattache à celle-ci.",
+    "cites": "Ce document cite",
+    "cited_by": "Cité par",
+    "no_citations": "Aucune loi ni aucune autre pièce n'est citée dans ce document.",
+    "detail": {
+      "reference": "Référence",
+      "file": "Dossier",
+      "kind": "Nature",
+      "made_by": "Faite par",
+      "date": "Date",
+      "status": "Statut",
+      "received": "Reçu de la police",
+      "counts": "Chefs d'accusation"
+    },
+    "open_elsewhere": "Ouvrir dans un autre programme"
   }
 }

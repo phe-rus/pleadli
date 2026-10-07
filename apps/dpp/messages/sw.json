@@ -1902,7 +1902,11 @@
     "stamp_title": "Muhuri wa ofisi",
     "too_big": "Picha ni kubwa kuliko KB 400.",
     "upload": "Pakia picha",
-    "wrong_type": "Tumia picha ya PNG au JPEG."
+    "wrong_type": "Tumia picha ya PNG au JPEG.",
+    "draw": "Saini hapa",
+    "pad_hint": "Saini kwa kalamu, kidole au kipanya",
+    "pad_clear": "Futa",
+    "pad_done": "Tumia saini hii"
   },
   "verify": {
     "check": "Hakiki",
@@ -1912,6 +1916,93 @@
     "mismatch": "Hati yenye rejea hii ipo, lakini nambari hailingani au rekodi ilibadilishwa. Chukulia karatasi kuwa si halisi.",
     "not_found": "Hakuna hati yenye rejea hii iliyotolewa hapa.",
     "reference": "Rejea, k.m. ODPP-2026-0001",
-    "title": "Hakiki hati"
+    "title": "Hakiki hati",
+    "paper_genuine": "Halisi. Karatasi hii ilichapishwa na {by} tarehe {date}. Linganisha neno kwa neno na maneno yaliyo hapa chini.",
+    "paper_hint": "Karatasi iliyochapishwa kutoka programu ina msimbo tu: andika msimbo pekee ili kuihakiki.",
+    "someone": "mtu wa ofisi hii"
+  },
+  "paper": {
+    "preview": "Onyesho",
+    "edit": "Hariri",
+    "print": "Chapisha au hifadhi kama PDF",
+    "word": "Hifadhi kama Word",
+    "print_hint": "Chagua \"Save as PDF\" kwenye dirisha la kuchapisha ili kupata PDF.",
+    "verify_line": "Hakiki karatasi hii kwa msimbo wake",
+    "changed": "Imebadilika tangu ilipochapishwa mara ya mwisho",
+    "last_printed": "Ilichapishwa mwisho {when}",
+    "saving": "Inaandaa karatasi",
+    "failed": "Karatasi haikuweza kuandaliwa",
+    "binder": {
+      "papers": "Karatasi katika jalada hili",
+      "received": "Kama zilivyopokelewa kutoka Polisi. Hazijabadilishwa na ofisi hii.",
+      "attached": "Vilivyoambatishwa kwenye karatasi hii",
+      "open_outside": "Fungua kwa programu yake",
+      "empty": "Bado hakuna karatasi. Ongeza alichotuma Polisi, au ingiza karatasi.",
+      "prepared": "Imeandaliwa na ofisi hii",
+      "from_police": "Imepokelewa kutoka Polisi"
+    },
+    "refs": {
+      "police": "Kumbukumbu ya Polisi",
+      "office": "Jalada la mashtaka",
+      "court": "Kesi mahakamani",
+      "station": "Kituo"
+    },
+    "statement": {
+      "name": "Jina",
+      "made_on": "Ilitolewa tarehe",
+      "maker": "Saini ya mtoa maelezo",
+      "recorder": "Imeandikwa na",
+      "source": "Chanzo",
+      "no_text": "Maneno ya maelezo haya yako kwenye nakala iliyoambatishwa.",
+      "title": {
+        "witness": "Maelezo ya shahidi",
+        "accused": "Maelezo ya mshtakiwa chini ya onyo",
+        "arresting_officer": "Maelezo ya afisa aliyekamata",
+        "investigating_officer": "Maelezo ya afisa mpelelezi",
+        "complainant": "Maelezo ya mlalamikaji"
+      }
+    },
+    "evidence": {
+      "title": "Kielelezo",
+      "category": "Aina",
+      "mark": "Alama ya utambulisho",
+      "description": "Maelezo"
+    },
+    "charges": {
+      "title": "Mashtaka yaliyopendekezwa na Polisi",
+      "count": "Shtaka la {n}",
+      "statement": "Maelezo ya kosa",
+      "particulars": "Maelezo ya kina ya kosa"
+    },
+    "open_word": "Fungua kwa Word",
+    "open_libre": "Fungua kwa LibreOffice",
+    "print_hint_windows": "Ili kupata PDF, chagua \"Microsoft Print to PDF\" kama printa.",
+    "tabs": {
+      "details": "Maelezo ya hati",
+      "history": "Historia",
+      "related": "Hati zinazohusiana",
+      "citations": "Marejeo"
+    },
+    "latest": "Hili ndilo toleo la karibuni la karatasi hii.",
+    "copy": "Nakili",
+    "copied": "Imenakiliwa",
+    "no_history": "Karatasi hii bado haijatoka ofisini. Kila inapochapishwa au kuhifadhiwa, toleo huhifadhiwa hapa.",
+    "read_version": "Soma toleo hili",
+    "printed_by": "Imechapishwa na {who}",
+    "no_related": "Hakuna karatasi nyingine katika jalada hili zinazohusiana na hii.",
+    "cites": "Karatasi hii inarejelea",
+    "cited_by": "Imerejelewa na",
+    "no_citations": "Hakuna sheria wala karatasi nyingine iliyotajwa katika karatasi hii.",
+    "detail": {
+      "reference": "Kumbukumbu",
+      "file": "Jalada",
+      "kind": "Aina",
+      "made_by": "Imetolewa na",
+      "date": "Tarehe",
+      "status": "Hali",
+      "received": "Imepokelewa kutoka Polisi",
+      "counts": "Mashtaka"
+    },
+    "open_elsewhere": "Fungua kwa programu nyingine"
   }
 }

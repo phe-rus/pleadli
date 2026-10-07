@@ -151,6 +151,21 @@ export function Navigator() {
         </div>
 
         <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pt-1 pb-2">
+          {recent.length > 0 && (
+            <Section id="recent" label={m["workspace.recent"]()}>
+              {recent.map((item) => (
+                <Row key={item.key} icon={tabIcon(item)} label={tabTitle(item)} active={item.key === activeKey} onOpen={() => go(item.to)} />
+              ))}
+            </Section>
+          )}
+          {pinned.length > 0 && (
+            <Section id="pinned" label={m["workspace.pinned"]()}>
+              {pinned.map((tab) => (
+                <Row key={tab.key} icon={tabIcon(tab)} label={tabTitle(tab)} active={tab.key === activeKey} onOpen={() => activate(tab)} />
+              ))}
+            </Section>
+          )}
+          {(recent.length > 0 || pinned.length > 0) && <div aria-hidden className="mx-2 my-1 border-t border-border/50" />}
           <nav aria-label={m["workspace.places"]()} className="flex flex-col gap-px pb-2">
             {dppNav
               .filter((item) => item.section === 'main')
@@ -160,20 +175,6 @@ export function Navigator() {
                 </div>
               ))}
           </nav>
-          {pinned.length > 0 && (
-            <Section id="pinned" label={m["workspace.pinned"]()}>
-              {pinned.map((tab) => (
-                <Row key={tab.key} icon={tabIcon(tab)} label={tabTitle(tab)} active={tab.key === activeKey} onOpen={() => activate(tab)} />
-              ))}
-            </Section>
-          )}
-          {recent.length > 0 && (
-            <Section id="recent" label={m["workspace.recent"]()}>
-              {recent.map((item) => (
-                <Row key={item.key} icon={tabIcon(item)} label={tabTitle(item)} active={item.key === activeKey} onOpen={() => go(item.to)} />
-              ))}
-            </Section>
-          )}
           <Section id="more" label={m["workspace.more"]()}>
             {dppNav.filter((item) => item.section === 'more').map((item) => navRow(item))}
           </Section>

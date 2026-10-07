@@ -3781,6 +3781,7 @@ dependencies = [
  "keyring",
  "libsqlite3-sys",
  "log",
+ "qrcode",
  "rand_core 0.6.4",
  "reqwest",
  "serde",

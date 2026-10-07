@@ -17,6 +17,10 @@ export type TemplateContext = {
   directions: { kind: string; instruction: string }[]
   custody: CustodyEvent[]
   exhibits: string[]
+  /** The statements on the file, in the order a prosecution calls them: witnesses by date, the investigating officer last. */
+  statements: { name: string; role: string; madeOn: number; text: string }[]
+  /** Exhibits Police listed, with the mark they carry (e.g. P. Exh. 1). */
+  evidence: { mark: string | null; kind: string; description: string }[]
   signer: { name: string; rank: string | null }
   today: number
 }

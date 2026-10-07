@@ -1902,7 +1902,11 @@
     "stamp_title": "Office stamp",
     "too_big": "The image is larger than 400 KB.",
     "upload": "Upload an image",
-    "wrong_type": "Use a PNG or JPEG image."
+    "wrong_type": "Use a PNG or JPEG image.",
+    "draw": "Sign here",
+    "pad_hint": "Sign with a pen, a finger or the mouse",
+    "pad_clear": "Clear",
+    "pad_done": "Use this signature"
   },
   "verify": {
     "check": "Check",
@@ -1912,6 +1916,93 @@
     "mismatch": "A document with this reference exists, but the code does not match or the record was altered. Treat the paper as not genuine.",
     "not_found": "No document with this reference was issued here.",
     "reference": "Reference, e.g. ODPP-2026-0001",
-    "title": "Verify a document"
+    "title": "Verify a document",
+    "paper_genuine": "Genuine. This paper was printed by {by} on {date}. Compare it word for word with the wording below.",
+    "paper_hint": "A paper printed from the app carries only a code: type it alone to check it.",
+    "someone": "someone in this office"
+  },
+  "paper": {
+    "preview": "Preview",
+    "edit": "Edit",
+    "print": "Print or save as PDF",
+    "word": "Save as Word",
+    "print_hint": "Choose \"Save as PDF\" in the print window to keep a PDF.",
+    "verify_line": "Check this paper with its code",
+    "changed": "Changed since it was last printed",
+    "last_printed": "Last printed {when}",
+    "saving": "Preparing the paper",
+    "failed": "The paper could not be prepared",
+    "binder": {
+      "papers": "Papers in this file",
+      "received": "As received from Police. Not changed by this office.",
+      "attached": "Attached to this paper",
+      "open_outside": "Open in its own program",
+      "empty": "No papers yet. Add what Police sent, or import the papers.",
+      "prepared": "Prepared by this office",
+      "from_police": "Received from Police"
+    },
+    "refs": {
+      "police": "Police reference",
+      "office": "Prosecution file",
+      "court": "Court case",
+      "station": "Station"
+    },
+    "statement": {
+      "name": "Name",
+      "made_on": "Made on",
+      "maker": "Signature of maker",
+      "recorder": "Recorded by",
+      "source": "Source",
+      "no_text": "The wording of this statement is in the attached scan.",
+      "title": {
+        "witness": "Statement of witness",
+        "accused": "Statement of accused under charge and caution",
+        "arresting_officer": "Statement of arresting officer",
+        "investigating_officer": "Statement of investigating officer",
+        "complainant": "Statement of complainant"
+      }
+    },
+    "evidence": {
+      "title": "Exhibit",
+      "category": "Kind",
+      "mark": "Identification mark",
+      "description": "Description"
+    },
+    "charges": {
+      "title": "Charges proposed by Police",
+      "count": "Count {n}",
+      "statement": "Statement of offence",
+      "particulars": "Particulars of offence"
+    },
+    "open_word": "Open in Word",
+    "open_libre": "Open in LibreOffice",
+    "print_hint_windows": "To keep a PDF, choose \"Microsoft Print to PDF\" as the printer.",
+    "tabs": {
+      "details": "Document detail",
+      "history": "History",
+      "related": "Related documents",
+      "citations": "Citations"
+    },
+    "latest": "This is the latest version of this paper.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "no_history": "This paper has not left the office yet. Each time it is printed or saved, the version is kept here.",
+    "read_version": "Read this version",
+    "printed_by": "Printed by {who}",
+    "no_related": "No other papers on this file belong with this one.",
+    "cites": "This paper cites",
+    "cited_by": "Cited by",
+    "no_citations": "No law or other paper is named in this paper.",
+    "detail": {
+      "reference": "Reference",
+      "file": "File",
+      "kind": "Kind",
+      "made_by": "Made by",
+      "date": "Date",
+      "status": "Status",
+      "received": "Received from Police",
+      "counts": "Counts"
+    },
+    "open_elsewhere": "Open in another program"
   }
 }

@@ -1,3 +1,5 @@
+import { PaperTabs, printSheet, type PaperLink } from '@pleadli/paper'
+import { cn } from '@pleadli/ui/lib/utils'
 import { formatDate } from '@/lib/dates'
 import { Tag } from '@/components/status-tag'
 import { decisionTypeLabel, useDecisionsForFile } from '@/features/decisions'
@@ -15,8 +17,7 @@ import { assistContext } from '@/features/assist/context'
 import { api } from '@/lib/api'
 import { serviceNames } from '@/lib/jurisdiction'
 import { useQueryClient } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
-import { exportFormats } from './schema'
+import { useEffect, useRef, useState } from 'react'
 import * as m from '@/paraglide/messages'
 
 const say = (error: unknown) => (error instanceof ApiError ? error.message : m["common.try_again"]())
@@ -24,7 +25,7 @@ const say = (error: unknown) => (error instanceof ApiError ? error.message : m["
 /** A document, read first and acted on second. The reading surface is the
  * sheet; everything around it (who and what it is, where it came from, what can
  * be done with it) is set apart and does not print. */
-export function DocumentReader({ id }: { id: string }) {
+export function DocumentReader({ id, embedded = false, links }: { id: string; embedded?: boolean; links?: { related?: PaperLink[]; citedBy?: PaperLink[] } }) {
   const { data: doc } = useDocument(id)
   const { data: all } = useDocuments()
   const { data: decisions } = useDecisionsForFile(doc.prosecutionFileId)
@@ -70,6 +71,17 @@ export function DocumentReader({ id }: { id: string }) {
   const next = index >= 0 && index < all.length - 1 ? all[index + 1] : null
   const draft = doc.status === 'draft'
 
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const [wording, setWording] = useState('')
+  useEffect(() => {
+    setWording(sheetRef.current?.innerText ?? '')
+  }, [doc])
+  const printThis = () => {
+    const sheet = sheetRef.current?.querySelector<HTMLElement>('[data-document-sheet]')
+    if (sheet) void printSheet(sheet)
+    else window.print()
+  }
+
   const download = (format: 'docx' | 'md') =>
     saveExport(doc.id, format).then(
       (saved) => saved && t.success(m["doc.saved"]()),
@@ -77,8 +89,9 @@ export function DocumentReader({ id }: { id: string }) {
     )
 
   return (
-    <article className="page">
+    <article className={embedded ? 'flex flex-col gap-4' : 'page'}>
       <div className="flex flex-col gap-6 print:hidden">
+        {!embedded && (
         <header className="page-header">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -103,39 +116,48 @@ export function DocumentReader({ id }: { id: string }) {
             </Button>
           </div>
         </header>
+        )}
 
-        <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={m["doc.actions"]()}>
-          <Button size="sm" variant="default" onClick={() => window.print()}>
-            {m["doc.print"]()}
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            title={m["doc.pdf_hint"]()}
-            onClick={() => {
-              t.success(m["doc.pdf_toast"]())
-              window.print()
-            }}
-          >
-            {m["doc.save_pdf"]()}
-          </Button>
-          {exportFormats.map((f) => (
-            <Button key={f.id} size="sm" variant="secondary" onClick={() => void download(f.id)}>
-              {f.label()}
-            </Button>
-          ))}
-          {draft && (
-            <>
-              <span className="mx-1 h-4 w-px bg-border" aria-hidden />
-              <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={() => setEditing((e) => !e)}>
-                {editing ? m["doc.done_editing"]() : m["doc.edit"]()}
+        <div className="flex flex-wrap items-center justify-between gap-2" role="toolbar" aria-label={m["doc.actions"]()}>
+          {draft ? (
+            <div role="radiogroup" className="inline-flex rounded-lg border border-border/70 p-0.5">
+              {([false, true] as const).map((on) => (
+                <button
+                  key={String(on)}
+                  type="button"
+                  role="radio"
+                  aria-checked={editing === on}
+                  onClick={() => setEditing(on)}
+                  className={cn('cursor-pointer rounded-md px-3 py-1 text-sm', editing === on ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:text-foreground')}
+                >
+                  {on ? m["paper.edit"]() : m["paper.preview"]()}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span />
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {draft && !fromTemplate && (
+              <Button size="sm" variant="ghost" disabled={refresh.isPending} onClick={() => refresh.mutate(doc.id, { onError: (e) => t.error(m["doc.refresh_failed"](), { description: say(e) }) })}>
+                {m["doc.refresh"]()}
               </Button>
-              {!fromTemplate && (
-                <Button size="sm" variant="outline" disabled={refresh.isPending} onClick={() => refresh.mutate(doc.id, { onError: (e) => t.error(m["doc.refresh_failed"](), { description: say(e) }) })}>
-                  {m["doc.refresh"]()}
-                </Button>
-              )}
-              {confirmIssue ? (
+            )}
+            {draft && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  if (window.confirm(m["doc.discard_confirm"]())) {
+                    discard.mutate(doc.id, { onSuccess: () => (embedded ? undefined : void navigate({ to: '/documents' })), onError: (e) => t.error(m["doc.discard_failed"](), { description: say(e) }) })
+                  }
+                }}
+              >
+                {m["doc.discard"]()}
+              </Button>
+            )}
+            {draft &&
+              (confirmIssue ? (
                 <span className="flex items-center gap-2 rounded-lg bg-primary/5 px-2 py-1 ring-1 ring-primary/30">
                   <span className="text-sm">{m["doc.issue_sure"]()}</span>
                   <Button
@@ -166,44 +188,42 @@ export function DocumentReader({ id }: { id: string }) {
                 <Button size="sm" variant="outline" onClick={() => setConfirmIssue(true)}>
                   {m["doc.issue"]()}
                 </Button>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  if (window.confirm(m["doc.discard_confirm"]())) {
-                    discard.mutate(doc.id, { onSuccess: () => void navigate({ to: '/documents' }), onError: (e) => t.error(m["doc.discard_failed"](), { description: say(e) }) })
-                  }
-                }}
-              >
-                {m["doc.discard"]()}
-              </Button>
-            </>
-          )}
+              ))}
+            <Button size="sm" variant="outline" onClick={() => void download('docx')}>
+              {m["paper.word"]()}
+            </Button>
+            <Button size="sm" onClick={printThis} title={m["doc.pdf_hint"]()}>
+              {m["paper.print"]()}
+            </Button>
+          </div>
         </div>
 
-        <dl className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex flex-col">
-            <dt className="text-xs text-muted-foreground">{m["doc.prepared_from"]()}</dt>
-            <dd>{source ? `${decisionTypeLabel(source.decisionType)}, ${formatDate(source.decidedAt)}` : m["doc.from_template"]()}</dd>
-          </div>
-          <div className="flex flex-col">
-            <dt className="text-xs text-muted-foreground">{draft ? m["doc.last_prepared"]() : m["doc.issued"]()}</dt>
-            <dd>{formatDate(draft ? doc.preparedAt : (doc.issuedAt ?? doc.preparedAt), 'datetime')}</dd>
-          </div>
-          <div className="flex flex-col">
-            <dt className="text-xs text-muted-foreground">{m["doc.author"]()}</dt>
-            <dd>{doc.author ?? m["doc.set_when_issued"]()}</dd>
-          </div>
-          <div className="flex min-w-0 flex-col">
-            <dt className="text-xs text-muted-foreground">{m["doc.sha"]()}</dt>
-            <dd className="truncate font-mono text-xs" title={doc.contentSha256 ?? undefined}>{doc.contentSha256 ?? m["doc.taken_when_issued"]()}</dd>
-          </div>
-        </dl>
-        {draft && <p>{fromTemplate ? m["doc.draft_hint_template"]() : m["doc.draft_hint"]()}</p>}
+        <PaperTabs
+          entityType="document"
+          entityId={doc.id}
+          wording={wording}
+          related={links?.related}
+          citedBy={links?.citedBy}
+          events={[
+            { at: doc.preparedAt, label: source ? `${m["doc.prepared_from"]()} ${decisionTypeLabel(source.decisionType)}` : m["doc.from_template"]() },
+            ...(doc.issuedAt ? [{ at: doc.issuedAt, label: `${m["doc.issued"]()} ${doc.reference ?? ''}`, by: doc.author }] : []),
+          ]}
+          details={[
+            { label: m["paper.detail.reference"](), value: doc.reference ?? m["doc.not_issued"](), copy: doc.reference ?? undefined },
+            { label: m["paper.detail.file"](), value: `${doc.fileTitle}${doc.fileReference ? `, ${doc.fileReference}` : ''}` },
+            { label: m["paper.detail.status"](), value: draft ? m["doc.draft"]() : m["doc.issued"]() },
+            { label: m["doc.prepared_from"](), value: source ? `${decisionTypeLabel(source.decisionType)}, ${formatDate(source.decidedAt)}` : m["doc.from_template"]() },
+            { label: draft ? m["doc.last_prepared"]() : m["doc.issued"](), value: formatDate(draft ? doc.preparedAt : (doc.issuedAt ?? doc.preparedAt), 'datetime') },
+            { label: m["doc.author"](), value: doc.author ?? m["doc.set_when_issued"]() },
+            ...(doc.content.verifyCode ? [{ label: m["paper.verify_line"](), value: doc.content.verifyCode, copy: doc.content.verifyCode }] : []),
+          ]}
+        />
+        {draft && <p className="text-sm text-muted-foreground">{fromTemplate ? m["doc.draft_hint_template"]() : m["doc.draft_hint"]()}</p>}
       </div>
 
-      <DocumentSheet document={doc} editing={draft && editing} onChange={change} onAssist={(i) => void assist(i)} assisting={assisting} />
+      <div ref={sheetRef}>
+        <DocumentSheet document={doc} editing={draft && editing} onChange={change} onAssist={(i) => void assist(i)} assisting={assisting} />
+      </div>
     </article>
   )
 }
