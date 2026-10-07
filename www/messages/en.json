@@ -398,6 +398,153 @@
     "roadmap": "Roadmap",
     "sign_in": "Sign in"
   },
+  "orch": {
+    "add_another": "Register another",
+    "address": "Orchestra address",
+    "address_hint": "Your fixed address on the Orchestra. Offices you work with use it to send you sealed files; it never changes.",
+    "address_none": "Issued after review",
+    "bk": {
+      "empty": "No backup reported yet.",
+      "failed": "Failed",
+      "history": "Recent backups",
+      "lead": "Your backups go from each computer straight to storage your institution owns, encrypted with a key only you hold. Pleadli never stores them; it shows only whether each backup worked.",
+      "ok": "Worked",
+      "storage": "Your storage",
+      "storage_none": "Connecting your storage (a government data centre, your own server or a drive) arrives with the apps' Orchestra update."
+    },
+    "cert_note": "Your certificate is issued to your apps the first time they connect to the Orchestra, in a coming app update.",
+    "choose_title": "Choose an institution",
+    "comp": {
+      "empty": "No computer has reported yet. Your apps begin reporting with their Orchestra update.",
+      "lead": "The computers running your Pleadli apps, as they report to the Orchestra. Each is known only by a code made from its machine, never by anything stored on it.",
+      "licensed": "Licensed",
+      "seen": "Last seen {date}",
+      "trial": "Trial, {days} days left",
+      "trial_ended": "Trial ended"
+    },
+    "failed": "That did not work",
+    "help": {
+      "answer": "Pleadli's answer",
+      "any": "Not about one app",
+      "app": "About which app (optional)",
+      "body": "Message",
+      "call": "Or call {phone}, or write to {email}.",
+      "empty": "No messages yet.",
+      "lead": "Write to Pleadli about anything: a question, a problem with an app, training. Answers appear here.",
+      "past": "Your messages",
+      "send": "Send",
+      "sent": "Message sent",
+      "title_field": "Subject",
+      "waiting": "Waiting for an answer"
+    },
+    "kind": {
+      "institution": "Public institution",
+      "practice": "Advocate or law firm"
+    },
+    "lic": {
+      "app": "App",
+      "empty": "No licences yet.",
+      "ended": "Ended",
+      "lead": "Every computer may use each app free for 30 days. After that the app and its records keep working; a licence adds connections, backup to your own storage and updates.",
+      "message": "Message (optional)",
+      "req_declined": "Declined",
+      "req_done": "Licence issued",
+      "req_open": "Waiting",
+      "request_lead": "Payment by mobile money and card opens soon. Until then Pleadli issues licences directly; public institutions under their agreement.",
+      "request_title": "Ask for a licence",
+      "requests": "Requests",
+      "revoked": "Revoked",
+      "row": "{used} of {seats} computers · until {date} · key ending {hint}",
+      "seats": "Computers",
+      "send": "Send request",
+      "sent": "Request sent"
+    },
+    "name": "Pleadli Orchestra",
+    "nav": {
+      "backups": "Backups",
+      "computers": "Computers",
+      "help": "Help",
+      "licences": "Licences",
+      "offices": "Offices",
+      "overview": "Overview",
+      "team": "Team"
+    },
+    "office": {
+      "chambers": "Chambers",
+      "command": "Command or head office",
+      "court": "Court",
+      "facility": "Prison or facility",
+      "office": "Office",
+      "station": "Station or post"
+    },
+    "offices": {
+      "add": "Add office",
+      "added": "Office added",
+      "empty": "No offices yet.",
+      "kind": "Kind",
+      "lead": "Every station, office, court or facility under this institution, each with its own address once the institution is approved."
+    },
+    "ov": {
+      "computers": "Computers",
+      "details": "Details",
+      "last_backup": "Last backup",
+      "licences": "Licences",
+      "none": "None yet",
+      "offices": "Offices"
+    },
+    "reg": {
+      "add_office": "Add an office",
+      "country": "Country",
+      "district": "District or town",
+      "email": "Contact email",
+      "failed": "Could not send the registration",
+      "lead": "A headquarters registers once and lists its offices; an advocate or firm registers its practice. Pleadli checks every registration with you before issuing your Orchestra address.",
+      "name": "Name",
+      "name_hint_institution": "As it is officially known, for example Albertine Region Police.",
+      "name_hint_practice": "Your name as an advocate, or your firm's name.",
+      "office_name": "Office name",
+      "offices": "Offices",
+      "offices_hint": "The stations, offices, courts or facilities under this headquarters. You can add more later.",
+      "phone": "Contact telephone",
+      "phone_hint": "Pleadli calls this number to confirm the registration is genuine.",
+      "remove": "Remove",
+      "sent": "Registration sent for review",
+      "submit": "Send for review",
+      "title": "Register your institution or practice",
+      "type": "Which institution",
+      "who": "Who are you registering?"
+    },
+    "sign_out": "Sign out",
+    "status": {
+      "declined": "Reason: {note}. Write to Pleadli if this is a mistake.",
+      "declined_title": "Registration declined",
+      "pending": "Pleadli will contact you at {email} or {phone} to confirm this registration is genuine. Your Orchestra address is issued once it is confirmed. Meanwhile you can add offices and invite administrators.",
+      "pending_title": "Waiting for review",
+      "suspended": "This institution is suspended on the Orchestra. Its apps and records keep working. Write to Pleadli to restore it.",
+      "suspended_title": "Suspended"
+    },
+    "team": {
+      "admin": "Administrator",
+      "email": "Email address",
+      "invite": "Invite an administrator",
+      "invite_hint": "They become an administrator when they sign in to pleadli.com with this address.",
+      "invited": "Invited, not signed in yet",
+      "invited_ok": "Invitation recorded",
+      "lead": "The people who manage this institution on pleadli.com. Officers and staff never need an account here; they sign in to their office's app.",
+      "owner": "Owner",
+      "owner_only": "Only the owner can invite or remove administrators.",
+      "remove": "Remove",
+      "send": "Invite"
+    },
+    "type": {
+      "courts": "Courts",
+      "dpp": "Prosecution (DPP)",
+      "lawyers": "Advocates",
+      "police": "Police",
+      "prisons": "Prisons"
+    },
+    "website": "Back to pleadli.com"
+  },
   "pricing": {
     "download": "Download and try",
     "every": {

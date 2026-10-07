@@ -33,7 +33,7 @@ function RouteComponent() {
         return
       }
       const role = (data.user as { role?: string }).role
-      window.location.href = search.redirect ?? (role === 'admin' ? '/admin' : '/')
+      window.location.href = search.redirect ?? (role === 'admin' ? '/admin' : '/orchestra')
     },
   })
 

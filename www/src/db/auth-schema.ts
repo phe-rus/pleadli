@@ -108,15 +108,11 @@ export const organization = sqliteTable("organization", {
   slug: text("slug").notNull().unique(),
   logo: text("logo"),
   institutionType: text("institution_type").notNull(),
-  // Pleadli Orchestra (docs/platform/ORCHESTRA-PLAN.md). A public institution
-  // registers at its headquarters; an advocate or firm registers as a practice.
   kind: text("kind").default("institution").notNull(),
   country: text("country").default("UG").notNull(),
   district: text("district"),
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
-  // Registration is a request until Pleadli staff approve it; only then is
-  // the address issued, and it never changes afterwards.
   status: text("status").default("active").notNull(),
   address: text("address").unique(),
   requestedAt: integer("requested_at", { mode: "timestamp_ms" }),
@@ -132,8 +128,6 @@ export const organizationUnit = sqliteTable("organization_unit", {
     .references(() => organization.id, { onDelete: "cascade" }),
   parentId: text("parent_id"),
   name: text("name").notNull(),
-  // An office under the institution (a station, a facility, a court), with
-  // its own Orchestra address under the institution's: ug.police.albertine.kagadi.
   kind: text("kind").default("office").notNull(),
   district: text("district"),
   address: text("address").unique(),

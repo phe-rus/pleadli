@@ -111,15 +111,15 @@ export const Dashboard: FC<DashboardProps> = ({
             }}
             onMouseLeave={() => setIsPeeking(false)}
             className={cn(
-              'fixed h-full shrink-0 border-r bg-background shadow-2xs',
-              'border-border/5 inset-y-0 z-10',
+              'fixed h-full shrink-0 border-r bg-[color-mix(in_oklab,var(--background)_96%,var(--foreground))]',
+              'border-border/60 inset-y-0 z-10',
               'transition-transform duration-300 ease-in-out',
               'will-change-transform',
               open
-                ? 'w-78 translate-x-0 z-55 md:relative'
+                ? 'w-64 translate-x-0 z-55 md:relative'
                 : isPeeking
-                  ? 'w-78 translate-x-0 z-55 md:absolute shadow-2xl'
-                  : 'w-78 -translate-x-full z-10 md:absolute',
+                  ? 'w-64 translate-x-0 z-55 md:absolute shadow-2xl'
+                  : 'w-64 -translate-x-full z-10 md:absolute',
               className,
             )}
           >
@@ -146,7 +146,7 @@ export const Dashboard: FC<DashboardProps> = ({
             <section
               data-tauri-drag-region
               className={cn(
-                'min-h-svh flex-col gap-5 p-2',
+                'min-h-svh flex-col gap-4 p-3',
                 !isExpanded ? 'hidden' : 'flex'
               )}
             >
@@ -157,30 +157,29 @@ export const Dashboard: FC<DashboardProps> = ({
                   <Link
                     to={brand.to}
                     className={cn(
-                      'flex gap-1.5 items-center text-primary',
-                      'hover:text-primary/65 tracking-wider font-bold',
-                      'px-1 text-lg',
+                      'flex min-w-0 items-center gap-2 text-foreground',
+                      'px-2 text-[0.9375rem] font-semibold hover:opacity-80',
                     )}
                   >
-                    {brand.icon && <HugeiconsIcon icon={brand.icon} className="size-5" />}
-                    {brand.label}
+                    {brand.icon && <HugeiconsIcon icon={brand.icon} className="size-5 shrink-0 text-primary" />}
+                    <span className="truncate">{brand.label}</span>
                   </Link>
                 </nav>
 
                 {addOns.identity && (
-                  <div className="px-1">
+                  <div className="px-2">
                     {addOns.identity}
                   </div>
                 )}
 
-                <nav className="flex flex-col gap-px">
+                <nav className="flex flex-col gap-0.5">
                   {itemLists.map((item, index) => {
                     const prevItem = itemLists[index - 1]
                     const showSection = Boolean(item.section) && item.section !== prevItem?.section
                     return (
                       <Fragment key={index}>
                         {showSection && (
-                          <span className="px-1 pt-3 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                          <span className="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground">
                             {item.section}
                           </span>
                         )}
@@ -235,14 +234,14 @@ export const Dashboard: FC<DashboardProps> = ({
                             key={index}
                             to={item.to}
                             className={cn(
-                              'group/icon relative flex items-center gap-2 text-base',
-                              'transition-colors duration-150 ease-out py-0.5 px-1',
-                              'rounded-md hover:bg-secondary',
+                              'group/icon relative flex items-center gap-2.5 text-[0.875rem] text-foreground/85',
+                              'transition-colors duration-150 ease-out py-1.5 px-2',
+                              'rounded-lg hover:bg-foreground/[0.05]',
                             )}
-                            activeProps={{ className: 'text-primary font-medium bg-secondary' }}
+                            activeProps={{ className: 'bg-primary/15 font-medium text-foreground! hover:bg-primary/15 [&_svg]:text-primary' }}
                             activeOptions={{ exact: item.exact }}
                           >
-                            {item.icon && <HugeiconsIcon icon={item.icon} className="size-5" />}
+                            {item.icon && <HugeiconsIcon icon={item.icon} className="size-[1.05rem] shrink-0 text-muted-foreground" />}
                             {item.label}
                           </Link>
                         )}

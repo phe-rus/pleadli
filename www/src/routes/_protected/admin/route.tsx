@@ -35,14 +35,17 @@ function RouteComponent() {
 
   return (
     <Dashboard
-      brand={{ to: '/', label: 'Pleadli', icon: JusticeScale01Icon }}
+      brand={{ to: '/admin', label: 'Pleadli staff', icon: JusticeScale01Icon }}
       itemLists={adminNav}
       addOns={{
         enableNavigation: true,
         footer: (
-          <Button size="sm" className="w-fit!" variant="destructive" onClick={signOut} disabled={isPending}>
-            {isPending ? 'Signing out...' : 'Sign out'}
-          </Button>
+          <div className="flex flex-col gap-0.5 border-t border-border/60 pt-3">
+            <span className="truncate px-2 text-[0.8125rem] text-muted-foreground">{session.user.email}</span>
+            <button type="button" onClick={signOut} disabled={isPending} className="cursor-pointer rounded-lg px-2 py-1.5 text-start text-[0.8125rem] text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground">
+              {isPending ? 'Signing out…' : 'Sign out'}
+            </button>
+          </div>
         ),
         banner: impersonatedBy && (
           <div className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b bg-destructive/10 px-5 py-2 text-xs text-destructive">

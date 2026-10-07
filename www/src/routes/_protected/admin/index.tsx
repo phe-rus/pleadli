@@ -1,106 +1,73 @@
-import { getAdminOverview } from '@/functions/admin.func'
-import { Building02Icon, LayoutTemplateIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Badge } from '@pleadli/ui/badge'
-import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
-import { cn } from '@pleadli/ui/lib/utils'
-import { createFileRoute } from '@tanstack/react-router'
+import { getStaffOverview } from '@/functions/staff.func'
+import { Group, GroupRow } from '@pleadli/ui/grouped'
+import { Stat } from '@pleadli/ui/stat'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_protected/admin/')({
-  loader: () => getAdminOverview(),
+  loader: () => getStaffOverview(),
   component: RouteComponent,
 })
 
+const appName: Record<string, string> = { police: 'Police', dpp: 'DPP', courts: 'Courts', lawyers: 'Lawyers', prisons: 'Prisons' }
+
+/** What staff look at first: who is waiting for review, what needs an answer,
+ * and how many computers run Pleadli. */
 function RouteComponent() {
-  const { organizations, totalUsers, users, templateCount, orgsByType } = Route.useLoaderData()
-
-  const stats = [
-    { icon: Building02Icon, label: 'Organizations', value: organizations.length },
-    { icon: LayoutTemplateIcon, label: 'Templates', value: templateCount },
-    { icon: UserGroupIcon, label: 'Users', value: totalUsers },
-  ]
-
-  const typeBreakdown = Object.entries(orgsByType)
-
+  const o = Route.useLoaderData()
+  const navigate = useNavigate()
   return (
-    <article className="container flex flex-col gap-5 py-10 md:max-w-5xl">
-      <section className='flex flex-col gap-5'>
-        <div>
-          <h1>Overview</h1>
-          <p className="text-muted-foreground md:max-w-md">The whole Pleadli ecosystem, at a glance.</p>
-        </div>
+    <article className="container flex flex-col gap-8 py-10 md:max-w-5xl">
+      <header>
+        <h1>Overview</h1>
+        <p className="text-muted-foreground">Pleadli Orchestra today.</p>
+      </header>
 
-        <div className="flex flex-wrap gap-3">
-          {stats.map((stat) => (
-            <Card key={stat.label} className={cn(
-              'bg-accent/15 border-border/15! min-w-3xs',
-              'max-w-3xs'
-            )}>
-              <CardHeader>
-                <HugeiconsIcon icon={stat.icon} className="text-muted-foreground" />
-                <CardTitle className="text-2xl">{stat.value}</CardTitle>
-                <CardDescription>{stat.label}</CardDescription>
-              </CardHeader>
-            </Card>
+      {o.waiting.length > 0 && (
+        <Group title={`Waiting for review (${o.waiting.length})`}>
+          {o.waiting.slice(0, 6).map((w) => (
+            <GroupRow
+              key={w.id}
+              label={w.name}
+              detail={[w.kind === 'practice' ? 'Practice' : 'Institution', appName[w.institutionType] ?? w.institutionType, w.country].join(' · ')}
+              value={w.requestedAt ? new Date(w.requestedAt).toLocaleDateString() : undefined}
+              chevron
+              onClick={() => void navigate({ to: '/admin/institutions', search: { open: w.id } as never })}
+            />
           ))}
-        </div>
+        </Group>
+      )}
+
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Stat label="Institutions" value={o.institutions.active} hint={`${o.institutions.practices} practices`} />
+        <Stat label="Licences active" value={o.licences.active} hint={o.licences.expiringSoon ? `${o.licences.expiringSoon} end within 30 days` : undefined} tone={o.licences.expiringSoon ? 'attention' : 'plain'} />
+        <Stat label="Licence requests" value={o.openRequests} tone={o.openRequests ? 'attention' : 'plain'} onClick={() => void navigate({ to: '/admin/licences' })} />
+        <Stat label="Reports to answer" value={o.openReports} hint={o.crashes ? `${o.crashes} crashes` : undefined} tone={o.crashes ? 'urgent' : o.openReports ? 'attention' : 'plain'} onClick={() => void navigate({ to: '/admin/reports' })} />
       </section>
 
-      <section className="flex flex-col gap-5">
-        <div>
-          <h1>Recently joined</h1>
-          <p className="text-muted-foreground md:max-w-md">The latest additions to the Pleadli platform.</p>
+      <section className="flex flex-col gap-3">
+        <h2>Computers running Pleadli</h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Stat label="Today" value={o.computers.today} />
+          <Stat label="This week" value={o.computers.week} />
+          <Stat label="This month" value={o.computers.month} />
+          <Stat label="Ever" value={o.computers.total} />
         </div>
-        <div className="flex flex-col gap-1">
-          {users.slice(0, 5).map((user, index) => (
-            <Card key={index} className={cn(
-              "gap-0 py-1! px-1! bg-secondary/35",
-              'ring-border/55!'
-            )}>
-              <div className={cn(
-                "flex items-center gap-4 not-last:border-b",
-                'justify-between'
-              )}>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs bg-secondary px-2 py-0.5 rounded font-mono">
-                    {user.id}
-                  </span>
-                  <span className="text-xs font-medium">{user.name}</span>
-                  <span className="text-xs text-muted-foreground">{user.email}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    'text-xs px-1 rounded',
-                    user.emailVerified ? "bg-green-400" : "bg-red-400"
-                  )}>
-                    {user.emailVerified ? "Verified" : "Not Verified"}
-                  </span>
-                </div>
-              </div>
-            </Card>
+        <Group title="By app, this month">
+          {Object.entries(o.computers.byApp).map(([app, n]) => (
+            <GroupRow key={app} label={`Pleadli ${appName[app]}`} value={String(n)} />
           ))}
-          {users.length === 0 && <p className="p-3 text-sm text-muted-foreground">No users yet.</p>}
-        </div>
+        </Group>
       </section>
 
-      <section className="flex flex-col gap-5">
-        <div>
-          <h1>Organizations by type</h1>
-          <p className="text-muted-foreground md:max-w-md">How the ecosystem is distributed across institution types.</p>
-        </div>
-        {typeBreakdown.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No organizations yet.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {typeBreakdown.map(([type, count]) => (
-              <Badge key={type} variant="outline" className="px-3 py-1 capitalize">
-                {type} <span className="text-muted-foreground">{count}</span>
-              </Badge>
-            ))}
-          </div>
-        )}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <Stat label="Trials running" value={o.trials.running} />
+        <Stat label="Trials ended, no licence" value={o.trials.ended} tone={o.trials.ended ? 'attention' : 'plain'} />
+        <Stat label="Failed backups this week" value={o.failedBackups} tone={o.failedBackups ? 'urgent' : 'plain'} />
       </section>
+
+      <p className="text-sm text-muted-foreground">
+        Computers and backups appear once the apps report to the Orchestra; see <Link to="/admin/computers" className="text-primary">Computers</Link>.
+      </p>
     </article>
   )
 }

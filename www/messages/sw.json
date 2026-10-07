@@ -398,6 +398,153 @@
     "roadmap": "Ramani ya kazi",
     "sign_in": "Ingia"
   },
+  "orch": {
+    "add_another": "Sajili nyingine",
+    "address": "Anwani ya Orchestra",
+    "address_hint": "Anwani yako ya kudumu kwenye Orchestra. Ofisi mnazofanya kazi nazo zinaitumia kukutumia majalada yaliyofungwa; haibadiliki kamwe.",
+    "address_none": "Itatolewa baada ya ukaguzi",
+    "bk": {
+      "empty": "Bado hakuna hifadhi iliyoripotiwa.",
+      "failed": "Imeshindwa",
+      "history": "Hifadhi za karibuni",
+      "lead": "Hifadhi zako zinaenda kutoka kila kompyuta moja kwa moja kwenye hifadhi inayomilikiwa na taasisi yako, zikiwa zimesimbwa kwa ufunguo ulio nao wewe tu. Pleadli haizihifadhi kamwe; inaonyesha tu kama kila hifadhi ilifanikiwa.",
+      "ok": "Imefanikiwa",
+      "storage": "Hifadhi yenu",
+      "storage_none": "Kuunganisha hifadhi yenu (kituo cha data cha serikali, seva yenu au diski) kunakuja na sasisho la programu la Orchestra."
+    },
+    "cert_note": "Cheti chako kinatolewa kwa programu zako mara ya kwanza zinapounganishwa na Orchestra, katika sasisho la programu linalokuja.",
+    "choose_title": "Chagua taasisi",
+    "comp": {
+      "empty": "Bado hakuna kompyuta iliyoripoti. Programu zako zinaanza kuripoti na sasisho lao la Orchestra.",
+      "lead": "Kompyuta zinazoendesha programu zako za Pleadli, kama zinavyoripoti kwa Orchestra. Kila moja inajulikana kwa namba iliyotengenezwa kutoka kwa mashine yake tu, kamwe si kwa chochote kilichohifadhiwa ndani yake.",
+      "licensed": "Ina leseni",
+      "seen": "Ilionekana mwisho {date}",
+      "trial": "Majaribio, siku {days} zimebaki",
+      "trial_ended": "Majaribio yameisha"
+    },
+    "failed": "Haikufanikiwa",
+    "help": {
+      "answer": "Jibu la Pleadli",
+      "any": "Si kuhusu programu moja",
+      "app": "Kuhusu programu ipi (si lazima)",
+      "body": "Ujumbe",
+      "call": "Au piga {phone}, au andika kwa {email}.",
+      "empty": "Bado hakuna ujumbe.",
+      "lead": "Iandikie Pleadli kuhusu chochote: swali, tatizo la programu, mafunzo. Majibu yanaonekana hapa.",
+      "past": "Ujumbe wako",
+      "send": "Tuma",
+      "sent": "Ujumbe umetumwa",
+      "title_field": "Mada",
+      "waiting": "Inasubiri jibu"
+    },
+    "kind": {
+      "institution": "Taasisi ya umma",
+      "practice": "Wakili au kampuni ya uwakili"
+    },
+    "lic": {
+      "app": "Programu",
+      "empty": "Bado hakuna leseni.",
+      "ended": "Imeisha",
+      "lead": "Kila kompyuta inaweza kutumia kila programu bure kwa siku 30. Baada ya hapo programu na kumbukumbu zake zinaendelea kufanya kazi; leseni inaongeza miunganiko, hifadhi kwenye hifadhi yenu na masasisho.",
+      "message": "Ujumbe (si lazima)",
+      "req_declined": "Imekataliwa",
+      "req_done": "Leseni imetolewa",
+      "req_open": "Inasubiri",
+      "request_lead": "Malipo kwa pesa za simu na kadi yatafunguliwa hivi karibuni. Hadi hapo Pleadli inatoa leseni moja kwa moja; taasisi za umma chini ya makubaliano yao.",
+      "request_title": "Omba leseni",
+      "requests": "Maombi",
+      "revoked": "Imefutwa",
+      "row": "Kompyuta {used} kati ya {seats} · hadi {date} · ufunguo unaoishia {hint}",
+      "seats": "Kompyuta",
+      "send": "Tuma ombi",
+      "sent": "Ombi limetumwa"
+    },
+    "name": "Pleadli Orchestra",
+    "nav": {
+      "backups": "Hifadhi",
+      "computers": "Kompyuta",
+      "help": "Msaada",
+      "licences": "Leseni",
+      "offices": "Ofisi",
+      "overview": "Muhtasari",
+      "team": "Timu"
+    },
+    "office": {
+      "chambers": "Chemba",
+      "command": "Makao makuu",
+      "court": "Mahakama",
+      "facility": "Gereza au kituo",
+      "office": "Ofisi",
+      "station": "Kituo au kituo kidogo"
+    },
+    "offices": {
+      "add": "Ongeza ofisi",
+      "added": "Ofisi imeongezwa",
+      "empty": "Bado hakuna ofisi.",
+      "kind": "Aina",
+      "lead": "Kila kituo, ofisi, mahakama au kituo chini ya taasisi hii, kila kimoja na anwani yake taasisi ikishaidhinishwa."
+    },
+    "ov": {
+      "computers": "Kompyuta",
+      "details": "Maelezo",
+      "last_backup": "Hifadhi ya mwisho",
+      "licences": "Leseni",
+      "none": "Bado hakuna",
+      "offices": "Ofisi"
+    },
+    "reg": {
+      "add_office": "Ongeza ofisi",
+      "country": "Nchi",
+      "district": "Wilaya au mji",
+      "email": "Barua pepe ya mawasiliano",
+      "failed": "Haikuwezekana kutuma usajili",
+      "lead": "Makao makuu yanajisajili mara moja na kuorodhesha ofisi zake; wakili au kampuni inasajili ofisi yake. Pleadli inahakiki kila usajili nawe kabla ya kutoa anwani yako ya Orchestra.",
+      "name": "Jina",
+      "name_hint_institution": "Kama inavyojulikana rasmi, kwa mfano Albertine Region Police.",
+      "name_hint_practice": "Jina lako kama wakili, au jina la kampuni yako.",
+      "office_name": "Jina la ofisi",
+      "offices": "Ofisi",
+      "offices_hint": "Vituo, ofisi, mahakama au vituo vilivyo chini ya makao makuu haya. Unaweza kuongeza zaidi baadaye.",
+      "phone": "Simu ya mawasiliano",
+      "phone_hint": "Pleadli itapiga namba hii kuthibitisha kuwa usajili ni halali.",
+      "remove": "Ondoa",
+      "sent": "Usajili umetumwa kukaguliwa",
+      "submit": "Tuma ikaguliwe",
+      "title": "Sajili taasisi au ofisi yako",
+      "type": "Taasisi ipi",
+      "who": "Unasajili nani?"
+    },
+    "sign_out": "Toka",
+    "status": {
+      "declined": "Sababu: {note}. Iandikie Pleadli kama hili ni kosa.",
+      "declined_title": "Usajili umekataliwa",
+      "pending": "Pleadli itawasiliana nawe kupitia {email} au {phone} kuthibitisha kuwa usajili huu ni halali. Anwani yako ya Orchestra itatolewa ukishathibitishwa. Wakati huo unaweza kuongeza ofisi na kualika wasimamizi.",
+      "pending_title": "Inasubiri kukaguliwa",
+      "suspended": "Taasisi hii imesimamishwa kwenye Orchestra. Programu na kumbukumbu zake zinaendelea kufanya kazi. Iandikie Pleadli kuirudisha.",
+      "suspended_title": "Imesimamishwa"
+    },
+    "team": {
+      "admin": "Msimamizi",
+      "email": "Anwani ya barua pepe",
+      "invite": "Alika msimamizi",
+      "invite_hint": "Wanakuwa msimamizi wanapoingia pleadli.com kwa anwani hii.",
+      "invited": "Amealikwa, bado hajaingia",
+      "invited_ok": "Mwaliko umerekodiwa",
+      "lead": "Watu wanaosimamia taasisi hii kwenye pleadli.com. Maafisa na wafanyakazi hawahitaji akaunti hapa; wanaingia kwenye programu ya ofisi yao.",
+      "owner": "Mmiliki",
+      "owner_only": "Mmiliki pekee anaweza kualika au kuondoa wasimamizi.",
+      "remove": "Ondoa",
+      "send": "Alika"
+    },
+    "type": {
+      "courts": "Mahakama",
+      "dpp": "Mashtaka (DPP)",
+      "lawyers": "Mawakili",
+      "police": "Polisi",
+      "prisons": "Magereza"
+    },
+    "website": "Rudi pleadli.com"
+  },
   "pricing": {
     "download": "Pakua ujaribu",
     "every": {

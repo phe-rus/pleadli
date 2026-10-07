@@ -1,14 +1,16 @@
 import { createServerFn } from '@tanstack/react-start'
 import { queryOptions } from '@tanstack/react-query'
 import { SessionMiddleware } from '@/middlewares/session'
-import { AdminMiddleware } from '@/middlewares/admin'
 
 export const getCurrentSession = createServerFn({ method: 'GET' })
   .middleware([SessionMiddleware])
   .handler(async ({ context }) => context.session)
 
+/** Any signed-in person: institutions on /orchestra and staff on /admin.
+ * /admin checks the staff role itself, and every staff server function runs
+ * behind AdminMiddleware. */
 const protectedSession = createServerFn({ method: 'GET' })
-  .middleware([AdminMiddleware])
+  .middleware([SessionMiddleware])
   .handler(async ({ context }) => context.session)
 
 export const meOptions = () =>

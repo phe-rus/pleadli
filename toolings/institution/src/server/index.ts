@@ -18,6 +18,21 @@ export const institutions = () => {
           slug: { type: 'string', required: true, unique: true },
           logo: { type: 'string', required: false },
           institutionType: { type: 'string', required: true },
+          // Pleadli Orchestra (docs/platform/ORCHESTRA-PLAN.md): a public
+          // institution registers at its headquarters, an advocate or firm as a
+          // practice; a registration waits for staff review, and only then is
+          // its address issued. The address never changes afterwards.
+          kind: { type: 'string', required: true, defaultValue: 'institution' },
+          country: { type: 'string', required: true, defaultValue: 'UG' },
+          district: { type: 'string', required: false },
+          contactEmail: { type: 'string', required: false },
+          contactPhone: { type: 'string', required: false },
+          status: { type: 'string', required: true, defaultValue: 'active' },
+          address: { type: 'string', required: false, unique: true },
+          requestedAt: { type: 'date', required: false },
+          reviewedAt: { type: 'date', required: false },
+          reviewedBy: { type: 'string', required: false },
+          reviewNote: { type: 'string', required: false },
         },
       },
       organizationUnit: {
@@ -29,6 +44,11 @@ export const institutions = () => {
           },
           parentId: { type: 'string', required: false },
           name: { type: 'string', required: true },
+          // An office under the institution (a station, a facility, a court),
+          // with its own address under the institution's.
+          kind: { type: 'string', required: true, defaultValue: 'office' },
+          district: { type: 'string', required: false },
+          address: { type: 'string', required: false, unique: true },
         },
       },
       membership: {

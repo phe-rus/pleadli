@@ -398,6 +398,153 @@
     "roadmap": "Feuille de route",
     "sign_in": "Se connecter"
   },
+  "orch": {
+    "add_another": "En inscrire une autre",
+    "address": "Adresse Orchestra",
+    "address_hint": "Votre adresse fixe sur l'Orchestre. Les bureaux avec qui vous travaillez l'utilisent pour vous envoyer des dossiers scellés ; elle ne change jamais.",
+    "address_none": "Délivrée après vérification",
+    "bk": {
+      "empty": "Aucune sauvegarde signalée pour l'instant.",
+      "failed": "Échouée",
+      "history": "Sauvegardes récentes",
+      "lead": "Vos sauvegardes vont de chaque ordinateur directement vers un stockage appartenant à votre institution, chiffrées avec une clé que vous seuls détenez. Pleadli ne les stocke jamais ; il indique seulement si chaque sauvegarde a réussi.",
+      "ok": "Réussie",
+      "storage": "Votre stockage",
+      "storage_none": "La connexion de votre stockage (centre de données de l'État, votre serveur ou un disque) arrive avec la mise à jour Orchestra des applications."
+    },
+    "cert_note": "Votre certificat est délivré à vos applications lors de leur première connexion à l'Orchestre, avec une prochaine mise à jour.",
+    "choose_title": "Choisissez une institution",
+    "comp": {
+      "empty": "Aucun ordinateur ne s'est encore signalé. Vos applications commenceront avec leur mise à jour Orchestra.",
+      "lead": "Les ordinateurs qui font tourner vos applications Pleadli, tels qu'ils se signalent à l'Orchestre. Chacun n'est connu que par un code tiré de sa machine, jamais par ce qu'il contient.",
+      "licensed": "Sous licence",
+      "seen": "Vu pour la dernière fois le {date}",
+      "trial": "Essai, {days} jours restants",
+      "trial_ended": "Essai terminé"
+    },
+    "failed": "Cela n'a pas fonctionné",
+    "help": {
+      "answer": "Réponse de Pleadli",
+      "any": "Pas une application en particulier",
+      "app": "Concernant quelle application (facultatif)",
+      "body": "Message",
+      "call": "Ou appelez le {phone}, ou écrivez à {email}.",
+      "empty": "Aucun message pour l'instant.",
+      "lead": "Écrivez à Pleadli pour toute chose : une question, un problème avec une application, une formation. Les réponses s'affichent ici.",
+      "past": "Vos messages",
+      "send": "Envoyer",
+      "sent": "Message envoyé",
+      "title_field": "Objet",
+      "waiting": "En attente de réponse"
+    },
+    "kind": {
+      "institution": "Institution publique",
+      "practice": "Avocat ou cabinet"
+    },
+    "lic": {
+      "app": "Application",
+      "empty": "Aucune licence pour l'instant.",
+      "ended": "Expirée",
+      "lead": "Chaque ordinateur peut utiliser chaque application gratuitement 30 jours. Ensuite, l'application et ses dossiers continuent de fonctionner ; une licence ajoute les liaisons, la sauvegarde sur votre stockage et les mises à jour.",
+      "message": "Message (facultatif)",
+      "req_declined": "Refusée",
+      "req_done": "Licence délivrée",
+      "req_open": "En attente",
+      "request_lead": "Le paiement par mobile money et carte ouvre bientôt. D'ici là, Pleadli délivre les licences directement ; les institutions publiques selon leur accord.",
+      "request_title": "Demander une licence",
+      "requests": "Demandes",
+      "revoked": "Révoquée",
+      "row": "{used} ordinateurs sur {seats} · jusqu'au {date} · clé finissant par {hint}",
+      "seats": "Ordinateurs",
+      "send": "Envoyer la demande",
+      "sent": "Demande envoyée"
+    },
+    "name": "Pleadli Orchestra",
+    "nav": {
+      "backups": "Sauvegardes",
+      "computers": "Ordinateurs",
+      "help": "Aide",
+      "licences": "Licences",
+      "offices": "Bureaux",
+      "overview": "Aperçu",
+      "team": "Équipe"
+    },
+    "office": {
+      "chambers": "Cabinet",
+      "command": "Commandement ou siège",
+      "court": "Tribunal",
+      "facility": "Prison ou établissement",
+      "office": "Bureau",
+      "station": "Poste ou antenne"
+    },
+    "offices": {
+      "add": "Ajouter le bureau",
+      "added": "Bureau ajouté",
+      "empty": "Aucun bureau pour l'instant.",
+      "kind": "Type",
+      "lead": "Chaque poste, bureau, tribunal ou établissement de cette institution, chacun avec sa propre adresse une fois l'institution approuvée."
+    },
+    "ov": {
+      "computers": "Ordinateurs",
+      "details": "Détails",
+      "last_backup": "Dernière sauvegarde",
+      "licences": "Licences",
+      "none": "Aucune",
+      "offices": "Bureaux"
+    },
+    "reg": {
+      "add_office": "Ajouter un bureau",
+      "country": "Pays",
+      "district": "District ou ville",
+      "email": "E-mail de contact",
+      "failed": "Impossible d'envoyer l'inscription",
+      "lead": "Un siège s'inscrit une fois et liste ses bureaux ; un avocat ou un cabinet inscrit son cabinet. Pleadli vérifie chaque inscription avec vous avant de délivrer votre adresse Orchestra.",
+      "name": "Nom",
+      "name_hint_institution": "Tel qu'elle est officiellement désignée, par exemple Albertine Region Police.",
+      "name_hint_practice": "Votre nom d'avocat, ou celui de votre cabinet.",
+      "office_name": "Nom du bureau",
+      "offices": "Bureaux",
+      "offices_hint": "Les postes, bureaux, tribunaux ou établissements relevant de ce siège. Vous pourrez en ajouter plus tard.",
+      "phone": "Téléphone de contact",
+      "phone_hint": "Pleadli appelle ce numéro pour confirmer que l'inscription est authentique.",
+      "remove": "Retirer",
+      "sent": "Inscription envoyée pour vérification",
+      "submit": "Envoyer pour vérification",
+      "title": "Inscrivez votre institution ou votre cabinet",
+      "type": "Quelle institution",
+      "who": "Qui inscrivez-vous ?"
+    },
+    "sign_out": "Se déconnecter",
+    "status": {
+      "declined": "Motif : {note}. Écrivez à Pleadli s'il s'agit d'une erreur.",
+      "declined_title": "Inscription refusée",
+      "pending": "Pleadli vous contactera à {email} ou au {phone} pour confirmer que cette inscription est authentique. Votre adresse Orchestra sera délivrée une fois confirmée. En attendant, vous pouvez ajouter des bureaux et inviter des administrateurs.",
+      "pending_title": "En attente de vérification",
+      "suspended": "Cette institution est suspendue sur l'Orchestre. Ses applications et ses dossiers continuent de fonctionner. Écrivez à Pleadli pour la rétablir.",
+      "suspended_title": "Suspendue"
+    },
+    "team": {
+      "admin": "Administrateur",
+      "email": "Adresse e-mail",
+      "invite": "Inviter un administrateur",
+      "invite_hint": "La personne devient administrateur en se connectant à pleadli.com avec cette adresse.",
+      "invited": "Invité, pas encore connecté",
+      "invited_ok": "Invitation enregistrée",
+      "lead": "Les personnes qui gèrent cette institution sur pleadli.com. Agents et personnel n'ont jamais besoin de compte ici ; ils se connectent à l'application de leur bureau.",
+      "owner": "Propriétaire",
+      "owner_only": "Seul le propriétaire peut inviter ou retirer des administrateurs.",
+      "remove": "Retirer",
+      "send": "Inviter"
+    },
+    "type": {
+      "courts": "Tribunaux",
+      "dpp": "Parquet (DPP)",
+      "lawyers": "Avocats",
+      "police": "Police",
+      "prisons": "Prisons"
+    },
+    "website": "Retour à pleadli.com"
+  },
   "pricing": {
     "download": "Télécharger et essayer",
     "every": {
