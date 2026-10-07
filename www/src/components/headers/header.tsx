@@ -27,7 +27,7 @@ export default function Header() {
       <section className="px-5 flex h-10 items-center justify-between gap-5">
         <div className="flex items-center gap-5">
           <Link to="/" className="flex items-center gap-2 font-bold text-base shrink-0">
-            <img src="/favicon.svg" alt="" className="size-5" />
+            <img src="/favicon.svg" alt="" className="size-6" />
             Pleadli
           </Link>
 

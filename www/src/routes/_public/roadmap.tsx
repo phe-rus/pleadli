@@ -6,6 +6,14 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/roadmap')({
+  head: () => ({
+    meta: [
+      { title: `${m["roadmap.title"]().replace(/\.$/, "")} · Pleadli` },
+      { name: 'description', content: m["roadmap.lead"]() },
+      { property: 'og:title', content: `${m["roadmap.title"]().replace(/\.$/, "")} · Pleadli` },
+      { property: 'og:description', content: m["roadmap.lead"]() },
+    ],
+  }),
   component: RouteComponent,
 })
 

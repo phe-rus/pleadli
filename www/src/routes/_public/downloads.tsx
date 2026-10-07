@@ -8,6 +8,14 @@ import * as m from '@/paraglide/messages'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/downloads')({
+  head: () => ({
+    meta: [
+      { title: `${m["downloads.title"]().replace(/\.$/, "")} · Pleadli` },
+      { name: 'description', content: m["downloads.lead"]() },
+      { property: 'og:title', content: `${m["downloads.title"]().replace(/\.$/, "")} · Pleadli` },
+      { property: 'og:description', content: m["downloads.lead"]() },
+    ],
+  }),
   component: RouteComponent,
 })
 

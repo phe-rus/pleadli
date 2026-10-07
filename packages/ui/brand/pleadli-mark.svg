@@ -1,11 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- Pleadli's mark, exactly as on pleadli.com (www/public/favicon.svg), on an app-icon tile. -->
-  <rect x="100" y="100" width="824" height="824" rx="185" fill="#ffffff"/>
-  <rect x="100.5" y="100.5" width="823" height="823" rx="185" fill="none" stroke="#000000" stroke-opacity="0.08"/>
-  <g transform="translate(232 232) scale(14)">
-    <rect x="12" y="12" width="28" height="28" fill="#000000"/>
-    <path d="M22.6605 30V21.2727H24.7699V28.2869H28.4006V30H22.6605Z" fill="#ffffff"/>
-    <rect width="20" height="20" fill="#000000"/>
-    <path d="M6.66051 14V5.27273H10.2656C10.919 5.27273 11.483 5.40057 11.9574 5.65625C12.4347 5.90909 12.8026 6.26278 13.0611 6.71733C13.3196 7.16903 13.4489 7.6946 13.4489 8.29403C13.4489 8.89631 13.3168 9.4233 13.0526 9.875C12.7912 10.3239 12.4176 10.6719 11.9318 10.919C11.446 11.1662 10.8693 11.2898 10.2017 11.2898H7.97727V9.62784H9.80966C10.1278 9.62784 10.3935 9.57244 10.6065 9.46165C10.8224 9.35085 10.9858 9.19602 11.0966 8.99716C11.2074 8.79545 11.2628 8.56108 11.2628 8.29403C11.2628 8.02415 11.2074 7.79119 11.0966 7.59517C10.9858 7.39631 10.8224 7.2429 10.6065 7.13494C10.3906 7.02699 10.125 6.97301 9.80966 6.97301H8.76989V14H6.66051Z" fill="#ffffff"/>
+  <!-- Pleadli's mark, exactly as on pleadli.com (www/public/favicon.svg), on a warm app-icon tile. -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#fffcf1"/>
+  <rect x="100.5" y="100.5" width="823" height="823" rx="185" fill="none" stroke="#3f3112" stroke-opacity="0.1"/>
+  <g transform="translate(192 192) scale(10)">
+  <rect x="2" y="2" width="39" height="39" rx="12" fill="#3f3112"/>
+  <rect x="23" y="23" width="39" height="39" rx="12" fill="#e1a73d"/>
+  <path d="M23 35a12 12 0 0 1 12-12h6v6a12 12 0 0 1-12 12h-6z" fill="#9a6a22"/>
   </g>
 </svg>

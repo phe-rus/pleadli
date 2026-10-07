@@ -1,33 +1,7 @@
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="40" height="40" fill="#CFF7D3" fill-opacity="0.05"/>
-<g filter="url(#filter0_i_3_9)">
-<rect width="28" height="28" transform="translate(12 12)" fill="black"/>
-<path d="M22.6605 30V21.2727H24.7699V28.2869H28.4006V30H22.6605Z" fill="white"/>
-</g>
-<g filter="url(#filter1_i_3_9)">
-<path d="M0 0H20V20H0V0Z" fill="black"/>
-<path d="M6.66051 14V5.27273H10.2656C10.919 5.27273 11.483 5.40057 11.9574 5.65625C12.4347 5.90909 12.8026 6.26278 13.0611 6.71733C13.3196 7.16903 13.4489 7.6946 13.4489 8.29403C13.4489 8.89631 13.3168 9.4233 13.0526 9.875C12.7912 10.3239 12.4176 10.6719 11.9318 10.919C11.446 11.1662 10.8693 11.2898 10.2017 11.2898H7.97727V9.62784H9.80966C10.1278 9.62784 10.3935 9.57244 10.6065 9.46165C10.8224 9.35085 10.9858 9.19602 11.0966 8.99716C11.2074 8.79545 11.2628 8.56108 11.2628 8.29403C11.2628 8.02415 11.2074 7.79119 11.0966 7.59517C10.9858 7.39631 10.8224 7.2429 10.6065 7.13494C10.3906 7.02699 10.125 6.97301 9.80966 6.97301H8.76989V14H6.66051Z" fill="white"/>
-</g>
-<defs>
-<filter id="filter0_i_3_9" x="12" y="12" width="28" height="32" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-<feOffset dy="4"/>
-<feGaussianBlur stdDeviation="2"/>
-<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
-<feBlend mode="normal" in2="shape" result="effect1_innerShadow_3_9"/>
-</filter>
-<filter id="filter1_i_3_9" x="0" y="0" width="20" height="24" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-<feOffset dy="4"/>
-<feGaussianBlur stdDeviation="2"/>
-<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
-<feBlend mode="normal" in2="shape" result="effect1_innerShadow_3_9"/>
-</filter>
-</defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Pleadli: two institutions that meet without becoming one. Deep brown and
+       amber from the site's own theme, overlapping in a warm blend. -->
+  <rect x="2" y="2" width="39" height="39" rx="12" fill="#3f3112"/>
+  <rect x="23" y="23" width="39" height="39" rx="12" fill="#e1a73d"/>
+  <path d="M23 35a12 12 0 0 1 12-12h6v6a12 12 0 0 1-12 12h-6z" fill="#9a6a22"/>
 </svg>

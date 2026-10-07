@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://pleadli.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://pleadli.com/products</loc><priority>0.9</priority></url>
+  <url><loc>https://pleadli.com/products/police</loc><priority>0.8</priority></url>
+  <url><loc>https://pleadli.com/products/dpp</loc><priority>0.8</priority></url>
+  <url><loc>https://pleadli.com/products/courts</loc><priority>0.8</priority></url>
+  <url><loc>https://pleadli.com/products/lawyers</loc><priority>0.8</priority></url>
+  <url><loc>https://pleadli.com/products/prisons</loc><priority>0.8</priority></url>
+  <url><loc>https://pleadli.com/downloads</loc><priority>0.8</priority></url>
+  <url><loc>https://pleadli.com/roadmap</loc><priority>0.6</priority></url>
+  <url><loc>https://pleadli.com/about</loc><priority>0.7</priority></url>
+  <url><loc>https://pleadli.com/docs</loc><priority>0.5</priority></url>
+  <url><loc>https://pleadli.com/docs/how-it-works</loc><priority>0.5</priority></url>
+  <url><loc>https://pleadli.com/docs/applications</loc><priority>0.5</priority></url>
+  <url><loc>https://pleadli.com/docs/documents</loc><priority>0.5</priority></url>
+  <url><loc>https://pleadli.com/docs/security</loc><priority>0.5</priority></url>
+  <url><loc>https://pleadli.com/docs/ai</loc><priority>0.5</priority></url>
+</urlset>

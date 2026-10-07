@@ -18,7 +18,7 @@ export default function Footer() {
       <section className="container flex w-full flex-col gap-10 py-20 md:max-w-5xl">
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <Link to="/" className="flex items-center gap-2 text-base font-bold">
-            <img src="/favicon.svg" alt="" className="size-5" />
+            <img src="/favicon.svg" alt="" className="size-6" />
             Pleadli
           </Link>
 
