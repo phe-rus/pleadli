@@ -138,13 +138,6 @@ export function Navigator() {
           <InboxList selectedId={selectedMessage} onSelect={(id) => void navigate({ to: '/inbox', search: { item: id } })} />
         ) : (
         <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pt-1 pb-2">
-          {pinned.length > 0 && (
-            <Section id="pinned" label={m.shell_section_pinned()}>
-              {pinned.map((tab) => (
-                <Row key={tab.key} icon={tabIcon(tab)} label={tab.title} active={tab.key === activeKey} onOpen={() => activate(tab)} />
-              ))}
-            </Section>
-          )}
           {recent.length > 0 && (
             <Section id="recent" label={m.shell_section_recent()}>
               {recent.map((item) => (
@@ -152,6 +145,14 @@ export function Navigator() {
               ))}
             </Section>
           )}
+          {pinned.length > 0 && (
+            <Section id="pinned" label={m.shell_section_pinned()}>
+              {pinned.map((tab) => (
+                <Row key={tab.key} icon={tabIcon(tab)} label={tab.title} active={tab.key === activeKey} onOpen={() => activate(tab)} />
+              ))}
+            </Section>
+          )}
+          {(recent.length > 0 || pinned.length > 0) && <div aria-hidden className="mx-2 my-1 border-t border-border/50" />}
           <Section id="areas" label={m.shell_section_areas()}>
             {areas.map((area) => (
               <Row key={area.to} icon={area.icon} label={area.label} active={identityForPath(area.to!)?.key === activeKey} onOpen={() => void navigate({ to: area.to as never })} />

@@ -142,13 +142,6 @@ export function Navigator() {
         </div>
 
         <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pt-1 pb-2">
-          {pinned.length > 0 && (
-            <Section id="pinned" label="Pinned">
-              {pinned.map((tab) => (
-                <Row key={tab.key} icon={tabIcon(tab)} label={tab.title} active={tab.key === activeKey} onOpen={() => activate(tab)} />
-              ))}
-            </Section>
-          )}
           {recent.length > 0 && (
             <Section id="recent" label="Recent">
               {recent.map((item) => (
@@ -156,6 +149,14 @@ export function Navigator() {
               ))}
             </Section>
           )}
+          {pinned.length > 0 && (
+            <Section id="pinned" label="Pinned">
+              {pinned.map((tab) => (
+                <Row key={tab.key} icon={tabIcon(tab)} label={tab.title} active={tab.key === activeKey} onOpen={() => activate(tab)} />
+              ))}
+            </Section>
+          )}
+          {(recent.length > 0 || pinned.length > 0) && <div aria-hidden className="mx-2 my-1 border-t border-border/50" />}
           {navSections.map((section) => (
             <Section key={section.id} id={section.id} label={section.label}>
               {courtsNav

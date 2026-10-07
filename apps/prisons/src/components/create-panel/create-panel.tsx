@@ -46,7 +46,7 @@ export const Createpanel: FC<createPanelProps> = ({
     return (
         <Drawer open={open} onOpenChange={handleOpenChange} swipeDirection="right">
             {trigger && <DrawerTrigger render={trigger} />}
-            <DrawerContent className='rounded-none! border-y-0 border-r-0 border-border/35 bg-background! [--drawer-inset:0px] data-[swipe-axis=x]:[--drawer-content-width:var(--panel-width)] data-[swipe-axis=x]:sm:[--drawer-content-width:var(--panel-width)]'>
+            <DrawerContent className='rounded-none! border-y-0 border-r-0 border-border/35 bg-card! [--drawer-inset:0px] data-[swipe-axis=x]:[--drawer-content-width:var(--panel-width)] data-[swipe-axis=x]:sm:[--drawer-content-width:var(--panel-width)]'>
                 <div className='panel-header gap-3'>
                     <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
                         <DrawerTitle>{headings.title}</DrawerTitle>
