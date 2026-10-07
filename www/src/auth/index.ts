@@ -8,6 +8,13 @@ import { password } from './password'
 import { templates } from '@pleadli/templates'
 import { institutions } from '@pleadli/institution'
 
+/** Pleadli staff addresses (Worker variable PLEADLI_STAFF_EMAILS, comma
+ * separated); pleadli@pleadli.com when it is not set. */
+function staffEmails() {
+  const configured = (env as { PLEADLI_STAFF_EMAILS?: string }).PLEADLI_STAFF_EMAILS
+  return (configured ?? 'pleadli@pleadli.com').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+}
+
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL ?? 'http://localhost:3000',
   secret: env.BETTER_AUTH_SECRET,
@@ -29,12 +36,12 @@ export const auth = betterAuth({
               data: user,
             }
           }
-          const adapter = ctx.context.adapter
-          const count = await adapter.count({ model: "user" })
+          // Pleadli staff are named, never "whoever signs up first": an empty
+          // database would otherwise hand the admin role to a stranger.
           return {
             data: {
               ...user,
-              role: count > 0 ? "user" : "admin",
+              role: staffEmails().includes(user.email.trim().toLowerCase()) ? "admin" : "user",
             },
           }
         },

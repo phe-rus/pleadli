@@ -25,8 +25,7 @@
 			"binding": "DB",
 			"database_name": "pleadli",
 			"database_id": "5e867f96-73d0-4c44-ad39-e80aaf99a4fa",
-			"migrations_dir": ".migrations",
-			"migrations_pattern": "./.migrations/*/migration.sql"
+			"migrations_dir": ".migrations"
 		}
 	]
 }

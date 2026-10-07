@@ -9,6 +9,9 @@ Written 2026-10-08 from the user's brief that day. Audit first, then the recomme
 - **Who registers on pleadli.com/orchestra**: **institutions** (at their HQ, attaching their offices) **and practices** (an advocate or a law firm). Individual officers never register; they sign in to their office's app.
 - **Contact on the site**: pleadli@pleadli.com, +256 772 591 289, **Justice Vincent Opyene, Founder**.
 - **Backups and relay**: nothing stored at Pleadli; backups go to the institution's own storage; the relay can run in the country (sections 2 and 4).
+- **Registration is a request**: Pleadli staff check an institution or practice is genuine before its Orchestra address and certificate are issued.
+- **Addresses** read `country.institution.place` and never change: `ug.police.albertine` (HQ), `ug.police.albertine.kagadi` (its station), `ug.dpp.hoima`, `ug.court.kagadi-cm`, `ug.prisons.hoima`, `ug.advocate.okello-chambers`.
+- **Managers**: whoever registers is the owner and invites a few administrators by email; ordinary officers never need a pleadli.com account.
 - **Way of working**: ask before going ahead on anything load-bearing; remember Pleadli is justice infrastructure, a family of purpose-built apps, not another SaaS.
 
 ## 1. Audit: what exists today
