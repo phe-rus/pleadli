@@ -18,7 +18,7 @@ const SITE = 'https://pleadli.com'
 const structuredData = JSON.stringify({
   '@context': 'https://schema.org',
   '@graph': [
-    { '@type': 'Organization', '@id': `${SITE}/#org`, name: 'Pleadli', url: SITE, logo: `${SITE}/apple-touch-icon.png`, slogan: 'Legal Orchestra', areaServed: ['Uganda', 'Kenya', 'Tanzania', 'Rwanda', 'Burundi', 'Democratic Republic of the Congo'] },
+    { '@type': 'Organization', '@id': `${SITE}/#org`, name: 'Pleadli', url: SITE, email: 'pleadli@pleadli.com', telephone: '+256772591289', founder: { '@type': 'Person', name: 'Justice Vincent Opyene' }, logo: `${SITE}/apple-touch-icon.png`, slogan: 'Legal Orchestra', areaServed: ['Uganda', 'Kenya', 'Tanzania', 'Rwanda', 'Burundi', 'Democratic Republic of the Congo'] },
     { '@type': 'WebSite', '@id': `${SITE}/#site`, url: SITE, name: 'Pleadli Legal Orchestra', publisher: { '@id': `${SITE}/#org` }, inLanguage: ['en', 'sw', 'fr'] },
     ...[
       ['Pleadli Police', 'police'],
@@ -49,7 +49,6 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { property: 'og:title', content: defaultTitle },
       { property: 'og:description', content: defaultDescription },
       { property: 'og:locale', content: ogLocale[getLocale()] ?? 'en_UG' },
-      { property: 'og:url', content: SITE },
       { property: 'og:image', content: `${SITE}/og-image.png` },
       { property: 'og:image:width', content: '1200' },
       { property: 'og:image:height', content: '630' },
@@ -65,10 +64,12 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         rel: 'stylesheet',
         href: appCss,
       },
-      { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-      { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
-      { rel: 'icon', href: '/favicon.png', type: 'image/png' },
-      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      // ?v=2: the mark changed on 2026-10-08; a new address tells browsers and
+      // search engines to fetch it again instead of keeping the old one.
+      { rel: 'icon', href: '/favicon.svg?v=2', type: 'image/svg+xml' },
+      { rel: 'icon', href: '/favicon.ico?v=2', sizes: '16x16 32x32 48x48 256x256' },
+      { rel: 'icon', href: '/favicon-192.png?v=2', type: 'image/png', sizes: '192x192' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png?v=2' },
     ],
     scripts: [{ type: 'application/ld+json', children: structuredData }],
   }

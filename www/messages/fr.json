@@ -45,7 +45,40 @@
       }
     },
     "sign_in_body": "Les utilisateurs institutionnels se connectent à Pleadli pour gérer leur organisation, sa structure et son personnel.",
-    "sign_in_title": "Se connecter à Pleadli"
+    "sign_in_title": "Se connecter à Pleadli",
+    "what_p1": "Pleadli est une famille de cinq applications, une pour chaque maillon de la justice : Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers et Pleadli Prisons. Chacune est faite pour le travail de ses utilisateurs, fonctionne sur les ordinateurs du bureau et se suffit à elle-même.",
+    "what_p2": "Pleadli Orchestra, sur pleadli.com, est ce qui les fait jouer ensemble : il donne à chaque institution son adresse et son certificat, transporte des pièces scellées entre les bureaux qui ont accepté de travailler ensemble, permet à chacun de vérifier qu'une pièce est authentique, et tient licences et mises à jour en ordre. Il ne détient jamais les dossiers d'une institution.",
+    "what_title": "Ce qu'est Pleadli",
+    "where_p1": "Pleadli commence en Ouganda, construit autour de ses lois, formulaires et bureaux tels qu'ils fonctionnent, et s'étend en Afrique de l'Est : Kenya, Tanzanie, Rwanda, Burundi, RD Congo et Soudan du Sud, chacun avec ses lois, délais et documents, en anglais, kiswahili et français.",
+    "where_title": "Où nous commençons",
+    "who_cta": "Parlons-en",
+    "who_title": "Qui est derrière Pleadli",
+    "why_p1": "Quand un dossier attend la paperasse, une personne attend en cellule. En Ouganda, près de la moitié des personnes incarcérées sont en détention provisoire, sans condamnation, et en 2018, une plainte sur trois pour violation des droits humains contre la police portait sur une détention au-delà des 48 heures permises par la Constitution. Une grande part de ce retard tient à des papiers qui circulent lentement entre des bureaux tenant chacun leurs dossiers.",
+    "why_p2": "Pleadli ne remplace pas ces bureaux et ne fusionne pas leurs dossiers. Il donne à chacun un meilleur outil pour son propre travail, et un moyen sûr de transmettre une affaire.",
+    "why_title": "Pourquoi c'est important"
+  },
+  "contact": {
+    "call": "Appeler",
+    "email": "E-mail",
+    "founder": "Fondateur",
+    "lead": "Pour un pilote dans votre district, une licence pour votre bureau, un partenariat ou une question sur Pleadli. Nous répondons à chaque message.",
+    "meta_description": "Parlez à Pleadli d'un pilote dans votre district, d'une licence pour votre bureau, d'un partenariat ou d'aide sur les applications.",
+    "meta_title": "Contact · Pleadli",
+    "person": "Personne à contacter",
+    "phone": "Téléphone",
+    "title": "Parlons-en",
+    "who": {
+      "gov": "Un pilote dans un district, un déploiement national ou une présentation à un groupe de travail du secteur de la justice.",
+      "gov_title": "Gouvernements et ministères",
+      "help": "Quelque chose qui ne marche pas, une question sur un écran, ou une idée. Précisez l'application et la version.",
+      "help_title": "Aide sur les applications",
+      "inst": "Licences pour vos bureaux, mise en place de votre commandement et de ses postes, formation de votre personnel.",
+      "inst_title": "Police, parquet, tribunaux, prisons et cabinets",
+      "partners": "Financement, recherche, ou apporter Pleadli dans un autre pays d'Afrique de l'Est.",
+      "partners_title": "Investisseurs et partenaires"
+    },
+    "who_title": "Qui nous écrit",
+    "write": "Nous écrire"
   },
   "docs": {
     "ai": {
@@ -130,9 +163,23 @@
       "works_title": "Ce qui fonctionne déjà bien"
     },
     "how": {
+      "address_body": "En s'inscrivant sur Pleadli Orchestra, une institution reçoit une adresse qui ne change jamais et un certificat signé par Pleadli indiquant quelles clés lui appartiennent. Deux bureaux choisissent toujours, de personne à personne, de travailler ensemble.",
+      "address_title": "Chaque institution a une adresse et un certificat",
       "admin_body": "L'administration de la plateforme gère Pleadli lui-même : quelles institutions existent et ce qu'elles ont le droit d'utiliser. L'administration institutionnelle est limitée à une institution : gérer ses propres unités et membres ne donne aucune visibilité sur la structure d'une autre.",
       "admin_title": "Administration de la plateforme et administration de l'institution",
-      "lead": "C'est le principe de conception de Pleadli, et la partie déjà réelle dans le modèle organisationnel de la plateforme.",
+      "apps_body": "Un poste de police, un parquet, un tribunal, une prison ou un cabinet fait tourner sa propre application Pleadli sur ses ordinateurs. Ses dossiers y sont chiffrés et y restent. Elle fonctionne sans aucun internet.",
+      "apps_title": "Chaque bureau garde son application et ses dossiers",
+      "country_body": "Les dossiers ne quittent jamais l'institution. Les sauvegardes vont sur un stockage qui lui appartient, comme un centre de données de l'État. Pour les institutions publiques, le relais lui-même peut tourner sur un serveur de l'État dans le pays.",
+      "country_title": "Gardé dans le pays",
+      "fig": {
+        "dpp": "Le parquet",
+        "dpp_do": "l'ouvre, une personne décide",
+        "relay": "Relais Orchestra",
+        "relay_do": "le garde, ne peut pas le lire",
+        "station": "Un poste de police",
+        "station_do": "scelle et signe le dossier"
+      },
+      "lead": "Cinq applications qui fonctionnent seules, et un Orchestre qui les fait travailler ensemble sans fusionner leurs dossiers.",
       "org": {
         "entitlement": {
           "body": "Si une institution a le droit d'utiliser une application Pleadli donnée.",
@@ -151,23 +198,30 @@
           "title": "Unité organisationnelle"
         }
       },
+      "post_p1": "Quand un poste envoie un dossier au parquet, l'application le scelle pour que seul ce parquet puisse l'ouvrir, et le signe pour que le parquet sache qu'il vient de ce poste sans modification.",
+      "post_p2": "Le dossier scellé part dans la boîte du parquet sur le relais Orchestra, comme une lettre fermée à la poste. Le relais le garde seulement jusqu'à son retrait et ne peut pas le lire. L'application du parquet le récupère, l'ouvre, et une personne décide de l'accepter. La décision revient par le même chemin.",
+      "post_p3": "Les bureaux d'un même bâtiment communiquent directement par leur réseau. Rien n'exige d'adresse spéciale ni de port ouvert : chaque bureau atteint le relais comme n'importe quel site web.",
+      "post_title": "Transmettre une affaire : une poste, pas un dossier partagé",
       "principle_p1": "Une affaire devrait garder une seule identité continue en passant d'une institution à l'autre. Ce qui reste séparé, c'est qui détient les dossiers : les dossiers de police appartiennent à la Police ougandaise, les décisions du DPP au DPP. Une institution peut référencer une affaire sans accéder aux dossiers internes d'une autre. Être référençable n'est pas être visible.",
       "principle_p2": "Aujourd'hui, une même affaire peut porter un numéro CRB du poste, un numéro de dossier DPP distinct et un numéro de rôle du tribunal distinct, sans fil commun entre eux. Combler cet écart sans abolir la propriété institutionnelle, voilà le vrai problème d'ingénierie.",
       "principle_title": "Le principe",
+      "public_body": "Toute personne détenant une pièce Pleadli peut vérifier son authenticité par son code. Une personne ayant reçu un code de suivi voit l'étape d'une affaire, jamais son contenu. Personne ne peut chercher des dossiers par nom.",
+      "public_title": "Ce que le public peut voir",
       "real_body": "Le travail sur les affaires vit dans chaque application. En dessous, Pleadli Cloud porte la couche organisationnelle : les institutions, leur structure interne et qui appartient à quoi.",
       "real_title": "Ce qui est réel aujourd'hui : le modèle organisationnel",
       "size_body": "C'est ce même modèle qui permet à une application Pleadli de servir un utilisateur seul, une équipe ou une grande organisation : un avocat seul et un cabinet utilisent tous deux Pleadli Lawyers avec le même modèle, structuré différemment. La forme de la hiérarchie revient à chaque organisation ; Pleadli ne suppose pas que toute institution ressemble à une force de police.",
       "size_title": "Un modèle, toutes tailles",
-      "title": "Identité partagée de l'affaire, dossiers détenus par l'institution"
+      "status_note": "Les applications et leurs dossiers existent aujourd'hui, et Pleadli DPP reçoit déjà des dossiers scellés. L'envoi depuis Pleadli Police, le relais Orchestra, les adresses, les certificats, la vérification des pièces et le suivi des affaires sont en construction ; voir la feuille de route.",
+      "title": "Comment fonctionne Pleadli"
     },
     "index": {
       "badge": "Documentation",
-      "lead": "Cette section s'adresse à un lecteur technique ou chargé de l'intégration institutionnelle, pas au discours commercial général. Elle décrit le modèle réel de Pleadli et l'état actuel de la plateforme.",
-      "next_body": "L'identité partagée de l'affaire et le modèle des dossiers détenus par l'institution, en détail.",
+      "lead": "Comment démarrer avec Pleadli, comment ses applications travaillent ensemble, et comment il protège les dossiers. Écrit pour ceux qui l'utiliseront et ceux qui décident.",
+      "next_body": "Cinq applications autonomes, et un Orchestre qui les fait travailler ensemble.",
       "scope_after": "pour un état des lieux honnête, application par application.",
       "scope_body": "Les cinq applications ont aujourd'hui du vrai code, à des niveaux de maturité différents. Police, DPP, Lawyers et Prisons ont une première version Windows qui se met à jour seule ; Courts n'est pas encore publié et c'est le moins éprouvé sur le terrain. Aucune n'est encore validée sur le terrain.",
       "scope_title": "Périmètre actuel",
-      "title": "Pleadli, côté technique",
+      "title": "Documentation",
       "what_body": "Pleadli est une famille d'applications dédiées, Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers et Pleadli Prisons, chacune avec sa propre connexion, ses processus et ses dossiers. Pleadli Cloud est la plateforme sous-jacente : identité, organisations, accès, et l'identité partagée de l'affaire qui relie les relations légitimes entre applications.",
       "what_title": "Ce qu'est Pleadli"
     },
@@ -175,6 +229,7 @@
       "ai": "IA",
       "applications": "Applications",
       "documents": "Documents",
+      "getting_started": "Bien démarrer",
       "how_it_works": "Fonctionnement",
       "overview": "Aperçu",
       "security": "Sécurité"
@@ -215,7 +270,28 @@
       },
       "title": "La sécurité est une architecture, pas une case à cocher"
     },
-    "see": "Voir"
+    "see": "Voir",
+    "start": {
+      "coming": "Avec Pleadli Orchestra, bientôt",
+      "help": "Bloqué à une étape ? Écrivez à pleadli@pleadli.com ou appelez le +256 772 591 289.",
+      "lead": "Du téléchargement à votre premier dossier, dans l'ordre où un bureau le fait.",
+      "s1": "Police, DPP, Lawyers et Prisons sont prêtes pour Windows sur la page Téléchargements. Courts suivra.",
+      "s1_title": "Téléchargez l'application de votre bureau",
+      "s2": "Ouvrez le programme d'installation. Windows peut indiquer avoir protégé votre ordinateur, car l'installateur n'est pas encore signé par un certificat : choisissez Informations complémentaires, puis Exécuter quand même. Les mises à jour suivantes s'installent ensuite après demande.",
+      "s2_title": "Installez-la",
+      "s3": "Le premier lancement demande votre pays, votre langue, le nom du bureau, la protection de l'application et les premières personnes qui l'utiliseront. Quelques minutes, sans internet.",
+      "s3_title": "Configurez le bureau",
+      "s4": "Saisissez votre premier dossier. Chaque dossier s'imprime, s'enregistre en PDF ou Word, et porte un code qui prouve son authenticité.",
+      "s4_title": "Commencez à travailler",
+      "s5": "Un siège inscrit son institution et rattache ses bureaux ; un avocat ou un cabinet inscrit son cabinet. Chacun reçoit son adresse Orchestra.",
+      "s5_title": "Inscrivez votre institution ou votre cabinet",
+      "s6": "Après 30 jours sur un ordinateur, une licence ajoute les liaisons avec les autres bureaux, la sauvegarde sur votre stockage et les mises à jour. Sans licence, l'application et chaque dossier continuent de fonctionner.",
+      "s6_title": "Ajoutez une licence",
+      "s7": "Un poste et son parquet conviennent de travailler ensemble, vérifient une fois leurs empreintes respectives, puis s'envoient des dossiers scellés.",
+      "s7_title": "Reliez-vous aux bureaux avec qui vous travaillez",
+      "title": "Bien démarrer",
+      "today": "Aujourd'hui"
+    }
   },
   "downloads": {
     "lead": "Police, DPP, Lawyers et Prisons ont leur première version Windows. Une fois installée, chacune vérifie s'il existe une mise à jour signée et propose de l'installer ; rien n'est installé sans votre accord. Ce sont des versions précoces, en développement actif et pas encore validées sur le terrain. Courts n'est pas encore publié.",
@@ -228,6 +304,10 @@
     },
     "stand_title": "Où en sont les versions",
     "title": "Télécharger Pleadli pour Windows."
+  },
+  "footer": {
+    "learn": "Découvrir",
+    "product": "Produit"
   },
   "home": {
     "about": "À propos de Pleadli",
@@ -305,15 +385,54 @@
   },
   "nav": {
     "about": "À propos",
+    "contact": "Contact",
     "docs": "Documentation",
     "downloads": "Téléchargements",
     "get_started": "Commencer gratuitement",
+    "getting_started": "Bien démarrer",
     "language": "Langue",
     "open_menu": "Ouvrir la navigation",
     "overview": "Aperçu",
+    "pricing": "Licences",
     "products": "Produits",
     "roadmap": "Feuille de route",
     "sign_in": "Se connecter"
+  },
+  "pricing": {
+    "download": "Télécharger et essayer",
+    "every": {
+      "after": "Après l'essai, l'application continue et chaque dossier reste ouvert, avec un avis jusqu'à l'ajout d'une licence.",
+      "licence": "Une licence ajoute l'Orchestre : liaisons avec les autres bureaux, sauvegarde quotidienne sur votre stockage, et mises à jour des lois, formulaires et documents.",
+      "trial": "30 jours gratuits sur chaque ordinateur, toutes fonctions, sans carte ni compte pour commencer."
+    },
+    "every_title": "Pour chaque bureau",
+    "faq": {
+      "after_a": "L'application continue de fonctionner et chaque dossier reste ouvert. Un avis rappelle la fin de l'essai ; liaisons, sauvegarde et mises à jour attendent une licence.",
+      "after_q": "Que se passe-t-il après 30 jours ?",
+      "locked_a": "Non. Les dossiers de justice doivent toujours rester accessibles. Un poste qui ne peut pas ouvrir son registre de garde à vue est un danger : Pleadli ne bloque jamais les dossiers pour un paiement.",
+      "locked_q": "Nos dossiers peuvent-ils être bloqués ?",
+      "read_a": "Non. Les dossiers restent sur vos ordinateurs, et les sauvegardes vont sur un stockage appartenant à votre institution, jamais chez Pleadli. Les deux sont chiffrés avec des clés que seule votre institution détient.",
+      "read_q": "Pleadli peut-il lire nos dossiers ?",
+      "reinstall_a": "Non. L'essai appartient à l'ordinateur : une réinstallation poursuit les mêmes 30 jours.",
+      "reinstall_q": "Une réinstallation relance-t-elle l'essai ?",
+      "where_a": "Là où votre institution le décide : un centre de données de l'État dans votre pays, votre propre serveur, ou un disque au bureau. Pleadli indique seulement si chaque sauvegarde a réussi.",
+      "where_q": "Où sont gardées les sauvegardes ?"
+    },
+    "faq_title": "Questions fréquentes",
+    "lead": "Chaque application Pleadli s'essaie gratuitement 30 jours sur chaque ordinateur, et aucun bureau ne perd jamais l'accès à ses propres dossiers.",
+    "meta_description": "Comment Pleadli est licencié : essai de 30 jours sur chaque ordinateur, accords pour les institutions publiques, licences en ligne pour avocats et cabinets. Les dossiers ne sont jamais bloqués.",
+    "meta_title": "Licences · Pleadli",
+    "now_note": "Les licences commencent avec Pleadli Orchestra. D'ici là, chaque application Pleadli est gratuite.",
+    "payments_note": "Le paiement par mobile money et carte ouvre bientôt. D'ici là, écrivez-nous et nous délivrons les licences directement.",
+    "practice_body": "Inscrivez votre cabinet et achetez votre licence en ligne. Les prix seront publiés à l'ouverture du paiement en ligne ; d'ici là, écrivez-nous et nous délivrons votre licence directement.",
+    "practice_cta": "Demander une licence",
+    "practice_title": "Avocats et cabinets",
+    "practice_who": "Votre propre cabinet, seul ou en équipe",
+    "public_body": "Licence par un accord avec Pleadli. Le siège s'inscrit une fois sur Pleadli Orchestra, et sa licence couvre ses postes, bureaux ou établissements. Les accords se font comme les États achètent : pour un district, une région ou tout le pays.",
+    "public_cta": "Parlons d'un accord",
+    "public_title": "Institutions publiques",
+    "public_who": "Police, parquet, tribunaux et prisons",
+    "title": "Comment fonctionnent les licences"
   },
   "product": {
     "ahead": "Ce qui reste à faire",
@@ -352,9 +471,54 @@
     "title": "Cinq applications, une seule plateforme en dessous."
   },
   "roadmap": {
-    "lead": "Un élément ne passe à « livré » qu'une fois réellement exécuté et vérifié, pas simplement écrit. Cette page découle du même audit que l'équipe mène sur son propre code, ce n'est pas un texte publicitaire.",
+    "app": {
+      "courts": {
+        "coming": "La première version, vérifiée avec un magistrat et un greffier.",
+        "ready": "Registre des affaires, audiences, renvois et rôle ; procès-verbal signé de chaque audience, pièces, décisions et jugements ; enregistrement sonore de l'audience."
+      },
+      "dpp": {
+        "coming": "Décisions renvoyées au poste par l'Orchestre ; pièces transmises au tribunal.",
+        "ready": "Chaque dossier sur un tableau par étapes, délais de garde à vue et de détention par pays, actes et pièces vérifiables, documents numérisés triés et lus, dossiers scellés reçus de la police."
+      },
+      "lawyers": {
+        "coming": "Avis d'audience et ordonnances reçus de Courts.",
+        "ready": "Toutes sortes d'affaires, délais judiciaires comptés selon les règles, actes et dossiers de dépôt, fonds des clients et états de frais, serments et registres, un cabinet sur un même réseau."
+      },
+      "police": {
+        "coming": "Supervision par le commandement de la garde à vue et des affaires graves ; envoi des dossiers au parquet.",
+        "ready": "Registre du poste, incidents, affaires, garde à vue avec le délai de 48 heures, cautions, dépositions, pièces et actes d'accusation, chaque dossier imprimé comme sa pièce ; agents, tableau de service et photos d'identité ; un commandement recevant les chiffres de ses postes."
+      },
+      "prisons": {
+        "coming": "Le design apaisé de DPP et Lawyers ; détention comptée avec les mêmes délais légaux.",
+        "ready": "Admission sur mandat, détention, libération et extraction ; chaque établissement fonctionnant seul ; échanges avec le siège par son propre réseau."
+      }
+    },
+    "apps_title": "Chaque application aujourd'hui",
+    "coming": "À venir",
+    "h_later": "Plus tard",
+    "h_next": "Ensuite",
+    "h_now": "Maintenant",
+    "later": {
+      "1": "Pleadli Police sur téléphone : dispatch, appels de renfort et circulation.",
+      "2": "Une application pour le public : signaler un crime, appeler à l'aide, suivre une affaire, réserver une visite en prison, trouver un avocat, déclarer sa résidence à la police locale.",
+      "3": "Installateurs signés, et Pleadli pour macOS et Linux."
+    },
+    "lead": "Ce qui se construit maintenant, ce qui vient ensuite et après, puis ce que fait chaque application aujourd'hui. Honnête : une chose n'est dite prête qu'après avoir été lancée et vérifiée.",
+    "next": {
+      "1": "Des affaires circulant entre institutions par l'Orchestre : de la police au parquet et retour, du parquet au tribunal, du tribunal aux prisons et aux avocats.",
+      "2": "Sauvegarde sur le stockage propre à chaque institution, visible en un seul endroit.",
+      "3": "Cinq à huit affaires réelles menées de l'arrestation au jugement à travers les applications.",
+      "4": "La première version de Pleadli Courts."
+    },
+    "now": {
+      "1": "Pleadli Orchestra sur pleadli.com : inscrire une institution ou un cabinet, licences et essai de 30 jours.",
+      "2": "Vérifier toute pièce Pleadli par son code, et suivre une affaire avec un code de suivi.",
+      "3": "Pleadli Police pour les commandements : districts et régions supervisant la garde à vue, les affaires graves et les chiffres mensuels.",
+      "4": "Prisons et Courts dans le même design apaisé que DPP et Lawyers."
+    },
     "platform": "Plateforme",
-    "title": "Ce qui est réel, ce qui vient, ce qui relève encore de la recherche."
+    "ready": "Prêt aujourd'hui",
+    "title": "Où va Pleadli"
   },
   "site": {
     "description": "Pleadli, l'orchestre juridique : des applications pour la police, le parquet, les tribunaux, les avocats et les prisons d'Afrique de l'Est. Hors ligne, sans ressaisie.",

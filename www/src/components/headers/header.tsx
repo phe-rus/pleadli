@@ -9,12 +9,12 @@ import { LanguageSwitch } from '@/components/language-switch'
 import * as m from '@/paraglide/messages'
 
 const navItems = [
-  { get label() { return m["nav.overview"]() }, to: '/' },
   { get label() { return m["nav.products"]() }, to: '/products' },
-  { get label() { return m["nav.roadmap"]() }, to: '/roadmap' },
+  { get label() { return m["nav.pricing"]() }, to: '/licensing' },
   { get label() { return m["nav.downloads"]() }, to: '/downloads' },
   { get label() { return m["nav.docs"]() }, to: '/docs' },
   { get label() { return m["nav.about"]() }, to: '/about' },
+  { get label() { return m["nav.contact"]() }, to: '/contact' },
 ] as const
 
 export default function Header() {
@@ -38,7 +38,6 @@ export default function Header() {
                 to={item.to}
                 className="text-sm!"
                 activeProps={{ className: 'text-primary font-bold' }}
-                activeOptions={{ exact: item.to === '/' }}
               >
                 {item.label}
               </Link>
@@ -68,7 +67,7 @@ export default function Header() {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-48 gap-0.5 p-1.5 md:hidden">
               {itemsList.map((item) => {
-                const active = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
+                const active = location.pathname.startsWith(item.to)
                 return (
                   <Link
                     key={item.to}

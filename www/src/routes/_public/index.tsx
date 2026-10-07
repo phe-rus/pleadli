@@ -1,3 +1,4 @@
+import { seo } from '@/lib/seo'
 import { Button } from '@pleadli/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
 import { getProducts, getReadinessLabel } from '@/data/products'
@@ -25,6 +26,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import * as m from '@/paraglide/messages'
 
 export const Route = createFileRoute('/_public/')({
+  head: () => seo({ title: m["site.title"](), description: m["site.description"](), path: '/' }),
   component: RouteComponent,
 })
 

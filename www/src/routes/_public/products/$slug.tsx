@@ -1,3 +1,4 @@
+import { seo } from '@/lib/seo'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card } from '@pleadli/ui/card'
@@ -26,16 +27,7 @@ export const Route = createFileRoute('/_public/products/$slug')({
     if (!loaderData) return {}
     const title = `${loaderData.name} · Pleadli`
     const description = `${loaderData.tagline} ${loaderData.problem}`
-    return {
-      meta: [
-        { title },
-        { name: 'description', content: description },
-        { property: 'og:title', content: title },
-        { property: 'og:description', content: description },
-        { name: 'twitter:title', content: title },
-        { name: 'twitter:description', content: description },
-      ],
-    }
+    return seo({ title, description, path: `/products/${loaderData.slug}` })
   },
   component: RouteComponent,
 })

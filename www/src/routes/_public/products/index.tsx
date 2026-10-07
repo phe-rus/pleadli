@@ -1,3 +1,4 @@
+import { seo } from '@/lib/seo'
 import { Badge } from '@pleadli/ui/badge'
 import { Card, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
 import { getPlatformStory, getProducts, getReadinessLabel } from '@/data/products'
@@ -7,14 +8,7 @@ import * as m from '@/paraglide/messages'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/products/')({
-  head: () => ({
-    meta: [
-      { title: `${m["products.title"]().replace(/\.$/, "")} · Pleadli` },
-      { name: 'description', content: m["products.lead"]() },
-      { property: 'og:title', content: `${m["products.title"]().replace(/\.$/, "")} · Pleadli` },
-      { property: 'og:description', content: m["products.lead"]() },
-    ],
-  }),
+  head: () => seo({ title: `${m["products.title"]().replace(/\.$/, "")} · Pleadli`, description: m["products.lead"](), path: '/products' }),
   component: RouteComponent,
 })
 

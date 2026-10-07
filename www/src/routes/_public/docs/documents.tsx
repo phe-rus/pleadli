@@ -1,3 +1,4 @@
+import { seo } from '@/lib/seo'
 import { Badge } from '@pleadli/ui/badge'
 import { Card, CardDescription, CardTitle } from '@pleadli/ui/card'
 import { getProducts } from '@/data/products'
@@ -13,6 +14,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { cn } from 'cn'
 
 export const Route = createFileRoute('/_public/docs/documents')({
+  head: () => seo({ title: `${m["docs.documents.title"]()} · Pleadli`, description: m["docs.documents.lead"](), path: '/docs/documents' }),
   component: RouteComponent,
 })
 

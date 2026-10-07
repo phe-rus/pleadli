@@ -1,13 +1,26 @@
 import * as m from '@/paraglide/messages'
+import { CONTACT } from '@/data/contact'
 import { Link } from '@tanstack/react-router'
 
-const footerNav = [
-  { get label() { return m["nav.overview"]() }, to: '/' },
-  { get label() { return m["nav.products"]() }, to: '/products' },
-  { get label() { return m["nav.roadmap"]() }, to: '/roadmap' },
-  { get label() { return m["nav.downloads"]() }, to: '/downloads' },
-  { get label() { return m["nav.docs"]() }, to: '/docs' },
-  { get label() { return m["nav.about"]() }, to: '/about' },
+const columns = [
+  {
+    get title() { return m["footer.product"]() },
+    links: [
+      { get label() { return m["nav.products"]() }, to: '/products' },
+      { get label() { return m["nav.pricing"]() }, to: '/licensing' },
+      { get label() { return m["nav.downloads"]() }, to: '/downloads' },
+      { get label() { return m["nav.roadmap"]() }, to: '/roadmap' },
+    ],
+  },
+  {
+    get title() { return m["footer.learn"]() },
+    links: [
+      { get label() { return m["nav.getting_started"]() }, to: '/docs/getting-started' },
+      { get label() { return m["nav.docs"]() }, to: '/docs' },
+      { get label() { return m["nav.about"]() }, to: '/about' },
+      { get label() { return m["nav.sign_in"]() }, to: '/login' },
+    ],
+  },
 ] as const
 
 export default function Footer() {
@@ -15,32 +28,33 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-border/55 bg-background">
-      <section className="container flex w-full flex-col gap-10 py-20 md:max-w-5xl">
-        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          <Link to="/" className="flex items-center gap-2 text-base font-bold">
-            <img src="/favicon.svg" alt="" className="size-6" />
-            Pleadli
-          </Link>
-
-          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            {footerNav.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">
-              {m["nav.sign_in"]()}
+      <section className="container flex w-full flex-col gap-12 py-16 md:max-w-5xl">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+          <div className="col-span-2 flex flex-col gap-3 md:col-span-1">
+            <Link to="/" className="flex items-center gap-2 text-base font-bold">
+              <img src="/favicon.svg" alt="" className="size-6" />
+              Pleadli
             </Link>
-          </nav>
-        </div>
+            <p className="text-sm text-muted-foreground">{m["site.slogan"]()}</p>
+          </div>
 
-        <div className="flex max-w-sm flex-col gap-1">
-          <p className="text-sm font-medium text-foreground">{m["site.slogan"]()}</p>
-          <p className="text-sm text-muted-foreground">{m["site.motto"]()}</p>
+          {columns.map((column) => (
+            <nav key={column.title} className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-foreground">{column.title}</span>
+              {column.links.map((item) => (
+                <Link key={item.to} to={item.to} className="text-sm text-muted-foreground hover:text-foreground">
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          ))}
+
+          <div className="flex flex-col gap-2">
+            <Link to="/contact" className="text-sm font-medium text-foreground">{m["nav.contact"]()}</Link>
+            <a href={`mailto:${CONTACT.email}`} className="text-sm text-muted-foreground hover:text-foreground">{CONTACT.email}</a>
+            <a href={`tel:${CONTACT.phoneE164}`} className="text-sm text-muted-foreground hover:text-foreground">{CONTACT.phone}</a>
+            <span className="text-sm text-muted-foreground">{CONTACT.person}</span>
+          </div>
         </div>
 
         <p className="border-t border-border/55 pt-6 text-sm text-muted-foreground">

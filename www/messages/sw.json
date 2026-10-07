@@ -45,7 +45,40 @@
       }
     },
     "sign_in_body": "Watumiaji wa taasisi huingia kwenye Pleadli kusimamia shirika lao, muundo wake na wafanyakazi.",
-    "sign_in_title": "Ingia kwenye Pleadli"
+    "sign_in_title": "Ingia kwenye Pleadli",
+    "what_p1": "Pleadli ni familia ya programu tano, moja kwa kila sehemu ya haki: Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers na Pleadli Prisons. Kila moja imetengenezwa kwa kazi ya watu wanaoitumia, inafanya kazi kwenye kompyuta za ofisi yenyewe, na ina manufaa peke yake.",
+    "what_p2": "Pleadli Orchestra, kwenye pleadli.com, ndiyo inayoziwezesha kufanya kazi pamoja: inaipa kila taasisi anwani na cheti chake, inabeba nyaraka zilizofungwa kati ya ofisi zilizokubali kufanya kazi pamoja, inamruhusu yeyote kuhakiki kwamba nyaraka ni halali, na inapanga leseni na masasisho. Haishikilii kamwe kumbukumbu za taasisi.",
+    "what_title": "Pleadli ni nini",
+    "where_p1": "Pleadli inaanzia Uganda, ikijengwa kuzunguka sheria, fomu na ofisi zake jinsi zinavyofanya kazi kweli, na inakua katika Afrika Mashariki: Kenya, Tanzania, Rwanda, Burundi, DR Congo na Sudan Kusini, kila moja na sheria, muda na nyaraka zake, kwa Kiingereza, Kiswahili na Kifaransa.",
+    "where_title": "Tunapoanzia",
+    "who_cta": "Zungumza nasi",
+    "who_title": "Walio nyuma ya Pleadli",
+    "why_p1": "Jalada linaposubiri makaratasi, mtu anasubiri selini. Nchini Uganda karibu nusu ya wote walio gerezani wako rumande, hawajatiwa hatiani, na mwaka 2018 lalamiko moja kati ya matatu ya haki za binadamu dhidi ya polisi lilihusu kushikiliwa zaidi ya saa 48 zinazoruhusiwa na Katiba. Sehemu kubwa ya ucheleweshaji huo ni makaratasi yanayosonga polepole kati ya ofisi zinazoshikilia kumbukumbu zao.",
+    "why_p2": "Pleadli haichukui nafasi ya ofisi hizo wala kuunganisha kumbukumbu zao. Inaipa kila moja zana bora kwa kazi yake, na njia salama ya kukabidhi shauri.",
+    "why_title": "Kwa nini ni muhimu"
+  },
+  "contact": {
+    "call": "Piga simu",
+    "email": "Barua pepe",
+    "founder": "Mwanzilishi",
+    "lead": "Kwa majaribio wilayani kwako, leseni ya ofisi yako, ushirikiano, au swali kuhusu Pleadli. Tunajibu kila ujumbe.",
+    "meta_description": "Zungumza na Pleadli kuhusu majaribio wilayani kwako, leseni ya ofisi yako, ushirikiano, au msaada wa programu.",
+    "meta_title": "Wasiliana nasi · Pleadli",
+    "person": "Mtu wa kuwasiliana naye",
+    "phone": "Simu",
+    "title": "Zungumza nasi",
+    "who": {
+      "gov": "Majaribio katika wilaya moja, utekelezaji wa kitaifa, au maelezo kwa kikundi kazi cha sekta ya haki.",
+      "gov_title": "Serikali na wizara",
+      "help": "Kitu kisichofanya kazi, swali kuhusu skrini, au wazo. Taja programu na toleo.",
+      "help_title": "Msaada wa programu",
+      "inst": "Leseni za ofisi zako, kuweka makao makuu na vituo vyake, mafunzo kwa wafanyakazi wako.",
+      "inst_title": "Polisi, waendesha mashtaka, mahakama, magereza na kampuni za mawakili",
+      "partners": "Ufadhili, utafiti, au kuleta Pleadli katika nchi nyingine ya Afrika Mashariki.",
+      "partners_title": "Wawekezaji na washirika"
+    },
+    "who_title": "Wanaotuandikia",
+    "write": "Tuandikie"
   },
   "docs": {
     "ai": {
@@ -130,9 +163,23 @@
       "works_title": "Kinachofanya kazi vizuri tayari"
     },
     "how": {
+      "address_body": "Taasisi inapojisajili kwenye Pleadli Orchestra inapata anwani isiyobadilika kamwe, na cheti kilichosainiwa na Pleadli kinachoonyesha funguo zipi ni zake. Ofisi mbili bado zinachagua, mtu kwa mtu, kama zifanye kazi pamoja.",
+      "address_title": "Kila taasisi ina anwani na cheti",
       "admin_body": "Usimamizi wa jukwaa husimamia Pleadli yenyewe, taasisi zipi zipo na zinaruhusiwa kutumia nini. Usimamizi wa taasisi umewekewa mipaka ya taasisi moja: kusimamia vitengo na wanachama wa taasisi hiyo hakutoi uwezo wowote wa kuona muundo wa taasisi nyingine.",
       "admin_title": "Usimamizi wa jukwaa dhidi ya usimamizi wa taasisi",
-      "lead": "Hii ndiyo kanuni ya muundo nyuma ya Pleadli, na sehemu ambayo tayari ni halisi katika mfumo wa mashirika wa jukwaa.",
+      "apps_body": "Kituo cha polisi, ofisi ya mwendesha mashtaka, mahakama, gereza au kampuni ya uwakili inaendesha programu yake ya Pleadli kwenye kompyuta zake. Kumbukumbu zake zimesimbwa hapo na zinabaki hapo. Inafanya kazi bila intaneti kabisa.",
+      "apps_title": "Kila ofisi ina programu yake na kumbukumbu zake",
+      "country_body": "Kumbukumbu haziondoki kamwe kwenye taasisi. Hifadhi zinaenda kwenye hifadhi inayomilikiwa na taasisi, kama kituo cha data cha serikali. Kwa taasisi za umma relay yenyewe inaweza kuendeshwa kwenye seva ya serikali nchini.",
+      "country_title": "Inabaki nchini",
+      "fig": {
+        "dpp": "Ofisi ya mwendesha mashtaka",
+        "dpp_do": "inalifungua, mtu anaamua",
+        "relay": "Relay ya Orchestra",
+        "relay_do": "inalishikilia, haiwezi kulisoma",
+        "station": "Kituo cha polisi",
+        "station_do": "kinafunga na kusaini jalada"
+      },
+      "lead": "Programu tano zinazofanya kazi kila moja peke yake, na Orchestra moja inayoziwezesha kufanya kazi pamoja bila kuunganisha kumbukumbu zao.",
       "org": {
         "entitlement": {
           "body": "Kama taasisi inaruhusiwa kutumia programu fulani ya Pleadli kabisa.",
@@ -151,23 +198,30 @@
           "title": "Kitengo cha shirika"
         }
       },
+      "post_p1": "Kituo kinapotuma jalada kwa mwendesha mashtaka, programu inalifunga ili ofisi ya mwendesha mashtaka huyo pekee iweze kulifungua, na inalisaini ili ofisi ijue limetoka kituo hicho na halijabadilishwa.",
+      "post_p2": "Jalada lililofungwa linaenda kwenye sanduku la barua la mwendesha mashtaka kwenye relay ya Orchestra, kama barua iliyofungwa posta. Relay inalishikilia hadi lichukuliwe tu na haiwezi kulisoma. Programu ya mwendesha mashtaka inalichukua, inalifungua, na mtu anaamua kama alikubali. Uamuzi unarudi kwa njia hiyo hiyo.",
+      "post_p3": "Ofisi zilizo jengo moja zinawasiliana moja kwa moja kupitia mtandao wao. Hakuna kinachohitaji anwani maalum wala mlango wazi: kila ofisi inafikia relay kama inavyofikia tovuti yoyote.",
+      "post_title": "Kukabidhi shauri: posta, si jalada la pamoja",
       "principle_p1": "Shauri linapaswa kuwa na utambulisho mmoja endelevu linapohama kati ya taasisi. Kinachobaki tofauti ni nani anamiliki kumbukumbu: kumbukumbu za polisi ni za Jeshi la Polisi la Uganda, maamuzi ya DPP ni ya DPP. Taasisi inaweza kurejelea shauri bila kupata kumbukumbu za ndani za taasisi nyingine. Kurejelewa si sawa na kuonekana.",
       "principle_p2": "Leo shauri moja linaweza kuwa na namba ya CRB ya kituo, namba tofauti ya jalada la DPP, na namba tofauti ya kesi mahakamani, bila uzi wowote wa pamoja kati yao. Kuziba pengo hilo bila kuvunja umiliki wa taasisi ndiyo changamoto halisi ya kihandisi.",
       "principle_title": "Kanuni",
+      "public_body": "Yeyote mwenye nyaraka ya Pleadli anaweza kuhakiki kuwa ni halali kwa namba yake. Mtu aliyepewa namba ya kufuatilia shauri anaweza kuona hatua shauri lilipofikia, kamwe si yaliyomo. Hakuna anayeweza kutafuta majalada kwa jina.",
+      "public_title": "Kile ambacho umma unaweza kuona",
       "real_body": "Kazi ya kila shauri iko ndani ya kila programu. Chini yake, Pleadli Cloud inashikilia tabaka la mashirika: taasisi, muundo wake wa ndani, na nani yuko wapi.",
       "real_title": "Kilicho halisi leo: mfumo wa mashirika",
       "size_body": "Mfumo huo huo wa mashirika ndio unaoruhusu programu ya Pleadli kumhudumia mtumiaji mmoja, timu, au shirika kubwa; wakili mmoja na kampuni ya mawakili wote hutumia Pleadli Lawyers kupitia mfumo huo huo, uliopangwa tofauti. Umbo la ngazi ni la kila shirika kuamua; Pleadli haidhanii kila taasisi inafanana na jeshi la polisi.",
       "size_title": "Mfumo mmoja, ukubwa wowote",
-      "title": "Utambulisho wa pamoja wa shauri, kumbukumbu za taasisi"
+      "status_note": "Programu na kumbukumbu zake zipo leo, na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa. Kuyatuma kutoka Pleadli Police, relay ya Orchestra, anwani, vyeti, uhakiki wa nyaraka na ufuatiliaji wa mashauri vinajengwa sasa; tazama Ramani ya kazi.",
+      "title": "Jinsi Pleadli inavyofanya kazi"
     },
     "index": {
       "badge": "Nyaraka",
-      "lead": "Sehemu hii ni kwa msomaji wa kiufundi au anayeshughulikia kuunganisha taasisi, si maelezo ya jumla ya matangazo. Inaeleza mfumo halisi nyuma ya Pleadli na jukwaa limefikia wapi leo.",
-      "next_body": "Utambulisho wa pamoja wa shauri na mfumo wa kumbukumbu zinazomilikiwa na taasisi, kwa undani.",
+      "lead": "Jinsi ya kuanza na Pleadli, jinsi programu zake zinavyofanya kazi pamoja, na jinsi inavyolinda kumbukumbu. Imeandikwa kwa watakaoitumia na wanaoamua kuhusu matumizi yake.",
+      "next_body": "Programu tano zinazofanya kazi peke yake, na Orchestra moja inayoziwezesha kufanya kazi pamoja.",
       "scope_after": "kwa maelezo ya kweli, programu moja moja.",
       "scope_body": "Programu zote tano zina msimbo halisi leo, katika viwango tofauti vya ukomavu. Police, DPP, Lawyers na Prisons zina toleo la kwanza la Windows linalojisasisha; Courts bado haijatolewa na ndiyo iliyojaribiwa kidogo zaidi kazini. Hakuna hata moja iliyothibitishwa kazini bado.",
       "scope_title": "Hali ya sasa",
-      "title": "Pleadli, kiufundi",
+      "title": "Nyaraka",
       "what_body": "Pleadli ni familia ya programu zilizojengwa kwa kusudi maalum, Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers na Pleadli Prisons, kila moja ikiwa na kuingia kwake, mitiririko yake ya kazi na kumbukumbu zake. Pleadli Cloud ni jukwaa lililo chini ya zote: utambulisho, mashirika, ruhusa, na utambulisho wa pamoja wa shauri unaounganisha mahusiano halali kati ya programu.",
       "what_title": "Pleadli ni nini"
     },
@@ -175,6 +229,7 @@
       "ai": "AI",
       "applications": "Programu",
       "documents": "Nyaraka",
+      "getting_started": "Kuanza",
       "how_it_works": "Jinsi inavyofanya kazi",
       "overview": "Muhtasari",
       "security": "Usalama"
@@ -215,7 +270,28 @@
       },
       "title": "Usalama ni muundo, si kisanduku cha kuweka alama"
     },
-    "see": "Tazama"
+    "see": "Tazama",
+    "start": {
+      "coming": "Inakuja na Pleadli Orchestra",
+      "help": "Umekwama hatua yoyote? Andika kwa pleadli@pleadli.com au piga +256 772 591 289.",
+      "lead": "Kuanzia kupakua hadi kumbukumbu yako ya kwanza, kwa mpangilio ambao ofisi hufanya.",
+      "s1": "Police, DPP, Lawyers na Prisons ziko tayari kwa Windows kwenye ukurasa wa Vipakuliwa. Courts inafuata.",
+      "s1_title": "Pakua programu ya ofisi yako",
+      "s2": "Fungua kisakinishi. Windows inaweza kusema imelinda kompyuta yako, kwa sababu kisakinishi bado hakijasainiwa kwa cheti: chagua More info, kisha Run anyway. Masasisho ya baadaye yanajisakinisha baada ya kuuliza.",
+      "s2_title": "Isakinishe",
+      "s3": "Uzinduzi wa kwanza unauliza nchi yako, lugha, jina la ofisi, jinsi programu inavyolindwa, na watu wa kwanza watakaoitumia. Inachukua dakika chache na haihitaji intaneti.",
+      "s3_title": "Weka ofisi",
+      "s4": "Ingiza kumbukumbu yako ya kwanza. Kila kumbukumbu inaweza kuchapishwa, kuhifadhiwa kama PDF au Word, na ina namba inayoonyesha kuwa ni halali.",
+      "s4_title": "Anza kazi",
+      "s5": "Makao makuu yanasajili taasisi yake na kuambatisha ofisi zake; wakili au kampuni inasajili ofisi yake. Kila moja inapata anwani yake ya Orchestra.",
+      "s5_title": "Sajili taasisi au ofisi yako",
+      "s6": "Baada ya siku 30 kwenye kompyuta, leseni inaongeza miunganiko na ofisi nyingine, hifadhi kwenye hifadhi yenu na masasisho. Bila leseni, programu na kila kumbukumbu zinaendelea kufanya kazi.",
+      "s6_title": "Ongeza leseni",
+      "s7": "Kituo na ofisi yake ya mwendesha mashtaka wanakubaliana kufanya kazi pamoja, wanahakiki alama za kila mmoja mara moja, na kuanzia hapo wanatumiana majalada yaliyofungwa.",
+      "s7_title": "Unganisha na ofisi mnazofanya kazi nazo",
+      "title": "Kuanza",
+      "today": "Leo"
+    }
   },
   "downloads": {
     "lead": "Police, DPP, Lawyers na Prisons zina toleo lao la kwanza la Windows. Ikishasakinishwa, kila moja hutafuta sasisho lililotiwa saini na hukuomba kulisakinisha; hakuna kinachosakinishwa bila kuuliza. Haya ni matoleo ya mapema, yanaendelea kuundwa na bado hayajathibitishwa kazini. Courts bado haijatolewa.",
@@ -228,6 +304,10 @@
     },
     "stand_title": "Matoleo yamefikia wapi",
     "title": "Pakua Pleadli kwa Windows."
+  },
+  "footer": {
+    "learn": "Jifunze",
+    "product": "Bidhaa"
   },
   "home": {
     "about": "Kuhusu Pleadli",
@@ -305,15 +385,54 @@
   },
   "nav": {
     "about": "Kuhusu",
+    "contact": "Wasiliana nasi",
     "docs": "Nyaraka",
     "downloads": "Vipakuliwa",
     "get_started": "Anza bure",
+    "getting_started": "Kuanza",
     "language": "Lugha",
     "open_menu": "Fungua menyu",
     "overview": "Muhtasari",
+    "pricing": "Leseni",
     "products": "Bidhaa",
     "roadmap": "Ramani ya kazi",
     "sign_in": "Ingia"
+  },
+  "pricing": {
+    "download": "Pakua ujaribu",
+    "every": {
+      "after": "Baada ya majaribio programu inaendelea kufanya kazi na kila kumbukumbu inabaki wazi, na ujumbe hadi leseni iongezwe.",
+      "licence": "Leseni inaongeza Okestra: miunganiko na ofisi nyingine, hifadhi ya kila siku kwenye hifadhi yenu, na masasisho ya sheria, fomu na nyaraka.",
+      "trial": "Siku 30 bure kwenye kila kompyuta, na kila kipengele, bila kadi wala akaunti kuanza."
+    },
+    "every_title": "Kwa kila ofisi",
+    "faq": {
+      "after_a": "Programu inaendelea kufanya kazi na kila kumbukumbu inabaki wazi. Ujumbe unakukumbusha kwamba majaribio yameisha, na miunganiko, hifadhi na masasisho yanasubiri leseni.",
+      "after_q": "Nini kinatokea baada ya siku 30?",
+      "locked_a": "Hapana. Kumbukumbu za haki lazima zipatikane kila wakati. Kituo kisichoweza kufungua daftari la mahabusu ni hatari, hivyo Pleadli haifungi kumbukumbu kwa sababu ya malipo.",
+      "locked_q": "Je, kumbukumbu zetu zinaweza kufungiwa?",
+      "read_a": "Hapana. Kumbukumbu zinabaki kwenye kompyuta zako, na hifadhi zinaenda kwenye hifadhi inayomilikiwa na taasisi yako, kamwe si kwa Pleadli. Zote zimesimbwa kwa funguo ambazo taasisi yako pekee inazo.",
+      "read_q": "Je, Pleadli inaweza kusoma kumbukumbu zetu?",
+      "reinstall_a": "Hapana. Majaribio ni ya kompyuta, hivyo kusakinisha upya kunaendeleza siku 30 zile zile.",
+      "reinstall_q": "Je, kusakinisha upya kunaanzisha majaribio mapya?",
+      "where_a": "Mahali taasisi yako inapochagua: kituo cha data cha serikali nchini kwako, seva yenu, au diski ofisini. Pleadli inaonyesha tu kama kila hifadhi ilifanikiwa.",
+      "where_q": "Hifadhi zinawekwa wapi?"
+    },
+    "faq_title": "Maswali yanayoulizwa",
+    "lead": "Kila programu ya Pleadli inaweza kujaribiwa bure kwa siku 30 kwenye kila kompyuta, na hakuna ofisi inayopoteza kamwe kumbukumbu zake.",
+    "meta_description": "Jinsi Pleadli inavyopewa leseni: majaribio ya siku 30 kwenye kila kompyuta, makubaliano kwa taasisi za umma, leseni mtandaoni kwa mawakili na kampuni. Kumbukumbu hazifungiwi kamwe.",
+    "meta_title": "Leseni · Pleadli",
+    "now_note": "Leseni zinaanza na Pleadli Orchestra. Hadi hapo, kila programu ya Pleadli ni bure kutumia.",
+    "payments_note": "Malipo kwa pesa za simu na kadi yatafunguliwa hivi karibuni. Hadi hapo, tuandikie na tutatoa leseni moja kwa moja.",
+    "practice_body": "Sajili ofisi yako na ununue leseni mtandaoni. Bei zitachapishwa malipo ya mtandaoni yatakapofunguliwa; hadi hapo, tuandikie na tutakupa leseni moja kwa moja.",
+    "practice_cta": "Omba leseni",
+    "practice_title": "Mawakili na kampuni za uwakili",
+    "practice_who": "Ofisi yako mwenyewe, peke yako au kama kampuni",
+    "public_body": "Leseni kupitia makubaliano na Pleadli. Makao makuu yanajisajili mara moja kwenye Pleadli Orchestra, na leseni yake inahusu vituo, ofisi au vituo vyake. Makubaliano hufanywa kwa namna serikali inavyonunua: kwa wilaya, kanda au nchi nzima.",
+    "public_cta": "Zungumza nasi kuhusu makubaliano",
+    "public_title": "Taasisi za umma",
+    "public_who": "Polisi, mashtaka, mahakama na magereza",
+    "title": "Jinsi leseni zinavyofanya kazi"
   },
   "product": {
     "ahead": "Kinachobaki",
@@ -352,9 +471,54 @@
     "title": "Programu tano, jukwaa moja chini yake."
   },
   "roadmap": {
-    "lead": "Kipengele huhamia \"imetolewa\" tu kikishaendeshwa na kuthibitishwa kweli, si kuandikwa tu. Ukurasa huu hutokana na ukaguzi ule ule ambao timu hufanya dhidi ya msimbo wake, si maneno ya matangazo.",
+    "app": {
+      "courts": {
+        "coming": "Toleo la kwanza, likikaguliwa na hakimu na karani wa mahakama.",
+        "ready": "Daftari la kesi, vikao, kuahirishwa na orodha ya kesi; kumbukumbu iliyosainiwa ya kila kikao, vielelezo, maamuzi na hukumu; sauti ya kikao ikirekodiwa."
+      },
+      "dpp": {
+        "coming": "Maamuzi yakirudishwa kituoni kupitia Orchestra; nyaraka zikitumwa mahakamani.",
+        "ready": "Kila jalada kwenye ubao katika hatua zake, saa za mahabusu na rumande kwa kila nchi, hati za mashtaka na nyaraka zinazohakikika, nyaraka zilizochanganuliwa zikipangwa na kusomwa, majalada yaliyofungwa yakipokelewa kutoka polisi."
+      },
+      "lawyers": {
+        "coming": "Taarifa za usikilizaji na amri zikipokelewa kutoka Courts.",
+        "ready": "Kila aina ya shauri, muda wa mahakama ukihesabiwa kwa kanuni, nyaraka za kuwasilisha, fedha za wateja na bili za gharama, viapo na madaftari, kampuni ikifanya kazi kwenye mtandao mmoja wa ofisi."
+      },
+      "police": {
+        "coming": "Usimamizi wa makao makuu juu ya uzuiaji na mashauri makubwa; kutuma majalada kwa mwendesha mashtaka.",
+        "ready": "Kitabu cha matukio, matukio, mashauri, mahabusu na saa 48, dhamana, maelezo, vielelezo na hati za mashtaka, kila kumbukumbu ikichapishwa kama nyaraka yake; maafisa, ratiba ya zamu na picha za utambulisho; makao makuu yakipokea takwimu za vituo vyake."
+      },
+      "prisons": {
+        "coming": "Muundo tulivu wa DPP na Lawyers; rumande ikihesabiwa kwa saa zile zile za kisheria.",
+        "ready": "Upokeaji kwa hati, uzuiaji, kuachiliwa na kupelekwa mahakamani; kila kituo kikifanya kazi kikamilifu peke yake; mawasiliano na makao makuu kupitia mtandao wake."
+      }
+    },
+    "apps_title": "Kila programu leo",
+    "coming": "Inakuja",
+    "h_later": "Baadaye",
+    "h_next": "Inayofuata",
+    "h_now": "Sasa",
+    "later": {
+      "1": "Pleadli Police kwenye simu: utumaji, maombi ya msaada na trafiki.",
+      "2": "Programu kwa umma: kuripoti uhalifu, kuomba msaada, kufuatilia shauri, kupanga kutembelea gereza, kumpata wakili, kujisajili makazi kwa polisi wa eneo.",
+      "3": "Visakinishi vilivyosainiwa, na Pleadli kwa macOS na Linux."
+    },
+    "lead": "Kinachojengwa sasa, kinachofuata na kitakachofuata baadaye, kisha kila programu inachofanya leo. Kwa ukweli: kitu kinaitwa tayari tu baada ya kuendeshwa na kukaguliwa.",
+    "next": {
+      "1": "Mashauri yakisonga kati ya taasisi kupitia Orchestra: polisi kwa mwendesha mashtaka na kurudi, mwendesha mashtaka kwa mahakama, mahakama kwa magereza na mawakili.",
+      "2": "Hifadhi kwenye hifadhi ya kila taasisi, ikionyeshwa mahali pamoja.",
+      "3": "Mashauri halisi matano hadi manane yakiendeshwa kutoka kukamatwa hadi hukumu katika programu zote.",
+      "4": "Toleo la kwanza la Pleadli Courts."
+    },
+    "now": {
+      "1": "Pleadli Orchestra kwenye pleadli.com: kusajili taasisi au ofisi, leseni na majaribio ya siku 30.",
+      "2": "Kuhakiki nyaraka yoyote ya Pleadli kwa namba yake, na kufuatilia shauri kwa namba ya ufuatiliaji.",
+      "3": "Pleadli Police kwa makao makuu: wilaya na kanda zikisimamia uzuiaji, mashauri makubwa na takwimu za uhalifu za kila mwezi.",
+      "4": "Prisons na Courts kwa muundo ule ule tulivu wa DPP na Lawyers."
+    },
     "platform": "Jukwaa",
-    "title": "Kilicho halisi, kinachofuata, na kilicho bado utafiti."
+    "ready": "Tayari leo",
+    "title": "Pleadli inakoelekea"
   },
   "site": {
     "description": "Pleadli, Okestra ya Sheria: programu za polisi, waendesha mashtaka, mahakama, mawakili na magereza Afrika Mashariki. Zinafanya kazi bila intaneti na kukabidhi shauri kwa usalama.",

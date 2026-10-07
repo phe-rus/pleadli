@@ -36,7 +36,7 @@ export const productsFr = {
       stats: [{ label: 'En garde à vue' }, { label: 'Affaires ouvertes' }, { label: 'De service' }],
       row: { meta: 'Détenu depuis 07:42, à présenter avant 06:42 demain', pill: 'Limite proche' },
     },
-    download: { state: "Première version Windows, 0.1.0. Les copies installées se mettent à jour d'elles-mêmes. Précoce : en développement et en test, pas encore validée sur le terrain." },
+    download: { state: "Version Windows 0.1.1. Les copies installées se mettent à jour d'elles-mêmes. Précoce : en développement et en test, pas encore validée sur le terrain." },
   },
   dpp: {
     institution: 'Bureau du Directeur des poursuites publiques',
@@ -73,7 +73,7 @@ export const productsFr = {
       stats: [{ label: 'En attente de décision' }, { label: 'Transmis cette semaine' }, { label: 'Actes émis' }],
       row: { meta: 'Transmis par le poste central de police, il y a 2 jours', pill: 'En examen' },
     },
-    download: { state: "Première version Windows, 0.1.0. Les copies installées se mettent à jour d'elles-mêmes. Précoce : en développement et en test, pas encore validée sur le terrain." },
+    download: { state: "Version Windows 0.1.1. Les copies installées se mettent à jour d'elles-mêmes. Précoce : en développement et en test, pas encore validée sur le terrain." },
   },
   courts: {
     institution: "Le pouvoir judiciaire de l'Ouganda",
@@ -150,7 +150,7 @@ export const productsFr = {
       stats: [{ label: 'Affaires ouvertes' }, { label: 'Audiences cette semaine' }, { label: 'Délais à échéance' }],
       row: { meta: 'Demande de mise en liberté, certificat de mise en état attendu', pill: 'Plus que 2 jours' },
     },
-    download: { state: "Première version Windows, 0.1.0. Les copies installées se mettent à jour d'elles-mêmes. Précoce : pas encore validée sur le terrain avec un cabinet en exercice." },
+    download: { state: "Version Windows 0.1.1. Les copies installées se mettent à jour d'elles-mêmes. Précoce : pas encore validée sur le terrain avec un cabinet en exercice." },
   },
   prisons: {
     institution: "Service pénitentiaire de l'Ouganda",
@@ -188,7 +188,7 @@ export const productsFr = {
       stats: [{ label: 'En détention' }, { label: 'Caution obligatoire proche' }, { label: "Visites du jour" }],
       row: { meta: 'Détention provisoire, seuil de caution obligatoire dans 47 h 40 min', pill: 'À surveiller' },
     },
-    download: { state: "Première version Windows, 0.1.0. Les copies installées se mettent à jour d'elles-mêmes. Précoce : en développement et en test, pas encore validée sur le terrain." },
+    download: { state: "Version Windows 0.1.1. Les copies installées se mettent à jour d'elles-mêmes. Précoce : en développement et en test, pas encore validée sur le terrain." },
   },
 }
 

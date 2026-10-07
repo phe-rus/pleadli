@@ -7,10 +7,13 @@
   <url><loc>https://pleadli.com/products/courts</loc><priority>0.8</priority></url>
   <url><loc>https://pleadli.com/products/lawyers</loc><priority>0.8</priority></url>
   <url><loc>https://pleadli.com/products/prisons</loc><priority>0.8</priority></url>
+  <url><loc>https://pleadli.com/licensing</loc><priority>0.8</priority></url>
+  <url><loc>https://pleadli.com/contact</loc><priority>0.7</priority></url>
   <url><loc>https://pleadli.com/downloads</loc><priority>0.8</priority></url>
   <url><loc>https://pleadli.com/roadmap</loc><priority>0.6</priority></url>
   <url><loc>https://pleadli.com/about</loc><priority>0.7</priority></url>
   <url><loc>https://pleadli.com/docs</loc><priority>0.5</priority></url>
+  <url><loc>https://pleadli.com/docs/getting-started</loc><priority>0.6</priority></url>
   <url><loc>https://pleadli.com/docs/how-it-works</loc><priority>0.5</priority></url>
   <url><loc>https://pleadli.com/docs/applications</loc><priority>0.5</priority></url>
   <url><loc>https://pleadli.com/docs/documents</loc><priority>0.5</priority></url>

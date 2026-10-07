@@ -18,3 +18,10 @@ S = {
 "site.not_found": ("Page not found", "Ukurasa haupatikani", "Page introuvable"),
 "site.not_found_body": ("The page you're looking for doesn't exist.", "Ukurasa unaoutafuta haupo.", "La page que vous cherchez n'existe pas."),
 }
+S.update({
+"nav.pricing": ("Licensing", "Leseni", "Licences"),
+"nav.contact": ("Contact", "Wasiliana nasi", "Contact"),
+"nav.getting_started": ("Getting started", "Kuanza", "Bien démarrer"),
+"footer.product": ("Product", "Bidhaa", "Produit"),
+"footer.learn": ("Learn", "Jifunze", "Découvrir"),
+})

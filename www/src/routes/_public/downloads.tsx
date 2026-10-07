@@ -1,3 +1,4 @@
+import { seo } from '@/lib/seo'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card, CardDescription, CardTitle } from '@pleadli/ui/card'
@@ -8,14 +9,7 @@ import * as m from '@/paraglide/messages'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/downloads')({
-  head: () => ({
-    meta: [
-      { title: `${m["downloads.title"]().replace(/\.$/, "")} · Pleadli` },
-      { name: 'description', content: m["downloads.lead"]() },
-      { property: 'og:title', content: `${m["downloads.title"]().replace(/\.$/, "")} · Pleadli` },
-      { property: 'og:description', content: m["downloads.lead"]() },
-    ],
-  }),
+  head: () => seo({ title: `${m["downloads.title"]().replace(/\.$/, "")} · Pleadli`, description: m["downloads.lead"](), path: '/downloads' }),
   component: RouteComponent,
 })
 

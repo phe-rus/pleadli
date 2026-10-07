@@ -9,6 +9,7 @@ import {
 /** Text is read through getters, so each request renders in its own language. */
 export const docsNav = [
   { slug: '', get title() { return m["docs.nav.overview"]() }, to: '/docs' },
+  { slug: 'getting-started', get title() { return m["docs.nav.getting_started"]() }, to: '/docs/getting-started' },
   { slug: 'how-it-works', get title() { return m["docs.nav.how_it_works"]() }, to: '/docs/how-it-works' },
   { slug: 'applications', get title() { return m["docs.nav.applications"]() }, to: '/docs/applications' },
   { slug: 'security', get title() { return m["docs.nav.security"]() }, to: '/docs/security' },
