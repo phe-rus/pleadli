@@ -11,6 +11,7 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useMemo } from 'react'
+import { CalendarViewSwitch } from '@/features/calendar/view-switch'
 
 const DAY = 86_400_000
 const EAT = 3 * 3_600_000
@@ -84,31 +85,35 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
+          <p className="text-[0.8125rem] font-medium text-muted-foreground">{m["nav.calendar"]()}</p>
           <h1>{formatMonth(first + DAY)}</h1>
-          <p>{m["calendar.lead"]()}</p>
         </div>
         <div className="page-actions">
-          <Button size="sm" variant="secondary" aria-label={m["calendar.previous"]()} onClick={() => go(-1)}>
+          <Button size="icon-sm" variant="ghost" aria-label={m["calendar.previous"]()} title={m["calendar.previous"]()} onClick={() => go(-1)}>
             <HugeiconsIcon icon={ArrowLeft01Icon} />
           </Button>
           <Button size="sm" variant="secondary" onClick={() => void navigate({ to: '/calendar', search: {}, replace: true })}>
             {m["calendar.this_month"]()}
           </Button>
-          <Button size="sm" variant="secondary" aria-label={m["calendar.next"]()} onClick={() => go(1)}>
+          <Button size="icon-sm" variant="ghost" aria-label={m["calendar.next"]()} title={m["calendar.next"]()} onClick={() => go(1)}>
             <HugeiconsIcon icon={ArrowRight01Icon} />
           </Button>
         </div>
       </header>
 
-      <div className="flex flex-wrap gap-4 text-muted-foreground">
+      <div className="flex justify-center">
+        <CalendarViewSwitch value="month" />
+      </div>
+
+      <div className="flex flex-wrap gap-4 text-[0.8125rem] text-muted-foreground">
         <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-primary" />{m["calendar.hearing"]()}</span>
         <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-amber-500" />{m["calendar.deadline"]()}</span>
         <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-muted-foreground/60" />{m["calendar.task"]()}</span>
       </div>
 
-      <div role="grid" aria-label={formatMonth(first + DAY)} className="grid grid-cols-7 overflow-hidden rounded-xl border border-border">
+      <div role="grid" aria-label={formatMonth(first + DAY)} className="grid grid-cols-7 overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border/70">
         {weekdays.map((w) => (
-          <div key={w} role="columnheader" className="border-b border-border bg-muted/40 px-2 py-1.5 text-muted-foreground">
+          <div key={w} role="columnheader" className="border-b border-border/60 px-2 py-1.5 text-right text-xs text-muted-foreground">
             {w}
           </div>
         ))}
@@ -124,7 +129,7 @@ function RouteComponent() {
               aria-label={new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'long', timeZone: 'Africa/Kampala' }).format(at + EAT)}
               className={cn('flex min-h-24 flex-col gap-1 border-b border-r border-border/60 p-1.5 [&:nth-child(7n)]:border-r-0', !inMonth && 'bg-muted/20 text-muted-foreground/60')}
             >
-              <span className={cn('self-start rounded-full px-1.5 tabular-nums', k === today && 'bg-primary text-primary-foreground')}>{new Date(at + EAT).getUTCDate()}</span>
+              <span className={cn('flex size-6 items-center justify-center self-end rounded-full text-[0.8125rem] tabular-nums', k === today && 'bg-destructive font-semibold text-white')}>{new Date(at + EAT).getUTCDate()}</span>
               {items.slice(0, 4).map((item) => {
                 const body = (
                   <span

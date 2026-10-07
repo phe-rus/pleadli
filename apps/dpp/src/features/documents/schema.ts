@@ -41,6 +41,7 @@ export const documentSchema = z.object({
     stampImage: z.string().optional(),
     verifyCode: z.string().optional(),
     verifyQr: z.string().optional(),
+    ink: z.string().optional(),
   }),
 })
 

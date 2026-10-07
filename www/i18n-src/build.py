@@ -1,11 +1,11 @@
-# Builds messages/{en,sw,fr,de}.json from the parts in this folder (w*.py),
-# each a dict S of key -> (en, sw, fr, de). Nested keys (a.b.c) become nested
+# Builds messages/{en,sw,fr}.json from the parts in this folder (w*.py),
+# each a dict S of key -> (en, sw, fr). Nested keys (a.b.c) become nested
 # JSON, read in code as m["a.b.c"](). No em-dashes, by house rule.
 import glob, importlib.util, json, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 APP = os.path.dirname(HERE)
-LANGS = ['en', 'sw', 'fr', 'de']
+LANGS = ['en', 'sw', 'fr']
 
 def put(o, k, v):
     parts = k.split('.')
@@ -18,7 +18,7 @@ for path in sorted(glob.glob(os.path.join(HERE, 'w*.py'))):
     spec = importlib.util.spec_from_file_location('part', path)
     part = importlib.util.module_from_spec(spec); spec.loader.exec_module(part)
     for k, texts in part.S.items():
-        assert len(texts) == 4, k
+        assert len(texts) == 3, k
         for l, text in zip(LANGS, texts):
             assert '—' not in text, f'em-dash in {k} ({l})'
             put(out[l], k, text)

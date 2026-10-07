@@ -1,11 +1,15 @@
 import { formatDate } from '@/lib/dates'
-import { serviceNames } from '@/lib/jurisdiction'
-import { SettingsCard } from '@/components/settings-card'
+import { Createpanel } from '@/components/create-panel'
 import { EmptyNote } from '@/components/planned'
 import { Tag } from '@/components/status-tag'
+import { useBrand } from '@/features/installation'
 import { ApiError } from '@/lib/api'
+import { CheckmarkCircle02Icon, PoliceCapIcon, Shield01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
+import { Group, GroupRow, RowIcon } from '@pleadli/ui/grouped'
 import { Input } from '@pleadli/ui/input'
+import { Segmented } from '@pleadli/ui/segmented'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -17,201 +21,246 @@ import * as m from '@/paraglide/messages'
 
 const say = (error: unknown) => (error instanceof ApiError ? error.message : typeof error === 'string' ? error : m["common.try_again"]())
 
-function IdentityCard() {
+/** The code a station and this office read to each other, in groups so it can be said aloud. */
+const spaced = (code: string | null | undefined) => (code ?? '').replace(/[^0-9a-f]/gi, '').replace(/(.{4})/g, '$1 ').trim().toUpperCase()
+
+/**
+ * Adding a station, as a phone pairs with something new: name the station,
+ * hand it the invitation, open its reply when it comes. The office's own
+ * identity is made on the way, from the name already set for this office, so
+ * there is no separate step for it.
+ */
+function AddStation({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { data: identity } = useIdentity()
-  const [name, setName] = useState('')
-  const [jurisdiction, setJurisdiction] = useState('')
-  const create = useMutation({
-    mutationFn: () => createIdentity(name, jurisdiction),
-    onSuccess: () => t.success(m["interchange.conn.identity_created"]()),
-    onError: (e) => t.error(m["interchange.conn.identity_failed"](), { description: say(e) }),
-  })
-
-  if (identity) {
-    return (
-      <SettingsCard
-        title={identity.officeName}
-        badge={<Tag tone="done">{m["interchange.conn.identity_set"]()}</Tag>}
-        description={identity.jurisdiction ? m["interchange.conn.handles"]({ area: identity.jurisdiction }) : m["interchange.conn.known_as"]()}
-        hint={m["interchange.conn.fingerprint_hint"]()}
-      >
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">{m["interchange.conn.fingerprint_label"]()}</span>
-          <code className="w-fit rounded-md bg-muted px-3 py-2 text-lg font-semibold tracking-wider text-foreground">{identity.fingerprint}</code>
-        </div>
-      </SettingsCard>
-    )
-  }
-  return (
-    <SettingsCard
-      title={m["interchange.conn.identify"]()}
-      description={m["interchange.conn.identify_description"]()}
-      onSubmit={(e) => {
-        e.preventDefault()
-        create.mutate()
-      }}
-      action={
-        <Button type="submit" size="sm" disabled={create.isPending || !name.trim()}>
-          {m["interchange.conn.create_identity"]()}
-        </Button>
-      }
-    >
-      <Input aria-label={m["interchange.conn.office_name"]()} placeholder={m["interchange.conn.office_placeholder"]({ office: serviceNames().short })} value={name} onChange={(e) => setName(e.target.value)} />
-      <Input aria-label={m["interchange.conn.area"]()} placeholder={m["interchange.conn.area_placeholder"]()} value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} />
-    </SettingsCard>
-  )
-}
-
-function InviteCard({ disabled }: { disabled: boolean }) {
+  const { data: brand } = useBrand()
   const [station, setStation] = useState('')
-  const [days, setDays] = useState(14)
+  const [days, setDays] = useState<'7' | '14' | '30'>('14')
+  const [made, setMade] = useState<Connection | null>(null)
   const invite = useMutation({
     mutationFn: async () => {
-      const connection = await createInvite(station, days)
+      if (!identity) await createIdentity(brand?.officeName ?? '', '')
+      const connection = await createInvite(station.trim(), Number(days))
       await saveFile('invite', connection.id)
       return connection
     },
-    onSuccess: () => {
-      t.success(m["interchange.conn.invited"]())
-      setStation('')
-    },
+    onSuccess: (c) => setMade(c),
     onError: (e) => t.error(m["interchange.conn.invite_failed"](), { description: say(e) }),
   })
+  const close = (next: boolean) => {
+    onOpenChange(next)
+    if (!next) {
+      setMade(null)
+      setStation('')
+    }
+  }
+
   return (
-    <SettingsCard
-      title={m["interchange.conn.invite_title"]()}
-      description={m["interchange.conn.invite_description"]()}
-      hint={m["interchange.conn.invite_hint"]()}
-      onSubmit={(e) => {
-        e.preventDefault()
-        invite.mutate()
-      }}
-      action={
-        <Button type="submit" size="sm" disabled={disabled || invite.isPending || !station.trim()}>
-          {m["interchange.conn.make_invite"]()}
-        </Button>
-      }
-    >
-      <Input aria-label={m["interchange.conn.station"]()} placeholder={m["interchange.conn.station_placeholder"]()} value={station} onChange={(e) => setStation(e.target.value)} disabled={disabled} />
-      <label className="flex items-center justify-between gap-3">
-        <span>{m["interchange.conn.open_for"]()}</span>
-        <select className="h-8 rounded-md border border-input bg-input/20 px-2" value={days} onChange={(e) => setDays(Number(e.target.value))}>
-          {[7, 14, 30].map((d) => (
-            <option key={d} value={d}>
-              {m["count.day.many"]({ count: d })}
-            </option>
-          ))}
-        </select>
-      </label>
-      {disabled && <p>{m["interchange.conn.identify_first"]()}</p>}
-    </SettingsCard>
+    <Createpanel open={open} onOpenChange={close} headings={{ title: m["stations.add"](), description: m["stations.add_lead"]() }}>
+      {!made ? (
+        <form
+          className="flex flex-1 flex-col gap-5 overflow-y-auto p-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            invite.mutate()
+          }}
+        >
+          <ol className="flex list-none flex-col gap-3 p-0 text-muted-foreground">
+            <li>{m["stations.step1"]()}</li>
+            <li>{m["stations.step2"]()}</li>
+            <li>{m["stations.step3"]()}</li>
+          </ol>
+          <label className="flex flex-col gap-1.5">
+            <span>{m["stations.which"]()}</span>
+            <Input autoFocus placeholder={m["interchange.conn.station_placeholder"]()} value={station} onChange={(e) => setStation(e.target.value)} />
+          </label>
+          <div className="flex items-center justify-between gap-3">
+            <span>{m["stations.valid_for"]()}</span>
+            <Segmented
+              label={m["stations.valid_for"]()}
+              size="sm"
+              value={days}
+              onChange={setDays}
+              items={(['7', '14', '30'] as const).map((d) => ({ value: d, label: m["count.day.many"]({ count: Number(d) }) }))}
+            />
+          </div>
+          <Button type="submit" disabled={invite.isPending || !station.trim()}>
+            {m["stations.make_invitation"]()}
+          </Button>
+        </form>
+      ) : (
+        <div className="flex flex-col items-center gap-4 p-4 py-8 text-center">
+          <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-10 text-green-600" />
+          <h3>{m["stations.invitation_ready"]({ station: made.intendedStation })}</h3>
+          <p className="text-muted-foreground">{m["stations.send_it"]({ date: formatDate(made.inviteExpiresAt) })}</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button variant="secondary" onClick={() => void saveFile('invite', made.id)}>
+              {m["interchange.conn.save_again"]()}
+            </Button>
+            <Button onClick={() => close(false)}>{m["common.done"]()}</Button>
+          </div>
+        </div>
+      )}
+    </Createpanel>
   )
 }
 
-function ConnectionRow({ connection: c }: { connection: Connection }) {
+/** One station opened: where things stand with it and the one thing to do next. */
+function StationPanel({ connection: c, onClose }: { connection: Connection; onClose: () => void }) {
   const [typed, setTyped] = useState('')
   const [reason, setReason] = useState('')
-  const state = connectionStates[c.state] ?? { label: c.state, tone: 'stopped' as const }
   const trust = useMutation({ mutationFn: () => trustConnection(c.id, typed), onSuccess: () => t.success(m["interchange.conn.trusted_toast"]()), onError: (e) => t.error(m["interchange.review.not_trusted"](), { description: say(e) }) })
-  const decline = useMutation({ mutationFn: () => declineConnection(c.id, reason), onError: (e) => t.error(m["interchange.conn.decline_failed"](), { description: say(e) }) })
-  const revoke = useMutation({ mutationFn: () => revokeConnection(c.id, reason), onSuccess: () => t.success(m["interchange.conn.ended"]()), onError: (e) => t.error(m["interchange.conn.end_failed"](), { description: say(e) }) })
-  const resend = useMutation({ mutationFn: () => saveFile('invite', c.id), onError: (e) => t.error(m["interchange.conn.save_invite_failed"](), { description: say(e) }) })
+  const decline = useMutation({ mutationFn: () => declineConnection(c.id, reason), onSuccess: onClose, onError: (e) => t.error(m["interchange.conn.decline_failed"](), { description: say(e) }) })
+  const revoke = useMutation({ mutationFn: () => revokeConnection(c.id, reason), onSuccess: () => { t.success(m["interchange.conn.ended"]()); onClose() }, onError: (e) => t.error(m["interchange.conn.end_failed"](), { description: say(e) }) })
 
   return (
-    <div role="listitem" className="flex flex-col gap-3 py-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <strong>{c.stationName ?? c.intendedStation}</strong>
-        <Tag tone={state.tone}>{state.label}</Tag>
-        {c.state === 'trusted' && c.waiting > 0 && <Tag tone="open">{m["interchange.conn.waiting"]({ count: c.waiting })}</Tag>}
-        <span className="ml-auto text-muted-foreground">{m["interchange.conn.invited_on"]({ date: formatDate(c.createdAt) })}</span>
-      </div>
-
+    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4">
       {c.state === 'invited' && (
-        <div className="flex flex-wrap items-center gap-3">
-          <p>{m["interchange.conn.waiting_answer"]({ station: c.intendedStation, date: formatDate(c.inviteExpiresAt) })}</p>
-          <Button size="sm" variant="outline" onClick={() => resend.mutate()}>
-            {m["interchange.conn.save_again"]()}
-          </Button>
-        </div>
+        <Group footer={m["interchange.conn.waiting_answer"]({ station: c.intendedStation, date: formatDate(c.inviteExpiresAt) })}>
+          <GroupRow label={m["stations.invitation"]()} value={<Button size="xs" variant="secondary" onClick={() => void saveFile('invite', c.id)}>{m["interchange.conn.save_again"]()}</Button>} />
+          <GroupRow label={m["stations.reply"]()} value={<ImportButton label={m["stations.open_reply"]()} variant="secondary" />} />
+        </Group>
       )}
 
       {c.state === 'awaiting_confirmation' && (
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/40 p-4">
+        <div className="flex flex-col gap-4">
           <p>
-            <strong>{c.stationName}</strong>{c.stationJurisdiction ? ` (${c.stationJurisdiction})` : ''}
+            <strong>{c.stationName}</strong>
+            {c.stationJurisdiction ? ` (${c.stationJurisdiction})` : ''}
             {c.officerInCharge ? `, ${m["interchange.conn.officer_in_charge"]({ name: c.officerInCharge })}` : ''} {m["interchange.conn.answered"]()}
           </p>
-          <code className="w-fit rounded-md bg-background px-3 py-2 text-lg font-semibold tracking-wider text-foreground">{c.fingerprint}</code>
-          <div className="flex flex-wrap items-center gap-2">
-            <Input aria-label={m["interchange.conn.fingerprint_read"]()} placeholder={m["interchange.conn.fingerprint_placeholder"]()} className="max-w-xs" value={typed} onChange={(e) => setTyped(e.target.value)} />
-            <Button size="sm" disabled={trust.isPending || typed.replace(/[^0-9a-f]/gi, '').length < 20} onClick={() => trust.mutate()}>
-              {m["interchange.conn.trust"]()}
-            </Button>
+          <div className="flex flex-col items-center gap-2 rounded-xl bg-foreground/[0.03] p-5 text-center">
+            <span className="text-[0.8125rem] text-muted-foreground">{m["stations.their_code"]()}</span>
+            <code className="font-mono text-xl font-semibold tracking-widest">{spaced(c.fingerprint)}</code>
+            <p className="text-[0.8125rem] text-muted-foreground">{m["stations.check_code"]()}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Input aria-label={m["interchange.conn.decline_reason"]()} placeholder={m["interchange.conn.decline_placeholder"]()} className="max-w-xs" value={reason} onChange={(e) => setReason(e.target.value)} />
-            <Button size="sm" variant="outline" disabled={decline.isPending} onClick={() => decline.mutate()}>
-              {m["interchange.conn.decline"]()}
-            </Button>
-          </div>
+          <Input aria-label={m["interchange.conn.fingerprint_read"]()} placeholder={m["stations.type_code"]()} value={typed} onChange={(e) => setTyped(e.target.value)} />
+          <Button disabled={trust.isPending || typed.replace(/[^0-9a-f]/gi, '').length < 20} onClick={() => trust.mutate()}>
+            {m["stations.connect"]()}
+          </Button>
+          <details className="text-muted-foreground">
+            <summary className="cursor-pointer">{m["stations.does_not_match"]()}</summary>
+            <div className="mt-3 flex flex-col gap-2">
+              <Input aria-label={m["interchange.conn.decline_reason"]()} placeholder={m["interchange.conn.decline_placeholder"]()} value={reason} onChange={(e) => setReason(e.target.value)} />
+              <Button variant="destructive" size="sm" disabled={decline.isPending} onClick={() => decline.mutate()}>
+                {m["interchange.conn.decline"]()}
+              </Button>
+            </div>
+          </details>
         </div>
       )}
 
       {c.state === 'trusted' && (
-        <div className="flex flex-col gap-2">
-          <p>
-            {m["interchange.conn.trusted_detail"]({ fingerprint: c.fingerprint ?? "", date: c.confirmedAt ? formatDate(c.confirmedAt) : '', by: c.confirmedBy ? ` (${c.confirmedBy})` : '', seq: c.lastSeqIn })}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <Input aria-label={m["interchange.conn.end_reason"]()} placeholder={m["interchange.conn.end_placeholder"]()} className="max-w-xs" value={reason} onChange={(e) => setReason(e.target.value)} />
-            <Button size="sm" variant="outline" disabled={revoke.isPending || !reason.trim()} onClick={() => revoke.mutate()}>
-              {m["interchange.conn.end"]()}
-            </Button>
-          </div>
-        </div>
+        <>
+          <Group>
+            <GroupRow label={m["stations.connected_since"]()} value={c.confirmedAt ? formatDate(c.confirmedAt) : ''} />
+            {c.confirmedBy && <GroupRow label={m["stations.confirmed_by"]()} value={c.confirmedBy} />}
+            <GroupRow label={m["stations.their_code"]()} value={<code className="font-mono text-xs">{spaced(c.fingerprint)}</code>} />
+            <GroupRow label={m["stations.packages"]()} value={c.lastSeqIn} />
+          </Group>
+          <details className="text-muted-foreground">
+            <summary className="cursor-pointer">{m["interchange.conn.end"]()}</summary>
+            <div className="mt-3 flex flex-col gap-2">
+              <Input aria-label={m["interchange.conn.end_reason"]()} placeholder={m["interchange.conn.end_placeholder"]()} value={reason} onChange={(e) => setReason(e.target.value)} />
+              <Button variant="destructive" size="sm" disabled={revoke.isPending || !reason.trim()} onClick={() => revoke.mutate()}>
+                {m["interchange.conn.end"]()}
+              </Button>
+            </div>
+          </details>
+        </>
       )}
 
-      {(c.state === 'revoked' || c.state === 'declined') && c.revokedReason && <p>{c.revokedReason}</p>}
+      {(c.state === 'revoked' || c.state === 'declined' || c.state === 'expired') && <p className="text-muted-foreground">{c.revokedReason ?? connectionStates[c.state]?.label}</p>}
     </div>
   )
 }
 
-/** Who this office is, which stations it has invited, and which it trusts. A
- * station is trusted only after a person here has confirmed its fingerprint with
- * the station itself. */
+/** What a station's row says under its name: where it stands, in a sentence. */
+function stationLine(c: Connection) {
+  switch (c.state) {
+    case 'invited':
+      return m["stations.line.invited"]({ date: formatDate(c.inviteExpiresAt) })
+    case 'awaiting_confirmation':
+      return m["stations.line.check"]()
+    case 'trusted':
+      return c.waiting > 0 ? m["interchange.conn.waiting"]({ count: c.waiting }) : m["stations.line.connected"]()
+    default:
+      return connectionStates[c.state]?.label ?? c.state
+  }
+}
+
+/**
+ * The police stations that may send files here. Adding one is a short guided
+ * sheet; each station opens to show where things stand and the next step. A
+ * station is trusted only after a person here has checked its code with the
+ * station itself.
+ */
 export function ConnectionsView() {
   const { data: identity } = useIdentity()
   const { data: connections } = useConnections()
+  const [adding, setAdding] = useState(false)
+  const [openId, setOpenId] = useState<string | null>(null)
+  const opened = connections.find((c) => c.id === openId) ?? null
 
   return (
-    <article className="page">
+    <article className="page page-narrow">
       <header className="page-header">
         <div>
-          <h1>{m["nav.item.police_connections"]()}</h1>
-          <p>{m["interchange.conn.subtitle"]()}</p>
+          <h1>{m["nav.item.police_stations"]()}</h1>
+          <p>{m["stations.subtitle"]()}</p>
         </div>
         <div className="page-actions">
-          <ImportButton label={m["interchange.conn.import_answer"]()} variant="secondary" />
+          <Button size="sm" onClick={() => setAdding(true)}>
+            {m["stations.add"]()}
+          </Button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <IdentityCard />
-        <InviteCard disabled={!identity} />
-      </div>
+      {connections.length === 0 ? (
+        <EmptyNote icon={<HugeiconsIcon icon={PoliceCapIcon} />} action={<Button onClick={() => setAdding(true)}>{m["stations.add"]()}</Button>}>
+          {m["stations.empty"]()}
+        </EmptyNote>
+      ) : (
+        <Group title={m["interchange.conn.stations"]()}>
+          {connections.map((c) => {
+            const state = connectionStates[c.state] ?? { label: c.state, tone: 'stopped' as const }
+            return (
+              <GroupRow
+                key={c.id}
+                icon={
+                  <RowIcon tone={c.state === 'trusted' ? 'blue' : c.state === 'awaiting_confirmation' ? 'orange' : 'gray'}>
+                    <HugeiconsIcon icon={PoliceCapIcon} />
+                  </RowIcon>
+                }
+                label={c.stationName ?? c.intendedStation}
+                detail={stationLine(c)}
+                value={c.state === 'awaiting_confirmation' ? <Tag tone={state.tone}>{state.label}</Tag> : undefined}
+                chevron
+                onClick={() => setOpenId(c.id)}
+              />
+            )
+          })}
+        </Group>
+      )}
 
-      <section className="page-section">
-        <h2>{m["interchange.conn.stations"]()}</h2>
-        {connections.length === 0 ? (
-          <EmptyNote>{m["interchange.conn.empty"]()}</EmptyNote>
-        ) : (
-          <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
-            {connections.map((c) => (
-              <ConnectionRow key={c.id} connection={c} />
-            ))}
-          </div>
-        )}
-      </section>
+      {identity && (
+        <Group title={m["stations.this_office"]()} footer={m["interchange.conn.fingerprint_hint"]()}>
+          <GroupRow
+            icon={
+              <RowIcon tone="green">
+                <HugeiconsIcon icon={Shield01Icon} />
+              </RowIcon>
+            }
+            label={identity.officeName}
+            detail={identity.jurisdiction ?? undefined}
+            value={<code className="font-mono text-xs">{spaced(identity.fingerprint)}</code>}
+          />
+        </Group>
+      )}
+
+      <AddStation open={adding} onOpenChange={setAdding} />
+      <Createpanel open={!!opened} onOpenChange={(o) => !o && setOpenId(null)} headings={{ title: opened ? (opened.stationName ?? opened.intendedStation) : '', description: opened ? stationLine(opened) : '' }}>
+        {opened && <StationPanel connection={opened} onClose={() => setOpenId(null)} />}
+      </Createpanel>
     </article>
   )
 }

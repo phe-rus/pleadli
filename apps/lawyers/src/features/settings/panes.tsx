@@ -63,12 +63,16 @@ function useIsAdmin() {
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   const id = useId()
   return (
-    <div className="grid grid-cols-1 gap-1.5 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] md:items-center md:gap-x-6">
-      <label htmlFor={id}>{label}</label>
-      <div id={id} className="contents">
+    // A row, as System Settings lays one out: the label on the left, the
+    // control on the right, the note under the control. Stacks on a narrow window.
+    <div className="grid grid-cols-1 items-center gap-x-6 gap-y-1.5 sm:grid-cols-[11rem_minmax(0,1fr)]">
+      <label htmlFor={id} className="text-[0.8125rem] sm:text-right">
+        {label}
+      </label>
+      <div id={id} className="flex min-w-0 flex-col">
         {children}
       </div>
-      {hint && <p className="text-muted-foreground md:col-start-2">{hint}</p>}
+      {hint && <p className="text-[0.8125rem] text-muted-foreground sm:col-start-2">{hint}</p>}
     </div>
   )
 }

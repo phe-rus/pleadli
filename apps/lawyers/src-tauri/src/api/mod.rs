@@ -671,6 +671,31 @@ struct PrintEntityQuery {
     entity_id: String,
 }
 
+/// The handwriting on one paper (a received statement, a scan), if any.
+async fn get_paper_ink(State(s): State<AppState>, Query(q): Query<PrintEntityQuery>) -> ApiResult<Option<String>> {
+    Ok(Json(pleadli_node_core::paper::ink(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InkInput {
+    entity_type: String,
+    entity_id: String,
+    ink: Option<String>,
+}
+
+/// Keeps (or clears) the handwriting on one paper, under who wrote it.
+async fn put_paper_ink(State(s): State<AppState>, Json(input): Json<InkInput>) -> Result<StatusCode, ApiError> {
+    if input.ink.as_ref().is_some_and(|i| i.len() > 4_000_000) {
+        return Err(DomainError::Invalid("There is too much writing on this paper to keep.".into()).into());
+    }
+    let actor = s.security.actor();
+    pleadli_node_core::paper::set_ink(&s.pool, &input.entity_type, &input.entity_id, input.ink.as_deref(), actor.as_ref().map(|a| a.name.as_str()))
+        .await
+        .map_err(DomainError::from)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn last_paper_print(State(s): State<AppState>, Query(q): Query<PrintEntityQuery>) -> ApiResult<Option<pleadli_node_core::paper::PaperPrint>> {
     Ok(Json(pleadli_node_core::paper::last_print(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?))
 }
@@ -1213,6 +1238,7 @@ pub fn core(state: AppState) -> Router {
         .route("/prints", post(stamp_paper))
         .route("/prints/last", get(last_paper_print))
         .route("/prints/history", get(paper_history))
+        .route("/prints/ink", get(get_paper_ink).put(put_paper_ink))
         .route("/prints/verify", get(verify_paper))
         .route("/matters/{id}/parties", post(add_party))
         .route("/parties/{id}", put(update_party).delete(remove_party))

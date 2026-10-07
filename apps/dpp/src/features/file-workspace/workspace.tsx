@@ -57,19 +57,6 @@ export function isFileTab(value: unknown): value is FileTabId {
 
 const canonicalTab = (tab: FileTabId): (typeof fileTabs)[number]['id'] => (tab in legacyTabs ? legacyTabs[tab as keyof typeof legacyTabs] : (tab as 'case'))
 
-/** A section folded away until wanted: details the prosecutor rarely needs. */
-function Fold({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <details className="group rounded-2xl ring-1 ring-border/60">
-      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium [&::-webkit-details-marker]:hidden">
-        {title}
-        <span className="text-muted-foreground transition-transform group-open:rotate-90">›</span>
-      </summary>
-      <div className="px-4 pb-4">{children}</div>
-    </details>
-  )
-}
-
 function Fact({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="flex min-w-0 flex-col">
@@ -117,83 +104,65 @@ export function FileWorkspace({ fileId, tab }: { fileId: string; tab: FileTabId 
   return (
     <div className="flex min-h-0 flex-1 items-start">
     <article className="page min-w-0">
-      <header className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1>{file.title}</h1>
+      <header className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <p className="text-[0.8125rem] text-muted-foreground">
+              {[refs[0].value ?? refs[1].value, file.policeStation, station ? m["file_ws.via_connection"]({ station }) : null].filter(Boolean).join(' · ')}
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="tracking-tight">{file.title}</h1>
               <FileStatusTag status={file.currentStatus} />
             </div>
             <p className="text-muted-foreground">
-              {[file.policeStation, m["file_ws.received"]({ date: formatDate(file.receivedAt) }), station ? m["file_ws.via_connection"]({ station }) : null].filter(Boolean).join(' · ')}
+              {[
+                accused.join(', ') || m["cover.no_accused"](),
+                charges.length ? `${charges[0].offence}${charges.length > 1 ? ` +${charges.length - 1}` : ''}` : m["cover.no_charge"](),
+                nextHearing ? m["cover.next_on"]({ date: formatDate(nextHearing.startsAt), kind: hearingKindLabel(nextHearing.kind) }) : m["cover.no_date"](),
+              ].join(' · ')}
             </p>
           </div>
-          <div className="page-actions">
-            <PanelButton label={m["file_ws.edit"]()} title={m["file_ws.edit_title"]()} description={m["file_ws.edit_description"]()} icon={false}>
+          <div className="flex shrink-0 items-center gap-2">
+            <PanelButton label={m["file_ws.info"]()} title={m["file_ws.info_title"]()} description={m["file_ws.info_description"]()} variant="secondary" icon={false}>
+              {() => <FilePanel fileId={fileId} />}
+            </PanelButton>
+            <PanelButton label={m["file_ws.edit"]()} title={m["file_ws.edit_title"]()} description={m["file_ws.edit_description"]()} variant="ghost" icon={false}>
               {({ close, setDirty }) => <EditProsecutionFileForm file={file} onSuccess={close} onDirtyChange={setDirty} />}
             </PanelButton>
           </div>
         </div>
 
-        {/* The cover: the three numbers the file is known by, who and what it is about, and the next date. */}
-        <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl bg-border/60 ring-1 ring-border/60 sm:grid-cols-3 lg:grid-cols-6">
-          {refs.map((r) => (
-            <div key={r.label} className="flex min-w-0 flex-col gap-0.5 bg-card px-4 py-3">
-              <dt className="truncate text-xs text-muted-foreground">{r.label}</dt>
-              <dd className={cn('ms-0 truncate font-mono text-sm', !r.value && 'font-sans text-muted-foreground')}>{r.value || m["common.not_recorded"]()}</dd>
-            </div>
-          ))}
-          <div className="flex min-w-0 flex-col gap-0.5 bg-card px-4 py-3">
-            <dt className="text-xs text-muted-foreground">{m["cover.accused"]()}</dt>
-            <dd className={cn('ms-0 truncate', accused.length === 0 && 'text-muted-foreground')}>{accused.join(', ') || m["common.not_recorded"]()}</dd>
+        {/* One file, three ways of looking at it, chosen like a Mac's segmented control. */}
+        <nav aria-label={m["file_ws.sections"]()} className="flex justify-center">
+          <div role="tablist" className="flex rounded-[0.625rem] bg-foreground/[0.055] p-0.5">
+            {fileTabs.map((item) => {
+              const active = item.id === canonicalTab(tab)
+              return (
+                <Link
+                  key={item.id}
+                  to="/files/$fileId"
+                  params={{ fileId }}
+                  search={{ tab: item.id }}
+                  replace
+                  role="tab"
+                  aria-selected={active}
+                  className={cn(
+                    'flex min-w-28 items-center justify-center gap-1.5 rounded-lg px-4 py-1 text-[0.8125rem] no-underline transition-all duration-150 motion-reduce:transition-none',
+                    active ? 'bg-background font-medium text-foreground shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {item.label}
+                  {item.id === 'papers' && papers.length ? <span className="text-xs text-muted-foreground tabular-nums">{papers.length}</span> : null}
+                </Link>
+              )
+            })}
           </div>
-          <div className="flex min-w-0 flex-col gap-0.5 bg-card px-4 py-3">
-            <dt className="text-xs text-muted-foreground">{m["cover.offence"]()}</dt>
-            <dd className={cn('ms-0 truncate', charges.length === 0 && 'text-muted-foreground')}>
-              {charges.length ? `${charges[0].offence}${charges.length > 1 ? ` +${charges.length - 1}` : ''}` : m["cover.no_charge"]()}
-            </dd>
-          </div>
-          <div className="flex min-w-0 flex-col gap-0.5 bg-card px-4 py-3">
-            <dt className="text-xs text-muted-foreground">{m["cover.next_date"]()}</dt>
-            <dd className={cn('ms-0 truncate', !nextHearing && 'text-muted-foreground')}>
-              {nextHearing ? `${formatDate(nextHearing.startsAt)}, ${hearingKindLabel(nextHearing.kind)}` : m["cover.no_date"]()}
-            </dd>
-          </div>
-        </dl>
-
+        </nav>
       </header>
-
-      <nav aria-label={m["file_ws.sections"]()} className="no-scrollbar -mb-2 flex gap-1 overflow-x-auto border-b border-border/60">
-        {fileTabs.map((item) => {
-          const active = item.id === canonicalTab(tab)
-          return (
-            <Link
-              key={item.id}
-              to="/files/$fileId"
-              params={{ fileId }}
-              search={{ tab: item.id }}
-              replace
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'relative flex shrink-0 items-center gap-1.5 rounded-t-md px-3 py-1.5 no-underline transition-colors motion-reduce:transition-none',
-                active ? 'text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary' : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {item.label}
-              {item.id === 'papers' && papers.length ? <span className="rounded-full bg-secondary px-1.5 text-[0.625rem] leading-4 tabular-nums">{papers.length}</span> : null}
-            </Link>
-          )
-        })}
-      </nav>
 
       {canonicalTab(tab) === 'case' && <CaseTab file={file} />}
       {canonicalTab(tab) === 'papers' && (
-        <div className="flex flex-col gap-8">
-          <FileBinder fileId={fileId} />
-          <Fold title={m["file_tab.details"]()}>
-            <FilePanel fileId={fileId} />
-          </Fold>
-        </div>
+        <FileBinder fileId={fileId} />
       )}
       {canonicalTab(tab) === 'activity' && (
         <div className="flex flex-col gap-8">

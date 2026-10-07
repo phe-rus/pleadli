@@ -2,22 +2,17 @@ import { formatDay, formatTime, formatWeekday } from '@/lib/dates'
 import { getLocale } from '@/paraglide/runtime'
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
-import { AlertBanner } from '@/components/alert-banner'
-import { Sparkline } from '@/components/charts/sparkline'
-import { RowList, Row } from '@/components/operational-row'
 import { EmptyNote } from '@/components/planned'
-import { StatTile } from '@/components/stat-tile'
 import { Tag } from '@/components/status-tag'
 import { PracticeDeadlines } from '@/features/clocks'
 import { HearingActions, purposeLabel, reasonLabel, type DiaryRow } from '@/features/hearings'
 import { MatterForm } from '@/features/matters'
 import { overviewOptions, useOverview, type Attention } from '@/features/overview'
-import { weeklyBuckets } from '@/lib/weekly-buckets'
-import { AlarmClockIcon, CalendarCheckOut01Icon, FolderViewIcon, LegalDocument01Icon } from '@hugeicons/core-free-icons'
-import { Badge } from '@pleadli/ui/badge'
-import { Card, CardContent } from '@pleadli/ui/card'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useMemo } from 'react'
+import { AlarmClockIcon, Calendar03Icon, CheckmarkCircle02Icon, CourtHouseIcon, Folder01Icon, HandshakeIcon, Task01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Group, GroupRow, RowIcon } from '@pleadli/ui/grouped'
+import { Stat } from '@pleadli/ui/stat'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/')({
   loader: async ({ context }) => {
@@ -26,42 +21,37 @@ export const Route = createFileRoute('/_public/')({
   component: RouteComponent,
 })
 
-const openLink = 'text-primary'
-
 function describe(item: Attention) {
   const at = item.at
   switch (item.kind) {
     case 'hearing_not_closed':
-      return { tone: 'urgent' as const, tag: m["today.att.not_closed"](), text: m["today.att.not_closed_text"]({ date: at ? formatDay(at) : m["today.att.earlier_date"]() }) }
+      return { late: true, icon: CourtHouseIcon, text: m["today.att.not_closed_text"]({ date: at ? formatDay(at) : m["today.att.earlier_date"]() }) }
     case 'no_hearing':
-      return { tone: 'open' as const, tag: m["today.no_hearing_listed"](), text: `${m["today.att.no_hearing_text"]()}${at ? ` ${m["today.att.last_hearing"]({ date: formatDay(at) })}` : ''}` }
+      return { late: false, icon: Folder01Icon, text: `${m["today.att.no_hearing_text"]()}${at ? ` ${m["today.att.last_hearing"]({ date: formatDay(at) })}` : ''}` }
     case 'task_overdue':
-      return { tone: 'urgent' as const, tag: m["today.att.overdue"](), text: m["today.att.was_due"]({ task: item.detail ?? m["today.att.a_task"](), date: at ? formatDay(at) : m["today.att.earlier_date"]() }) }
+      return { late: true, icon: AlarmClockIcon, text: m["today.att.was_due"]({ task: item.detail ?? m["today.att.a_task"](), date: at ? formatDay(at) : m["today.att.earlier_date"]() }) }
     case 'task_soon':
-      return { tone: 'open' as const, tag: m["today.att.due_soon"](), text: m["today.att.is_due"]({ task: item.detail ?? m["today.att.a_task"](), date: at ? formatWeekday(at) : '' }) }
+      return { late: false, icon: Task01Icon, text: m["today.att.is_due"]({ task: item.detail ?? m["today.att.a_task"](), date: at ? formatWeekday(at) : '' }) }
     case 'plea_unconfirmed':
-      return { tone: 'open' as const, tag: m["today.att.plea_agreed"](), text: at ? m["today.att.plea_signed_text"]({ date: formatDay(at) }) : m["today.att.plea_text"]() }
+      return { late: false, icon: HandshakeIcon, text: at ? m["today.att.plea_signed_text"]({ date: formatDay(at) }) : m["today.att.plea_text"]() }
   }
 }
 
-function HearingLine({ row }: { row: DiaryRow }) {
+const matterName = (courtNumber: string | null | undefined, title: string) => `${courtNumber ? `${courtNumber}, ` : ''}${title}`
+
+/** One hearing today: the time, the matter, and closing it in place. */
+function HearingRow({ row }: { row: DiaryRow }) {
   const remanded = row.clientCustody === 'remanded'
   return (
-    <Row
-      key={row.id}
-      marker={row.status === 'scheduled' ? 'open' : undefined}
-      aligned
-      title={
-        <>
-          {formatTime(row.at)}{' '}
-          <Link to="/matters/$matterId" params={{ matterId: row.matterId }} className="text-foreground">
-            {row.courtNumber ? `${row.courtNumber}, ` : ''}
-            {row.matterTitle}
-          </Link>
-        </>
+    <GroupRow
+      icon={<span className="text-[0.8125rem] font-medium tabular-nums text-foreground">{formatTime(row.at)}</span>}
+      label={
+        <Link to="/matters/$matterId" params={{ matterId: row.matterId }} className="text-foreground no-underline hover:underline">
+          {matterName(row.courtNumber, row.matterTitle)}
+        </Link>
       }
-      summary={`${purposeLabel(row.purpose)}${row.courtroom ? `, ${row.courtroom}` : ''}. ${row.clientName}${remanded ? `, ${m["today.on_remand"]()}` : ''}.`}
-      trailing={
+      detail={`${purposeLabel(row.purpose)}${row.courtroom ? `, ${row.courtroom}` : ''} · ${row.clientName}${remanded ? `, ${m["today.on_remand"]()}` : ''}`}
+      value={
         row.status === 'scheduled' ? (
           <HearingActions hearing={row} matterId={row.matterId} />
         ) : (
@@ -72,33 +62,28 @@ function HearingLine({ row }: { row: DiaryRow }) {
   )
 }
 
-/** The advocate's home: what is in the diary today, what is due, and what has
- * been left open. Every line is read from the record. A section with nothing
- * behind it says so and shows no invented figure. */
+/** The advocate's home: what is in court today, what needs them, the few
+ * figures worth knowing and the week ahead. Every line is read from the
+ * record; a section with nothing behind it does not appear. */
 function RouteComponent() {
+  const navigate = useNavigate()
   const { data: today } = useOverview()
   const { counts, attention, hearings, upcoming } = today
-  const urgent = attention.filter((a) => a.kind === 'hearing_not_closed' || a.kind === 'task_overdue')
-  const buckets = useMemo(() => weeklyBuckets(today.recentAdjournments), [today.recentAdjournments])
-  const peak = Math.max(1, ...buckets)
+
+  // Only figures with something behind them: a row of zeros tells nobody anything.
+  const figures = [
+    { id: 'open', label: m["today.open_matters"](), value: counts.openMatters, tone: 'plain' as const, go: () => navigate({ to: '/matters', search: { view: 'open' } }) },
+    { id: 'no_hearing', label: m["nav.no_hearing"](), value: counts.noHearing, tone: 'attention' as const, go: () => navigate({ to: '/matters', search: { view: 'no_hearing' } }) },
+    { id: 'tasks', label: m["today.tasks"](), value: counts.tasksOpen, tone: counts.tasksOverdue > 0 ? ('urgent' as const) : ('plain' as const), hint: counts.tasksOverdue > 0 ? m["today.overdue_count"]({ count: String(counts.tasksOverdue) }) : undefined, go: () => navigate({ to: '/tasks' }) },
+    { id: 'drafts', label: m["today.drafts"](), value: counts.draftDocuments, tone: 'plain' as const, hint: m["today.not_filed"](), go: () => navigate({ to: '/documents' }) },
+  ].filter((f) => f.value > 0)
 
   return (
     <article className="page">
-      {urgent.length > 0 && (
-        <AlertBanner tone="urgent" title={m["today.left_open"]()} action={<Link to="/tasks" className={openLink}>{m["today.tasks"]()}</Link>}>
-          {m["today.left_open_body"]({ count: String(urgent.length) })}
-        </AlertBanner>
-      )}
-      {counts.noHearing > 0 && (
-        <AlertBanner tone="attention" title={m["today.no_hearing_listed"]()} action={<Link to="/matters" search={{ view: 'no_hearing' }} className={openLink}>{m["today.open_list"]()}</Link>}>
-          {m["today.no_hearing_body"]({ count: String(counts.noHearing) })}
-        </AlertBanner>
-      )}
-
       <header className="page-header">
         <div>
+          <p className="text-[0.8125rem] font-medium text-muted-foreground">{new Intl.DateTimeFormat(getLocale(), { dateStyle: 'full' }).format(new Date())}</p>
           <h1>{m["today.title"]()}</h1>
-          <p>{new Intl.DateTimeFormat(getLocale(), { dateStyle: 'full' }).format(new Date())}. {m["today.lead"]()}</p>
         </div>
         <div className="page-actions">
           <PanelButton label={m["today.open_matter"]()} title={m["today.open_matter"]()} description={m["today.open_matter_description"]()} variant="default">
@@ -107,123 +92,110 @@ function RouteComponent() {
         </div>
       </header>
 
-      <section aria-label="Figures" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatTile
-          label={m["today.hearings_today"]()}
-          icon={CalendarCheckOut01Icon}
-          tint="primary"
-          value={counts.hearingsToday}
-          meta={counts.notClosed > 0 && <Badge variant="destructive">{counts.notClosed} not closed</Badge>}
-          caption={counts.hearingsToday === 0 ? m["today.nothing_today"]() : m["today.in_diary_today"]()}
-        />
-        <StatTile label={m["today.open_matters"]()} icon={FolderViewIcon} tint="emerald" value={counts.openMatters} meta={<Badge variant="secondary">{m["today.with_no_hearing"]({ count: String(counts.noHearing) })}</Badge>} caption={m["today.matters_acting"]()} />
-        <StatTile
-          label={m["today.tasks"]()}
-          icon={AlarmClockIcon}
-          tint={counts.tasksOverdue > 0 ? 'rose' : 'amber'}
-          value={counts.tasksOpen}
-          meta={<Badge variant={counts.tasksOverdue > 0 ? 'destructive' : 'secondary'}>{counts.tasksOverdue > 0 ? m["today.overdue_count"]({ count: String(counts.tasksOverdue) }) : m["today.none_overdue"]()}</Badge>}
-          caption={m["today.tasks_caption"]()}
-        />
-        <StatTile label={m["today.drafts"]()} icon={LegalDocument01Icon} tint="amber" value={counts.draftDocuments} meta={<Badge variant="secondary">{m["today.not_filed"]()}</Badge>} caption={m["today.drafts_caption"]()} />
-      </section>
+      <PracticeDeadlines />
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-8">
-          <PracticeDeadlines />
+      {hearings.length === 0 && attention.length === 0 && <EmptyNote icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} />}>{m["today.all_clear"]()}</EmptyNote>}
 
-          <section aria-labelledby="listed" className="page-section">
-            <div className="section-head">
-              <h2 id="listed">{m["today.in_court"]()}</h2>
-              <Link to="/diary" className={openLink}>Diary</Link>
-            </div>
-            {hearings.length === 0 ? <EmptyNote>{m["today.nothing_today_full"]()}</EmptyNote> : <RowList>{hearings.map((h) => <HearingLine key={h.id} row={h} />)}</RowList>}
-          </section>
+      {hearings.length > 0 && (
+        <Group
+          title={m["today.in_court"]()}
+          action={
+            <Link to="/diary" className="text-[0.8125rem]">
+              {m["nav.diary"]()}
+            </Link>
+          }
+        >
+          {hearings.map((h) => (
+            <HearingRow key={h.id} row={h} />
+          ))}
+        </Group>
+      )}
 
-          <section aria-labelledby="attention" className="page-section">
-            <div className="section-head">
-              <h2 id="attention">{m["today.attention"]()}</h2>
-              {attention.length > 0 && <Tag tone="open">{m["today.items_count"]({ count: String(attention.length) })}</Tag>}
-            </div>
-            {attention.length === 0 ? (
-              <EmptyNote>{m["today.nothing_attention"]()}</EmptyNote>
+      {attention.length > 0 && (
+        <Group title={`${m["today.attention"]()} · ${attention.length}`}>
+          {attention.map((item, index) => {
+            const d = describe(item)
+            const row = {
+              icon: (
+                <RowIcon tone={d.late ? 'red' : 'gray'}>
+                  <HugeiconsIcon icon={d.icon} />
+                </RowIcon>
+              ),
+              label: item.matterTitle ? matterName(item.courtNumber, item.matterTitle) : m["today.task_no_matter"](),
+              detail: d.text,
+            }
+            const key = `${item.kind}:${item.refId ?? item.matterId}:${index}`
+            return item.matterId ? (
+              <GroupRow
+                key={key}
+                {...row}
+                chevron
+                render={({ className, children }) => (
+                  <Link to="/matters/$matterId" params={{ matterId: item.matterId! }} className={className}>
+                    {children}
+                  </Link>
+                )}
+              />
             ) : (
-              <RowList>
-                {attention.map((item, index) => {
-                  const d = describe(item)
-                  return (
-                    <Row
-                      key={`${item.kind}:${item.refId ?? item.matterId}:${index}`}
-                      marker={d.tone}
-                      title={item.matterTitle ? `${item.courtNumber ? `${item.courtNumber}, ` : ''}${item.matterTitle}` : m["today.task_no_matter"]()}
-                      summary={d.text}
-                      trailing={
-                        <>
-                          <Tag tone={d.tone}>{d.tag}</Tag>
-                          {item.matterId && (
-                            <Link to="/matters/$matterId" params={{ matterId: item.matterId }} className={openLink}>Open</Link>
-                          )}
-                        </>
-                      }
-                    />
-                  )
-                })}
-              </RowList>
-            )}
-          </section>
-        </div>
+              <GroupRow key={key} {...row} chevron onClick={() => void navigate({ to: '/tasks' })} />
+            )
+          })}
+        </Group>
+      )}
 
-        <div className="flex flex-col gap-8">
-          <section aria-labelledby="upcoming" className="page-section">
-            <h2 id="upcoming">{m["today.week_ahead"]()}</h2>
-            {upcoming.length === 0 ? (
-              <EmptyNote>{m["today.nothing_week"]()}</EmptyNote>
-            ) : (
-              <RowList>
-                {upcoming.map((h) => (
-                  <Row
-                    key={h.id}
-                    aligned
-                    title={`${formatWeekday(h.at)}, ${formatTime(h.at)}`}
-                    summary={
-                      <Link to="/matters/$matterId" params={{ matterId: h.matterId }} className="text-foreground">
-                        {h.courtNumber ? `${h.courtNumber}, ` : ''}
-                        {h.matterTitle}, {purposeLabel(h.purpose).toLowerCase()}
-                      </Link>
-                    }
-                  />
-                ))}
-              </RowList>
-            )}
-          </section>
+      {figures.length > 0 && (
+        <section className="flex flex-col gap-1.5">
+          <div className="flex items-end justify-between px-1">
+            <h2 data-slot="group-title">{m["today.figures"]()}</h2>
+            <Link to="/statistics" className="text-[0.8125rem]">
+              {m["nav.statistics"]()}
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {figures.map((f) => (
+              <Stat key={f.id} label={f.label} value={f.value} tone={f.tone} hint={f.hint} onClick={() => void f.go()} />
+            ))}
+          </div>
+        </section>
+      )}
 
-          <section aria-labelledby="trend" className="page-section">
-            <h2 id="trend">{m["today.trend"]()}</h2>
-            <Card className="p-0">
-              <CardContent className="p-0">
-                <div className="flex justify-between p-5">
-                  <p className="tabular-nums">{m["today.adjournments_count"]({ count: String(today.recentAdjournments.length) })}</p>
-                  <p className="tabular-nums">Peak: {peak}/wk</p>
-                </div>
-                <Sparkline data={buckets} />
-              </CardContent>
-            </Card>
-          </section>
+      {upcoming.length > 0 && (
+        <Group
+          title={m["today.week_ahead"]()}
+          action={
+            <Link to="/calendar" className="text-[0.8125rem]">
+              {m["nav.calendar"]()}
+            </Link>
+          }
+        >
+          {upcoming.map((h) => (
+            <GroupRow
+              key={h.id}
+              icon={
+                <RowIcon>
+                  <HugeiconsIcon icon={Calendar03Icon} />
+                </RowIcon>
+              }
+              label={matterName(h.courtNumber, h.matterTitle)}
+              detail={`${formatWeekday(h.at)}, ${formatTime(h.at)} · ${purposeLabel(h.purpose)}`}
+              chevron
+              render={({ className, children }) => (
+                <Link to="/matters/$matterId" params={{ matterId: h.matterId }} className={className}>
+                  {children}
+                </Link>
+              )}
+            />
+          ))}
+        </Group>
+      )}
 
-          <section aria-labelledby="reasons" className="page-section">
-            <h2 id="reasons">{m["today.reasons"]()}</h2>
-            {today.reasonCounts.length === 0 ? (
-              <EmptyNote>{m["today.no_adjournments"]()}</EmptyNote>
-            ) : (
-              <RowList>
-                {today.reasonCounts.map((r) => (
-                  <Row key={r.reason} aligned title={reasonLabel(r.reason)} trailing={<Tag tone="neutral">{r.count}</Tag>} />
-                ))}
-              </RowList>
-            )}
-          </section>
-        </div>
-      </div>
+      {today.reasonCounts.length > 0 && (
+        <Group title={m["today.reasons"]()} footer={m["today.adjournments_count"]({ count: String(today.recentAdjournments.length) })}>
+          {today.reasonCounts.map((r) => (
+            <GroupRow key={r.reason} label={reasonLabel(r.reason)} value={<span className="tabular-nums">{r.count}</span>} />
+          ))}
+        </Group>
+      )}
     </article>
   )
 }

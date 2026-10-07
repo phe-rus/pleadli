@@ -2,7 +2,6 @@ import { getLocale } from '@/paraglide/runtime'
 import type { FormatDistanceToken, Locale } from 'date-fns'
 import { format as formatWith } from 'date-fns/format'
 import { formatDistanceToNowStrict as distanceWith } from 'date-fns/formatDistanceToNowStrict'
-import { de } from 'date-fns/locale/de'
 import { enUS } from 'date-fns/locale/en-US'
 
 /** Dates in the language the officer chose. Every page imports `format` and
@@ -78,7 +77,6 @@ const sw: Locale = {
 
 function dateLocale(): Locale {
   const locale = getLocale()
-  if (locale === 'de') return de
   if (locale === 'sw') return sw
   return enUS
 }

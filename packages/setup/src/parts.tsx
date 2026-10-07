@@ -92,9 +92,10 @@ export function TextField({
 
 export function StepHeader({ title, lead }: { title: ReactNode; lead?: ReactNode }) {
   return (
-    <header className="flex flex-col gap-2 pb-8">
+    // Centred, as each step of a Mac's Setup Assistant is: the title, then one quiet line.
+    <header className="flex flex-col items-center gap-2 pb-8 text-center">
       <h1>{title}</h1>
-      {lead && <p className="text-muted-foreground">{lead}</p>}
+      {lead && <p className="max-w-md text-muted-foreground">{lead}</p>}
     </header>
   )
 }

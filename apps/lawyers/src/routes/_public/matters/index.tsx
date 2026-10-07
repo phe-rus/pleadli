@@ -6,6 +6,7 @@ import { engagementLabel, isMatterView, levelLabel, MatterBoard, MatterForm, mat
 import * as m from '@/paraglide/messages'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { cn } from '@pleadli/ui/lib/utils'
+import { Segmented } from '@pleadli/ui/segmented'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useMemo } from 'react'
@@ -17,7 +18,7 @@ export const Route = createFileRoute('/_public/matters/')({
     ...(isMatterView(search.view) ? { view: search.view } : {}),
     ...(typeof search.type === 'string' ? { type: search.type } : {}),
   }),
-  loaderDeps: ({ search }) => ({ view: search.view ?? 'board' }),
+  loaderDeps: ({ search }) => ({ view: search.view ?? 'open' }),
   loader: async ({ context, deps }) => {
     await context.queryClient.query({ ...mattersOptions(deps.view), staleTime: 'static' })
   },
@@ -35,9 +36,10 @@ const emptyText: Record<MatterViewId, () => string> = {
 /** Every matter: the board (one kind of matter, a column per stage) or a list
  * per slice. The work itself happens in a matter's own workspace. */
 function RouteComponent() {
-  const { view = 'board', type } = Route.useSearch()
+  const { view = 'open', type } = Route.useSearch()
   const navigate = useNavigate()
-  const current = matterViews.find((v) => v.id === view) ?? matterViews[0]
+  // The board is open matters seen another way, so it keeps their name.
+  const current = matterViews.find((v) => v.id === (view === 'board' ? 'open' : view)) ?? matterViews[0]
   const { data: matters } = useMatters(view)
   const enabled = useEnabledMatterTypes()
   const { data: allTypes } = useMatterTypes()
@@ -65,7 +67,6 @@ function RouteComponent() {
           )
         },
       },
-      { accessorKey: 'id', header: 'ID' },
       { accessorKey: 'matterType', header: m["matter.col.type"](), cell: ({ row }) => matterTypeLabel(row.original.matterType) },
       { accessorKey: 'stage', header: m["matter.col.stage"](), cell: ({ row }) => stageLabel(row.original.stage) },
       { accessorKey: 'clientName', header: m["matter.col.client"]() },
@@ -87,12 +88,6 @@ function RouteComponent() {
     ],
     [],
   )
-
-  const tabClass = (active: boolean) =>
-    cn(
-      'relative shrink-0 px-3 py-1.5 no-underline',
-      active ? 'text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary' : 'text-muted-foreground hover:text-foreground',
-    )
 
   return (
     <article className="page">
@@ -116,13 +111,22 @@ function RouteComponent() {
         </div>
       </header>
 
-      <nav aria-label={m["matter.views"]()} className="no-scrollbar -mb-2 flex gap-1 overflow-x-auto border-b border-border/60">
-        {matterViews.map((item) => (
-          <Link key={item.id} to="/matters" search={{ view: item.id }} replace aria-current={item.id === view ? 'page' : undefined} className={tabClass(item.id === view)}>
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      {(view === 'open' || view === 'board') && (
+        <Segmented
+          label={m["matter.views"]()}
+          value={view}
+          items={[
+            { value: 'open', label: m["workspace.view.list"]() },
+            { value: 'board', label: m["workspace.view.board"]() },
+          ]}
+          render={(item, props) => (
+            <Link key={item.value} to="/matters" search={{ view: item.value }} replace className={props.className} role={props.role} aria-selected={props['aria-selected']}>
+              {props.children}
+            </Link>
+          )}
+          className="self-start"
+        />
+      )}
 
       {view === 'board' ? (
         boardType ? (

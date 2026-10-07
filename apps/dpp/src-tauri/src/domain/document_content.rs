@@ -55,6 +55,10 @@ pub struct DocumentContent {
     pub verify_code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verify_qr: Option<String>,
+    /// Handwriting on the page (pen, finger or mouse), as SVG path data in the
+    /// page's own coordinates. Part of the content, so it is sealed on issue.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ink: Option<String>,
 }
 
 pub const OFFICE: &str = "Office of the Director of Public Prosecutions";

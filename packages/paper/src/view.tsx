@@ -1,4 +1,4 @@
-import { File01Icon, PencilEdit02Icon, PrinterIcon, ViewIcon } from '@hugeicons/core-free-icons'
+import { File01Icon, PrinterIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -6,8 +6,10 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { usePaperApp, type OfficeApps, type PaperStamp } from './context'
 import { nextPaint, printSheet, safeFileName, sheetWording, wordFile } from './output'
 import { PaperSheet } from './sheet'
+import { InkLayer } from './ink'
+import { Segmented } from '@pleadli/ui/segmented'
 
-export type PaperMode = 'preview' | 'edit'
+export type PaperMode = 'preview' | 'edit' | 'write'
 
 /**
  * A piece of paperwork shown as its paper. Preview is the page as it prints;
@@ -63,7 +65,21 @@ export function PaperView({
   const [error, setError] = useState<string | null>(null)
   const [office, setOffice] = useState<OfficeApps | null>(null)
   const editable = edit !== undefined || typeof children === 'function'
-  const showPage = mode === 'preview' || edit === undefined
+  const showPage = mode !== 'edit' || edit === undefined
+  // Handwriting kept with this paper, where the app keeps it.
+  const [ink, setInk] = useState<string | null>(null)
+  useEffect(() => {
+    let alive = true
+    app.ink?.load(entityType, entityId).then((v) => alive && setInk(v)).catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [app, entityType, entityId])
+  const writeInk = (next: string | null) => {
+    setInk(next)
+    void app.ink?.save(entityType, entityId, next)
+  }
+  const modes: PaperMode[] = [...(editable || app.ink ? (['preview'] as const) : []), ...(editable ? (['edit'] as const) : []), ...(app.ink ? (['write'] as const) : [])]
 
   useEffect(() => {
     app.office?.().then(setOffice).catch(() => {})
@@ -128,37 +144,27 @@ export function PaperView({
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       <div data-paper-tools className="flex flex-wrap items-center justify-between gap-2">
-        {editable ? (
-          <div role="radiogroup" className="inline-flex rounded-lg border border-border/70 p-0.5">
-            {(['preview', 'edit'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="radio"
-                aria-checked={mode === m}
-                onClick={() => setMode(m)}
-                className={cn('inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-sm', mode === m ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:text-foreground')}
-              >
-                <HugeiconsIcon icon={m === 'preview' ? ViewIcon : PencilEdit02Icon} className="size-3.5" />
-                {m === 'preview' ? labels.preview : labels.edit}
-              </button>
-            ))}
-          </div>
+        {modes.length > 1 ? (
+          <Segmented
+            label={labels.preview}
+            value={mode}
+            onChange={setMode}
+            items={modes.map((m) => ({ value: m, label: m === 'preview' ? labels.preview : m === 'edit' ? labels.edit : labels.write }))}
+          />
         ) : (
           <span />
         )}
         <div className="flex flex-wrap items-center gap-2">
-          {last && !unchanged && <span className="text-xs text-muted-foreground">{labels.changedSincePrinted}</span>}
           {last && unchanged && app.formatDate && <span className="text-xs text-muted-foreground">{labels.lastPrinted(app.formatDate(last.printedAt))}</span>}
           {app.openFile && office && (
             // Always offered: Word where Office is installed, else LibreOffice,
             // else whatever program this computer opens Word files with.
-            <Button size="sm" variant="outline" disabled={busy} onClick={openInOffice}>
+            <Button size="sm" variant="ghost" disabled={busy} onClick={openInOffice}>
               <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
               {office.word ? labels.openInWord : office.libreOffice ? labels.openInLibreOffice : labels.openElsewhere}
             </Button>
           )}
-          <Button size="sm" variant="outline" disabled={busy} onClick={word}>
+          <Button size="sm" variant="ghost" disabled={busy} onClick={word}>
             <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
             {labels.word}
           </Button>
@@ -170,9 +176,26 @@ export function PaperView({
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       {above}
+      {mode === 'write' && (
+        <p className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+          {labels.writeHint}
+          {ink && (
+            <Button size="xs" variant="ghost" onClick={() => writeInk(null)}>
+              {labels.clearWriting}
+            </Button>
+          )}
+        </p>
+      )}
       {showPage ? (
-        <PaperSheet ref={sheet} head={head} title={title} stamp={shown} reference={reference}>
-          {typeof children === 'function' ? children(mode) : children}
+        <PaperSheet
+          ref={sheet}
+          head={head}
+          title={title}
+          stamp={shown}
+          reference={reference}
+          overlay={(ink || mode === 'write') && app.ink ? <InkLayer value={ink} active={mode === 'write'} onChange={writeInk} /> : undefined}
+        >
+          {typeof children === 'function' ? children(mode === 'write' ? 'preview' : mode) : children}
         </PaperSheet>
       ) : (
         edit

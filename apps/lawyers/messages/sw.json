@@ -1,6 +1,10 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "assist": {
+    "dock": {
+      "close": "Funga Msaidizi",
+      "on_matter": "Kwenye shauri hili"
+    },
     "panel": {
       "answer": "Jibu la Msaidizi",
       "ask": "Uliza Msaidizi",
@@ -239,6 +243,17 @@
     "next_hearing": "Usikilizwaji ujao {when}",
     "open_tasks": "Kazi zilizo wazi: {count}"
   },
+  "cal": {
+    "day": "Siku",
+    "day_empty": "Hakuna kitu kwenye shajara siku hii. Panga usikilizwaji kutoka kwenye shauri.",
+    "diary_for": "Shajara ya {date}",
+    "month": "Mwezi",
+    "next_day": "Siku inayofuata",
+    "previous_day": "Siku iliyopita",
+    "print": "Chapisha",
+    "to_attend": "Kuhudhuria",
+    "views": "Mwonekano wa kalenda"
+  },
   "calendar": {
     "deadline": "Muda wa mwisho",
     "hearing": "Usikilizwaji",
@@ -313,6 +328,7 @@
   },
   "common": {
     "cancel": "Ghairi",
+    "planned": "Imepangwa",
     "try_again": "Tafadhali jaribu tena."
   },
   "compliance": {
@@ -408,6 +424,10 @@
     "uganda_v": "Uganda dhidi ya",
     "year": "Mwaka"
   },
+  "doc": {
+    "clear_writing": "Futa mwandiko",
+    "write": "Andika"
+  },
   "doc_page": {
     "changed_since_filing": "Imebadilika tangu kuwasilishwa",
     "discard": "Futa",
@@ -429,6 +449,17 @@
     "text": "Maandishi",
     "title": "Kichwa",
     "untitled": "Bila kichwa"
+  },
+  "docs": {
+    "all": "Zote",
+    "changed_on": "Ilibadilishwa {date}",
+    "drafts": "Rasimu",
+    "filed": "Zilizowasilishwa",
+    "filed_on": "Iliwasilishwa {date}",
+    "lead": "Ulichoandaa na kuwasilisha. Hati iliyowasilishwa haibadiliki: inaweza kuchapishwa na kubadilishwa kwa nyingine, kamwe kuhaririwa.",
+    "none": "Bado hakuna hati iliyoandaliwa. Fungua shauri na uchague Andaa hati.",
+    "none_here": "Hakuna kitu hapa.",
+    "verify": "Hakiki karatasi…"
   },
   "document": {
     "advocate_files": "Wakili wa ofisi ndiye anawasilisha hii",
@@ -720,7 +751,7 @@
       "board_about": "Mashauri yaliyo wazi ya aina moja, kwa hatua yaliyofikia. Buruta kadi, au tumia menyu yake, kuihamisha.",
       "closed": "Yaliyofungwa",
       "closed_about": "Mashauri uliyomaliza.",
-      "no_hearing": "Hakuna usikilizwaji",
+      "no_hearing": "Linahitaji tarehe",
       "no_hearing_about": "Mashauri ya mahakama yaliyo wazi bila usikilizwaji kwenye shajara. Kila moja linahitaji tarehe.",
       "open": "Mashauri yaliyo wazi",
       "open_about": "Kila shauri unalolishughulikia."
@@ -903,9 +934,13 @@
     "hearings": "Usikilizaji",
     "hearings_count": "Usikilizaji: {count}",
     "history": "Historia ya shauri hili",
+    "info": "Taarifa",
+    "info_description": "Unamwakilisha nani, wapi, na kwa masharti gani.",
+    "info_title": "Kuhusu shauri hili",
     "list_hearing": "Panga usikilizaji",
     "list_hearing_description": "Weka usikilizaji kwenye shajara yako.",
     "made": "Zilizoandaliwa kwa shauri hili",
+    "more": "Zaidi",
     "no_court_number": "Hakuna namba ya mahakama iliyorekodiwa",
     "no_documents": "Hakuna hati iliyoandaliwa kwa shauri hili.",
     "no_hearing_listed": "Hakuna usikilizaji uliopangwa",
@@ -937,6 +972,14 @@
     "reopen": "Fungua tena",
     "reopen_failed": "Shauri halikuweza kufunguliwa tena",
     "reopened": "Shauri limefunguliwa tena",
+    "sections": "Sehemu za shauri",
+    "seg": {
+      "activity": "Shughuli",
+      "matter": "Shauri",
+      "money": "Fedha na muda",
+      "notes": "Maelezo",
+      "papers": "Karatasi"
+    },
     "tab": {
       "deadlines": "Tarehe za mwisho",
       "filings": "Mawasilisho",
@@ -967,7 +1010,7 @@
     "diary": "Shajara",
     "documents": "Nyaraka",
     "money": "Fedha",
-    "no_hearing": "Hakuna usikilizwaji",
+    "no_hearing": "Linahitaji tarehe",
     "open_matters": "Mashauri yaliyo wazi",
     "pinned": "Zilizobandikwa",
     "recent": "Za karibuni",
@@ -1058,12 +1101,19 @@
     "assist_off": "Msaidizi haujawekwa, kwa hiyo hizi haziwezi kusomwa bado.",
     "binder": {
       "attached": "Vilivyoambatishwa kwenye karatasi hii",
+      "count": "Karatasi {count}",
+      "decisions": "Mapitio na maamuzi",
       "empty": "Bado hakuna karatasi. Ongeza alichotuma Polisi, au ingiza karatasi.",
+      "every_paper": "Kila karatasi, kwa namba",
       "from_police": "Imepokelewa kutoka Polisi",
+      "minutes_count": "Maelezo {count}",
+      "minutes_one": "Maelezo 1",
       "open_outside": "Fungua kwa programu yake",
       "papers": "Karatasi katika jalada hili",
+      "papers_short": "Karatasi",
       "prepared": "Imeandaliwa na ofisi hii",
-      "received": "Kama zilivyopokelewa kutoka Polisi. Hazijabadilishwa na ofisi hii."
+      "received": "Kama zilivyopokelewa kutoka Polisi. Hazijabadilishwa na ofisi hii.",
+      "this_file": "Jalada hili"
     },
     "changed": "Imebadilika tangu ilipochapishwa mara ya mwisho",
     "charges": {
@@ -1078,6 +1128,28 @@
     "cites": "Karatasi hii inarejelea",
     "copied": "Imenakiliwa",
     "copy": "Nakili",
+    "cover": {
+      "accused": "Mshtakiwa",
+      "complainant": "Mlalamikaji",
+      "last_decision": "Uamuzi wa mwisho",
+      "not_given": "Haijatolewa",
+      "offences": "Makosa",
+      "received": "Ilipokelewa",
+      "title": "Jalada la faili"
+    },
+    "decision": {
+      "applies_to": "Inahusu",
+      "decided_by": "Imeamuliwa na",
+      "decided_on": "Imeamuliwa tarehe",
+      "decision": "Uamuzi",
+      "directions": "Maelekezo kwa Polisi",
+      "no_reasons": "Hakuna sababu zilizoandikwa kwa uamuzi huu.",
+      "on_review": "Kwa mapitio",
+      "police_answer": "Jibu la Polisi",
+      "reasons": "Sababu",
+      "recorded": "Uamuzi umerekodiwa",
+      "title": "Kumbukumbu ya uamuzi"
+    },
     "detail": {
       "counts": "Mashtaka",
       "date": "Tarehe",
@@ -1107,6 +1179,14 @@
     "found_recorded": "Imerekodiwa",
     "found_title": "Hatua alizoona Msaidizi katika karatasi",
     "hide": "Ficha",
+    "index": {
+      "entries": "Maingizo",
+      "issued": "Imetolewa",
+      "no": "Na.",
+      "pages": "Kurasa",
+      "paper": "Karatasi",
+      "title": "Orodha ya karatasi"
+    },
     "kind": {
       "contract": "Mkataba",
       "court_document": "Kutoka mahakamani",
@@ -1119,6 +1199,13 @@
     },
     "last_printed": "Ilichapishwa mwisho {when}",
     "latest": "Hili ndilo toleo la karibuni la karatasi hii.",
+    "minutes": {
+      "by": "Mwendesha mashtaka",
+      "count": "Maelezo",
+      "minute": "Maelezo {n}",
+      "title": "Karatasi ya maelezo",
+      "written": "Maelezo yameandikwa"
+    },
     "no_citations": "Hakuna sheria wala karatasi nyingine iliyotajwa katika karatasi hii.",
     "no_history": "Karatasi hii bado haijatoka ofisini. Kila inapochapishwa au kuhifadhiwa, toleo huhifadhiwa hapa.",
     "no_related": "Hakuna karatasi nyingine katika jalada hili zinazohusiana na hii.",
@@ -1145,6 +1232,21 @@
     "remove": "Ondoa karatasi",
     "remove_confirm": "Faili inaharibiwa kwenye kompyuta hii.",
     "remove_failed": "Imeshindwa kuiondoa",
+    "review": {
+      "by": "Mwendesha mashtaka aliyepitia",
+      "concluded": "Mapitio yamekamilika",
+      "criterion": "Kigezo",
+      "finding": "Matokeo",
+      "no_outcome": "Bado haijarekodiwa",
+      "not_assessed": "Haijapimwa",
+      "note": "Maelezo",
+      "open": "Yanaendelea",
+      "outcome": "Matokeo ya jaribio",
+      "reopened": "Imefunguliwa tena kwa sababu",
+      "standard": "Kiwango kilichotumika",
+      "started": "Mapitio yalianza",
+      "title": "Mapitio ya kushtaki"
+    },
     "save_checked": "Imekaguliwa, hifadhi",
     "saving": "Inaandaa karatasi",
     "statement": {
@@ -1173,7 +1275,8 @@
     "unchecked": "Imetajwa na Msaidizi, haijakaguliwa",
     "uploading": "Inaongeza {count}...",
     "verify_line": "Hakiki karatasi hii kwa msimbo wake",
-    "word": "Hifadhi kama Word"
+    "word": "Hifadhi kama Word",
+    "write_hint": "Andika kwenye karatasi kwa kalamu ya kidijitali, kidole au kipanya. Inabaki kwenye nakala ya ofisi na kuchapishwa nayo."
   },
   "party": {
     "add": "Ongeza mhusika",
@@ -1216,6 +1319,11 @@
     "title": "Kuingia",
     "your_new_password": "Nenosiri lako jipya",
     "your_new_pin": "PIN yako mpya"
+  },
+  "recent": {
+    "empty": "Bado hakuna kilichofunguliwa. Mashauri na hati utakazofungua zitaonekana hapa.",
+    "matters": "Mashauri",
+    "subtitle": "Mashauri na hati zilizofunguliwa hivi karibuni kwenye kompyuta hii."
   },
   "registers": {
     "add": "Ingizo jipya",
@@ -1658,6 +1766,7 @@
   "today": {
     "adjourned": "Iliahirishwa",
     "adjournments_count": "Kuahirishwa: {count}",
+    "all_clear": "Hakuna kinachokuhitaji sasa. Hakuna mahakamani leo, hakuna kilichochelewa.",
     "att": {
       "a_task": "Kazi",
       "due_soon": "Inakaribia",
@@ -1677,6 +1786,7 @@
     "attention": "Inahitaji umakini",
     "drafts": "Rasimu",
     "drafts_caption": "Hati zilizoandaliwa na bado hazijawasilishwa",
+    "figures": "Ofisi yako",
     "hearings_today": "Usikilizaji wa leo",
     "in_court": "Mahakamani leo",
     "in_diary_today": "Kwenye shajara yako leo",
@@ -1778,7 +1888,37 @@
     "someone": "mtu wa ofisi hii",
     "title": "Kagua nakala iliyochapishwa"
   },
+  "window": {
+    "close": "Funga",
+    "controls": "Dirisha",
+    "maximize": "Kuza",
+    "minimize": "Punguza"
+  },
   "workspace": {
-    "subtitle_default": "Ofisi yako"
+    "advocate": "Wakili",
+    "hide_sidebar": "Ficha upau wa pembeni",
+    "new": "Mpya",
+    "no_advocate": "Hakuna wakili aliyewekwa",
+    "places": "Mahali",
+    "quick": {
+      "add_client": "Ongeza mteja",
+      "add_client_about": "Mtu unayemwakilisha.",
+      "find": "Tafuta",
+      "label": "Vitendo vya haraka",
+      "start": "Anza"
+    },
+    "search_short": "Tafuta",
+    "show_sidebar": "Onyesha upau wa pembeni",
+    "sidebar": "Upau wa pembeni",
+    "subtitle_default": "Ofisi yako",
+    "tab": {
+      "next": "Kichupo kinachofuata",
+      "previous": "Kichupo kilichopita"
+    },
+    "view": {
+      "board": "Ubao",
+      "list": "Orodha"
+    },
+    "window": "Dirisha"
   }
 }

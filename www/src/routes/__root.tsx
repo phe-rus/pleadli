@@ -10,7 +10,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
-const ogLocale: Record<string, string> = { en: 'en_UG', sw: 'sw_UG', fr: 'fr_FR', de: 'de_DE' }
+const ogLocale: Record<string, string> = { en: 'en_UG', sw: 'sw_UG', fr: 'fr_FR'}
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => {

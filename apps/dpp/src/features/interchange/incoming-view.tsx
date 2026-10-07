@@ -1,3 +1,5 @@
+import { HugeiconsIcon } from '@hugeicons/react'
+import { InboxIcon } from '@hugeicons/core-free-icons'
 import { formatDate } from '@/lib/dates'
 import { EmptyNote } from '@/components/planned'
 import { Row, RowList } from '@/components/operational-row'
@@ -50,7 +52,7 @@ export function IncomingView() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["nav.item.incoming"]()}</h1>
+          <h1>{m["nav.item.inbox"]()}</h1>
           <p>{m["interchange.in.subtitle"]()}</p>
         </div>
         <div className="page-actions">
@@ -64,7 +66,7 @@ export function IncomingView() {
           {waiting.length > 0 && <Tag tone="open">{waiting.length}</Tag>}
         </div>
         {waiting.length === 0 ? (
-          <EmptyNote>{m["interchange.in.empty"]()}</EmptyNote>
+          <EmptyNote icon={<HugeiconsIcon icon={InboxIcon} />}>{m["interchange.in.empty"]()}</EmptyNote>
         ) : (
           <RowList>
             {waiting.map((p) => (
@@ -85,6 +87,8 @@ export function IncomingView() {
         )}
       </section>
 
+      {/* Only when there is something to send: an empty outbox says nothing. */}
+      {outgoing.length > 0 && (
       <section className="page-section">
         <div className="section-head">
           <h2>{m["interchange.in.to_send"]()}</h2>
@@ -101,6 +105,7 @@ export function IncomingView() {
           </RowList>
         )}
       </section>
+      )}
 
       {decided.length > 0 && (
         <section className="page-section">

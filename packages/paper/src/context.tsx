@@ -17,6 +17,10 @@ export type OfficeApps = { os: 'windows' | 'macos' | 'linux'; word: boolean; exc
 export type PaperLabels = {
   preview: string
   edit: string
+  /** Writing on the paper with a pen, a finger or the mouse. */
+  write: string
+  clearWriting: string
+  writeHint: string
   print: string
   word: string
   printHint: string
@@ -45,6 +49,9 @@ export type PaperLabels = {
 export const englishLabels: PaperLabels = {
   preview: 'Preview',
   edit: 'Edit',
+  write: 'Write',
+  clearWriting: 'Clear writing',
+  writeHint: 'Write on the paper with a pen, a finger or the mouse. It is kept with this office\'s copy and printed with it.',
   print: 'Print or save as PDF',
   word: 'Save as Word',
   printHint: 'Choose "Save as PDF" in the print window to keep a PDF.',
@@ -83,6 +90,8 @@ export type PaperApp = {
   office?: () => Promise<OfficeApps>
   /** Opens a file in the program the system uses for it. */
   openFile?: (name: string, bytes: Uint8Array) => Promise<void>
+  /** Handwriting kept with a paper. Given, papers offer Write. */
+  ink?: { load: (entityType: string, entityId: string) => Promise<string | null>; save: (entityType: string, entityId: string, ink: string | null) => Promise<void> }
   labels?: Partial<PaperLabels>
   formatDate?: (ms: number) => string
 }

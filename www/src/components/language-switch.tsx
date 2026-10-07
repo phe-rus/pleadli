@@ -1,7 +1,7 @@
 import * as m from '@/paraglide/messages'
 import { getLocale, locales, setLocale, type Locale } from '@/paraglide/runtime'
 
-const names: Record<Locale, string> = { en: 'English', sw: 'Kiswahili', fr: 'Français', de: 'Deutsch' }
+const names: Record<Locale, string> = { en: 'English', sw: 'Kiswahili', fr: 'Français'}
 
 /** The site in the visitor's language. The choice is kept in a cookie, so
  * the server renders every page in it from then on. */

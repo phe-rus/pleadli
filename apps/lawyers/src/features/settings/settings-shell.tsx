@@ -1,7 +1,6 @@
 import { SettingsCard } from '@/components/settings-card'
 import { Tag } from '@/components/status-tag'
 import * as m from '@/paraglide/messages'
-import { Badge } from '@pleadli/ui/badge'
 import { cn } from '@pleadli/ui/lib/utils'
 import { AiMagicIcon, Building03Icon, Route01Icon, SecurityLockIcon, UserCircleIcon, UserGroupIcon, Wifi01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -35,6 +34,9 @@ const sections: readonly { id: SettingsSectionId; label: () => string; owner: ()
   { id: 'network', label: () => m["settings.section.network"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.network"]() },
   { id: 'roadmap', label: () => m["settings.section.roadmap"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.roadmap"]() },
 ]
+
+/** The list in groups by who owns each choice: you, the practice, this computer, and what is to come. */
+const groups = [['you'], ['practice', 'people', 'assist'], ['security', 'network'], ['roadmap']].map((ids) => ids.map((id) => sections.find((s) => s.id === id)!))
 
 export function isSettingsSection(value: unknown): value is SettingsSectionId {
   return sectionIds.includes(value as SettingsSectionId)
@@ -88,38 +90,46 @@ export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
 
   return (
     <article className="page">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-10">
-        <nav aria-label={m["settings.sections"]()} className="flex flex-col gap-4 md:sticky md:top-0 md:self-start">
-          <h1 className="px-3">{m["settings.title"]()}</h1>
-          <div className="flex flex-row flex-wrap gap-0.5 md:flex-col">
-            {sections.map((section) => {
-              const active = section.id === current.id
-              return (
-                <Link
-                  key={section.id}
-                  to="/settings/$section"
-                  params={{ section: section.id }}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'flex items-center gap-3 rounded-full px-3 py-2 no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none',
-                    active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground',
-                  )}
-                >
-                  <HugeiconsIcon icon={icons[section.id]} size={18} />
-                  {section.label()}
-                </Link>
-              )
-            })}
-          </div>
+      <header className="page-header">
+        <div>
+          <h1>{m["settings.title"]()}</h1>
+          <p>{m["settings.lead"]()}</p>
+        </div>
+      </header>
+
+      <div className="flex flex-col gap-6 md:flex-row md:gap-10">
+        <nav aria-label={m["settings.sections"]()} className="flex shrink-0 flex-col gap-4 md:sticky md:top-0 md:w-56 md:self-start">
+          {groups.map((group, i) => (
+            <div key={i} role="group" aria-label={group[0].owner()} className="flex flex-col gap-px">
+              {group.map((section) => {
+                const active = section.id === current.id
+                return (
+                  <Link
+                    key={section.id}
+                    to="/settings/$section"
+                    params={{ section: section.id }}
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[0.8125rem] no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none',
+                      active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-foreground/5',
+                    )}
+                  >
+                    <HugeiconsIcon icon={icons[section.id]} className={cn('size-4 shrink-0', active ? 'text-primary-foreground' : 'text-muted-foreground')} />
+                    {section.label()}
+                  </Link>
+                )
+              })}
+            </div>
+          ))}
         </nav>
 
-        <section aria-labelledby="settings-section" className="flex w-full min-w-0 max-w-2xl flex-col gap-6">
-          <div className="flex flex-col gap-1 px-1">
+        <section aria-labelledby="settings-section" className="flex w-full min-w-0 flex-col gap-5">
+          <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="settings-section">{current.label()}</h2>
-              <Badge variant="outline">{current.owner()}</Badge>
+              <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-xs text-muted-foreground">{current.owner()}</span>
             </div>
-            <p className="text-muted-foreground">{current.about()}</p>
+            <p>{current.about()}</p>
           </div>
           {panes[current.id]()}
         </section>

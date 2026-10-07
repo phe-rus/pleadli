@@ -1,8 +1,8 @@
 import { cn } from '@pleadli/ui/lib/utils'
 import type { FormEventHandler, ReactNode } from 'react'
 
-/** One group of settings, in the shape Vercel, GitHub and Claude share: a
- * bordered card with a title and a line of purpose, the controls, and a
+/** One group of settings, drawn like a group in a Mac's System Settings: a
+ * white rounded card lifted off the page with a title and a line of purpose, the controls, and a
  * footer that holds a hint on the left and the action on the right.
  *
  * Text is plain semantic tags (`h3`, `p`) so the global typography styles it;
@@ -38,7 +38,7 @@ export function SettingsCard({
   return (
     <Root
       onSubmit={onSubmit}
-      className={cn('flex w-full flex-col overflow-hidden rounded-lg border bg-card', danger ? 'border-destructive/40' : 'border-border', className)}
+      className={cn('flex w-full flex-col overflow-hidden rounded-xl bg-card shadow-xs ring-1', danger ? 'ring-destructive/40' : 'ring-border/70', className)}
     >
       {(title || description || children) && (
         <div className="flex flex-col gap-4 p-4">
@@ -57,7 +57,7 @@ export function SettingsCard({
         </div>
       )}
       {hasFooter && (
-        <footer className={cn('flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3', danger ? 'border-destructive/40 bg-destructive/5' : 'border-border bg-muted/40')}>
+        <footer className={cn('flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3', danger ? 'border-destructive/30 bg-destructive/5' : 'border-border/60 bg-foreground/[0.02]')}>
           <div className="min-w-0 flex-1">{hint}</div>
           {action}
         </footer>

@@ -1,10 +1,10 @@
-/** Kiswahili, French and German for src/data/home.ts. Only text; whatever is
+/** Kiswahili and French for src/data/home.ts. Only text; whatever is
  * missing stays English. Same order as the English lists. */
 export const homeText = {
   adminNavItems: {
     sw: [{ label: 'Mashirika' }, { label: 'Vitengo vya shirika' }, { label: 'Uanachama' }, { label: 'Stahiki' }],
     fr: [{ label: 'Organisations' }, { label: "Unités d'organisation" }, { label: 'Adhésions' }, { label: 'Droits' }],
-    de: [{ label: 'Organisationen' }, { label: 'Organisationseinheiten' }, { label: 'Mitgliedschaften' }, { label: 'Berechtigungen' }],
+    
   },
   trustPoints: {
     sw: [
@@ -17,11 +17,7 @@ export const homeText = {
       { title: 'Chiffré en transit', description: 'TLS standard partout, y compris pour les audiences en direct, sans exception.' },
       { title: "Conforme à la loi ougandaise sur la protection des données", description: "Conçu autour du Data Protection and Privacy Act de 2019, et non ajouté après coup." },
     ],
-    de: [
-      { title: 'Im Ruhezustand verschlüsselt', description: 'Jede Akte ist mit eigenem Schlüssel verschlüsselt, pro Institution getrennt verpackt. Nichts wird im Klartext gespeichert.' },
-      { title: 'Bei der Übertragung verschlüsselt', description: 'Überall Standard-TLS, auch bei Live-Verhandlungen, ohne Ausnahme.' },
-      { title: 'Im Einklang mit Ugandas Datenschutzrecht', description: 'Um den Data Protection and Privacy Act von 2019 herum entworfen, nicht nachträglich angefügt.' },
-    ],
+    
   },
   homeStats: {
     sw: [
@@ -32,10 +28,7 @@ export const homeText = {
       { value: '48 %', description: 'de la population carcérale ougandaise est en détention provisoire, en attente de jugement, sans condamnation.' },
       { value: '48 h', description: "le délai constitutionnel pour présenter un suspect au tribunal après son arrestation." },
     ],
-    de: [
-      { value: '48 %', description: 'der Gefängnisinsassen Ugandas sind in Untersuchungshaft, warten auf ihren Prozess und sind nicht verurteilt.' },
-      { value: '48 Std.', description: 'die verfassungsmäßige Frist, um einen Verdächtigen nach der Festnahme einem Gericht vorzuführen.' },
-    ],
+    
   },
   homeProblems: {
     sw: [
@@ -48,16 +41,12 @@ export const homeText = {
       { title: 'Transmissions lentes', description: "Une affaire qui passe de la police au parquet puis au tribunal attend souvent que les papiers suivent physiquement." },
       { title: 'Aucune référence commune', description: "Personne hors d'une institution ne peut confirmer où en est vraiment une affaire, même avec une raison légitime de le savoir." },
     ],
-    de: [
-      { title: 'Wiederholte Dateneingabe', description: 'Dieselben Fakten werden an jeder Institutionsgrenze, für jeden Fall, neu in ein anderes System getippt.' },
-      { title: 'Langsame Übergaben', description: 'Ein Fall, der von der Polizei zur Staatsanwaltschaft und zum Gericht geht, wartet oft darauf, dass die Papiere nachkommen.' },
-      { title: 'Keine gemeinsame Referenz', description: 'Niemand außerhalb einer Institution kann bestätigen, wo ein Fall wirklich steht, selbst mit berechtigtem Grund.' },
-    ],
+    
   },
   caseRecords: {
     sw: { records: [{ reference: 'Rejea ya CRB', activity: 'Upelelezi' }, { reference: 'Jalada la DPP', activity: 'Uchunguzi, uamuzi' }, { reference: 'Namba ya shauri', activity: 'Mashauri' }, { reference: 'Shauri', activity: 'Uwakilishi' }, { reference: 'Kumbukumbu ya kupokelewa', activity: 'Kizuizini' }] },
     fr: { records: [{ reference: 'Référence CRB', activity: 'Enquête' }, { reference: 'Dossier DPP', activity: 'Examen, décision' }, { reference: 'Numéro de rôle', activity: 'Procédure' }, { reference: 'Affaire', activity: 'Représentation' }, { reference: "Registre d'écrou", activity: 'Détention' }] },
-    de: { records: [{ reference: 'CRB-Referenz', activity: 'Ermittlung' }, { reference: 'DPP-Akte', activity: 'Prüfung, Entscheidung' }, { reference: 'Aktenzeichen', activity: 'Verfahren' }, { reference: 'Mandat', activity: 'Vertretung' }, { reference: 'Aufnahmeakte', activity: 'Haft' }] },
+    
   },
   applicationSpotlight: {
     sw: [
@@ -68,10 +57,7 @@ export const homeText = {
       { description: "L'enregistrement des affaires et l'enquête restent entre les mains de la police ougandaise, du début à la fin.", points: ["Une affaire reçoit son identité partagée dès son ouverture, avant qu'une autre application n'intervienne.", "Les actes d'enquête, dépositions et preuves restent la propriété du poste et de l'unité qui les ont traités.", "La transmission au DPP porte l'identité de l'affaire, pas une nouvelle liasse de papiers."] },
       { description: "L'examen, l'autorisation des poursuites et les décisions restent la propriété du DPP.", points: ["Une affaire transmise arrive avec son historique d'enquête intact, sans dupliquer le dossier.", "Les décisions d'autorisation, de complément d'enquête ou de refus sont enregistrées sur la même identité d'affaire.", "Ce que la police voit d'une décision du DPP est ce que le DPP choisit de montrer, pas le dossier lui-même."] },
     ],
-    de: [
-      { description: 'Fallaufnahme und Ermittlung bleiben von Anfang bis Ende in der Hand der ugandischen Polizei.', points: ['Ein Fall erhält seine gemeinsame Identität bei der Eröffnung, bevor eine andere Anwendung beteiligt ist.', 'Ermittlungsakten, Aussagen und Beweise gehören der Wache und Einheit, die sie bearbeitet haben.', 'Die Übergabe an die DPP trägt die Fallidentität weiter, keinen neuen Papierstapel.'] },
-      { description: 'Prüfung, Anklagegenehmigung und Anklageentscheidungen bleiben bei der DPP.', points: ['Ein übergebener Fall kommt mit vollständiger Ermittlungsgeschichte an, ohne die Akte zu duplizieren.', 'Genehmigungen, Nachermittlungen und Ablehnungen werden unter derselben Fallidentität erfasst.', 'Was die Polizei von einer DPP-Entscheidung sieht, bestimmt die DPP, nicht die Akte selbst.'] },
-    ],
+    
   },
   scalingChains: {
     sw: [
@@ -82,9 +68,6 @@ export const homeText = {
       { title: 'Pleadli Police, par exemple', steps: [{ label: 'Agent de police' }, { label: 'Poste de police' }, { label: 'Division ou organisation' }, { label: 'Police ougandaise' }] },
       { title: 'Pleadli Lawyers, par exemple', steps: [{ label: 'Avocat individuel' }, { label: "Cabinet d'avocats" }] },
     ],
-    de: [
-      { title: 'Pleadli Police, zum Beispiel', steps: [{ label: 'Polizeibeamter' }, { label: 'Polizeiwache' }, { label: 'Division oder Organisation' }, { label: 'Ugandische Polizei' }] },
-      { title: 'Pleadli Lawyers, zum Beispiel', steps: [{ label: 'Einzelanwalt' }, { label: 'Anwaltskanzlei' }] },
-    ],
+    
   },
 }

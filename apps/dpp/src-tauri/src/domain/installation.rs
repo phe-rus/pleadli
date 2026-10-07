@@ -12,7 +12,7 @@ use super::error::{clean, invalid, DomainError};
 use super::staff::{self, PersonInput, Protection};
 use super::totp;
 
-pub const LANGUAGES: [&str; 4] = ["en", "sw", "de", "fr"];
+pub const LANGUAGES: [&str; 3] = ["en", "sw", "fr"];
 pub const ACCENTS: [&str; 8] = ["gold", "green", "blue", "navy", "teal", "maroon", "purple", "slate"];
 /// A 1 MB image grows by a third as a data URL.
 const MAX_LOGO_CHARS: usize = 1_400_000;

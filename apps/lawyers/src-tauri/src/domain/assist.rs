@@ -245,7 +245,7 @@ pub struct AskInput {
     /// The conversation so far, oldest first, for `chat`.
     #[serde(default)]
     pub messages: Vec<ChatMessage>,
-    /// The language the person reads ("en", "sw", "de", "fr").
+    /// The language the person reads ("en", "sw", "fr").
     pub language: Option<String>,
 }
 
@@ -287,7 +287,6 @@ pub struct Answer {
 fn language_name(code: Option<&str>) -> &'static str {
     match code.unwrap_or("en") {
         "sw" => "Swahili",
-        "de" => "German",
         "fr" => "French",
         _ => "English",
     }

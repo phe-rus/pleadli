@@ -139,7 +139,8 @@
     "review": "Examiner",
     "save_changes": "Enregistrer les modifications",
     "source_note_optional": "Source (facultatif)",
-    "try_again": "Veuillez réessayer."
+    "try_again": "Veuillez réessayer.",
+    "done": "Terminé"
   },
   "count": {
     "active_file": {
@@ -327,7 +328,7 @@
     "for_decision": "Pour la décision sur ce dossier",
     "from_decision": "À partir de la décision : {decision}, {date}",
     "from_template": "Un modèle",
-    "issue": "Émettre",
+    "issue": "Émettre…",
     "issue_confirm": "Émettre ce document ? Il reçoit sa référence et ne peut plus être modifié.",
     "issue_failed": "Émission impossible",
     "issue_now": "Émettre",
@@ -356,7 +357,7 @@
     "prepared_from": "Préparé à partir de",
     "previous": "Document précédent",
     "print": "Imprimer",
-    "ready": "Prêts à préparer",
+    "ready": "En attente de préparation",
     "ready_empty": "Chaque décision qui produit un document en a un de préparé.",
     "refresh": "Actualiser depuis le dossier",
     "refresh_failed": "Actualisation impossible",
@@ -369,7 +370,30 @@
     "taken_when_issued": "Calculé à l'émission",
     "type_here": "Saisissez ici",
     "verify_label": "Vérifiable auprès du parquet émetteur",
-    "write_with_assist": "Rédiger ce paragraphe avec l'assistant"
+    "write_with_assist": "Rédiger ce paragraphe avec l'assistant",
+    "write": "Écrire",
+    "sign": "Signer…",
+    "more": "Plus",
+    "clear_writing": "Effacer l’écriture manuscrite",
+    "remove_signature": "Retirer la signature",
+    "write_hint": "Écrivez sur la page avec un stylet, le doigt ou la souris. Ce que vous écrivez reste sur la pièce et est scellé à l’émission.",
+    "issue_title": "Émettre {title} ?",
+    "sign_title": "Signer ce document",
+    "sign_lead": "Votre signature se place sur la ligne du signataire et est scellée avec la pièce à l’émission.",
+    "sign_done": "Signer la pièce",
+    "filter": {
+      "all": "Tous",
+      "drafts": "Projets",
+      "issued": "Émis",
+      "none": "Rien ici."
+    },
+    "verify_button": "Vérifier une pièce…",
+    "open_kind": "Ouvrir : {kind}",
+    "prepare_kind": "Préparer : {kind}",
+    "sign_saved": "Votre signature enregistrée",
+    "sign_used_before": "Utilisée sur vos documents",
+    "sign_draw_new": "Dessiner une nouvelle signature",
+    "sign_keep": "La garder aussi comme ma signature enregistrée"
   },
   "event": {
     "attachment": "Document joint : {what}",
@@ -482,7 +506,7 @@
       },
       "returned": {
         "about": "Chez la police pour complément d'enquête.",
-        "label": "Renvoyés à la police"
+        "label": "Chez la police"
       }
     }
   },
@@ -549,7 +573,10 @@
     "via_connection": "Transmis par la connexion avec {station}.",
     "whole_file": "Tout le dossier",
     "with_police": "Chez la police",
-    "tasks": "Tâches"
+    "tasks": "Tâches",
+    "info": "Infos",
+    "info_title": "Infos du dossier",
+    "info_description": "Ses numéros, les personnes concernées, ses tâches, notes et pièces jointes."
   },
   "intake_alerts": {
     "title": "En attente d'une décision de poursuite"
@@ -769,7 +796,11 @@
       "calendar": "Calendrier",
       "statistics": "Statistiques",
       "cases": "Affaires",
-      "tasks": "Tâches"
+      "tasks": "Tâches",
+      "inbox": "Boîte de réception",
+      "police_stations": "Postes de police",
+      "workload": "Charge de travail",
+      "recent": "Récents"
     },
     "section": {
       "files": "Dossiers",
@@ -851,11 +882,12 @@
       "decisions_recorded": "Décisions enregistrées",
       "reopened": "Rouverts",
       "resubmitted": "Retransmis",
-      "with_court_reference": "Avec une référence du tribunal"
+      "with_court_reference": "Avec une référence du tribunal",
+      "decided_30": "Décidés, 30 derniers jours"
     },
     "subtitle": "{date}. Ce qui demande votre attention, et ce qu'il y a sur votre bureau.",
     "waiting": "En attente depuis {age}.",
-    "workload": "Charge actuelle"
+    "workload": "En un coup d’œil"
   },
   "page": {
     "court": {
@@ -1474,7 +1506,8 @@
   "window": {
     "close": "Fermer",
     "maximize": "Agrandir",
-    "minimize": "Réduire"
+    "minimize": "Réduire",
+    "controls": "Fenêtre"
   },
   "workspace": {
     "hide_sidebar": "Masquer la barre latérale",
@@ -1488,7 +1521,7 @@
       "add_person_description": "Une personne qui figure dans un dossier : accusé, plaignant ou témoin.",
       "find": "Trouver",
       "label": "Actions rapides",
-      "open_file": "Ouvrir un dossier",
+      "open_file": "Nouveau dossier",
       "open_file_description": "Enregistrer une affaire transmise par la police.",
       "start": "Commencer"
     },
@@ -1515,7 +1548,12 @@
     "tagline": "Espace de travail du parquet",
     "window": "Fenêtre",
     "more": "Plus",
-    "places": "Espaces"
+    "places": "Espaces",
+    "search_short": "Rechercher",
+    "section": {
+      "files": "Dossiers",
+      "office": "Bureau"
+    }
   },
   "assist": {
     "title": "Assistant",
@@ -1690,7 +1728,9 @@
     "offence": "Infraction",
     "no_charge": "Aucune prévention rédigée",
     "next_date": "Prochaine date",
-    "no_date": "Aucune"
+    "no_date": "Pas d’audience fixée",
+    "no_accused": "Aucun prévenu nommé",
+    "next_on": "{kind} le {date}"
   },
   "import": {
     "button": "Importer des pièces",
@@ -1829,7 +1869,9 @@
     },
     "do_it_yourself": "Faire cette étape vous-même",
     "skip_to": "Passer à : {stage}",
-    "procedure": "Garde à vue, détention et droits"
+    "procedure": "Garde à vue, détention et droits",
+    "ask_assist": "Demander à l’assistant de préparer",
+    "move_on": "Passer à : {stage}"
   },
   "cases": {
     "proposal_ready": "Prêt à relire",
@@ -1939,7 +1981,14 @@
       "open_outside": "Ouvrir dans son programme",
       "empty": "Aucune pièce pour l'instant. Ajoutez ce que la police a envoyé, ou importez les pièces.",
       "prepared": "Préparé par ce bureau",
-      "from_police": "Reçu de la police"
+      "from_police": "Reçu de la police",
+      "this_file": "Ce dossier",
+      "every_paper": "Toutes les pièces, numérotées",
+      "minutes_count": "{count} annotations",
+      "decisions": "Examens et décisions",
+      "count": "{count} pièces",
+      "papers_short": "Pièces",
+      "minutes_one": "1 annotation"
     },
     "refs": {
       "police": "Référence police",
@@ -2003,6 +2052,157 @@
       "received": "Reçu de la police",
       "counts": "Chefs d'accusation"
     },
-    "open_elsewhere": "Ouvrir dans un autre programme"
+    "open_elsewhere": "Ouvrir dans un autre programme",
+    "cover": {
+      "title": "Couverture du dossier",
+      "not_given": "Non indiqué",
+      "received": "Reçu le",
+      "accused": "Prévenu(s)",
+      "complainant": "Plaignant(s)",
+      "offences": "Infractions",
+      "last_decision": "Dernière décision"
+    },
+    "index": {
+      "title": "Inventaire des pièces",
+      "issued": "Délivré",
+      "entries": "Pièces",
+      "no": "N°",
+      "paper": "Pièce",
+      "pages": "Pages"
+    },
+    "minutes": {
+      "title": "Feuille d’annotations",
+      "count": "Annotations",
+      "written": "Annotation écrite",
+      "minute": "Annotation {n}",
+      "by": "Magistrat du parquet"
+    },
+    "review": {
+      "title": "Examen de l’opportunité des poursuites",
+      "criterion": "Critère",
+      "finding": "Constat",
+      "note": "Observation",
+      "not_assessed": "Non examiné",
+      "outcome": "Résultat",
+      "no_outcome": "Pas encore enregistré",
+      "started": "Examen commencé",
+      "concluded": "Examen terminé",
+      "open": "En cours",
+      "standard": "Critère appliqué",
+      "reopened": "Rouvert parce que",
+      "by": "Magistrat ayant examiné"
+    },
+    "decision": {
+      "title": "Procès-verbal de décision",
+      "recorded": "Décision enregistrée",
+      "decided_by": "Décidé par",
+      "decision": "Décision",
+      "applies_to": "S’applique à",
+      "decided_on": "Décidé le",
+      "on_review": "Sur l’examen",
+      "reasons": "Motifs",
+      "no_reasons": "Aucun motif n’a été écrit pour cette décision.",
+      "directions": "Instructions à la police judiciaire",
+      "police_answer": "Réponse de la police"
+    },
+    "add": {
+      "button": "Ajouter",
+      "office": "Rédigé par ce bureau",
+      "police": "Venant de la police",
+      "document": "Nouveau document à partir d’un modèle…",
+      "import": "Importer des pièces numérisées…",
+      "statement": "Déposition…",
+      "evidence": "Pièce à conviction…",
+      "charge": "Chef d’accusation proposé…"
+    },
+    "write_hint": "Écrivez sur la pièce avec un stylet, le doigt ou la souris. L’écriture reste sur la copie du bureau et s’imprime avec elle."
+  },
+  "folder": {
+    "receive": "Nouveaux",
+    "review": "En examen",
+    "decide": "À décider",
+    "prepare": "À préparer",
+    "handover": "À transmettre",
+    "follow_up": "En suivi",
+    "concluded": "Clôturés"
+  },
+  "files": {
+    "layout": {
+      "list": "Liste",
+      "board": "Tableau",
+      "label": "Afficher en"
+    },
+    "count": "{count} dossiers",
+    "count_one": "1 dossier"
+  },
+  "stations": {
+    "add": "Ajouter un poste de police",
+    "add_lead": "Un poste peut envoyer des dossiers ici une fois l’invitation acceptée et le code vérifié ensemble.",
+    "step1": "1. Nommez le poste et créez son invitation.",
+    "step2": "2. Remettez le fichier d’invitation au poste : courriel, clé USB, par tout moyen.",
+    "step3": "3. Ouvrez ici la réponse du poste, puis vérifiez son code avec lui par téléphone.",
+    "which": "Quel poste ?",
+    "valid_for": "Invitation valable",
+    "make_invitation": "Créer l’invitation",
+    "invitation_ready": "L’invitation pour {station} est prête",
+    "send_it": "Remettez le fichier enregistré au poste avant le {date}. Quand il répond, ouvrez sa réponse sur cette page.",
+    "invitation": "Invitation",
+    "reply": "La réponse du poste",
+    "open_reply": "Ouvrir la réponse…",
+    "their_code": "Code de sécurité du poste",
+    "check_code": "Appelez le poste et lisez-vous ce code. Ne connectez que s’il est identique.",
+    "type_code": "Saisissez le code que le poste vous lit",
+    "connect": "Connecter",
+    "does_not_match": "Le code ne correspond pas",
+    "connected_since": "Connecté depuis",
+    "confirmed_by": "Vérifié par",
+    "packages": "Paquets reçus",
+    "line": {
+      "invited": "Invité · en attente de réponse jusqu’au {date}",
+      "check": "A répondu · vérifiez le code pour connecter",
+      "connected": "Connecté"
+    },
+    "subtitle": "Les postes qui peuvent envoyer des dossiers à ce bureau.",
+    "empty": "Aucun poste n’est encore connecté. Ajoutez les postes avec lesquels ce bureau travaille.",
+    "this_office": "Ce bureau"
+  },
+  "search": {
+    "group": {
+      "places": "Emplacements",
+      "files": "Dossiers",
+      "people": "Personnes"
+    },
+    "hint": {
+      "move": "naviguer",
+      "open": "ouvrir",
+      "close": "fermer"
+    }
+  },
+  "workload": {
+    "subtitle": "Ce qui est sur le bureau maintenant. L’évolution dans le temps est dans Statistiques."
+  },
+  "statistics": {
+    "subtitle": "L’évolution du travail du bureau sur une période, comptée à partir du dossier.",
+    "median": "cas médian, en jours"
+  },
+  "recent": {
+    "subtitle": "Dossiers et documents ouverts récemment sur cet ordinateur.",
+    "empty": "Rien d’ouvert pour l’instant. Les dossiers et documents ouverts apparaîtront ici."
+  },
+  "people": {
+    "col": {
+      "name": "Nom",
+      "id": "Identifiant",
+      "other_names": "Autres noms",
+      "phone": "Téléphone",
+      "national_id": "N° d’identité nationale",
+      "address": "Adresse",
+      "recorded": "Enregistré"
+    },
+    "subtitle": "Prévenus, plaignants et témoins dans les dossiers.",
+    "edit": "Modifier la personne",
+    "edit_description": "Modifier ce qui a été enregistré.",
+    "empty": "Personne n’est encore enregistré.",
+    "search": "Rechercher des personnes…"
   }
 }

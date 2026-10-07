@@ -5,6 +5,7 @@ import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
+import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import type { CalendarEntry } from './data'
@@ -40,33 +41,31 @@ function entryTitle(e: CalendarEntry) {
 
 function Agenda({ entries, day }: { entries: CalendarEntry[]; day: Date }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2>{formatDate(day, 'weekday')}</h2>
+    <Group title={formatDate(day, 'weekday')}>
       {entries.length === 0 ? (
-        <p className="text-muted-foreground">{m["calendar.nothing"]()}</p>
+        <GroupRow label={<span className="text-muted-foreground">{m["calendar.nothing"]()}</span>} />
       ) : (
-        <ol className="flex list-none flex-col gap-2 p-0">
-          {entries.map((e) => (
-            <li key={`${e.source}:${e.id}`} className="flex gap-3 rounded-xl bg-card p-3 ring-1 ring-border/60">
-              <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', dot[e.source])} />
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <div className="flex flex-wrap items-baseline gap-x-2">
-                  <strong className="truncate">{entryTitle(e)}</strong>
-                  {e.source === 'hearing' && <span className="text-muted-foreground">{formatDate(e.at, 'time')}</span>}
-                </div>
-                {e.fileId && (
-                  <Link to="/files/$fileId" params={{ fileId: e.fileId }} search={{ tab: e.source === 'hearing' ? 'court' : 'file' }} className="truncate text-muted-foreground no-underline hover:text-foreground">
-                    {e.fileTitle}
-                    {e.fileReference ? `, ${e.fileReference}` : ''}
-                  </Link>
-                )}
-                {e.detail && <p className="text-muted-foreground">{e.detail}</p>}
-              </div>
-            </li>
-          ))}
-        </ol>
+        entries.map((e) => (
+          <GroupRow
+            key={`${e.source}:${e.id}`}
+            icon={<span className={cn('size-2.5 rounded-full', dot[e.source])} />}
+            label={entryTitle(e)}
+            detail={[e.fileTitle && `${e.fileTitle}${e.fileReference ? `, ${e.fileReference}` : ''}`, e.detail].filter(Boolean).join(' · ') || undefined}
+            value={e.source === 'hearing' ? <span className="text-xs tabular-nums">{formatDate(e.at, 'time')}</span> : undefined}
+            chevron={!!e.fileId}
+            render={
+              e.fileId
+                ? ({ className, children }) => (
+                    <Link to="/files/$fileId" params={{ fileId: e.fileId! }} search={{ tab: 'case' }} className={className}>
+                      {children}
+                    </Link>
+                  )
+                : undefined
+            }
+          />
+        ))
       )}
-    </section>
+    </Group>
   )
 }
 
@@ -101,9 +100,14 @@ export function Calendar() {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="capitalize">{formatDate(month, 'month')}</h2>
-          <div className="flex items-center gap-1">
+        {/* The month is the page's title, as Calendar shows it: the month strong, the year lighter. */}
+        <header className="page-header">
+          <div>
+            <h1 className="capitalize">
+              {new Intl.DateTimeFormat(getLocale(), { month: 'long' }).format(month)} <span className="font-normal text-muted-foreground">{month.getFullYear()}</span>
+            </h1>
+          </div>
+          <div className="page-actions gap-1">
             <Button size="icon-sm" variant="ghost" onClick={() => shift(-1)} aria-label={m["calendar.previous"]()}>
               <HugeiconsIcon icon={ArrowLeft01Icon} />
             </Button>
@@ -122,10 +126,10 @@ export function Calendar() {
               <HugeiconsIcon icon={ArrowRight01Icon} />
             </Button>
           </div>
-        </div>
-        <div className="grid grid-cols-7 overflow-hidden rounded-2xl ring-1 ring-border/60">
+        </header>
+        <div className="grid grid-cols-7 overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border/70">
           {weekdays.map((w) => (
-            <div key={w} className="border-b border-border/60 bg-secondary/40 py-1.5 text-center text-xs text-muted-foreground capitalize">
+            <div key={w} className="border-b border-border/60 py-2 text-end pe-3 text-xs font-medium text-muted-foreground capitalize">
               {w}
             </div>
           ))}
@@ -140,19 +144,19 @@ export function Calendar() {
                 type="button"
                 onClick={() => setSelected(d)}
                 className={cn(
-                  'flex min-h-20 cursor-pointer flex-col gap-1 border-border/60 p-1.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset',
+                  'flex min-h-22 cursor-default flex-col gap-1 border-border/50 p-1.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset',
                   i % 7 !== 6 && 'border-r',
                   i < 35 && 'border-b',
-                  !inMonth && 'bg-secondary/20 text-muted-foreground/60',
-                  isSelected && 'bg-primary/5',
-                  'hover:bg-secondary/40',
+                  i % 7 >= 5 && 'bg-foreground/[0.018]',
+                  !inMonth && 'text-muted-foreground/45',
+                  isSelected && 'bg-primary/[0.06]',
                 )}
               >
                 <span
                   className={cn(
-                    'flex size-6 items-center justify-center rounded-full text-xs tabular-nums',
-                    isToday && 'bg-primary text-primary-foreground',
-                    isSelected && !isToday && 'ring-1 ring-primary',
+                    'flex size-6 items-center justify-center self-end rounded-full text-[0.8125rem] tabular-nums',
+                    isToday && 'bg-red-500 font-semibold text-white',
+                    isSelected && !isToday && 'bg-foreground font-semibold text-background',
                   )}
                 >
                   {d.getDate()}
@@ -187,18 +191,17 @@ export function Calendar() {
         <Agenda entries={byDay.get(dayKey(selected)) ?? []} day={selected} />
         {upcoming.length > 0 && (
           <section className="flex flex-col gap-2">
-            <h3 className="text-muted-foreground">{m["calendar.coming_up"]()}</h3>
-            <ol className="flex list-none flex-col gap-1 p-0">
+            <Group title={m["calendar.coming_up"]()}>
               {upcoming.map((e) => (
-                <li key={`${e.source}:${e.id}`}>
-                  <button type="button" onClick={() => setSelected(new Date(e.at))} className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-left hover:bg-secondary/60">
-                    <span className={cn('size-1.5 shrink-0 rounded-full', dot[e.source])} />
-                    <span className="w-16 shrink-0 text-xs text-muted-foreground">{formatDate(e.at)}</span>
-                    <span className="truncate">{entryTitle(e)}</span>
-                  </button>
-                </li>
+                <GroupRow
+                  key={`${e.source}:${e.id}`}
+                  icon={<span className={cn('size-2.5 rounded-full', dot[e.source])} />}
+                  label={entryTitle(e)}
+                  value={<span className="text-xs tabular-nums">{formatDate(e.at)}</span>}
+                  onClick={() => setSelected(new Date(e.at))}
+                />
               ))}
-            </ol>
+            </Group>
           </section>
         )}
       </aside>

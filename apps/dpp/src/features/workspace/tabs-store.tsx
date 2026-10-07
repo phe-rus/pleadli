@@ -30,7 +30,7 @@ export type SectionId = 'pinned' | 'recent' | 'files' | 'work' | 'office' | 'mor
  * replaces the tab worked on longest ago. */
 const MAX_TABS = 5
 /** The sidebar's Recent list never shows more than this. */
-export const MAX_RECENTS = 3
+export const MAX_RECENTS = 24
 
 /** `title` stays empty: Overview's name is display text, derived at render
  * time by `tabTitle` so it follows the current language. */

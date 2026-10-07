@@ -12,7 +12,7 @@ use super::error::{clean, invalid, DomainError};
 use super::staff::{self, PersonInput, Protection};
 use super::{totp, usages};
 
-pub const LANGUAGES: [&str; 4] = ["en", "sw", "de", "fr"];
+pub const LANGUAGES: [&str; 3] = ["en", "sw", "fr"];
 pub const ACCENTS: [&str; 8] = ["gold", "green", "blue", "navy", "teal", "maroon", "purple", "slate"];
 pub const SETTINGS: [&str; 2] = ["alone", "firm"];
 /// Private practice (any area), a government legal office (the Attorney

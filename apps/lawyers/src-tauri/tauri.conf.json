@@ -21,7 +21,7 @@
         "minHeight": 640,
         "resizable": true,
         "decorations": false,
-        "transparent": false,
+        "transparent": true,
         "backgroundColor": "#fffcf1",
         "shadow": false,
         "center": true,
@@ -30,7 +30,7 @@
         "skipTaskbar": false,
         "windowEffects": {
           "effects": [],
-          "radius": 6
+          "radius": 10
         }
       }
     ],

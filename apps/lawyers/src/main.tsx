@@ -11,6 +11,7 @@ import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query
 import ReactDOM from 'react-dom/client'
 import { routeTree } from './routeTree.gen'
 import { startUpdateChecks } from '@/lib/updater'
+import { DesktopFrame } from '@/components/desktop-frame'
 
 const getRouter = () => {
     const queryClient = queryContext()
@@ -68,6 +69,7 @@ if (!rootElement.innerHTML) {
             disableTransitionOnChange
         >
             <Queryprovider query={queryContext()}>
+                <DesktopFrame>
                 <RecoveryGate>
                     <AppGate onUnlocked={() => void router.invalidate()}>
                         <LocaleBoundary>
@@ -78,6 +80,7 @@ if (!rootElement.innerHTML) {
                     </AppGate>
                     <LanguageSelect />
                 </RecoveryGate>
+                </DesktopFrame>
             </Queryprovider>
         </ThemeProvider>
     )

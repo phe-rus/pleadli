@@ -44,6 +44,9 @@ export function NewDocumentButton({
   variant = 'secondary',
   mode = 'decision',
   onMade,
+  open: openProp,
+  onOpenChange,
+  trigger = true,
 }: {
   fileId: string
   decisionId: string | null
@@ -52,8 +55,14 @@ export function NewDocumentButton({
   mode?: 'decision' | 'custody'
   /** Given: the new draft is handed here instead of opening on its own page. */
   onMade?: (documentId: string) => void
+  /** Given: opened from elsewhere (a menu) instead of by its own button. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  trigger?: boolean
 }) {
-  const [open, setOpen] = useState(false)
+  const [ownOpen, setOwnOpen] = useState(false)
+  const open = openProp ?? ownOpen
+  const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOwnOpen(next))
   const country = useJurisdiction()
   const byDecision = templatesForDecision(country, decisionKind)
   const all = [...byDecision.primary, ...byDecision.others]
@@ -86,10 +95,12 @@ export function NewDocumentButton({
   )
   return (
     <>
-      <Button size={mode === 'custody' ? 'xs' : 'sm'} variant={variant} onClick={() => setOpen(true)}>
-        <HugeiconsIcon icon={Add01Icon} />
-        {mode === 'custody' ? m["doc.custody_document"]() : m["doc.new"]()}
-      </Button>
+      {trigger && (
+        <Button size={mode === 'custody' ? 'xs' : 'sm'} variant={variant} onClick={() => setOpen(true)}>
+          <HugeiconsIcon icon={Add01Icon} />
+          {mode === 'custody' ? m["doc.custody_document"]() : m["doc.new"]()}
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

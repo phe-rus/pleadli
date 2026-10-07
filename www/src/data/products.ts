@@ -162,7 +162,7 @@ const productsBase: Product[] = [
       'Documents per country: charge sheets, directions, requests to court, sealed and verifiable, PDF and Word',
       'Country packs for Uganda, Kenya, Tanzania, Rwanda, Burundi, DR Congo, South Sudan and Somalia',
       'First-launch setup, a PIN or password and phone code per person',
-      'English, Kiswahili, German and French',
+      'English, Kiswahili and French',
     ],
     notYetBuilt: [
       'The Police side of the Police to DPP exchange (it only ships in DPP today)',
@@ -270,7 +270,7 @@ const productsBase: Product[] = [
       { title: 'Filing', description: 'Drafts are sealed with the letterhead, signature, stamp and a verification code, filed together as one pack, and exported as PDF or Word.' },
       { title: 'Money and costs', description: 'Client money is never paid out beyond what a client holds; fee notes are issued and paid against; bills of costs are priced by the Sixth Schedule for taxation.' },
     ],
-    features: ['Board, list and calendar of matters of 13 kinds', 'Court deadline clocks (Uganda)', 'Documents, sealed filings, filing packs, PDF and Word export', 'Papers read by Assist', 'Client ledgers, fee notes, bills of costs', 'Oaths and notarial registers, practising compliance, pro bono hours', 'Statistics', 'A firm on one office network', 'Export of every record', 'English, Kiswahili, German and French'],
+    features: ['Board, list and calendar of matters of 13 kinds', 'Court deadline clocks (Uganda)', 'Documents, sealed filings, filing packs, PDF and Word export', 'Papers read by Assist', 'Client ledgers, fee notes, bills of costs', 'Oaths and notarial registers, practising compliance, pro bono hours', 'Statistics', 'A firm on one office network', 'Export of every record', 'English, Kiswahili and French'],
     notYetBuilt: [
       'Hearing notices and orders received from Pleadli Courts',
       'Backups and restore from inside the app',

@@ -1,7 +1,7 @@
 import { Createpanel } from '@/components/create-panel'
 import { ClientForm } from '@/features/clients'
 import { MatterForm } from '@/features/matters'
-import { AddCircleIcon, FolderViewIcon, Search01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
+import { Add01Icon, FolderViewIcon, Search01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import {
@@ -16,11 +16,13 @@ import {
 } from '@pleadli/ui/dropdown-menu'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { shortcut } from '@/lib/platform'
+import * as m from '@/paraglide/messages'
 import { useWorkspace } from './tabs-store'
 
 type Panel = 'matter' | 'client' | null
 
-/** The ribbon's second control: what an advocate most often needs to start.
+/** The "+" beside search: what an advocate most often needs to start.
  * Finding a matter, then opening one or adding a client. Not a navigation menu:
  * the areas live in the sidebar. */
 export function QuickActions() {
@@ -38,30 +40,30 @@ export function QuickActions() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button size="icon" variant="ghost" aria-label="Quick actions" title="Quick actions" className="cursor-pointer">
-              <HugeiconsIcon icon={AddCircleIcon} />
+            <Button size="icon-sm" variant="ghost" aria-label={m["workspace.quick.label"]()} title={m["workspace.quick.label"]()} className="size-7.5 shrink-0 cursor-pointer rounded-lg">
+              <HugeiconsIcon icon={Add01Icon} className="size-4" />
             </Button>
           }
         />
-        <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-60">
+        <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="w-60">
           <DropdownMenuGroup>
-            <DropdownMenuLabel>Find</DropdownMenuLabel>
+            <DropdownMenuLabel>{m["workspace.quick.find"]()}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setCommandOpen(true)}>
               <HugeiconsIcon icon={Search01Icon} />
-              Search
-              <DropdownMenuShortcut>Ctrl K</DropdownMenuShortcut>
+              {m["workspace.search_short"]()}
+              <DropdownMenuShortcut>{shortcut('K')}</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuLabel>Start</DropdownMenuLabel>
+            <DropdownMenuLabel>{m["workspace.quick.start"]()}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setPanel('matter')}>
               <HugeiconsIcon icon={FolderViewIcon} />
-              Open a matter
+              {m["matter.open_a_matter"]()}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setPanel('client')}>
               <HugeiconsIcon icon={UserGroupIcon} />
-              Add a client
+              {m["workspace.quick.add_client"]()}
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
@@ -71,7 +73,7 @@ export function QuickActions() {
         open={panel === 'matter'}
         onOpenChange={(open) => !open && close()}
         isDirty={dirty}
-        headings={{ title: 'Open a matter', description: 'A client, and the matter you are acting in for them.' }}
+        headings={{ title: m["matter.open_a_matter"](), description: m["matter.open_a_matter_about"]() }}
       >
         <MatterForm
           onDirtyChange={setDirty}
@@ -81,7 +83,7 @@ export function QuickActions() {
           }}
         />
       </Createpanel>
-      <Createpanel open={panel === 'client'} onOpenChange={(open) => !open && close()} isDirty={dirty} headings={{ title: 'Add a client', description: 'Someone you act for.' }}>
+      <Createpanel open={panel === 'client'} onOpenChange={(open) => !open && close()} isDirty={dirty} headings={{ title: m["workspace.quick.add_client"](), description: m["workspace.quick.add_client_about"]() }}>
         <ClientForm onDirtyChange={setDirty} onSuccess={close} />
       </Createpanel>
     </>

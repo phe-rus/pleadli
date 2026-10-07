@@ -1,17 +1,21 @@
-import { PaperTabs, printSheet, type PaperLink } from '@pleadli/paper'
-import { cn } from '@pleadli/ui/lib/utils'
+import { PaperTabs, printSheet, SignaturePad, type PaperLink } from '@pleadli/paper'
+import { Segmented } from '@pleadli/ui/segmented'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@pleadli/ui/dropdown-menu'
 import { formatDate } from '@/lib/dates'
 import { Tag } from '@/components/status-tag'
 import { decisionTypeLabel, useDecisionsForFile } from '@/features/decisions'
 import { ApiError } from '@/lib/api'
-import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, ArrowRight01Icon, MoreHorizontalIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { saveExport } from './data'
 import { DocumentSheet } from './document-sheet'
-import { useDiscardDocument, useDocument, useDocuments, useIssueDocument, useRefreshDocument, useSaveContent } from './queries'
+import { useDiscardDocument, useDocument, useDocuments, useIssueDocument, useRefreshDocument, useSaveContent, useSeals, useSetSignature } from './queries'
+import { useSecurityStatus } from '@/features/security'
+import { Checkbox } from '@pleadli/ui/checkbox'
 import type { DocumentContent } from './schema'
 import { assistContext } from '@/features/assist/context'
 import { api } from '@/lib/api'
@@ -21,6 +25,79 @@ import { useEffect, useRef, useState } from 'react'
 import * as m from '@/paraglide/messages'
 
 const say = (error: unknown) => (error instanceof ApiError ? error.message : m["common.try_again"]())
+
+/**
+ * The signatures a person may put on a paper: the one saved in Settings, and
+ * the ones they themselves used on documents they issued. Never anyone
+ * else's. Or a new one, drawn here, which can be kept as theirs.
+ */
+function SignSheet({ open, onOpenChange, onSign }: { open: boolean; onOpenChange: (open: boolean) => void; onSign: (png: string) => void }) {
+  const { data: seals } = useSeals()
+  const { data: status } = useSecurityStatus()
+  const { data: all } = useDocuments()
+  const setSaved = useSetSignature()
+  const [drawing, setDrawing] = useState(false)
+  const [keep, setKeep] = useState(false)
+  const me = status?.actor?.name
+  const used = [...new Set(all.filter((d) => d.status === 'issued' && me && d.author === me && d.content.signatureImage).map((d) => d.content.signatureImage!))].filter((sig) => sig !== seals?.signature).slice(0, 3)
+  const mine = [...(seals?.signature ? [{ image: seals.signature, label: m["doc.sign_saved"]() }] : []), ...used.map((image) => ({ image, label: m["doc.sign_used_before"]() }))]
+  const showPad = drawing || mine.length === 0
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next)
+        if (!next) {
+          setDrawing(false)
+          setKeep(false)
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{m["doc.sign_title"]()}</DialogTitle>
+          <DialogDescription>{m["doc.sign_lead"]()}</DialogDescription>
+        </DialogHeader>
+        {!showPad ? (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              {mine.map((sig, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onSign(sig.image)}
+                  className="flex cursor-pointer flex-col items-center gap-2 rounded-xl bg-card p-3 ring-1 ring-border/70 transition-shadow hover:shadow-sm hover:ring-primary/50"
+                >
+                  <img src={sig.image} alt="" className="h-16 w-full object-contain" />
+                  <span className="text-xs text-muted-foreground">{sig.label}</span>
+                </button>
+              ))}
+            </div>
+            <Button variant="secondary" onClick={() => setDrawing(true)}>
+              {m["doc.sign_draw_new"]()}
+            </Button>
+          </div>
+        ) : (
+          <>
+            <SignaturePad
+              labels={{ hint: m["seal.pad_hint"](), clear: m["seal.pad_clear"](), done: m["doc.sign_done"](), cancel: m["common.cancel"]() }}
+              onCancel={() => (mine.length ? setDrawing(false) : onOpenChange(false))}
+              onDone={(png) => {
+                if (keep) setSaved.mutate(png)
+                onSign(png)
+              }}
+            />
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <Checkbox checked={keep} onCheckedChange={(v) => setKeep(v === true)} />
+              {m["doc.sign_keep"]()}
+            </label>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 /** A document, read first and acted on second. The reading surface is the
  * sheet; everything around it (who and what it is, where it came from, what can
@@ -35,7 +112,11 @@ export function DocumentReader({ id, embedded = false, links }: { id: string; em
   const discard = useDiscardDocument()
   const save = useSaveContent()
   const queryClient = useQueryClient()
-  const [editing, setEditing] = useState(false)
+  // Read it, change its words, or write on it with a pen: one control, three ways of working on the page.
+  const [mode, setMode] = useState<'preview' | 'edit' | 'write'>('preview')
+  const editing = mode === 'edit'
+  const [signing, setSigning] = useState(false)
+  const [discarding, setDiscarding] = useState(false)
   const [confirmIssue, setConfirmIssue] = useState(false)
   const [assisting, setAssisting] = useState<number | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -54,7 +135,7 @@ export function DocumentReader({ id, embedded = false, links }: { id: string; em
     try {
       const before = doc.content.blocks.slice(Math.max(0, index - 3), index).map((b) => ('text' in b ? b.text : '')).join('\n')
       const current = doc.content.blocks[index]
-      const ask = `Write the paragraph of "${doc.content.title}" that comes after:\n${before}\n\nWhat is there now: ${'text' in current ? current.text : ''}\n\nWrite it in ${doc.content.lang === 'fr' ? 'French' : doc.content.lang === 'sw' ? 'Swahili' : doc.content.lang === 'de' ? 'German' : 'English'}, in the formal style of this document, from the facts of the file only. Reply with the paragraph text alone.`
+      const ask = `Write the paragraph of "${doc.content.title}" that comes after:\n${before}\n\nWhat is there now: ${'text' in current ? current.text : ''}\n\nWrite it in ${doc.content.lang === 'fr' ? 'French' : doc.content.lang === 'sw' ? 'Swahili' : 'English'}, in the formal style of this document, from the facts of the file only. Reply with the paragraph text alone.`
       const reply = await api('POST', '/api/assist/chat', { body: { messages: [{ role: 'user', content: ask }], fileId: doc.prosecutionFileId, place: 'a document being drafted', context: assistContext(doc.prosecutionFileId) } })
       const text = String((reply as { text?: string }).text ?? '').trim()
       if (text) change({ ...doc.content, blocks: doc.content.blocks.map((b, i) => (i === index && b.type === 'paragraph' ? { ...b, text } : b)) })
@@ -120,83 +201,137 @@ export function DocumentReader({ id, embedded = false, links }: { id: string; em
 
         <div className="flex flex-wrap items-center justify-between gap-2" role="toolbar" aria-label={m["doc.actions"]()}>
           {draft ? (
-            <div role="radiogroup" className="inline-flex rounded-lg border border-border/70 p-0.5">
-              {([false, true] as const).map((on) => (
-                <button
-                  key={String(on)}
-                  type="button"
-                  role="radio"
-                  aria-checked={editing === on}
-                  onClick={() => setEditing(on)}
-                  className={cn('cursor-pointer rounded-md px-3 py-1 text-sm', editing === on ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:text-foreground')}
-                >
-                  {on ? m["paper.edit"]() : m["paper.preview"]()}
-                </button>
-              ))}
-            </div>
+            <Segmented
+              label={m["doc.actions"]()}
+              value={mode}
+              onChange={setMode}
+              items={[
+                { value: 'preview', label: m["paper.preview"]() },
+                { value: 'edit', label: m["paper.edit"]() },
+                { value: 'write', label: m["doc.write"]() },
+              ]}
+            />
           ) : (
             <span />
           )}
           <div className="flex flex-wrap items-center gap-2">
-            {draft && !fromTemplate && (
-              <Button size="sm" variant="ghost" disabled={refresh.isPending} onClick={() => refresh.mutate(doc.id, { onError: (e) => t.error(m["doc.refresh_failed"](), { description: say(e) }) })}>
-                {m["doc.refresh"]()}
+            {draft && (
+              <Button size="sm" variant="ghost" onClick={() => setSigning(true)}>
+                {m["doc.sign"]()}
+              </Button>
+            )}
+            {!draft && (
+              <Button size="sm" variant="ghost" onClick={() => void download('docx')}>
+                {m["paper.word"]()}
+              </Button>
+            )}
+            <Button size="sm" variant={draft ? 'secondary' : 'default'} onClick={printThis} title={m["doc.pdf_hint"]()}>
+              {m["paper.print"]()}
+            </Button>
+            {draft && (
+              <Button size="sm" onClick={() => setConfirmIssue(true)}>
+                {m["doc.issue"]()}
               </Button>
             )}
             {draft && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  if (window.confirm(m["doc.discard_confirm"]())) {
-                    discard.mutate(doc.id, { onSuccess: () => (embedded ? undefined : void navigate({ to: '/documents' })), onError: (e) => t.error(m["doc.discard_failed"](), { description: say(e) }) })
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button size="icon-sm" variant="ghost" aria-label={m["doc.more"]()} title={m["doc.more"]()}>
+                      <HugeiconsIcon icon={MoreHorizontalIcon} />
+                    </Button>
                   }
-                }}
+                />
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => void download('docx')}>{m["paper.word"]()}</DropdownMenuItem>
+                  {!fromTemplate && (
+                    <DropdownMenuItem onClick={() => refresh.mutate(doc.id, { onError: (e) => t.error(m["doc.refresh_failed"](), { description: say(e) }) })}>{m["doc.refresh"]()}</DropdownMenuItem>
+                  )}
+                  {doc.content.ink && <DropdownMenuItem onClick={() => change({ ...doc.content, ink: undefined })}>{m["doc.clear_writing"]()}</DropdownMenuItem>}
+                  {doc.content.signatureImage && <DropdownMenuItem onClick={() => change({ ...doc.content, signatureImage: undefined })}>{m["doc.remove_signature"]()}</DropdownMenuItem>}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={() => setDiscarding(true)}>
+                    {m["doc.discard"]()}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
+        {mode === 'write' && <p className="text-sm text-muted-foreground">{m["doc.write_hint"]()}</p>}
+
+        {/* Issuing makes the paper final: asked once, plainly, in a sheet. */}
+        <Dialog open={confirmIssue} onOpenChange={setConfirmIssue}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{m["doc.issue_title"]({ title: doc.title })}</DialogTitle>
+              <DialogDescription>{m["doc.issue_sure"]()}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setConfirmIssue(false)}>
+                {m["common.cancel"]()}
+              </Button>
+              <Button
+                disabled={issue.isPending}
+                onClick={() =>
+                  issue.mutate(
+                    { id: doc.id, prefix: serviceNames().short.replace(/[^A-Za-z0-9]/g, '').toUpperCase() },
+                    {
+                      onSuccess: () => {
+                        setConfirmIssue(false)
+                        setMode('preview')
+                        t.success(m["security.audit_action.document_issued"]())
+                        void queryClient.invalidateQueries({ queryKey: ['documents'] })
+                      },
+                      onError: (e) => t.error(m["doc.issue_failed"](), { description: say(e) }),
+                    },
+                  )
+                }
+              >
+                {m["doc.issue_now"]()}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={discarding} onOpenChange={setDiscarding}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{m["doc.discard"]()}</DialogTitle>
+              <DialogDescription>{m["doc.discard_confirm"]()}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setDiscarding(false)}>
+                {m["common.cancel"]()}
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={discard.isPending}
+                onClick={() =>
+                  discard.mutate(doc.id, {
+                    onSuccess: () => {
+                      setDiscarding(false)
+                      if (!embedded) void navigate({ to: '/documents' })
+                    },
+                    onError: (e) => t.error(m["doc.discard_failed"](), { description: say(e) }),
+                  })
+                }
               >
                 {m["doc.discard"]()}
               </Button>
-            )}
-            {draft &&
-              (confirmIssue ? (
-                <span className="flex items-center gap-2 rounded-lg bg-primary/5 px-2 py-1 ring-1 ring-primary/30">
-                  <span className="text-sm">{m["doc.issue_sure"]()}</span>
-                  <Button
-                    size="sm"
-                    disabled={issue.isPending}
-                    onClick={() =>
-                      issue.mutate(
-                        { id: doc.id, prefix: serviceNames().short.replace(/[^A-Za-z0-9]/g, '').toUpperCase() },
-                        {
-                          onSuccess: () => {
-                            setConfirmIssue(false)
-                            setEditing(false)
-                            t.success(m["security.audit_action.document_issued"]())
-                            void queryClient.invalidateQueries({ queryKey: ['documents'] })
-                          },
-                          onError: (e) => t.error(m["doc.issue_failed"](), { description: say(e) }),
-                        },
-                      )
-                    }
-                  >
-                    {m["doc.issue_now"]()}
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setConfirmIssue(false)}>
-                    {m["common.cancel"]()}
-                  </Button>
-                </span>
-              ) : (
-                <Button size="sm" variant="outline" onClick={() => setConfirmIssue(true)}>
-                  {m["doc.issue"]()}
-                </Button>
-              ))}
-            <Button size="sm" variant="outline" onClick={() => void download('docx')}>
-              {m["paper.word"]()}
-            </Button>
-            <Button size="sm" onClick={printThis} title={m["doc.pdf_hint"]()}>
-              {m["paper.print"]()}
-            </Button>
-          </div>
-        </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Signing on the paper itself: a signature already yours, or a new one drawn with a pen, a finger or the mouse. */}
+        <SignSheet
+          open={signing}
+          onOpenChange={setSigning}
+          onSign={(png) => {
+            setSigning(false)
+            change({ ...doc.content, signatureImage: png })
+          }}
+        />
 
         <PaperTabs
           entityType="document"
@@ -222,7 +357,7 @@ export function DocumentReader({ id, embedded = false, links }: { id: string; em
       </div>
 
       <div ref={sheetRef}>
-        <DocumentSheet document={doc} editing={draft && editing} onChange={change} onAssist={(i) => void assist(i)} assisting={assisting} />
+        <DocumentSheet document={doc} editing={draft && editing} writing={draft && mode === 'write'} onChange={change} onAssist={(i) => void assist(i)} assisting={assisting} />
       </div>
     </article>
   )

@@ -16,7 +16,7 @@ import { Button } from '@pleadli/ui/button'
 import { useQuery } from '@tanstack/react-query'
 
 /** The numbers the paper belongs to, as a court caption prints the numbers a case arises from. */
-function FileRefs({ file }: { file: ProsecutionFile }) {
+export function FileRefs({ file }: { file: ProsecutionFile }) {
   const refs = [
     file.policeStation && `${m["paper.refs.station"]()}: ${file.policeStation}`,
     file.policeReference && `${m["paper.refs.police"]()}: ${file.policeReference}`,
@@ -42,7 +42,7 @@ function statementTitle(role: string) {
   return (titles[role] ?? m["paper.statement.title.witness"])()
 }
 
-const hasText = (rich: string | null) => !!rich && rich.replace(/<[^>]+>|"type":"(doc|paragraph)"|[{}[\],":]|content|text/g, '').trim().length > 0
+export const hasText = (rich: string | null) => !!rich && rich.replace(/<[^>]+>|"type":"(doc|paragraph)"|[{}[\],":]|content|text/g, '').trim().length > 0
 
 export type PaperLinks = { related?: PaperLink[]; citedBy?: PaperLink[] }
 

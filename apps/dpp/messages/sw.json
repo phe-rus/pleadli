@@ -139,7 +139,8 @@
     "review": "Pitia",
     "save_changes": "Hifadhi mabadiliko",
     "source_note_optional": "Dokezo la chanzo (si lazima)",
-    "try_again": "Tafadhali jaribu tena."
+    "try_again": "Tafadhali jaribu tena.",
+    "done": "Imekamilika"
   },
   "count": {
     "active_file": {
@@ -327,7 +328,7 @@
     "for_decision": "Kwa uamuzi wa jalada hili",
     "from_decision": "Kutoka kwa uamuzi: {decision}, {date}",
     "from_template": "Kiolezo",
-    "issue": "Toa",
+    "issue": "Toa…",
     "issue_confirm": "Toa hati hii? Itapewa namba yake ya marejeo na haiwezi kubadilishwa tena.",
     "issue_failed": "Imeshindwa kutoa",
     "issue_now": "Toa sasa",
@@ -356,7 +357,7 @@
     "prepared_from": "Imeandaliwa kutoka",
     "previous": "Hati iliyotangulia",
     "print": "Chapisha",
-    "ready": "Tayari kuandaliwa",
+    "ready": "Zinasubiri kuandaliwa",
     "ready_empty": "Kila uamuzi unaozalisha hati una hati iliyoandaliwa.",
     "refresh": "Sasisha kutoka kumbukumbu",
     "refresh_failed": "Imeshindwa kusasisha",
@@ -369,7 +370,30 @@
     "taken_when_issued": "Huchukuliwa inapotolewa",
     "type_here": "Andika hapa",
     "verify_label": "Hakiki hati hii kwenye ofisi iliyoitoa",
-    "write_with_assist": "Andika aya hii kwa msaidizi"
+    "write_with_assist": "Andika aya hii kwa msaidizi",
+    "write": "Andika",
+    "sign": "Saini…",
+    "more": "Zaidi",
+    "clear_writing": "Futa mwandiko",
+    "remove_signature": "Ondoa saini",
+    "write_hint": "Andika kwenye ukurasa kwa kalamu ya kidijitali, kidole au kipanya. Unachoandika kinabaki kwenye karatasi na kufungwa inapotolewa.",
+    "issue_title": "Toa {title}?",
+    "sign_title": "Saini hati hii",
+    "sign_lead": "Saini yako inawekwa kwenye mstari wa mtia saini na kufungwa pamoja na karatasi inapotolewa.",
+    "sign_done": "Saini karatasi",
+    "filter": {
+      "all": "Zote",
+      "drafts": "Rasimu",
+      "issued": "Zilizotolewa",
+      "none": "Hakuna kitu hapa."
+    },
+    "verify_button": "Hakiki karatasi…",
+    "open_kind": "Fungua: {kind}",
+    "prepare_kind": "Andaa: {kind}",
+    "sign_saved": "Saini yako iliyohifadhiwa",
+    "sign_used_before": "Imetumika kwenye hati zako",
+    "sign_draw_new": "Chora saini mpya",
+    "sign_keep": "Ihifadhi pia kama saini yangu"
   },
   "event": {
     "attachment": "Hati imeambatishwa: {what}",
@@ -482,7 +506,7 @@
       },
       "returned": {
         "about": "Liko Polisi kwa upelelezi zaidi.",
-        "label": "Yaliyorudishwa Polisi"
+        "label": "Yako Polisi"
       }
     }
   },
@@ -549,7 +573,10 @@
     "via_connection": "Liliwasilishwa kupitia muunganisho na {station}.",
     "whole_file": "Jalada zima",
     "with_police": "Kwa Polisi",
-    "tasks": "Kazi"
+    "tasks": "Kazi",
+    "info": "Taarifa",
+    "info_title": "Taarifa za faili",
+    "info_description": "Namba zake, watu wanaohusika, kazi zake, maelezo na viambatisho."
   },
   "intake_alerts": {
     "title": "Linasubiri uamuzi wa kushtaki"
@@ -769,7 +796,11 @@
       "calendar": "Kalenda",
       "statistics": "Takwimu",
       "cases": "Kesi",
-      "tasks": "Kazi"
+      "tasks": "Kazi",
+      "inbox": "Kikasha",
+      "police_stations": "Vituo vya polisi",
+      "workload": "Mzigo wa kazi",
+      "recent": "Za karibuni"
     },
     "section": {
       "files": "Majalada",
@@ -851,11 +882,12 @@
       "decisions_recorded": "Maamuzi yaliyorekodiwa",
       "reopened": "Yamefunguliwa upya",
       "resubmitted": "Yamewasilishwa upya",
-      "with_court_reference": "Yenye namba ya mahakama"
+      "with_court_reference": "Yenye namba ya mahakama",
+      "decided_30": "Yaliyoamuliwa, siku 30 zilizopita"
     },
     "subtitle": "{date}. Kinachohitaji umakini wako, na kazi iliyo mezani kwako.",
     "waiting": "Inasubiri: {age}.",
-    "workload": "Mzigo wa kazi wa sasa"
+    "workload": "Kwa muhtasari"
   },
   "page": {
     "court": {
@@ -1474,7 +1506,8 @@
   "window": {
     "close": "Funga",
     "maximize": "Kuza",
-    "minimize": "Punguza"
+    "minimize": "Punguza",
+    "controls": "Dirisha"
   },
   "workspace": {
     "hide_sidebar": "Ficha upau wa pembeni",
@@ -1488,7 +1521,7 @@
       "add_person_description": "Mtu anayeonekana kwenye jalada: mshtakiwa, mlalamikaji au shahidi.",
       "find": "Tafuta",
       "label": "Vitendo vya haraka",
-      "open_file": "Fungua jalada",
+      "open_file": "Faili jipya",
       "open_file_description": "Andika shauri lililopelekwa na Polisi.",
       "start": "Anza"
     },
@@ -1515,7 +1548,12 @@
     "tagline": "Eneo la kazi la mashtaka",
     "window": "Dirisha",
     "more": "Zaidi",
-    "places": "Maeneo"
+    "places": "Maeneo",
+    "search_short": "Tafuta",
+    "section": {
+      "files": "Mafaili",
+      "office": "Ofisi"
+    }
   },
   "assist": {
     "title": "Msaidizi",
@@ -1690,7 +1728,9 @@
     "offence": "Kosa",
     "no_charge": "Hakuna shtaka lililoandaliwa",
     "next_date": "Tarehe ijayo",
-    "no_date": "Hakuna"
+    "no_date": "Hakuna tarehe ya kusikilizwa",
+    "no_accused": "Hakuna mshtakiwa aliyetajwa",
+    "next_on": "{kind} tarehe {date}"
   },
   "import": {
     "button": "Ingiza karatasi",
@@ -1829,7 +1869,9 @@
     },
     "do_it_yourself": "Fanya hatua hii mwenyewe",
     "skip_to": "Endelea hadi {stage}",
-    "procedure": "Kizuizi, rumande na haki"
+    "procedure": "Kizuizi, rumande na haki",
+    "ask_assist": "Mwombe Msaidizi aandae hili",
+    "move_on": "Endelea hadi {stage}"
   },
   "cases": {
     "proposal_ready": "Tayari kupitiwa",
@@ -1939,7 +1981,14 @@
       "open_outside": "Fungua kwa programu yake",
       "empty": "Bado hakuna karatasi. Ongeza alichotuma Polisi, au ingiza karatasi.",
       "prepared": "Imeandaliwa na ofisi hii",
-      "from_police": "Imepokelewa kutoka Polisi"
+      "from_police": "Imepokelewa kutoka Polisi",
+      "this_file": "Jalada hili",
+      "every_paper": "Kila karatasi, kwa namba",
+      "minutes_count": "Maelezo {count}",
+      "decisions": "Mapitio na maamuzi",
+      "count": "Karatasi {count}",
+      "papers_short": "Karatasi",
+      "minutes_one": "Maelezo 1"
     },
     "refs": {
       "police": "Kumbukumbu ya Polisi",
@@ -2003,6 +2052,157 @@
       "received": "Imepokelewa kutoka Polisi",
       "counts": "Mashtaka"
     },
-    "open_elsewhere": "Fungua kwa programu nyingine"
+    "open_elsewhere": "Fungua kwa programu nyingine",
+    "cover": {
+      "title": "Jalada la faili",
+      "not_given": "Haijatolewa",
+      "received": "Ilipokelewa",
+      "accused": "Mshtakiwa",
+      "complainant": "Mlalamikaji",
+      "offences": "Makosa",
+      "last_decision": "Uamuzi wa mwisho"
+    },
+    "index": {
+      "title": "Orodha ya karatasi",
+      "issued": "Imetolewa",
+      "entries": "Maingizo",
+      "no": "Na.",
+      "paper": "Karatasi",
+      "pages": "Kurasa"
+    },
+    "minutes": {
+      "title": "Karatasi ya maelezo",
+      "count": "Maelezo",
+      "written": "Maelezo yameandikwa",
+      "minute": "Maelezo {n}",
+      "by": "Mwendesha mashtaka"
+    },
+    "review": {
+      "title": "Mapitio ya kushtaki",
+      "criterion": "Kigezo",
+      "finding": "Matokeo",
+      "note": "Maelezo",
+      "not_assessed": "Haijapimwa",
+      "outcome": "Matokeo ya jaribio",
+      "no_outcome": "Bado haijarekodiwa",
+      "started": "Mapitio yalianza",
+      "concluded": "Mapitio yamekamilika",
+      "open": "Yanaendelea",
+      "standard": "Kiwango kilichotumika",
+      "reopened": "Imefunguliwa tena kwa sababu",
+      "by": "Mwendesha mashtaka aliyepitia"
+    },
+    "decision": {
+      "title": "Kumbukumbu ya uamuzi",
+      "recorded": "Uamuzi umerekodiwa",
+      "decided_by": "Imeamuliwa na",
+      "decision": "Uamuzi",
+      "applies_to": "Inahusu",
+      "decided_on": "Imeamuliwa tarehe",
+      "on_review": "Kwa mapitio",
+      "reasons": "Sababu",
+      "no_reasons": "Hakuna sababu zilizoandikwa kwa uamuzi huu.",
+      "directions": "Maelekezo kwa Polisi",
+      "police_answer": "Jibu la Polisi"
+    },
+    "add": {
+      "button": "Ongeza",
+      "office": "Imeandikwa na ofisi hii",
+      "police": "Kutoka Polisi",
+      "document": "Hati mpya kutoka kiolezo…",
+      "import": "Leta karatasi zilizoskaniwa…",
+      "statement": "Maelezo…",
+      "evidence": "Kielelezo…",
+      "charge": "Shtaka linalopendekezwa…"
+    },
+    "write_hint": "Andika kwenye karatasi kwa kalamu ya kidijitali, kidole au kipanya. Inabaki kwenye nakala ya ofisi na kuchapishwa nayo."
+  },
+  "folder": {
+    "receive": "Mapya",
+    "review": "Yanapitiwa",
+    "decide": "Ya kuamua",
+    "prepare": "Ya kuandaa",
+    "handover": "Ya kukabidhi",
+    "follow_up": "Yanafuatiliwa",
+    "concluded": "Yamefungwa"
+  },
+  "files": {
+    "layout": {
+      "list": "Orodha",
+      "board": "Ubao",
+      "label": "Onyesha kama"
+    },
+    "count": "Mafaili {count}",
+    "count_one": "Faili 1"
+  },
+  "stations": {
+    "add": "Ongeza kituo cha polisi",
+    "add_lead": "Kituo kinaweza kutuma mafaili hapa kikishakubali mwaliko wa ofisi hii na mmehakiki namba yake pamoja.",
+    "step1": "1. Taja kituo na utengeneze mwaliko wake.",
+    "step2": "2. Mpe kituo faili la mwaliko: barua pepe, flashi, njia yoyote.",
+    "step3": "3. Fungua jibu la kituo hapa, kisha hakikisheni namba yake kwa simu.",
+    "which": "Kituo gani?",
+    "valid_for": "Mwaliko halali kwa",
+    "make_invitation": "Tengeneza mwaliko",
+    "invitation_ready": "Mwaliko wa {station} uko tayari",
+    "send_it": "Kipe kituo faili lililohifadhiwa kabla ya {date}. Wakijibu, fungua jibu lao kwenye ukurasa huu.",
+    "invitation": "Mwaliko",
+    "reply": "Jibu la kituo",
+    "open_reply": "Fungua jibu…",
+    "their_code": "Namba ya usalama ya kituo",
+    "check_code": "Piga simu kituoni mwambiane namba hii. Unganisha tu ikiwa ni ile ile.",
+    "type_code": "Andika namba ambayo kituo kinakusomea",
+    "connect": "Unganisha",
+    "does_not_match": "Namba haifanani",
+    "connected_since": "Imeunganishwa tangu",
+    "confirmed_by": "Imehakikiwa na",
+    "packages": "Vifurushi vilivyopokelewa",
+    "line": {
+      "invited": "Imealikwa · inasubiri jibu hadi {date}",
+      "check": "Imejibu · hakiki namba ili kuunganisha",
+      "connected": "Imeunganishwa"
+    },
+    "subtitle": "Vituo vinavyoweza kutuma mafaili kwa ofisi hii.",
+    "empty": "Bado hakuna kituo kilichounganishwa. Ongeza vituo ofisi hii inavyofanya kazi navyo.",
+    "this_office": "Ofisi hii"
+  },
+  "search": {
+    "group": {
+      "places": "Mahali",
+      "files": "Mafaili",
+      "people": "Watu"
+    },
+    "hint": {
+      "move": "sogea",
+      "open": "fungua",
+      "close": "funga"
+    }
+  },
+  "workload": {
+    "subtitle": "Kilichopo mezani kwa ofisi hii sasa. Mwenendo kwa muda uko kwenye Takwimu."
+  },
+  "statistics": {
+    "subtitle": "Jinsi kazi ya ofisi ilivyokwenda kwa kipindi, ikihesabiwa kutoka kumbukumbu.",
+    "median": "kesi ya kati, kwa siku"
+  },
+  "recent": {
+    "subtitle": "Mafaili na hati zilizofunguliwa karibuni kwenye kompyuta hii.",
+    "empty": "Bado hakuna kilichofunguliwa. Mafaili na hati utakazofungua zitakuwa hapa."
+  },
+  "people": {
+    "col": {
+      "name": "Jina",
+      "id": "Kitambulisho",
+      "other_names": "Majina mengine",
+      "phone": "Simu",
+      "national_id": "Kitambulisho cha taifa",
+      "address": "Anwani",
+      "recorded": "Imeandikwa"
+    },
+    "subtitle": "Washtakiwa, walalamikaji na mashahidi katika mafaili.",
+    "edit": "Hariri mtu",
+    "edit_description": "Badilisha kilichoandikwa.",
+    "empty": "Bado hakuna aliyeandikwa.",
+    "search": "Tafuta watu…"
   }
 }

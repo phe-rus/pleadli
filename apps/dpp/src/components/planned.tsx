@@ -27,6 +27,12 @@ export function Planned({ title, children, covers }: { title: string; children?:
 }
 
 /** Nothing here yet, said plainly. */
-export function EmptyNote({ children }: { children: ReactNode }) {
-  return <p className="rounded-lg border border-dashed border-border p-4 text-muted-foreground">{children}</p>
+export function EmptyNote({ children, icon, action }: { children: ReactNode; icon?: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-foreground/[0.025] px-6 py-10 text-center">
+      {icon && <span className="text-muted-foreground/60 [&_svg]:size-8">{icon}</span>}
+      <p className="max-w-sm text-muted-foreground">{children}</p>
+      {action}
+    </div>
+  )
 }

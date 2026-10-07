@@ -1,6 +1,6 @@
 /** The languages every Pleadli app ships with. */
-export type Locale = 'en' | 'sw' | 'de' | 'fr'
-export const LOCALES: readonly Locale[] = ['en', 'sw', 'de', 'fr']
+export type Locale = 'en' | 'sw' | 'fr'
+export const LOCALES: readonly Locale[] = ['en', 'sw', 'fr']
 
 /** What a word looks like in each shipped language. */
 export type Text = Record<Locale, string>

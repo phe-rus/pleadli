@@ -16,7 +16,7 @@ function RouteComponent() {
     <article className="page flex min-h-0 flex-1 flex-col">
       <header className="page-header">
         <div>
-          <h1>{m["nav.item.board"]()}</h1>
+          <h1>{m["nav.item.tasks"]()}</h1>
           <p>{m["page.board.about"]()}</p>
         </div>
       </header>

@@ -1,8 +1,8 @@
 import { cn } from '@pleadli/ui/lib/utils'
 import type { FormEventHandler, ReactNode } from 'react'
 
-/** One group of settings, in the shape Vercel, GitHub and Claude share: a
- * bordered card with a title and a line of purpose, the controls, and a
+/** One group of settings, drawn like a group in a Mac's System Settings: a
+ * white rounded card lifted off the page with a title and a line of purpose, the controls, and a
  * footer that holds a hint on the left and the action on the right.
  *
  * Text is plain semantic tags (`h3`, `p`) so the global typography styles it;
@@ -35,43 +35,33 @@ export function SettingsCard({
 }) {
   const Root = onSubmit ? 'form' : 'section'
   const hasFooter = hint != null || action != null
-  // A card with nothing inside but its action is one row: the words on the
-  // left, the button on the right, as a browser's settings list them.
-  const single = !children && hasFooter
   return (
-    <Root onSubmit={onSubmit} className={cn('relative flex w-full flex-col gap-2', className)}>
-      {(title || badge) && (
-        <div className="flex flex-wrap items-center gap-2 px-1">
-          {title && <h3 className={cn(danger && 'text-destructive')}>{title}</h3>}
-          {badge}
+    <Root
+      onSubmit={onSubmit}
+      className={cn('flex w-full flex-col overflow-hidden rounded-xl bg-card shadow-xs ring-1', danger ? 'ring-destructive/40' : 'ring-border/70', className)}
+    >
+      {(title || description || children) && (
+        <div className="flex flex-col gap-4 p-4">
+          {(title || description) && (
+            <div className="flex flex-col gap-1">
+              {title && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3>{title}</h3>
+                  {badge}
+                </div>
+              )}
+              {description && <p>{description}</p>}
+            </div>
+          )}
+          {children}
         </div>
       )}
-      <div className={cn('overflow-hidden rounded-xl border bg-card shadow-xs', danger ? 'border-destructive/40' : 'border-border/70')}>
-        {single ? (
-          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3.5">
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              {description && <p className="text-foreground">{description}</p>}
-              {hint && <div className="text-muted-foreground">{hint}</div>}
-            </div>
-            <div className="shrink-0">{action}</div>
-          </div>
-        ) : (
-          <>
-            {(description || children) && (
-              <div className="flex flex-col gap-4 px-4 py-4">
-                {description && <p className="text-muted-foreground">{description}</p>}
-                {children}
-              </div>
-            )}
-            {hasFooter && (
-              <footer className={cn('flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t px-4 py-2.5', danger ? 'border-destructive/30' : 'border-border/60')}>
-                <div className="min-w-0 flex-1 text-muted-foreground">{hint}</div>
-                {action}
-              </footer>
-            )}
-          </>
-        )}
-      </div>
+      {hasFooter && (
+        <footer className={cn('flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3', danger ? 'border-destructive/30 bg-destructive/5' : 'border-border/60 bg-foreground/[0.02]')}>
+          <div className="min-w-0 flex-1">{hint}</div>
+          {action}
+        </footer>
+      )}
     </Root>
   )
 }

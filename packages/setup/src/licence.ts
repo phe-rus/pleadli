@@ -45,21 +45,7 @@ export const LICENCE: Record<Locale, LicenceText> = {
       { heading: '10. Mkataba uliosainiwa unatangulia', body: 'Pale leseni hii na mkataba uliosainiwa kati ya Taasisi na Pleadli vinapotofautiana, mkataba uliosainiwa ndio unaotumika. Tafsiri ya leseni hii ikitofautiana na maandishi ya Kiingereza, maandishi ya Kiingereza ndiyo yanayotumika.' },
     ],
   },
-  de: {
-    title: 'Pleadli Lizenzvereinbarung',
-    sections: [
-      { heading: '1. Für wen diese Lizenz gilt', body: 'Diese Lizenz gilt zwischen Pleadli und der öffentlichen Stelle, Kanzlei oder Praxis, die diese Software installiert (die Institution). Die Personen, die die Institution zur Nutzung berechtigt (Nutzende), handeln in ihrem Auftrag.' },
-      { heading: '2. Was Sie dürfen', body: 'Die Institution darf die Software auf den Computern und Geräten installieren und nutzen, die sie selbst verwaltet, für ihre eigene Arbeit, solange ihre Vereinbarung mit Pleadli gilt.' },
-      { heading: '3. Was Sie nicht dürfen', body: 'Sie dürfen die Software nicht verkaufen, vermieten oder an Dritte weitergeben, ihre Hinweise entfernen oder versuchen, ihre Sicherheit, ihr Prüfprotokoll oder ihre Lizenzprüfung zu umgehen.' },
-      { heading: '4. Ihre Akten gehören Ihnen', body: 'Alle Einträge, Dokumente und Akten in der Software gehören der Institution. Sie werden auf den eigenen Computern der Institution gespeichert und dort verschlüsselt. Nichts wird irgendwohin übertragen, außer die Institution richtet selbst eine Verbindung ein. Pleadli hat keinen Zugriff auf die Akten der Institution.' },
-      { heading: '5. Entscheidungen treffen Menschen', body: 'Die Software unterstützt Menschen bei ihrer Arbeit. Sie trifft niemals eine rechtliche Entscheidung. Jede Assistenzfunktion, auch künstliche Intelligenz, ist ausgeschaltet, bis die Institution sie einschaltet, und ihr Ergebnis bleibt ein Entwurf, bis eine namentlich genannte Person es annimmt.' },
-      { heading: '6. Ihre Pflichten', body: 'Die Institution bestimmt, wer die Software nutzen darf, hält Anmeldedaten geheim, sichert ihre Geräte und erstellt Sicherungskopien. Sie nutzt die Software im Einklang mit dem Recht ihres Landes, einschließlich des Datenschutzrechts.' },
-      { heading: '7. Aktualisierungen und Unterstützung', body: 'Pleadli stellt Aktualisierungen und Unterstützung wie mit der Institution vereinbart bereit. Aktualisierungen entfernen oder ändern niemals Akten ohne Zutun der Institution.' },
-      { heading: '8. Grenzen', body: 'Die Software wird wie im Vertrag vereinbart bereitgestellt. Soweit gesetzlich zulässig, haftet Pleadli nicht für mittelbare Schäden oder für Entscheidungen, die mit Hilfe der Software getroffen wurden.' },
-      { heading: '9. Anwendbares Recht', body: 'Für diese Lizenz gilt das Recht des Landes, in dem die Institution tätig ist, sofern der unterzeichnete Vertrag nichts anderes bestimmt.' },
-      { heading: '10. Der unterzeichnete Vertrag hat Vorrang', body: 'Weichen diese Lizenz und der unterzeichnete Vertrag der Institution mit Pleadli voneinander ab, gilt der unterzeichnete Vertrag. Weicht eine Übersetzung dieser Lizenz vom englischen Text ab, gilt der englische Text.' },
-    ],
-  },
+  
   fr: {
     title: 'Contrat de licence Pleadli',
     sections: [

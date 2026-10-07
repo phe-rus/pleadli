@@ -334,6 +334,14 @@ fn view_filter(view: &str) -> Result<&'static str, DomainError> {
         "active" => "(f.current_status = 'resubmitted' OR (f.current_status = 'under_review' AND EXISTS (SELECT 1 FROM review_notes n WHERE n.prosecution_file_id = f.id)))",
         "awaiting" => "f.current_status IN ('under_review', 'resubmitted')",
         "returned" => "f.current_status = 'returned_for_investigation'",
+        // The sidebar's folders: one per stage of the work, the same stages the file's own steps show.
+        "receive" => "f.stage = 'receive'",
+        "review" => "f.stage = 'review'",
+        "decide" => "f.stage = 'decide'",
+        "prepare" => "f.stage = 'prepare'",
+        "handover" => "f.stage = 'handover'",
+        "follow_up" => "f.stage = 'follow_up'",
+        "concluded" => "f.stage = 'concluded'",
         // A concluded file with a review open on it that reopens a decision.
         "reopened" => "EXISTS (SELECT 1 FROM charging_reviews r WHERE r.prosecution_file_id = f.id AND r.concluded_at IS NULL AND r.reopens_decision_id IS NOT NULL)",
         "closed" => "f.current_status NOT IN ('under_review', 'resubmitted', 'returned_for_investigation')
@@ -354,7 +362,7 @@ pub async fn list_file_summaries(pool: &SqlitePool, query: &str, view: &str, lim
          LIMIT ?2"
     );
     // Open work is oldest first; a register of concluded files reads newest first.
-    let sql = if matches!(view, "closed" | "all" | "") {
+    let sql = if matches!(view, "closed" | "concluded" | "all" | "") {
         sql.replace("ORDER BY awaiting_since ASC, f.received_at ASC", "ORDER BY last_activity_at DESC")
     } else {
         sql

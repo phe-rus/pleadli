@@ -3,7 +3,8 @@ import { SignatureCard, StampCard } from '@/features/documents/seals'
 import { BackupPane } from '@/features/security/settings-panes'
 import { useSecurityStatus } from '@/features/security'
 import * as m from '@/paraglide/messages'
-import { Badge } from '@pleadli/ui/badge'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Building03Icon, CloudUploadIcon, LegalDocument01Icon, Notification03Icon, PaintBoardIcon, SparklesIcon, SquareLock02Icon, UserGroupIcon, UserIcon } from '@hugeicons/core-free-icons'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -48,6 +49,19 @@ const sectionText: Record<SettingsSectionId, { label: () => string; about: () =>
   licence: { label: m["settings.nav.licence"], about: m["settings.about.licence"] },
 }
 
+/** Each section's icon, one quiet colour (the user turned down tinted squares). */
+const sectionIcon: Record<SettingsSectionId, { icon: typeof UserIcon; tone?: string }> = {
+  you: { icon: UserIcon, tone: 'blue' },
+  office: { icon: Building03Icon, tone: 'teal' },
+  people: { icon: UserGroupIcon, tone: 'blue' },
+  protection: { icon: SquareLock02Icon, tone: 'gray' },
+  assist: { icon: SparklesIcon, tone: 'purple' },
+  appearance: { icon: PaintBoardIcon, tone: 'orange' },
+  notifications: { icon: Notification03Icon, tone: 'red' },
+  backup: { icon: CloudUploadIcon, tone: 'green' },
+  licence: { icon: LegalDocument01Icon, tone: 'gray' },
+}
+
 const ownerOf = (group: GroupId) =>
   group === 'you' ? m["settings.owner.you"]() : group === 'office' ? m["settings.owner.office"]() : group === 'computer' ? m["settings.owner.this_machine"]() : m["settings.owner.read_only"]()
 
@@ -74,9 +88,9 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
 }
 
 /** Settings as a left list of sections and one pane, the section in the URL so
- * it can be a tab, a link and a palette target. The pane is the one column
- * everything in a section sits in: `w-full` up to `md:max-w-md`, and nothing
- * inside it sets a width of its own. */
+ * it can be a tab, a link and a palette target. The list is drawn like a Mac's
+ * System Settings: a quiet icon per section, the chosen one filled with the accent. The
+ * pane fills the rest of the page's one width; nothing inside it sets its own. */
 export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
   const { data: status } = useSecurityStatus()
   const current = isSettingsSection(sectionId) ? sectionId : 'you'
@@ -94,14 +108,14 @@ export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
       </header>
 
       <div className="flex flex-col gap-6 md:flex-row md:gap-10">
-        <nav aria-label={m["settings.title"]()} className="flex shrink-0 flex-col gap-4 md:w-52">
+        <nav aria-label={m["settings.title"]()} className="flex shrink-0 flex-col gap-4 md:w-56">
           {groups.map((g) => (
-            <div key={g.id} className="flex flex-col gap-0.5">
-              <span className="px-2.5 pb-1 text-[0.6875rem] font-medium tracking-wider text-muted-foreground uppercase">{groupText[g.id]()}</span>
+            <div key={g.id} role="group" aria-label={groupText[g.id]()} className="flex flex-col gap-px">
               {g.sections
                 .filter((id) => !hidden(id))
                 .map((id) => {
                   const active = id === current
+                  const { icon } = sectionIcon[id]
                   return (
                     <Link
                       key={id}
@@ -109,10 +123,11 @@ export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
                       params={{ section: id }}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'rounded-md px-2.5 py-1.5 no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none',
-                        active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
+                        'flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[0.8125rem] no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none',
+                        active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-foreground/5',
                       )}
                     >
+                      <HugeiconsIcon icon={icon} className={cn('size-4 shrink-0', active ? 'text-primary-foreground' : 'text-muted-foreground')} />
                       {sectionText[id].label()}
                     </Link>
                   )
@@ -121,11 +136,11 @@ export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
           ))}
         </nav>
 
-        <section aria-labelledby="settings-section" className="flex w-full min-w-0 flex-col gap-5 md:max-w-md">
+        <section aria-labelledby="settings-section" className="flex w-full min-w-0 flex-col gap-5">
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="settings-section">{sectionText[current].label()}</h2>
-              <Badge variant="outline">{ownerOf(group.id)}</Badge>
+              <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-xs text-muted-foreground">{ownerOf(group.id)}</span>
             </div>
             <p>{sectionText[current].about()}</p>
           </div>

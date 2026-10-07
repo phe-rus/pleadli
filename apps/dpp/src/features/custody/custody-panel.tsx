@@ -1,4 +1,5 @@
 import { useJurisdiction } from '@/features/installation'
+import { Group, GroupRow, RowIcon } from '@pleadli/ui/grouped'
 import { NewDocumentButton } from '@/features/templates/new-document'
 import { formatDate, formatRelative } from '@/lib/dates'
 import { packText } from '@/lib/jurisdiction'
@@ -70,7 +71,7 @@ export function ClockList({ clocks, compact = false }: { clocks: Clock[]; compac
 }
 
 /** The custody record of a file and the clocks it starts. */
-export function CustodyPanel({ fileId }: { fileId: string }) {
+export function CustodyPanel({ fileId, quiet = false }: { fileId: string; quiet?: boolean }) {
   const country = useJurisdiction()
   const { data: events = [] } = useCustody(fileId)
   const add = useAddCustody()
@@ -83,6 +84,29 @@ export function CustodyPanel({ fileId }: { fileId: string }) {
   const clocks = computeClocks(events, country)
 
   if (!country?.timeLimits.length) return null
+  // Nothing recorded yet: one quiet row that says so and offers the two ways in.
+  if (quiet && events.length === 0 && !open)
+    return (
+      <Group>
+        <GroupRow
+          icon={
+            <RowIcon tone="gray">
+              <HugeiconsIcon icon={Clock01Icon} />
+            </RowIcon>
+          }
+          label={m["clock.title"]()}
+          detail={m["clock.none"]()}
+          value={
+            <>
+              <NewDocumentButton fileId={fileId} decisionId={null} decisionKind={null} variant="ghost" mode="custody" />
+              <Button size="xs" variant="secondary" onClick={() => setOpen(true)}>
+                {m["clock.add_event"]()}
+              </Button>
+            </>
+          }
+        />
+      </Group>
+    )
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">

@@ -246,7 +246,9 @@ pub async fn issue(pool: &SqlitePool, id: &str, input: IssueInput, signer: Optio
     // The seals go in first; the code is taken from the sealed content, and
     // the stored content (code and QR included) is what the hash covers.
     let mut content = doc.content.clone();
-    content.signature_image = signature;
+    // A signature written on this very paper (pen, finger) is the one sealed;
+    // otherwise the signer's saved signature.
+    content.signature_image = doc.content.signature_image.clone().or(signature);
     content.stamp_image = stamp;
     let sealed = serde_json::to_string(&content).unwrap_or_default();
     let code = hash(&format!("{reference}|{sealed}"))[..12].to_uppercase();

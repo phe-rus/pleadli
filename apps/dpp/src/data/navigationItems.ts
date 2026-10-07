@@ -3,10 +3,7 @@ import {
   ChartBarLineIcon,
   CourtHouseIcon,
   DashboardBrowsingIcon,
-  FileEditIcon,
-  FolderViewIcon,
   GavelIcon,
-  Files01Icon,
   LegalDocument01Icon,
   Search01Icon,
   Settings01Icon,
@@ -19,13 +16,15 @@ import {
   Folder01Icon,
   KanbanIcon,
   Calendar03Icon,
+  Clock01Icon,
 } from '@hugeicons/core-free-icons'
+import { fileViews } from '@/features/prosecution-files/schema'
 import * as m from '@/paraglide/messages'
 
 export type NavIcon = typeof DashboardBrowsingIcon
 
 /** Which count from the workload read model an item carries beside its name. */
-export type NavCount = 'intake' | 'inReview' | 'returned' | 'reopened' | 'thresholdDue' | 'draftDocuments' | 'incomingWaiting'
+export type NavCount = 'thresholdDue' | 'draftDocuments' | 'incomingWaiting'
 
 export type NavItem = {
   /** Display only: a message getter, so it follows the current language. */
@@ -36,44 +35,46 @@ export type NavItem = {
   search?: Record<string, string>
   exact?: boolean
   count?: NavCount
-  /** Sidebar group. Overview and Search have no group: they are on the ribbon. */
+  /** Sidebar group. Without one, the place is still reachable (search, links)
+   * and named on its tab, but not listed. */
   section?: NavSection
 }
 
-/** Where an item sits in the sidebar: the six main places, the views of
- * Files shown under it, or the folded "More" group. */
-export type NavSection = 'main' | 'files' | 'more'
+/** Where an item sits in the sidebar: the day's work at the top, the inbox
+ * above the file folders, and the office below them. */
+export type NavSection = 'main' | 'inbox' | 'office'
 
-/** Seven places, as the client asked: Today, Files, Board, Calendar,
- * Documents, Statistics, and Search on the ribbon. Everything a prosecutor
- * does to one file (police material, review, decisions, court) lives inside
- * the file; the office-wide lists of those stay one click away under More. */
+/**
+ * The sidebar, organised the way the work is: what is on today, then the
+ * files in folders by the stage they are at (the same stages a file's own
+ * steps show, so there is one way of seeing a file everywhere), then the
+ * office. Each thing has one place. The office-wide registers that used to be
+ * separate places (decisions, police material, court matters, charging review)
+ * are reached from inside a file or by search, and keep their addresses.
+ */
 export const dppNav: readonly NavItem[] = [
   { label: m["nav.item.today"], icon: DashboardBrowsingIcon, to: '/', exact: true, section: 'main' },
-  { label: m["nav.item.cases"], icon: KanbanIcon, to: '/cases', section: 'main' },
-  { label: m["nav.item.files"], icon: Folder01Icon, to: '/files', search: { view: 'all' }, section: 'more' },
+  { label: m["nav.item.recent"], icon: Clock01Icon, to: '/recent', section: 'main' },
+  { label: m["nav.item.tasks"], icon: Task01Icon, to: '/board', section: 'main' },
   { label: m["nav.item.calendar"], icon: Calendar03Icon, to: '/calendar', section: 'main' },
   { label: m["nav.item.documents"], icon: LegalDocument01Icon, to: '/documents', count: 'draftDocuments', section: 'main' },
-  { label: m["nav.item.statistics"], icon: ChartBarLineIcon, to: '/reports', section: 'main' },
+
+  { label: m["nav.item.inbox"], icon: FileImportIcon, to: '/incoming', count: 'incomingWaiting', section: 'inbox' },
+  ...fileViews.map((v) => ({ label: () => v.label, icon: Folder01Icon, to: '/files', search: { view: v.id } })),
+
+  { label: m["nav.item.people"], icon: UserGroupIcon, to: '/people', section: 'office' },
+  { label: m["nav.item.police_stations"], icon: NetworkIcon, to: '/connections', section: 'office' },
+  { label: m["nav.item.workload"], icon: Analytics01Icon, to: '/capacity', section: 'office' },
+  { label: m["nav.item.statistics"], icon: ChartBarLineIcon, to: '/reports', section: 'office' },
+
+  { label: m["nav.item.cases"], icon: KanbanIcon, to: '/cases' },
   { label: m["nav.item.search"], icon: Search01Icon, to: '/search' },
-
-  { label: m["nav.item.incoming"], icon: FileImportIcon, to: '/incoming', count: 'incomingWaiting', section: 'more' },
-  { label: m["nav.item.intake"], icon: FolderViewIcon, to: '/files', search: { view: 'intake' }, count: 'intake' },
-  { label: m["nav.item.active_reviews"], icon: Task01Icon, to: '/files', search: { view: 'active' }, count: 'inReview' },
-  { label: m["nav.item.returned"], icon: Files01Icon, to: '/files', search: { view: 'returned' }, count: 'returned' },
-  { label: m["nav.item.reopened"], icon: FileEditIcon, to: '/files', search: { view: 'reopened' }, count: 'reopened' },
-  { label: m["nav.item.closed"], icon: LegalDocument01Icon, to: '/files', search: { view: 'closed' } },
-
-  { label: m["nav.item.tasks"], icon: Task01Icon, to: '/board', section: 'more' },
-  { label: m["nav.item.charging_review"], icon: BalanceScaleIcon, to: '/review', count: 'thresholdDue', section: 'more' },
-  { label: m["nav.item.police_material"], icon: DocumentAttachmentIcon, to: '/material', section: 'more' },
-  { label: m["nav.item.decisions"], icon: GavelIcon, to: '/decisions', section: 'more' },
-  { label: m["nav.item.court_matters"], icon: CourtHouseIcon, to: '/court-matters', section: 'more' },
-  { label: m["nav.item.people"], icon: UserGroupIcon, to: '/people', section: 'more' },
-  { label: m["nav.item.police_connections"], icon: NetworkIcon, to: '/connections', section: 'more' },
-  { label: m["nav.item.capacity"], icon: Analytics01Icon, to: '/capacity', section: 'more' },
+  { label: m["nav.item.charging_review"], icon: BalanceScaleIcon, to: '/review', count: 'thresholdDue' },
+  { label: m["nav.item.police_material"], icon: DocumentAttachmentIcon, to: '/material' },
+  { label: m["nav.item.decisions"], icon: GavelIcon, to: '/decisions' },
+  { label: m["nav.item.court_matters"], icon: CourtHouseIcon, to: '/court-matters' },
   { label: m["nav.item.settings"], icon: Settings01Icon, to: '/settings' },
-] as const
+]
 
 /** The nav entry a location belongs to, for tab titles and icons. `/files`
  * and `/material` have several entries: the search parameter picks one. */

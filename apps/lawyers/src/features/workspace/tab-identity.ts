@@ -27,7 +27,7 @@ export function identityForLocation(pathname: string, search: Record<string, unk
   if (documentMatch) return { kind: 'document', key: `document:${documentMatch[1]}`, recordId: documentMatch[1], to: path }
 
   if (path === '/matters') {
-    const view = isMatterView(search.view) ? search.view : 'board'
+    const view = isMatterView(search.view) ? search.view : 'open'
     return { kind: 'area', key: 'area:/matters', to: `/matters?view=${view}` }
   }
   if (path === '/diary') return { kind: 'area', key: 'area:/diary', to: typeof search.day === 'string' ? `/diary?day=${search.day}` : path }
@@ -49,7 +49,7 @@ function titleFor(identity: TabIdentity, search: Record<string, unknown>): strin
       return m["nav.tab.document"]()
     case 'area': {
       if (identity.key === 'area:/matters') {
-        const view = isMatterView(search.view) ? search.view : 'board'
+        const view = isMatterView(search.view) ? search.view : 'open'
         return matterViews.find((v) => v.id === view)?.label ?? m["nav.section.matters"]()
       }
       return areaMeta(identity.key.slice('area:'.length))?.label ?? identity.to

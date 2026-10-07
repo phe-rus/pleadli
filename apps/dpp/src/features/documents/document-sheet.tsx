@@ -1,6 +1,7 @@
 import { useBrandLogo } from '@/features/brand'
 import * as m from '@/paraglide/messages'
 import { Add01Icon, Delete02Icon, SparklesIcon } from '@hugeicons/core-free-icons'
+import { InkLayer } from '@pleadli/paper'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { displayCode } from '@pleadli/paper'
@@ -73,8 +74,11 @@ export function DocumentSheet({
   onChange,
   onAssist,
   assisting,
+  writing = false,
 }: {
   document: DocumentRecord
+  /** The pen is out: writing on the page goes into its handwriting layer. */
+  writing?: boolean
   editing?: boolean
   onChange?: (content: DocumentContent) => void
   onAssist?: (index: number) => void
@@ -84,7 +88,7 @@ export function DocumentSheet({
   const logo = useBrandLogo()
   const issued = document.status === 'issued' && document.reference
   // The draft banner is in the document's own language, like the rest of the page.
-  const draftBanner = { fr: 'PROJET, NON ÉMIS', sw: 'RASIMU, HAIJATOLEWA', de: 'ENTWURF, NICHT AUSGEFERTIGT', en: 'DRAFT, NOT ISSUED' }[content.lang ?? ''] ?? m["doc.draft_banner"]()
+  const draftBanner = { fr: 'PROJET, NON ÉMIS', sw: 'RASIMU, HAIJATOLEWA', en: 'DRAFT, NOT ISSUED' }[content.lang ?? ''] ?? m["doc.draft_banner"]()
   const status = issued ? document.reference : draftBanner
   const letterhead = content.letterhead ?? []
   const set = (blocks: Block[]) => onChange?.({ ...content, blocks })
@@ -120,6 +124,7 @@ export function DocumentSheet({
 
   return (
     <div lang={content.lang} className="paper relative mx-auto w-full max-w-[210mm] p-[16mm] font-serif text-sm leading-relaxed" data-document-sheet>
+      {(content.ink || writing) && <InkLayer value={content.ink} active={writing && document.status === 'draft'} onChange={(ink) => onChange?.({ ...content, ink: ink ?? undefined })} />}
       <header className="mb-6 flex flex-col items-center gap-1 text-center">
         <img src={logo} alt="" className="mb-1 size-16 object-contain" draggable={false} />
         {letterhead.map((line, i) => (

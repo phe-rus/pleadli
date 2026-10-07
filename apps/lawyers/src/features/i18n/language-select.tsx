@@ -1,6 +1,7 @@
 import { ArrowDown01Icon, Globe02Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@pleadli/ui/dropdown-menu'
 import { cn } from '@pleadli/ui/lib/utils'
 import { AnimatePresence, motion, useDragControls, useMotionValue, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
@@ -101,7 +102,7 @@ export function LanguageSelect() {
       onDragStart={() => (didDrag.current = false)}
       onDrag={() => (didDrag.current = true)}
       onDragEnd={commitDrag}
-      className="z-50 print:hidden"
+      className="z-50 print:hidden [html[data-language-docked]_&]:hidden"
     >
       <motion.div
         layout
@@ -177,5 +178,47 @@ export function LanguageSelect() {
         </AnimatePresence>
       </motion.div>
     </motion.div>
+  )
+}
+
+/** The language switch as a quiet word in the status bar, for inside the
+ * workspace, where a floating button would sit on top of the work. While it
+ * is mounted the floating one steps aside. */
+export function StatusBarLanguageSelect() {
+  const current = useLocale()
+
+  useEffect(() => {
+    document.documentElement.dataset.languageDocked = ''
+    return () => {
+      delete document.documentElement.dataset.languageDocked
+    }
+  }, [])
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            aria-label={m["i18n.language_aria"]({ name: localeNames[current] })}
+            className="flex cursor-pointer items-center gap-1 rounded px-1 uppercase outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+          />
+        }
+      >
+        <HugeiconsIcon icon={Globe02Icon} className="size-3.5" />
+        {current}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="end" sideOffset={6} className="w-44">
+        {selectableLocales.map((locale) => (
+          <DropdownMenuItem key={locale} onClick={() => changeLocale(locale)} className="justify-between">
+            <span className="flex items-center gap-2.5">
+              <span className="w-5 uppercase text-muted-foreground">{locale}</span>
+              {localeNames[locale]}
+            </span>
+            {locale === current && <HugeiconsIcon icon={Tick02Icon} className="size-4" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

@@ -6,7 +6,7 @@ import { FileTasks } from '@/features/board'
 import { useChargesForFile } from '@/features/charges'
 import { criteria, findings } from '@/features/charging-review/schema'
 import { CourtRecord } from '@/features/court'
-import { CustodyPanel } from '@/features/custody'
+import { CustodyPanel, useCustody } from '@/features/custody'
 import { availableDecisionTypes, decisionTypeLabel } from '@/features/decisions/schema'
 import { directionKinds } from '@/features/directions/schema'
 import { DecisionsPanel, DocumentsPanel } from '@/features/file-workspace/decision-panels'
@@ -16,7 +16,7 @@ import { useBrand } from '@/features/installation'
 import { personFullNameForRole, useFilePeople, type ProsecutionFile } from '@/features/prosecution-files'
 import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
-import { AlertCircleIcon, ArrowDown01Icon, ArrowRight01Icon, Mail01Icon, PrinterIcon, Download04Icon, SparklesIcon, Tick02Icon } from '@hugeicons/core-free-icons'
+import { AlertCircleIcon, ArrowRight01Icon, Mail01Icon, PrinterIcon, Download04Icon, SparklesIcon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
@@ -63,23 +63,29 @@ export const methodLabel = (x: string) =>
 export function StageStepper({ current, viewing, onView }: { current: Stage; viewing: Stage; onView: (s: Stage) => void }) {
   const at = stages.indexOf(current)
   return (
-    <ol aria-label={m["timeline.label"]()} className="no-scrollbar flex list-none items-stretch gap-1 overflow-x-auto p-0">
+    <ol aria-label={m["timeline.label"]()} className="no-scrollbar flex list-none items-start overflow-x-auto p-0">
       {stages.map((s, i) => (
-        <li key={s} className="min-w-24 flex-1">
+        <li key={s} className="relative flex min-w-20 flex-1 flex-col items-center">
+          {/* The line joining this step to the one before it. */}
+          {i > 0 && <span aria-hidden className={cn('absolute top-3 right-1/2 left-[-50%] h-0.5', i <= at ? 'bg-primary' : 'bg-border')} />}
           <button
             type="button"
             onClick={() => onView(s)}
             aria-current={s === current ? 'step' : undefined}
-            className={cn(
-              'flex w-full cursor-pointer flex-col items-start gap-1 rounded-xl px-3 py-2 text-left transition-colors',
-              s === viewing ? 'bg-secondary ring-1 ring-border' : 'hover:bg-secondary/50',
-            )}
+            className="relative flex cursor-pointer flex-col items-center gap-1.5 rounded-lg px-2 py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
-            <span className={cn('h-1 w-full rounded-full', i < at ? 'bg-primary' : i === at ? 'bg-primary/60' : 'bg-border')} />
-            <span className={cn('flex items-center gap-1 text-xs', i <= at ? 'text-foreground' : 'text-muted-foreground', s === current && 'font-semibold')}>
-              {i < at && <HugeiconsIcon icon={Tick02Icon} className="size-3 text-primary" />}
-              {stageLabel(s)}
+            <span
+              className={cn(
+                'flex size-6 items-center justify-center rounded-full transition-colors',
+                i < at && 'bg-primary text-primary-foreground',
+                i === at && 'bg-primary text-primary-foreground ring-4 ring-primary/20',
+                i > at && 'bg-background ring-2 ring-border ring-inset',
+                s === viewing && s !== current && 'ring-2 ring-foreground/40',
+              )}
+            >
+              {i < at ? <HugeiconsIcon icon={Tick02Icon} className="size-3.5" /> : i === at ? <span className="size-2 rounded-full bg-primary-foreground" /> : null}
             </span>
+            <span className={cn('text-xs whitespace-nowrap', i <= at ? 'text-foreground' : 'text-muted-foreground', (s === current || s === viewing) && 'font-semibold')}>{stageLabel(s)}</span>
           </button>
         </li>
       ))}
@@ -383,10 +389,10 @@ export function CaseTab({ file }: { file: ProsecutionFile }) {
   const { data: proposals = [] } = useProposals(file.id)
   const { data: handovers = [] } = useHandovers(file.id)
   const { data: assist } = useAssistSettings()
+  const { data: custody = [] } = useCustody(file.id)
   const propose = usePropose(file.id)
   const answer = useAnswer()
   const move = useSetStage()
-  const [diy, setDiy] = useState(false)
   const [rejecting, setRejecting] = useState(false)
   const [note, setNote] = useState('')
 
@@ -420,11 +426,12 @@ export function CaseTab({ file }: { file: ProsecutionFile }) {
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <CustodyPanel fileId={file.id} />
+    <div className="flex flex-col gap-6">
+      {/* A running legal clock outranks everything else on the file. */}
+      {custody.length > 0 && <CustodyPanel fileId={file.id} />}
       <StageStepper current={current} viewing={viewing} onView={setViewing} />
 
-      <section className="flex flex-col gap-4 rounded-2xl bg-card p-5 ring-1 ring-border/60">
+      <section className="flex flex-col gap-5 rounded-xl bg-card p-5 shadow-xs ring-1 ring-border/70">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h2>{stageLabel(viewing)}</h2>
@@ -485,21 +492,26 @@ export function CaseTab({ file }: { file: ProsecutionFile }) {
               </div>
             )}
           </div>
-        ) : viewing === current && current !== 'concluded' ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <Button disabled={!canPropose || propose.isPending} onClick={() => propose.mutate(viewing, { onError: (e) => t.error(m["pipe.propose_failed"](), { description: e.message }) })}>
-              <HugeiconsIcon icon={SparklesIcon} className={cn(propose.isPending && 'animate-pulse')} />
-              {propose.isPending ? m["pipe.preparing"]() : needsModel ? m["pipe.prepare_with_assist"]() : m["pipe.check"]()}
-            </Button>
-            {!canPropose && <span className="text-muted-foreground">{m["pipe.assist_off"]()}</span>}
-            {propose.isError && (
-              <span className="not-typeset flex items-center gap-1 text-destructive">
-                <HugeiconsIcon icon={AlertCircleIcon} className="size-4" />
-                {propose.error.message}
-              </span>
+        ) : (
+          <>
+            {/* The stage's own work, there to do: nothing hidden behind a fold. */}
+            <DoItYourself stage={viewing} file={file} />
+            {viewing === current && current !== 'concluded' && canPropose && (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="secondary" size="sm" disabled={propose.isPending} onClick={() => propose.mutate(viewing, { onError: (e) => t.error(m["pipe.propose_failed"](), { description: e.message }) })}>
+                  <HugeiconsIcon icon={SparklesIcon} className={cn(propose.isPending && 'animate-pulse')} />
+                  {propose.isPending ? m["pipe.preparing"]() : needsModel ? m["pipe.ask_assist"]() : m["pipe.check"]()}
+                </Button>
+                {propose.isError && (
+                  <span className="not-typeset flex items-center gap-1 text-destructive">
+                    <HugeiconsIcon icon={AlertCircleIcon} className="size-4" />
+                    {propose.error.message}
+                  </span>
+                )}
+              </div>
             )}
-          </div>
-        ) : null}
+          </>
+        )}
 
         {done.length > 0 && (
           <ul className="flex list-none flex-col gap-1 p-0 text-sm text-muted-foreground">
@@ -528,21 +540,18 @@ export function CaseTab({ file }: { file: ProsecutionFile }) {
             ))}
           </ul>
         )}
+
+        {viewing === current && current !== 'concluded' && (
+          <div className="flex justify-end border-t border-border/60 pt-4">
+            <Button size="sm" onClick={() => move.mutate({ fileId: file.id, stage: stages[idx + 1] })}>
+              {m["pipe.move_on"]({ stage: stageLabel(stages[idx + 1]) })}
+              <HugeiconsIcon icon={ArrowRight01Icon} />
+            </Button>
+          </div>
+        )}
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <button type="button" onClick={() => setDiy((d) => !d)} className="flex cursor-pointer items-center gap-1 text-muted-foreground hover:text-foreground">
-          <HugeiconsIcon icon={ArrowDown01Icon} className={cn('size-4 transition-transform', !diy && '-rotate-90')} />
-          {m["pipe.do_it_yourself"]()}
-        </button>
-        {viewing === current && current !== 'concluded' && (
-          <Button size="sm" variant="ghost" onClick={() => move.mutate({ fileId: file.id, stage: stages[idx + 1] })}>
-            {m["pipe.skip_to"]({ stage: stageLabel(stages[idx + 1]) })}
-            <HugeiconsIcon icon={ArrowRight01Icon} />
-          </Button>
-        )}
-      </div>
-      {diy && <DoItYourself stage={viewing} file={file} />}
+      {custody.length === 0 && <CustodyPanel fileId={file.id} quiet />}
     </div>
   )
 }

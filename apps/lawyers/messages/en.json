@@ -1,6 +1,10 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "assist": {
+    "dock": {
+      "close": "Close Assist",
+      "on_matter": "On this matter"
+    },
     "panel": {
       "answer": "Assist's answer",
       "ask": "Ask Assist",
@@ -239,6 +243,17 @@
     "next_hearing": "Next hearing {when}",
     "open_tasks": "Open tasks: {count}"
   },
+  "cal": {
+    "day": "Day",
+    "day_empty": "Nothing is in the diary for this day. List a hearing from a matter.",
+    "diary_for": "Diary for {date}",
+    "month": "Month",
+    "next_day": "Next day",
+    "previous_day": "Previous day",
+    "print": "Print",
+    "to_attend": "To attend",
+    "views": "Calendar view"
+  },
   "calendar": {
     "deadline": "Deadline",
     "hearing": "Hearing",
@@ -313,6 +328,7 @@
   },
   "common": {
     "cancel": "Cancel",
+    "planned": "Planned",
     "try_again": "Please try again."
   },
   "compliance": {
@@ -408,6 +424,10 @@
     "uganda_v": "Uganda v.",
     "year": "Year"
   },
+  "doc": {
+    "clear_writing": "Clear handwriting",
+    "write": "Write"
+  },
   "doc_page": {
     "changed_since_filing": "Changed since filing",
     "discard": "Discard",
@@ -429,6 +449,17 @@
     "text": "Text",
     "title": "Title",
     "untitled": "Untitled"
+  },
+  "docs": {
+    "all": "All",
+    "changed_on": "Changed {date}",
+    "drafts": "Drafts",
+    "filed": "Filed",
+    "filed_on": "Filed {date}",
+    "lead": "What you have drafted and filed. A filed document is frozen: it can be printed and replaced, never edited.",
+    "none": "No document has been drafted yet. Open a matter and choose Draft a document.",
+    "none_here": "Nothing here.",
+    "verify": "Check a paper…"
   },
   "document": {
     "advocate_files": "An advocate in the practice files this",
@@ -720,7 +751,7 @@
       "board_about": "Open matters of one kind, by the stage each has reached. Drag a card, or use its menu, to move it.",
       "closed": "Closed",
       "closed_about": "Matters you have finished with.",
-      "no_hearing": "No hearing listed",
+      "no_hearing": "Needs a date",
       "no_hearing_about": "Open court matters with no hearing in the diary. Each one needs a date.",
       "open": "Open matters",
       "open_about": "Every matter you are acting in."
@@ -903,9 +934,13 @@
     "hearings": "Hearings",
     "hearings_count": "Hearings: {count}",
     "history": "History of this matter",
+    "info": "Info",
+    "info_description": "Who you act for, where, and on what terms.",
+    "info_title": "About this matter",
     "list_hearing": "List a hearing",
     "list_hearing_description": "Put a hearing in your diary.",
     "made": "Made for this matter",
+    "more": "More",
     "no_court_number": "No court number recorded",
     "no_documents": "No document has been drafted for this matter.",
     "no_hearing_listed": "No hearing listed",
@@ -937,6 +972,14 @@
     "reopen": "Reopen",
     "reopen_failed": "Could not reopen the matter",
     "reopened": "Matter reopened",
+    "sections": "Matter sections",
+    "seg": {
+      "activity": "Activity",
+      "matter": "The matter",
+      "money": "Money and time",
+      "notes": "Notes",
+      "papers": "Papers"
+    },
     "tab": {
       "deadlines": "Deadlines",
       "filings": "Filings",
@@ -967,7 +1010,7 @@
     "diary": "Diary",
     "documents": "Documents",
     "money": "Money",
-    "no_hearing": "No hearing listed",
+    "no_hearing": "Needs a date",
     "open_matters": "Open matters",
     "pinned": "Pinned",
     "recent": "Recent",
@@ -1058,12 +1101,19 @@
     "assist_off": "Assist is not set up, so these cannot be read yet.",
     "binder": {
       "attached": "Attached to this paper",
+      "count": "{count} papers",
+      "decisions": "Reviews and decisions",
       "empty": "No papers yet. Add what Police sent, or import the papers.",
+      "every_paper": "Every paper, numbered",
       "from_police": "Received from Police",
+      "minutes_count": "{count} minutes",
+      "minutes_one": "1 minute",
       "open_outside": "Open in its own program",
       "papers": "Papers in this file",
+      "papers_short": "Papers",
       "prepared": "Prepared by this office",
-      "received": "As received from Police. Not changed by this office."
+      "received": "As received from Police. Not changed by this office.",
+      "this_file": "This file"
     },
     "changed": "Changed since it was last printed",
     "charges": {
@@ -1078,6 +1128,28 @@
     "cites": "This paper cites",
     "copied": "Copied",
     "copy": "Copy",
+    "cover": {
+      "accused": "Accused",
+      "complainant": "Complainant",
+      "last_decision": "Last decision",
+      "not_given": "Not given",
+      "offences": "Offences",
+      "received": "Received on",
+      "title": "File cover"
+    },
+    "decision": {
+      "applies_to": "Applies to",
+      "decided_by": "Decided by",
+      "decided_on": "Decided on",
+      "decision": "Decision",
+      "directions": "Directions to Police",
+      "no_reasons": "No reasons were written for this decision.",
+      "on_review": "On the review",
+      "police_answer": "Police answer",
+      "reasons": "Reasons",
+      "recorded": "Decision recorded",
+      "title": "Record of decision"
+    },
     "detail": {
       "counts": "Counts",
       "date": "Date",
@@ -1107,6 +1179,14 @@
     "found_recorded": "Recorded",
     "found_title": "Steps Assist saw in the papers",
     "hide": "Hide",
+    "index": {
+      "entries": "Entries",
+      "issued": "Issued",
+      "no": "No.",
+      "pages": "Pages",
+      "paper": "Paper",
+      "title": "Index of papers"
+    },
     "kind": {
       "contract": "Contract or agreement",
       "court_document": "From the court",
@@ -1119,6 +1199,13 @@
     },
     "last_printed": "Last printed {when}",
     "latest": "This is the latest version of this paper.",
+    "minutes": {
+      "by": "Prosecutor",
+      "count": "Minutes",
+      "minute": "Minute {n}",
+      "title": "Minute sheet",
+      "written": "Minute written"
+    },
     "no_citations": "No law or other paper is named in this paper.",
     "no_history": "This paper has not left the office yet. Each time it is printed or saved, the version is kept here.",
     "no_related": "No other papers on this file belong with this one.",
@@ -1145,6 +1232,21 @@
     "remove": "Remove the paper",
     "remove_confirm": "The file is destroyed on this computer.",
     "remove_failed": "Could not remove it",
+    "review": {
+      "by": "Reviewing prosecutor",
+      "concluded": "Review concluded",
+      "criterion": "Criterion",
+      "finding": "Finding",
+      "no_outcome": "Not yet recorded",
+      "not_assessed": "Not assessed",
+      "note": "Note",
+      "open": "In progress",
+      "outcome": "Outcome",
+      "reopened": "Reopened because",
+      "standard": "Standard applied",
+      "started": "Review started",
+      "title": "Charging review"
+    },
     "save_checked": "Checked, save",
     "saving": "Preparing the paper",
     "statement": {
@@ -1173,7 +1275,8 @@
     "unchecked": "Named by Assist, unchecked",
     "uploading": "Adding {count}...",
     "verify_line": "Check this paper with its code",
-    "word": "Save as Word"
+    "word": "Save as Word",
+    "write_hint": "Write on the paper with a pen, a finger or the mouse. It is kept with this office's copy and printed with it."
   },
   "party": {
     "add": "Add a party",
@@ -1216,6 +1319,11 @@
     "title": "Sign-in",
     "your_new_password": "Your new password",
     "your_new_pin": "Your new PIN"
+  },
+  "recent": {
+    "empty": "Nothing opened yet. Matters and documents you open appear here.",
+    "matters": "Matters",
+    "subtitle": "Matters and documents opened lately on this computer."
   },
   "registers": {
     "add": "New entry",
@@ -1658,6 +1766,7 @@
   "today": {
     "adjourned": "Adjourned",
     "adjournments_count": "Adjournments: {count}",
+    "all_clear": "Nothing needs you right now. Nothing in court today, nothing overdue.",
     "att": {
       "a_task": "A task",
       "due_soon": "Due soon",
@@ -1677,6 +1786,7 @@
     "attention": "Needs attention",
     "drafts": "Drafts",
     "drafts_caption": "Documents drafted and not yet filed",
+    "figures": "Your practice",
     "hearings_today": "Hearings today",
     "in_court": "In court today",
     "in_diary_today": "In your diary for today",
@@ -1778,7 +1888,37 @@
     "someone": "someone in this office",
     "title": "Check a printed copy"
   },
+  "window": {
+    "close": "Close",
+    "controls": "Window",
+    "maximize": "Maximize",
+    "minimize": "Minimize"
+  },
   "workspace": {
-    "subtitle_default": "Your practice"
+    "advocate": "Advocate",
+    "hide_sidebar": "Hide sidebar",
+    "new": "New",
+    "no_advocate": "No advocate set",
+    "places": "Places",
+    "quick": {
+      "add_client": "Add a client",
+      "add_client_about": "Someone you act for.",
+      "find": "Find",
+      "label": "Quick actions",
+      "start": "Start"
+    },
+    "search_short": "Search",
+    "show_sidebar": "Show sidebar",
+    "sidebar": "Sidebar",
+    "subtitle_default": "Your practice",
+    "tab": {
+      "next": "Next tab",
+      "previous": "Previous tab"
+    },
+    "view": {
+      "board": "Board",
+      "list": "List"
+    },
+    "window": "Window"
   }
 }

@@ -1,52 +1,41 @@
-import { PanelLeftIcon } from '@hugeicons/core-free-icons'
 import { productName } from '@/lib/jurisdiction'
 import { BrandLogo } from '@/features/brand'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Button } from '@pleadli/ui/button'
+import { Controls } from '@/components/toolbar/controls'
+import { SidebarToggle } from '@/components/toolbar/sidebar-toggle'
+import { cn } from '@pleadli/ui/lib/utils'
 import { Navigator } from './navigator'
-import { Ribbon } from './ribbon'
 import { useWorkspace } from './tabs-store'
 import * as m from '@/paraglide/messages'
 import { useBrand } from '@/features/installation'
 
-/** The left pillar: a full-height column with a header of its own, holding the
- * ribbon and the sidebar. The sidebar is `w-78` open and nothing folded; the
- * ribbon stays. The header is exactly as wide as ribbon plus sidebar, so the
- * brand sits over the ribbon's icons and the fold control over the sidebar. It
- * is sized `w-89` inside and clipped, so folding the sidebar hides the title
- * rather than squeezing it. */
+/** The left pillar: the sidebar running the full height of the window, on its
+ * own quiet grey. Its top is the window's title bar, holding the window
+ * buttons and the sidebar button side by side, as on a Mac; the office's crest
+ * and name sit just below. Folding it hides it entirely; both buttons then
+ * move to the centre's header. */
 export function LeftPillar() {
   const { leftOpen, setLeftOpen } = useWorkspace()
   const { data: brand } = useBrand()
 
   return (
-    <div className="flex shrink-0 flex-col overflow-hidden border-r border-border/20 bg-background print:hidden">
+    <div className={cn('flex shrink-0 flex-col overflow-hidden bg-sidebar print:hidden', leftOpen ? 'border-r border-sidebar-border' : 'w-0')}>
       {/* `w-0 min-w-full`: as wide as the pillar, but adds nothing to how wide
-          the pillar is, so the pillar is still ribbon plus sidebar. */}
-      <header data-tauri-drag-region className="flex h-9 w-0 min-w-full shrink-0 items-center overflow-hidden border-b border-border/20 bg-background">
-        <div data-tauri-drag-region className="flex w-89 shrink-0 items-center">
-          <div data-tauri-drag-region className="flex w-11 shrink-0 items-center justify-center">
-            <BrandLogo className="size-6" />
-          </div>
-          <div data-tauri-drag-region className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-            <span data-tauri-drag-region className="truncate text-sm leading-4 font-semibold">{productName()}</span>
-            <span data-tauri-drag-region className="truncate text-xs leading-3.5 text-muted-foreground">{brand?.officeName ?? m["workspace.tagline"]()}</span>
-          </div>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={() => setLeftOpen(false)}
-            aria-label={m["workspace.hide_sidebar"]()}
-            title={m["workspace.hide_sidebar"]()}
-            inert={!leftOpen}
-            className="mx-2 shrink-0 cursor-pointer"
-          >
-            <HugeiconsIcon icon={PanelLeftIcon} className="size-4" />
-          </Button>
+          the pillar is, so folding hides the contents rather than squeezing them. */}
+      <header data-tauri-drag-region className="flex h-12 w-0 min-w-full shrink-0 items-center overflow-hidden">
+        <div data-tauri-drag-region className="flex w-64 shrink-0 items-center gap-3 ps-4 pe-2">
+          <Controls />
+          <span data-tauri-drag-region className="flex-1" />
+          <SidebarToggle open={leftOpen} onToggle={() => setLeftOpen(false)} />
         </div>
       </header>
+      <div data-tauri-drag-region className="flex w-64 shrink-0 items-center gap-2.5 px-4 pt-1 pb-3">
+        <BrandLogo className="size-8 shrink-0" />
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-[0.8125rem] leading-4 font-semibold">{productName()}</span>
+          <span className="truncate text-[0.6875rem] leading-4 text-muted-foreground">{brand?.officeName ?? m["workspace.tagline"]()}</span>
+        </div>
+      </div>
       <div className="flex min-h-0 flex-1">
-        <Ribbon />
         <Navigator />
       </div>
     </div>

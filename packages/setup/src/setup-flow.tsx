@@ -315,22 +315,24 @@ export function SetupFlow(props: SetupFlowProps) {
   })()
 
   return (
-    <div className="typeset fixed inset-0 z-50 flex flex-col bg-background">
+    // Absolute, not fixed: it fills the app's frame and keeps the desktop window's rounded corners.
+    <div className="typeset absolute inset-0 z-50 flex flex-col bg-background">
       <header data-tauri-drag-region className="flex h-12 shrink-0 items-center gap-4 px-4">
-        <img src={state.logo ?? props.defaultLogo} alt="" className="size-6 object-contain" draggable={false} />
+        {/* The window's buttons where a Mac has them; the progress in the middle; nothing else. */}
+        <div className="flex min-w-14">{props.windowControls}</div>
         <div data-tauri-drag-region className="flex flex-1 justify-center">
           {step !== 'done' && (
             <ol aria-label={t.step(index + 1, counted)} className="not-typeset flex list-none gap-1.5 p-0">
               {steps.slice(0, counted).map((s, i) => (
                 <li
                   key={s}
-                  className={cn('h-1 w-8 rounded-full transition-colors duration-300', i <= index ? 'bg-primary' : 'bg-muted')}
+                  className={cn('size-1.5 rounded-full transition-colors duration-300', i <= index ? 'bg-foreground/70' : 'bg-foreground/15')}
                 />
               ))}
             </ol>
           )}
         </div>
-        <div className="flex min-w-6 justify-end">{props.windowControls}</div>
+        <div className="min-w-14" />
       </header>
 
       <main ref={scroller} className="flex-1 overflow-y-auto">
@@ -349,7 +351,7 @@ export function SetupFlow(props: SetupFlowProps) {
         </AnimatePresence>
       </main>
 
-      <footer className="shrink-0 border-t border-border/60 bg-background/80 backdrop-blur">
+      <footer className="shrink-0 bg-background/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3 px-6 py-4">
           {step === 'done' ? (
             <span />
@@ -364,7 +366,7 @@ export function SetupFlow(props: SetupFlowProps) {
                 {error}
               </p>
             ) : (
-              step !== 'done' && <span className="text-muted-foreground">{t.step(index + 1, counted)}</span>
+              step !== 'done' && <span className="sr-only">{t.step(index + 1, counted)}</span>
             )}
           </div>
           {step === 'done' ? (

@@ -139,7 +139,8 @@
     "review": "Review",
     "save_changes": "Save changes",
     "source_note_optional": "Source note (optional)",
-    "try_again": "Please try again."
+    "try_again": "Please try again.",
+    "done": "Done"
   },
   "count": {
     "active_file": {
@@ -327,7 +328,7 @@
     "for_decision": "For the decision on this file",
     "from_decision": "From the decision: {decision}, {date}",
     "from_template": "A template",
-    "issue": "Issue",
+    "issue": "Issue…",
     "issue_confirm": "Issue this document? It is given its reference and can no longer be changed.",
     "issue_failed": "Could not issue",
     "issue_now": "Issue now",
@@ -356,7 +357,7 @@
     "prepared_from": "Prepared from",
     "previous": "Previous document",
     "print": "Print",
-    "ready": "Ready to prepare",
+    "ready": "Waiting to be prepared",
     "ready_empty": "Every decision that produces a document has one prepared.",
     "refresh": "Refresh from the record",
     "refresh_failed": "Could not refresh",
@@ -369,7 +370,30 @@
     "taken_when_issued": "Taken when issued",
     "type_here": "Type here",
     "verify_label": "Check this document at the issuing office",
-    "write_with_assist": "Write this paragraph with Assist"
+    "write_with_assist": "Write this paragraph with Assist",
+    "write": "Write",
+    "sign": "Sign…",
+    "more": "More",
+    "clear_writing": "Clear handwriting",
+    "remove_signature": "Remove signature",
+    "write_hint": "Write on the page with a pen, a finger or the mouse. What you write stays with the paper and is sealed when it is issued.",
+    "issue_title": "Issue {title}?",
+    "sign_title": "Sign this document",
+    "sign_lead": "Your signature goes on the signer's line of this paper and is sealed with it when it is issued.",
+    "sign_done": "Sign the paper",
+    "filter": {
+      "all": "All",
+      "drafts": "Drafts",
+      "issued": "Issued",
+      "none": "Nothing here."
+    },
+    "verify_button": "Verify a paper…",
+    "open_kind": "Open: {kind}",
+    "prepare_kind": "Prepare: {kind}",
+    "sign_saved": "Your saved signature",
+    "sign_used_before": "Used on your documents",
+    "sign_draw_new": "Draw a new signature",
+    "sign_keep": "Also keep it as my saved signature"
   },
   "event": {
     "attachment": "Document attached: {what}",
@@ -482,7 +506,7 @@
       },
       "returned": {
         "about": "With Police for further investigation.",
-        "label": "Returned to Police"
+        "label": "With Police"
       }
     }
   },
@@ -549,7 +573,10 @@
     "via_connection": "Referred through the connection to {station}.",
     "whole_file": "Whole file",
     "with_police": "With Police",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "info": "Info",
+    "info_title": "File info",
+    "info_description": "Its numbers, the people on it, its tasks, notes and attachments."
   },
   "intake_alerts": {
     "title": "Awaiting a charging decision"
@@ -769,7 +796,11 @@
       "calendar": "Calendar",
       "statistics": "Statistics",
       "cases": "Cases",
-      "tasks": "Tasks"
+      "tasks": "Tasks",
+      "inbox": "Inbox",
+      "police_stations": "Police stations",
+      "workload": "Workload",
+      "recent": "Recent"
     },
     "section": {
       "files": "Files",
@@ -851,11 +882,12 @@
       "decisions_recorded": "Decisions recorded",
       "reopened": "Reopened",
       "resubmitted": "Resubmitted",
-      "with_court_reference": "With a court reference"
+      "with_court_reference": "With a court reference",
+      "decided_30": "Decided, last 30 days"
     },
     "subtitle": "{date}. What needs your attention, and how much is on your desk.",
     "waiting": "Waiting {age}.",
-    "workload": "Current workload"
+    "workload": "At a glance"
   },
   "page": {
     "court": {
@@ -1474,7 +1506,8 @@
   "window": {
     "close": "Close",
     "maximize": "Maximize",
-    "minimize": "Minimize"
+    "minimize": "Minimize",
+    "controls": "Window"
   },
   "workspace": {
     "hide_sidebar": "Hide sidebar",
@@ -1488,7 +1521,7 @@
       "add_person_description": "Someone who appears on a file: accused, complainant or witness.",
       "find": "Find",
       "label": "Quick actions",
-      "open_file": "Open a file",
+      "open_file": "New file",
       "open_file_description": "Log a matter referred by Police.",
       "start": "Start"
     },
@@ -1515,7 +1548,12 @@
     "tagline": "Prosecution workspace",
     "window": "Window",
     "more": "More",
-    "places": "Places"
+    "places": "Places",
+    "search_short": "Search",
+    "section": {
+      "files": "Files",
+      "office": "Office"
+    }
   },
   "assist": {
     "title": "Assist",
@@ -1690,7 +1728,9 @@
     "offence": "Offence",
     "no_charge": "No charge drafted",
     "next_date": "Next date",
-    "no_date": "None set"
+    "no_date": "No hearing date",
+    "no_accused": "No accused named",
+    "next_on": "{kind} on {date}"
   },
   "import": {
     "button": "Import paper",
@@ -1829,7 +1869,9 @@
     },
     "do_it_yourself": "Do this stage yourself",
     "skip_to": "Move on to {stage}",
-    "procedure": "Custody, detention and rights"
+    "procedure": "Custody, detention and rights",
+    "ask_assist": "Ask Assist to prepare this",
+    "move_on": "Move on to {stage}"
   },
   "cases": {
     "proposal_ready": "Ready to review",
@@ -1875,7 +1917,7 @@
     "manual_add": "Add to the library"
   },
   "clock": {
-    "title": "Time limits",
+    "title": "Legal time limits",
     "none": "No arrest or detention recorded on this file, so no legal clock is running.",
     "add_event": "Record arrest or detention",
     "person": "Who (if several accused)",
@@ -1939,7 +1981,14 @@
       "open_outside": "Open in its own program",
       "empty": "No papers yet. Add what Police sent, or import the papers.",
       "prepared": "Prepared by this office",
-      "from_police": "Received from Police"
+      "from_police": "Received from Police",
+      "this_file": "This file",
+      "every_paper": "Every paper, numbered",
+      "minutes_count": "{count} minutes",
+      "decisions": "Reviews and decisions",
+      "count": "{count} papers",
+      "papers_short": "Papers",
+      "minutes_one": "1 minute"
     },
     "refs": {
       "police": "Police reference",
@@ -2003,6 +2052,157 @@
       "received": "Received from Police",
       "counts": "Counts"
     },
-    "open_elsewhere": "Open in another program"
+    "open_elsewhere": "Open in another program",
+    "cover": {
+      "title": "File cover",
+      "not_given": "Not given",
+      "received": "Received on",
+      "accused": "Accused",
+      "complainant": "Complainant",
+      "offences": "Offences",
+      "last_decision": "Last decision"
+    },
+    "index": {
+      "title": "Index of papers",
+      "issued": "Issued",
+      "entries": "Entries",
+      "no": "No.",
+      "paper": "Paper",
+      "pages": "Pages"
+    },
+    "minutes": {
+      "title": "Minute sheet",
+      "count": "Minutes",
+      "written": "Minute written",
+      "minute": "Minute {n}",
+      "by": "Prosecutor"
+    },
+    "review": {
+      "title": "Charging review",
+      "criterion": "Criterion",
+      "finding": "Finding",
+      "note": "Note",
+      "not_assessed": "Not assessed",
+      "outcome": "Outcome",
+      "no_outcome": "Not yet recorded",
+      "started": "Review started",
+      "concluded": "Review concluded",
+      "open": "In progress",
+      "standard": "Standard applied",
+      "reopened": "Reopened because",
+      "by": "Reviewing prosecutor"
+    },
+    "decision": {
+      "title": "Record of decision",
+      "recorded": "Decision recorded",
+      "decided_by": "Decided by",
+      "decision": "Decision",
+      "applies_to": "Applies to",
+      "decided_on": "Decided on",
+      "on_review": "On the review",
+      "reasons": "Reasons",
+      "no_reasons": "No reasons were written for this decision.",
+      "directions": "Directions to Police",
+      "police_answer": "Police answer"
+    },
+    "add": {
+      "button": "Add",
+      "office": "Written by this office",
+      "police": "From Police",
+      "document": "New document from a template…",
+      "import": "Import scanned papers…",
+      "statement": "Statement…",
+      "evidence": "Exhibit…",
+      "charge": "Proposed charge…"
+    },
+    "write_hint": "Write on the paper with a pen, a finger or the mouse. It is kept with this office's copy and printed with it."
+  },
+  "folder": {
+    "receive": "New",
+    "review": "In review",
+    "decide": "To decide",
+    "prepare": "To prepare",
+    "handover": "To hand over",
+    "follow_up": "Following up",
+    "concluded": "Closed"
+  },
+  "files": {
+    "layout": {
+      "list": "List",
+      "board": "Board",
+      "label": "Show as"
+    },
+    "count": "{count} files",
+    "count_one": "1 file"
+  },
+  "stations": {
+    "add": "Add police station",
+    "add_lead": "A station can send files here once it accepts this office's invitation and you have checked its code together.",
+    "step1": "1. Name the station and make its invitation.",
+    "step2": "2. Give the invitation file to the station: e-mail, a stick, any way.",
+    "step3": "3. Open the station's reply here, then check its code with them by phone.",
+    "which": "Which station?",
+    "valid_for": "Invitation valid for",
+    "make_invitation": "Make the invitation",
+    "invitation_ready": "The invitation for {station} is ready",
+    "send_it": "Give the saved file to the station before {date}. When they reply, open their reply on this page.",
+    "invitation": "Invitation",
+    "reply": "The station's reply",
+    "open_reply": "Open reply…",
+    "their_code": "Station's security code",
+    "check_code": "Call the station and read this code to each other. Connect only if it is the same.",
+    "type_code": "Type the code the station reads to you",
+    "connect": "Connect",
+    "does_not_match": "The code does not match",
+    "connected_since": "Connected since",
+    "confirmed_by": "Checked by",
+    "packages": "Packages received",
+    "line": {
+      "invited": "Invited · waiting for their reply until {date}",
+      "check": "Replied · check their code to connect",
+      "connected": "Connected"
+    },
+    "subtitle": "The stations that can send files to this office.",
+    "empty": "No station is connected yet. Add the stations this office works with.",
+    "this_office": "This office"
+  },
+  "search": {
+    "group": {
+      "places": "Places",
+      "files": "Files",
+      "people": "People"
+    },
+    "hint": {
+      "move": "move",
+      "open": "open",
+      "close": "close"
+    }
+  },
+  "workload": {
+    "subtitle": "What is on this office's desk now. How things went over time is in Statistics."
+  },
+  "statistics": {
+    "subtitle": "How the office's work went over a period, counted from the record.",
+    "median": "middle case, in days"
+  },
+  "recent": {
+    "subtitle": "Files and documents opened lately on this computer.",
+    "empty": "Nothing opened yet. Files and documents you open will be here."
+  },
+  "people": {
+    "col": {
+      "name": "Name",
+      "id": "ID",
+      "other_names": "Other names",
+      "phone": "Phone",
+      "national_id": "National ID",
+      "address": "Address",
+      "recorded": "Recorded"
+    },
+    "subtitle": "Accused, complainants and witnesses across the files.",
+    "edit": "Edit person",
+    "edit_description": "Change what was recorded.",
+    "empty": "No one recorded yet.",
+    "search": "Search people…"
   }
 }

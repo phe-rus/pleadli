@@ -41,7 +41,20 @@ export const fileViews = [
   { id: 'reopened', get label() { return m["file.view.reopened.label"]() }, get about() { return m["file.view.reopened.about"]() } },
   { id: 'closed', get label() { return m["file.view.closed.label"]() }, get about() { return m["file.view.closed.about"]() } },
   { id: 'all', get label() { return m["file.view.all.label"]() }, get about() { return m["file.view.all.about"]() } },
+  { id: 'receive', get label() { return m["folder.receive"]() }, get about() { return m["stage.pipe.receive_about"]() } },
+  { id: 'review', get label() { return m["folder.review"]() }, get about() { return m["stage.pipe.review_about"]() } },
+  { id: 'decide', get label() { return m["folder.decide"]() }, get about() { return m["stage.pipe.decide_about"]() } },
+  { id: 'prepare', get label() { return m["folder.prepare"]() }, get about() { return m["stage.pipe.prepare_about"]() } },
+  { id: 'handover', get label() { return m["folder.handover"]() }, get about() { return m["stage.pipe.handover_about"]() } },
+  { id: 'follow_up', get label() { return m["folder.follow_up"]() }, get about() { return m["stage.pipe.follow_up_about"]() } },
+  { id: 'concluded', get label() { return m["folder.concluded"]() }, get about() { return m["stage.pipe.concluded_about"]() } },
 ] as const
+
+/** The folders in the sidebar, in the order the work moves: every file, then
+ * one folder per stage (the same stages the file's own steps show), and the
+ * files that are back with Police. A file is in exactly one stage. */
+export const fileFolders = ['all', 'receive', 'review', 'decide', 'prepare', 'handover', 'follow_up', 'returned', 'concluded'] as const satisfies readonly FileViewId[]
+export type FileFolderId = (typeof fileFolders)[number]
 
 export type FileViewId = (typeof fileViews)[number]['id']
 

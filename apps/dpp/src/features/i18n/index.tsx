@@ -6,13 +6,13 @@ export { baseLocale, locales, type Locale }
 /** Every language the app ships, fully translated. Not yet reviewed by a
  * native-speaking lawyer; missing keys fall back to English key by key,
  * never to a raw key. */
-export const selectableLocales: readonly Locale[] = ['en', 'sw', 'de', 'fr']
+export const selectableLocales: readonly Locale[] = ['en', 'sw', 'fr']
 
 /** Endonyms: each language named in itself. */
 export const localeNames: Record<Locale, string> = {
   en: 'English',
   sw: 'Kiswahili',
-  de: 'Deutsch',
+  
   fr: 'Français',
 }
 

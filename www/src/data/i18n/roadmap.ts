@@ -1,4 +1,4 @@
-/** Kiswahili, French and German for src/data/roadmap.ts: [title, note] in the
+/** Kiswahili and French for src/data/roadmap.ts: [title, note] in the
  * same order as the English list. An empty note stays empty. */
 type Row = [string, string]
 
@@ -8,7 +8,7 @@ const sw: Row[] = [
   ['Mpangilio mmoja wa mwanzo: nchi, lugha, ofisi, ulinzi, rangi na nembo, watu wa kwanza', 'Unatumiwa na DPP na Lawyers. Police na Prisons zinafuata.'],
   ['Vifurushi vya nchi nane za Afrika Mashariki', 'Uganda, Kenya, Tanzania, Rwanda, Burundi, DR Congo, Sudan Kusini na Somalia: mahakama, sheria, rejea, mipaka ya muda. Baadhi ya taarifa ni za muda au kutoka vyanzo vya pili, na zimewekewa alama hivyo.'],
   ['Msaidizi: AI kwa mtoa huduma na ufunguo ambao ofisi inachagua', 'Umejengwa katika DPP na Lawyers. Muda wa mwisho daima huhesabiwa na programu, kamwe si na AI.'],
-  ['Kiingereza, Kiswahili, Kijerumani na Kifaransa', 'Kamili katika DPP na kwenye tovuti hii; skrini mpya za Lawyers zimetafsiriwa na za zamani zinamaliziwa; Police na Prisons zinafuata.'],
+  ['Kiingereza, Kiswahili na Kifaransa', 'Kamili katika DPP na kwenye tovuti hii; skrini mpya za Lawyers zimetafsiriwa na za zamani zinamaliziwa; Police na Prisons zinafuata.'],
   ['Visakinishi vilivyosainiwa kwa cheti, checksums, Linux na macOS', 'Hadi hapo Windows huonyesha onyo la SmartScreen katika usakinishaji wa kwanza.'],
   ['Kupokea mashauri, upelelezi, kizuizini, shughuli za kituo', 'Mtiririko mkuu wa kazi ya kituo.'],
   ['Hifadhidata iliyosimbwa', 'Usimamizi ule ule wa funguo wa programu nyingine.'],
@@ -46,7 +46,7 @@ const fr: Row[] = [
   ['Une seule configuration au premier lancement : pays, langue, bureau, protection, couleur et logo, premières personnes', 'Partagée par DPP et Lawyers. Police et Prisons suivent.'],
   ["Packs pour huit pays d'Afrique de l'Est", 'Ouganda, Kenya, Tanzanie, Rwanda, Burundi, RD Congo, Soudan du Sud et Somalie : tribunaux, lois, références, délais. Certains éléments sont provisoires ou tirés de sources secondaires, et signalés comme tels.'],
   ["L'Assistant : l'IA avec le fournisseur et la clé choisis par le bureau", "Construit dans DPP et Lawyers. Les délais sont toujours calculés par l'application, jamais par l'IA."],
-  ['Anglais, kiswahili, allemand et français', 'Complet dans DPP et sur ce site ; les nouveaux écrans de Lawyers sont traduits et les anciens en cours ; Police et Prisons suivent.'],
+  ['Anglais, kiswahili et français', 'Complet dans DPP et sur ce site ; les nouveaux écrans de Lawyers sont traduits et les anciens en cours ; Police et Prisons suivent.'],
   ['Installateurs signés par certificat, sommes de contrôle, Linux et macOS', "D'ici là, Windows affiche un avertissement SmartScreen à la première installation."],
   ['Enregistrement des affaires, enquête, garde à vue, vie du poste', 'Le cœur du travail du poste.'],
   ['Base de données chiffrée', 'Même gestion partagée des clés que les autres applications.'],
@@ -78,50 +78,13 @@ const fr: Row[] = [
   ['Site public Pleadli Cloud et administration légère (ce site)', 'Téléchargements en ligne ; quatre langues.'],
 ]
 
-const de: Row[] = [
-  ['Windows-Installer für Police, DPP, Lawyers und Prisons', 'Version 0.1.0, von einem automatischen Release-Ablauf gebaut und veröffentlicht. Noch nicht codesigniert.'],
-  ['Signierte automatische Updates', 'Installierte Kopien suchen ein mit Pleadlis Schlüssel signiertes Update und fragen vor der Installation. Das erste echte Update steht noch aus.'],
-  ['Eine Ersteinrichtung: Land, Sprache, Büro, Schutz, Farbe und Logo, erste Personen', 'Gemeinsam genutzt von DPP und Lawyers. Police und Prisons folgen.'],
-  ['Länderpakete für acht ostafrikanische Staaten', 'Uganda, Kenia, Tansania, Ruanda, Burundi, DR Kongo, Südsudan und Somalia: Gerichte, Gesetze, Aktenzeichen, Fristen. Manche Angaben sind vorläufig oder aus Sekundärquellen und entsprechend markiert.'],
-  ['Der Assistent: KI mit Anbieter und Schlüssel nach Wahl des Büros', 'Gebaut in DPP und Lawyers. Fristen rechnet immer die App, nie die KI.'],
-  ['Englisch, Kiswahili, Deutsch und Französisch', 'Vollständig in DPP und auf dieser Website; die neueren Bildschirme von Lawyers sind übersetzt, die älteren folgen; Police und Prisons danach.'],
-  ['Codesignierte Installer, Prüfsummen, Linux und macOS', 'Bis dahin zeigt Windows bei der ersten Installation eine SmartScreen-Warnung.'],
-  ['Fallaufnahme, Ermittlung, Gewahrsam, Wachbetrieb', 'Der Kern der Wacharbeit.'],
-  ['Verschlüsselte Datenbank', 'Dieselbe gemeinsame Schlüsselverwaltung wie die anderen Anwendungen.'],
-  ['Ersteinrichtung, Anmeldung und Rollen', 'Als Nächstes: auf die gemeinsame Einrichtung von DPP und Lawyers.'],
-  ['Versiegelter Anhangspeicher und hash-verketteter Prüfpfad', ''],
-  ['Fallboard, Aktenabschnitte, Kalender, Aufgaben, Statistik', ''],
-  ['Gesetzliche Fristen für Gewahrsam und Untersuchungshaft, je Land', 'Von der App aus erfassten Ereignissen gerechnet.'],
-  ['Dokumente je Land, versiegelt und überprüfbar', 'Uganda und DR Kongo in einem echten Browser geprüft; die anderen Pakete nutzen Common-Law- oder Parquet-Vorlagen.'],
-  ['Gescannte Unterlagen getrennt, sortiert und gelesen', ''],
-  ['Austausch mit Polizei und Gerichten', 'Entwurf festgelegt, noch nicht gebaut.'],
-  ['Register, Sitzungen, strukturierte Vertagungen, Terminliste', 'Mit einer Rust-Testsuite und einem fensterlosen UI-Lauf geprüft.'],
-  ['Unterschriebenes Sitzungsprotokoll, Beweisstücke, Beschlüsse, Urteile', 'Unterschriebene Protokolle werden per Datenbank-Trigger eingefroren.'],
-  ['Tonaufnahme einer Sitzung in gehashten Abschnitten', ''],
-  ['Erste Windows-Version', 'Courts ist die einzige noch nicht veröffentlichte Anwendung.'],
-  ['Transkriptions-Engine hinter der Schnittstelle', 'Die Schnittstelle weigert sich, Text zu erfinden. Zuerst braucht es echte Gerichtsaufnahmen.'],
-  ['Erprobung mit einer echten Richterin und einem Gerichtsschreiber', ''],
-  ['Jede Art Praxis: Mandatsarten, Phasen, Board, Konfliktprüfung', 'Allein oder als Kanzlei; Einsatzbereiche bei der Einrichtung gewählt.'],
-  ['Gerichtsfristen (ugandische Regeln)', 'Zivilprozessordnung, Verfahrensordnung des Berufungsgerichts, Verjährungsgesetz, Mitteilung an die Regierung.'],
-  ['Versiegelte Einreichungen, Einreichungspakete, Export als PDF und Word', ''],
-  ['Mandantengelder, Honorarnoten, Kostenrechnungen', 'Accounts Rules durchgesetzt; Kostenrechnungen nach der Sechsten Anlage.'],
-  ['Eides- und Notariatsregister, Berufsnachweise, Statistik', ''],
-  ['Eine Kanzlei in einem Büronetz', 'Mit zwei Kopien auf einem Rechner geprüft; noch nicht auf zwei physischen Rechnern.'],
-  ['Export aller Daten', 'Ein ZIP: JSON und eine Tabelle je Datenart.'],
-  ['Terminmitteilungen und Verfügungen von den Gerichten', ''],
-  ['Aufnahme, Haft, Entlassung, Vorführung vor Gericht', ''],
-  ['Offline-Modell mit Anstalt zuerst, Koordination der Zentrale', 'Eine Anstalt läuft vollständig ohne Zentrale.'],
-  ['Austausch Anstalt und Zentrale mit gebundenem TLS', 'Noch nicht auf zwei physischen Rechnern getestet.'],
-  ['Gemeinsame Einrichtung, gesetzliche Fristen und Assistent aus DPP', 'Als Nächstes für Prisons.'],
-  ['Öffentliche Website von Pleadli Cloud und schlanke Verwaltung (diese Website)', 'Downloads online; vier Sprachen.'],
-]
 
 const toItems = (rows: Row[]) => rows.map(([title, note]) => ({ title, note }))
 
-export const roadmapText = { sw: toItems(sw), fr: toItems(fr), de: toItems(de) }
+export const roadmapText = { sw: toItems(sw), fr: toItems(fr)}
 
 export const roadmapStatusText = {
   sw: { done: 'Imetolewa', 'in-progress': 'Inaendelea', planned: 'Imepangwa', research: 'Inahitaji utafiti' },
   fr: { done: 'Livré', 'in-progress': 'En cours', planned: 'Prévu', research: 'Recherche nécessaire' },
-  de: { done: 'Ausgeliefert', 'in-progress': 'In Arbeit', planned: 'Geplant', research: 'Recherche nötig' },
+  
 }

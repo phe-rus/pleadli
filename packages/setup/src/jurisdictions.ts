@@ -40,23 +40,23 @@ export type DocKind =
   | 'other'
 
 export const DOC_KINDS: readonly { id: DocKind; label: Text }[] = [
-  { id: 'complaint', label: { en: 'Complaint', sw: 'Malalamiko', de: 'Anzeige', fr: 'Plainte' } },
-  { id: 'initial_report', label: { en: 'First report', sw: 'Taarifa ya kwanza', de: 'Erstbericht', fr: 'Premier rapport' } },
-  { id: 'witness_statement', label: { en: 'Witness statement', sw: 'Maelezo ya shahidi', de: 'Zeugenaussage', fr: 'Déclaration de témoin' } },
-  { id: 'accused_statement', label: { en: "Accused's statement", sw: 'Maelezo ya mshtakiwa', de: 'Aussage des Beschuldigten', fr: 'Déclaration du prévenu' } },
-  { id: 'exhibit', label: { en: 'Exhibit or document', sw: 'Kielelezo au hati', de: 'Beweisstück oder Urkunde', fr: 'Pièce ou document' } },
-  { id: 'expert_report', label: { en: 'Expert report', sw: 'Ripoti ya mtaalamu', de: 'Gutachten', fr: "Rapport d'expertise" } },
-  { id: 'medical_report', label: { en: 'Medical report', sw: 'Ripoti ya matibabu', de: 'Ärztliches Attest', fr: 'Certificat médical' } },
-  { id: 'detention', label: { en: 'Detention paper', sw: 'Hati ya kizuizi', de: 'Haftunterlage', fr: 'Pièce de détention' } },
-  { id: 'investigation_diary', label: { en: 'Investigation diary', sw: 'Shajara ya upelelezi', de: 'Ermittlungstagebuch', fr: "Journal d'enquête" } },
-  { id: 'charge_sheet', label: { en: 'Charge sheet', sw: 'Hati ya mashtaka', de: 'Anklageschrift', fr: "Acte d'accusation" } },
-  { id: 'lists', label: { en: 'List (witnesses, exhibits, record)', sw: 'Orodha (mashahidi, vielelezo, rekodi)', de: 'Liste (Zeugen, Asservate, Register)', fr: 'Liste (témoins, scellés, casier)' } },
-  { id: 'io_report', label: { en: "Investigator's report", sw: 'Ripoti ya mpelelezi', de: 'Ermittlungsbericht', fr: "Rapport de l'enquêteur" } },
-  { id: 'minute', label: { en: 'Minute', sw: 'Kumbukumbu', de: 'Verfügung', fr: 'Minute' } },
-  { id: 'correspondence', label: { en: 'Letter', sw: 'Barua', de: 'Schreiben', fr: 'Lettre' } },
-  { id: 'decision', label: { en: 'Decision', sw: 'Uamuzi', de: 'Entscheidung', fr: 'Décision' } },
-  { id: 'court_record', label: { en: 'Court record', sw: 'Kumbukumbu ya mahakama', de: 'Gerichtsakte', fr: 'Pièce du tribunal' } },
-  { id: 'other', label: { en: 'Other', sw: 'Nyingine', de: 'Sonstiges', fr: 'Autre' } },
+  { id: 'complaint', label: { en: 'Complaint', sw: 'Malalamiko', fr: 'Plainte' } },
+  { id: 'initial_report', label: { en: 'First report', sw: 'Taarifa ya kwanza', fr: 'Premier rapport' } },
+  { id: 'witness_statement', label: { en: 'Witness statement', sw: 'Maelezo ya shahidi', fr: 'Déclaration de témoin' } },
+  { id: 'accused_statement', label: { en: "Accused's statement", sw: 'Maelezo ya mshtakiwa', fr: 'Déclaration du prévenu' } },
+  { id: 'exhibit', label: { en: 'Exhibit or document', sw: 'Kielelezo au hati', fr: 'Pièce ou document' } },
+  { id: 'expert_report', label: { en: 'Expert report', sw: 'Ripoti ya mtaalamu', fr: "Rapport d'expertise" } },
+  { id: 'medical_report', label: { en: 'Medical report', sw: 'Ripoti ya matibabu', fr: 'Certificat médical' } },
+  { id: 'detention', label: { en: 'Detention paper', sw: 'Hati ya kizuizi', fr: 'Pièce de détention' } },
+  { id: 'investigation_diary', label: { en: 'Investigation diary', sw: 'Shajara ya upelelezi', fr: "Journal d'enquête" } },
+  { id: 'charge_sheet', label: { en: 'Charge sheet', sw: 'Hati ya mashtaka', fr: "Acte d'accusation" } },
+  { id: 'lists', label: { en: 'List (witnesses, exhibits, record)', sw: 'Orodha (mashahidi, vielelezo, rekodi)', fr: 'Liste (témoins, scellés, casier)' } },
+  { id: 'io_report', label: { en: "Investigator's report", sw: 'Ripoti ya mpelelezi', fr: "Rapport de l'enquêteur" } },
+  { id: 'minute', label: { en: 'Minute', sw: 'Kumbukumbu', fr: 'Minute' } },
+  { id: 'correspondence', label: { en: 'Letter', sw: 'Barua', fr: 'Lettre' } },
+  { id: 'decision', label: { en: 'Decision', sw: 'Uamuzi', fr: 'Décision' } },
+  { id: 'court_record', label: { en: 'Court record', sw: 'Kumbukumbu ya mahakama', fr: 'Pièce du tribunal' } },
+  { id: 'other', label: { en: 'Other', sw: 'Nyingine', fr: 'Autre' } },
 ]
 
 export type FileSection = { code: string; title: Text; kinds: readonly DocKind[] }
@@ -70,17 +70,17 @@ export type Statute = { title: string; cite: string | null }
 export type CustodyKind = 'arrest' | 'court_production' | 'remand' | 'remand_both' | 'remand_high_court' | 'map' | 'odp' | 'odp_extension' | 'bail' | 'release' | 'trial_start'
 
 export const CUSTODY_KINDS: readonly { id: CustodyKind; label: Text }[] = [
-  { id: 'arrest', label: { en: 'Arrested', sw: 'Alikamatwa', de: 'Festgenommen', fr: 'Arrêté' } },
-  { id: 'court_production', label: { en: 'Brought before a court', sw: 'Alifikishwa mahakamani', de: 'Dem Gericht vorgeführt', fr: 'Présenté au juge' } },
-  { id: 'remand', label: { en: 'Remanded in custody to the next hearing', sw: 'Rumande hadi usikilizwaji ujao', de: 'Bis zum nächsten Termin in Haft', fr: "Renvoyé en détention jusqu'à la prochaine audience" } },
-  { id: 'remand_both', label: { en: 'Remanded (offence triable by both courts)', sw: 'Rumande (kosa linalosikilizwa na mahakama zote)', de: 'U-Haft (vor beiden Gerichten verhandelbar)', fr: 'Détention (infraction jugeable par les deux juridictions)' } },
-  { id: 'remand_high_court', label: { en: 'Remanded (High Court offence)', sw: 'Rumande (kosa la Mahakama Kuu)', de: 'U-Haft (Straftat vor dem High Court)', fr: 'Détention (infraction de la Haute Cour)' } },
-  { id: 'map', label: { en: "Prosecutor's provisional arrest warrant", sw: 'Hati ya muda ya kukamatwa ya mwendesha mashtaka', de: 'Vorläufiger Haftbefehl der Staatsanwaltschaft', fr: "Mandat d'arrêt provisoire (MAP)" } },
-  { id: 'odp', label: { en: 'Pre-trial detention order', sw: 'Amri ya kizuizi kabla ya kesi', de: 'Haftanordnung', fr: 'Ordonnance de détention préventive (ODP)' } },
-  { id: 'odp_extension', label: { en: 'Detention extended', sw: 'Kizuizi kiliongezwa', de: 'Haft verlängert', fr: 'Détention prorogée' } },
-  { id: 'bail', label: { en: 'Released on bail', sw: 'Aliachiliwa kwa dhamana', de: 'Gegen Kaution frei', fr: 'Liberté provisoire' } },
-  { id: 'release', label: { en: 'Released', sw: 'Aliachiliwa', de: 'Freigelassen', fr: 'Libéré' } },
-  { id: 'trial_start', label: { en: 'Trial began', sw: 'Kesi ilianza', de: 'Hauptverhandlung begonnen', fr: 'Procès ouvert' } },
+  { id: 'arrest', label: { en: 'Arrested', sw: 'Alikamatwa', fr: 'Arrêté' } },
+  { id: 'court_production', label: { en: 'Brought before a court', sw: 'Alifikishwa mahakamani', fr: 'Présenté au juge' } },
+  { id: 'remand', label: { en: 'Remanded in custody to the next hearing', sw: 'Rumande hadi usikilizwaji ujao', fr: "Renvoyé en détention jusqu'à la prochaine audience" } },
+  { id: 'remand_both', label: { en: 'Remanded (offence triable by both courts)', sw: 'Rumande (kosa linalosikilizwa na mahakama zote)', fr: 'Détention (infraction jugeable par les deux juridictions)' } },
+  { id: 'remand_high_court', label: { en: 'Remanded (High Court offence)', sw: 'Rumande (kosa la Mahakama Kuu)', fr: 'Détention (infraction de la Haute Cour)' } },
+  { id: 'map', label: { en: "Prosecutor's provisional arrest warrant", sw: 'Hati ya muda ya kukamatwa ya mwendesha mashtaka', fr: "Mandat d'arrêt provisoire (MAP)" } },
+  { id: 'odp', label: { en: 'Pre-trial detention order', sw: 'Amri ya kizuizi kabla ya kesi', fr: 'Ordonnance de détention préventive (ODP)' } },
+  { id: 'odp_extension', label: { en: 'Detention extended', sw: 'Kizuizi kiliongezwa', fr: 'Détention prorogée' } },
+  { id: 'bail', label: { en: 'Released on bail', sw: 'Aliachiliwa kwa dhamana', fr: 'Liberté provisoire' } },
+  { id: 'release', label: { en: 'Released', sw: 'Aliachiliwa', fr: 'Libéré' } },
+  { id: 'trial_start', label: { en: 'Trial began', sw: 'Kesi ilianza', fr: 'Procès ouvert' } },
 ]
 
 /** A time limit the law puts on custody: how long, started by which event,
@@ -137,7 +137,7 @@ export type InstitutionPack = {
 export type Country = {
   code: string
   name: Text
-  area: 'east_africa' | 'europe'
+  area: 'east_africa'
   status: PackStatus
   /** Languages people work in there, among the ones Pleadli ships. */
   languages: readonly Locale[]
@@ -160,30 +160,30 @@ export type Country = {
   decisions: readonly DecisionOption[] | null
 }
 
-const region: Text = { en: 'Region', sw: 'Mkoa', de: 'Region', fr: 'Région' }
+const region: Text = { en: 'Region', sw: 'Mkoa', fr: 'Région' }
 
-const BEFORE_COURT: Text = { en: 'Before a court', sw: 'Kufikishwa mahakamani', de: 'Vorführung vor Gericht', fr: 'Présentation au tribunal' }
+const BEFORE_COURT: Text = { en: 'Before a court', sw: 'Kufikishwa mahakamani', fr: 'Présentation au tribunal' }
 
 /** Kenya's lettered police file (National Police Service standing orders, as
  * taught at the Kenya School of Law). Used provisionally where a country's own
  * order is not published (decision D3). */
 const LETTERED_FILE: readonly FileSection[] = [
-  { code: 'A', title: { en: 'Initial reports', sw: 'Taarifa za awali', de: 'Erste Berichte', fr: 'Rapports initiaux' }, kinds: ['complaint', 'initial_report'] },
-  { code: 'B', title: { en: 'Documentary evidence', sw: 'Ushahidi wa nyaraka', de: 'Urkundenbeweise', fr: 'Preuves documentaires' }, kinds: ['exhibit'] },
-  { code: 'C', title: { en: 'Expert reports', sw: 'Ripoti za wataalamu', de: 'Gutachten', fr: "Rapports d'expertise" }, kinds: ['expert_report', 'medical_report'] },
-  { code: 'D', title: { en: 'Witness statements', sw: 'Maelezo ya mashahidi', de: 'Zeugenaussagen', fr: 'Déclarations des témoins' }, kinds: ['witness_statement'] },
-  { code: 'E', title: { en: "Accused's statements", sw: 'Maelezo ya mshtakiwa', de: 'Aussagen des Beschuldigten', fr: "Déclarations de l'accusé" }, kinds: ['accused_statement'] },
-  { code: 'F', title: { en: 'Investigation diary', sw: 'Shajara ya upelelezi', de: 'Ermittlungstagebuch', fr: "Journal d'enquête" }, kinds: ['investigation_diary', 'detention'] },
-  { code: 'G', title: { en: 'Charge sheets', sw: 'Hati za mashtaka', de: 'Anklageentwürfe', fr: "Actes d'accusation" }, kinds: ['charge_sheet'] },
-  { code: 'H', title: { en: 'Lists: witnesses, exhibits, record', sw: 'Orodha: mashahidi, vielelezo, rekodi', de: 'Listen: Zeugen, Asservate, Register', fr: 'Listes : témoins, scellés, casier' }, kinds: ['lists'] },
-  { code: 'I', title: { en: 'Investigating officer\'s report', sw: 'Ripoti ya mpelelezi', de: 'Schlussbericht der Ermittler', fr: "Rapport de l'enquêteur" }, kinds: ['io_report'] },
-  { code: 'J', title: { en: 'Minute sheet', sw: 'Karatasi ya kumbukumbu', de: 'Verfügungsblatt', fr: 'Feuille de minutes' }, kinds: ['minute', 'correspondence', 'decision', 'court_record', 'other'] },
+  { code: 'A', title: { en: 'Initial reports', sw: 'Taarifa za awali', fr: 'Rapports initiaux' }, kinds: ['complaint', 'initial_report'] },
+  { code: 'B', title: { en: 'Documentary evidence', sw: 'Ushahidi wa nyaraka', fr: 'Preuves documentaires' }, kinds: ['exhibit'] },
+  { code: 'C', title: { en: 'Expert reports', sw: 'Ripoti za wataalamu', fr: "Rapports d'expertise" }, kinds: ['expert_report', 'medical_report'] },
+  { code: 'D', title: { en: 'Witness statements', sw: 'Maelezo ya mashahidi', fr: 'Déclarations des témoins' }, kinds: ['witness_statement'] },
+  { code: 'E', title: { en: "Accused's statements", sw: 'Maelezo ya mshtakiwa', fr: "Déclarations de l'accusé" }, kinds: ['accused_statement'] },
+  { code: 'F', title: { en: 'Investigation diary', sw: 'Shajara ya upelelezi', fr: "Journal d'enquête" }, kinds: ['investigation_diary', 'detention'] },
+  { code: 'G', title: { en: 'Charge sheets', sw: 'Hati za mashtaka', fr: "Actes d'accusation" }, kinds: ['charge_sheet'] },
+  { code: 'H', title: { en: 'Lists: witnesses, exhibits, record', sw: 'Orodha: mashahidi, vielelezo, rekodi', fr: 'Listes : témoins, scellés, casier' }, kinds: ['lists'] },
+  { code: 'I', title: { en: 'Investigating officer\'s report', sw: 'Ripoti ya mpelelezi', fr: "Rapport de l'enquêteur" }, kinds: ['io_report'] },
+  { code: 'J', title: { en: 'Minute sheet', sw: 'Karatasi ya kumbukumbu', fr: 'Feuille de minutes' }, kinds: ['minute', 'correspondence', 'decision', 'court_record', 'other'] },
 ]
 
 export const COUNTRIES: readonly Country[] = [
   {
     code: 'ug',
-    name: { en: 'Uganda', sw: 'Uganda', de: 'Uganda', fr: 'Ouganda' },
+    name: { en: 'Uganda', sw: 'Uganda', fr: 'Ouganda' },
     area: 'east_africa',
     status: 'ready',
     languages: ['en', 'sw'],
@@ -228,7 +228,7 @@ export const COUNTRIES: readonly Country[] = [
     timeLimits: [
       {
         id: 'police_custody',
-        label: { en: 'Before a court', sw: 'Kufikishwa mahakamani', de: 'Vorführung vor Gericht', fr: 'Présentation au tribunal' },
+        label: { en: 'Before a court', sw: 'Kufikishwa mahakamani', fr: 'Présentation au tribunal' },
         hours: 48,
         basis: 'Constitution Art. 23(4)(b)',
         source: 'P',
@@ -238,7 +238,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'remand_subordinate',
-        label: { en: 'Remand, then bail (both courts)', sw: 'Rumande, kisha dhamana (mahakama zote)', de: 'U-Haft, dann Kaution (beide Gerichte)', fr: 'Détention provisoire, puis caution (deux juridictions)' },
+        label: { en: 'Remand, then bail (both courts)', sw: 'Rumande, kisha dhamana (mahakama zote)', fr: 'Détention provisoire, puis caution (deux juridictions)' },
         hours: 60 * 24,
         basis: 'Constitution Art. 23(6)(b)',
         source: 'P',
@@ -248,7 +248,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'remand_high_court',
-        label: { en: 'Remand, then bail (High Court only)', sw: 'Rumande, kisha dhamana (Mahakama Kuu tu)', de: 'U-Haft, dann Kaution (nur High Court)', fr: 'Détention provisoire, puis caution (Haute Cour seule)' },
+        label: { en: 'Remand, then bail (High Court only)', sw: 'Rumande, kisha dhamana (Mahakama Kuu tu)', fr: 'Détention provisoire, puis caution (Haute Cour seule)' },
         hours: 180 * 24,
         basis: 'Constitution Art. 23(6)(c)',
         source: 'P',
@@ -261,12 +261,12 @@ export const COUNTRIES: readonly Country[] = [
   },
   {
     code: 'ke',
-    name: { en: 'Kenya', sw: 'Kenya', de: 'Kenia', fr: 'Kenya' },
+    name: { en: 'Kenya', sw: 'Kenya', fr: 'Kenya' },
     area: 'east_africa',
     status: 'provisional',
     languages: ['en', 'sw'],
     defaultLanguage: 'en',
-    regionLabel: { en: 'County', sw: 'Kaunti', de: 'County', fr: 'Comté' },
+    regionLabel: { en: 'County', sw: 'Kaunti', fr: 'Comté' },
     // The 47 counties (Constitution of Kenya, 2010, First Schedule).
     regions: ['Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa', 'Homa Bay', 'Isiolo', 'Kajiado', 'Kakamega', 'Kericho', 'Kiambu', 'Kilifi', 'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui', 'Kwale', 'Laikipia', 'Lamu', 'Machakos', 'Makueni', 'Mandera', 'Marsabit', 'Meru', 'Migori', 'Mombasa', "Murang'a", 'Nairobi', 'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua', 'Nyeri', 'Samburu', 'Siaya', 'Taita-Taveta', 'Tana River', 'Tharaka-Nithi', 'Trans Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot'],
     references: {
@@ -317,21 +317,21 @@ export const COUNTRIES: readonly Country[] = [
       },
     ],
     decisions: [
-      { kind: 'sanction', label: { en: 'Charge', sw: 'Kushtaki', de: 'Anklage erheben', fr: 'Inculper' } },
-      { kind: 'threshold_charge', label: { en: 'Charge on the threshold test', sw: 'Kushtaki kwa kigezo cha awali', de: 'Anklage nach dem Schwellentest', fr: 'Inculper selon le critère du seuil' } },
-      { kind: 'decline', label: { en: 'No further action', sw: 'Hakuna hatua zaidi', de: 'Keine weiteren Maßnahmen', fr: 'Pas de suite' } },
-      { kind: 'divert', label: { en: 'Divert (Diversion Policy)', sw: 'Kuelekeza nje ya mahakama', de: 'Diversion', fr: 'Déjudiciarisation' } },
-      { kind: 'return_for_investigation', label: { en: 'Further investigation', sw: 'Upelelezi zaidi', de: 'Nachermittlung', fr: "Complément d'enquête" } },
-      { kind: 'plea_bargain_accepted', label: { en: 'Plea agreement (CPC s.137A)', sw: 'Makubaliano ya kukiri (CPC k.137A)', de: 'Verständigung (CPC s.137A)', fr: 'Accord de plaidoyer (CPC s.137A)' } },
-      { kind: 'take_over', label: { en: 'Take over the prosecution (Art. 157(6)(b))', sw: 'Kuchukua mashtaka (Ib. 157(6)(b))', de: 'Verfahren übernehmen (Art. 157(6)(b))', fr: 'Reprendre les poursuites (art. 157(6)(b))' } },
-      { kind: 'discontinue', label: { en: 'Discontinue, with the court’s permission (Art. 157(6)(c))', sw: 'Kusitisha kwa ruhusa ya mahakama (Ib. 157(6)(c))', de: 'Einstellung mit Zustimmung des Gerichts (Art. 157(6)(c))', fr: "Abandon avec l'accord du tribunal (art. 157(6)(c))" } },
-      { kind: 'nolle_prosequi', label: { en: 'Nolle prosequi (CPC s.82)', sw: 'Nolle prosequi (CPC k.82)', de: 'Nolle prosequi (CPC s.82)', fr: 'Nolle prosequi (CPC s.82)' } },
-      { kind: 'amend_charge', label: { en: 'Amend the charge', sw: 'Kurekebisha shtaka', de: 'Anklage ändern', fr: "Modifier l'accusation" } },
+      { kind: 'sanction', label: { en: 'Charge', sw: 'Kushtaki', fr: 'Inculper' } },
+      { kind: 'threshold_charge', label: { en: 'Charge on the threshold test', sw: 'Kushtaki kwa kigezo cha awali', fr: 'Inculper selon le critère du seuil' } },
+      { kind: 'decline', label: { en: 'No further action', sw: 'Hakuna hatua zaidi', fr: 'Pas de suite' } },
+      { kind: 'divert', label: { en: 'Divert (Diversion Policy)', sw: 'Kuelekeza nje ya mahakama', fr: 'Déjudiciarisation' } },
+      { kind: 'return_for_investigation', label: { en: 'Further investigation', sw: 'Upelelezi zaidi', fr: "Complément d'enquête" } },
+      { kind: 'plea_bargain_accepted', label: { en: 'Plea agreement (CPC s.137A)', sw: 'Makubaliano ya kukiri (CPC k.137A)', fr: 'Accord de plaidoyer (CPC s.137A)' } },
+      { kind: 'take_over', label: { en: 'Take over the prosecution (Art. 157(6)(b))', sw: 'Kuchukua mashtaka (Ib. 157(6)(b))', fr: 'Reprendre les poursuites (art. 157(6)(b))' } },
+      { kind: 'discontinue', label: { en: 'Discontinue, with the court’s permission (Art. 157(6)(c))', sw: 'Kusitisha kwa ruhusa ya mahakama (Ib. 157(6)(c))', fr: "Abandon avec l'accord du tribunal (art. 157(6)(c))" } },
+      { kind: 'nolle_prosequi', label: { en: 'Nolle prosequi (CPC s.82)', sw: 'Nolle prosequi (CPC k.82)', fr: 'Nolle prosequi (CPC s.82)' } },
+      { kind: 'amend_charge', label: { en: 'Amend the charge', sw: 'Kurekebisha shtaka', fr: "Modifier l'accusation" } },
     ],
   },
   {
     code: 'tz',
-    name: { en: 'Tanzania', sw: 'Tanzania', de: 'Tansania', fr: 'Tanzanie' },
+    name: { en: 'Tanzania', sw: 'Tanzania', fr: 'Tanzanie' },
     area: 'east_africa',
     status: 'provisional',
     languages: ['sw', 'en'],
@@ -375,7 +375,7 @@ export const COUNTRIES: readonly Country[] = [
     timeLimits: [
       {
         id: 'police_custody',
-        label: { en: 'Before a court, or bond', sw: 'Kufikishwa mahakamani, au dhamana ya polisi', de: 'Vorführung vor Gericht oder Kaution', fr: 'Présentation au tribunal ou caution' },
+        label: { en: 'Before a court, or bond', sw: 'Kufikishwa mahakamani, au dhamana ya polisi', fr: 'Présentation au tribunal ou caution' },
         hours: 24,
         basis: 'Criminal Procedure Act s.32(1)',
         source: 'P',
@@ -385,7 +385,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'remand_adjournment',
-        label: { en: 'Each remand to prison', sw: 'Kila rumande gerezani', de: 'Jede Haftvertagung', fr: 'Chaque renvoi en détention' },
+        label: { en: 'Each remand to prison', sw: 'Kila rumande gerezani', fr: 'Chaque renvoi en détention' },
         hours: 15 * 24,
         basis: 'Criminal Procedure Act s.225(2)',
         source: 'P',
@@ -395,7 +395,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'remand_total',
-        label: { en: 'Adjournments in all (First Schedule offences, unless certified)', sw: 'Jumla ya kuahirisha (makosa ya Jedwali la Kwanza, bila hati)', de: 'Vertagungen insgesamt (Erste Anlage, ohne Zertifikat)', fr: 'Renvois au total (infractions de la première annexe, sans certificat)' },
+        label: { en: 'Adjournments in all (First Schedule offences, unless certified)', sw: 'Jumla ya kuahirisha (makosa ya Jedwali la Kwanza, bila hati)', fr: 'Renvois au total (infractions de la première annexe, sans certificat)' },
         hours: 60 * 24,
         basis: 'Criminal Procedure Act s.225(4)',
         source: 'P',
@@ -405,23 +405,23 @@ export const COUNTRIES: readonly Country[] = [
       },
     ],
     decisions: [
-      { kind: 'sanction', label: { en: 'Charge', sw: 'Kufungua mashtaka', de: 'Anklage erheben', fr: 'Inculper' } },
-      { kind: 'decline', label: { en: 'No charge', sw: 'Hakuna mashtaka', de: 'Keine Anklage', fr: 'Pas de poursuites' } },
-      { kind: 'return_for_investigation', label: { en: 'Back to the police for more investigation', sw: 'Kurudisha polisi kwa upelelezi zaidi', de: 'Zurück an die Polizei zur Nachermittlung', fr: 'Renvoi à la police pour complément' } },
-      { kind: 'plea_bargain_accepted', label: { en: 'Plea agreement (CPA s.194A)', sw: 'Makubaliano ya kukiri kosa (CPA k.194A)', de: 'Verständigung (CPA s.194A)', fr: 'Accord de plaidoyer (CPA s.194A)' } },
-      { kind: 'nolle_prosequi', label: { en: 'Nolle prosequi (CPA s.91)', sw: 'Nolle prosequi (CPA k.91)', de: 'Nolle prosequi (CPA s.91)', fr: 'Nolle prosequi (CPA s.91)' } },
-      { kind: 'take_over', label: { en: 'Take over the prosecution', sw: 'Kuchukua mashtaka', de: 'Verfahren übernehmen', fr: 'Reprendre les poursuites' } },
-      { kind: 'amend_charge', label: { en: 'Amend the charge', sw: 'Kurekebisha hati ya mashtaka', de: 'Anklage ändern', fr: "Modifier l'accusation" } },
+      { kind: 'sanction', label: { en: 'Charge', sw: 'Kufungua mashtaka', fr: 'Inculper' } },
+      { kind: 'decline', label: { en: 'No charge', sw: 'Hakuna mashtaka', fr: 'Pas de poursuites' } },
+      { kind: 'return_for_investigation', label: { en: 'Back to the police for more investigation', sw: 'Kurudisha polisi kwa upelelezi zaidi', fr: 'Renvoi à la police pour complément' } },
+      { kind: 'plea_bargain_accepted', label: { en: 'Plea agreement (CPA s.194A)', sw: 'Makubaliano ya kukiri kosa (CPA k.194A)', fr: 'Accord de plaidoyer (CPA s.194A)' } },
+      { kind: 'nolle_prosequi', label: { en: 'Nolle prosequi (CPA s.91)', sw: 'Nolle prosequi (CPA k.91)', fr: 'Nolle prosequi (CPA s.91)' } },
+      { kind: 'take_over', label: { en: 'Take over the prosecution', sw: 'Kuchukua mashtaka', fr: 'Reprendre les poursuites' } },
+      { kind: 'amend_charge', label: { en: 'Amend the charge', sw: 'Kurekebisha hati ya mashtaka', fr: "Modifier l'accusation" } },
     ],
   },
   {
     code: 'rw',
-    name: { en: 'Rwanda', sw: 'Rwanda', de: 'Ruanda', fr: 'Rwanda' },
+    name: { en: 'Rwanda', sw: 'Rwanda', fr: 'Rwanda' },
     area: 'east_africa',
     status: 'provisional',
     languages: ['en', 'fr', 'sw'],
     defaultLanguage: 'en',
-    regionLabel: { en: 'Province', sw: 'Jimbo', de: 'Provinz', fr: 'Province' },
+    regionLabel: { en: 'Province', sw: 'Jimbo', fr: 'Province' },
     regions: ['City of Kigali', 'Eastern', 'Northern', 'Southern', 'Western'],
     references: {
       police: { label: 'RIB file number', example: null },
@@ -454,7 +454,7 @@ export const COUNTRIES: readonly Country[] = [
     timeLimits: [
       {
         id: 'police_custody',
-        label: { en: 'Held by the investigator', sw: 'Kizuizi cha mpelelezi', de: 'Gewahrsam der Ermittler', fr: "Détention par l'officier de police judiciaire" },
+        label: { en: 'Held by the investigator', sw: 'Kizuizi cha mpelelezi', fr: "Détention par l'officier de police judiciaire" },
         hours: 5 * 24,
         basis: 'Law 027/2019 Art. 66',
         source: 'P',
@@ -464,7 +464,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'map',
-        label: { en: "Prosecutor's provisional arrest warrant", sw: 'Hati ya muda ya mwendesha mashtaka', de: 'Vorläufiger Haftbefehl der Staatsanwaltschaft', fr: "Mandat d'arrêt provisoire" },
+        label: { en: "Prosecutor's provisional arrest warrant", sw: 'Hati ya muda ya mwendesha mashtaka', fr: "Mandat d'arrêt provisoire" },
         hours: 5 * 24,
         basis: 'Law 027/2019 Art. 35',
         source: 'P',
@@ -474,7 +474,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'odp',
-        label: { en: 'Provisional detention order', sw: 'Amri ya kizuizi cha muda', de: 'Untersuchungshaftbeschluss', fr: 'Ordonnance de détention provisoire' },
+        label: { en: 'Provisional detention order', sw: 'Amri ya kizuizi cha muda', fr: 'Ordonnance de détention provisoire' },
         hours: 30 * 24,
         basis: 'Law 027/2019 Art. 79',
         source: 'P',
@@ -484,7 +484,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'detention_misdemeanour',
-        label: { en: 'Longest detention, misdemeanour', sw: 'Kizuizi kirefu zaidi, kosa la kati', de: 'Höchstdauer, Vergehen', fr: 'Durée maximale, délit' },
+        label: { en: 'Longest detention, misdemeanour', sw: 'Kizuizi kirefu zaidi, kosa la kati', fr: 'Durée maximale, délit' },
         hours: 90 * 24,
         basis: 'Law 027/2019 Art. 79 (three months)',
         source: 'P',
@@ -494,7 +494,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'detention_felony',
-        label: { en: 'Longest detention, felony', sw: 'Kizuizi kirefu zaidi, kosa kubwa', de: 'Höchstdauer, Verbrechen', fr: 'Durée maximale, crime' },
+        label: { en: 'Longest detention, felony', sw: 'Kizuizi kirefu zaidi, kosa kubwa', fr: 'Durée maximale, crime' },
         hours: 180 * 24,
         basis: 'Law 027/2019 Art. 79 (six months)',
         source: 'P',
@@ -505,24 +505,24 @@ export const COUNTRIES: readonly Country[] = [
     ],
     // What the prosecutor may do on receiving the file (Law 027/2019 Art. 24-26).
     decisions: [
-      { kind: 'sanction', label: { en: 'File the case in court', sw: 'Kufungua kesi mahakamani', de: 'Anklage beim Gericht', fr: 'Saisir la juridiction' } },
-      { kind: 'return_for_investigation', label: { en: 'Further investigation', sw: 'Upelelezi zaidi', de: 'Weitere Ermittlungen', fr: 'Instruction supplémentaire' } },
-      { kind: 'divert', label: { en: 'Mediation, or a fine without trial', sw: 'Upatanishi, au faini bila kesi', de: 'Schlichtung oder Buße ohne Verfahren', fr: 'Médiation ou amende transactionnelle' } },
-      { kind: 'plea_bargain_accepted', label: { en: 'Plea bargain', sw: 'Makubaliano ya kukiri kosa', de: 'Verständigung', fr: 'Plaidoyer de culpabilité négocié' } },
-      { kind: 'decline', label: { en: 'Close the file', sw: 'Kufunga jalada', de: 'Einstellung', fr: 'Classement sans suite' } },
-      { kind: 'amend_charge', label: { en: 'Change the charge', sw: 'Kubadilisha shtaka', de: 'Tatvorwurf ändern', fr: 'Requalification' } },
+      { kind: 'sanction', label: { en: 'File the case in court', sw: 'Kufungua kesi mahakamani', fr: 'Saisir la juridiction' } },
+      { kind: 'return_for_investigation', label: { en: 'Further investigation', sw: 'Upelelezi zaidi', fr: 'Instruction supplémentaire' } },
+      { kind: 'divert', label: { en: 'Mediation, or a fine without trial', sw: 'Upatanishi, au faini bila kesi', fr: 'Médiation ou amende transactionnelle' } },
+      { kind: 'plea_bargain_accepted', label: { en: 'Plea bargain', sw: 'Makubaliano ya kukiri kosa', fr: 'Plaidoyer de culpabilité négocié' } },
+      { kind: 'decline', label: { en: 'Close the file', sw: 'Kufunga jalada', fr: 'Classement sans suite' } },
+      { kind: 'amend_charge', label: { en: 'Change the charge', sw: 'Kubadilisha shtaka', fr: 'Requalification' } },
     ],
   },
   {
     code: 'bi',
-    name: { en: 'Burundi', sw: 'Burundi', de: 'Burundi', fr: 'Burundi' },
+    name: { en: 'Burundi', sw: 'Burundi', fr: 'Burundi' },
     area: 'east_africa',
     // Detention limits from secondary sources (the 2018 code could not be
     // opened here); numbering and ranks follow the shared parquet practice.
     status: 'provisional',
     languages: ['fr', 'sw', 'en'],
     defaultLanguage: 'fr',
-    regionLabel: { en: 'Province', sw: 'Jimbo', de: 'Provinz', fr: 'Province' },
+    regionLabel: { en: 'Province', sw: 'Jimbo', fr: 'Province' },
     // The five provinces from 2025 (Loi organique n°1/05 du 16 mars 2023).
     regions: ['Buhumuza', 'Bujumbura', 'Burunga', 'Butanyerera', 'Gitega'],
     references: {
@@ -554,7 +554,7 @@ export const COUNTRIES: readonly Country[] = [
     timeLimits: [
       {
         id: 'police_custody',
-        label: { en: 'Police custody (garde à vue)', sw: 'Kizuizi cha polisi', de: 'Polizeigewahrsam', fr: 'Garde à vue' },
+        label: { en: 'Police custody (garde à vue)', sw: 'Kizuizi cha polisi', fr: 'Garde à vue' },
         hours: 7 * 24,
         basis: 'Code de procédure pénale 2018 (7 jours francs)',
         source: 'S',
@@ -564,7 +564,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'police_custody_extended',
-        label: { en: 'Police custody, if the prosecutor extended it', sw: 'Kizuizi cha polisi kikiongezwa', de: 'Polizeigewahrsam, verlängert', fr: 'Garde à vue prorogée' },
+        label: { en: 'Police custody, if the prosecutor extended it', sw: 'Kizuizi cha polisi kikiongezwa', fr: 'Garde à vue prorogée' },
         hours: 14 * 24,
         basis: 'Code de procédure pénale 2018 (au plus le double)',
         source: 'S',
@@ -574,7 +574,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'map',
-        label: { en: 'Before the detention judge', sw: 'Kufikishwa kwa jaji wa kizuizi', de: 'Vorführung vor den Haftrichter', fr: 'Comparution devant le juge de la détention' },
+        label: { en: 'Before the detention judge', sw: 'Kufikishwa kwa jaji wa kizuizi', fr: 'Comparution devant le juge de la détention' },
         hours: 15 * 24,
         basis: 'Code de procédure pénale 2018, art. 155',
         source: 'S',
@@ -584,7 +584,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'odp',
-        label: { en: 'Pre-trial detention order, then each month', sw: 'Amri ya kizuizi, kisha kila mwezi', de: 'Haftanordnung, dann jeden Monat', fr: 'Ordonnance de détention préventive, puis chaque mois' },
+        label: { en: 'Pre-trial detention order, then each month', sw: 'Amri ya kizuizi, kisha kila mwezi', fr: 'Ordonnance de détention préventive, puis chaque mois' },
         hours: 30 * 24,
         basis: 'Code de procédure pénale 2018',
         source: 'S',
@@ -594,7 +594,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'detention_max_5y',
-        label: { en: 'Longest detention, offence up to 5 years', sw: 'Kizuizi kirefu zaidi, kosa hadi miaka 5', de: 'Höchstdauer, Strafe bis 5 Jahre', fr: "Durée maximale, peine jusqu'à 5 ans" },
+        label: { en: 'Longest detention, offence up to 5 years', sw: 'Kizuizi kirefu zaidi, kosa hadi miaka 5', fr: "Durée maximale, peine jusqu'à 5 ans" },
         hours: 365 * 24,
         basis: 'Code de procédure pénale 2018 (un an)',
         source: 'S',
@@ -604,21 +604,21 @@ export const COUNTRIES: readonly Country[] = [
       },
     ],
     decisions: [
-      { kind: 'sanction', label: { en: 'Send to court (fixation)', sw: 'Kupeleka mahakamani', de: 'Anklage (fixation)', fr: "Fixation d'audience" } },
-      { kind: 'decline', label: { en: 'Close without action', sw: 'Kufunga bila hatua', de: 'Einstellung', fr: 'Classement sans suite' } },
-      { kind: 'divert', label: { en: 'Settlement fine', sw: 'Faini ya maridhiano', de: 'Vergleichsbuße', fr: 'Amende transactionnelle' } },
-      { kind: 'return_for_investigation', label: { en: 'Back to the police officer for more', sw: 'Kurudisha kwa polisi kwa uchunguzi zaidi', de: 'Zurück an die Polizei zur Nachermittlung', fr: "Renvoi à l'OPJ pour complément d'enquête" } },
-      { kind: 'amend_charge', label: { en: 'Change the charge', sw: 'Kubadilisha shtaka', de: 'Tatvorwurf ändern', fr: 'Requalification des faits' } },
+      { kind: 'sanction', label: { en: 'Send to court (fixation)', sw: 'Kupeleka mahakamani', fr: "Fixation d'audience" } },
+      { kind: 'decline', label: { en: 'Close without action', sw: 'Kufunga bila hatua', fr: 'Classement sans suite' } },
+      { kind: 'divert', label: { en: 'Settlement fine', sw: 'Faini ya maridhiano', fr: 'Amende transactionnelle' } },
+      { kind: 'return_for_investigation', label: { en: 'Back to the police officer for more', sw: 'Kurudisha kwa polisi kwa uchunguzi zaidi', fr: "Renvoi à l'OPJ pour complément d'enquête" } },
+      { kind: 'amend_charge', label: { en: 'Change the charge', sw: 'Kubadilisha shtaka', fr: 'Requalification des faits' } },
     ],
   },
   {
     code: 'ss',
-    name: { en: 'South Sudan', sw: 'Sudan Kusini', de: 'Südsudan', fr: 'Soudan du Sud' },
+    name: { en: 'South Sudan', sw: 'Sudan Kusini', fr: 'Soudan du Sud' },
     area: 'east_africa',
     status: 'provisional',
     languages: ['en'],
     defaultLanguage: 'en',
-    regionLabel: { en: 'State', sw: 'Jimbo', de: 'Bundesstaat', fr: 'État' },
+    regionLabel: { en: 'State', sw: 'Jimbo', fr: 'État' },
     // The ten states and the three administrative areas.
     regions: ['Central Equatoria', 'Eastern Equatoria', 'Western Equatoria', 'Jonglei', 'Lakes', 'Northern Bahr el Ghazal', 'Western Bahr el Ghazal', 'Unity', 'Upper Nile', 'Warrap', 'Abyei Administrative Area', 'Greater Pibor Administrative Area', 'Ruweng Administrative Area'],
     references: { police: { label: 'Police case number', example: null }, prosecution: { label: 'Prosecution file number', example: null }, court: { label: 'Court case number', example: null } },
@@ -654,7 +654,7 @@ export const COUNTRIES: readonly Country[] = [
   },
   {
     code: 'cd',
-    name: { en: 'DR Congo', sw: 'Kongo (DRC)', de: 'DR Kongo', fr: 'RD Congo' },
+    name: { en: 'DR Congo', sw: 'Kongo (DRC)', fr: 'RD Congo' },
     area: 'east_africa',
     // Numbering, registers, ranks and detention steps from practitioner
     // sources (parquets de grande instance, Kinshasa); nothing confirmed by
@@ -662,7 +662,7 @@ export const COUNTRIES: readonly Country[] = [
     status: 'provisional',
     languages: ['fr', 'sw'],
     defaultLanguage: 'fr',
-    regionLabel: { en: 'Province', sw: 'Jimbo', de: 'Provinz', fr: 'Province' },
+    regionLabel: { en: 'Province', sw: 'Jimbo', fr: 'Province' },
     // The 26 provinces (Constitution of 18 February 2006, art. 2).
     regions: ['Bas-Uele', 'Équateur', 'Haut-Katanga', 'Haut-Lomami', 'Haut-Uele', 'Ituri', 'Kasaï', 'Kasaï-Central', 'Kasaï-Oriental', 'Kinshasa', 'Kongo-Central', 'Kwango', 'Kwilu', 'Lomami', 'Lualaba', 'Mai-Ndombe', 'Maniema', 'Mongala', 'Nord-Kivu', 'Nord-Ubangi', 'Sankuru', 'Sud-Kivu', 'Sud-Ubangi', 'Tanganyika', 'Tshopo', 'Tshuapa'],
     references: {
@@ -691,16 +691,16 @@ export const COUNTRIES: readonly Country[] = [
     fileSections: {
       status: 'provisional',
       sections: [
-        { code: '1', title: { en: 'Complaint and referral', sw: 'Malalamiko na rufaa', de: 'Anzeige und Zuleitung', fr: 'Plainte et saisine' }, kinds: ['complaint'] },
-        { code: '2', title: { en: "Police officer's reports (PV)", sw: 'Ripoti za polisi (PV)', de: 'Polizeiprotokolle (PV)', fr: "Procès-verbaux de l'OPJ" }, kinds: ['initial_report', 'io_report', 'investigation_diary'] },
-        { code: '3', title: { en: 'Hearings: complainant and witnesses', sw: 'Mahojiano: mlalamikaji na mashahidi', de: 'Vernehmungen: Anzeigende und Zeugen', fr: "PV d'audition : plaignant et témoins" }, kinds: ['witness_statement'] },
-        { code: '4', title: { en: 'Questioning of the accused', sw: 'Mahojiano ya mshtakiwa', de: 'Vernehmung des Beschuldigten', fr: 'Interrogatoire du prévenu' }, kinds: ['accused_statement'] },
-        { code: '5', title: { en: 'Detention (MAP, ODP, extensions)', sw: 'Kizuizini (MAP, ODP, nyongeza)', de: 'Haft (MAP, ODP, Verlängerungen)', fr: 'Détention (MAP, ODP, prorogations)' }, kinds: ['detention'] },
-        { code: '6', title: { en: 'Seizures and exhibits', sw: 'Vitu vilivyokamatwa na vielelezo', de: 'Beschlagnahmen und Beweisstücke', fr: 'Saisies et pièces à conviction' }, kinds: ['exhibit', 'lists'] },
-        { code: '7', title: { en: 'Expert and medical reports', sw: 'Ripoti za wataalamu na za matibabu', de: 'Gutachten und ärztliche Atteste', fr: "Rapports d'expertise et certificats médicaux" }, kinds: ['expert_report', 'medical_report'] },
-        { code: '8', title: { en: "Magistrate's acts and orders", sw: 'Hatua na amri za hakimu', de: 'Verfügungen des Staatsanwalts', fr: 'Actes et ordonnances du magistrat' }, kinds: ['charge_sheet', 'minute', 'court_record'] },
-        { code: '9', title: { en: 'Correspondence', sw: 'Mawasiliano', de: 'Schriftverkehr', fr: 'Correspondance' }, kinds: ['correspondence', 'other'] },
-        { code: '10', title: { en: 'Closing note and decision', sw: 'Taarifa ya mwisho na uamuzi', de: 'Abschlussvermerk und Entscheidung', fr: "Note de fin d'instruction et décision" }, kinds: ['decision'] },
+        { code: '1', title: { en: 'Complaint and referral', sw: 'Malalamiko na rufaa', fr: 'Plainte et saisine' }, kinds: ['complaint'] },
+        { code: '2', title: { en: "Police officer's reports (PV)", sw: 'Ripoti za polisi (PV)', fr: "Procès-verbaux de l'OPJ" }, kinds: ['initial_report', 'io_report', 'investigation_diary'] },
+        { code: '3', title: { en: 'Hearings: complainant and witnesses', sw: 'Mahojiano: mlalamikaji na mashahidi', fr: "PV d'audition : plaignant et témoins" }, kinds: ['witness_statement'] },
+        { code: '4', title: { en: 'Questioning of the accused', sw: 'Mahojiano ya mshtakiwa', fr: 'Interrogatoire du prévenu' }, kinds: ['accused_statement'] },
+        { code: '5', title: { en: 'Detention (MAP, ODP, extensions)', sw: 'Kizuizini (MAP, ODP, nyongeza)', fr: 'Détention (MAP, ODP, prorogations)' }, kinds: ['detention'] },
+        { code: '6', title: { en: 'Seizures and exhibits', sw: 'Vitu vilivyokamatwa na vielelezo', fr: 'Saisies et pièces à conviction' }, kinds: ['exhibit', 'lists'] },
+        { code: '7', title: { en: 'Expert and medical reports', sw: 'Ripoti za wataalamu na za matibabu', fr: "Rapports d'expertise et certificats médicaux" }, kinds: ['expert_report', 'medical_report'] },
+        { code: '8', title: { en: "Magistrate's acts and orders", sw: 'Hatua na amri za hakimu', fr: 'Actes et ordonnances du magistrat' }, kinds: ['charge_sheet', 'minute', 'court_record'] },
+        { code: '9', title: { en: 'Correspondence', sw: 'Mawasiliano', fr: 'Correspondance' }, kinds: ['correspondence', 'other'] },
+        { code: '10', title: { en: 'Closing note and decision', sw: 'Taarifa ya mwisho na uamuzi', fr: "Note de fin d'instruction et décision" }, kinds: ['decision'] },
       ],
     },
     courts: ['Tribunal de paix', 'Tribunal de grande instance', "Cour d'appel", 'Cour de cassation'],
@@ -715,7 +715,7 @@ export const COUNTRIES: readonly Country[] = [
     timeLimits: [
       {
         id: 'police_custody',
-        label: { en: 'Police custody (garde à vue)', sw: 'Kizuizi cha polisi (garde à vue)', de: 'Polizeigewahrsam (garde à vue)', fr: 'Garde à vue' },
+        label: { en: 'Police custody (garde à vue)', sw: 'Kizuizi cha polisi (garde à vue)', fr: 'Garde à vue' },
         hours: 48,
         basis: 'Code de procédure pénale',
         source: 'S',
@@ -725,7 +725,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'map',
-        label: { en: 'Provisional arrest warrant (MAP)', sw: 'Hati ya kukamatwa ya muda (MAP)', de: 'Vorläufiger Haftbefehl (MAP)', fr: "Mandat d'arrêt provisoire (MAP)" },
+        label: { en: 'Provisional arrest warrant (MAP)', sw: 'Hati ya kukamatwa ya muda (MAP)', fr: "Mandat d'arrêt provisoire (MAP)" },
         hours: 5 * 24,
         basis: 'Code de procédure pénale',
         source: 'S',
@@ -735,7 +735,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'odp',
-        label: { en: 'Pre-trial detention order (ODP)', sw: 'Amri ya kizuizi kabla ya kesi (ODP)', de: 'Haftanordnung (ODP)', fr: 'Ordonnance de détention préventive (ODP)' },
+        label: { en: 'Pre-trial detention order (ODP)', sw: 'Amri ya kizuizi kabla ya kesi (ODP)', fr: 'Ordonnance de détention préventive (ODP)' },
         hours: 15 * 24,
         basis: 'Code de procédure pénale',
         source: 'S',
@@ -745,7 +745,7 @@ export const COUNTRIES: readonly Country[] = [
       },
       {
         id: 'odp_extension',
-        label: { en: 'Each extension of detention', sw: 'Kila nyongeza ya kizuizi', de: 'Jede Haftverlängerung', fr: 'Chaque prorogation' },
+        label: { en: 'Each extension of detention', sw: 'Kila nyongeza ya kizuizi', fr: 'Chaque prorogation' },
         hours: 30 * 24,
         basis: 'Code de procédure pénale',
         source: 'S',
@@ -755,21 +755,21 @@ export const COUNTRIES: readonly Country[] = [
       },
     ],
     decisions: [
-      { kind: 'sanction', label: { en: 'Send to court (fixation)', sw: 'Kupeleka mahakamani (fixation)', de: 'Anklage (fixation)', fr: "Fixation d'audience" } },
-      { kind: 'decline', label: { en: 'Close without action', sw: 'Kufunga bila hatua', de: 'Einstellung', fr: 'Classement sans suite' } },
-      { kind: 'divert', label: { en: 'Settlement fine', sw: 'Faini ya maridhiano', de: 'Vergleichsbuße', fr: 'Amende transactionnelle' } },
-      { kind: 'return_for_investigation', label: { en: 'Back to the police officer for more', sw: 'Kurudisha kwa polisi kwa uchunguzi zaidi', de: 'Zurück an die Polizei zur Nachermittlung', fr: "Renvoi à l'OPJ pour complément d'enquête" } },
-      { kind: 'amend_charge', label: { en: 'Change the charge', sw: 'Kubadilisha shtaka', de: 'Tatvorwurf ändern', fr: 'Requalification des faits' } },
+      { kind: 'sanction', label: { en: 'Send to court (fixation)', sw: 'Kupeleka mahakamani (fixation)', fr: "Fixation d'audience" } },
+      { kind: 'decline', label: { en: 'Close without action', sw: 'Kufunga bila hatua', fr: 'Classement sans suite' } },
+      { kind: 'divert', label: { en: 'Settlement fine', sw: 'Faini ya maridhiano', fr: 'Amende transactionnelle' } },
+      { kind: 'return_for_investigation', label: { en: 'Back to the police officer for more', sw: 'Kurudisha kwa polisi kwa uchunguzi zaidi', fr: "Renvoi à l'OPJ pour complément d'enquête" } },
+      { kind: 'amend_charge', label: { en: 'Change the charge', sw: 'Kubadilisha shtaka', fr: 'Requalification des faits' } },
     ],
   },
   {
     code: 'so',
-    name: { en: 'Somalia', sw: 'Somalia', de: 'Somalia', fr: 'Somalie' },
+    name: { en: 'Somalia', sw: 'Somalia', fr: 'Somalie' },
     area: 'east_africa',
     status: 'provisional',
     languages: ['en'],
     defaultLanguage: 'en',
-    regionLabel: { en: 'Federal member state', sw: 'Jimbo la shirikisho', de: 'Gliedstaat', fr: 'État membre fédéré' },
+    regionLabel: { en: 'Federal member state', sw: 'Jimbo la shirikisho', fr: 'État membre fédéré' },
     // The federal member states and Banadir (Mogadishu). Somaliland runs its
     // own prosecution service and is not listed.
     regions: ['Banadir', 'Galmudug', 'Hirshabelle', 'Jubaland', 'Puntland', 'South West'],
@@ -799,58 +799,6 @@ export const COUNTRIES: readonly Country[] = [
         from: 'latest',
       },
     ],
-    decisions: null,
-  },
-  {
-    code: 'de',
-    name: { en: 'Germany', sw: 'Ujerumani', de: 'Deutschland', fr: 'Allemagne' },
-    area: 'europe',
-    status: 'provisional',
-    languages: ['de'],
-    defaultLanguage: 'de',
-    regionLabel: { en: 'State (Land)', sw: 'Jimbo (Land)', de: 'Land', fr: 'Land' },
-    regions: ['Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'],
-    references: {
-      police: { label: 'Vorgangsnummer', example: null },
-      prosecution: { label: 'Aktenzeichen (Js)', example: '12 Js 1234/15' },
-      court: { label: 'Aktenzeichen', example: null },
-    },
-    institutions: {
-      // Prosecution is organised per Land: the nearest thing to a headquarters
-      // is each Land's Generalstaatsanwaltschaft.
-      dpp: { letterhead: ["STAATSANWALTSCHAFT {OFFICE}"], name: 'Staatsanwaltschaft', short: 'StA', head: 'Generalstaatsanwalt', headShort: 'GStA', headquarters: 'Generalstaatsanwaltschaft', ranks: [] },
-      police: { name: 'Polizei', headquarters: 'Landespolizeipräsidium', ranks: [] },
-      prisons: { name: 'Justizvollzug', headquarters: null, ranks: [] },
-    },
-    fileSections: null,
-    courts: [],
-    laws: [],
-    timeLimits: [],
-    decisions: null,
-  },
-  {
-    code: 'fr',
-    name: { en: 'France', sw: 'Ufaransa', de: 'Frankreich', fr: 'France' },
-    area: 'europe',
-    status: 'provisional',
-    languages: ['fr'],
-    defaultLanguage: 'fr',
-    regionLabel: { en: 'Court of appeal area', sw: 'Eneo la mahakama ya rufaa', de: 'Berufungsgerichtsbezirk', fr: "Ressort de cour d'appel" },
-    regions: [],
-    references: {
-      police: { label: 'Numéro de procédure', example: null },
-      prosecution: { label: 'Numéro de parquet (NPP)', example: null },
-      court: { label: 'Numéro de parquet (NPP)', example: null },
-    },
-    institutions: {
-      dpp: { letterhead: ["RÉPUBLIQUE FRANÇAISE", "MINISTÈRE DE LA JUSTICE", "PARQUET DE {OFFICE}"], name: 'Ministère public (parquet)', short: 'Parquet', head: 'Procureur de la République', headShort: 'PR', headquarters: 'Parquet général', ranks: [] },
-      police: { name: 'Police nationale', headquarters: null, ranks: [] },
-      prisons: { name: 'Administration pénitentiaire', headquarters: null, ranks: [] },
-    },
-    fileSections: null,
-    courts: [],
-    laws: [],
-    timeLimits: [],
     decisions: null,
   },
 ]

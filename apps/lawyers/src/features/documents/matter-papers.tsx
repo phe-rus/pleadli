@@ -83,7 +83,7 @@ export function MatterPapers({ matterId, matterType, stage, documents, open, mat
       <div className="section-head">
         <h2 id="papers-of-matter">{m["mp.papers"]()}</h2>
         {documents.length > 0 && (
-          <PanelButton label={m["give.button"]()} title={m["give.title"]()} description={m["give.description"]()} variant="default" icon={false}>
+          <PanelButton label={m["give.button"]()} title={m["give.title"]()} description={m["give.description"]()} variant="secondary" icon={false}>
             {({ close }) => <GivePapers matterId={matterId} matterTitle={matterTitle} clientName={clientName} documents={documents} onDone={close} />}
           </PanelButton>
         )}

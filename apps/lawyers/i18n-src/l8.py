@@ -1,15 +1,15 @@
-# Assist from anywhere (0.1.1): key -> (en, sw, de, fr).
+# Assist from anywhere (0.1.1): key -> (en, sw, fr).
 S = {
-"nav.assist": ("Assist", "Msaidizi", "Assistent", "Assistant"),
-"assist_page.title": ("Assist", "Msaidizi", "Assistent", "Assistant"),
-"assist_page.lead": ("AI help on a matter: a summary, the chronology, what the other side has not answered, a first draft. It reads the matter's record; it never decides and never counts deadlines.", "Msaada wa AI kwenye shauri: muhtasari, mfuatano wa matukio, kile upande mwingine haujajibu, rasimu ya kwanza. Unasoma kumbukumbu za shauri; hauamui wala kuhesabu muda wa mwisho.", "KI-Hilfe zu einem Mandat: Zusammenfassung, Chronologie, was die Gegenseite nicht beantwortet hat, ein erster Entwurf. Sie liest die Akte; sie entscheidet nie und berechnet keine Fristen.", "Aide IA sur une affaire : résumé, chronologie, ce que la partie adverse n'a pas répondu, un premier projet. Elle lit le dossier ; elle ne décide jamais et ne calcule aucun délai."),
-"assist_page.off_title": ("Assist is off", "Msaidizi umezimwa", "Der Assistent ist aus", "L'assistant est désactivé"),
-"assist_page.off_description": ("It works with an AI provider the practice chooses (Gemini, OpenRouter, Anthropic or another) and the practice's own key. Nothing is sent anywhere until an administrator turns it on.", "Unafanya kazi na mtoa huduma wa AI ambaye ofisi inachagua (Gemini, OpenRouter, Anthropic au mwingine) na ufunguo wa ofisi yenyewe. Hakuna kinachotumwa popote hadi msimamizi auwashe.", "Er arbeitet mit einem KI-Anbieter, den die Kanzlei wählt (Gemini, OpenRouter, Anthropic oder ein anderer), und dem eigenen Schlüssel der Kanzlei. Nichts wird gesendet, bevor eine Administratorin oder ein Administrator ihn einschaltet.", "Il fonctionne avec un fournisseur d'IA choisi par le cabinet (Gemini, OpenRouter, Anthropic ou autre) et la clé du cabinet. Rien n'est envoyé tant qu'un administrateur ne l'a pas activé."),
-"assist_page.off_admin": ("Choose the provider and paste the key in Settings, Assist.", "Chagua mtoa huduma na ubandike ufunguo katika Mipangilio, Msaidizi.", "Anbieter wählen und Schlüssel unter Einstellungen, Assistent einfügen.", "Choisissez le fournisseur et collez la clé dans Paramètres, Assistant."),
-"assist_page.off_ask_admin": ("Ask an administrator of the practice to turn it on.", "Muombe msimamizi wa ofisi auwashe.", "Bitten Sie eine Administratorin oder einen Administrator der Kanzlei, ihn einzuschalten.", "Demandez à un administrateur du cabinet de l'activer."),
-"assist_page.turn_on": ("Turn on Assist", "Washa Msaidizi", "Assistent einschalten", "Activer l'assistant"),
-"assist_page.which_matter": ("Matter", "Shauri", "Mandat", "Affaire"),
-"assist_page.choose_matter": ("Choose a matter", "Chagua shauri", "Mandat wählen", "Choisir une affaire"),
-"assist_page.no_matters": ("No open matter yet.", "Hakuna shauri lililo wazi bado.", "Noch kein offenes Mandat.", "Aucune affaire ouverte pour l'instant."),
-"assist_page.not_for_role": ("Assist works on matters; the accounts role does not use it.", "Msaidizi hufanya kazi kwenye mashauri; nafasi ya uhasibu haiutumii.", "Der Assistent arbeitet an Mandaten; die Buchhaltung nutzt ihn nicht.", "L'assistant travaille sur les affaires ; le rôle comptable ne l'utilise pas."),
+"nav.assist": ("Assist", "Msaidizi", "Assistant"),
+"assist_page.title": ("Assist", "Msaidizi", "Assistant"),
+"assist_page.lead": ("AI help on a matter: a summary, the chronology, what the other side has not answered, a first draft. It reads the matter's record; it never decides and never counts deadlines.", "Msaada wa AI kwenye shauri: muhtasari, mfuatano wa matukio, kile upande mwingine haujajibu, rasimu ya kwanza. Unasoma kumbukumbu za shauri; hauamui wala kuhesabu muda wa mwisho.", "Aide IA sur une affaire : résumé, chronologie, ce que la partie adverse n'a pas répondu, un premier projet. Elle lit le dossier ; elle ne décide jamais et ne calcule aucun délai."),
+"assist_page.off_title": ("Assist is off", "Msaidizi umezimwa", "L'assistant est désactivé"),
+"assist_page.off_description": ("It works with an AI provider the practice chooses (Gemini, OpenRouter, Anthropic or another) and the practice's own key. Nothing is sent anywhere until an administrator turns it on.", "Unafanya kazi na mtoa huduma wa AI ambaye ofisi inachagua (Gemini, OpenRouter, Anthropic au mwingine) na ufunguo wa ofisi yenyewe. Hakuna kinachotumwa popote hadi msimamizi auwashe.", "Il fonctionne avec un fournisseur d'IA choisi par le cabinet (Gemini, OpenRouter, Anthropic ou autre) et la clé du cabinet. Rien n'est envoyé tant qu'un administrateur ne l'a pas activé."),
+"assist_page.off_admin": ("Choose the provider and paste the key in Settings, Assist.", "Chagua mtoa huduma na ubandike ufunguo katika Mipangilio, Msaidizi.", "Choisissez le fournisseur et collez la clé dans Paramètres, Assistant."),
+"assist_page.off_ask_admin": ("Ask an administrator of the practice to turn it on.", "Muombe msimamizi wa ofisi auwashe.", "Demandez à un administrateur du cabinet de l'activer."),
+"assist_page.turn_on": ("Turn on Assist", "Washa Msaidizi", "Activer l'assistant"),
+"assist_page.which_matter": ("Matter", "Shauri", "Affaire"),
+"assist_page.choose_matter": ("Choose a matter", "Chagua shauri", "Choisir une affaire"),
+"assist_page.no_matters": ("No open matter yet.", "Hakuna shauri lililo wazi bado.", "Aucune affaire ouverte pour l'instant."),
+"assist_page.not_for_role": ("Assist works on matters; the accounts role does not use it.", "Msaidizi hufanya kazi kwenye mashauri; nafasi ya uhasibu haiutumii.", "L'assistant travaille sur les affaires ; le rôle comptable ne l'utilise pas."),
 }

@@ -223,3 +223,50 @@ mod tests {
         pool.close().await;
     }
 }
+
+/// Handwriting on a paper: what a pen, a finger or the mouse wrote over a
+/// paper on screen (a statement received from Police, a scan), one row per
+/// paper, the latest writing only. It is a note on the office's copy and is
+/// printed with it; it is not part of the paper's verified wording, which is
+/// the paper itself. Documents this office issues keep their writing inside
+/// their own sealed content instead.
+pub const INK_TABLE_SQL: &str = "CREATE TABLE paper_ink (
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    ink TEXT NOT NULL,
+    written_by TEXT,
+    written_at INTEGER NOT NULL,
+    PRIMARY KEY (entity_type, entity_id)
+);";
+
+/// The writing on one paper, if any.
+pub async fn ink(pool: &SqlitePool, entity_type: &str, entity_id: &str) -> Result<Option<String>, sqlx::Error> {
+    sqlx::query_scalar("SELECT ink FROM paper_ink WHERE entity_type = ? AND entity_id = ?")
+        .bind(entity_type)
+        .bind(entity_id)
+        .fetch_optional(pool)
+        .await
+}
+
+/// Keeps the writing on one paper; `None` (or empty) clears it.
+pub async fn set_ink(pool: &SqlitePool, entity_type: &str, entity_id: &str, ink: Option<&str>, written_by: Option<&str>) -> Result<(), sqlx::Error> {
+    match ink.filter(|i| !i.trim().is_empty()) {
+        Some(ink) => {
+            sqlx::query(
+                "INSERT INTO paper_ink (entity_type, entity_id, ink, written_by, written_at) VALUES (?, ?, ?, ?, ?)
+                 ON CONFLICT (entity_type, entity_id) DO UPDATE SET ink = excluded.ink, written_by = excluded.written_by, written_at = excluded.written_at",
+            )
+            .bind(entity_type)
+            .bind(entity_id)
+            .bind(ink)
+            .bind(written_by)
+            .bind(chrono::Utc::now().timestamp_millis())
+            .execute(pool)
+            .await?;
+        }
+        None => {
+            sqlx::query("DELETE FROM paper_ink WHERE entity_type = ? AND entity_id = ?").bind(entity_type).bind(entity_id).execute(pool).await?;
+        }
+    }
+    Ok(())
+}

@@ -13,6 +13,7 @@ import { EditProsecutionFileForm, useFilePeople, useProsecutionFile } from '@/fe
 import { ResubmissionForm, useReferralsForFile } from '@/features/referrals'
 import { describeEvent, useChronology } from '@/features/workload'
 import { RichTextPreview } from '@pleadli/rich-text'
+import { Group, GroupRow } from '@pleadli/ui/grouped'
 import * as m from '@/paraglide/messages'
 import { NewDocumentButton } from '@/features/templates/new-document'
 
@@ -23,29 +24,25 @@ export function ChronologyPanel({ fileId }: { fileId: string }) {
 
   if (events.length === 0) return <EmptyNote>{m["file_ws.chronology_empty"]()}</EmptyNote>
 
+  // Grouped by day, newest first, as a Mac lists history: the day as a quiet
+  // title, then what happened that day with its time.
+  const days = new Map<string, typeof events>()
+  for (const event of [...events].sort((a, b) => b.at - a.at)) {
+    const day = formatDate(event.at, 'long')
+    days.set(day, [...(days.get(day) ?? []), event])
+  }
+
   return (
-    <ol className="flex flex-col">
-      {events.map((event, index) => {
-        const { title, detail } = describeEvent(event)
-        return (
-          <li key={`${event.kind}:${event.id}`} className="grid grid-cols-[7rem_1rem_1fr] gap-x-3 sm:grid-cols-[9rem_1rem_1fr]">
-            <time dateTime={new Date(event.at).toISOString()} className="pt-0.5 text-right text-muted-foreground tabular-nums">
-              {formatDate(event.at)}
-              <br />
-              <span className="text-xs">{formatDate(event.at, 'time')}</span>
-            </time>
-            <span aria-hidden className="relative flex justify-center">
-              <span className="mt-2 size-2 rounded-full bg-primary" />
-              {index < events.length - 1 && <span className="absolute top-4 bottom-0 w-px bg-border" />}
-            </span>
-            <div className="flex flex-col pb-5">
-              <strong>{title}</strong>
-              {detail && <p>{detail}</p>}
-            </div>
-          </li>
-        )
-      })}
-    </ol>
+    <div className="flex flex-col gap-6">
+      {[...days.entries()].map(([day, list]) => (
+        <Group key={day} title={day}>
+          {list.map((event) => {
+            const { title, detail } = describeEvent(event)
+            return <GroupRow key={`${event.kind}:${event.id}`} label={title} detail={detail ?? undefined} value={<time className="text-xs tabular-nums">{formatDate(event.at, 'time')}</time>} />
+          })}
+        </Group>
+      ))}
+    </div>
   )
 }
 

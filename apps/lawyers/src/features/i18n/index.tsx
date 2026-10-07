@@ -5,13 +5,13 @@ export { baseLocale, locales, type Locale }
 
 /** Which locales this installation may choose today. Missing keys fall back to
  * English key by key, never to a raw key. */
-export const selectableLocales: readonly Locale[] = ['en', 'sw', 'de', 'fr']
+export const selectableLocales: readonly Locale[] = ['en', 'sw', 'fr']
 
 /** Each language names itself, so these are not translated. */
 export const localeNames: Record<Locale, string> = {
   en: 'English',
   sw: 'Kiswahili',
-  de: 'Deutsch',
+  
   fr: 'Français',
 }
 
@@ -45,4 +45,4 @@ export function LocaleBoundary({ children }: { children: ReactNode }) {
   }, [locale])
   return <Fragment key={locale}>{children}</Fragment>
 }
-export { LanguageSelect } from './language-select'
+export { LanguageSelect, StatusBarLanguageSelect } from './language-select'

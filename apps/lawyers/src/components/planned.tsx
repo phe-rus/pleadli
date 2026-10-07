@@ -1,5 +1,6 @@
 import { Tag } from '@/components/status-tag'
 import type { ReactNode } from 'react'
+import * as m from '@/paraglide/messages'
 
 /** A capability the product will have and this build does not. It says so, and
  * says what it will cover, so a destination is never mistaken for a working one
@@ -9,7 +10,7 @@ export function Planned({ title, children, covers }: { title: string; children?:
     <section className="flex flex-col gap-3 rounded-lg border border-dashed border-border p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3>{title}</h3>
-        <Tag tone="planned">Planned</Tag>
+        <Tag tone="planned">{m["common.planned"]()}</Tag>
       </div>
       {children && <p>{children}</p>}
       {covers && (
@@ -26,6 +27,12 @@ export function Planned({ title, children, covers }: { title: string; children?:
 }
 
 /** Nothing here yet, said plainly. */
-export function EmptyNote({ children }: { children: ReactNode }) {
-  return <p className="rounded-lg border border-dashed border-border p-4 text-muted-foreground">{children}</p>
+export function EmptyNote({ children, icon, action }: { children: ReactNode; icon?: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-foreground/[0.025] px-6 py-10 text-center">
+      {icon && <span className="text-muted-foreground/60 [&_svg]:size-8">{icon}</span>}
+      <p className="max-w-sm text-muted-foreground">{children}</p>
+      {action}
+    </div>
+  )
 }

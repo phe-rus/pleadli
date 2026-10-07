@@ -6,12 +6,12 @@ export { baseLocale, locales, type Locale }
 /** Which locales this installation may choose today. The `sw` and `de`
  * catalogs are complete but not yet reviewed by a native-speaking court
  * officer. Missing keys fall back to English key by key, never to a raw key. */
-export const selectableLocales: readonly Locale[] = ['en', 'sw', 'de']
+export const selectableLocales: readonly Locale[] = ['en', 'sw']
 
 export const localeNames: Record<Locale, string> = {
   en: 'English',
   sw: 'Kiswahili',
-  de: 'Deutsch',
+  
 }
 
 const listeners = new Set<() => void>()

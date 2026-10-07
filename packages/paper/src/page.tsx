@@ -64,7 +64,8 @@ export function PaperTabs({
 }) {
   const app = usePaperApp()
   const { labels } = app
-  const [tab, setTab] = useState<Tab>('details')
+  // Folded until asked for: the paper is what the page is for, its details sit beside it.
+  const [tab, setTab] = useState<Tab | null>(null)
   const [versions, setVersions] = useState<Version[]>([])
   const [reading, setReading] = useState<Version | null>(null)
 
@@ -103,17 +104,18 @@ export function PaperTabs({
   )
   return (
     <section className="flex flex-col gap-3" data-paper-tools>
-      <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-border/60">
+      {changed && <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-200">{labels.changedSincePrinted}</p>}
+      <div role="tablist" className="no-scrollbar flex gap-1 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
             role="tab"
             aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => setTab((open) => (open === t.id ? null : t.id))}
             className={cn(
-              'relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 px-3 py-2 text-sm',
-              tab === t.id ? 'font-medium text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary' : 'text-muted-foreground hover:text-foreground',
+              'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-[0.8125rem] transition-colors',
+              tab === t.id ? 'bg-foreground/[0.07] font-medium text-foreground' : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
             )}
           >
             <HugeiconsIcon icon={t.icon} className="size-3.5" />
@@ -123,12 +125,10 @@ export function PaperTabs({
         ))}
       </div>
 
-      <div role="tabpanel" className="min-h-16">
+      {tab && <div role="tabpanel" className="rounded-xl bg-foreground/[0.025] p-4">
         {tab === 'details' && (
           <div className="flex flex-col gap-3">
-            {(latest || changed) && (
-              <p className={cn('rounded-lg px-3 py-2 text-sm', changed ? 'bg-amber-500/10 text-amber-900 dark:text-amber-200' : 'bg-primary/5')}>{changed ? labels.changedSincePrinted : labels.latest}</p>
-            )}
+            {latest && !changed && <p className="text-sm text-muted-foreground">{labels.latest}</p>}
             <div className="grid grid-cols-1 gap-x-10 gap-y-2 md:grid-cols-[1fr_16rem]">
               <dl className="not-typeset grid grid-cols-[minmax(8rem,auto)_1fr] items-baseline gap-x-4 gap-y-1.5 text-sm [&_dd]:m-0 [&_dd]:p-0 [&_dt]:m-0 [&_dt]:p-0">
                 {details.map((d) => (
@@ -223,7 +223,7 @@ export function PaperTabs({
               )}
             </div>
           ))}
-      </div>
+      </div>}
     </section>
   )
 }

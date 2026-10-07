@@ -1,6 +1,10 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "assist": {
+    "dock": {
+      "close": "Fermer l'assistant",
+      "on_matter": "Sur ce dossier"
+    },
     "panel": {
       "answer": "Réponse de l'Assistant",
       "ask": "Demander à l'Assistant",
@@ -239,6 +243,17 @@
     "next_hearing": "Prochaine audience {when}",
     "open_tasks": "Tâches ouvertes : {count}"
   },
+  "cal": {
+    "day": "Jour",
+    "day_empty": "Rien à l'agenda ce jour-là. Inscrivez une audience depuis un dossier.",
+    "diary_for": "Agenda du {date}",
+    "month": "Mois",
+    "next_day": "Jour suivant",
+    "previous_day": "Jour précédent",
+    "print": "Imprimer",
+    "to_attend": "À suivre",
+    "views": "Vue du calendrier"
+  },
   "calendar": {
     "deadline": "Délai",
     "hearing": "Audience",
@@ -313,6 +328,7 @@
   },
   "common": {
     "cancel": "Annuler",
+    "planned": "Prévu",
     "try_again": "Veuillez réessayer."
   },
   "compliance": {
@@ -408,6 +424,10 @@
     "uganda_v": "Ouganda c.",
     "year": "Année"
   },
+  "doc": {
+    "clear_writing": "Effacer l’écriture manuscrite",
+    "write": "Écrire"
+  },
   "doc_page": {
     "changed_since_filing": "Modifié depuis le dépôt",
     "discard": "Abandonner",
@@ -429,6 +449,17 @@
     "text": "Texte",
     "title": "Titre",
     "untitled": "Sans titre"
+  },
+  "docs": {
+    "all": "Tous",
+    "changed_on": "Modifié le {date}",
+    "drafts": "Brouillons",
+    "filed": "Déposés",
+    "filed_on": "Déposé le {date}",
+    "lead": "Ce que vous avez rédigé et déposé. Un document déposé est figé : il peut être imprimé et remplacé, jamais modifié.",
+    "none": "Aucun document rédigé pour l'instant. Ouvrez un dossier et choisissez Rédiger un document.",
+    "none_here": "Rien ici.",
+    "verify": "Vérifier un document…"
   },
   "document": {
     "advocate_files": "Un avocat du cabinet dépose ce document",
@@ -720,7 +751,7 @@
       "board_about": "Les dossiers ouverts d'un type, selon leur étape. Faites glisser une carte, ou utilisez son menu, pour la déplacer.",
       "closed": "Clos",
       "closed_about": "Les dossiers terminés.",
-      "no_hearing": "Aucune audience inscrite",
+      "no_hearing": "Sans date d'audience",
       "no_hearing_about": "Dossiers judiciaires ouverts sans audience à l'agenda. Chacun a besoin d'une date.",
       "open": "Dossiers ouverts",
       "open_about": "Tous les dossiers dont vous vous occupez."
@@ -903,9 +934,13 @@
     "hearings": "Audiences",
     "hearings_count": "Audiences : {count}",
     "history": "Historique de ce dossier",
+    "info": "Infos",
+    "info_description": "Pour qui vous agissez, où, et à quelles conditions.",
+    "info_title": "À propos de ce dossier",
     "list_hearing": "Fixer une audience",
     "list_hearing_description": "Inscrire une audience à l'agenda.",
     "made": "Établis pour ce dossier",
+    "more": "Plus",
     "no_court_number": "Aucun numéro de rôle enregistré",
     "no_documents": "Aucun document n'a été rédigé pour ce dossier.",
     "no_hearing_listed": "Aucune audience fixée",
@@ -937,6 +972,14 @@
     "reopen": "Rouvrir",
     "reopen_failed": "Le dossier n'a pas pu être rouvert",
     "reopened": "Dossier rouvert",
+    "sections": "Sections du dossier",
+    "seg": {
+      "activity": "Activité",
+      "matter": "Le dossier",
+      "money": "Argent et temps",
+      "notes": "Notes",
+      "papers": "Pièces"
+    },
     "tab": {
       "deadlines": "Délais",
       "filings": "Dépôts",
@@ -967,7 +1010,7 @@
     "diary": "Agenda",
     "documents": "Documents",
     "money": "Finances",
-    "no_hearing": "Aucune audience inscrite",
+    "no_hearing": "Sans date d'audience",
     "open_matters": "Dossiers ouverts",
     "pinned": "Épinglés",
     "recent": "Récents",
@@ -1058,12 +1101,19 @@
     "assist_off": "L'Assistant n'est pas configuré : elles ne peuvent pas encore être lues.",
     "binder": {
       "attached": "Joint à ce document",
+      "count": "{count} pièces",
+      "decisions": "Examens et décisions",
       "empty": "Aucune pièce pour l'instant. Ajoutez ce que la police a envoyé, ou importez les pièces.",
+      "every_paper": "Toutes les pièces, numérotées",
       "from_police": "Reçu de la police",
+      "minutes_count": "{count} annotations",
+      "minutes_one": "1 annotation",
       "open_outside": "Ouvrir dans son programme",
       "papers": "Pièces du dossier",
+      "papers_short": "Pièces",
       "prepared": "Préparé par ce bureau",
-      "received": "Tel que reçu de la police. Non modifié par ce bureau."
+      "received": "Tel que reçu de la police. Non modifié par ce bureau.",
+      "this_file": "Ce dossier"
     },
     "changed": "Modifié depuis la dernière impression",
     "charges": {
@@ -1078,6 +1128,28 @@
     "cites": "Ce document cite",
     "copied": "Copié",
     "copy": "Copier",
+    "cover": {
+      "accused": "Prévenu(s)",
+      "complainant": "Plaignant(s)",
+      "last_decision": "Dernière décision",
+      "not_given": "Non indiqué",
+      "offences": "Infractions",
+      "received": "Reçu le",
+      "title": "Couverture du dossier"
+    },
+    "decision": {
+      "applies_to": "S’applique à",
+      "decided_by": "Décidé par",
+      "decided_on": "Décidé le",
+      "decision": "Décision",
+      "directions": "Instructions à la police judiciaire",
+      "no_reasons": "Aucun motif n’a été écrit pour cette décision.",
+      "on_review": "Sur l’examen",
+      "police_answer": "Réponse de la police",
+      "reasons": "Motifs",
+      "recorded": "Décision enregistrée",
+      "title": "Procès-verbal de décision"
+    },
     "detail": {
       "counts": "Chefs d'accusation",
       "date": "Date",
@@ -1107,6 +1179,14 @@
     "found_recorded": "Enregistrée",
     "found_title": "Étapes vues par l'Assistant dans les pièces",
     "hide": "Masquer",
+    "index": {
+      "entries": "Pièces",
+      "issued": "Délivré",
+      "no": "N°",
+      "pages": "Pages",
+      "paper": "Pièce",
+      "title": "Inventaire des pièces"
+    },
     "kind": {
       "contract": "Contrat",
       "court_document": "Du tribunal",
@@ -1119,6 +1199,13 @@
     },
     "last_printed": "Imprimé pour la dernière fois le {when}",
     "latest": "Ceci est la dernière version de ce document.",
+    "minutes": {
+      "by": "Magistrat du parquet",
+      "count": "Annotations",
+      "minute": "Annotation {n}",
+      "title": "Feuille d’annotations",
+      "written": "Annotation écrite"
+    },
     "no_citations": "Aucune loi ni aucune autre pièce n'est citée dans ce document.",
     "no_history": "Ce document n'a pas encore quitté le bureau. À chaque impression ou enregistrement, la version est conservée ici.",
     "no_related": "Aucune autre pièce du dossier ne se rattache à celle-ci.",
@@ -1145,6 +1232,21 @@
     "remove": "Retirer la pièce",
     "remove_confirm": "Le fichier est détruit sur cet ordinateur.",
     "remove_failed": "Impossible de la retirer",
+    "review": {
+      "by": "Magistrat ayant examiné",
+      "concluded": "Examen terminé",
+      "criterion": "Critère",
+      "finding": "Constat",
+      "no_outcome": "Pas encore enregistré",
+      "not_assessed": "Non examiné",
+      "note": "Observation",
+      "open": "En cours",
+      "outcome": "Résultat",
+      "reopened": "Rouvert parce que",
+      "standard": "Critère appliqué",
+      "started": "Examen commencé",
+      "title": "Examen de l’opportunité des poursuites"
+    },
     "save_checked": "Vérifiée, enregistrer",
     "saving": "Préparation du document",
     "statement": {
@@ -1173,7 +1275,8 @@
     "unchecked": "Nommée par l'Assistant, non vérifiée",
     "uploading": "Ajout de {count}...",
     "verify_line": "Vérifiez ce document avec son code",
-    "word": "Enregistrer en Word"
+    "word": "Enregistrer en Word",
+    "write_hint": "Écrivez sur la pièce avec un stylet, le doigt ou la souris. L’écriture reste sur la copie du bureau et s’imprime avec elle."
   },
   "party": {
     "add": "Ajouter une partie",
@@ -1216,6 +1319,11 @@
     "title": "Connexion",
     "your_new_password": "Votre nouveau mot de passe",
     "your_new_pin": "Votre nouveau code PIN"
+  },
+  "recent": {
+    "empty": "Rien d'ouvert pour l'instant. Les dossiers et documents que vous ouvrez apparaissent ici.",
+    "matters": "Dossiers",
+    "subtitle": "Dossiers et documents ouverts récemment sur cet ordinateur."
   },
   "registers": {
     "add": "Nouvelle inscription",
@@ -1658,6 +1766,7 @@
   "today": {
     "adjourned": "Renvoyée",
     "adjournments_count": "Renvois : {count}",
+    "all_clear": "Rien ne vous attend pour l'instant. Rien au tribunal aujourd'hui, rien en retard.",
     "att": {
       "a_task": "Une tâche",
       "due_soon": "Bientôt due",
@@ -1677,6 +1786,7 @@
     "attention": "À traiter",
     "drafts": "Projets",
     "drafts_caption": "Documents rédigés et pas encore déposés",
+    "figures": "Votre cabinet",
     "hearings_today": "Audiences du jour",
     "in_court": "Au tribunal aujourd'hui",
     "in_diary_today": "À votre agenda aujourd'hui",
@@ -1778,7 +1888,37 @@
     "someone": "une personne de ce bureau",
     "title": "Vérifier une copie imprimée"
   },
+  "window": {
+    "close": "Fermer",
+    "controls": "Fenêtre",
+    "maximize": "Agrandir",
+    "minimize": "Réduire"
+  },
   "workspace": {
-    "subtitle_default": "Votre cabinet"
+    "advocate": "Avocat",
+    "hide_sidebar": "Masquer la barre latérale",
+    "new": "Nouveau",
+    "no_advocate": "Aucun avocat indiqué",
+    "places": "Emplacements",
+    "quick": {
+      "add_client": "Ajouter un client",
+      "add_client_about": "Une personne que vous représentez.",
+      "find": "Trouver",
+      "label": "Actions rapides",
+      "start": "Commencer"
+    },
+    "search_short": "Rechercher",
+    "show_sidebar": "Afficher la barre latérale",
+    "sidebar": "Barre latérale",
+    "subtitle_default": "Votre cabinet",
+    "tab": {
+      "next": "Onglet suivant",
+      "previous": "Onglet précédent"
+    },
+    "view": {
+      "board": "Tableau",
+      "list": "Liste"
+    },
+    "window": "Fenêtre"
   }
 }

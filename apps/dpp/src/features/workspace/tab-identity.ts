@@ -30,7 +30,7 @@ export function identityForLocation(pathname: string, search: Record<string, unk
   if (/^\/incoming(\/[^/]+)?$/.test(path)) return { kind: 'area', key: 'area:/incoming', to: path }
 
   if (path === '/files') {
-    const view = isFileView(search.view) ? search.view : 'intake'
+    const view = isFileView(search.view) ? search.view : 'all'
     return { kind: 'area', key: 'area:/files', to: `/files?view=${view}` }
   }
   if (path === '/material') {
@@ -59,7 +59,7 @@ export function tabTitle(tab: { kind: WorkspaceTab['kind']; title: string; to: s
       const [pathname, query = ''] = tab.to.split('?')
       const search = Object.fromEntries(new URLSearchParams(query))
       if (pathname === '/files') {
-        const view = isFileView(search.view) ? search.view : 'intake'
+        const view = isFileView(search.view) ? search.view : 'all'
         return fileViews.find((v) => v.id === view)?.label ?? m["tabs.files"]()
       }
       const identity = identityForLocation(pathname, search)

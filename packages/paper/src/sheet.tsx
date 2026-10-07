@@ -62,10 +62,11 @@ export function VerifyBlock({ stamp, reference }: { stamp: PaperStamp; reference
  * `children` is the paper's wording; the verification block sits below it,
  * outside the wording it vouches for.
  */
-export const PaperSheet = forwardRef<HTMLDivElement, { head?: ReactNode; title?: string | null; children: ReactNode; stamp?: PaperStamp | null; reference?: string | null; className?: string }>(
-  function PaperSheet({ head, title, children, stamp, reference, className }, ref) {
+export const PaperSheet = forwardRef<HTMLDivElement, { head?: ReactNode; title?: string | null; children: ReactNode; stamp?: PaperStamp | null; reference?: string | null; className?: string; overlay?: ReactNode }>(
+  function PaperSheet({ head, title, children, stamp, reference, className, overlay }, ref) {
     return (
       <div ref={ref} className={cn('paper relative mx-auto w-full max-w-[210mm] p-[16mm] font-serif text-sm leading-relaxed', className)}>
+        {overlay}
         <div data-paper-body>
           {head}
           {title && <h1 className="mb-5 text-center text-base font-semibold tracking-wide uppercase underline underline-offset-4">{title}</h1>}

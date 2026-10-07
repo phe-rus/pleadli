@@ -1,12 +1,10 @@
+import * as m from '@/paraglide/messages'
 import { formatDate } from '@/lib/dates'
 import { Createpanel } from '@/components/create-panel'
 import { useDeepLinkRecord } from '@/hooks/use-deep-link-record'
 import { peopleOptions, personFullName, PersonForm, usePeople, type Person } from '@/features/people'
-import { AddCircleIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Button } from '@pleadli/ui/button'
-import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 
@@ -34,7 +32,7 @@ function RouteComponent() {
       {
         id: 'name',
         accessorFn: (row) => personFullName(row),
-        header: 'Name',
+        header: () => m["people.col.name"](),
         cell: ({ row }) => (
           <button type="button" onClick={() => setEditingPerson(row.original)} className="flex cursor-pointer flex-col text-start">
             <span className="font-medium text-foreground">{personFullName(row.original)}</span>
@@ -42,14 +40,14 @@ function RouteComponent() {
           </button>
         ),
       },
-      { accessorKey: 'id', header: 'ID' },
-      { accessorKey: 'otherNames', header: 'Other names', cell: ({ row }) => row.original.otherNames ?? '·' },
-      { accessorKey: 'phone', header: 'Phone', cell: ({ row }) => row.original.phone ?? '·' },
-      { accessorKey: 'nationalId', header: 'National ID', cell: ({ row }) => row.original.nationalId ?? '·' },
-      { accessorKey: 'address', header: 'Address', cell: ({ row }) => row.original.address ?? '·' },
+      { accessorKey: 'id', header: () => m["people.col.id"]() },
+      { accessorKey: 'otherNames', header: () => m["people.col.other_names"](), cell: ({ row }) => row.original.otherNames ?? '·' },
+      { accessorKey: 'phone', header: () => m["people.col.phone"](), cell: ({ row }) => row.original.phone ?? '·' },
+      { accessorKey: 'nationalId', header: () => m["people.col.national_id"](), cell: ({ row }) => row.original.nationalId ?? '·' },
+      { accessorKey: 'address', header: () => m["people.col.address"](), cell: ({ row }) => row.original.address ?? '·' },
       {
         accessorKey: 'createdAt',
-        header: 'Recorded',
+        header: () => m["people.col.recorded"](),
         cell: ({ getValue }) => formatDate(getValue<number>(), 'datetime'),
       },
     ]
@@ -59,8 +57,8 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>People</h1>
-          <p>Accused, complainants and witnesses referenced across the files.</p>
+          <h1>{m["nav.item.people"]()}</h1>
+          <p>{m["people.subtitle"]()}</p>
         </div>
         <div className="page-actions">
           <Createpanel
@@ -68,12 +66,9 @@ function RouteComponent() {
             onOpenChange={setAddOpen}
             isDirty={addDirty}
             trigger={
-              <Button size="sm">
-                <HugeiconsIcon icon={AddCircleIcon} />
-                Add a person
-              </Button>
+              <Button size="sm">{m["workspace.quick.add_person"]()}</Button>
             }
-            headings={{ title: 'Add a person', description: "Record someone who isn't already known to the system." }}
+            headings={{ title: m["workspace.quick.add_person"](), description: m["workspace.quick.add_person_description"]() }}
           >
             <PersonForm onSuccess={() => setAddOpen(false)} onDirtyChange={setAddDirty} />
           </Createpanel>
@@ -86,7 +81,7 @@ function RouteComponent() {
           if (!open) setEditingPerson(null)
         }}
         isDirty={editDirty}
-        headings={{ title: 'Edit person', description: 'Update what was recorded.' }}
+        headings={{ title: m["people.edit"](), description: m["people.edit_description"]() }}
       >
         {editingPerson && (
           <PersonForm
@@ -99,12 +94,13 @@ function RouteComponent() {
       </Createpanel>
 
       <DataTable
-        aria-label="People"
+        aria-label={m["nav.item.people"]()}
         data={people}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage="No one recorded yet."
-        searchPlaceholder="Search people…"
+        emptyMessage={m["people.empty"]()}
+        initialHidden={['id', 'otherNames']}
+        searchPlaceholder={m["people.search"]()}
       />
     </article>
   )

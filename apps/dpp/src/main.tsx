@@ -7,6 +7,7 @@ import { Queryprovider, queryContext } from '@/lib/query-context'
 import "@/styles/globals.css"
 import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
+import { DesktopFrame } from '@/components/desktop-frame'
 import ReactDOM from 'react-dom/client'
 import { routeTree } from './routeTree.gen'
 import { startUpdateChecks } from '@/lib/updater'
@@ -67,6 +68,7 @@ if (!rootElement.innerHTML) {
             disableTransitionOnChange
         >
             <Queryprovider query={queryContext()}>
+              <DesktopFrame>
                 <AppGate onUnlocked={() => void router.invalidate()}>
                     <LocaleBoundary>
                         <PaperProvider>
@@ -75,6 +77,7 @@ if (!rootElement.innerHTML) {
                     </LocaleBoundary>
                 </AppGate>
                 <LanguageSelect />
+              </DesktopFrame>
             </Queryprovider>
         </ThemeProvider>
     )

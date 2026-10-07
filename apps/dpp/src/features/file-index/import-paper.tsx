@@ -37,8 +37,10 @@ function Elapsed({ since }: { since: number }) {
  * Assist on, it reads them, splits them into the documents they are, and puts
  * each in its place in the file for a person to check. Without Assist, each
  * scan goes in as one document to be sorted by hand. */
-export function ImportPaper({ fileId }: { fileId: string }) {
-  const [open, setOpen] = useState(false)
+export function ImportPaper({ fileId, open: openProp, onOpenChange, trigger = true }: { fileId: string; open?: boolean; onOpenChange?: (open: boolean) => void; trigger?: boolean }) {
+  const [ownOpen, setOwnOpen] = useState(false)
+  const open = openProp ?? ownOpen
+  const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOwnOpen(next))
   const [picked, setPicked] = useState<Picked[]>([])
   const [phase, setPhase] = useState<Phase>({ step: 'choose' })
   const [dragOver, setDragOver] = useState(false)
@@ -96,10 +98,12 @@ export function ImportPaper({ fileId }: { fileId: string }) {
 
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}>
-        <HugeiconsIcon icon={FileImportIcon} />
-        {m["import.button"]()}
-      </Button>
+      {trigger && (
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <HugeiconsIcon icon={FileImportIcon} />
+          {m["import.button"]()}
+        </Button>
+      )}
       <Dialog
         open={open}
         onOpenChange={(next) => {

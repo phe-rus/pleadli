@@ -16,31 +16,35 @@ import {
 import { ageLabel } from '@/lib/present'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { cn } from '@pleadli/ui/lib/utils'
+import { boardOptions, CaseBoard } from '@/features/pipeline'
+import { Folder01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo } from 'react'
 
 export const Route = createFileRoute('/_public/files/')({
-  validateSearch: (search: Record<string, unknown>): { view?: FileViewId; open?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { view?: FileViewId; open?: string; layout?: 'list' | 'board' } => ({
     ...(isFileView(search.view) ? { view: search.view } : {}),
     ...(typeof search.open === 'string' ? { open: search.open } : {}),
+    ...(search.layout === 'board' ? { layout: 'board' as const } : {}),
   }),
-  loaderDeps: ({ search }) => ({ view: search.view ?? 'intake' }),
+  loaderDeps: ({ search }) => ({ view: search.view ?? 'all' }),
   loader: async ({ context, deps }) => {
-    await context.queryClient.query({ ...filesOptions(deps.view), staleTime: 'static' })
+    await Promise.all([context.queryClient.query({ ...filesOptions(deps.view), staleTime: 'static' }), context.queryClient.query({ ...boardOptions(), staleTime: 'static' })])
   },
   component: RouteComponent,
 })
 
-/** Finding a prosecution file. One page, one view per slice of the register:
- * what has just arrived, what is under review, what is with Police, what is
- * concluded. Doing the work happens in the file's own workspace and in the
- * work areas, not here. */
+/** One folder of files, chosen in the sidebar: every file, the files at one
+ * stage, or those back with Police. All files can also be seen as a board of
+ * the stages. Doing the work happens in the file itself, not here. */
 function RouteComponent() {
-  const { view = 'intake', open } = Route.useSearch()
+  const { view = 'all', open, layout = 'list' } = Route.useSearch()
   const navigate = useNavigate()
   const current = fileViews.find((v) => v.id === view) ?? fileViews[0]
   const { data: files } = useFiles(view)
   const waiting = view === 'intake' || view === 'active' || view === 'returned'
+  const board = view === 'all' && layout === 'board'
 
   // A link from search or the Overview may name a file to open.
   useEffect(() => {
@@ -83,13 +87,32 @@ function RouteComponent() {
   }, [view, waiting])
 
   return (
-    <article className="page">
+    <article className={cn('page', board && 'flex min-h-0 flex-1 flex-col')}>
       <header className="page-header">
         <div>
           <h1>{current.label}</h1>
-          <p>{current.about}</p>
+          <p>
+            {files.length === 1 ? m["files.count_one"]() : m["files.count"]({ count: files.length })} · {current.about}
+          </p>
         </div>
         <div className="page-actions">
+          {view === 'all' && (
+            <div role="radiogroup" aria-label={m["files.layout.label"]()} className="flex rounded-lg bg-foreground/[0.05] p-0.5">
+              {(['list', 'board'] as const).map((id) => (
+                <Link
+                  key={id}
+                  to="/files"
+                  search={{ view: 'all', ...(id === 'board' ? { layout: 'board' as const } : {}) }}
+                  replace
+                  role="radio"
+                  aria-checked={layout === id}
+                  className={cn('rounded-md px-3 py-1 text-[0.8125rem] no-underline transition-colors', layout === id ? 'bg-background font-medium text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground')}
+                >
+                  {id === 'list' ? m["files.layout.list"]() : m["files.layout.board"]()}
+                </Link>
+              ))}
+            </div>
+          )}
           <PanelButton label={m["workspace.quick.open_file"]()} title={m["workspace.quick.open_file"]()} description={m["workspace.quick.open_file_description"]()} variant="default">
             {({ close, setDirty }) => (
               <ProsecutionFileForm
@@ -105,26 +128,10 @@ function RouteComponent() {
         </div>
       </header>
 
-      <nav aria-label={m["page.files.views"]()} className="no-scrollbar -mb-2 flex gap-1 overflow-x-auto border-b border-border/60">
-        {fileViews.map((item) => (
-          <Link
-            key={item.id}
-            to="/files"
-            search={{ view: item.id }}
-            replace
-            aria-current={item.id === view ? 'page' : undefined}
-            className={cn(
-              'relative shrink-0 px-3 py-1.5 no-underline',
-              item.id === view ? 'text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary' : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
-      {files.length === 0 ? (
-        <EmptyNote>{emptyText[view]?.() ?? m["page.files.empty"]()}</EmptyNote>
+      {board ? (
+        <CaseBoard />
+      ) : files.length === 0 ? (
+        <EmptyNote icon={<HugeiconsIcon icon={Folder01Icon} />}>{emptyText[view]?.() ?? m["page.files.empty"]()}</EmptyNote>
       ) : (
         <DataTable aria-label={current.label} data={files} columns={columns} getRowId={(row) => row.id} initialHidden={['id', 'reference', 'createdAt']} emptyMessage={m["page.files.empty"]()} searchPlaceholder={m["page.files.search_list"]()} />
       )}

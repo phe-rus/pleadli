@@ -28,7 +28,7 @@ const roadmapBase: RoadmapItem[] = [
   { title: 'One first-launch setup: country, language, office, protection, colour and logo, first people', application: 'Platform', status: 'done', note: 'Shared by DPP and Lawyers. Police and Prisons move onto it next.' },
   { title: 'Country packs for eight East African countries', application: 'Platform', status: 'in-progress', note: 'Uganda, Kenya, Tanzania, Rwanda, Burundi, DR Congo, South Sudan and Somalia: courts, laws, references, time limits. Some details are provisional or from secondary sources, and marked so.' },
   { title: 'Assist: AI with the provider and key the office chooses', application: 'Platform', status: 'done', note: 'Built in DPP and Lawyers. Deadlines are always counted by the app, never by the AI.' },
-  { title: 'English, Kiswahili, German and French', application: 'Platform', status: 'in-progress', note: 'Complete in DPP and on this site; Lawyers’ newer screens are translated and its older ones are being finished; Police and Prisons follow.' },
+  { title: 'English, Kiswahili and French', application: 'Platform', status: 'in-progress', note: 'Complete in DPP and on this site; Lawyers’ newer screens are translated and its older ones are being finished; Police and Prisons follow.' },
   { title: 'Code-signed installers, checksums, Linux and macOS', application: 'Platform', status: 'planned', note: 'Until then Windows shows a SmartScreen warning on first install.' },
 
   { title: 'Case intake, investigation, custody, station operations', application: 'Police', status: 'done', note: 'Core station workflow.' },

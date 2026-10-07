@@ -9,14 +9,14 @@ export { baseLocale, locales, type Locale }
 /** Which locales an installation may choose today. The catalogs for the rest
  * exist and fall back to English key by key, but the node refuses a language
  * it has no complete translation for (`facility_profile::LANGUAGES`). */
-export const selectableLocales: readonly Locale[] = ['en', 'sw', 'de']
+export const selectableLocales: readonly Locale[] = ['en', 'sw']
 
 export const localeNames: Record<Locale, string> = {
   en: 'English',
   sw: 'Kiswahili',
   fr: 'Français',
-  de: 'Deutsch',
-  zh: '中文',
+  
+  
 }
 
 const listeners = new Set<() => void>()
@@ -60,8 +60,8 @@ export function useLocaleFromProfile() {
 }
 export { LanguageSelect } from './language-select'
 
-/** A label used mid-sentence. English and Kiswahili lower-case it; German
- * keeps the capital, because its nouns are always capitalised. Display only. */
+/** A label used mid-sentence, lower-cased as English, Kiswahili and French
+ * write it. Display only. */
 export function inlineLabel(label: string) {
-  return getLocale() === 'de' ? label : label.toLowerCase()
+  return label.toLowerCase()
 }

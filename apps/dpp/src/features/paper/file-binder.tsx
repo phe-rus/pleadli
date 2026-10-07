@@ -1,5 +1,5 @@
 import { DocumentView } from '@/components/document-viewer'
-import { PanelButton } from '@/components/add-panel'
+import { Createpanel } from '@/components/create-panel'
 import { EmptyNote } from '@/components/planned'
 import { openAttachment } from '@/features/attachments'
 import { entityTypes } from '@/features/attachments/schema'
@@ -7,7 +7,11 @@ import { AttachmentsField } from '@/features/attachments'
 import { ChargeForm, useChargesForFile } from '@/features/charges'
 import { CommentThread } from '@/features/comments'
 import { DocumentReader, useDocuments } from '@/features/documents'
-import { useDecisionsForFile } from '@/features/decisions'
+import { decisionActs, decisionTypeLabel, useDecisionsForFile } from '@/features/decisions'
+import { standardLabel } from '@/features/charging-review/schema'
+import { useReviewsForFile } from '@/features/charging-review'
+import { useDirectionsForFile } from '@/features/directions'
+import { useReviewNotesForFile } from '@/features/review-notes'
 import { NewDocumentButton } from '@/features/templates/new-document'
 import { evidenceCategoryLabel, EvidenceForm, useEvidenceForFile } from '@/features/evidence'
 import { groups, KindSelect, kindLabel, TypedEntry } from '@/features/file-index/file-index'
@@ -15,22 +19,38 @@ import type { FileItem } from '@/features/file-index/data'
 import { ImportPaper } from '@/features/file-index/import-paper'
 import { useConfirmFileItems, useDeleteFileItem, useFileItems, useUpdateFileItem } from '@/features/file-index/queries'
 import { useJurisdiction } from '@/features/installation'
-import { useProsecutionFile } from '@/features/prosecution-files'
+import { useFilePeople, useProsecutionFile } from '@/features/prosecution-files'
 import type { ProsecutionFile } from '@/features/prosecution-files/schema'
 import { StatementForm, statementRoleLabel, useStatementsForFile } from '@/features/statements'
 import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
-import { Delete02Icon, File02Icon, SparklesIcon, TextIcon } from '@hugeicons/core-free-icons'
+import { Add01Icon, Attachment01Icon, CheckListIcon, Delete02Icon, File02Icon, FileImportIcon, Folder01Icon, LeftToRightListNumberIcon, LegalDocument01Icon, NoteIcon, SparklesIcon, TextIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { PaperView } from '@pleadli/paper'
 import { Button } from '@pleadli/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@pleadli/ui/dropdown-menu'
 import { Input } from '@pleadli/ui/input'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Textarea } from '@pleadli/ui/textarea'
 import { useState, type ReactNode } from 'react'
-import { AttachedPapers, ChargesPaper, EvidencePaper, StatementPaper } from './material-papers'
+import { AttachedPapers, ChargesPaper, EvidencePaper, hasText, StatementPaper } from './material-papers'
+import { DecisionPaper, FileCoverPaper, FileIndexPaper, MinuteSheetPaper, ReviewPaper } from './office-papers'
 
-type Picked = { kind: 'doc'; id: string } | { kind: 'item'; id: string } | { kind: 'charges' } | { kind: 'statement'; id: string } | { kind: 'evidence'; id: string }
+type Picked =
+  | { kind: 'cover' }
+  | { kind: 'index' }
+  | { kind: 'minutes' }
+  | { kind: 'review'; id: string }
+  | { kind: 'decision'; id: string }
+  | { kind: 'doc'; id: string } | { kind: 'item'; id: string } | { kind: 'charges' } | { kind: 'statement'; id: string } | { kind: 'evidence'; id: string }
 
 const same = (a: Picked | null, b: Picked) => !!a && a.kind === b.kind && ('id' in b ? 'id' in a && a.id === b.id : true)
 
@@ -124,6 +144,87 @@ function ScannedPaper({ item }: { item: FileItem }) {
   )
 }
 
+type AddPanel = 'document' | 'import' | 'statement' | 'evidence' | 'charge' | null
+
+/** Every way a paper comes into the file, behind one button, grouped by where
+ * it comes from: what this office writes, and what Police sent. */
+function AddMenu({ fileId, decision, onMade, onType }: { fileId: string; decision: { id: string; decisionType: string } | null; onMade: (id: string) => void; onType: () => void }) {
+  const [panel, setPanel] = useState<AddPanel>(null)
+  const [dirty, setDirty] = useState(false)
+  const close = () => {
+    setPanel(null)
+    setDirty(false)
+  }
+  const form = (id: AddPanel, title: string, description: string, body: ReactNode) => (
+    <Createpanel open={panel === id} onOpenChange={(open) => !open && close()} isDirty={dirty} headings={{ title, description }}>
+      {body}
+    </Createpanel>
+  )
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button size="icon-sm" variant="ghost" aria-label={m["paper.add.button"]()} title={m["paper.add.button"]()} className="cursor-pointer">
+              <HugeiconsIcon icon={Add01Icon} className="size-4" />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end" sideOffset={6} className="w-64">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>{m["paper.add.office"]()}</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setPanel('document')}>
+              <HugeiconsIcon icon={File02Icon} />
+              {m["paper.add.document"]()}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onType}>
+              <HugeiconsIcon icon={TextIcon} />
+              {m["index.type_document"]()}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>{m["paper.add.police"]()}</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setPanel('import')}>
+              <HugeiconsIcon icon={FileImportIcon} />
+              {m["paper.add.import"]()}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setPanel('statement')}>
+              <HugeiconsIcon icon={NoteIcon} />
+              {m["paper.add.statement"]()}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setPanel('evidence')}>
+              <HugeiconsIcon icon={Attachment01Icon} />
+              {m["paper.add.evidence"]()}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setPanel('charge')}>
+              <HugeiconsIcon icon={LegalDocument01Icon} />
+              {m["paper.add.charge"]()}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <NewDocumentButton
+        fileId={fileId}
+        decisionId={decision?.id ?? null}
+        decisionKind={decision?.decisionType ?? null}
+        trigger={false}
+        open={panel === 'document'}
+        onOpenChange={(open) => !open && close()}
+        onMade={(id) => {
+          close()
+          onMade(id)
+        }}
+      />
+      <ImportPaper fileId={fileId} trigger={false} open={panel === 'import'} onOpenChange={(open) => !open && close()} />
+      {form('statement', m["material.add_statement"](), m["material.add_statement_description"](), <StatementForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />)}
+      {form('evidence', m["material.add_evidence"](), m["material.add_evidence_description"](), <EvidenceForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />)}
+      {form('charge', m["material.add_charge"](), m["material.add_charge_description"](), <ChargeForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />)}
+    </>
+  )
+}
+
 /**
  * The file as a binder of papers: what this office has prepared, the file's
  * own papers in the country's section order, and what Police sent. Choosing a
@@ -140,10 +241,22 @@ export function FileBinder({ fileId }: { fileId: string }) {
   const confirm = useConfirmFileItems(fileId)
   const { data: decisions } = useDecisionsForFile(fileId)
   const lastDecision = [...decisions].sort((a, b) => b.decidedAt - a.decidedAt)[0] ?? null
+  const { data: people } = useFilePeople(fileId)
+  const { data: allNotes } = useReviewNotesForFile(fileId)
+  const notes = allNotes.filter((n) => hasText(n.note))
+  const { data: reviews } = useReviewsForFile(fileId)
+  const { data: directions } = useDirectionsForFile(fileId)
+  const acts = decisionActs([...decisions].sort((a, b) => a.decidedAt - b.decidedAt))
+  const reviewsInOrder = [...reviews].sort((a, b) => a.startedAt - b.startedAt)
   const [picked, setPicked] = useState<Picked | null>(null)
   const [typing, setTyping] = useState(false)
 
   const all: Picked[] = [
+    { kind: 'cover' },
+    { kind: 'index' },
+    ...(notes.length ? [{ kind: 'minutes' } as const] : []),
+    ...reviewsInOrder.map((r) => ({ kind: 'review', id: r.id }) as const),
+    ...acts.map((a) => ({ kind: 'decision', id: a.decisions[0]!.id }) as const),
     ...documents.map((d) => ({ kind: 'doc', id: d.id }) as const),
     ...items.map((i) => ({ kind: 'item', id: i.id }) as const),
     ...(charges.length ? [{ kind: 'charges' } as const] : []),
@@ -190,24 +303,6 @@ export function FileBinder({ fileId }: { fileId: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <NewDocumentButton fileId={fileId} decisionId={lastDecision?.id ?? null} decisionKind={lastDecision?.decisionType ?? null} variant="default" onMade={(id) => setPicked({ kind: 'doc', id })} />
-        <Button size="sm" variant="secondary" onClick={() => setTyping(true)} disabled={typing}>
-          <HugeiconsIcon icon={TextIcon} data-icon="inline-start" />
-          {m["index.type_document"]()}
-        </Button>
-        <ImportPaper fileId={fileId} />
-        <PanelButton label={m["material.add_statement"]()} title={m["material.add_statement"]()} description={m["material.add_statement_description"]()}>
-          {({ close, setDirty }) => <StatementForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
-        </PanelButton>
-        <PanelButton label={m["material.add_evidence"]()} title={m["material.add_evidence"]()} description={m["material.add_evidence_description"]()}>
-          {({ close, setDirty }) => <EvidenceForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
-        </PanelButton>
-        <PanelButton label={m["material.add_charge"]()} title={m["material.add_charge"]()} description={m["material.add_charge_description"]()}>
-          {({ close, setDirty }) => <ChargeForm prosecutionFileId={fileId} onSuccess={close} onDirtyChange={setDirty} />}
-        </PanelButton>
-      </div>
-
       {typing && <TypedEntry fileId={fileId} onDone={() => setTyping(false)} />}
 
       {unconfirmed > 0 && (
@@ -227,6 +322,22 @@ export function FileBinder({ fileId }: { fileId: string }) {
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_1fr]">
           <nav aria-label={m["paper.binder.papers"]()} className="flex flex-col gap-0.5 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto">
+            <div className="flex items-center justify-between gap-2 px-2 pb-1">
+              <span className="text-sm font-medium">
+                {m["paper.binder.papers_short"]()} <span className="font-normal text-muted-foreground tabular-nums">{all.length}</span>
+              </span>
+              <AddMenu fileId={fileId} decision={lastDecision} onMade={(id) => setPicked({ kind: 'doc', id })} onType={() => setTyping(true)} />
+            </div>
+            {heading(m["paper.binder.this_file"]())}
+            {entry({ kind: 'cover' }, m["paper.cover.title"](), file.title, Folder01Icon)}
+            {entry({ kind: 'index' }, m["paper.index.title"](), m["paper.binder.every_paper"](), LeftToRightListNumberIcon)}
+            {notes.length > 0 && entry({ kind: 'minutes' }, m["paper.minutes.title"](), (notes.length === 1 ? m["paper.binder.minutes_one"]() : m["paper.binder.minutes_count"]({ count: notes.length })), NoteIcon)}
+            {(reviewsInOrder.length > 0 || acts.length > 0) && heading(m["paper.binder.decisions"]())}
+            {reviewsInOrder.map((r) => entry({ kind: 'review', id: r.id }, m["paper.review.title"](), `${standardLabel(r.standard)} · ${formatDate(r.startedAt)}`, CheckListIcon))}
+            {acts.map((a) => {
+              const d = a.decisions[0]!
+              return entry({ kind: 'decision', id: d.id }, decisionTypeLabel(d.decisionType), [d.decidedBy, formatDate(d.decidedAt)].filter(Boolean).join(' · '), CheckListIcon)
+            })}
             {documents.length > 0 && (
               <>
                 {heading(m["paper.binder.prepared"]())}
@@ -256,6 +367,57 @@ export function FileBinder({ fileId }: { fileId: string }) {
           </nav>
 
           <div className="flex min-w-0 flex-col gap-6">
+            {current.kind === 'cover' && <FileCoverPaper file={file} people={people} charges={charges} decisions={decisions} links={{ related: [...allDocs, ...chargesLink] }} />}
+            {current.kind === 'index' && <FileIndexPaper file={file} country={country} documents={documents} items={items} charges={charges} statements={statements} evidence={evidence} />}
+            {current.kind === 'minutes' && <MinuteSheetPaper file={file} notes={notes} />}
+            {current.kind === 'review' &&
+              (() => {
+                const r = reviews.find((x) => x.id === current.id)
+                if (!r) return null
+                const made = acts.filter((a) => a.decisions[0]!.reviewId === r.id)
+                return (
+                  <>
+                    <ReviewPaper
+                      key={r.id}
+                      file={file}
+                      review={r}
+                      links={{ related: [...made.map((a) => ({ key: `dec-${a.key}`, label: decisionTypeLabel(a.decisions[0]!.decisionType), sub: formatDate(a.decisions[0]!.decidedAt), onOpen: () => setPicked({ kind: 'decision', id: a.decisions[0]!.id }) })), ...statements.map(statementLink), ...evidence.map(evidenceLink)] }}
+                    />
+                    <CommentThread entityType="charging_review" entityId={r.id} />
+                  </>
+                )
+              })()}
+            {current.kind === 'decision' &&
+              (() => {
+                const a = acts.find((x) => x.decisions[0]!.id === current.id)
+                if (!a) return null
+                const d = a.decisions[0]!
+                const review = d.reviewId ? (reviews.find((r) => r.id === d.reviewId) ?? null) : null
+                const madeDocs = documents.filter((doc) => doc.sourceDecisionId && a.decisions.some((x) => x.id === doc.sourceDecisionId))
+                return (
+                  <>
+                    <DecisionPaper
+                      key={d.id}
+                      file={file}
+                      act={a.decisions}
+                      charges={charges}
+                      directions={directions.filter((x) => a.decisions.some((y) => y.id === x.decisionId))}
+                      review={review}
+                      people={people}
+                      links={{
+                        related: [
+                          ...madeDocs.map((doc) => ({ key: `doc-${doc.id}`, label: doc.title, sub: doc.reference ?? m["doc.draft"](), onOpen: () => setPicked({ kind: 'doc', id: doc.id }) })),
+                          ...(review ? [{ key: `rev-${review.id}`, label: m["paper.review.title"](), sub: formatDate(review.startedAt), onOpen: () => setPicked({ kind: 'review', id: review.id }) }] : []),
+                          ...chargesLink,
+                        ],
+                      }}
+                    />
+                    {a.decisions.map((x) => (
+                      <CommentThread key={x.id} entityType="decision" entityId={x.id} />
+                    ))}
+                  </>
+                )
+              })()}
             {current.kind === 'doc' &&
               (() => {
                 const d = documents.find((x) => x.id === current.id)

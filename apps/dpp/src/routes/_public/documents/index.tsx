@@ -3,6 +3,8 @@ import { VerifyDocument } from '@/features/documents/seals'
 import { DocumentLibrary, documentsOptions } from '@/features/documents'
 import { decisionsOptions } from '@/features/decisions'
 import { createFileRoute } from '@tanstack/react-router'
+import { Button } from '@pleadli/ui/button'
+import { Dialog, DialogContent, DialogTrigger } from '@pleadli/ui/dialog'
 
 export const Route = createFileRoute('/_public/documents/')({
   loader: async ({ context }) => {
@@ -26,11 +28,18 @@ function RouteComponent() {
           <h1>{m["nav.item.documents"]()}</h1>
           <p>{m["page.documents.about"]()}</p>
         </div>
+        <div className="page-actions">
+          {/* Checking a paper someone hands you is occasional: a sheet, not a form on the page. */}
+          <Dialog>
+            <DialogTrigger render={<Button size="sm" variant="secondary">{m["doc.verify_button"]()}</Button>} />
+            <DialogContent className="sm:max-w-lg">
+              <VerifyDocument />
+            </DialogContent>
+          </Dialog>
+        </div>
       </header>
 
       <DocumentLibrary />
-
-      <VerifyDocument />
     </article>
   )
 }

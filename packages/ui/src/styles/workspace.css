@@ -119,3 +119,40 @@
 .paper :is(h1, h2, h3, h4, h5, h6) {
   font-family: inherit;
 }
+
+/* ---------- Type, the Mac way ----------
+   A large, tight page title; group titles small and quiet above their group;
+   section titles a step up from body. Set once here, never on the markup. */
+.page-header h1,
+[data-slot="page-title"] {
+  font-size: 1.75rem;
+  line-height: 2.125rem;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+}
+
+.page-header h1 + p,
+.page-header :first-child > p {
+  color: var(--muted-foreground);
+}
+
+[data-slot="group-title"] {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  letter-spacing: 0;
+}
+
+[data-slot="group-footer"] {
+  font-size: 0.75rem;
+  line-height: 1.1rem;
+}
+
+.page-section > h2,
+.page-section .section-head h2 {
+  font-size: 1.0625rem;
+  line-height: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}

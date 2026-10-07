@@ -30,7 +30,7 @@ export type SectionId = 'pinned' | 'recent' | 'practice' | 'matters' | 'office'
  * replaces the tab worked on longest ago. */
 const MAX_TABS = 5
 /** The sidebar's Recent list never shows more than this. */
-export const MAX_RECENTS = 3
+export const MAX_RECENTS = 20
 
 const OVERVIEW_TAB: WorkspaceTab = { key: 'overview', kind: 'overview', title: 'Today', to: '/', pinned: true }
 

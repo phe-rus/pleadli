@@ -17,6 +17,11 @@ const app: PaperApp = {
   stamp: (input) => api('POST', '/api/prints', { body: input }) as Promise<PaperStamp>,
   lastPrint: (entityType, entityId) => api('GET', '/api/prints/last', { query: { entityType, entityId } }) as Promise<(PaperStamp & { body: string }) | null>,
   history: (entityType, entityId) => api('GET', '/api/prints/history', { query: { entityType, entityId } }) as never,
+  // Handwriting on a paper (pen, finger, mouse), kept with the practice's copy.
+  ink: {
+    load: (entityType, entityId) => api('GET', '/api/prints/ink', { query: { entityType, entityId } }) as Promise<string | null>,
+    save: (entityType, entityId, ink) => api('PUT', '/api/prints/ink', { body: { entityType, entityId, ink } }).then(() => undefined),
+  },
   saveFile: (name, bytes, _mime, extension) => saveFile(bytes, name, extension === 'doc' ? 'doc' : extension === 'csv' ? 'csv' : 'pdf'),
   office: async () => (isTauri() ? ((await invoke('office_apps')) as OfficeApps) : { os: 'linux', word: false, excel: false, libreOffice: false }),
   openFile: async (name, bytes) => {
@@ -28,6 +33,9 @@ const app: PaperApp = {
       preview: m["paper.preview"](),
       edit: m["paper.edit"](),
       print: m["paper.print"](),
+      write: m["doc.write"](),
+      clearWriting: m["doc.clear_writing"](),
+      writeHint: m["paper.write_hint"](),
       word: m["paper.word"](),
       printHint: m["paper.print_hint"](),
       printHintWindows: m["paper.print_hint_windows"](),

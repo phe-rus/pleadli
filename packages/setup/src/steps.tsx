@@ -1,3 +1,4 @@
+import { Briefcase01Icon, SquareLock02Icon, UserCheck01Icon } from '@hugeicons/core-free-icons'
 import { Add01Icon, Delete02Icon, LockKeyIcon, ShieldUserIcon, SquareUnlock02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
@@ -20,9 +21,9 @@ type T = { t: SetupMessages }
 export function WelcomeStep({ t, institution, productName, logo, action }: T & { institution: Institution; productName: string; logo: string; action?: ReactNode }) {
   const intro = t.intro[institution]
   const rows = [
-    { title: t.what_title, body: intro.what },
-    { title: t.never_title, body: intro.never },
-    { title: t.data_title, body: t.data_body },
+    { icon: Briefcase01Icon, title: t.what_title, body: intro.what },
+    { icon: UserCheck01Icon, title: t.never_title, body: intro.never },
+    { icon: SquareLock02Icon, title: t.data_title, body: t.data_body },
   ]
   return (
     <div className="flex flex-col items-center gap-8 pt-6 text-center">
@@ -31,11 +32,15 @@ export function WelcomeStep({ t, institution, productName, logo, action }: T & {
         <h1>{t.welcome_title(productName)}</h1>
         <p className="text-muted-foreground">{t.welcome_lead}</p>
       </div>
-      <ul className="not-typeset flex w-full list-none flex-col gap-3 p-0 text-left">
+      {/* What the app is, as Apple's welcome screens say it: an icon, a bold line, a quiet line. No boxes. */}
+      <ul className="not-typeset flex w-full list-none flex-col gap-6 p-0 text-left">
         {rows.map((row) => (
-          <li key={row.title} className="rounded-xl border border-border bg-card p-4">
-            <h3>{row.title}</h3>
-            <p className="text-muted-foreground">{row.body}</p>
+          <li key={row.title} className="flex items-start gap-4">
+            <HugeiconsIcon icon={row.icon} className="mt-0.5 size-7 shrink-0 text-primary" />
+            <div className="flex flex-col gap-0.5">
+              <h3 className="font-semibold">{row.title}</h3>
+              <p className="text-muted-foreground">{row.body}</p>
+            </div>
           </li>
         ))}
       </ul>
@@ -75,13 +80,14 @@ export function LicenceStep({ t, locale, accepted, onAccept }: T & { locale: Loc
           ))}
         </article>
       </div>
-      <div className="flex items-start gap-3 pt-5">
+      {/* The whole line is the target, box and sentence, as on a Mac. */}
+      <label className={cn('flex cursor-pointer items-start gap-3 pt-5', !readToEnd && 'cursor-default text-muted-foreground')}>
         <Checkbox id={id} checked={accepted} disabled={!readToEnd} onCheckedChange={(v) => onAccept(v === true)} className="mt-0.5" />
-        <label htmlFor={id} className={cn(!readToEnd && 'text-muted-foreground')}>
+        <span>
           {t.licence_accept}
           {!readToEnd && <span className="block text-muted-foreground">{t.licence_scroll}</span>}
-        </label>
-      </div>
+        </span>
+      </label>
     </div>
   )
 }
@@ -108,7 +114,6 @@ export function WhereStep({
   const country = COUNTRIES.find((c) => c.code === jurisdiction)
   const areas = [
     { id: 'east_africa' as const, label: t.area_east_africa },
-    { id: 'europe' as const, label: t.area_europe },
   ]
   const local = country?.languages ?? []
   const other = LOCALES.filter((l) => !local.includes(l))
@@ -122,12 +127,18 @@ export function WhereStep({
               <h2 className="text-muted-foreground">{area.label}</h2>
               <div role="radiogroup" aria-label={area.label} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {COUNTRIES.filter((c) => c.area === area.id).map((c) => (
-                  <ChoiceCard key={c.code} selected={c.code === jurisdiction} onSelect={() => onCountry(c.code)} title={c.name[locale]} badge={statusChip(t, countryReadiness(c))} />
+                  <ChoiceCard key={c.code} selected={c.code === jurisdiction} onSelect={() => onCountry(c.code)} title={c.name[locale]} />
                 ))}
               </div>
             </section>
           ))}
-          {country && <p className="text-muted-foreground">{statusHint(t, countryReadiness(country))}</p>}
+          {/* The countries are listed plainly; how ready the chosen one is is said once, here. */}
+          {country && (
+            <p className="flex flex-wrap items-center gap-2 text-muted-foreground">
+              {statusChip(t, countryReadiness(country))}
+              {statusHint(t, countryReadiness(country))}
+            </p>
+          )}
         </div>
       </div>
 
@@ -571,13 +582,13 @@ export function PeopleStep({
           <TextField label={t.rank} value={a.rank} onChange={(e) => setAdmin({ rank: e.target.value })} list={rankList} />
         </div>
         {personFlag && (
-          <div className="flex items-start gap-3">
+          <label className="flex cursor-pointer items-start gap-3">
             <Checkbox id={flagId} checked={a.flag} onCheckedChange={(v) => setAdmin({ flag: v === true })} className="mt-0.5" />
-            <label htmlFor={flagId}>
+            <span>
               {personFlag.label(findCountry(state.jurisdiction))}
               {personFlag.hint && <span className="block text-muted-foreground">{personFlag.hint(findCountry(state.jurisdiction))}</span>}
-            </label>
-          </div>
+            </span>
+          </label>
         )}
         {state.protection !== 'none' && (
           <SecretFields
