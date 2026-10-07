@@ -81,10 +81,9 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
 }
 
 /** Settings as a left list of sections and one pane, the section in the URL
- * so it can be a tab and a real link, not a scroll position. The pane is the
- * one column everything in a section sits in: `w-full` up to `md:max-w-md`,
- * and nothing inside it sets a width of its own, so forms, lists and cards
- * always line up. */
+ * so it can be a tab and a real link, not a scroll position. The list is drawn
+ * like a Mac's System Settings; the pane fills the rest of the page's one
+ * width, and nothing inside it sets a width of its own. */
 export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
   const current = sections.find((section) => section.id === sectionId) ?? sections[0]
 

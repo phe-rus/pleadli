@@ -145,7 +145,7 @@ function RouteComponent() {
         </div>
       </header>
 
-      <section aria-labelledby="bill-basis" className="page-section md:max-w-3xl">
+      <section aria-labelledby="bill-basis" className="page-section">
         <h2 id="bill-basis">{m["bill.instructions"]()}</h2>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
@@ -261,7 +261,7 @@ function RouteComponent() {
         {scale && <p className="text-muted-foreground">{m["bill.floors"]({ list: scale.floors.map((f) => `${f.item} ${ugx(f.atLeast)}`).join(' · ') })}</p>}
       </section>
 
-      <section aria-labelledby="bill-taxation" className="page-section md:max-w-3xl">
+      <section aria-labelledby="bill-taxation" className="page-section">
         <h2 id="bill-taxation">{m["bill.taxation"]()}</h2>
         <p className="text-muted-foreground">{m["bill.reg_13a"]()}</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

@@ -138,7 +138,7 @@ function RouteComponent() {
         />
       )}
 
-      <section aria-labelledby="lines" className="page-section md:max-w-2xl">
+      <section aria-labelledby="lines" className="page-section">
         <h2 id="lines">{m["money.lines"]()}</h2>
         <table className="w-full">
           <tbody>

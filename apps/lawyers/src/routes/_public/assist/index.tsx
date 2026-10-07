@@ -38,7 +38,7 @@ function RouteComponent() {
       {isError ? (
         <p className="text-muted-foreground">{m["assist_page.not_for_role"]()}</p>
       ) : settings && !settings.ready ? (
-        <div className="max-w-2xl">
+        <div>
           <SettingsCard
             title={m["assist_page.off_title"]()}
             description={m["assist_page.off_description"]()}
@@ -53,7 +53,7 @@ function RouteComponent() {
           />
         </div>
       ) : settings ? (
-        <div className="flex max-w-3xl flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="assist-matter">{m["assist_page.which_matter"]()}</label>
             <Select items={items} value={matter ?? ''} onValueChange={(v) => void navigate({ search: v ? { matter: v } : {} })}>

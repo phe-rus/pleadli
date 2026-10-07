@@ -32,7 +32,9 @@
    Use `page page-narrow` for reading-width pages (procedures, forms). */
 @utility page {
   width: 100%;
-  max-width: var(--page-max, 90rem);
+  /* One width for every page, as a Mac app keeps one: the content never jumps
+     as you move between places. Wide enough for a paper list beside an A4 sheet. */
+  max-width: 72rem;
   margin-inline: auto;
   padding-inline: 1rem;
   padding-block: 1.25rem 4rem;
@@ -88,7 +90,8 @@
 }
 
 @utility page-narrow {
-  --page-max: 52rem;
+  /* Kept so older markup still compiles: every page now has the same width. */
+  max-width: 72rem;
 }
 
 @utility page-header {
