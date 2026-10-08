@@ -13,6 +13,7 @@ Written 2026-10-08 from the user's brief that day. Audit first, then the recomme
 - **Registration is a request**: Pleadli staff check an institution or practice is genuine before its Orchestra address and certificate are issued.
 - **Addresses** read `country.institution.place` and never change: `ug.police.albertine` (HQ), `ug.police.albertine.kagadi` (its station), `ug.dpp.hoima`, `ug.court.kagadi-cm`, `ug.prisons.hoima`, `ug.advocate.okello-chambers`.
 - **Managers**: whoever registers is the owner and invites a few administrators by email; ordinary officers never need a pleadli.com account.
+- **Apps, Police first** (2026-10-08): backups run once a day on their own (when the app is open and online and the last good backup is 24 hours old) plus a Back up now button; every officer sees the trial or licence bar, only administrators enter the key, back up, restore or see storage; papers that leave the office (Police: charge sheets, police bonds, letters) are sent to /verify automatically once licensed; restore is from a chosen backup file and the recovery phrase, staged and applied at the next start with the old data kept aside. Shared code: `packages/node-core` `orchestra.rs` and `snapshot.rs` (feature `orchestra`).
 - **Way of working**: ask before going ahead on anything load-bearing; remember Pleadli is justice infrastructure, a family of purpose-built apps, not another SaaS.
 
 ## 1. Audit: what exists today

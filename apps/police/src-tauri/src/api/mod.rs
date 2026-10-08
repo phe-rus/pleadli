@@ -6,6 +6,7 @@
 //! because they need the operating system (a file dialog, a path, an event).
 
 pub mod hq;
+pub mod orchestra;
 pub mod session;
 
 use axum::{
@@ -1513,9 +1514,13 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
 
 /// The whole API, nested under `/api`, with the guard in front of every
 /// route: no valid session, no answer.
-pub fn router(pool: SqlitePool, vault_root: PathBuf) -> Router {
+pub fn router(pool: SqlitePool, vault_root: PathBuf, orchestra: Option<std::sync::Arc<pleadli_node_core::orchestra::Orchestra>>) -> Router {
     let state = AppState { pool: pool.clone(), vault_root: vault_root.clone() };
-    routes(pool, vault_root).layer(axum::middleware::from_fn_with_state(state, session::guard))
+    let mut all = routes(pool, vault_root);
+    if let Some(o) = orchestra {
+        all = all.nest("/api/orchestra", orchestra::routes(o));
+    }
+    all.layer(axum::middleware::from_fn_with_state(state, session::guard))
 }
 
 /// Serves the router on 127.0.0.1 for the browser dev server. Debug builds
@@ -1717,7 +1722,7 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
         let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
-        (router(db.pool.clone(), vault_root), db, dir)
+        (router(db.pool.clone(), vault_root, None), db, dir)
     }
 
     /// A station: nothing answers before setup or without a session, setup signs

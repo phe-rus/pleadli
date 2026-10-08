@@ -16,6 +16,12 @@ lan = ["dep:reqwest", "dep:base64", "dep:rustls", "dep:rcgen"]
 # Orchestra backups (docs/platform/ORCHESTRA-BACKUP.md): the recovery phrase,
 # seals that agree with www/src/lib/seal.ts, and the encrypted backup file.
 backup = ["dep:x25519-dalek", "dep:hkdf", "dep:aes-gcm", "dep:base64", "dep:serde_json"]
+# Where backups go: a folder or drive, S3-compatible storage (SigV4), or an
+# SFTP server whose host key is pinned. Brings an HTTP and an SSH client.
+storage = ["backup", "dep:reqwest", "reqwest/stream", "dep:tokio", "tokio/fs", "tokio/io-util", "dep:hmac", "dep:russh", "dep:russh-sftp"]
+# Pleadli Orchestra for the apps (docs/platform/ORCHESTRA-API.md): the trial,
+# the signed licence, the heartbeat, papers sent to /verify, daily backups.
+orchestra = ["storage", "dep:ed25519-dalek", "dep:machine-uid", "tokio/sync"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -42,6 +48,11 @@ rcgen = { version = "0.13", optional = true }
 x25519-dalek = { version = "2", features = ["static_secrets"], optional = true }
 hkdf = { version = "0.12", optional = true }
 aes-gcm = { version = "0.10", optional = true }
+hmac = { version = "0.12", optional = true }
+ed25519-dalek = { version = "2", optional = true }
+machine-uid = { version = "0.5", optional = true }
+russh = { version = "0.64", default-features = false, features = ["ring", "rsa"], optional = true }
+russh-sftp = { version = "3", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

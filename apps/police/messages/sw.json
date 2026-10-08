@@ -1907,7 +1907,8 @@
     "ready": "Toleo {version} liko tayari. Anzisha upya kukamilisha.",
     "restart": "Anzisha upya",
     "title": "Sasisho la programu",
-    "version": "Toleo"
+    "version": "Toleo",
+    "no_build": "Bado hakuna sasisho lililochapishwa kwa aina hii ya kompyuta."
   },
   "roster_page": {
     "detail_title": "Zamu ya kazi",
@@ -1954,5 +1955,158 @@
     "book_search": "Tafuta kwenye kitabu",
     "span": "{from} hadi {to}",
     "empty": "Bado hakuna aliye kwenye ratiba. Weka afisa zamuni ili kuianza."
+  },
+  "orchestra": {
+    "settings": {
+      "group": "Pleadli",
+      "licence": "Leseni",
+      "licence_about": "Majaribio au leseni ya kompyuta hii, na nyaraka ambazo pleadli.com/verify inaweza kuthibitisha.",
+      "backups": "Nakala za kumbukumbu",
+      "backups_about": "Nakala iliyofungwa ya kumbukumbu zote, hutumwa mara moja kila siku kwenye hifadhi ya taasisi yenu."
+    },
+    "state": {
+      "licensed": "Leseni ya {institution}",
+      "trial": "Majaribio · siku {days} zimebaki",
+      "trial_ended": "Majaribio yamekwisha",
+      "licence_ended": "Leseni imekwisha"
+    },
+    "licence": {
+      "this_computer": "Kompyuta hii",
+      "trial_about": "Kila kitu kinafanya kazi katika siku 30 za majaribio. Yanaisha tarehe {date}.",
+      "trial_ended_about": "Majaribio ya siku 30 yamekwisha. Leseni kutoka kwa taasisi yenu inarudisha nakala za kumbukumbu na nyaraka zinazoweza kuthibitishwa kwenye pleadli.com.",
+      "never_locked": "Kumbukumbu hazifungwi kamwe. Kila daftari, jalada na kumbukumbu ya mahabusu hubaki wazi na kuendelea kufanya kazi.",
+      "check_now": "Kagua sasa",
+      "checking": "Inakagua…",
+      "checked": "pleadli.com imejibu",
+      "institution": "Taasisi",
+      "address": "Anwani ya Orchestra",
+      "seats": "Kompyuta kwenye leseni hii",
+      "expires": "Leseni inaisha",
+      "valid_until": "Inafanya kazi bila mtandao hadi {date}",
+      "last_contact": "Mara ya mwisho kuwasiliana na pleadli.com",
+      "never": "Bado",
+      "device": "Namba ya kompyuta",
+      "device_hint": "Isome ikiwa msaada wa Pleadli utauliza ni kompyuta gani.",
+      "cannot_verify": "Nakala hii ya Pleadli Police bado haiwezi kukagua leseni. Sakinisha toleo rasmi."
+    },
+    "activate": {
+      "title": "Ufunguo wa leseni",
+      "about": "Andika ufunguo uliopewa na msimamizi wa taasisi yenu. Unatumika mara moja, kwenye kompyuta hii.",
+      "hint": "Msimamizi hupata ufunguo kwenye pleadli.com/orchestra, chini ya Leseni.",
+      "ask_admin": "Msimamizi wa kituo hiki ndiye huingiza ufunguo wa leseni.",
+      "key": "Ufunguo",
+      "activate": "Washa",
+      "activating": "Inawasha…",
+      "done": "Kompyuta hii ina leseni"
+    },
+    "papers": {
+      "title": "Nyaraka zinazoweza kuthibitishwa",
+      "about": "Hati za mashtaka, dhamana za polisi na barua zinazotoka kituoni hujulikana na pleadli.com/verify kwa namba na alama yake. Maneno yake hayatoki kwenye kompyuta hii.",
+      "office": "Imetolewa na",
+      "office_hint": "Ofisi inayotajwa mtu anapothibitisha hati.",
+      "sent": "Zinajulikana na pleadli.com",
+      "waiting": "Zinasubiri mtandao",
+      "failed": "Hati {count} zimekataliwa na pleadli.com. Kagua ofisi inayozitoa.",
+      "send_now": "Tuma sasa",
+      "sent_now": "Hati {count} zimetumwa"
+    },
+    "backups": {
+      "title": "Nakala ya kila siku",
+      "about": "Kumbukumbu zote na kila hati, zimefungwa kwenye kompyuta hii kwa ufunguo wa urejeshaji wa taasisi yenu. Ni maneno ya urejeshaji pekee yanayozifungua, na Pleadli haishiki nakala yoyote.",
+      "daily": "Nakala hufanyika yenyewe mara moja kila siku Pleadli Police ikiwa wazi na kwenye mtandao.",
+      "none_approved": "Bado hakuna hifadhi iliyoidhinishwa kwa kompyuta hii. Msimamizi wenu hufanya hivyo kwenye pleadli.com/orchestra, chini ya Nakala.",
+      "now": "Hifadhi nakala sasa",
+      "running": "Inahifadhi nakala…",
+      "done": "Nakala imekamilika",
+      "partly": "Nakala imehifadhiwa kwenye hifadhi {ok} kati ya {total}",
+      "last": "Nakala ya mwisho",
+      "never": "Bado hakuna",
+      "key": "Ufunguo wa urejeshaji",
+      "key_hint": "Inalingana na alama iliyochapishwa kwenye karatasi ya maneno ya urejeshaji.",
+      "admin_only": "Msimamizi wa kituo hiki ndiye husimamia nakala za kumbukumbu.",
+      "needs_licence_title": "Nakala zinahitaji leseni",
+      "needs_licence": "Kompyuta hii ikipata leseni, itahifadhi nakala kwenye hifadhi ambayo taasisi yenu imechagua. Bado unaweza kurejesha nakala hapa chini."
+    },
+    "storage": {
+      "title": "Nakala zinapokwenda",
+      "about": "Imechaguliwa na taasisi yenu kwenye pleadli.com/orchestra.",
+      "approved": "Imeidhinishwa",
+      "waiting": "Bado haijaidhinishwa",
+      "test": "Jaribu",
+      "testing": "Inajaribu…",
+      "works": "{label} inafanya kazi"
+    },
+    "history": {
+      "title": "Nakala za karibuni",
+      "ok": "Imekamilika",
+      "failed": "Imeshindwa"
+    },
+    "kind": {
+      "s3": "Hifadhi ya S3",
+      "folder": "Folda au diski",
+      "sftp": "Seva ya SFTP"
+    },
+    "restore": {
+      "title": "Rejesha nakala",
+      "about": "Chagua faili la nakala na uandike maneno ya urejeshaji. Nakala hukaguliwa yote, kisha huwekwa mahali pake Pleadli Police ikianza upya.",
+      "kept_aside": "Kilichopo kwenye kompyuta hii sasa kinawekwa pembeni, hakifutwi.",
+      "file": "Faili la nakala",
+      "file_type": "Nakala ya Pleadli",
+      "choose": "Chagua…",
+      "change": "Badilisha…",
+      "phrase": "Maneno ya urejeshaji",
+      "phrase_hint": "Makundi 8 ya herufi 4, kutoka karatasi ambayo taasisi yenu ilichapisha.",
+      "restore": "Kagua na urejeshe",
+      "checking": "Inakagua nakala…",
+      "ready_title": "Tayari kurejesha",
+      "ready": "Nakala ya {date}, yenye hati {documents}, imekaguliwa na iko tayari. Anza upya Pleadli Police ili kuiweka mahali pake.",
+      "missing": "Hati {count} hazikuweza kusomwa nakala hii ilipotengenezwa na hazimo ndani yake.",
+      "restart": "Anza upya sasa",
+      "restart_browser": "Anza upya programu kutoka kwenye terminal ili kumaliza",
+      "pending_title": "Urejeshaji unasubiri",
+      "pending_badge": "Wakati wa kuanza tena",
+      "pending": "Nakala iliyokaguliwa itawekwa mahali pake wakati ujao Pleadli Police ikianza.",
+      "cancel": "Ghairi urejeshaji"
+    },
+    "bar": {
+      "trial": "Majaribio ya Pleadli Police: siku {days} zimebaki.",
+      "trial_ended": "Majaribio yamekwisha. Kila kumbukumbu inabaki wazi.",
+      "licence_ended": "Leseni imekwisha. Kila kumbukumbu inabaki wazi.",
+      "go_online": "Unganisha kompyuta hii na mtandao hivi karibuni ili leseni yake iendelee kuwa hai.",
+      "get_licence": "Leseni",
+      "open": "Fungua",
+      "ask_admin": "Msimamizi wenu anaweza kuweka leseni."
+    },
+    "reason": {
+      "revoked": "Leseni ya taasisi yenu imefutwa kwenye pleadli.com.",
+      "suspended": "Taasisi yenu imesimamishwa kwenye Pleadli Orchestra.",
+      "expired": "Leseni imefikia tarehe yake ya mwisho.",
+      "removed": "Leseni imeondolewa kwenye pleadli.com.",
+      "unknown": "Leseni si halali tena, au kompyuta hii imekaa bila mtandao muda mrefu mno."
+    },
+    "error": {
+      "offline": "pleadli.com haikupatikana. Kagua mtandao na ujaribu tena.",
+      "unknown_key": "Hakuna leseni yenye ufunguo huu. Hakiki na msimamizi wenu.",
+      "seats_full": "Kompyuta zote kwenye leseni hii zinatumika. Msimamizi wenu anaweza kuachia moja kwenye pleadli.com/orchestra.",
+      "revoked": "Leseni hii imefutwa.",
+      "suspended": "Taasisi yenu haiko hai kwenye Pleadli Orchestra.",
+      "expired": "Leseni hii imekwisha.",
+      "wrong_application": "Ufunguo huu ni wa programu nyingine ya Pleadli.",
+      "invalid": "pleadli.com haikukubali ombi. Kagua ufunguo.",
+      "licence_needed": "Hili linahitaji leseni kwenye kompyuta hii.",
+      "no_recovery_phrase": "Taasisi yenu bado haijaweka maneno ya urejeshaji. Msimamizi hufanya hivyo kwanza, kwenye pleadli.com/orchestra chini ya Nakala.",
+      "no_storage": "Bado hakuna hifadhi iliyowekwa kwa ajili ya nakala.",
+      "storage_not_approved": "Kompyuta hii bado haijaidhinishwa kwa hifadhi hiyo.",
+      "storage_host_key": "Ufunguo wa seva si ule ambao taasisi yenu iliweka. Hakuna kilichotumwa. Mjulishe msimamizi wenu.",
+      "storage_denied": "Hifadhi imekataa jina la mtumiaji, nenosiri au ufunguo wa kufikia.",
+      "storage_unreachable": "Hifadhi haikupatikana. Kagua diski, mtandao wa ndani au intaneti.",
+      "backup_running": "Nakala tayari inaendelea.",
+      "unknown_office": "Ofisi hiyo haiko kwenye leseni hii.",
+      "restore_phrase": "Maneno ya urejeshaji hayafungui nakala hii. Kagua kila kundi la herufi nne.",
+      "restore_unreadable": "Faili hili si nakala kamili ya Pleadli.",
+      "restore_wrong_app": "Hii ni nakala ya programu nyingine ya Pleadli.",
+      "restore_newer": "Nakala hii ilitengenezwa na Pleadli Police mpya zaidi. Sasisha kwanza, kisha urejeshe.",
+      "general": "Hilo halikufanikiwa. Jaribu tena."
+    }
   }
 }

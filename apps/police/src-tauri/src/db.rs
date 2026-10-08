@@ -55,9 +55,22 @@ pub struct Db {
 
 const DB_FILE: &str = "police.db";
 
+/// The newest migration this build has: a backup from a newer build is refused.
+pub fn latest_migration() -> i64 {
+    sqlx::migrate!("./migrations").iter().map(|m| m.version).max().unwrap_or(0)
+}
+
 pub async fn startup(data_dir: &Path, vault_root: PathBuf) -> Result<Db, StartupError> {
     let db_path = data_dir.join(DB_FILE);
     std::fs::create_dir_all(data_dir).map_err(|e| StartupError::Fatal(format!("could not create the data folder: {e}")))?;
+
+    // A backup staged for restore (Settings, Backups) goes in place first,
+    // before anything opens the database; the current data is kept aside.
+    match pleadli_node_core::snapshot::apply_pending(data_dir, &db_path, &vault_root) {
+        Ok(Some(applied)) => log::info!("backup restored: {} documents", applied.documents),
+        Ok(None) => {}
+        Err(e) => return Err(StartupError::Fatal(format!("could not put the restored backup in place: {e}"))),
+    }
 
     core::finish_interrupted_encryption(&db_path);
     let (db_keys, state) = core::open_keys(keys::SERVICE, data_dir, &db_path)?;

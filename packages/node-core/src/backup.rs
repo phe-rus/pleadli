@@ -36,6 +36,8 @@ pub enum BackupError {
     Phrase,
     /// Wrong key, wrong context, or damaged: these are not told apart.
     Unreadable,
+    /// The file is a backup, but this key does not open it.
+    WrongKey,
 }
 
 impl From<io::Error> for BackupError {
@@ -50,6 +52,7 @@ impl std::fmt::Display for BackupError {
             BackupError::Io(e) => write!(f, "{e}"),
             BackupError::Phrase => write!(f, "the recovery phrase is not right; check each group"),
             BackupError::Unreadable => write!(f, "the backup could not be opened with this key"),
+            BackupError::WrongKey => write!(f, "this backup was locked with another recovery phrase"),
         }
     }
 }
@@ -196,52 +199,80 @@ fn read_full(reader: &mut impl Read, buf: &mut [u8]) -> io::Result<usize> {
     Ok(filled)
 }
 
+/// Writes a backup file as its contents arrive, locked to the institution key.
+/// Each 64 KiB is sealed once more has arrived, so the last chunk is known;
+/// `finish` seals the last one. Dropped without `finish`, the file is
+/// incomplete and refused when read.
+pub struct BackupWriter<W: Write> {
+    out: W,
+    enc: Option<EncryptorBE32<ChaCha20Poly1305>>,
+    aad: Vec<u8>,
+    pending: Vec<u8>,
+    written: u64,
+}
+
+impl<W: Write> BackupWriter<W> {
+    pub fn new(institution: &PublicKey, application: &str, computer: &str, mut out: W) -> Result<Self, BackupError> {
+        let mut data_key = [0u8; 32];
+        OsRng.fill_bytes(&mut data_key);
+        let header = Header {
+            v: 1,
+            application: application.to_string(),
+            computer: computer.to_string(),
+            created_at: chrono::Utc::now().timestamp_millis(),
+            key_fingerprint: fingerprint(institution.as_bytes()),
+            key: seal(institution, &data_key, BACKUP_CONTEXT),
+        };
+        let json = serde_json::to_vec(&header).map_err(|e| BackupError::Io(io::Error::other(e)))?;
+        let mut nonce = [0u8; NONCE_LEN];
+        OsRng.fill_bytes(&mut nonce);
+        out.write_all(MAGIC)?;
+        out.write_all(&(json.len() as u32).to_be_bytes())?;
+        out.write_all(&json)?;
+        out.write_all(&nonce)?;
+        let written = (MAGIC.len() + 4 + json.len() + NONCE_LEN) as u64;
+        // The header is bound into every chunk, so it cannot be swapped.
+        Ok(BackupWriter { out, enc: Some(EncryptorBE32::from_aead(ChaCha20Poly1305::new(&data_key.into()), &nonce.into())), aad: json, pending: Vec::with_capacity(CHUNK * 2), written })
+    }
+
+    fn seal_full(&mut self) -> io::Result<()> {
+        while self.pending.len() > CHUNK {
+            let chunk: Vec<u8> = self.pending.drain(..CHUNK).collect();
+            let enc = self.enc.as_mut().ok_or_else(|| io::Error::other("backup already finished"))?;
+            let sealed = enc.encrypt_next(chacha20poly1305::aead::Payload { msg: &chunk, aad: &self.aad }).map_err(|_| io::Error::other("sealing failed"))?;
+            self.out.write_all(&sealed)?;
+            self.written += sealed.len() as u64;
+        }
+        Ok(())
+    }
+
+    /// Seals the last chunk. Returns the output and the bytes written in all.
+    pub fn finish(mut self) -> Result<(W, u64), BackupError> {
+        let enc = self.enc.take().ok_or(BackupError::Unreadable)?;
+        let sealed = enc.encrypt_last(chacha20poly1305::aead::Payload { msg: &self.pending, aad: &self.aad }).map_err(|_| BackupError::Unreadable)?;
+        self.out.write_all(&sealed)?;
+        self.out.flush()?;
+        Ok((self.out, self.written + sealed.len() as u64))
+    }
+}
+
+impl<W: Write> Write for BackupWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.pending.extend_from_slice(buf);
+        self.seal_full()?;
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 /// Encrypts everything `plain` yields into a backup file on `out`, locked to
 /// the institution key. Returns the number of bytes written.
 pub fn write_backup(institution: &PublicKey, application: &str, computer: &str, plain: &mut impl Read, out: &mut impl Write) -> Result<u64, BackupError> {
-    let mut data_key = [0u8; 32];
-    OsRng.fill_bytes(&mut data_key);
-    let header = Header {
-        v: 1,
-        application: application.to_string(),
-        computer: computer.to_string(),
-        created_at: chrono::Utc::now().timestamp_millis(),
-        key_fingerprint: fingerprint(institution.as_bytes()),
-        key: seal(institution, &data_key, BACKUP_CONTEXT),
-    };
-    let json = serde_json::to_vec(&header).map_err(|e| BackupError::Io(io::Error::other(e)))?;
-    let mut nonce = [0u8; NONCE_LEN];
-    OsRng.fill_bytes(&mut nonce);
-    out.write_all(MAGIC)?;
-    out.write_all(&(json.len() as u32).to_be_bytes())?;
-    out.write_all(&json)?;
-    out.write_all(&nonce)?;
-    let mut written = (MAGIC.len() + 4 + json.len() + NONCE_LEN) as u64;
-
-    // The header is bound into every chunk, so it cannot be swapped.
-    let mut enc = Some(EncryptorBE32::from_aead(ChaCha20Poly1305::new(&data_key.into()), &nonce.into()));
-    let mut chunk = vec![0u8; CHUNK];
-    let mut n = read_full(plain, &mut chunk)?;
-    loop {
-        let mut next = vec![0u8; CHUNK];
-        let m = if n == CHUNK { read_full(plain, &mut next)? } else { 0 };
-        let payload = chacha20poly1305::aead::Payload { msg: &chunk[..n], aad: &json };
-        let sealed = if m == 0 {
-            enc.take().ok_or(BackupError::Unreadable)?.encrypt_last(payload)
-        } else {
-            enc.as_mut().ok_or(BackupError::Unreadable)?.encrypt_next(payload)
-        }
-        .map_err(|_| BackupError::Unreadable)?;
-        out.write_all(&sealed)?;
-        written += sealed.len() as u64;
-        if m == 0 {
-            break;
-        }
-        chunk = next;
-        n = m;
-    }
-    out.flush()?;
-    Ok(written)
+    let mut writer = BackupWriter::new(institution, application, computer, out)?;
+    io::copy(plain, &mut writer)?;
+    Ok(writer.finish()?.1)
 }
 
 /// Reads only the header of a backup file.
@@ -263,34 +294,83 @@ pub fn read_header(file: &mut impl Read) -> Result<(Header, Vec<u8>), BackupErro
     Ok((header, json))
 }
 
+/// Reads a backup file's contents with the institution key from the recovery
+/// phrase. Every chunk is checked before any of it is given out, and a file
+/// cut short fails at the end instead of looking complete: a reader must read
+/// to the end (`Read` returns 0) before trusting what it has.
+pub struct BackupReader<R: Read> {
+    input: R,
+    header: Header,
+    aad: Vec<u8>,
+    dec: Option<DecryptorBE32<ChaCha20Poly1305>>,
+    ahead: Vec<u8>,
+    plain: Vec<u8>,
+    at: usize,
+}
+
+impl<R: Read> BackupReader<R> {
+    pub fn open(institution: &StaticSecret, mut input: R) -> Result<Self, BackupError> {
+        let (header, aad) = read_header(&mut input)?;
+        let data_key: [u8; 32] = open_seal(institution, &header.key, BACKUP_CONTEXT).map_err(|_| BackupError::WrongKey)?.try_into().map_err(|_| BackupError::Unreadable)?;
+        let mut nonce = [0u8; NONCE_LEN];
+        input.read_exact(&mut nonce)?;
+        let mut ahead = vec![0u8; CHUNK + TAG];
+        let n = read_full(&mut input, &mut ahead)?;
+        ahead.truncate(n);
+        Ok(BackupReader { input, header, aad, dec: Some(DecryptorBE32::from_aead(ChaCha20Poly1305::new(&data_key.into()), &nonce.into())), ahead, plain: Vec::new(), at: 0 })
+    }
+
+    pub fn header(&self) -> &Header {
+        &self.header
+    }
+
+    /// Opens the next chunk; false once the last one has been opened.
+    fn next_chunk(&mut self) -> Result<bool, BackupError> {
+        let Some(mut dec) = self.dec.take() else { return Ok(false) };
+        if self.ahead.len() < TAG {
+            return Err(BackupError::Unreadable);
+        }
+        let frame = std::mem::take(&mut self.ahead);
+        let mut next = vec![0u8; CHUNK + TAG];
+        let n = read_full(&mut self.input, &mut next)?;
+        next.truncate(n);
+        let payload = chacha20poly1305::aead::Payload { msg: &frame, aad: &self.aad };
+        self.plain = if n == 0 {
+            dec.decrypt_last(payload).map_err(|_| BackupError::Unreadable)?
+        } else {
+            let plain = dec.decrypt_next(payload).map_err(|_| BackupError::Unreadable)?;
+            self.dec = Some(dec);
+            plain
+        };
+        self.ahead = next;
+        self.at = 0;
+        Ok(true)
+    }
+}
+
+impl<R: Read> Read for BackupReader<R> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        while self.at >= self.plain.len() {
+            match self.next_chunk() {
+                Ok(true) => {}
+                Ok(false) => return Ok(0),
+                Err(BackupError::Io(e)) => return Err(e),
+                Err(_) => return Err(io::Error::new(io::ErrorKind::InvalidData, "the backup could not be opened with this key, or is damaged")),
+            }
+        }
+        let n = buf.len().min(self.plain.len() - self.at);
+        buf[..n].copy_from_slice(&self.plain[self.at..self.at + n]);
+        self.at += n;
+        Ok(n)
+    }
+}
+
 /// Decrypts a backup file with the institution key from the recovery phrase.
 pub fn read_backup(institution: &StaticSecret, file: &mut impl Read, out: &mut impl Write) -> Result<Header, BackupError> {
-    let (header, json) = read_header(file)?;
-    let data_key: [u8; 32] = open_seal(institution, &header.key, BACKUP_CONTEXT)?.try_into().map_err(|_| BackupError::Unreadable)?;
-    let mut nonce = [0u8; NONCE_LEN];
-    file.read_exact(&mut nonce)?;
-    let mut dec = Some(DecryptorBE32::from_aead(ChaCha20Poly1305::new(&data_key.into()), &nonce.into()));
-    let mut frame = vec![0u8; CHUNK + TAG];
-    let mut n = read_full(file, &mut frame)?;
-    loop {
-        let mut next = vec![0u8; CHUNK + TAG];
-        let m = if n == CHUNK + TAG { read_full(file, &mut next)? } else { 0 };
-        let payload = chacha20poly1305::aead::Payload { msg: &frame[..n], aad: &json };
-        let plain = if m == 0 {
-            dec.take().ok_or(BackupError::Unreadable)?.decrypt_last(payload)
-        } else {
-            dec.as_mut().ok_or(BackupError::Unreadable)?.decrypt_next(payload)
-        }
-        .map_err(|_| BackupError::Unreadable)?;
-        out.write_all(&plain)?;
-        if m == 0 {
-            break;
-        }
-        frame = next;
-        n = m;
-    }
+    let mut reader = BackupReader::open(institution, file)?;
+    io::copy(&mut reader, out).map_err(|e| if e.kind() == io::ErrorKind::InvalidData { BackupError::Unreadable } else { BackupError::Io(e) })?;
     out.flush()?;
-    Ok(header)
+    Ok(reader.header)
 }
 
 #[cfg(test)]

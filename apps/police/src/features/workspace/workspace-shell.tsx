@@ -1,4 +1,5 @@
 import { CommandMenu } from '@/components/command-menu'
+import { LicenceBar } from '@/features/orchestra'
 import { useInstallation } from '@/features/session'
 import { useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, type FC, type PropsWithChildren } from 'react'
@@ -78,6 +79,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
           <LeftPillar />
           <div className="flex min-w-0 flex-1 flex-col print:block">
             <CenterHeader />
+            <LicenceBar />
             <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background print:block print:overflow-visible">
               <div ref={scroller} className="no-scrollbar min-h-0 flex-1 overflow-y-auto print:overflow-visible">{children}</div>
             </main>

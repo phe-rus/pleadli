@@ -16,5 +16,11 @@ pub mod keys;
 #[cfg(feature = "lan")]
 pub mod lan;
 pub mod office;
+#[cfg(feature = "orchestra")]
+pub mod orchestra;
 pub mod paper;
+#[cfg(feature = "backup")]
+pub mod snapshot;
+#[cfg(feature = "storage")]
+pub mod storage;
 pub mod vault;

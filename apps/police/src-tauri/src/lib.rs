@@ -95,7 +95,10 @@ pub fn run() {
                 Err(db::StartupError::Fatal(reason)) => return Err(reason.into()),
             };
 
-            let router = api::router(db.pool.clone(), db.vault_root.clone());
+            // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
+            let orchestra = domain::orchestra::start(db.pool.clone(), data_dir.clone(), db.vault_root.clone());
+            tauri::async_runtime::spawn(orchestra.clone().run());
+            let router = api::router(db.pool.clone(), db.vault_root.clone(), Some(orchestra));
             #[cfg(debug_assertions)]
             tauri::async_runtime::spawn(api::serve_dev(router.clone()));
             app.manage(commands::api::LocalApi(router));

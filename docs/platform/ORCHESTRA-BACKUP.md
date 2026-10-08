@@ -2,7 +2,7 @@
 
 Decided by the user on 2026-10-08 (ORCHESTRA-PLAN.md sections 0 and 4): a recovery phrase for the institution, storage details sealed in the administrator's browser to each approved computer, and S3-compatible storage, a folder or drive, or an SFTP server. Pleadli stores no backups and holds nothing it can use to read one or to reach the storage.
 
-Code: `www/src/lib/seal.ts` (browser and Worker), `packages/node-core/src/backup.rs` (apps). Both sides are checked against the test vectors in `packages/node-core/tests/seal-vectors.json`.
+Code: `www/src/lib/seal.ts` (browser and Worker), `packages/node-core/src/backup.rs` (apps), and `packages/node-core/src/storage.rs` (feature `storage`: sending the file to the storage). Both sides are checked against the test vectors in `packages/node-core/tests/seal-vectors.json`.
 
 ## Who holds what
 
@@ -47,6 +47,18 @@ Restoring asks for the phrase, opens `key`, decrypts. The apps report each backu
 - `s3`: `{endpoint, region, bucket, prefix}`; secret `{accessKeyId, secretAccessKey}`.
 - `folder`: `{path}` (a network share or drive, as each computer sees it); no secret.
 - `sftp`: `{host, port, username, path, hostKey}` (the server's SHA-256 key fingerprint, checked on connect); secret `{password}` or `{privateKey}`.
+
+## What is inside, and restoring (`snapshot.rs`)
+
+Inside the encrypted file: a description (application, date, document counts, newest migration), the database exported plain (the restoring computer encrypts it under its own key), and each document under its path relative to the application's document folder. Restoring takes the file and the phrase, checks everything (phrase, application, version, every chunk, database integrity, required tables) into a staging folder, and the next start sets the current database and documents aside under `pre-restore` and puts the backup in place. A database restored onto another computer forgets the old computer's Orchestra token, seal key and licence (`orchestra.rs` `adopt_device`), so that computer is activated again as itself.
+
+## Sending the file (`storage.rs`)
+
+`Target::open(entry, sealKey, computerId)` takes one `backup/config` storage entry, refuses it unless `approved`, and opens its secret; `upload(local, object_name(...))` sends the file; `check(application, computer)` writes a small `.pleadli-check` file to prove the settings before the first backup. A file is written as `<name>.partial` and renamed, so a broken-off copy never sits under a backup's name. Errors are an enum (`NotApproved`, `Settings`, `HostKey`, `Denied`, `Network`, `Refused`, `Io`) so each app says them in its own words.
+
+- Folder: the folder must already exist (a drive not plugged in is an error, not a new folder on C:).
+- S3: Signature Version 4, path-style (`<endpoint>/<bucket>/<key>`), one signed PUT, so at most 5 GB per backup. An empty region signs as `us-east-1`, which R2 and MinIO also accept. Checked against AWS's own signer.
+- SFTP: the server's key must match `hostKey` (`SHA256:...` as `ssh-keygen -lf` prints it); a mismatch is `HostKey` with the key the server showed. Password or an unencrypted OpenSSH/PEM private key. Checked against a real OpenSSH server (the ignored test `sftp_to_a_real_server`).
 
 ## API (ORCHESTRA-API.md)
 

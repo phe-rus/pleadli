@@ -3,7 +3,7 @@ import { SettingsCard, SettingsRow } from '@/components/settings-card'
 import { useTheme } from '@/components/theme-provider'
 import { useStationProfile } from '@/features/station-admin'
 import { autoUpdate, checkNow, download as downloadUpdate, restart as restartApp, setAutoUpdate, useUpdateState } from '@/lib/updater'
-import { Building06Icon, Database01Icon, Download04Icon, InformationCircleIcon, Notification03Icon, PaintBoardIcon, Share08Icon, SmartPhone01Icon, SquareLock02Icon, UserIcon } from '@hugeicons/core-free-icons'
+import { Building06Icon, CloudUploadIcon, Database01Icon, LicenseIcon, Download04Icon, InformationCircleIcon, Notification03Icon, PaintBoardIcon, Share08Icon, SmartPhone01Icon, SquareLock02Icon, UserIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Segmented } from '@pleadli/ui/segmented'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -14,6 +14,7 @@ import { LogoCard, type LogoCardLabels } from '@/features/brand'
 import { changeLocale, localeNames, selectableLocales, useLocale } from '@/features/i18n'
 import { isCustodyAlertsEnabled, setCustodyAlertsEnabled } from '@/hooks/use-custody-deadline-alerts'
 import { BulkFileIntake, ExportPanel, ImportWizard } from '@/features/data-io'
+import { BackupsPane, LicencePane } from '@/features/orchestra'
 import { remoteAccessLogOptions, useRemoteAccessLog } from '@/features/officers'
 import {
   cloudflareConfigOptions,
@@ -42,8 +43,8 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from '@/lib/date'
 import { useEffect, useState } from 'react'
 
-type Section = 'station' | 'sign-in' | 'command' | 'remote' | 'records' | 'appearance' | 'notifications' | 'updates' | 'about'
-const SECTIONS: Section[] = ['station', 'sign-in', 'command', 'remote', 'records', 'appearance', 'notifications', 'updates', 'about']
+type Section = 'station' | 'sign-in' | 'command' | 'remote' | 'records' | 'licence' | 'backups' | 'appearance' | 'notifications' | 'updates' | 'about'
+const SECTIONS: Section[] = ['station', 'sign-in', 'command', 'remote', 'records', 'licence', 'backups', 'appearance', 'notifications', 'updates', 'about']
 
 export const Route = createFileRoute('/_public/settings/')({
   validateSearch: (search: Record<string, unknown>): { section?: Section } => (SECTIONS.includes(search.section as Section) ? { section: search.section as Section } : {}),
@@ -333,6 +334,8 @@ function UpdatesPane() {
             ? m["update.downloading"]({ percent: String(Math.round(u.progress * 100)) })
             : u.phase === 'ready'
               ? m["update.ready"]({ version: u.version ?? '' })
+              : u.phase === 'no_build'
+                ? m["update.no_build"]()
               : u.phase === 'failed'
                 ? m["update.failed"]()
                 : m["update.not_checked"]()
@@ -390,6 +393,7 @@ function RouteComponent() {
 
   const groups: { id: string; label: string; sections: Section[] }[] = [
     { id: 'station', label: command ? m["settings.group.command"]() : m["settings.group.station"](), sections: command ? ['station', 'sign-in', 'command'] : ['station', 'sign-in', 'command', 'remote', 'records'] },
+    { id: 'pleadli', label: m["orchestra.settings.group"](), sections: ['licence', 'backups'] },
     { id: 'computer', label: m["settings.group.computer"](), sections: ['appearance', 'notifications', 'updates'] },
     { id: 'about', label: m["settings.group.about"](), sections: ['about'] },
   ]
@@ -402,6 +406,8 @@ function RouteComponent() {
     command: { label: command ? m["settings.tab_stations"]() : m["settings.tab_command"](), about: command ? m["settings.about.stations"]() : m["settings.about.command"](), icon: Share08Icon },
     remote: { label: m["settings.nav.remote"](), about: m["settings.about.remote"](), icon: SmartPhone01Icon },
     records: { label: m["settings.nav.records"](), about: m["settings.about.records"](), icon: Database01Icon },
+    licence: { label: m["orchestra.settings.licence"](), about: m["orchestra.settings.licence_about"](), icon: LicenseIcon },
+    backups: { label: m["orchestra.settings.backups"](), about: m["orchestra.settings.backups_about"](), icon: CloudUploadIcon },
     appearance: { label: m["settings.appearance"](), about: m["settings.about.appearance"](), icon: PaintBoardIcon },
     notifications: { label: m["settings.nav.notifications"](), about: m["settings.about.notifications"](), icon: Notification03Icon },
     updates: { label: m["update.title"](), about: m["update.about"](), icon: Download04Icon },
@@ -414,6 +420,8 @@ function RouteComponent() {
     command: () => (command ? <ListenerCard /> : <ConnectionSettings />),
     remote: () => <NetworkTab />,
     records: () => <RecordsPane />,
+    licence: () => <LicencePane />,
+    backups: () => <BackupsPane />,
     appearance: () => <AppearancePane />,
     notifications: () => <NotificationsPane />,
     updates: () => <UpdatesPane />,

@@ -18,6 +18,7 @@ pub mod incidents;
 pub mod keys;
 pub mod markdown;
 pub mod officers;
+pub mod orchestra;
 pub mod people;
 pub mod referrals;
 pub mod registers;

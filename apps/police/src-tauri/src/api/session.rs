@@ -60,12 +60,13 @@ fn admin_only(method: &Method, path: &str) -> bool {
         || path.starts_with("/api/hq/") && write
         || path == "/api/command-link" && write
         || path == "/api/system/dev-mode"
+        || path.starts_with("/api/orchestra/")
 }
 
 /// A Command holds no case or person records, so the routes for them are not
 /// there to call.
 fn command_allows(path: &str) -> bool {
-    ["/api/system", "/api/auth", "/api/officers", "/api/station-profile", "/api/units", "/api/hq"]
+    ["/api/system", "/api/auth", "/api/officers", "/api/station-profile", "/api/units", "/api/hq", "/api/orchestra"]
         .iter()
         .any(|prefix| path == *prefix || path.starts_with(&format!("{prefix}/")))
 }
