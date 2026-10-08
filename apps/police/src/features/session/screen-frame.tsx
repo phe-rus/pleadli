@@ -10,7 +10,7 @@ export function ScreenFrame({ mode, title, description, children }: { mode?: Mod
   return (
     <PreAuthLayout mode={mode}>
       <motion.div {...screenTransition} className="flex w-full max-w-sm flex-col gap-6">
-        <ScreenHeader icon={mode === 'command' ? NetworkIcon : PoliceBadgeIcon} title={title} description={description} />
+        <ScreenHeader centered icon={mode === 'command' ? NetworkIcon : PoliceBadgeIcon} title={title} description={description} />
         {children}
       </motion.div>
     </PreAuthLayout>

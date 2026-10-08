@@ -113,16 +113,33 @@ export function PasswordField({ busy, error, className, ...input }: Omit<Compone
   useShake(box, error)
   const empty = !input.value
   return (
-    <div ref={box} className={cn('flex h-10 w-full items-center gap-1 rounded-full bg-card ps-4 pe-1 ring-1 ring-border focus-within:ring-2 focus-within:ring-primary/60', className)}>
-      <input type="password" className="h-full min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground/70" {...input} />
-      <button
-        type="submit"
-        aria-label={typeof input.placeholder === 'string' ? input.placeholder : undefined}
-        disabled={empty || busy || input.disabled}
-        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity disabled:cursor-default disabled:opacity-30"
-      >
-        <HugeiconsIcon icon={ArrowRight02Icon} className="size-4" />
-      </button>
+    <div ref={box} className={cn(signInFieldClass, className)}>
+      <input type="password" className={signInInputClass} {...input} />
+      <SignInArrow hidden={empty} disabled={empty || busy || input.disabled} label={typeof input.placeholder === 'string' ? input.placeholder : undefined} />
     </div>
+  )
+}
+
+/** The look of a sign-in field (badge, user name, password): one calm
+ * rounded box with a hairline, a 1px accent when focused, no glow. */
+export const signInFieldClass =
+  'flex h-11 w-full items-center gap-2 rounded-xl bg-card ps-3.5 pe-1.5 ring-1 ring-border shadow-xs transition-[box-shadow,color] focus-within:ring-primary'
+export const signInInputClass = 'h-full min-w-0 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground'
+
+/** The arrow inside a sign-in field: there once something is typed, as on a Mac. */
+export function SignInArrow({ hidden, disabled, label }: { hidden?: boolean; disabled?: boolean; label?: string }) {
+  return (
+    <button
+      type="submit"
+      aria-label={label}
+      disabled={disabled}
+      tabIndex={hidden ? -1 : undefined}
+      className={cn(
+        'flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity duration-150 disabled:cursor-default',
+        hidden ? 'pointer-events-none opacity-0' : 'disabled:opacity-50',
+      )}
+    >
+      <HugeiconsIcon icon={ArrowRight02Icon} className="size-4" />
+    </button>
   )
 }

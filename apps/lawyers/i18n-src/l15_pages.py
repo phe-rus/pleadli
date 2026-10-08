@@ -160,6 +160,7 @@ S.update({
 "update.ready": ("Version {version} is ready. Restart to finish.", "Toleo {version} liko tayari. Anzisha upya kukamilisha.", "La version {version} est prête. Redémarrez pour terminer."),
 "update.failed": ("The update could not be checked or installed", "Sasisho halikuweza kukaguliwa au kusakinishwa", "La mise à jour n'a pas pu être vérifiée ou installée"),
 "update.not_checked": ("Not checked yet", "Bado halijakaguliwa", "Pas encore vérifié"),
+"update.no_build": ("No update is published for this kind of computer yet.", "Bado hakuna sasisho lililochapishwa kwa aina hii ya kompyuta.", "Aucune mise à jour n'est encore publiée pour ce type d'ordinateur."),
 "update.checked_at": ("Last checked at {time}.", "Ilikaguliwa mara ya mwisho saa {time}.", "Dernière vérification à {time}."),
 "update.get": ("Update now", "Sasisha sasa", "Mettre à jour"),
 "update.restart": ("Restart", "Anzisha upya", "Redémarrer"),

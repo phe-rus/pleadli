@@ -2273,6 +2273,7 @@
     "ready": "Toleo {version} liko tayari. Anzisha upya kukamilisha.",
     "restart": "Anzisha upya",
     "title": "Sasisho la programu",
-    "version": "Toleo"
+    "version": "Toleo",
+    "no_build": "Bado hakuna sasisho lililochapishwa kwa aina hii ya kompyuta."
   }
 }

@@ -2000,6 +2000,7 @@
     "downloading": "Téléchargement de la mise à jour… {percent} %",
     "failed": "La mise à jour n'a pas pu être vérifiée ou installée",
     "get": "Mettre à jour",
+    "no_build": "Aucune mise à jour n'est encore publiée pour ce type d'ordinateur.",
     "not_checked": "Pas encore vérifié",
     "ready": "La version {version} est prête. Redémarrez pour terminer.",
     "restart": "Redémarrer",

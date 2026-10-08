@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react'
 
 /** Where an update stands, read by Settings > Software update. */
 export type UpdateState = {
-  phase: 'unsupported' | 'idle' | 'checking' | 'current' | 'available' | 'downloading' | 'ready' | 'failed'
+  phase: 'unsupported' | 'idle' | 'checking' | 'current' | 'available' | 'downloading' | 'ready' | 'failed' | 'no_build'
   current: string | null
   version: string | null
   /** 0 to 1 while downloading. */
@@ -69,7 +69,11 @@ export async function checkNow(byHand = false) {
     if (autoUpdate()) await download()
     else if (!byHand) t.info(m["update.available"]({ version: update.version }), { action: { label: m["update.get"](), onClick: () => void download() } })
   } catch (error) {
-    set({ phase: byHand ? 'failed' : 'idle', error: error instanceof Error ? error.message : String(error), checkedAt: Date.now() })
+    const message = error instanceof Error ? error.message : String(error)
+    // Releases are built for some systems only (Windows today): a feed with no
+    // build for this one is a fact to state, not a failure to show.
+    if (/platforms/i.test(message)) return set({ phase: 'no_build', error: null, checkedAt: Date.now() })
+    set({ phase: byHand ? 'failed' : 'idle', error: message, checkedAt: Date.now() })
   }
 }
 

@@ -62,9 +62,11 @@ export const screenTransition = {
   transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
 }
 
-export function ScreenHeader({ icon, title, description }: { icon: typeof PoliceBadgeIcon; title: string; description: string }) {
+/** `centered` for a screen whose controls sit on the middle axis (signing in,
+ * waiting), so the heading and the field line up; forms keep it on the left. */
+export function ScreenHeader({ icon, title, description, centered }: { icon: typeof PoliceBadgeIcon; title: string; description: string; centered?: boolean }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.25 }} className="flex flex-col gap-3">
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.25 }} className={cn('flex flex-col gap-3', centered && 'items-center text-center')}>
       <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15">
         <HugeiconsIcon icon={icon} size={20} />
       </div>

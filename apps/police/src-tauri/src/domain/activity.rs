@@ -34,7 +34,7 @@ pub async fn recent(pool: &SqlitePool) -> Result<Vec<ActivityItem>, sqlx::Error>
         .map(|e| ActivityItem {
             id: e.id.clone(),
             entity_type: "station_diary_entry".to_string(),
-            title: format!("SD entry — {}", e.category.replace('_', " ")),
+            title: format!("SD entry: {}", e.category.replace('_', " ")),
             subtitle: String::new(),
             occurred_at: e.created_at,
             route: format!("/sd-log?open={}", e.id),
@@ -66,7 +66,7 @@ pub async fn recent(pool: &SqlitePool) -> Result<Vec<ActivityItem>, sqlx::Error>
             ActivityItem {
                 id: s.id.clone(),
                 entity_type: "statement".to_string(),
-                title: format!("Statement — {name}"),
+                title: format!("Statement: {name}"),
                 subtitle: s.officer_name.clone().unwrap_or_default(),
                 occurred_at: s.created_at,
                 route: format!("/statements?open={}", s.id),
@@ -84,7 +84,7 @@ pub async fn recent(pool: &SqlitePool) -> Result<Vec<ActivityItem>, sqlx::Error>
             ActivityItem {
                 id: r.id.clone(),
                 entity_type: "custody_record".to_string(),
-                title: format!("Custody — {name}"),
+                title: format!("Custody: {name}"),
                 subtitle: r.location.clone().unwrap_or_default(),
                 occurred_at: r.created_at,
                 route: format!("/search/custody?open={}", r.id),
@@ -102,7 +102,7 @@ pub async fn recent(pool: &SqlitePool) -> Result<Vec<ActivityItem>, sqlx::Error>
             ActivityItem {
                 id: b.id.clone(),
                 entity_type: "bond".to_string(),
-                title: format!("Bond — {name}"),
+                title: format!("Bond: {name}"),
                 subtitle: b.surety_name.clone().unwrap_or_default(),
                 occurred_at: b.created_at,
                 route: format!("/search/bonds?open={}", b.id),
@@ -123,7 +123,7 @@ pub async fn recent(pool: &SqlitePool) -> Result<Vec<ActivityItem>, sqlx::Error>
             ActivityItem {
                 id: cs.id.clone(),
                 entity_type: "charge_sheet".to_string(),
-                title: format!("Charge — {}", cs.offence),
+                title: format!("Charge: {}", cs.offence),
                 subtitle: name.unwrap_or(cs.case_reference.clone()),
                 occurred_at: cs.created_at,
                 route: format!("/legal-forms?open={}", cs.id),
@@ -139,7 +139,7 @@ pub async fn recent(pool: &SqlitePool) -> Result<Vec<ActivityItem>, sqlx::Error>
         .map(|r| ActivityItem {
             id: r.id.clone(),
             entity_type: "referral".to_string(),
-            title: format!("Referral — {}", r.destination_name.clone().unwrap_or_else(|| r.destination_type.clone())),
+            title: format!("Referral: {}", r.destination_name.clone().unwrap_or_else(|| r.destination_type.clone())),
             subtitle: r.case_reference.clone(),
             occurred_at: r.created_at,
             route: format!("/referrals?open={}", r.id),

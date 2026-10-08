@@ -760,6 +760,8 @@ export function UpdatesPane() {
             ? m["update.downloading"]({ percent: String(Math.round(u.progress * 100)) })
             : u.phase === 'ready'
               ? m["update.ready"]({ version: u.version ?? '' })
+              : u.phase === 'no_build'
+                ? m["update.no_build"]()
               : u.phase === 'failed'
                 ? m["update.failed"]()
                 : m["update.not_checked"]()

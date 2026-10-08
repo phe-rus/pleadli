@@ -1,7 +1,7 @@
 import * as m from '@/paraglide/messages'
-import { ArrowLeft01Icon, ArrowRight02Icon } from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { PasswordField } from '@pleadli/ui/pin-field'
+import { PasswordField, SignInArrow, signInFieldClass, signInInputClass } from '@pleadli/ui/pin-field'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useState, type FormEvent } from 'react'
 import { ApiError } from '@/lib/api'
@@ -132,7 +132,7 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
   return (
     <ScreenFrame mode={installation.mode ?? undefined} title={command ? m["sign_in.command_title"]() : m["sign_in.title"]()} description={where}>
       {chosen ? (
-        <form onSubmit={submit} className="flex flex-col items-center gap-4">
+        <form onSubmit={submit} className="flex w-full flex-col items-center gap-4">
           <span className="flex size-20 items-center justify-center rounded-full bg-gradient-to-b from-primary/80 to-primary text-2xl font-semibold text-primary-foreground">{initials(chosen)}</span>
           <div className="flex flex-col items-center">
             <strong>{[chosen.rank, chosen.name].filter(Boolean).join(' ') || chosen.badge}</strong>
@@ -141,21 +141,23 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
           {ask === 'choose' ? (
             <>
               <p className="max-w-72 text-center text-[0.8125rem] text-muted-foreground">{m["sign_in.choose_lead"]()}</p>
-              <input
-                autoFocus
-                type="password"
-                autoComplete="new-password"
-                aria-label={m["sign_in.choose_new"]()}
-                placeholder={m["sign_in.choose_new"]()}
-                value={password}
-                disabled={busy}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-10 w-full max-w-64 rounded-full bg-card px-4 ring-1 ring-border outline-none placeholder:text-muted-foreground/70 focus:ring-2 focus:ring-primary/60"
-              />
-              <PasswordField placeholder={m["sign_in.choose_again"]()} aria-label={m["sign_in.choose_again"]()} autoComplete="new-password" value={again} busy={busy || password.length === 0} error={error} onChange={(e) => setAgain(e.target.value)} className="max-w-64" />
+              <div className={cn(signInFieldClass, 'max-w-72 pe-3.5')}>
+                <input
+                  autoFocus
+                  type="password"
+                  autoComplete="new-password"
+                  aria-label={m["sign_in.choose_new"]()}
+                  placeholder={m["sign_in.choose_new"]()}
+                  value={password}
+                  disabled={busy}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={signInInputClass}
+                />
+              </div>
+              <PasswordField placeholder={m["sign_in.choose_again"]()} aria-label={m["sign_in.choose_again"]()} autoComplete="new-password" value={again} busy={busy || password.length === 0} error={error} onChange={(e) => setAgain(e.target.value)} className="max-w-72" />
             </>
           ) : ask === 'password' ? (
-            <PasswordField autoFocus placeholder={m["common.password"]()} aria-label={m["common.password"]()} autoComplete="current-password" value={password} busy={busy} error={error} onChange={(e) => setPassword(e.target.value)} className="max-w-64" />
+            <PasswordField autoFocus placeholder={m["common.password"]()} aria-label={m["common.password"]()} autoComplete="current-password" value={password} busy={busy} error={error} onChange={(e) => setPassword(e.target.value)} className="max-w-72" />
           ) : (
             busy && <p className="text-muted-foreground">{m["sign_in.signing_in"]()}</p>
           )}
@@ -170,27 +172,24 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
           </button>
         </form>
       ) : typing ? (
-        <form onSubmit={submit} className="flex flex-col items-center gap-3">
-          <div className="flex h-10 w-full max-w-64 items-center gap-1 rounded-full bg-card ps-4 pe-1 ring-1 ring-border focus-within:ring-2 focus-within:ring-primary/60">
+        <form onSubmit={submit} className="flex w-full flex-col items-center gap-2.5">
+          <div className={cn(signInFieldClass, 'max-w-72')}>
             <input
               autoFocus
               inputMode="text"
               aria-label={m["common.badge_number"]()}
               placeholder={m["common.badge_number"]()}
               autoComplete="username"
+              spellCheck={false}
               value={badge}
               disabled={busy}
               onChange={(e) => setBadge(e.target.value)}
-              className="h-full min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground/70"
+              className={signInInputClass}
             />
-            {!needsPassword && (
-              <button type="submit" aria-label={m["sign_in.title"]()} disabled={!badge.trim() || busy} className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground disabled:cursor-default disabled:opacity-30">
-                <HugeiconsIcon icon={ArrowRight02Icon} className="size-4" />
-              </button>
-            )}
+            {!needsPassword && <SignInArrow hidden={!badge.trim()} disabled={!badge.trim() || busy} label={m["sign_in.title"]()} />}
           </div>
           {needsPassword && (
-            <PasswordField placeholder={m["common.password"]()} aria-label={m["common.password"]()} autoComplete="current-password" value={password} busy={busy || !badge.trim()} error={error} onChange={(e) => setPassword(e.target.value)} className="max-w-64" />
+            <PasswordField placeholder={m["common.password"]()} aria-label={m["common.password"]()} autoComplete="current-password" value={password} busy={busy || !badge.trim()} error={error} onChange={(e) => setPassword(e.target.value)} className="max-w-72" />
           )}
           {message && (
             <p role="alert" className="text-center text-destructive">

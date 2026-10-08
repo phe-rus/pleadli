@@ -2000,6 +2000,7 @@
     "downloading": "Downloading the update… {percent}%",
     "failed": "The update could not be checked or installed",
     "get": "Update now",
+    "no_build": "No update is published for this kind of computer yet.",
     "not_checked": "Not checked yet",
     "ready": "Version {version} is ready. Restart to finish.",
     "restart": "Restart",

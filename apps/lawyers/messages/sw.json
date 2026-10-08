@@ -2000,6 +2000,7 @@
     "downloading": "Inapakua sasisho… {percent}%",
     "failed": "Sasisho halikuweza kukaguliwa au kusakinishwa",
     "get": "Sasisha sasa",
+    "no_build": "Bado hakuna sasisho lililochapishwa kwa aina hii ya kompyuta.",
     "not_checked": "Bado halijakaguliwa",
     "ready": "Toleo {version} liko tayari. Anzisha upya kukamilisha.",
     "restart": "Anzisha upya",
