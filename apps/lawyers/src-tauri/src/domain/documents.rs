@@ -387,9 +387,7 @@ pub(super) async fn seal(tx: &mut sqlx::SqliteConnection, id: &str, filed_on: i6
     // the stored content (code and QR included) is what the hash covers.
     let sealed = serde_json::to_string(&content).map_err(|_| DomainError::Invalid("The document could not be prepared.".to_string()))?;
     let code = hex(&format!("{reference}|{sealed}"))[..12].to_uppercase();
-    content.verify_qr = qrcode::QrCode::new(format!("PLEADLI {reference} {code}").as_bytes())
-        .ok()
-        .map(|q| q.render::<qrcode::render::svg::Color>().quiet_zone(false).min_dimensions(96, 96).build());
+    content.verify_qr = pleadli_node_core::paper::qr(&code);
     content.verify_code = Some(code);
     let text = serde_json::to_string(&content).map_err(|_| DomainError::Invalid("The document could not be prepared.".to_string()))?;
     sqlx::query("UPDATE documents SET status = 'filed', reference = ?, content = ?, content_sha256 = ?, filed_on = ?, filed_with = ?, filed_at = ?, filed_by = ?, updated_at = ? WHERE id = ?")

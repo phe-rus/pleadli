@@ -85,12 +85,14 @@ pub fn normalise(typed: &str) -> String {
     typed.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_uppercase()
 }
 
-fn qr(code: &str, reference: Option<&str>) -> Option<String> {
-    let text = match reference {
-        Some(r) if !r.is_empty() => format!("PLEADLI {r} {}", display(code)),
-        _ => format!("PLEADLI {}", display(code)),
-    };
-    qrcode::QrCode::new(text.as_bytes())
+/// Where anyone checks a paper: a phone camera opens this from the QR.
+pub fn verify_url(code: &str) -> String {
+    format!("https://pleadli.com/verify?code={}", display(code))
+}
+
+/// The QR printed on a paper: its verify link, as SVG.
+pub fn qr(code: &str) -> Option<String> {
+    qrcode::QrCode::new(verify_url(code).as_bytes())
         .ok()
         .map(|q| q.render::<qrcode::render::svg::Color>().quiet_zone(false).min_dimensions(96, 96).build())
 }
@@ -110,7 +112,7 @@ pub async fn stamp(pool: &SqlitePool, input: PaperInput<'_>) -> Result<Stamp, sq
     .fetch_optional(pool)
     .await?;
     if let Some((code, printed_at)) = existing {
-        return Ok(Stamp { qr: qr(&code, input.reference), code, printed_at });
+        return Ok(Stamp { qr: qr(&code), code, printed_at });
     }
 
     let printed_at = chrono::Utc::now().timestamp_millis();
@@ -139,7 +141,7 @@ pub async fn stamp(pool: &SqlitePool, input: PaperInput<'_>) -> Result<Stamp, sq
     .bind(printed_at)
     .execute(pool)
     .await?;
-    Ok(Stamp { qr: qr(&code, input.reference), code, printed_at })
+    Ok(Stamp { qr: qr(&code), code, printed_at })
 }
 
 /// The paper a code was printed on, word for word, or nothing.
@@ -207,6 +209,7 @@ mod tests {
         assert_ne!(a.code, c.code);
         assert_eq!(a.code.len(), 12);
         assert!(a.qr.is_some());
+        assert_eq!(verify_url("ABCDEFGHJKLM"), "https://pleadli.com/verify?code=ABCD-EFGH-JKLM");
         // The old code still answers with the old wording.
         assert_eq!(verify(&pool, &a.code).await.unwrap().unwrap().body, "I saw him.");
         assert_eq!(last_print(&pool, "statement", "s1").await.unwrap().unwrap().code, c.code);

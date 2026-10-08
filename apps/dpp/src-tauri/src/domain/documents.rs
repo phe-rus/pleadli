@@ -253,9 +253,7 @@ pub async fn issue(pool: &SqlitePool, id: &str, input: IssueInput, signer: Optio
     let sealed = serde_json::to_string(&content).unwrap_or_default();
     let code = hash(&format!("{reference}|{sealed}"))[..12].to_uppercase();
     content.verify_code = Some(code.clone());
-    content.verify_qr = qrcode::QrCode::new(format!("PLEADLI {reference} {code}").as_bytes())
-        .ok()
-        .map(|q| q.render::<qrcode::render::svg::Color>().quiet_zone(false).min_dimensions(96, 96).build());
+    content.verify_qr = pleadli_node_core::paper::qr(&code);
     let stored = serde_json::to_string(&content).unwrap_or_default();
 
     sqlx::query("UPDATE documents SET status = 'issued', reference = ?, author = ?, content = ?, content_sha256 = ?, issued_at = ? WHERE id = ?")
