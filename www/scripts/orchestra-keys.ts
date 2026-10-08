@@ -23,6 +23,8 @@ const WWW = resolve(import.meta.dir, '..')
 const REPO = resolve(WWW, '..')
 const CERT_FILE = join(WWW, 'src/lib/orchestra-key-cert.json')
 const ROOT_PUB_FILE = join(REPO, 'docs/platform/orchestra-root-public-key.txt')
+// The same public key for pleadli.com itself (Pleadli staff > Signing key).
+const ROOT_PUB_JSON = join(WWW, 'src/lib/orchestra-root-public-key.json')
 const DEV_VARS = join(WWW, '.dev.vars')
 const ROOT_NAME = 'pleadli-orchestra-root.key'
 
@@ -101,6 +103,7 @@ if (command === 'init') {
     ].join('\n'),
   )
   writeFileSync(ROOT_PUB_FILE, `${rootPub}\n`)
+  writeFileSync(ROOT_PUB_JSON, JSON.stringify({ publicKey: rootPub }) + '\n')
   console.log(`Root key written to ${join(folder, ROOT_NAME)}`)
   console.log(`Root PUBLIC key: ${rootPub} (also in ${ROOT_PUB_FILE}, apps embed this one)`)
   const online = devVarsKey()

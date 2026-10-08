@@ -131,7 +131,14 @@ async function state(row: typeof computer.$inferSelect, trusted: boolean) {
     validUntil,
     expiresAt: found.l.expiresAt.getTime(),
   })
-  return { state: 'licensed', trial, licence: signed, serverTime: at.getTime() }
+  // The institution and its offices, so a computer can say which office it
+  // issues papers for (ORCHESTRA-API.md, papers.office).
+  const units = await db
+    .select({ address: organizationUnit.address, name: organizationUnit.name })
+    .from(organizationUnit)
+    .where(eq(organizationUnit.organizationId, found.l.organizationId))
+  const offices = [{ address: found.org.address, name: found.org.name }, ...units].filter((o): o is { address: string; name: string } => !!o.address)
+  return { state: 'licensed', trial, licence: signed, offices, serverTime: at.getTime() }
 }
 
 const handlers: Record<string, { method: 'GET' | 'POST'; run: (request: Request, body: unknown) => Promise<unknown> }> = {
@@ -204,6 +211,9 @@ const handlers: Record<string, { method: 'GET' | 'POST'; run: (request: Request,
       const targets = await db.select().from(storageTarget).where(eq(storageTarget.organizationId, row.organizationId!))
       const seals = await db.select().from(storageSeal).where(eq(storageSeal.computerId, row.id))
       return {
+        // Storage secrets are sealed under this id (ORCHESTRA-BACKUP.md), and
+        // backups are filed under it.
+        computer: row.id,
         backupKey: key ? { publicKey: key.publicKey, fingerprint: key.fingerprint } : null,
         storage: targets.map((t) => {
           const seal = seals.find((s) => s.storageId === t.id)

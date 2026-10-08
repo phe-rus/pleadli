@@ -5,6 +5,7 @@ import {
   HelpCircleIcon,
   Key01Icon,
   LayoutTemplateIcon,
+  SecurityLockIcon,
   UserGroupIcon,
 } from '@hugeicons/core-free-icons'
 
@@ -18,4 +19,5 @@ export const adminNav = [
   { icon: HelpCircleIcon, label: 'Reports', to: '/admin/reports' },
   { icon: UserGroupIcon, label: 'Users', to: '/admin/users' },
   { icon: LayoutTemplateIcon, label: 'Templates', to: '/admin/templates' },
+  { icon: SecurityLockIcon, label: 'Signing key', to: '/admin/signing-key' },
 ] as const
