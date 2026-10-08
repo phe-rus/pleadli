@@ -1,7 +1,7 @@
 import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
 import { computer, licence, paper, trackingCode, trackingEvent } from '@/db/orchestra-schema'
-import { APPLICATIONS, DAY, TRIAL_DAYS, sha256Hex } from '@/lib/orchestra'
+import { APPLICATIONS, DAY, TRACKING_STAGES, TRIAL_DAYS, normaliseCode, sha256Hex } from '@/lib/orchestra'
 import { CERT, newToken, publicKey, sign, KEY_ID } from '@/lib/orchestra-signing'
 import { and, eq, ne } from 'drizzle-orm'
 import * as z from 'zod'
@@ -14,8 +14,6 @@ import * as z from 'zod'
  * with no internet (docs/platform/ORCHESTRA-PLAN.md section 3). */
 const REFRESH_DAYS = 7
 const GRACE_DAYS = 30
-
-export const TRACKING_STAGES = ['reported', 'investigating', 'with_dpp', 'charged', 'in_court', 'remanded', 'on_bail', 'judgment', 'released', 'closed'] as const
 
 class ApiError extends Error {
   constructor(
@@ -268,11 +266,6 @@ const handlers: Record<string, { method: 'GET' | 'POST'; run: (request: Request,
       return { ok: true, code: input.code }
     },
   },
-}
-
-/** Codes are compared without case, spaces or dashes: "a1b2-c3d4" = "A1B2C3D4". */
-export function normaliseCode(text: string) {
-  return text.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
 async function licensedComputer(request: Request, input: z.infer<typeof device>) {

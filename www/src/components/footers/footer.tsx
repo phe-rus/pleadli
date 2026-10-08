@@ -18,6 +18,8 @@ const columns = [
       { get label() { return m["nav.getting_started"]() }, to: '/docs/getting-started' },
       { get label() { return m["nav.docs"]() }, to: '/docs' },
       { get label() { return m["nav.about"]() }, to: '/about' },
+      { get label() { return m["verify.meta_title"]() }, to: '/verify' },
+      { get label() { return m["track.meta_title"]() }, to: '/track' },
       { get label() { return m["nav.sign_in"]() }, to: '/login' },
     ],
   },

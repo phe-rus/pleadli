@@ -46,3 +46,11 @@ export async function sha256Hex(text: string) {
 
 export const DAY = 86_400_000
 export const TRIAL_DAYS = 30
+
+/** Codes are compared without case, spaces or dashes: "a1b2-c3d4" = "A1B2C3D4". */
+export function normaliseCode(text: string) {
+  return text.toUpperCase().replace(/[^A-Z0-9]/g, '')
+}
+
+/** The stages a tracked case can show: a fixed list, so no names can be sent. */
+export const TRACKING_STAGES = ['reported', 'investigating', 'with_dpp', 'charged', 'in_court', 'remanded', 'on_bail', 'judgment', 'released', 'closed'] as const
