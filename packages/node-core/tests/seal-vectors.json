@@ -1,0 +1,16 @@
+{
+  "note": "Made by www/src/lib/seal.ts; packages/node-core/src/backup.rs must agree. See docs/platform/ORCHESTRA-BACKUP.md.",
+  "entropy": "AAECAwQFBgcICQoLDA0ODw",
+  "phrase": "000G-40R4-0M30-E209-185G-R38E-1YZ4-BJS6",
+  "mistyped": "000G-40R4-0M30-E209-185G-R38E-1YZ4-BJSA",
+  "institutionSecretKey": "JAqc2QF19WVQcmW3IUUd8i5VlIR11uD2EUYqINHWE5k",
+  "institutionPublicKey": "GtwLVc0ESBcbhqp_WcSUVcM_hNc3r3SY9J5HQp-FbzA",
+  "fingerprint": "4b86 c732 82d1 8784",
+  "seal": {
+    "ephemeral": "ZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1-f4CBgoM",
+    "nonce": "yMnKy8zNzs_Q0dLT",
+    "plaintext": "{\"secretAccessKey\":\"example\"}",
+    "context": "pleadli/storage/st1/pc1",
+    "sealed": "AX2cJDFlOYJcGJblfygZd0Z5POYMvuOtR9qdB7hfpV4qyMnKy8zNzs_Q0dLTn5a9ehGdKSPRqq7a38VzZSUCqkwIzjFqpvSlLQwYqGxqH31E8akmg-g1eOrs"
+  }
+}

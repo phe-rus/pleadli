@@ -1,45 +1,13 @@
 import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
-import { backupReport, computer, licence, licenceRequest, orchestraMember, storageTarget, supportReport } from '@/db/orchestra-schema'
+import { backupKey, backupReport, computer, licence, licenceRequest, orchestraMember, storageSeal, storageTarget, supportReport } from '@/db/orchestra-schema'
 import { APPLICATIONS, slugPart } from '@/lib/orchestra'
 import { SessionMiddleware } from '@/middlewares/session'
 import { INSTITUTION_TYPES } from '@pleadli/templates'
-import { redirect } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { and, desc, eq, inArray, or } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import * as z from 'zod'
-
-/** The signed-in person, or a redirect to sign in. */
-function requireUser(session: { user: { id: string; email: string } } | null) {
-  if (!session) throw redirect({ to: '/login', search: { redirect: '/orchestra' } as never })
-  return session.user
-}
-
-/** The institutions this person manages. An invitation sent to their email
- * becomes active the first time they arrive here signed in with it. */
-async function myMemberships(user: { id: string; email: string }) {
-  const email = user.email.trim().toLowerCase()
-  const rows = await db
-    .select()
-    .from(orchestraMember)
-    .where(or(eq(orchestraMember.userId, user.id), eq(orchestraMember.email, email)))
-  const invited = rows.filter((r) => r.status === 'invited')
-  if (invited.length) {
-    await db
-      .update(orchestraMember)
-      .set({ status: 'active', userId: user.id, joinedAt: new Date() })
-      .where(inArray(orchestraMember.id, invited.map((r) => r.id)))
-  }
-  return rows.map((r) => ({ ...r, status: 'active' as const, userId: user.id }))
-}
-
-/** The membership that lets this person act on this institution, or an error. */
-async function memberOf(user: { id: string; email: string }, organizationId: string, ownerOnly = false) {
-  const memberships = await myMemberships(user)
-  const m = memberships.find((r) => r.organizationId === organizationId)
-  if (!m || (ownerOnly && m.role !== 'owner')) throw new Error('You do not manage this institution.')
-  return m
-}
+import { memberOf, myMemberships, requireUser } from './members'
 
 export const getMyOrchestra = createServerFn({ method: 'GET' })
   .middleware([SessionMiddleware])
@@ -106,7 +74,7 @@ export const getInstitution = createServerFn({ method: 'GET' })
     const user = requireUser(context.session)
     const me = await memberOf(user, data.organizationId)
     const [org] = await db.select().from(organization).where(eq(organization.id, data.organizationId))
-    const [offices, licences, computers, backups, members, requests, reports, storage] = await Promise.all([
+    const [offices, licences, computers, backups, members, requests, reports, storage, [key], seals] = await Promise.all([
       db.select().from(organizationUnit).where(eq(organizationUnit.organizationId, data.organizationId)),
       db
         .select({ id: licence.id, application: licence.application, seats: licence.seats, startsAt: licence.startsAt, expiresAt: licence.expiresAt, status: licence.status, keyHint: licence.keyHint })
@@ -117,9 +85,29 @@ export const getInstitution = createServerFn({ method: 'GET' })
       db.select().from(orchestraMember).where(eq(orchestraMember.organizationId, data.organizationId)),
       db.select().from(licenceRequest).where(eq(licenceRequest.organizationId, data.organizationId)).orderBy(desc(licenceRequest.createdAt)),
       db.select().from(supportReport).where(eq(supportReport.organizationId, data.organizationId)).orderBy(desc(supportReport.createdAt)).limit(100),
-      db.select({ id: storageTarget.id, label: storageTarget.label, kind: storageTarget.kind, updatedAt: storageTarget.updatedAt }).from(storageTarget).where(eq(storageTarget.organizationId, data.organizationId)),
+      db.select().from(storageTarget).where(eq(storageTarget.organizationId, data.organizationId)),
+      db.select().from(backupKey).where(eq(backupKey.organizationId, data.organizationId)),
+      db
+        .select({ storageId: storageSeal.storageId, computerId: storageSeal.computerId, sealedAt: storageSeal.sealedAt })
+        .from(storageSeal)
+        .innerJoin(storageTarget, eq(storageTarget.id, storageSeal.storageId))
+        .where(eq(storageTarget.organizationId, data.organizationId)),
     ])
-    return { role: me.role, institution: org, offices, licences, computers, backups, members, requests, reports, storage }
+    return {
+      role: me.role,
+      institution: org,
+      offices,
+      licences,
+      // The token hash stays on the server; the seal key is public by design.
+      computers: computers.map(({ tokenHash: _, ...c }) => c),
+      backups,
+      members,
+      requests,
+      reports,
+      storage: storage.map((s) => ({ ...s, settings: JSON.parse(s.settings) as Record<string, string | number> })),
+      backupKey: key ? { publicKey: key.publicKey, fingerprint: key.fingerprint, createdAt: key.createdAt } : null,
+      seals,
+    }
   })
 
 const officeSchema = z.object({ organizationId: z.string().min(1), name: z.string().trim().min(2).max(120), kind: z.string().min(1), district: z.string().trim().max(80).optional() })

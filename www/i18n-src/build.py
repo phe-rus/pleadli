@@ -8,9 +8,13 @@ APP = os.path.dirname(HERE)
 LANGS = ['en', 'sw', 'fr']
 
 def put(o, k, v):
+    # A key cannot be both a text and a group of texts: one would silently
+    # replace the other, depending on which part is read last.
     parts = k.split('.')
     for p in parts[:-1]:
         o = o.setdefault(p, {})
+        assert isinstance(o, dict), f'{k}: {p} is already a text'
+    assert not isinstance(o.get(parts[-1]), dict), f'{k} is already a group'
     o[parts[-1]] = v
 
 out = {l: {'$schema': 'https://inlang.com/schema/inlang-message-format'} for l in LANGS}

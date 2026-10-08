@@ -9,6 +9,8 @@ pub mod ai;
 #[cfg(feature = "ai")]
 pub mod local_ai;
 pub mod audit;
+#[cfg(feature = "backup")]
+pub mod backup;
 pub mod db;
 pub mod keys;
 #[cfg(feature = "lan")]

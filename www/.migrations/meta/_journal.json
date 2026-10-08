@@ -22,6 +22,20 @@
       "when": 1791414881187,
       "tag": "0002_app_api",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791425136620,
+      "tag": "0003_common_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791425137769,
+      "tag": "0004_fancy_wrecking_crew",
+      "breakpoints": true
     }
   ]
 }

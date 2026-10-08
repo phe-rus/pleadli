@@ -98,7 +98,7 @@ S = {
 
 "orch.bk.lead": ("Your backups go from each computer straight to storage your institution owns, encrypted with a key only you hold. Pleadli never stores them; it shows only whether each backup worked.", "Hifadhi zako zinaenda kutoka kila kompyuta moja kwa moja kwenye hifadhi inayomilikiwa na taasisi yako, zikiwa zimesimbwa kwa ufunguo ulio nao wewe tu. Pleadli haizihifadhi kamwe; inaonyesha tu kama kila hifadhi ilifanikiwa.", "Vos sauvegardes vont de chaque ordinateur directement vers un stockage appartenant à votre institution, chiffrées avec une clé que vous seuls détenez. Pleadli ne les stocke jamais ; il indique seulement si chaque sauvegarde a réussi."),
 "orch.bk.storage": ("Your storage", "Hifadhi yenu", "Votre stockage"),
-"orch.bk.storage_none": ("Connecting your storage (a government data centre, your own server or a drive) arrives with the apps' Orchestra update.", "Kuunganisha hifadhi yenu (kituo cha data cha serikali, seva yenu au diski) kunakuja na sasisho la programu la Orchestra.", "La connexion de votre stockage (centre de données de l'État, votre serveur ou un disque) arrive avec la mise à jour Orchestra des applications."),
+"orch.bk.storage_none": ("No storage connected yet. Add your government data centre, your own server or a drive.", "Bado hakuna hifadhi iliyounganishwa. Ongeza kituo cha data cha serikali, seva yenu au diski.", "Aucun stockage connecté pour l'instant. Ajoutez votre centre de données de l'État, votre propre serveur ou un disque."),
 "orch.bk.history": ("Recent backups", "Hifadhi za karibuni", "Sauvegardes récentes"),
 "orch.bk.empty": ("No backup reported yet.", "Bado hakuna hifadhi iliyoripotiwa.", "Aucune sauvegarde signalée pour l'instant."),
 "orch.bk.ok": ("Worked", "Imefanikiwa", "Réussie"),

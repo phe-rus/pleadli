@@ -75,6 +75,9 @@ export const computer = sqliteTable(
     // SHA-256 of the secret handed to the app when it activated a licence; the
     // app shows it on every later call that speaks for its institution.
     tokenHash: text('token_hash'),
+    // The computer's seal public key (base64url X25519): storage secrets are
+    // sealed to it in an administrator's browser (ORCHESTRA-BACKUP.md).
+    sealKey: text('seal_key'),
   },
   (t) => [uniqueIndex('computer_device_app').on(t.deviceHash, t.application), index('computer_org').on(t.organizationId)],
 )
@@ -88,6 +91,7 @@ export const backupReport = sqliteTable(
     computerId: text('computer_id').notNull().references(() => computer.id, { onDelete: 'cascade' }),
     organizationId: text('organization_id').references(() => organization.id, { onDelete: 'cascade' }),
     at: integer('at', { mode: 'timestamp_ms' }).notNull(),
+    storageId: text('storage_id'),
     sizeBytes: integer('size_bytes'),
     ok: integer('ok', { mode: 'boolean' }).notNull(),
     message: text('message'),
@@ -95,17 +99,41 @@ export const backupReport = sqliteTable(
   (t) => [index('backup_report_org').on(t.organizationId, t.at)],
 )
 
-/** The institution's own backup storage, its access details sealed to the
- * institution's key so that only its apps can open them. */
+/** The public half of an institution's backup key. Its secret half is the
+ * recovery phrase the institution wrote down; Pleadli never sees it. */
+export const backupKey = sqliteTable('backup_key', {
+  organizationId: text('organization_id').primaryKey().references(() => organization.id, { onDelete: 'cascade' }),
+  publicKey: text('public_key').notNull(),
+  fingerprint: text('fingerprint').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+})
+
+/** The institution's own backup storage. `settings` holds only what is not
+ * secret (endpoint, bucket, path, user name); the secret is in storageSeal. */
 export const storageTarget = sqliteTable('storage_target', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id').notNull().references(() => organization.id, { onDelete: 'cascade' }),
   label: text('label').notNull(),
-  kind: text('kind').notNull(), // s3 | network | drive
-  sealedConfig: text('sealed_config'),
+  kind: text('kind').notNull(), // s3 | folder | sftp
+  settings: text('settings').notNull(), // JSON
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 })
+
+/** A computer's access to one storage: the secret, sealed in an
+ * administrator's browser to that computer's seal key. Present means approved. */
+export const storageSeal = sqliteTable(
+  'storage_seal',
+  {
+    storageId: text('storage_id').notNull().references(() => storageTarget.id, { onDelete: 'cascade' }),
+    computerId: text('computer_id').notNull().references(() => computer.id, { onDelete: 'cascade' }),
+    sealed: text('sealed'), // null for a storage with no secret (a folder)
+    sealedAt: integer('sealed_at', { mode: 'timestamp_ms' }).notNull(),
+    sealedBy: text('sealed_by').references(() => user.id, { onDelete: 'set null' }),
+  },
+  (t) => [uniqueIndex('storage_seal_pair').on(t.storageId, t.computerId)],
+)
 
 /** A crash report, an issue or a question, sent from an app only when someone
  * presses Send, or written on /orchestra. Never carries case data. */

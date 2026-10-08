@@ -1,0 +1,1 @@
+ALTER TABLE `storage_target` DROP COLUMN `sealed_config`;

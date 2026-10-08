@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
-import { computer, licence, paper, trackingCode, trackingEvent } from '@/db/orchestra-schema'
+import { backupKey, backupReport, computer, licence, paper, storageSeal, storageTarget, trackingCode, trackingEvent } from '@/db/orchestra-schema'
 import { APPLICATIONS, DAY, TRACKING_STAGES, TRIAL_DAYS, normaliseCode, sha256Hex } from '@/lib/orchestra'
 import { CERT, newToken, publicKey, sign, KEY_ID } from '@/lib/orchestra-signing'
 import { and, eq, ne } from 'drizzle-orm'
@@ -32,6 +32,8 @@ const device = z.object({
   version: z.string().max(40).optional(),
   os: z.string().max(40).optional(),
   country: z.string().length(2).toLowerCase().optional(),
+  // The computer's seal public key (base64url X25519, ORCHESTRA-BACKUP.md).
+  sealKey: z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional(),
 })
 
 const now = () => new Date()
@@ -69,6 +71,15 @@ async function touch(input: z.infer<typeof device> & { localTrialStartedAt?: num
     .set({ lastSeenAt: at, trialStartedAt, version: input.version ?? existing.version, os: input.os ?? existing.os, country: input.country ?? existing.country })
     .where(eq(computer.id, existing.id))
   return { ...existing, lastSeenAt: at, trialStartedAt }
+}
+
+/** A seal key is taken only on a call the computer proved with its token, so
+ * nobody else can put their key in its place. A new key drops the computer's
+ * storage access: what was sealed to the old key cannot be opened anyway. */
+async function keepSealKey(row: typeof computer.$inferSelect, sealKey: string | undefined) {
+  if (!sealKey || sealKey === row.sealKey) return
+  await db.update(computer).set({ sealKey }).where(eq(computer.id, row.id))
+  if (row.sealKey) await db.delete(storageSeal).where(eq(storageSeal.computerId, row.id))
 }
 
 async function tokenHash(token: string) {
@@ -162,6 +173,7 @@ const handlers: Record<string, { method: 'GET' | 'POST'; run: (request: Request,
       }
       const token = newToken()
       await db.update(computer).set({ licenceId: found.l.id, organizationId: found.l.organizationId, tokenHash: await tokenHash(token) }).where(eq(computer.id, row.id))
+      await keepSealKey(row, input.sealKey)
       const updated = (await findComputer(input.device, input.application))!
       return { ...(await state(updated, true)), token }
     },
@@ -172,8 +184,60 @@ const handlers: Record<string, { method: 'GET' | 'POST'; run: (request: Request,
   heartbeat: {
     method: 'POST',
     run: async (request, body) => {
-      const row = await touch(device.parse(body))
-      return state(row, await authorised(request, row))
+      const input = device.parse(body)
+      const row = await touch(input)
+      const trusted = await authorised(request, row)
+      if (trusted) await keepSealKey(row, input.sealKey)
+      return state(row, trusted)
+    },
+  },
+
+  /** Where this computer backs up to: the institution's backup public key,
+   * and each storage with the secret sealed to this computer once an
+   * administrator has approved it. Backups need a licence. */
+  'backup/config': {
+    method: 'POST',
+    run: async (request, body) => {
+      const input = device.parse(body)
+      const row = await licensedComputer(request, input)
+      const [key] = await db.select().from(backupKey).where(eq(backupKey.organizationId, row.organizationId!))
+      const targets = await db.select().from(storageTarget).where(eq(storageTarget.organizationId, row.organizationId!))
+      const seals = await db.select().from(storageSeal).where(eq(storageSeal.computerId, row.id))
+      return {
+        backupKey: key ? { publicKey: key.publicKey, fingerprint: key.fingerprint } : null,
+        storage: targets.map((t) => {
+          const seal = seals.find((s) => s.storageId === t.id)
+          return { id: t.id, label: t.label, kind: t.kind, settings: JSON.parse(t.settings), approved: !!seal, sealed: seal?.sealed ?? null }
+        }),
+      }
+    },
+  },
+
+  /** After each backup: when, how large, whether it worked. Never the backup. */
+  'backup/report': {
+    method: 'POST',
+    run: async (request, body) => {
+      const input = device
+        .extend({
+          storageId: z.string().max(60).optional(),
+          at: z.number().int().positive(),
+          sizeBytes: z.number().int().nonnegative().optional(),
+          ok: z.boolean(),
+          message: z.string().trim().max(300).optional(),
+        })
+        .parse(body)
+      const row = await licensedComputer(request, input)
+      await db.insert(backupReport).values({
+        id: crypto.randomUUID(),
+        computerId: row.id,
+        organizationId: row.organizationId,
+        storageId: input.storageId ?? null,
+        at: new Date(input.at),
+        sizeBytes: input.sizeBytes ?? null,
+        ok: input.ok,
+        message: input.message ?? null,
+      })
+      return { ok: true }
     },
   },
 

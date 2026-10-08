@@ -9,6 +9,7 @@ Written 2026-10-08 from the user's brief that day. Audit first, then the recomme
 - **Who registers on pleadli.com/orchestra**: **institutions** (at their HQ, attaching their offices) **and practices** (an advocate or a law firm). Individual officers never register; they sign in to their office's app.
 - **Contact on the site**: pleadli@pleadli.com, +256 772 591 289, **Justice Vincent Opyene, Founder**.
 - **Backups and relay**: nothing stored at Pleadli; backups go to the institution's own storage; the relay can run in the country (sections 2 and 4).
+- **Backup keys** (2026-10-08): a recovery phrase for the institution (computers hold only its public half, so they can lock backups but not open them); storage secrets sealed in the administrator's browser to each approved computer; S3-compatible, folder or drive, and SFTP. Full design: ORCHESTRA-BACKUP.md.
 - **Registration is a request**: Pleadli staff check an institution or practice is genuine before its Orchestra address and certificate are issued.
 - **Addresses** read `country.institution.place` and never change: `ug.police.albertine` (HQ), `ug.police.albertine.kagadi` (its station), `ug.dpp.hoima`, `ug.court.kagadi-cm`, `ug.prisons.hoima`, `ug.advocate.okello-chambers`.
 - **Managers**: whoever registers is the owner and invites a few administrators by email; ordinary officers never need a pleadli.com account.
@@ -75,7 +76,7 @@ The first draft stored encrypted backups in Cloudflare R2. That puts copies of c
 - **Pleadli stores no backups.** Each institution connects the storage it already trusts: a government data centre (for Uganda, NITA-U's National Data Centre), any S3-compatible store in the country, a server or NAS on its own network, or an external drive.
 - **The app sends the backup straight to that storage.** The bytes go from the office's computer to the institution's storage and never pass through pleadli.com.
 - **Encrypted before it leaves the computer**, with a key the institution holds (a recovery phrase shown once). Even the storage operator cannot read it.
-- **Configured in one place.** An institution administrator sets the storage on pleadli.com/orchestra. The access details are sealed there to the institution's own key, so only its apps can open them; Pleadli holds nothing it can use.
+- **Configured in one place.** An institution administrator sets the storage on pleadli.com/orchestra. The secret part of the access details is sealed in their browser to each approved computer, so only those computers can open it; Pleadli holds nothing it can use (ORCHESTRA-BACKUP.md).
 - **The iCloud-like view shows facts, not files.** Apps report "computer, time, size, success" after each backup, so pleadli.com/orchestra shows every office's last backup and alerts on failures. Restoring reads from the institution's storage.
 - A private client (a law firm) with no storage of its own may later choose a Pleadli-run store in a named country; it is never the default and never for public institutions.
 
