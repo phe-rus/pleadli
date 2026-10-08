@@ -1,10 +1,10 @@
 import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
-import { backupReport, computer, licence, licenceRequest, orchestraMember, supportReport } from '@/db/orchestra-schema'
+import { backupReport, computer, licence, licenceRequest, orchestraMember, paper, supportReport, trackingCode, trackingEvent } from '@/db/orchestra-schema'
 import { ADDRESS_PATTERN, APPLICATIONS, DAY, TRIAL_DAYS, newLicenceKey, sha256Hex, slugPart, suggestAddress } from '@/lib/orchestra'
 import { AdminMiddleware } from '@/middlewares/admin'
 import { createServerFn } from '@tanstack/react-start'
-import { and, desc, eq, gte } from 'drizzle-orm'
+import { and, count, desc, eq, gte, sql } from 'drizzle-orm'
 import * as z from 'zod'
 
 /** The figures Pleadli staff watch: who is waiting, how many computers run
@@ -13,13 +13,29 @@ export const getStaffOverview = createServerFn({ method: 'GET' })
   .middleware([AdminMiddleware])
   .handler(async () => {
     const now = Date.now()
-    const [orgs, computers, licences, requests, reports, failedBackups] = await Promise.all([
+    const monthAgo = new Date(now - 30 * DAY)
+    const [orgs, computers, licences, requests, reports, failedBackups, [papers], [tracked]] = await Promise.all([
       db.select({ id: organization.id, name: organization.name, status: organization.status, kind: organization.kind, institutionType: organization.institutionType, country: organization.country, requestedAt: organization.requestedAt }).from(organization),
       db.select({ application: computer.application, lastSeenAt: computer.lastSeenAt, trialStartedAt: computer.trialStartedAt, licenceId: computer.licenceId, version: computer.version, country: computer.country }).from(computer),
       db.select({ status: licence.status, expiresAt: licence.expiresAt, seats: licence.seats, application: licence.application }).from(licence),
       db.select({ id: licenceRequest.id }).from(licenceRequest).where(eq(licenceRequest.status, 'open')),
       db.select({ id: supportReport.id, kind: supportReport.kind }).from(supportReport).where(eq(supportReport.status, 'open')),
       db.select({ id: backupReport.id }).from(backupReport).where(and(eq(backupReport.ok, false), gte(backupReport.at, new Date(now - 7 * DAY)))),
+      // Papers and tracking grow with every case, so they are counted in the database.
+      db
+        .select({
+          total: count(),
+          month: sql<number>`coalesce(sum(case when ${paper.issuedAt} >= ${monthAgo.getTime()} then 1 else 0 end), 0)`,
+          withdrawn: sql<number>`coalesce(sum(case when ${paper.withdrawnAt} is not null then 1 else 0 end), 0)`,
+          withPdf: sql<number>`coalesce(sum(case when ${paper.fileSha256} is not null then 1 else 0 end), 0)`,
+        })
+        .from(paper),
+      db
+        .select({
+          total: count(),
+          month: sql<number>`(select count(distinct ${trackingEvent.code}) from ${trackingEvent} where ${trackingEvent.recordedAt} >= ${monthAgo.getTime()})`,
+        })
+        .from(trackingCode),
     ])
     const seenWithin = (days: number) => computers.filter((c) => c.lastSeenAt.getTime() >= now - days * DAY).length
     const byApp = Object.fromEntries(APPLICATIONS.map((a) => [a, computers.filter((c) => c.application === a && c.lastSeenAt.getTime() >= now - 30 * DAY).length]))
@@ -35,6 +51,8 @@ export const getStaffOverview = createServerFn({ method: 'GET' })
       openReports: reports.length,
       crashes: reports.filter((r) => r.kind === 'crash').length,
       failedBackups: failedBackups.length,
+      papers: { total: papers.total, month: Number(papers.month), withdrawn: Number(papers.withdrawn), withPdf: Number(papers.withPdf) },
+      tracked: { total: tracked.total, month: Number(tracked.month) },
     }
   })
 

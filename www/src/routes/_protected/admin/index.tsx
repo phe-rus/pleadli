@@ -65,6 +65,16 @@ function RouteComponent() {
         <Stat label="Failed backups this week" value={o.failedBackups} tone={o.failedBackups ? 'urgent' : 'plain'} />
       </section>
 
+      <section className="flex flex-col gap-3">
+        <h2>Papers and cases followed</h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Stat label="Papers this month" value={o.papers.month} hint={`${o.papers.total} ever`} />
+          <Stat label="With a PDF to compare" value={o.papers.withPdf} />
+          <Stat label="Withdrawn" value={o.papers.withdrawn} />
+          <Stat label="Cases followed" value={o.tracked.total} hint={`${o.tracked.month} updated this month`} />
+        </div>
+      </section>
+
       <p className="text-sm text-muted-foreground">
         Computers and backups appear once the apps report to the Orchestra; see <Link to="/admin/computers" className="text-primary">Computers</Link>.
       </p>
