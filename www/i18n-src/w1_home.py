@@ -6,7 +6,7 @@ S = {
 "home.hero_badge": ("Pleadli Legal Orchestra", "Pleadli, Okestra ya Sheria", "Pleadli, l'orchestre juridique"),
 "home.hero_title_1": ("Police, prosecutors, courts, advocates and prisons.", "Polisi, waendesha mashtaka, mahakama, mawakili na magereza.", "Police, parquet, tribunaux, avocats et prisons."),
 "home.hero_title_2": ("One justice system, in step.", "Mfumo mmoja wa haki, kwa pamoja.", "Une seule justice, au même rythme."),
-"home.hero_lead": ("Pleadli gives each institution its own app, made for its own work. Each one runs on the computers it already has, even without internet, and passes a case on safely. A file is never typed twice, and no one waits in a cell for paperwork.", "Pleadli inaipa kila taasisi programu yake, iliyotengenezwa kwa kazi yake. Kila moja inafanya kazi kwenye kompyuta ilizo nazo tayari, hata bila intaneti, na inakabidhi shauri kwa usalama. Jalada haliandikwi mara mbili, na hakuna anayesubiri selini kwa ajili ya makaratasi.", "Pleadli donne à chaque institution sa propre application, pensée pour son propre travail. Chacune fonctionne sur les ordinateurs déjà en place, même sans internet, et transmet une affaire en toute sécurité. Un dossier n'est jamais ressaisi, et personne n'attend en cellule à cause de la paperasse."),
+'home.hero_lead': ('Use Pleadli on your own, or with the people in your institution. Keep working offline in your desktop app. Online services add account management, subscriptions and optional connections; institutional connections are still being developed.', 'Tumia Pleadli peke yako au pamoja na watu wa taasisi yako. Endelea kufanya kazi bila intaneti kwenye programu ya kompyuta. Huduma za mtandaoni zinaongeza usimamizi wa akaunti, usajili na miunganiko ya hiari; miunganiko kati ya taasisi bado inatengenezwa.', 'Utilisez Pleadli seul ou avec les membres de votre institution. Continuez à travailler hors ligne dans votre application. Les services en ligne ajoutent la gestion des comptes, les abonnements et des connexions facultatives ; les connexions entre institutions restent en développement.'),
 "home.download": ("Download the apps", "Pakua programu", "Télécharger les applications"),
 "home.see_case": ("Follow a case", "Fuatilia shauri", "Suivre une affaire"),
 "home.about": ("About Pleadli", "Kuhusu Pleadli", "À propos de Pleadli"),
@@ -74,4 +74,15 @@ S.update({
 "home.trust.named": ("Who wrote, changed, printed or sent a record is kept with it, and cannot be quietly erased.", "Aliyeandika, kubadilisha, kuchapisha au kutuma kumbukumbu anahifadhiwa nayo, na hawezi kufutwa kimyakimya.", "Qui a écrit, modifié, imprimé ou envoyé un dossier est conservé avec lui, sans pouvoir être effacé en silence."),
 "home.trust.law_title": ("Built around the law on personal data", "Imejengwa kwa kuzingatia sheria ya data binafsi", "Conçu autour de la loi sur les données personnelles"),
 "home.trust.law": ("Designed with Uganda's Data Protection and Privacy Act, 2019 in mind from the start, not added afterwards.", "Imeundwa kwa kuzingatia Sheria ya Ulinzi wa Data na Faragha ya Uganda, 2019, tangu mwanzo, si baadaye.", "Conçu dès le départ en tenant compte de la loi ougandaise de 2019 sur la protection des données et la vie privée, pas ajouté ensuite."),
+})
+
+S.update({
+'home.hero_title_1': ('More time for justice.', 'Muda zaidi kwa haki.', 'Plus de temps pour la justice.'),
+'home.hero_title_2': ('Less time chasing paperwork.', 'Muda mchache kutafuta makaratasi.', 'Moins de temps à chercher des documents.'),
+'home.hero_lead': ('A place for your cases, documents and daily work. Choose the Pleadli app for your role, work on your own offline, or bring your institution together.', 'Mahali pa mashauri, nyaraka na kazi zako za kila siku. Chagua programu ya Pleadli kwa jukumu lako, fanya kazi peke yako bila intaneti, au leta taasisi yako pamoja.', 'Un espace pour vos affaires, vos documents et votre travail quotidien. Choisissez l’application Pleadli pour votre métier, travaillez seul hors ligne ou réunissez votre institution.'),
+})
+
+S.update({
+'home.case_lead': ('The journey Pleadli is being built to support, from the first report to the final outcome. Connections between institutions are in development.', 'Safari ambayo Pleadli inajengwa kusaidia, kutoka taarifa ya kwanza hadi matokeo ya mwisho. Miunganiko kati ya taasisi inatengenezwa.', 'Le parcours que Pleadli prépare, du premier signalement à la décision finale. Les connexions entre institutions sont en développement.'),
+'home.apps_lead': ('A dedicated app for each institution, with its own records and daily work. Explore the tools available today and what is coming next.', 'Programu maalumu kwa kila taasisi, kumbukumbu zake na kazi za kila siku. Ona zana zilizopo leo na zinazokuja.', 'Une application pour chaque institution, ses dossiers et son travail quotidien. Découvrez les outils disponibles et les prochaines étapes.'),
 })

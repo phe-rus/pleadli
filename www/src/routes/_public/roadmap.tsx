@@ -28,14 +28,14 @@ const apps = [
 function RouteComponent() {
   return (
     <article className="container flex w-full flex-col md:max-w-5xl">
-      <section className="flex flex-col gap-5 py-16 md:py-24">
-        <h1 className="text-3xl tracking-tight md:max-w-3xl md:text-5xl!">{m["roadmap.title"]()}</h1>
+      <section className="editorial-hero">
+        <h1 className="text-4xl! font-semibold tracking-tight md:max-w-3xl md:text-6xl!">{m["roadmap.title"]()}</h1>
         <p className="md:max-w-2xl md:text-lg!">{m["roadmap.lead"]()}</p>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {horizons.map((h) => (
-          <Card key={h.label()} className="gap-4 p-6">
+          <Card key={h.label()} className="gap-4 rounded-3xl border-border/50 bg-muted/30 p-8">
             <span className={cn('w-fit rounded-full px-3 py-1 text-xs font-semibold', h.tone)}>{h.label()}</span>
             <ul className="flex flex-col gap-3 pl-0">
               {h.items.map((item, i) => (

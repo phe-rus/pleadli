@@ -25,3 +25,15 @@ S.update({
 "footer.product": ("Product", "Bidhaa", "Produit"),
 "footer.learn": ("Learn", "Jifunze", "Découvrir"),
 })
+
+S.update({
+'site.title': ('Pleadli | Case management for police, courts & legal teams', 'Pleadli | Usimamizi wa mashauri kwa polisi na mahakama', 'Pleadli | Gestion des affaires pour la police et la justice'),
+'site.description': ('Manage cases, documents and daily work with Pleadli apps for police, prosecutors, courts, lawyers and prisons. Work offline, alone or with your institution.', 'Simamia mashauri, nyaraka na kazi za kila siku kwa programu za Pleadli za polisi, waendesha mashtaka, mahakama, mawakili na magereza. Fanya kazi bila intaneti.', 'Gérez affaires, documents et travail quotidien avec Pleadli pour la police, le parquet, les tribunaux, les avocats et les prisons. Seul ou en institution, hors ligne.'),
+})
+
+S.update({
+'nav.products': ('Explore Pleadli', 'Gundua Pleadli', 'Découvrir Pleadli'),
+'nav.docs': ('Your guide', 'Mwongozo wako', 'Votre guide'),
+'nav.contact': ('Talk to us', 'Zungumza nasi', 'Parlons-en'),
+'nav.get_started': ('Your Pleadli', 'Pleadli yako', 'Votre Pleadli'),
+})

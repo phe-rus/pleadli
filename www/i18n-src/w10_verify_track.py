@@ -32,6 +32,7 @@ S = {
 "verify.kind.judgment": ("Judgment", "Hukumu", "Jugement"),
 "verify.kind.release_warrant": ("Release warrant", "Hati ya kuachiliwa", "Ordre de libération"),
 "verify.kind.letter": ("Letter", "Barua", "Lettre"),
+"verify.kind.legal_document": ("Legal document", "Hati ya kisheria", "Acte juridique"),
 "verify.kind.other": ("Paper", "Karatasi", "Document"),
 
 "track.meta_title": ("Follow a case", "Fuatilia kesi", "Suivre une affaire"),

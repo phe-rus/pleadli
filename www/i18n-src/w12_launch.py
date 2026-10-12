@@ -1,0 +1,20 @@
+# Product introduction: key -> (English, Kiswahili, French).
+S = {
+'launch.eyebrow': ('Meet Pleadli.', 'Kutana na Pleadli.', 'Voici Pleadli.'),
+'launch.title': ('Your work. In good order.', 'Kazi yako. Kwa mpangilio mzuri.', 'Votre travail. En bonne place.'),
+'launch.lead': ('Thoughtful apps for the people who keep justice moving. Your cases, your documents, your day. Together in one place.', 'Programu kwa watu wanaoendeleza haki. Mashauri yako, nyaraka zako na siku yako. Pamoja mahali pamoja.', 'Des applications pensées pour les personnes qui font avancer la justice. Vos affaires, vos documents, votre journée. Réunis au même endroit.'),
+'launch.choose': ('Find your app', 'Pata programu yako', 'Trouvez votre application'),
+'launch.talk': ('Let’s talk', 'Tuzungumze', 'Parlons-en'),
+'launch.see': ('Take a closer look', 'Angalia kwa karibu', 'Regardez de plus près'),
+'launch.family': ('Different work. The same care.', 'Kazi tofauti. Uangalifu uleule.', 'Des métiers différents. La même attention.'),
+'launch.family_lead': ('From a busy station to a quiet moment with a case file. There is a Pleadli app for your part of the work.', 'Kutoka kituo chenye shughuli hadi wakati wa kutulia na jalada. Kuna programu ya Pleadli kwa sehemu yako ya kazi.', 'D’un poste animé à un moment de réflexion devant un dossier. Une application Pleadli accompagne votre métier.'),
+'launch.everyday': ('Made to feel at home in your day.', 'Kwa siku yako ya kazi.', 'À sa place dans votre quotidien.'),
+'launch.offline_title': ('Keep going. Even offline.', 'Endelea. Hata bila intaneti.', 'Continuez. Même hors ligne.'),
+'launch.offline': ('Your desktop app keeps everyday work on your computer. Online services are there when you need them.', 'Programu yako ya kompyuta huhifadhi kazi za kila siku kwenye kompyuta yako. Huduma za mtandaoni zipo unapozihitaji.', 'Votre application conserve le travail quotidien sur votre ordinateur. Les services en ligne sont là lorsque vous en avez besoin.'),
+'launch.documents_title': ('Papers that belong with the case.', 'Nyaraka pamoja na shauri.', 'Les documents, avec leur dossier.'),
+'launch.documents': ('Find the record alongside the work. Explore the document tools available in each app.', 'Pata kumbukumbu pamoja na kazi. Angalia zana za nyaraka katika kila programu.', 'Retrouvez les documents avec votre travail. Découvrez les outils documentaires de chaque application.'),
+'launch.languages_title': ('A familiar language.', 'Lugha unayoifahamu.', 'Une langue familière.'),
+'launch.languages': ('Explore Pleadli in English, Kiswahili and French. Choose the language that feels right for you.', 'Gundua Pleadli kwa Kiingereza, Kiswahili na Kifaransa. Chagua lugha inayokufaa.', 'Découvrez Pleadli en anglais, en kiswahili et en français. Choisissez la langue qui vous convient.'),
+'launch.close': ('Make room for a better working day.', 'Nafasi kwa siku bora ya kazi.', 'Faites place à une meilleure journée.'),
+'launch.close_lead': ('Start on your own, or with your institution. Explore the apps and see what is available today.', 'Anza peke yako, au na taasisi yako. Angalia programu na kinachopatikana leo.', 'Commencez seul ou avec votre institution. Découvrez les applications et les versions disponibles aujourd’hui.'),
+}

@@ -21,31 +21,32 @@ const reasons = [
 
 function RouteComponent() {
   return (
-    <article className="container flex w-full flex-col md:max-w-5xl">
-      <section className="flex flex-col gap-5 py-16 md:py-24">
-        <h1 className="text-3xl tracking-tight md:text-5xl!">{m["contact.title"]()}</h1>
+    <article className="container flex w-full flex-col md:max-w-6xl">
+      <section className="editorial-hero">
+        <span className="editorial-eyebrow">{m["nav.contact"]()}</span>
+        <h1 className="text-4xl! font-semibold tracking-tight md:text-6xl!">{m["contact.title"]()}</h1>
         <p className="md:max-w-xl md:text-lg!">{m["contact.lead"]()}</p>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="gap-3 p-6">
-          <HugeiconsIcon icon={Mail01Icon} className="text-primary" />
+        <Card className="gap-4 rounded-3xl border-border/50 bg-muted/30 p-8">
+          <HugeiconsIcon icon={Mail01Icon} className="size-10! rounded-xl bg-primary/10 p-2 text-primary" />
           <span className="text-sm text-muted-foreground">{m["contact.email"]()}</span>
           <a href={`mailto:${CONTACT.email}`} className="text-lg font-semibold break-all hover:text-primary">{CONTACT.email}</a>
-          <Button className="mt-2 w-fit" nativeButton={false} render={<a href={`mailto:${CONTACT.email}`} />}>
+          <Button className="mt-2 w-fit rounded-full" nativeButton={false} render={<a href={`mailto:${CONTACT.email}`} />}>
             {m["contact.write"]()}
           </Button>
         </Card>
-        <Card className="gap-3 p-6">
-          <HugeiconsIcon icon={CallIcon} className="text-primary" />
+        <Card className="gap-4 rounded-3xl border-border/50 bg-muted/30 p-8">
+          <HugeiconsIcon icon={CallIcon} className="size-10! rounded-xl bg-primary/10 p-2 text-primary" />
           <span className="text-sm text-muted-foreground">{m["contact.phone"]()}</span>
           <a href={`tel:${CONTACT.phoneE164}`} className="text-lg font-semibold hover:text-primary">{CONTACT.phone}</a>
-          <Button className="mt-2 w-fit" variant="secondary" nativeButton={false} render={<a href={`tel:${CONTACT.phoneE164}`} />}>
+          <Button className="mt-2 w-fit rounded-full" variant="secondary" nativeButton={false} render={<a href={`tel:${CONTACT.phoneE164}`} />}>
             {m["contact.call"]()}
           </Button>
         </Card>
-        <Card className="gap-3 p-6">
-          <HugeiconsIcon icon={UserIcon} className="text-primary" />
+        <Card className="gap-4 rounded-3xl border-border/50 bg-muted/30 p-8">
+          <HugeiconsIcon icon={UserIcon} className="size-10! rounded-xl bg-primary/10 p-2 text-primary" />
           <span className="text-sm text-muted-foreground">{m["contact.person"]()}</span>
           <span className="text-lg font-semibold">{CONTACT.person}</span>
           <span className="text-sm text-muted-foreground">{m["contact.founder"]()}, Pleadli</span>

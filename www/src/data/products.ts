@@ -29,11 +29,7 @@ export interface CapabilityNote {
   detail: string
 }
 
-/** A stylized representation of the real workspace shell: brand header,
- * icon ribbon, foldable navigator sections, a tab, and a status bar, the
- * same structure every Pleadli desktop app actually uses (see any app's
- * `features/workspace/{left-pillar,navigator,ribbon,statusbar}.tsx`), with
- * that app's real section and item labels. Not a claimed screenshot. */
+/** Illustrative workspace data, not evidence of the downloaded interface. */
 export interface ProductMockup {
   subtitle: string
   sections: { label: string; items: string[] }[]
@@ -71,8 +67,6 @@ export interface Product {
   download: {
     platforms: string[]
     state: string
-    /** Where the Windows installer is published (phe-rus/pleadli-releases), once there is one. */
-    release?: { version: string; url: string }
   }
 }
 
@@ -132,7 +126,7 @@ const productsBase: Product[] = [
       ],
       row: { title: 'R. Okello', meta: 'Held since 07:42, produce by 06:42 tomorrow', pill: 'Approaching limit' },
     },
-    download: { platforms: ['Windows'], state: 'Windows release 0.1.1. Installed copies update themselves. Early: in active development and testing, not yet field-validated.', release: { version: '0.1.1', url: 'https://github.com/phe-rus/pleadli-releases/releases/tag/police-v0.1.1' } },
+    download: { platforms: ['Windows'], state: 'Installed copies update themselves. Early: in active development and testing, not yet field-validated.' },
   },
   {
     slug: 'dpp',
@@ -190,7 +184,7 @@ const productsBase: Product[] = [
       ],
       row: { title: 'DPP/2026/0143', meta: 'Referred by Central Police Station, 2 days ago', pill: 'Under review' },
     },
-    download: { platforms: ['Windows'], state: 'Windows release 0.1.1. Installed copies update themselves. Early: in active development and testing, not yet field-validated.', release: { version: '0.1.1', url: 'https://github.com/phe-rus/pleadli-releases/releases/tag/dpp-v0.1.1' } },
+    download: { platforms: ['Windows'], state: 'Installed copies update themselves. Early: in active development and testing, not yet field-validated.' },
   },
   {
     slug: 'courts',
@@ -298,7 +292,7 @@ const productsBase: Product[] = [
       ],
       row: { title: 'Nakato v. Uganda', meta: 'Bail application, trial-readiness certificate due', pill: '2 days left' },
     },
-    download: { platforms: ['Windows'], state: 'Windows release 0.1.1. Installed copies update themselves. Early: not yet field-validated with a practising firm.', release: { version: '0.1.1', url: 'https://github.com/phe-rus/pleadli-releases/releases/tag/lawyers-v0.1.1' } },
+    download: { platforms: ['Windows'], state: 'Installed copies update themselves. Early: not yet field-validated with a practising firm.' },
   },
   {
     slug: 'prisons',
@@ -355,7 +349,7 @@ const productsBase: Product[] = [
       ],
       row: { title: 'P. Achen', meta: 'Remand, mandatory-bail threshold in 47h 40m', pill: 'Needs attention' },
     },
-    download: { platforms: ['Windows'], state: 'Windows release 0.1.1. Installed copies update themselves. Early: in active development and testing, not yet field-validated.', release: { version: '0.1.1', url: 'https://github.com/phe-rus/pleadli-releases/releases/tag/prisons-v0.1.1' } },
+    download: { platforms: ['Windows'], state: 'Installed copies update themselves. Early: in active development and testing, not yet field-validated.' },
   },
 ]
 

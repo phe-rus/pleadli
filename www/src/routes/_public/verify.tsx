@@ -27,6 +27,7 @@ const kinds: Record<string, () => string> = {
   judgment: () => m["verify.kind.judgment"](),
   release_warrant: () => m["verify.kind.release_warrant"](),
   letter: () => m["verify.kind.letter"](),
+  legal_document: () => m["verify.kind.legal_document"](),
 }
 
 function RouteComponent() {
@@ -35,8 +36,8 @@ function RouteComponent() {
 
   return (
     <article className="container flex w-full flex-col md:max-w-3xl">
-      <section className="flex flex-col gap-5 py-16 md:py-24">
-        <h1 className="text-3xl tracking-tight md:text-5xl!">{m["verify.title"]()}</h1>
+      <section className="editorial-hero">
+        <h1 className="text-4xl! font-semibold tracking-tight md:text-6xl!">{m["verify.title"]()}</h1>
         <p className="md:max-w-xl md:text-lg!">{m["verify.lead"]()}</p>
         <CodeForm from="/verify" code={code} label={m["verify.code"]()} hint={m["verify.code_hint"]()} submit={m["verify.check"]()} />
       </section>

@@ -25,34 +25,35 @@ const faq = [
  * Records are never locked; this page says so before anything else. */
 function RouteComponent() {
   return (
-    <article className="container flex w-full flex-col md:max-w-5xl">
-      <section className="flex flex-col gap-5 py-16 md:py-24">
-        <h1 className="text-3xl tracking-tight md:max-w-3xl md:text-5xl!">{m["pricing.title"]()}</h1>
+    <article className="container flex w-full flex-col md:max-w-6xl">
+      <section className="editorial-hero">
+        <span className="editorial-eyebrow">{m["nav.pricing"]()}</span>
+        <h1 className="text-4xl! font-semibold tracking-tight md:max-w-3xl md:text-6xl!">{m["pricing.title"]()}</h1>
         <p className="md:max-w-xl md:text-lg!">{m["pricing.lead"]()}</p>
         <p className="w-fit rounded-xl bg-primary/[0.07] px-4 py-3 text-sm ring-1 ring-primary/15">{m["pricing.now_note"]()}</p>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card className="gap-4 p-6 sm:p-8">
+        <Card className="gap-5 rounded-3xl border-border/50 bg-muted/30 p-8 sm:p-10">
           <HugeiconsIcon icon={Building03Icon} className="size-7! text-primary" />
           <div className="flex flex-col gap-1">
             <h2 className="text-xl! tracking-tight">{m["pricing.public_title"]()}</h2>
             <span className="text-sm text-muted-foreground">{m["pricing.public_who"]()}</span>
           </div>
           <p>{m["pricing.public_body"]()}</p>
-          <Button className="mt-auto w-fit" nativeButton={false} render={<Link to="/contact" />}>
+          <Button className="mt-auto w-fit rounded-full" nativeButton={false} render={<Link to="/contact" />}>
             {m["pricing.public_cta"]()}
             <HugeiconsIcon icon={ArrowRight02Icon} data-icon="inline-end" />
           </Button>
         </Card>
-        <Card className="gap-4 p-6 sm:p-8">
+        <Card className="gap-5 rounded-3xl border-border/50 bg-muted/30 p-8 sm:p-10">
           <HugeiconsIcon icon={JusticeScale01Icon} className="size-7! text-primary" />
           <div className="flex flex-col gap-1">
             <h2 className="text-xl! tracking-tight">{m["pricing.practice_title"]()}</h2>
             <span className="text-sm text-muted-foreground">{m["pricing.practice_who"]()}</span>
           </div>
           <p>{m["pricing.practice_body"]()}</p>
-          <Button className="mt-auto w-fit" variant="secondary" nativeButton={false} render={<a href={`mailto:${CONTACT.email}?subject=${encodeURIComponent(m["pricing.practice_cta"]())}`} />}>
+          <Button className="mt-auto w-fit rounded-full" variant="secondary" nativeButton={false} render={<a href={`mailto:${CONTACT.email}?subject=${encodeURIComponent(m["pricing.practice_cta"]())}`} />}>
             {m["pricing.practice_cta"]()}
           </Button>
         </Card>
@@ -79,9 +80,9 @@ function RouteComponent() {
         <h2 className="text-2xl! md:text-3xl! tracking-tight">{m["pricing.faq_title"]()}</h2>
         <dl className="grid grid-cols-1 gap-x-10 gap-y-8 md:grid-cols-2">
           {faq.map((item) => (
-            <div key={item.q()} className="flex flex-col gap-1">
+            <div key={item.q()} className="rounded-2xl border border-border/50 p-5">
               <dt className="font-semibold">{item.q()}</dt>
-              <dd className="ms-0">{item.a()}</dd>
+              <dd className="ms-0 mt-3 leading-relaxed text-muted-foreground">{item.a()}</dd>
             </div>
           ))}
         </dl>

@@ -38,8 +38,8 @@ function RouteComponent() {
 
   return (
     <article className="container flex w-full flex-col md:max-w-3xl">
-      <section className="flex flex-col gap-5 py-16 md:py-24">
-        <h1 className="text-3xl tracking-tight md:text-5xl!">{m["track.title"]()}</h1>
+      <section className="editorial-hero">
+        <h1 className="text-4xl! font-semibold tracking-tight md:text-6xl!">{m["track.title"]()}</h1>
         <p className="md:max-w-xl md:text-lg!">{m["track.lead"]()}</p>
         <CodeForm from="/track" code={code} label={m["track.code"]()} hint={m["track.code_hint"]()} submit={m["track.check"]()} />
       </section>

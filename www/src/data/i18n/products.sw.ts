@@ -36,7 +36,7 @@ export const productsSw = {
       stats: [{ label: 'Kizuizini' }, { label: 'Mashauri wazi' }, { label: 'Zamu leo' }],
       row: { meta: 'Ameshikiliwa tangu 07:42, afikishwe kabla ya 06:42 kesho', pill: 'Anakaribia kikomo' },
     },
-    download: { state: 'Toleo la Windows 0.1.1. Nakala zilizosakinishwa hujisasisha zenyewe. Mapema: bado inaendelezwa na kujaribiwa, haijathibitishwa kazini.' },
+    download: { state: 'Nakala zilizosakinishwa hujisasisha zenyewe. Mapema: bado inaendelezwa na kujaribiwa, haijathibitishwa kazini.' },
   },
   dpp: {
     institution: 'Ofisi ya Mkurugenzi wa Mashtaka ya Umma',
@@ -73,7 +73,7 @@ export const productsSw = {
       stats: [{ label: 'Yanasubiri uamuzi' }, { label: 'Yaliyopelekwa wiki hii' }, { label: 'Hati za mashtaka zilizotolewa' }],
       row: { meta: 'Limepelekwa na Kituo Kikuu cha Polisi, siku 2 zilizopita', pill: 'Linachunguzwa' },
     },
-    download: { state: 'Toleo la Windows 0.1.1. Nakala zilizosakinishwa hujisasisha zenyewe. Mapema: bado inaendelezwa na kujaribiwa, haijathibitishwa kazini.' },
+    download: { state: 'Nakala zilizosakinishwa hujisasisha zenyewe. Mapema: bado inaendelezwa na kujaribiwa, haijathibitishwa kazini.' },
   },
   courts: {
     institution: 'Mahakama ya Uganda',
@@ -150,7 +150,7 @@ export const productsSw = {
       stats: [{ label: 'Mashauri wazi' }, { label: 'Vikao wiki hii' }, { label: 'Muda wa mwisho unaokaribia' }],
       row: { meta: 'Maombi ya dhamana, cheti cha utayari wa kesi kinahitajika', pill: 'Siku 2 zimebaki' },
     },
-    download: { state: 'Toleo la Windows 0.1.1. Nakala zilizosakinishwa hujisasisha zenyewe. Mapema: haijathibitishwa kazini na kampuni ya uwakili.' },
+    download: { state: 'Nakala zilizosakinishwa hujisasisha zenyewe. Mapema: haijathibitishwa kazini na kampuni ya uwakili.' },
   },
   prisons: {
     institution: 'Idara ya Magereza ya Uganda',
@@ -188,7 +188,7 @@ export const productsSw = {
       stats: [{ label: 'Kizuizini' }, { label: 'Dhamana ya lazima inakaribia' }, { label: 'Kutembelewa leo' }],
       row: { meta: 'Rumande, kikomo cha dhamana ya lazima ndani ya saa 47 dakika 40', pill: 'Inahitaji uangalizi' },
     },
-    download: { state: 'Toleo la Windows 0.1.1. Nakala zilizosakinishwa hujisasisha zenyewe. Mapema: bado inaendelezwa na kujaribiwa, haijathibitishwa kazini.' },
+    download: { state: 'Nakala zilizosakinishwa hujisasisha zenyewe. Mapema: bado inaendelezwa na kujaribiwa, haijathibitishwa kazini.' },
   },
 }
 

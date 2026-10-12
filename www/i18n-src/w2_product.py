@@ -3,7 +3,7 @@ S = {
 "product.real_today": ("Real today", "Ipo leo", "Réel aujourd'hui"),
 "product.partial": ("Partial", "Sehemu", "Partiel"),
 "product.not_built": ("Not built", "Haijajengwa", "Non construit"),
-"product.mockup_note": ("A stylized representation of the real workspace, built from real navigation and sample data, not a screenshot.", "Mfano wa eneo halisi la kazi, uliojengwa kwa menyu halisi na data ya mfano, si picha ya skrini.", "Une représentation stylisée du vrai espace de travail, construite à partir de la vraie navigation et de données d'exemple, pas une capture d'écran."),
+'product.mockup_note': ('Illustration with sample records, not a screenshot of the downloaded release.', 'Mfano wenye kumbukumbu za majaribio, si picha ya skrini ya toleo unalopakua.', 'Illustration avec des dossiers fictifs, pas une capture de la version téléchargée.'),
 "product.mock_search": ("Search…", "Tafuta…", "Rechercher…"),
 "product.mock_local": ("Local", "Ndani", "Local"),
 "product.problem": ("The problem", "Tatizo", "Le problème"),
@@ -33,3 +33,26 @@ S = {
 "products.story_title": ("One platform story, told once", "Hadithi moja ya jukwaa, inayosimuliwa mara moja", "Une histoire de plateforme, racontée une fois"),
 "products.story_lead": ("What's shared underneath every application above, honestly scored.", "Kinachoshirikiwa chini ya kila programu hapo juu, kwa tathmini ya ukweli.", "Ce qui est partagé sous chaque application ci-dessus, noté honnêtement."),
 }
+
+S.update({
+'product.screenshot_note': ('Pleadli Prisons, in development. Shown with fictional records; available releases may look different.', 'Pleadli Prisons inatengenezwa. Imeonyeshwa na kumbukumbu za mfano; matoleo yanayopatikana yanaweza kutofautiana.', 'Pleadli Prisons, en développement. Dossiers fictifs ; les versions disponibles peuvent différer.'),
+'product.contact': ('Ask us about {name}', 'Tuulize kuhusu {name}', 'Parlons de {name}'),
+'product.workflows': ('Made for your working day', 'Kwa siku yako ya kazi', 'Pour votre journée de travail'),
+'product.workflows_lead': ('From the first task to the next decision, keep the work in one place.', 'Kuanzia kazi ya kwanza hadi uamuzi unaofuata, weka kazi pamoja.', 'De la première tâche à la prochaine décision, gardez votre travail au même endroit.'),
+'product.owns': ('The records you keep', 'Kumbukumbu unazohifadhi', 'Les dossiers que vous conservez'),
+'product.stands': ('What you can use today', 'Unachoweza kutumia leo', 'Ce que vous pouvez utiliser aujourd’hui'),
+'product.stands_lead': ('See what is available, what is being improved, and what is still to come.', 'Ona kinachopatikana, kinachoboreshwa na kinachokuja.', 'Découvrez ce qui est disponible, en cours d’amélioration et à venir.'),
+'product.ahead_lead': ('The next improvements we are working towards.', 'Maboresho yanayofuata tunayoyafanyia kazi.', 'Les prochaines améliorations que nous préparons.'),
+})
+
+S.update({
+'preview.explore': ('Explore the screens', 'Angalia skrini', 'Explorer les écrans'),
+'preview.hearing': ('The hearing', 'Kikao', 'L’audience'),
+'preview.documents': ('Court papers', 'Nyaraka za mahakama', 'Les actes judiciaires'),
+'preview.custody': ('The custody file', 'Jalada la mahabusu', 'Le dossier de détention'),
+'preview.law': ('Uganda legal settings', 'Mipangilio ya sheria za Uganda', 'Paramètres juridiques ougandais'),
+'preview.real_note': ('Explore a development version with fictional records. Available downloads may differ.', 'Angalia toleo linalotengenezwa lenye kumbukumbu za mfano. Matoleo yanayopatikana yanaweza kutofautiana.', 'Découvrez une version en développement avec des dossiers fictifs. Les versions disponibles peuvent différer.'),
+'preview.details': ('Explore features and availability', 'Angalia vipengele na upatikanaji', 'Fonctionnalités et disponibilité'),
+'products.title': ('Find your place in Pleadli.', 'Pata nafasi yako katika Pleadli.', 'Trouvez votre place dans Pleadli.'),
+'products.lead': ('Five apps, shaped around the people who keep justice moving. Find the one for your working day.', 'Programu tano kwa watu wanaoendeleza haki. Pata inayofaa siku yako ya kazi.', 'Cinq applications pour les personnes qui font avancer la justice. Trouvez celle qui accompagne votre journée.'),
+})

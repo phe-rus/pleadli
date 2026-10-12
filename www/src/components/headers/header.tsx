@@ -23,21 +23,21 @@ export default function Header() {
   const itemsList = useMemo(() => navItems, [])
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/55 bg-background/95 backdrop-blur">
-      <section className="px-5 flex h-10 items-center justify-between gap-5">
-        <div className="flex items-center gap-5">
-          <Link to="/" className="flex items-center gap-2 font-bold text-base shrink-0">
-            <img src="/favicon.svg" alt="" className="size-6" />
+    <header className="sticky top-0 z-40 border-b border-border/40 bg-background/75 backdrop-blur-2xl">
+      <section className="mx-auto max-w-6xl px-5 flex h-14 items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight text-base shrink-0">
+            <img src="/favicon.svg" alt="" className="size-7" />
             Pleadli
           </Link>
 
-          <nav className="hidden md:flex items-center gap-3">
+          <nav className="hidden lg:flex items-center gap-2">
             {itemsList.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="text-sm!"
-                activeProps={{ className: 'text-primary font-bold' }}
+                className="rounded-full px-2 py-2 text-xs! text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                activeProps={{ className: 'bg-muted/70 text-foreground font-medium' }}
               >
                 {item.label}
               </Link>
@@ -47,7 +47,7 @@ export default function Header() {
 
         <nav className="flex items-center gap-2">
           <LanguageSwitch />
-          <Link to="/login" className={cn(buttonVariants({ variant: 'secondary' }))}>
+          <Link to="/login" className={cn(buttonVariants({ variant: 'secondary' }), 'rounded-full text-xs')}>
             <HugeiconsIcon icon={PersonStandingIcon} />
             <span className="hidden sm:inline">{m["nav.get_started"]()}</span>
             <span className="sm:hidden">{m["nav.sign_in"]()}</span>
@@ -59,13 +59,13 @@ export default function Header() {
                 <button
                   type="button"
                   aria-label={m["nav.open_menu"]()}
-                  className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
                 />
               }
             >
               <HugeiconsIcon icon={Menu01Icon} className="size-4.5!" />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-48 gap-0.5 p-1.5 md:hidden">
+            <PopoverContent align="end" className="w-48 gap-0.5 p-1.5 lg:hidden">
               {itemsList.map((item) => {
                 const active = location.pathname.startsWith(item.to)
                 return (

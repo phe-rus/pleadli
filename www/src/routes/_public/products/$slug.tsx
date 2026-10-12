@@ -3,146 +3,39 @@ import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card } from '@pleadli/ui/card'
 import { Separator } from '@pleadli/ui/separator'
-import { type CapabilityNote, type Product, productBySlug, getProducts, getReadinessLabel } from '@/data/products'
+import { type CapabilityNote, productBySlug, getProducts, getReadinessLabel } from '@/data/products'
 import {
   ArrowRight02Icon,
   CheckmarkCircle02Icon,
   CircleIcon,
-  Download01Icon,
   MinusSignCircleIcon,
-  WifiOff02Icon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import * as m from '@/paraglide/messages'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { getReleases } from '@/functions/releases.func'
 import { cn } from 'cn'
+import { ProductPreview } from '@/components/product-preview'
+import { productPresentation } from '@/data/product-presentation'
+import { DownloadActions } from '@/components/download-actions'
 
 export const Route = createFileRoute('/_public/products/$slug')({
-  loader: ({ params }) => {
+  loader: async ({ params }) => {
     const product = productBySlug(params.slug)
     if (!product) throw notFound()
-    return product
+    // A release needs both a feed and a published installer.
+    const live = await getReleases()
+    return { slug: product.slug, availability: live[product.slug] ?? { status: 'unavailable' as const } }
   },
   head: ({ loaderData }) => {
     if (!loaderData) return {}
-    const title = `${loaderData.name} · Pleadli`
-    const description = `${loaderData.tagline} ${loaderData.problem}`
-    return seo({ title, description, path: `/products/${loaderData.slug}` })
+    const product = productBySlug(loaderData.slug)
+    if (!product) return {}
+    return seo({ title: `${product.name} · Pleadli`, description: `${product.tagline} ${product.problem}`, path: `/products/${product.slug}` })
   },
   component: RouteComponent,
 })
 
-const tileTints = ['bg-primary/10 text-primary', 'bg-emerald-500/10 text-emerald-600', 'bg-amber-500/10 text-amber-600'] as const
-
-/** The workspace as the desktop apps draw it: title bar with the app's mark,
- * Chrome-style tabs, a navigator of folding sections with count chips, stat
- * tiles, and a status bar. Real labels from the app's own menu, sample data.
- * Labelled as a mockup so it never reads as a claim about exact pixels. */
-function ProductMockup({ product }: { product: Product }) {
-  const { mockup } = product
-  const today = mockup.sections[0]?.items[0]
-  return (
-    <Card className="w-full gap-0 overflow-hidden rounded-xl p-0 shadow-lg">
-      {/* Title bar: mark, name and office on the left, tabs, theme on the right. */}
-      <div className="flex h-9 items-stretch border-b bg-background">
-        <div className="flex w-[92px] shrink-0 items-center gap-2 px-2.5 sm:w-[180px]">
-          <HugeiconsIcon icon={product.icon} className="size-4! shrink-0 text-primary" />
-          <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-            <span className="truncate text-[0.7rem] font-semibold">{product.name}</span>
-            <span className="truncate text-[0.6rem] text-muted-foreground">{mockup.statusLeft}</span>
-          </div>
-        </div>
-        <div className="flex min-w-0 flex-1 items-end gap-0.5 px-1">
-          {[today, mockup.tab].filter((t, i, a) => t && a.indexOf(t) === i).map((t) => (
-            <span
-              key={t}
-              className={cn(
-                'flex h-7 max-w-[9rem] items-center truncate rounded-t-md px-2.5 text-[0.65rem]',
-                t === mockup.tab ? 'border-b-2 border-primary bg-muted/60 font-medium text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-        <span className="hidden items-center pr-3 text-[0.6rem] text-muted-foreground sm:flex">
-          <HugeiconsIcon icon={WifiOff02Icon} className="mr-1 size-2.5!" />
-          {m["product.mock_local"]()}
-        </span>
-      </div>
-
-      <div className="aspect-4/3 sm:aspect-video">
-        <div className="grid h-full grid-cols-[92px_1fr] sm:grid-cols-[180px_1fr]">
-          {/* Navigator. */}
-          <div className="flex flex-col gap-2 overflow-hidden border-r bg-muted/20 p-1.5 sm:gap-2.5 sm:p-2">
-            <div className="hidden h-6 items-center rounded-md border border-border/60 bg-background px-2 text-[0.6rem] text-muted-foreground sm:flex">{m["product.mock_search"]()}</div>
-            {mockup.sections.map((section, si) => (
-              <div key={section.label} className="flex flex-col gap-0.5">
-                <span className="hidden items-center justify-between px-1.5 text-[0.55rem] font-semibold tracking-wider text-muted-foreground/70 uppercase sm:flex">
-                  {section.label}
-                  <span aria-hidden>⌄</span>
-                </span>
-                {section.items.map((item, ii) => (
-                  <div
-                    key={item}
-                    className={cn(
-                      'flex items-center justify-between gap-1 truncate rounded-md px-1.5 py-1 text-[0.65rem] sm:px-2',
-                      item === mockup.tab ? 'bg-primary/10 font-medium text-primary' : 'text-muted-foreground',
-                    )}
-                  >
-                    <span className="flex min-w-0 items-center gap-1.5">
-                      <span className={cn('size-2.5 shrink-0 rounded-[3px] border', item === mockup.tab ? 'border-primary/60' : 'border-muted-foreground/40')} />
-                      <span className="truncate">{item}</span>
-                    </span>
-                    {si === 0 && ii === 1 && <span className="rounded-full bg-destructive/15 px-1 text-[0.55rem] text-destructive">2</span>}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* The page in view. */}
-          <div className="flex min-w-0 flex-col">
-            <div className="flex flex-1 flex-col gap-2.5 overflow-hidden p-2.5 sm:gap-3 sm:p-4">
-              <div className="flex flex-col">
-                <span className="truncate text-sm font-bold sm:text-lg">{mockup.tab}</span>
-                <span className="hidden truncate text-[0.65rem] text-muted-foreground sm:block">{mockup.subtitle}</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                {mockup.stats.map((stat, i) => (
-                  <div key={stat.label} className="flex flex-col gap-1 rounded-lg border bg-card p-1.5 sm:p-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className={cn('flex size-4 shrink-0 items-center justify-center rounded-full sm:size-5', tileTints[i % 3])}>
-                        <span className="size-1.5 rounded-full bg-current" />
-                      </span>
-                      <span className="truncate text-[0.55rem] text-muted-foreground sm:text-[0.65rem]">{stat.label}</span>
-                    </div>
-                    <span className="text-base font-semibold tabular-nums sm:text-2xl">{stat.value}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center justify-between gap-2 rounded-lg border bg-card p-2 sm:p-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="size-1.5 shrink-0 rounded-full bg-destructive" />
-                  <div className="flex min-w-0 flex-col">
-                    <span className="truncate text-[0.7rem] font-semibold sm:text-sm">{mockup.row.title}</span>
-                    <span className="truncate text-[0.6rem] text-muted-foreground sm:text-xs">{mockup.row.meta}</span>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="shrink-0 bg-destructive/10 text-destructive">{mockup.row.pill}</Badge>
-              </div>
-            </div>
-            {/* Status bar. */}
-            <div className="flex h-6 items-center justify-between gap-2 border-t px-2.5 text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">
-              <span className="truncate">{mockup.statusLeft}</span>
-              <span className="shrink-0">{mockup.statusRight}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Card>
-  )
-}
 
 function CapabilityRow({ label, note }: { label: string; note: CapabilityNote }) {
   const icon = note.state === true ? CheckmarkCircle02Icon : note.state === 'partial' ? MinusSignCircleIcon : CircleIcon
@@ -169,11 +62,13 @@ function CapabilityRow({ label, note }: { label: string; note: CapabilityNote })
 }
 
 function RouteComponent() {
-  const product = Route.useLoaderData()
+  const { slug, availability } = Route.useLoaderData()
+  const product = productBySlug(slug)!
+  const story = productPresentation(slug)
 
   return (
     <article className="container flex w-full flex-col gap-5 md:max-w-5xl">
-      <section className="flex flex-col gap-5 py-16 md:py-20">
+      <section className="flex flex-col items-center gap-5 py-16 text-center md:py-24">
         <div className="flex items-center gap-3">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <HugeiconsIcon icon={product.icon} className="size-6!" />
@@ -184,18 +79,19 @@ function RouteComponent() {
         </div>
         <div>
           <h1 className="text-3xl md:max-w-2xl md:text-5xl!">{product.name}</h1>
-          <p className="md:max-w-xl md:text-base!">{product.tagline}</p>
+          <p className="mx-auto mt-4 max-w-3xl text-3xl! font-semibold tracking-tight md:text-5xl!">{story.title}</p>
+          <p className="mx-auto mt-5 max-w-xl text-base! text-muted-foreground">{story.lead}</p>
         </div>
         <p className="text-sm text-muted-foreground">{product.institution}</p>
       </section>
 
-      <section className="pb-10">
-        <ProductMockup product={product} />
-        <p className="mt-2 text-xs text-muted-foreground">
-          {m["product.mockup_note"]()}
-        </p>
-      </section>
+      <div className={`product-showcase product-tone-${slug} rounded-3xl p-4 sm:p-10`}><ProductPreview product={product} /></div>
 
+      <section className="grid gap-6 py-16 md:grid-cols-3">
+        {product.homePoints.map((point, index) => <div key={point} className="rounded-3xl bg-muted/40 p-7"><span className="text-sm font-medium text-primary">0{index + 1}</span><p className="mt-4 text-lg! font-medium leading-relaxed">{point}</p></div>)}
+      </section>
+      <details className="rounded-3xl border border-border/60 px-6 py-5 sm:px-10">
+        <summary className="cursor-pointer text-base font-medium">{m['preview.details']()}</summary>
       <section className="flex flex-col gap-3 py-10">
         <h2 className="text-xl!">{m["product.problem"]()}</h2>
         <p className="md:max-w-2xl">{product.problem}</p>
@@ -302,6 +198,8 @@ function RouteComponent() {
         <p className="md:max-w-2xl text-muted-foreground">{product.interchange}</p>
       </section>
 
+      </details>
+
       <section className="flex flex-col items-start gap-4 py-16 md:py-20">
         <div className="flex flex-col md:max-w-md">
           <h2 className="text-2xl!">{m["product.download_title"]({ name: product.name })}</h2>
@@ -310,17 +208,7 @@ function RouteComponent() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {product.download.release ? (
-            <Button size="lg" nativeButton={false} render={<a href={product.download.release.url} target="_blank" rel="noreferrer" />}>
-              <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
-              {m["product.download_windows"]()}
-            </Button>
-          ) : (
-            <Button size="lg" variant="secondary" disabled>
-              <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
-              {m["product.not_available"]()}
-            </Button>
-          )}
+          <DownloadActions name={product.name} availability={availability} />
           <Button size="lg" variant="outline" nativeButton={false} render={<Link to="/roadmap" />}>
             {m["product.see_roadmap"]()}
             <HugeiconsIcon icon={ArrowRight02Icon} data-icon="inline-end" />

@@ -29,22 +29,22 @@ export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="border-t border-border/55 bg-background">
-      <section className="container flex w-full flex-col gap-12 py-16 md:max-w-5xl">
-        <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+    <footer className="border-t border-border/40 bg-muted/35">
+      <section className="container flex w-full flex-col gap-10 py-14 md:max-w-6xl">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-[1.2fr_1fr_1fr_1.2fr]">
           <div className="col-span-2 flex flex-col gap-3 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 text-base font-bold">
-              <img src="/favicon.svg" alt="" className="size-6" />
+            <Link to="/" className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+              <img src="/favicon.svg" alt="" className="size-8" />
               Pleadli
             </Link>
-            <p className="text-sm text-muted-foreground">{m["site.slogan"]()}</p>
+            <p className="text-sm text-muted-foreground">{m["polish.footer"]()}</p>
           </div>
 
           {columns.map((column) => (
             <nav key={column.title} className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-foreground">{column.title}</span>
+              <span className="mb-2 text-xs font-semibold text-foreground">{column.title}</span>
               {column.links.map((item) => (
-                <Link key={item.to} to={item.to} className="text-sm text-muted-foreground hover:text-foreground">
+                <Link key={item.to} to={item.to} className="text-xs leading-relaxed text-muted-foreground transition-colors hover:text-foreground">
                   {item.label}
                 </Link>
               ))}
@@ -52,9 +52,9 @@ export default function Footer() {
           ))}
 
           <div className="flex flex-col gap-2">
-            <Link to="/contact" className="text-sm font-medium text-foreground">{m["nav.contact"]()}</Link>
-            <a href={`mailto:${CONTACT.email}`} className="text-sm text-muted-foreground hover:text-foreground">{CONTACT.email}</a>
-            <a href={`tel:${CONTACT.phoneE164}`} className="text-sm text-muted-foreground hover:text-foreground">{CONTACT.phone}</a>
+            <Link to="/contact" className="mb-2 text-xs font-semibold text-foreground">{m["nav.contact"]()}</Link>
+            <a href={`mailto:${CONTACT.email}`} className="text-xs leading-relaxed text-muted-foreground transition-colors hover:text-foreground">{CONTACT.email}</a>
+            <a href={`tel:${CONTACT.phoneE164}`} className="text-xs leading-relaxed text-muted-foreground transition-colors hover:text-foreground">{CONTACT.phone}</a>
             <span className="text-sm text-muted-foreground">{CONTACT.person}</span>
           </div>
         </div>

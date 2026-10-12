@@ -18,8 +18,8 @@ function RouteComponent() {
 
   return (
     <article className={cn(
-      "container mx-auto flex w-full flex-col gap-5 py-10",
-      'md:max-w-5xl md:flex-row md:items-start',
+      "container mx-auto flex w-full flex-col gap-8 py-12 md:py-16",
+      'md:max-w-6xl md:flex-row md:items-start',
       'relative'
     )}>
       <div className="md:hidden">
@@ -42,7 +42,7 @@ function RouteComponent() {
                 to={item.to}
                 onClick={() => setOpen(false)}
                 className="px-2 text-sm text-muted-foreground hover:text-foreground"
-                activeProps={{ className: 'font-medium text-foreground' }}
+                activeProps={{ className: 'bg-background font-medium text-primary shadow-sm' }}
                 activeOptions={{ exact: true }}
               >
                 {item.title}
@@ -52,13 +52,13 @@ function RouteComponent() {
         </Popover>
       </div>
 
-      <nav className="hidden md:sticky md:top-16 md:flex md:w-48 md:shrink-0 md:flex-col">
+      <nav className="hidden md:sticky md:top-16 md:flex md:w-52 md:shrink-0 md:flex-col md:gap-1 md:rounded-2xl md:bg-muted/40 md:p-3">
         {docsNav.map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            className="text-sm text-muted-foreground hover:text-foreground"
-            activeProps={{ className: 'font-medium text-foreground' }}
+            className="rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+            activeProps={{ className: 'bg-background font-medium text-primary shadow-sm' }}
             activeOptions={{ exact: true }}
           >
             {item.title}
@@ -66,7 +66,7 @@ function RouteComponent() {
         ))}
       </nav>
 
-      <div className="min-w-0 flex-1">
+      <div className="guide-reading min-w-0 flex-1 rounded-3xl bg-card p-6 leading-relaxed sm:p-10">
         <Outlet />
       </div>
     </article>
