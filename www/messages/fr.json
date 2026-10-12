@@ -814,6 +814,14 @@
     "ready": "Prêt aujourd'hui",
     "title": "Où va Pleadli"
   },
+  "seo": {
+    "about_title": "À propos de Pleadli | Notre mission et notre équipe",
+    "contact_title": "Contacter Pleadli | Assistance, projets pilotes et partenariats",
+    "downloads_title": "Télécharger Pleadli | Applications pour les métiers de la justice",
+    "home_title": "Pleadli Legal Orchestra | Un meilleur espace pour votre travail.",
+    "licensing_title": "Licences Pleadli | Particuliers, cabinets et institutions",
+    "products_title": "Découvrez Pleadli | Des applications pour chaque métier de la justice"
+  },
   "site": {
     "description": "Gérez affaires, documents et travail quotidien avec Pleadli pour la police, le parquet, les tribunaux, les avocats et les prisons. Seul ou en institution, hors ligne.",
     "motto": "La justice exige que les institutions travaillent ensemble, sans devenir une seule et même institution.",

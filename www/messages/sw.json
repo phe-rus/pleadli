@@ -814,6 +814,14 @@
     "ready": "Tayari leo",
     "title": "Pleadli inakoelekea"
   },
+  "seo": {
+    "about_title": "Kuhusu Pleadli | Lengo letu na watu wetu",
+    "contact_title": "Wasiliana na Pleadli | Msaada, majaribio na ushirikiano",
+    "downloads_title": "Pakua Pleadli | Programu za kazi za kisheria",
+    "home_title": "Pleadli Legal Orchestra | Mahali bora pa kazi yako.",
+    "licensing_title": "Leseni za Pleadli | Watu binafsi, ofisi na taasisi",
+    "products_title": "Gundua Pleadli | Programu kwa kila sehemu ya haki"
+  },
   "site": {
     "description": "Simamia mashauri, nyaraka na kazi za kila siku kwa programu za Pleadli za polisi, waendesha mashtaka, mahakama, mawakili na magereza. Fanya kazi bila intaneti.",
     "motto": "Haki inahitaji taasisi kufanya kazi pamoja, bila kuwa taasisi moja.",

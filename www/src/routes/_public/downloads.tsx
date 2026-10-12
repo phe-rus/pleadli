@@ -12,7 +12,7 @@ import { ProductPreview } from '@/components/product-preview'
 import { productPresentation } from '@/data/product-presentation'
 
 export const Route = createFileRoute('/_public/downloads')({
-  head: () => seo({ title: `${m['downloads.title']().replace(/\.$/, '')} · Pleadli`, description: m['downloads.lead'](), path: '/downloads' }),
+  head: () => seo({ title: m['seo.downloads_title'](), description: m['downloads.lead'](), path: '/downloads' }),
   loader: () => getReleases(),
   component: RouteComponent,
 })

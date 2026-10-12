@@ -8,7 +8,7 @@ import { Card } from '@pleadli/ui/card'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/contact')({
-  head: () => seo({ title: m["contact.meta_title"](), description: m["contact.meta_description"](), path: '/contact' }),
+  head: () => seo({ title: m['seo.contact_title'](), description: m["contact.meta_description"](), path: '/contact' }),
   component: RouteComponent,
 })
 

@@ -10,7 +10,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import * as m from '@/paraglide/messages'
 
 export const Route = createFileRoute('/_public/')({
-  head: () => seo({ title: m['site.title'](), description: m['site.description'](), path: '/' }),
+  head: () => seo({ title: m['seo.home_title'](), description: m['site.description'](), path: '/' }),
   component: RouteComponent,
 })
 

@@ -8,7 +8,7 @@ import { Card } from '@pleadli/ui/card'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/licensing')({
-  head: () => seo({ title: m["pricing.meta_title"](), description: m["pricing.meta_description"](), path: '/licensing' }),
+  head: () => seo({ title: m['seo.licensing_title'](), description: m["pricing.meta_description"](), path: '/licensing' }),
   component: RouteComponent,
 })
 

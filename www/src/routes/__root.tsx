@@ -18,7 +18,7 @@ const SITE = 'https://pleadli.com'
 const structuredData = JSON.stringify({
   '@context': 'https://schema.org',
   '@graph': [
-    { '@type': 'Organization', '@id': `${SITE}/#org`, name: 'Pleadli', url: SITE, email: 'pleadli@pleadli.com', telephone: '+256772591289', founder: { '@type': 'Person', name: 'Justice Vincent Opyene' }, logo: `${SITE}/apple-touch-icon.png`, slogan: 'Legal Orchestra', areaServed: ['Uganda', 'Kenya', 'Tanzania', 'Rwanda', 'Burundi', 'Democratic Republic of the Congo'] },
+    { '@type': 'Organization', '@id': `${SITE}/#org`, name: 'Pleadli', url: SITE, email: 'pleadli@pleadli.com', telephone: '+256772591289', founder: { '@type': 'Person', name: 'Justice Vincent Opyene' }, logo: `${SITE}/apple-touch-icon.png`, slogan: 'A better place for your work.', areaServed: ['Uganda', 'Kenya', 'Tanzania', 'Rwanda', 'Burundi', 'Democratic Republic of the Congo'] },
     { '@type': 'WebSite', '@id': `${SITE}/#site`, url: SITE, name: 'Pleadli Legal Orchestra', publisher: { '@id': `${SITE}/#org` }, inLanguage: ['en', 'sw', 'fr'] },
     ...[
       ['Pleadli Police', 'police'],

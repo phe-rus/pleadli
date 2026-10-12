@@ -814,6 +814,14 @@
     "ready": "Ready today",
     "title": "Where Pleadli is going"
   },
+  "seo": {
+    "about_title": "About Pleadli | Our purpose and the people behind it",
+    "contact_title": "Contact Pleadli | Support, pilots and partnerships",
+    "downloads_title": "Download Pleadli | Desktop apps for legal work",
+    "home_title": "Pleadli Legal Orchestra | A better place for your work.",
+    "licensing_title": "Pleadli licensing | Individuals, practices and institutions",
+    "products_title": "Explore Pleadli | Apps for every part of justice"
+  },
   "site": {
     "description": "Manage cases, documents and daily work with Pleadli apps for police, prosecutors, courts, lawyers and prisons. Work offline, alone or with your institution.",
     "motto": "Justice requires institutions to work together, without becoming the same institution.",
