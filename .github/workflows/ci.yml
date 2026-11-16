@@ -87,6 +87,9 @@ jobs:
         run: |
           bun toolings/ci/routes.ts apps/*/
           cd www
+          # Placeholder values only. wrangler types reads the variable NAMES from
+          # .env to type `Env`. No secret is involved.
+          cp .env.ci .env
           bun run i18n
           bun run generate-routes
           bun run cf-typegen
@@ -136,6 +139,19 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       # tauri::generate_context needs the frontendDist folder to exist to compile.
       - run: mkdir -p apps/${{ matrix.app }}/dist
+      # Tauri checks that each sidecar in externalBin exists at build time (the real
+      # file is downloaded at release time). Empty placeholders are enough to compile.
+      - name: Sidecar placeholders
+        run: |
+          bun -e '
+            const conf = await Bun.file("apps/${{ matrix.app }}/src-tauri/tauri.conf.json").json();
+            for (const bin of conf.bundle?.externalBin ?? []) console.log(bin);
+          ' | while read -r bin; do
+            path="apps/${{ matrix.app }}/src-tauri/${bin}-x86_64-unknown-linux-gnu"
+            mkdir -p "$(dirname "$path")"
+            : > "$path"
+            chmod +x "$path"
+          done
       - name: cargo test
         run: cargo test --manifest-path apps/${{ matrix.app }}/src-tauri/Cargo.toml
       - name: cargo clippy and the ratchet

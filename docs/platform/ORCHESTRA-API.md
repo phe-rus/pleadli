@@ -33,12 +33,12 @@ Errors: `{error, message}` with 400 invalid, 401 not_activated, 403 revoked / su
 Two levels, so a lost or leaked online key never needs an app update:
 
 - **Root key**: offline only (USB stick plus a printed sheet, two places). Apps embed its public half (`orchestra-root-public-key.txt` once made). It signs only certificates of online keys.
-- **Online key**: Worker secret `ORCHESTRA_SIGNING_KEY` (and `www/.dev.vars` for local dev). `cert` in every Signed answer is the root's statement `{kind:"pleadli.signing-key", key, publicKey, issuedAt}` about it. The app checks `cert` with the root key, then the licence with `cert.publicKey`.
+- **Online key**: Worker secret `ORCHESTRA_SIGNING_KEY` (and `www/.env.local` for local dev). `cert` in every Signed answer is the root's statement `{kind:"pleadli.signing-key", key, publicKey, issuedAt}` about it. The app checks `cert` with the root key, then the licence with `cert.publicKey`.
 
 Run in your own terminal from `www/` (key material never goes through an assistant or git):
 
 - `bun scripts/orchestra-keys.ts init /media/usb/pleadli-keys`: makes the root key, backs up the current online key to the same folder, writes the certificate to `www/src/lib/orchestra-key-cert.json` (public; commit and deploy).
 - `bun scripts/orchestra-keys.ts rotate /media/usb/pleadli-keys`: online key lost or leaked: new key, backed up, uploaded with wrangler, certified. Then deploy.
-- `bun scripts/orchestra-keys.ts certify /media/usb/pleadli-keys`: certify the key in `.dev.vars` again.
+- `bun scripts/orchestra-keys.ts certify /media/usb/pleadli-keys`: certify the key in `.env.local` again.
 
 Until `init` runs, `cert` is null and `key` reads `orchestra-uncertified`; apps must not ship before then.

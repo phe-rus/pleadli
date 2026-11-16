@@ -91,6 +91,7 @@ if (import.meta.main) {
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     console.log(`${app}: ${total} warning(s) across ${Object.keys(counts).length} lint(s).`);
     for (const l of result.lines) console.log(l);
+    console.log(`${app} counts: ${JSON.stringify(Object.fromEntries(Object.entries(counts).sort()))}`);
     console.log(`${app}: clippy ratchet ${result.ok ? "passed" : "FAILED"}.`);
     process.exit(result.ok ? 0 : 1);
   } else if (cmd === "counts" && rest.length === 1) {

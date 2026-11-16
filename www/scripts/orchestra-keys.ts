@@ -11,7 +11,7 @@
  *
  * Run it in your own terminal (not through an assistant), from www/:
  *   bun scripts/orchestra-keys.ts init    <offline-folder>   once: root key + certify the current online key
- *   bun scripts/orchestra-keys.ts certify <offline-folder>   certify the online key in .dev.vars again
+ *   bun scripts/orchestra-keys.ts certify <offline-folder>   certify the online key in .env.local again
  *   bun scripts/orchestra-keys.ts rotate  <offline-folder>   new online key, certified, uploaded to Cloudflare
  */
 import { createPrivateKey, createPublicKey, generateKeyPairSync, sign as edSign } from 'node:crypto'
@@ -25,7 +25,7 @@ const CERT_FILE = join(WWW, 'src/lib/orchestra-key-cert.json')
 const ROOT_PUB_FILE = join(REPO, 'docs/platform/orchestra-root-public-key.txt')
 // The same public key for pleadli.com itself (Pleadli staff > Signing key).
 const ROOT_PUB_JSON = join(WWW, 'src/lib/orchestra-root-public-key.json')
-const DEV_VARS = join(WWW, '.dev.vars')
+const DEV_VARS = join(WWW, '.env.local')
 const ROOT_NAME = 'pleadli-orchestra-root.key'
 
 const [command, folderArg] = process.argv.slice(2)
@@ -55,7 +55,7 @@ function writeSecret(path: string, text: string) {
 
 function devVarsKey() {
   const line = readFileSync(DEV_VARS, 'utf8').split('\n').find((l) => l.startsWith('ORCHESTRA_SIGNING_KEY='))
-  if (!line) fail('No ORCHESTRA_SIGNING_KEY in www/.dev.vars.')
+  if (!line) fail('No ORCHESTRA_SIGNING_KEY in www/.env.local.')
   return line.slice('ORCHESTRA_SIGNING_KEY='.length).trim()
 }
 
