@@ -1,7 +1,7 @@
 import { AddRecordPanel } from '@/components/add-record-panel'
 import { useHqConfig, usePermissions } from '@/features/session'
 import {
-  AddCircleIcon,
+  Add01Icon,
   ArrowDataTransferHorizontalIcon,
   DoorOpenIcon,
   Login02Icon,
@@ -24,9 +24,10 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { identityForPath } from './tab-identity'
 import { useWorkspace } from './tabs-store'
+import { shortcut } from '@/lib/platform'
 import { m } from '@/paraglide/messages'
 
-/** The first ribbon control: what an officer most often needs to do next,
+/** The "+" beside search: what an officer most often needs to do next,
  * filtered by what they may do and by what is open. Finding something, then
  * starting a procedure, and, when a prisoner's file is in view, the
  * procedures that concern that person. Not a navigation menu: the areas live
@@ -51,19 +52,19 @@ export function QuickActions() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button size="icon" variant="ghost" aria-label={m.workspace_quick_actions()} title={m.workspace_quick_actions()} className="cursor-pointer">
-              <HugeiconsIcon icon={AddCircleIcon} />
+            <Button size="icon-sm" variant="ghost" aria-label={m.shell_new()} title={m.shell_new()} className="cursor-pointer text-muted-foreground hover:text-foreground">
+              <HugeiconsIcon icon={Add01Icon} className="size-4" />
             </Button>
           }
         />
-        <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-60">
+        <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="w-60">
           {canSearch && (
             <DropdownMenuGroup>
               <DropdownMenuLabel>{m.workspace_find()}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => setCommandOpen(true)}>
                 <HugeiconsIcon icon={Search01Icon} />
                 {m.workspace_search_and_commands()}
-                <DropdownMenuShortcut>{m.workspace_ctrl_k()}</DropdownMenuShortcut>
+                <DropdownMenuShortcut>{shortcut('K')}</DropdownMenuShortcut>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           )}

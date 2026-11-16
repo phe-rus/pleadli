@@ -1,6 +1,7 @@
 import { Notfound } from '@/components/notfound'
 import { SplashScreen } from '@/components/splash-screen'
 import { ThemeProvider } from '@/components/theme-provider'
+import { PaperProvider } from '@/features/paper/provider'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
 import { AppErrorBoundary, ErrorOverlay, watchWindowErrors } from '@/features/diagnostics'
 import { LanguageSelect, LocaleBoundary } from '@/features/i18n'
@@ -48,10 +49,11 @@ function RootComponent() {
     <>
       <HeadContent />
       <main className={cn(
-        "flex flex-col bg-background h-svh transition-colors overflow-hidden!",
-        'rounded-md! shadow-lg! border border-border/35 typeset',
-        'print:h-auto print:overflow-visible print:rounded-none',
-        'print:border-none print:shadow-none'
+        // The window itself is see-through; this is the window, drawn as DPP
+        // draws it: rounded corners and a hairline edge, as a Mac window looks.
+        "flex min-h-0 flex-col bg-background h-svh transition-colors overflow-hidden typeset",
+        'shell-window ring-1 ring-black/15 ring-inset dark:ring-white/15',
+        'print:h-auto print:overflow-visible print:rounded-none print:ring-0'
       )}>
         <WindowResizeHandles />
         <ThemeProvider
@@ -63,13 +65,14 @@ function RootComponent() {
           disableTransitionOnChange
         >
           <div className={cn(
-            'relative isolate transition-colors wrap-anywhere',
+            'relative isolate min-h-0 flex-1 overflow-hidden transition-colors wrap-anywhere print:flex-none print:overflow-visible',
             'selection:bg-primary/15'
           )}>
             <MotionConfig reducedMotion="user">
               <TooltipProvider>
                 <SplashScreen>
                   <LocaleBoundary>
+                    <PaperProvider>
                     <AppErrorBoundary>
                     <RecoveryGate>
                       <OnboardingGate>
@@ -80,6 +83,7 @@ function RootComponent() {
                       </OnboardingGate>
                     </RecoveryGate>
                     </AppErrorBoundary>
+                    </PaperProvider>
                   </LocaleBoundary>
                 </SplashScreen>
               </TooltipProvider>

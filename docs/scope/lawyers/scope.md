@@ -14,6 +14,7 @@ Drift note: `docs/scope/index.md` currently still lists Lawyers under "Not yet s
 | 1 | App lock | Foundation | in-progress |
 | 2 | Settings: sectioned shell | Existing | existing |
 | 3 | Matter notes: rich text | Existing | existing |
+| 4 | Pilot readiness | Stage 1 | planned |
 
 ## Foundation
 
@@ -37,6 +38,15 @@ Settings was one flat page (every card stacked, no categories). Rebuilt as a lef
 
 ### 3. Matter notes: rich text · existing
 Notes were a plain `<textarea>`, the only place in the app still typed as free text where a document already had real rich text. Switched to the same `@pleadli/rich-text` (`RichTextInput`/`RichTextPreview`) the Documents feature already uses; older plain text notes still render (`safeParseRichTextDoc` handles both shapes). No backend change: `matter_notes.body` was already a plain `TEXT` column holding either shape. Code in `apps/lawyers/src/features/practice/notes.tsx`.
+
+## Stage 1: the first trusted app
+
+### 4. Pilot readiness · planned
+Lawyers is the fastest route to a paying customer (private, decides quickly, practice tools unserved). The app has grown far past the three rows above (clients, matters, hearings, diary, templates, seals, filing packs, money, registers, papers) but has never been run end to end in the real Tauri window, and has few tests on the screen side.
+**Done when:** a full day of an advocate's work (new client, matter, hearing, filing pack, invoice, backup and restore) runs in the real window without a failure, the Rust and screen tests cover those paths, and a one page pilot checklist exists for a first firm.
+- [ ] Build it: `/develop lawyers pilot readiness`
+- [ ] Verify it: `/check verify lawyers pilot readiness`
+- [ ] Test it: `/test lawyers pilot readiness`
 
 ## Legend
 See `docs/scope/index.md` for the shared legend.

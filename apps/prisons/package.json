@@ -1,7 +1,7 @@
 {
   "name": "prisons",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "dev": "NODE_OPTIONS=--max-old-space-size=768 vite",
@@ -37,7 +37,8 @@
     "motion": "^13.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^4.5.4"
+    "zod": "^4.5.4",
+    "@pleadli/paper": "workspace:*"
   },
   "devDependencies": {
     "@inlang/plugin-message-format": "^4.4.4",

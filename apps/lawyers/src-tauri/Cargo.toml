@@ -1,6 +1,6 @@
 [package]
 name = "lawyers"
-version = "0.1.0"
+version = "0.1.2"
 description = "Pleadli Lawyers: the advocate's practice"
 authors = ["Pleadli"]
 edition = "2021"
@@ -38,7 +38,7 @@ tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "ma
 axum = "0.8"
 tower-http = { version = "0.6", features = ["cors"] }
 tower = { version = "0.5", features = ["util"] }
-pleadli-node-core = { path = "../../../packages/node-core", features = ["ai", "lan"] }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["ai", "lan", "orchestra"] }
 # The office computer serves joined computers over TLS (L6); the client side
 # is node-core's pinned client, on the same reqwest.
 axum-server = { version = "0.8", features = ["tls-rustls-no-provider"] }

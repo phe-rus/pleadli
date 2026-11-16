@@ -2,31 +2,32 @@
 @import "@pleadli/ui/workspace.css";
 @source "../src/**/*.{tsx,ts}";
 
-/* Prisons's own accent. Everything else about the look is @pleadli/ui/workspace.css. */
+/* Prisons's own accent: a calm maroon, as restrained as Police's teal, and
+   apart from the urgent red so a button never reads as a warning. Everything else about the look is @pleadli/ui/workspace.css. */
 :root {
-  --primary: oklch(0.505 0.213 27.518);
+  --primary: oklch(0.43 0.115 18);
   --primary-foreground: oklch(0.971 0.013 17.38);
   --ring: oklch(0.714 0.014 41.2);
-  --chart-1: oklch(0.808 0.114 19.571);
-  --chart-2: oklch(0.637 0.237 25.331);
-  --chart-3: oklch(0.577 0.245 27.325);
-  --chart-4: oklch(0.505 0.213 27.518);
-  --chart-5: oklch(0.444 0.177 26.899);
-  --sidebar-primary: oklch(0.577 0.245 27.325);
+  --chart-1: oklch(0.80 0.07 18);
+  --chart-2: oklch(0.64 0.10 18);
+  --chart-3: oklch(0.56 0.11 18);
+  --chart-4: oklch(0.48 0.11 18);
+  --chart-5: oklch(0.40 0.10 18);
+  --sidebar-primary: oklch(0.47 0.115 18);
   --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
   --sidebar-ring: oklch(0.714 0.014 41.2);
 }
 
 .dark {
-  --primary: oklch(0.444 0.177 26.899);
+  --primary: oklch(0.66 0.11 18);
   --primary-foreground: oklch(0.971 0.013 17.38);
   --ring: oklch(0.547 0.021 43.1);
-  --chart-1: oklch(0.808 0.114 19.571);
-  --chart-2: oklch(0.637 0.237 25.331);
-  --chart-3: oklch(0.577 0.245 27.325);
-  --chart-4: oklch(0.505 0.213 27.518);
-  --chart-5: oklch(0.444 0.177 26.899);
-  --sidebar-primary: oklch(0.637 0.237 25.331);
+  --chart-1: oklch(0.80 0.07 18);
+  --chart-2: oklch(0.64 0.10 18);
+  --chart-3: oklch(0.56 0.11 18);
+  --chart-4: oklch(0.48 0.11 18);
+  --chart-5: oklch(0.40 0.10 18);
+  --sidebar-primary: oklch(0.66 0.11 18);
   --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
   --sidebar-ring: oklch(0.547 0.021 43.1);
 }
@@ -35,167 +36,4 @@
   --color-node-online: var(--node-online);
   --color-node-isolated: var(--node-isolated);
   --color-security-badge: var(--security-badge);
-}
-
-/* ---------- Page rhythm ----------
-   Every route is one <article class="page"> made of a <header class="page-header">
-   followed by <section class="page-section"> blocks. Spacing lives here, once.
-   Use `page page-narrow` for reading-width pages (procedures, forms). */
-@utility page {
-  width: 100%;
-  max-width: var(--page-max, 90rem);
-  margin-inline: auto;
-  padding-inline: 1rem;
-  padding-block: 1.25rem 4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  animation: page-in 160ms ease-out;
-
-  @media (width >= 40rem) {
-    padding-inline: 1.5rem;
-    padding-block-start: 1.5rem;
-  }
-
-  @media (width >= 90rem) {
-    padding-inline: 2rem;
-  }
-}
-
-/* ---------- Side panels ----------
-   Every side panel (record forms, Add record) is the same shape: a header, one
-   scrolling body, and a footer pinned to the bottom edge. Nothing inside sets
-   a width of its own, and nothing is centred: the panel is anchored to the
-   right, its content runs left to right in one column. */
-@utility panel-header {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
-}
-
-@utility panel-body {
-  display: flex;
-  flex: 1 1 0%;
-  flex-direction: column;
-  gap: 1rem;
-  min-height: 0;
-  padding: 1rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-
-  /* A form's own footer stays at the bottom edge of the panel, whether the
-     form is short (it sits at the foot) or long (it sticks while scrolling). */
-  & > [data-slot="drawer-footer"] {
-    position: sticky;
-    bottom: -1rem;
-    z-index: 1;
-    margin: auto -1rem -1rem;
-    padding: 0.75rem 1rem;
-    background: var(--card);
-    border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
-  }
-}
-
-@utility page-narrow {
-  --page-max: 52rem;
-}
-
-@utility page-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.75rem 1.5rem;
-
-  & > :first-child {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 0;
-  }
-
-  & > :first-child p {
-    max-width: 65ch;
-  }
-}
-
-@utility page-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-@utility page-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-width: 0;
-
-  & h2 {
-    font-size: 1rem;
-    line-height: 1.4;
-  }
-}
-
-@utility section-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-}
-
-@keyframes page-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-
-/* A sheet of paper: always light, whatever the theme, so a document reads on
- * screen the way it will print. The variables re-point the global typography
- * (which reads them) at black on white. */
-.paper {
-  --foreground: #000;
-  --color-foreground: #000;
-  --muted-foreground: #3f3f46;
-  --border: #000;
-  --muted: #f4f4f5;
-  color-scheme: light;
-  background: #fff;
-  color: #000;
-  border: 1px solid #d4d4d8;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
-  min-height: 297mm;
-}
-
-@media print {
-  @page {
-    size: A4;
-    margin: 16mm 14mm 22mm;
-    @bottom-right {
-      content: "Page " counter(page) " of " counter(pages);
-      font-size: 9pt;
-    }
-  }
-
-  .paper {
-    border: 0;
-    box-shadow: none;
-    min-height: 0;
-  }
 }

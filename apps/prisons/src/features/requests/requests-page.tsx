@@ -4,13 +4,10 @@ import { RequestForm } from './request-form'
 import { ResolveRequestForm } from './resolve-request-form'
 import { requestCategoryLabel, type PrisonRequest } from './schema'
 import { useRequests } from './queries'
-import { AddCircleIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
-import { cn } from '@pleadli/ui/lib/utils'
 import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 import { m } from '@/paraglide/messages'
@@ -31,18 +28,6 @@ export function RequestsPage() {
   const columns: DataTableColumnDef<PrisonRequest>[] = useMemo(() => {
     return [
       selectColumn(),
-      {
-        accessorKey: 'id',
-        header: 'ID',
-        cell: ({ row }) => (
-          <span
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')}
-            onClick={() => setSelected(row.original)}
-          >
-            {row.original.id}
-          </span>
-        ),
-      },
       {
         id: 'prisoner',
         header: m.route_requests_prisoner(),
@@ -85,7 +70,6 @@ export function RequestsPage() {
             isDirty={addDirty}
             trigger={
               <Button size="sm">
-                <HugeiconsIcon icon={AddCircleIcon} />
                 {m.route_requests_record_complaint()}
               </Button>
             }
@@ -122,6 +106,7 @@ export function RequestsPage() {
       </Createpanel>
 
       <DataTable
+        onRowOpen={setSelected}
         aria-label={m.route_requests_requests_and_complaints()}
         data={requests}
         columns={columns}

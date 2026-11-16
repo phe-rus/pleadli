@@ -1,6 +1,7 @@
 import { ArrowDown01Icon, Globe02Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@pleadli/ui/dropdown-menu'
 import { cn } from '@pleadli/ui/lib/utils'
 import { AnimatePresence, motion, useDragControls, useMotionValue, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
@@ -101,20 +102,19 @@ export function LanguageSelect() {
       onDragStart={() => (didDrag.current = false)}
       onDrag={() => (didDrag.current = true)}
       onDragEnd={commitDrag}
-      className="z-50 print:hidden"
+      className="z-50 print:hidden [html[data-language-docked]_&]:hidden"
     >
       <motion.div
-        layout
-        transition={{ type: 'spring', damping: 26, stiffness: 360, mass: 0.7 }}
+        layout={!reduceMotion}
+        transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 28, stiffness: 380, mass: 0.65 }}
         className={cn(
-          'flex overflow-hidden',
+          'floating-language-surface flex overflow-hidden',
           growsUp ? 'flex-col-reverse' : 'flex-col',
-          open && 'rounded-xl border border-border bg-background shadow-md',
         )}
       >
         <Button
           type="button"
-          variant="secondary"
+          variant="ghost"
           size="sm"
           aria-label={m.i18n_language_current({ language: localeNames[current] })}
           aria-haspopup="listbox"
@@ -128,11 +128,11 @@ export function LanguageSelect() {
             }
             setOpen((prev) => !prev)
           }}
-          className="ml-auto h-9 w-fit gap-1.5 rounded-full px-3"
+          className="floating-language-trigger"
         >
-          <HugeiconsIcon icon={Globe02Icon} className="shrink-0" />
+          <HugeiconsIcon icon={Globe02Icon} className="size-4 shrink-0 text-muted-foreground" />
           <span>{current.toUpperCase()}</span>
-          <motion.span animate={{ rotate: open ? 180 : 0 }} className="shrink-0">
+          <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: reduceMotion ? 0 : 0.18 }} className="shrink-0 text-muted-foreground">
             <HugeiconsIcon icon={ArrowDown01Icon} className="size-3.5" />
           </motion.span>
         </Button>
@@ -145,7 +145,7 @@ export function LanguageSelect() {
               initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: growsUp ? 6 : -6 }}
               animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className={cn('flex w-48 flex-col gap-0.5 p-1', growsUp ? 'mb-1' : 'mt-1')}
+              className={cn('flex w-52 flex-col gap-0.5 p-1', growsUp ? 'mb-1' : 'mt-1')}
             >
               {selectableLocales.map((locale) => {
                 const active = locale === current
@@ -160,12 +160,11 @@ export function LanguageSelect() {
                       changeLocale(locale)
                     }}
                     className={cn(
-                      'flex items-center justify-between gap-2 rounded-md px-2 py-1 text-left',
-                      active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground',
+                      'floating-language-option',
                     )}
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
-                      <span className="uppercase">{locale}</span>
+                      <span className="floating-language-code">{locale}</span>
                       <span className="truncate">{localeNames[locale]}</span>
                     </span>
                     {active && <HugeiconsIcon icon={Tick02Icon} className="size-4" />}
@@ -177,5 +176,47 @@ export function LanguageSelect() {
         </AnimatePresence>
       </motion.div>
     </motion.div>
+  )
+}
+
+/** The language, docked in the sidebar's footer once someone is signed in.
+ * While it is there the floating switcher steps aside. */
+export function SidebarLanguageSelect() {
+  const current = useLocale()
+
+  useEffect(() => {
+    document.documentElement.dataset.languageDocked = ''
+    return () => {
+      delete document.documentElement.dataset.languageDocked
+    }
+  }, [])
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            aria-label={localeNames[current]}
+            title={localeNames[current]}
+            className="flex h-7 cursor-pointer items-center gap-1 rounded-md px-1.5 text-xs text-muted-foreground uppercase outline-none hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+          />
+        }
+      >
+        <HugeiconsIcon icon={Globe02Icon} className="size-3.5" />
+        {current}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="end" sideOffset={6} className="w-44">
+        {selectableLocales.map((locale) => (
+          <DropdownMenuItem key={locale} onClick={() => changeLocale(locale)} className="justify-between">
+            <span className="flex items-center gap-2.5">
+              <span className="w-5 text-muted-foreground uppercase">{locale}</span>
+              {localeNames[locale]}
+            </span>
+            {locale === current && <HugeiconsIcon icon={Tick02Icon} className="size-4" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

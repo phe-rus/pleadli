@@ -2,9 +2,10 @@ import { AssistPane } from '@/features/assist/assist-settings'
 import { SignatureCard, StampCard } from '@/features/documents/seals'
 import { BackupPane } from '@/features/security/settings-panes'
 import { useSecurityStatus } from '@/features/security'
+import { BackupsPane as DailyBackupsPane, LicencePane as PleadliLicencePane } from '@/features/orchestra'
 import * as m from '@/paraglide/messages'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Building03Icon, CloudUploadIcon, LegalDocument01Icon, Notification03Icon, PaintBoardIcon, Download04Icon, SparklesIcon, SquareLock02Icon, UserGroupIcon, UserIcon } from '@hugeicons/core-free-icons'
+import { Building03Icon, CloudUploadIcon, CloudSavingDone01Icon, LegalDocument01Icon, LicenseIcon, Notification03Icon, PaintBoardIcon, Download04Icon, SparklesIcon, SquareLock02Icon, UserGroupIcon, UserIcon } from '@hugeicons/core-free-icons'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -18,6 +19,7 @@ const groups = [
   { id: 'you', sections: ['you'] },
   { id: 'office', sections: ['office', 'people', 'protection', 'assist'] },
   { id: 'computer', sections: ['appearance', 'notifications', 'backup', 'updates'] },
+  { id: 'pleadli', sections: ['pleadli-licence', 'daily-backups'] },
   { id: 'about', sections: ['licence'] },
 ] as const
 
@@ -34,6 +36,7 @@ const groupText: Record<GroupId, () => string> = {
   you: m["settings.group.you"],
   office: m["settings.group.office"],
   computer: m["settings.group.computer"],
+  pleadli: m["orchestra.settings.group"],
   about: m["settings.group.about"],
 }
 
@@ -47,6 +50,8 @@ const sectionText: Record<SettingsSectionId, { label: () => string; about: () =>
   notifications: { label: m["settings.nav.notifications"], about: m["settings.about.notifications"] },
   backup: { label: m["settings.nav.backup"], about: m["settings.about.backup"] },
   updates: { label: m["update.title"], about: m["update.about"] },
+  'pleadli-licence': { label: m["orchestra.settings.licence"], about: m["orchestra.settings.licence_about"] },
+  'daily-backups': { label: m["orchestra.settings.backups"], about: m["orchestra.settings.backups_about"] },
   licence: { label: m["settings.nav.licence"], about: m["settings.about.licence"] },
 }
 
@@ -61,11 +66,13 @@ const sectionIcon: Record<SettingsSectionId, { icon: typeof UserIcon; tone?: str
   notifications: { icon: Notification03Icon, tone: 'red' },
   backup: { icon: CloudUploadIcon, tone: 'green' },
   updates: { icon: Download04Icon },
+  'pleadli-licence': { icon: LicenseIcon, tone: 'gray' },
+  'daily-backups': { icon: CloudSavingDone01Icon, tone: 'green' },
   licence: { icon: LegalDocument01Icon, tone: 'gray' },
 }
 
 const ownerOf = (group: GroupId) =>
-  group === 'you' ? m["settings.owner.you"]() : group === 'office' ? m["settings.owner.office"]() : group === 'computer' ? m["settings.owner.this_machine"]() : m["settings.owner.read_only"]()
+  group === 'you' ? m["settings.owner.you"]() : group === 'office' || group === 'pleadli' ? m["settings.owner.office"]() : group === 'computer' ? m["settings.owner.this_machine"]() : m["settings.owner.read_only"]()
 
 const panes: Record<SettingsSectionId, () => ReactNode> = {
   you: () => (
@@ -87,6 +94,8 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
   notifications: () => <NotificationsPane />,
   backup: () => <BackupPane />,
   updates: () => <UpdatesPane />,
+  'pleadli-licence': () => <PleadliLicencePane />,
+  'daily-backups': () => <DailyBackupsPane />,
   licence: () => <LicencePane />,
 }
 

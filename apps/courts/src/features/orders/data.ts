@@ -1,6 +1,6 @@
 import { api, seg } from '@/lib/api'
 import * as z from 'zod'
-import { orderSchema, orderSummarySchema, type CreateOrderInput, type UpdateOrderInput } from './schema'
+import { orderSchema, orderSummarySchema, orderPreviewSchema, type CreateOrderInput, type UpdateOrderInput } from './schema'
 
 export async function getOrders(status = '') {
   return z.array(orderSummarySchema).parse(await api('GET', '/api/orders', { query: { status } }))
@@ -24,4 +24,8 @@ export async function discardOrder(id: string) {
 
 export async function issueOrder(id: string) {
   return orderSchema.parse(await api('POST', `/api/orders/${seg(id)}/issue`))
+}
+
+export async function getOrderPreview(id: string) {
+  return orderPreviewSchema.parse(await api('GET', `/api/orders/${seg(id)}/preview`))
 }

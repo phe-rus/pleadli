@@ -1,8 +1,11 @@
+import { SoftwareUpdatePane } from './software-update'
 import { SettingsCard } from '@/components/settings-card'
 import { Tag } from '@/components/status-tag'
 import { IntegrityCard } from '@/features/audit'
 import { LogoCard } from '@/features/brand'
 import { ProfileCard } from '@/features/profile'
+import { BackupsPane, LicencePane } from '@/features/orchestra'
+import { m } from '@/features/orchestra/text'
 import { Badge } from '@pleadli/ui/badge'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
@@ -11,6 +14,9 @@ import type { ReactNode } from 'react'
 const sections = [
   { id: 'bench', label: 'Bench', owner: 'You decide' },
   { id: 'security', label: 'Security', owner: 'This machine' },
+  { id: 'pleadli-licence', label: 'Pleadli licence', owner: 'This machine' },
+  { id: 'daily-backups', label: 'Daily backups', owner: 'This machine' },
+  { id: 'software-update', label: 'Software update', owner: 'This machine' },
   { id: 'roadmap', label: 'Roadmap', owner: 'This machine' },
 ] as const
 
@@ -23,6 +29,9 @@ export function isSettingsSection(value: unknown): value is SettingsSectionId {
 const about: Record<SettingsSectionId, string> = {
   bench: "Who sits here. The audit trail records the judicial officer's name against what the bench does, and it heads what is signed.",
   security: 'The record of activity, kept apart from anything that could edit it without notice.',
+  'pleadli-licence': m.orchestra_settings_licence_about(),
+  'daily-backups': m.orchestra_settings_backups_about(),
+  'software-update': 'Check for a signed Courts release and choose when to install it.',
   roadmap: "What this version does not cover yet, said plainly rather than left to look like a working feature that isn't.",
 }
 
@@ -36,7 +45,6 @@ function RoadmapPane() {
         {[
           'A transcription engine (none is installed: passages are typed against the recording by a person)',
           'The Laws.Africa statute texts bundled and checked against source',
-          'Backups and restoring from one',
           'App lock',
           'Receiving cases from DPP and sending notices back',
           'Prisons production and warrants',
@@ -59,6 +67,9 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
     </>
   ),
   security: () => <IntegrityCard />,
+  'pleadli-licence': () => <LicencePane />,
+  'daily-backups': () => <BackupsPane />,
+  'software-update': () => <SoftwareUpdatePane />,
   roadmap: () => <RoadmapPane />,
 }
 

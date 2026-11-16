@@ -17,7 +17,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useWorkspace } from './tabs-store'
 
-/** The ribbon's second control: what the bench most often needs to start.
+/** The header’s quick actions: what the bench most often needs to start.
  * Finding a case, then registering one. Not a navigation menu: the areas live in
  * the sidebar. A new case opens its own workspace once it is saved. */
 export function QuickActions() {
@@ -35,12 +35,13 @@ export function QuickActions() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button size="icon" variant="ghost" aria-label="Quick actions" title="Quick actions" className="cursor-pointer">
+            <Button size="sm" variant="ghost" aria-label="Quick actions" title="Quick actions" className="cursor-pointer">
               <HugeiconsIcon icon={AddCircleIcon} />
+              Actions
             </Button>
           }
         />
-        <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-60">
+        <DropdownMenuContent side="bottom" align="end" sideOffset={8} className="w-60">
           <DropdownMenuGroup>
             <DropdownMenuLabel>Find</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setCommandOpen(true)}>
@@ -56,6 +57,13 @@ export function QuickActions() {
               <HugeiconsIcon icon={FolderViewIcon} />
               Register a case
             </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Work</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => void navigate({ to: '/cause-list' })}>Today’s cause list</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void navigate({ to: '/orders' })}>Orders</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void navigate({ to: '/rulings' })}>Rulings and judgments</DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>

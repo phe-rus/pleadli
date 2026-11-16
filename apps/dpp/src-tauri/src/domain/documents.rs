@@ -265,6 +265,23 @@ pub async fn issue(pool: &SqlitePool, id: &str, input: IssueInput, signer: Optio
         .bind(id)
         .execute(&mut *tx)
         .await?;
+    // The paper's code, kept with the other papers that left the office, so
+    // Orchestra can tell pleadli.com/verify about it (migration 0029).
+    sqlx::query(
+        "INSERT OR IGNORE INTO paper_prints (code, entity_type, entity_id, reference, title, body, body_sha256, printed_by, printed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(&code)
+    .bind(if doc.kind == "charge_sheet" { "issued_charge_sheet" } else { "issued_document" })
+    .bind(id)
+    .bind(&reference)
+    .bind(&doc.title)
+    .bind(&stored)
+    .bind(hash(&stored))
+    .bind(&author)
+    .bind(now.timestamp_millis())
+    .execute(&mut *tx)
+    .await?;
     audit::record(&mut tx, Entry::new("document_issued").subject("document", id).file(&doc.prosecution_file_id).detail(format!("{reference}, {}", doc.kind))).await?;
     tx.commit().await?;
     get(pool, id).await

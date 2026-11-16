@@ -21,6 +21,7 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/auth/bootstrap-status", Need::Device, bootstrap_status)
         .post("/api/auth/bootstrap", Need::Onboarding, bootstrap)
         .post("/api/auth/login", Need::Device, login)
+        .get("/api/auth/desk", Need::Device, desk)
         .post("/api/auth/logout", Need::Session, logout)
         .get("/api/auth/session", Need::Session, current_session)
         .get("/api/auth/accounts", Need::Perm(perm::ACCOUNTS_MANAGE), list_accounts)
@@ -42,6 +43,32 @@ async fn bootstrap_status(State(node): State<NodeRef>) -> Result<Json<BootstrapS
     Ok(Json(BootstrapStatus { bootstrap: officers::is_bootstrap(&node.pool).await? }))
 }
 
+#[derive(Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+struct DeskOfficer {
+    badge_number: String,
+    name: String,
+    role: String,
+    passwordless: bool,
+}
+
+/// The officers of a facility that signs in on badges, for the sign-in screen
+/// to show as faces, the way a Mac's login window lists its accounts. Only
+/// where one click already signs an officer in: a facility (never Head
+/// Office), on badges alone, on the node's own computer (never a LAN
+/// workstation). Anywhere else the list is empty and the badge is typed.
+async fn desk(State(node): State<NodeRef>, Extension(device): Extension<CallerDevice>) -> Result<Json<Vec<DeskOfficer>>, ApiError> {
+    let head_office = crate::domain::session::get_hq_config(&node.pool).await?.is_head_office;
+    let policy = crate::domain::auth_policy::get(&node.pool).await?;
+    if head_office || policy.mode != "badge_only" || device.0.is_some() {
+        return Ok(Json(Vec::new()));
+    }
+    let officers = sqlx::query_as::<_, DeskOfficer>("SELECT badge_number, name, role, passwordless FROM officers WHERE active = 1 AND substr(role, 1, 3) != 'hq_' ORDER BY name COLLATE NOCASE")
+        .fetch_all(&node.pool)
+        .await?;
+    Ok(Json(officers))
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct BootstrapBody {
@@ -59,7 +86,7 @@ async fn bootstrap(
     Json(body): Json<BootstrapBody>,
 ) -> Result<Json<SessionInfo>, ApiError> {
     let badge = body.badge_number.clone();
-    let password = body.password.clone();
+    let mut password = body.password.clone();
     write(&node, |c| {
         Box::pin(async move {
             officers::create_first_admin(c, &body.badge_number, &body.name, &body.password).await?;
@@ -67,6 +94,11 @@ async fn bootstrap(
         })
     })
     .await?;
+    // No password typed: Head Office's first account starts on the default
+    // passcode; a facility's signs in with its badge.
+    if password.is_empty() && crate::domain::session::get_hq_config(&node.pool).await?.is_head_office {
+        password = officers::HEAD_OFFICE_DEFAULT_PASSCODE.to_string();
+    }
     Ok(Json(sessions::sign_in(&node.pool, &badge, &password, device.0.as_deref()).await?))
 }
 

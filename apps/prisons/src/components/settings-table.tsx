@@ -11,29 +11,24 @@ export type SettingsRow = {
   expanded?: ReactNode
 }
 
-/** Rows of a setting: its name and what it does on the left, the control on
- * the right (Claude's settings shape), inside a card frame so it lines up
- * with `SettingsCard`. Plain semantic tags only, so the global typography
- * does the styling and the hairline dividers come from the table rules. */
+/** Rows of settings drawn as DPP's System Settings group: one white rounded
+ * surface, hairlines between rows, the name and a grey line on the left, the
+ * control on the right. */
 export function SettingsTable({ rows, className }: { rows: SettingsRow[]; className?: string }) {
   return (
-    <div className={cn('w-full overflow-hidden rounded-lg border border-border bg-card', className)}>
-      <table className="w-full">
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key} className="border-t border-border first:border-t-0">
-              <td className="w-full p-4 align-top">
-                <div className="flex flex-col gap-0.5">
-                  <h4>{row.label}</h4>
-                  {row.description && <p>{row.description}</p>}
-                  {row.expanded && <div className="mt-2">{row.expanded}</div>}
-                </div>
-              </td>
-              <td className="p-4 text-right align-top whitespace-nowrap">{row.control}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className={cn('flex w-full flex-col divide-y divide-border/60 overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-border/70', className)}>
+      {rows.map((row) => (
+        <div key={row.key} className="flex flex-col gap-2 px-4 py-3">
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex min-w-0 flex-col">
+              <span>{row.label}</span>
+              {row.description && <p className="text-[0.8125rem] text-muted-foreground">{row.description}</p>}
+            </div>
+            {row.control && <div className="shrink-0">{row.control}</div>}
+          </div>
+          {row.expanded}
+        </div>
+      ))}
     </div>
   )
 }

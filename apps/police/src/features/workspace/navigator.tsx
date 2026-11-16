@@ -173,7 +173,7 @@ export function Navigator() {
     <aside
       aria-label={m["workspace.sidebar"]()}
       inert={!leftOpen}
-      className={cn('shrink-0 overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none print:hidden', leftOpen ? 'w-64' : 'w-0')}
+      className={cn('min-h-0 w-64 shrink-0 overflow-hidden print:hidden')}
     >
       <div className="flex h-full w-64 flex-col">
         {station && (

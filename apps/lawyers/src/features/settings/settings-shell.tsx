@@ -2,7 +2,7 @@ import { SettingsCard } from '@/components/settings-card'
 import { Tag } from '@/components/status-tag'
 import * as m from '@/paraglide/messages'
 import { cn } from '@pleadli/ui/lib/utils'
-import { AiMagicIcon, Building03Icon, PaintBoardIcon, Download04Icon, Route01Icon, SecurityLockIcon, UserCircleIcon, UserGroupIcon, Wifi01Icon } from '@hugeicons/core-free-icons'
+import { CloudSavingDone01Icon, LicenseIcon, AiMagicIcon, Building03Icon, PaintBoardIcon, Download04Icon, Route01Icon, SecurityLockIcon, UserCircleIcon, UserGroupIcon, Wifi01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -10,9 +10,10 @@ import type { ReactNode } from 'react'
 type NavIcon = typeof UserCircleIcon
 import { AssistPane } from '@/features/assist/assist-settings'
 import { NetworkPane } from '@/features/network'
+import { BackupsPane as DailyBackupsPane, LicencePane as PleadliLicencePane } from '@/features/orchestra'
 import { AppearancePane, UpdatesPane, PeoplePane, PracticePane, SecurityPane, YouPane } from './panes'
 
-const sectionIds = ['you', 'practice', 'people', 'assist', 'appearance', 'security', 'network', 'updates', 'roadmap'] as const
+const sectionIds = ['you', 'practice', 'people', 'assist', 'appearance', 'security', 'network', 'updates', 'pleadli-licence', 'daily-backups', 'roadmap'] as const
 export type SettingsSectionId = (typeof sectionIds)[number]
 
 const icons: Record<SettingsSectionId, NavIcon> = {
@@ -24,6 +25,8 @@ const icons: Record<SettingsSectionId, NavIcon> = {
   security: SecurityLockIcon,
   network: Wifi01Icon,
   updates: Download04Icon,
+  'pleadli-licence': LicenseIcon,
+  'daily-backups': CloudSavingDone01Icon,
   roadmap: Route01Icon,
 }
 
@@ -36,11 +39,13 @@ const sections: readonly { id: SettingsSectionId; label: () => string; owner: ()
   { id: 'security', label: () => m["settings.section.security"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.security"]() },
   { id: 'network', label: () => m["settings.section.network"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.network"]() },
   { id: 'updates', label: () => m["update.title"](), owner: () => m["settings.owner.computer"](), about: () => m["update.about"]() },
+  { id: 'pleadli-licence', label: () => m["orchestra.settings.licence"](), owner: () => m["settings.owner.practice"](), about: () => m["orchestra.settings.licence_about"]() },
+  { id: 'daily-backups', label: () => m["orchestra.settings.backups"](), owner: () => m["settings.owner.practice"](), about: () => m["orchestra.settings.backups_about"]() },
   { id: 'roadmap', label: () => m["settings.section.roadmap"](), owner: () => m["settings.owner.computer"](), about: () => m["settings.about.roadmap"]() },
 ]
 
 /** The list in groups by who owns each choice: you, the practice, this computer, and what is to come. */
-const groups = [['you'], ['practice', 'people', 'assist'], ['appearance', 'security', 'network', 'updates'], ['roadmap']].map((ids) => ids.map((id) => sections.find((s) => s.id === id)!))
+const groups = [['you'], ['practice', 'people', 'assist'], ['appearance', 'security', 'network', 'updates'], ['pleadli-licence', 'daily-backups'], ['roadmap']].map((ids) => ids.map((id) => sections.find((s) => s.id === id)!))
 
 export function isSettingsSection(value: unknown): value is SettingsSectionId {
   return sectionIds.includes(value as SettingsSectionId)
@@ -56,7 +61,7 @@ const roadmap: readonly { label: () => string; built: boolean }[] = [
   { label: () => m["settings.roadmap.assist"](), built: true },
   { label: () => m["settings.roadmap.network"](), built: true },
   { label: () => m["settings.roadmap.court"](), built: false },
-  { label: () => m["settings.roadmap.backups"](), built: false },
+  { label: () => m["settings.roadmap.backups"](), built: true },
 ]
 
 function RoadmapPane() {
@@ -83,6 +88,8 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
   security: () => <SecurityPane />,
   network: () => <NetworkPane />,
   updates: () => <UpdatesPane />,
+  'pleadli-licence': () => <PleadliLicencePane />,
+  'daily-backups': () => <DailyBackupsPane />,
   roadmap: () => <RoadmapPane />,
 }
 

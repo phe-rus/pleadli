@@ -1,11 +1,10 @@
+import { DocumentActions } from '@/features/documents/document-actions'
 import { Createpanel } from '@/components/create-panel'
 import { Tag } from '@/components/status-tag'
 import { caseOptions, useCase } from '@/features/cases'
-import { OrderForm, OrderSheet, orderKindLabel, orderOptions, useDiscardOrder, useIssueOrder, useOrder } from '@/features/orders'
+import { OrderForm, OrderSheet, OrderPaper, useOrderPreview, orderKindLabel, orderOptions, useDiscardOrder, useIssueOrder, useOrder } from '@/features/orders'
 import { purposeLabel } from '@/features/sittings'
 import { messageOf } from '@/lib/api'
-import { PrinterIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
@@ -21,13 +20,14 @@ export const Route = createFileRoute('/_public/orders/$orderId')({
   component: RouteComponent,
 })
 
-/** One order. A draft shows the facts it will be made from and can be edited,
+/** One order. A draft previews saved facts through the issue renderer and can be edited,
  * issued or discarded. An issued order is the sheet itself, ready to print, with
  * a check that what is stored is still what was issued. */
 function RouteComponent() {
   const { orderId } = Route.useParams()
   const { data: order } = useOrder(orderId)
   const { data: detail } = useCase(order?.caseId ?? '')
+  const preview = useOrderPreview(orderId, order?.status === 'draft')
   const issue = useIssueOrder()
   const discard = useDiscardOrder()
   const navigate = useNavigate()
@@ -67,6 +67,7 @@ function RouteComponent() {
           {draft ? (
             <>
               <Tag tone="open">Draft</Tag>
+              {preview.data?.content && <DocumentActions title={`Draft - ${order.title}`} />}
               <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
                 Edit draft
               </Button>
@@ -88,8 +89,14 @@ function RouteComponent() {
               </Button>
               <Button
                 size="sm"
-                onClick={() => issue.mutate(order.id, { onSuccess: () => t.success('Order issued'), onError: (error) => t.error('The order cannot be issued yet', { description: messageOf(error) }) })}
-                disabled={issue.isPending}
+                onClick={() => {
+                  if (!window.confirm('Issue this order? Its wording will be frozen and a reference assigned. You cannot edit or discard it afterwards.')) return
+                  issue.mutate(order.id, {
+                    onSuccess: () => t.success('Order issued'),
+                    onError: (error) => t.error('The order cannot be issued yet', { description: messageOf(error) }),
+                  })
+                }}
+                disabled={issue.isPending || !preview.data || preview.isFetching || preview.data.blockers.length > 0}
               >
                 Issue order
               </Button>
@@ -97,32 +104,53 @@ function RouteComponent() {
           ) : (
             <>
               {order.intact === false ? <Tag tone="urgent">Changed since issue</Tag> : <Tag tone="done">Issued, unchanged</Tag>}
-              <Button size="sm" variant="secondary" onClick={() => window.print()}>
-                <HugeiconsIcon icon={PrinterIcon} />
-                Print
-              </Button>
+<DocumentActions title={order.reference ?? order.title} />
             </>
           )}
         </div>
       </header>
 
       {draft ? (
-        <section className="page-section">
-          <h2>Facts this order will be made from</h2>
-          {given.length === 0 ? (
-            <p className="text-muted-foreground">Nothing has been filled in yet. Edit the draft to add the facts.</p>
-          ) : (
-            <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-              {given.map(([label, value]) => (
-                <div key={label} className="flex flex-col">
-                  <dt className="text-xs text-muted-foreground">{label}</dt>
-                  <dd className="whitespace-pre-wrap">{value}</dd>
-                </div>
-              ))}
-            </dl>
+        <div className="flex flex-col gap-6">
+          <section className="page-section print:hidden" aria-label="Draft review">
+            <h2>Review the saved draft</h2>
+            <p className="text-muted-foreground">Working template, not the Judiciary&rsquo;s prescribed form. Review the wording before issuing. Editing and saving refreshes this preview.</p>
+            {preview.isPending && <p role="status">Preparing the document…</p>}
+            {preview.isError && (
+              <div role="alert">
+                <p>Could not prepare the preview. {messageOf(preview.error)}</p>
+                <Button variant="secondary" size="sm" onClick={() => void preview.refetch()}>Try again</Button>
+              </div>
+            )}
+            {!!preview.data?.blockers.length && (
+              <div role="status">
+                <h3 className="font-medium">Before this can be issued</h3>
+                <ul className="list-disc pl-5">{preview.data.blockers.map((message) => <li key={message}>{message}</li>)}</ul>
+              </div>
+            )}
+          </section>
+          {preview.data && (preview.data.content ? <OrderPaper content={preview.data.content} draft /> : (
+            <section className="paper mx-auto w-full max-w-[210mm] p-8 text-center" aria-label="Incomplete draft">
+              <p className="text-xs font-semibold tracking-widest uppercase">Draft · Not issued</p>
+              <h2 className="mt-6">{order.title}</h2>
+              <p>{order.courtNumber} · {order.caseTitle}</p>
+              <p className="mt-8 text-muted-foreground">Complete the facts to prepare the wording.</p>
+            </section>
+          ))}
+          {!!given.length && (
+            <details className="page-section print:hidden">
+              <summary className="cursor-pointer font-medium">Saved facts</summary>
+              <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {given.map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-xs text-muted-foreground">{label}</dt>
+                    <dd className="whitespace-pre-wrap">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
           )}
-          <p className="text-muted-foreground">The wording is written when the order is issued, and needs your name and court set in Settings. The wording is a working template, not the Judiciary&rsquo;s prescribed form.</p>
-        </section>
+        </div>
       ) : (
         <>
           <OrderSheet order={order} />

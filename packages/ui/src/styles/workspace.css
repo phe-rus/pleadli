@@ -1,3 +1,5 @@
+@import "./pages.css";
+
 /* The Pleadli workspace look, shared by every app: a soft off-white page with
    what you work on (cards, lists, panels, forms) lifted onto white with a gentle
    shadow, rounded corners, crisp neutral ink, and comfortable controls.
@@ -155,4 +157,121 @@
   line-height: 1.5rem;
   font-weight: 650;
   letter-spacing: -0.01em;
+}
+
+/* ---------- The shell, one definition for every Pleadli app ----------
+   The window's corner and the toolbar's glass capsules. The sidebar stays full
+   height and attached, on its own grey (the user preferred it to a floating pane,
+   2026-10-08). */
+:root {
+  --shell-radius: 12px;
+  --shell-inset: 6px;
+  --shell-inner-radius: calc(var(--shell-radius) - var(--shell-inset));
+  --glass: color-mix(in oklab, var(--sidebar) 72%, transparent);
+  --glass-edge: color-mix(in oklab, var(--foreground) 9%, transparent);
+  --glass-shine: color-mix(in oklab, white 55%, transparent);
+}
+.dark {
+  --glass: color-mix(in oklab, var(--sidebar) 70%, transparent);
+  --glass-edge: color-mix(in oklab, white 10%, transparent);
+  --glass-shine: color-mix(in oklab, white 8%, transparent);
+}
+
+/* Toolbar controls that belong together sit in one capsule of glass, as
+   Safari and Finder group theirs, instead of standing loose in the bar. */
+.shell-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--background) 70%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow:
+    inset 0 0 0 1px var(--glass-edge),
+    0 1px 2px color-mix(in oklab, black 8%, transparent);
+}
+.shell-capsule > :is(button, a) {
+  border-radius: 9999px;
+}
+
+/* The window itself in the desktop app: the outer, largest radius. */
+.shell-window {
+  border-radius: var(--shell-radius);
+}
+
+/* The floating selector uses one quiet glass surface across all desktop apps. */
+.floating-language-surface {
+  border: 1px solid var(--glass-edge);
+  border-radius: 1.5rem;
+  padding: 2px;
+  background: color-mix(in oklab, var(--popover) 90%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 var(--glass-shine);
+}
+.floating-language-trigger {
+  margin-left: auto;
+  height: 2.5rem;
+  min-width: 6rem;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding-inline: 0.875rem;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+.floating-language-option {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 0.875rem;
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  outline: none;
+}
+.floating-language-option:hover,
+.floating-language-option[aria-selected="true"] {
+  background: color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+.floating-language-option:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.floating-language-code {
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-size: 0.625rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+/* The native window is transparent behind the single rounded app frame. */
+@media screen {
+  html, body { height: 100%; overflow: hidden; background: transparent; overscroll-behavior: none; }
+}
+
+.shell-sidebar {
+  width: 16rem;
+  transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.shell-sidebar[data-open="false"] { width: 0; }
+.shell-sidebar > * {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 180ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.shell-sidebar[data-open="false"] > * { opacity: 0; transform: translateX(-8px); }
+@media (prefers-reduced-motion: reduce) {
+  .shell-sidebar, .shell-sidebar > * { transition: none; }
 }

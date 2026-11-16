@@ -61,6 +61,44 @@ impl Documents for FolderDocuments {
     }
 }
 
+/// Documents sealed in node-core's vault, one file per document at
+/// `attachments/<id>.enc` (DPP's attachments, Lawyers' papers). Each is read
+/// plain through the vault, so the backup holds it locked only with the
+/// institution key and another computer can seal it again under its own key.
+/// Named by id: `apply_pending_sealed` and `seal_restored` put them back.
+pub struct SealedVault(pub PathBuf);
+
+impl Documents for SealedVault {
+    fn list(&self) -> io::Result<Vec<String>> {
+        let dir = self.0.join("attachments");
+        if !dir.exists() {
+            return Ok(Vec::new());
+        }
+        let mut ids = Vec::new();
+        for entry in fs::read_dir(&dir)?.flatten() {
+            let name = entry.file_name();
+            let Some(id) = name.to_str().and_then(|n| n.strip_suffix(".enc")) else { continue };
+            if is_id(id) {
+                ids.push(id.to_string());
+            }
+        }
+        ids.sort();
+        Ok(ids)
+    }
+
+    fn open(&self, id: &str) -> io::Result<Box<dyn Read + Send>> {
+        if !is_id(id) {
+            return Err(io::Error::other("bad name"));
+        }
+        let bytes = vault::read(&self.0, &vault::relative_path_for(id), id).map_err(|e| io::Error::other(e.to_string()))?;
+        Ok(Box::new(io::Cursor::new(bytes)))
+    }
+}
+
+fn is_id(id: &str) -> bool {
+    !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
+
 /// A name from a backup as a path that stays inside its folder, or nothing.
 fn safe_relative(name: &str) -> Option<PathBuf> {
     if name.is_empty() || name.contains('\\') || name.contains('\0') {
@@ -412,6 +450,43 @@ pub fn apply_pending(data_dir: &Path, db_path: &Path, documents_root: &Path) -> 
     }
     remove_tree(&staged)?;
     Ok(Some(Applied { documents }))
+}
+
+/// `apply_pending` for an application whose documents are sealed in the
+/// vault (`SealedVault`): the vault is set aside with the database, and the
+/// restored documents are left plain in `incoming`, named by id, for
+/// `seal_restored` to seal once the key is open.
+pub fn apply_pending_sealed(data_dir: &Path, db_path: &Path, vault_root: &Path, incoming: &Path) -> io::Result<Option<Applied>> {
+    if pending(data_dir) && vault_root.exists() {
+        let stamp = chrono::Utc::now().format("%Y%m%d-%H%M%S").to_string();
+        let aside = data_dir.join("pre-restore");
+        fs::create_dir_all(&aside)?;
+        move_path(vault_root, &aside.join(format!("{stamp}-vault")))?;
+    }
+    apply_pending(data_dir, db_path, incoming)
+}
+
+/// Seals every plain document left in `incoming` by a restore into the vault
+/// under its id, checks the sealed copy opens to the same bytes, and only then
+/// destroys the plain file. Runs at every start (after the keys are open), so
+/// a start interrupted half way finishes the next time. Returns how many.
+pub fn seal_restored(incoming: &Path, vault_root: &Path) -> io::Result<usize> {
+    if !incoming.exists() {
+        return Ok(0);
+    }
+    let mut sealed = 0;
+    for file in vault::walk(incoming)? {
+        let Some(id) = file.file_name().and_then(|n| n.to_str()).filter(|n| is_id(n)).map(str::to_string) else { continue };
+        let plain = fs::read(&file)?;
+        let relative = vault::write(vault_root, &id, &plain).map_err(|e| io::Error::other(e.to_string()))?;
+        if vault::read(vault_root, &relative, &id).map_err(|e| io::Error::other(e.to_string()))? != plain {
+            return Err(io::Error::other(format!("the sealed copy of {id} does not match")));
+        }
+        vault::shred_file(&file)?;
+        sealed += 1;
+    }
+    let _ = remove_tree(incoming);
+    Ok(sealed)
 }
 
 #[cfg(test)]

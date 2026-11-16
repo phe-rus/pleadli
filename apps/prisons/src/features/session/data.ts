@@ -40,3 +40,10 @@ export async function setDevRole(isHeadOffice: boolean) {
   setSessionToken(null)
   return account
 }
+
+/** The facility's officers, for the sign-in screen's faces. Empty unless this
+ * computer signs a known officer in on the badge alone. */
+export async function getDeskOfficers() {
+  const rows = (await api('GET', '/api/auth/desk')) as { badgeNumber: string; name: string; role: string; passwordless: boolean }[]
+  return Array.isArray(rows) ? rows : []
+}

@@ -110,6 +110,7 @@ struct PendingRow {
 }
 
 pub async fn overview(pool: &SqlitePool) -> Result<LegalOverview, sqlx::Error> {
+    let rules = super::jurisdiction::for_pool(pool).await?;
     let now = now_ms();
 
     let diary = sqlx::query_as::<_, DiaryEntry>(
@@ -148,7 +149,7 @@ pub async fn overview(pool: &SqlitePool) -> Result<LegalOverview, sqlx::Error> {
     for p in &prisoners {
         let name = format!("{}, {}", p.last_name, p.first_name);
         let sentence = sentence_by.get(&p.id);
-        let clocks = compute_clocks(p, sentence, now);
+        let clocks = compute_clocks(p, sentence, now, rules);
 
         if let Some(due) = clocks.mandatory_bail_on {
             thresholds.push(ThresholdRow {
@@ -157,7 +158,7 @@ pub async fn overview(pool: &SqlitePool) -> Result<LegalOverview, sqlx::Error> {
                 admitted_at: p.admitted_at,
                 high_court_only: p.high_court_only_offence,
                 days_held: clocks.days_held,
-                threshold_days: if p.high_court_only_offence { 180 } else { 60 },
+                threshold_days: rules.mandatory_bail_days(p.high_court_only_offence),
                 mandatory_bail_on: due,
                 days_remaining: (due - now).div_euclid(DAY_MS),
                 last_produced_at: last_produced.get(&p.id).copied(),

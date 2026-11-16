@@ -19,6 +19,15 @@ _These are recommendations to keep the build orderly, not requirements. A worksp
 | `www` (Pleadli Cloud) | built, one feature mid way, several candidate gaps deferred pending a decision | 6 existing / 1 in-progress / 7 | [www/scope.md](www/scope.md) |
 | `_root` (shared packages + monorepo tooling) | packages stable; foundational tooling (AGENTS.md, CI) missing entirely; officer identity and sign in designed and spec captured, ready to build | 3 existing / 1 in-progress / 3 planned / 7 | [_root/scope.md](_root/scope.md) |
 
+## Staged plan (2026-11-17)
+
+Order recommended after the audit in `docs/platform/AUDIT-2026-11-17.md`. Do one stage, run `/clear`, then start the next from these files.
+
+1. **Stage 0, hygiene and gates:** `_root` features 5 (CI), 6 (Turbo tasks), 9 (code health), 10 (budgets).
+2. **Stage 1, first trusted app:** `lawyers` feature 4 (pilot readiness) and `www` feature 8 (purchases, seats and keys).
+3. **Stage 2, shared core:** `_root` features 11, 12, 13.
+4. **Later, not yet scoped:** files that travel (Word round trip, Drive and OneDrive), the institution link and civilian portal, Police mobile, National ID, bring your own AI, extensions, the world website and film, security review and signed installers. Each becomes a row only when its stage is next.
+
 ## Legend
 
 - `existing`: built before this workflow existed; `/develop` and `/sync` leave these alone.

@@ -313,15 +313,26 @@ pub async fn set_jurisdiction(pool: &SqlitePool, jurisdiction: &str, region: Opt
 /// password for the new level; everyone else gets theirs from the
 /// administrator in People before they can sign in again.
 pub async fn set_protection(pool: &SqlitePool, admin_id: &str, level: Protection, secret: Option<&str>) -> Result<Installation, DomainError> {
-    if level != Protection::None {
+    if level == Protection::None {
+        // Keep the one-person check and the change in one SQLite statement.
+        // Settings must preserve the same rule as first-run setup.
+        let changed = sqlx::query("UPDATE installation SET protection = 'none', updated_at = ? WHERE id = 'this' AND (SELECT count(*) FROM staff WHERE active = 1) = 1")
+            .bind(chrono::Utc::now().timestamp_millis())
+            .execute(pool)
+            .await?
+            .rows_affected();
+        if changed == 0 {
+            return invalid("With no sign-in only one person can use this copy. Make the others inactive first.");
+        }
+    } else {
         let secret = secret.ok_or_else(|| DomainError::Invalid("Give your new PIN or password.".to_string()))?;
         staff::set_secret(pool, level, admin_id, secret).await?;
         if level == Protection::Full {
             // A password without the phone: they link it at the next sign-in.
             staff::set_second_factor(pool, admin_id, None).await?;
         }
+        sqlx::query("UPDATE installation SET protection = ?, updated_at = ? WHERE id = 'this'").bind(level.as_str()).bind(chrono::Utc::now().timestamp_millis()).execute(pool).await?;
     }
-    sqlx::query("UPDATE installation SET protection = ?, updated_at = ? WHERE id = 'this'").bind(level.as_str()).bind(chrono::Utc::now().timestamp_millis()).execute(pool).await?;
     let _ = audit::log(pool, Entry::new("protection_changed").detail(level.as_str())).await;
     Ok(get(pool).await?.ok_or(sqlx::Error::RowNotFound)?)
 }

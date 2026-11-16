@@ -2,14 +2,16 @@
 //! how long a session lasts. Facility-owned; only an administrator changes it
 //! and every change is audited.
 //!
-//! * `password`   every account needs a password (the default)
+//! * `badge_only` an account may be marked as signing in with its badge
+//!   alone. The default for a new facility: the first account is created
+//!   that way. Refused on Head Office, refused while this machine serves LAN
+//!   workstations, and never honoured for a workstation sign-in. Anyone may
+//!   still be given a password, and then it is asked for.
+//! * `password`   every account needs a password
 //! * `pin`        non-administrators may use a 4 to 8 digit PIN instead
-//! * `badge_only` non-administrators may be marked as signing in with their
-//!   badge alone, for a controlled room. Refused on Head Office, refused while
-//!   this machine serves LAN workstations, and never honoured for a
-//!   workstation sign-in.
 //!
-//! Administrators always use a password, in every mode.
+//! Head Office always uses a secret; its first account starts on the default
+//! passcode, `officers::HEAD_OFFICE_DEFAULT_PASSCODE`.
 
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqliteConnection, SqlitePool};
@@ -54,8 +56,8 @@ impl AuthPolicy {
         self.mode == "pin" && !is_admin
     }
 
-    pub fn allows_passwordless(&self, is_admin: bool, head_office: bool) -> bool {
-        self.mode == "badge_only" && !is_admin && !head_office
+    pub fn allows_passwordless(&self, _is_admin: bool, head_office: bool) -> bool {
+        self.mode == "badge_only" && !head_office
     }
 }
 
@@ -84,6 +86,13 @@ pub async fn save(conn: &mut SqliteConnection, actor: &Actor, input: AuthPolicyI
     }
 
     let before = get_conn(conn).await?;
+    if before.mode == "badge_only" && input.mode != "badge_only" {
+        // Leaving badge-only would leave an administrator with no way in.
+        let stranded: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM officers WHERE passwordless = 1 AND is_admin = 1 AND active = 1").fetch_one(&mut *conn).await?;
+        if stranded > 0 {
+            return Err(DomainError::rejected("Give every administrator a password first, from Officers. Until then they sign in with their badge alone."));
+        }
+    }
     sqlx::query("UPDATE auth_policy SET mode = ?, idle_timeout_minutes = ?, absolute_lifetime_hours = ?, updated_at = ?, updated_by = ? WHERE id = 'default'")
         .bind(&input.mode)
         .bind(input.idle_timeout_minutes)

@@ -12,7 +12,6 @@ import {
 import { facilityStatusLabel, type ConnectionRequest, type Facility } from './schema'
 import { usePermissions } from '@/features/session'
 import {
-  AddCircleIcon,
   CheckmarkCircle02Icon,
   Clock01Icon,
   Copy01Icon,
@@ -52,7 +51,7 @@ export function FacilitiesPage() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m.route_facilities_facilities()}</h1>
+          <h1>{m.nav_regions_prisons()}</h1>
           <p className="md:max-w-lg">{m.route_facilities_every_prison_facility_on_this_head()}</p>
         </div>
         {manage && (
@@ -62,7 +61,6 @@ export function FacilitiesPage() {
               onOpenChange={setRegisterOpen}
               trigger={
                 <Button size="sm">
-                  <HugeiconsIcon icon={AddCircleIcon} />
                   {m.route_facilities_register_a_facility()}
                 </Button>
               }
@@ -77,7 +75,7 @@ export function FacilitiesPage() {
         )}
       </header>
 
-      <div className="flex flex-col gap-6 md:max-w-4xl">
+      <div className="flex flex-col gap-6">
         {manage && <ConnectionRequestsSection />}
 
         <section className="page-section flex flex-col gap-3">

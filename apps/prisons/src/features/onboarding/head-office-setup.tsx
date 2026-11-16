@@ -83,6 +83,7 @@ function StepBody({ index, draft, errors, update }: { index: number; draft: Draf
         <TextField label={m.hqsetup_name()} value={draft.name} onChange={(name) => update({ name })} error={errors.name} autoFocus autoComplete="off" placeholder={m.hqsetup_name_placeholder()} />
         <TextField label={m.hqsetup_code()} value={draft.facilityCode} onChange={(facilityCode) => update({ facilityCode })} error={errors.facilityCode} autoComplete="off" placeholder="UPS-HQ" description={m.hqsetup_code_description()} />
         <TextField label={m.setup_location()} value={draft.location} onChange={(location) => update({ location })} autoComplete="off" placeholder={m.hqsetup_location_placeholder()} />
+        <p className="text-sm text-muted-foreground">{m.jurisdiction_setup_note()}</p>
         <p>{m.hqsetup_verify_note()}</p>
       </div>
     )
@@ -102,5 +103,5 @@ function StepBody({ index, draft, errors, update }: { index: number; draft: Draf
       </div>
     )
   }
-  return <AdministratorStep draft={draft} errors={errors} update={update} />
+  return <AdministratorStep headOffice draft={draft} errors={errors} update={update} />
 }

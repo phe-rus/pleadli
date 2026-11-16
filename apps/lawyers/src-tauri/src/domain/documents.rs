@@ -402,6 +402,24 @@ pub(super) async fn seal(tx: &mut sqlx::SqliteConnection, id: &str, filed_on: i6
         .bind(id)
         .execute(&mut *tx)
         .await?;
+    // The paper's code, kept with the other papers that left the practice, so
+    // Orchestra can tell pleadli.com/verify about it (migration 0020).
+    let letter = kind.ends_with("letter") || matches!(kind.as_str(), "legal_opinion" | "government_notice");
+    sqlx::query(
+        "INSERT OR IGNORE INTO paper_prints (code, entity_type, entity_id, reference, title, body, body_sha256, printed_by, printed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(content.verify_code.as_deref())
+    .bind(if letter { "filed_letter" } else { "filed_document" })
+    .bind(id)
+    .bind(&reference)
+    .bind(&content.title)
+    .bind(&text)
+    .bind(hex(&text))
+    .bind(&advocate)
+    .bind(now)
+    .execute(&mut *tx)
+    .await?;
     audit::record(tx, Entry::new("document_filed").subject("document", id).scope(&matter_id).detail(&reference)).await?;
     Ok((reference, advocate))
 }

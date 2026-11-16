@@ -1267,7 +1267,8 @@
       "passphrase": "Backup passphrase",
       "passphrase_placeholder": "Backup passphrase (at least 10 characters)",
       "saved": "Backup saved",
-      "title": "Make a backup"
+      "title": "Make a backup",
+      "admin_only": "Only an administrator of this office makes a backup file or restores one."
     },
     "confirm_placeholder": "Confirm the passphrase",
     "gate": {
@@ -2275,5 +2276,158 @@
     "title": "Software update",
     "version": "Version",
     "no_build": "No update is published for this kind of computer yet."
+  },
+  "orchestra": {
+    "settings": {
+      "group": "Pleadli",
+      "licence": "Pleadli licence",
+      "licence_about": "This computer's trial or licence, and the documents pleadli.com/verify can answer for.",
+      "backups": "Daily backups",
+      "backups_about": "A locked copy of the whole record, sent once a day to your institution's own storage. The passphrase backup under Backup stays as it is."
+    },
+    "state": {
+      "licensed": "Licensed to {institution}",
+      "trial": "Trial · {days} days left",
+      "trial_ended": "Trial ended",
+      "licence_ended": "Licence ended"
+    },
+    "licence": {
+      "this_computer": "This computer",
+      "trial_about": "Everything works during the 30-day trial. It ends on {date}.",
+      "trial_ended_about": "The 30-day trial has ended. A licence from your institution brings back daily backups and documents that can be checked on pleadli.com.",
+      "never_locked": "Records are never locked. Every file, decision and document stays open and keeps working.",
+      "check_now": "Check now",
+      "checking": "Checking…",
+      "checked": "pleadli.com answered",
+      "institution": "Institution",
+      "address": "Orchestra address",
+      "seats": "Computers on this licence",
+      "expires": "Licence ends",
+      "valid_until": "Works offline until {date}",
+      "last_contact": "Last in touch with pleadli.com",
+      "never": "Not yet",
+      "device": "Computer number",
+      "device_hint": "Read this out if Pleadli support asks which computer this is.",
+      "cannot_verify": "This copy of Pleadli DPP cannot check licences yet. Install the released version."
+    },
+    "activate": {
+      "title": "Licence key",
+      "about": "Type the key your institution's administrator gave you. It is used once, on this computer.",
+      "hint": "The administrator finds the key on pleadli.com/orchestra, under Licences.",
+      "ask_admin": "An administrator of this office enters the licence key.",
+      "key": "Key",
+      "activate": "Activate",
+      "activating": "Activating…",
+      "done": "This computer is licensed"
+    },
+    "papers": {
+      "title": "Documents that can be checked",
+      "about": "Charge sheets, directions to police and the other documents this office issues are known to pleadli.com/verify by their code and fingerprint. Their wording never leaves this computer.",
+      "office": "Issued by",
+      "office_hint": "The office named when someone checks a document.",
+      "sent": "Known to pleadli.com",
+      "waiting": "Waiting for the internet",
+      "failed": "{count} documents were refused by pleadli.com. Check which office issues them.",
+      "send_now": "Send now",
+      "sent_now": "{count} documents sent"
+    },
+    "backups": {
+      "title": "Daily backup",
+      "about": "The whole record and every document, locked on this computer with your institution's recovery key. Only the recovery phrase opens it, and Pleadli never holds a copy.",
+      "daily": "A backup runs on its own once a day while Pleadli DPP is open and online.",
+      "none_approved": "No storage has been approved for this computer yet. Your administrator does that on pleadli.com/orchestra, under Backups.",
+      "now": "Back up now",
+      "running": "Backing up…",
+      "done": "Backup finished",
+      "partly": "Backed up to {ok} of {total} storage places",
+      "last": "Last backup",
+      "never": "None yet",
+      "key": "Recovery key",
+      "key_hint": "Matches the fingerprint printed on the recovery phrase sheet.",
+      "admin_only": "An administrator of this office manages daily backups.",
+      "needs_licence_title": "Backups need a licence",
+      "needs_licence": "Once this computer has a licence, it backs up to the storage your institution chose. You can still restore a backup below."
+    },
+    "storage": {
+      "title": "Where backups go",
+      "about": "Chosen by your institution on pleadli.com/orchestra.",
+      "approved": "Approved",
+      "waiting": "Not yet approved",
+      "test": "Test",
+      "testing": "Testing…",
+      "works": "{label} works"
+    },
+    "history": {
+      "title": "Recent backups",
+      "ok": "Done",
+      "failed": "Failed"
+    },
+    "kind": {
+      "s3": "S3 storage",
+      "folder": "Folder or drive",
+      "sftp": "SFTP server"
+    },
+    "restore": {
+      "title": "Restore a backup",
+      "about": "Choose a backup file and type the recovery phrase. The backup is checked completely, then put in place when Pleadli DPP restarts.",
+      "kept_aside": "What is on this computer now is kept aside, not deleted.",
+      "file": "Backup file",
+      "file_type": "Pleadli backup",
+      "choose": "Choose…",
+      "change": "Change…",
+      "phrase": "Recovery phrase",
+      "phrase_hint": "8 groups of 4, from the sheet your institution printed.",
+      "restore": "Check and restore",
+      "checking": "Checking the backup…",
+      "ready_title": "Ready to restore",
+      "ready": "The backup of {date}, with {documents} documents, is checked and ready. Restart Pleadli DPP to put it in place.",
+      "missing": "{count} documents could not be read when this backup was made and are not in it.",
+      "restart": "Restart now",
+      "restart_browser": "Restart the app from the terminal to finish",
+      "pending_title": "A restore is waiting",
+      "pending_badge": "At next start",
+      "pending": "A checked backup will be put in place the next time Pleadli DPP starts.",
+      "cancel": "Cancel restore"
+    },
+    "bar": {
+      "trial": "Pleadli DPP trial: {days} days left.",
+      "trial_ended": "The trial has ended. Every record stays open.",
+      "licence_ended": "The licence has ended. Every record stays open.",
+      "go_online": "Connect this computer to the internet soon to keep its licence current.",
+      "get_licence": "Licence",
+      "open": "Open",
+      "ask_admin": "Your administrator can add a licence."
+    },
+    "reason": {
+      "revoked": "Your institution's licence was revoked on pleadli.com.",
+      "suspended": "Your institution is suspended on Pleadli Orchestra.",
+      "expired": "The licence reached its end date.",
+      "removed": "The licence was removed on pleadli.com.",
+      "unknown": "The licence is no longer valid, or this computer has been offline too long."
+    },
+    "error": {
+      "offline": "pleadli.com could not be reached. Check the internet and try again.",
+      "unknown_key": "No licence has this key. Check it with your administrator.",
+      "seats_full": "Every computer on this licence is in use. Your administrator can free one on pleadli.com/orchestra.",
+      "revoked": "This licence has been revoked.",
+      "suspended": "Your institution is not active on Pleadli Orchestra.",
+      "expired": "This licence has ended.",
+      "wrong_application": "This key is for another Pleadli application.",
+      "invalid": "pleadli.com did not accept the request. Check the key.",
+      "licence_needed": "This needs a licence on this computer.",
+      "no_recovery_phrase": "Your institution has not set its recovery phrase yet. The administrator does that first, on pleadli.com/orchestra under Backups.",
+      "no_storage": "No storage is set up for backups yet.",
+      "storage_not_approved": "This computer is not approved for that storage yet.",
+      "storage_host_key": "The server's key is not the one your institution pinned. Nothing was sent. Tell your administrator.",
+      "storage_denied": "The storage refused the user name, password or access key.",
+      "storage_unreachable": "The storage could not be reached. Check the drive, the network or the internet.",
+      "backup_running": "A backup is already running.",
+      "unknown_office": "That office is not on this licence.",
+      "restore_phrase": "The recovery phrase does not open this backup. Check each group of four.",
+      "restore_unreadable": "This file is not a complete Pleadli backup.",
+      "restore_wrong_app": "This is a backup of another Pleadli application.",
+      "restore_newer": "This backup was made by a newer Pleadli DPP. Update first, then restore.",
+      "general": "That did not work. Try again."
+    }
   }
 }

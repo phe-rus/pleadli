@@ -1,0 +1,212 @@
+name: CI
+
+# Checks every pull request to main (and every push to main): typecheck, Rust tests and
+# clippy, and a bundle size budget. Only the parts a change touches run.
+#
+# ONE MANUAL STEP, done once by a repo admin, because a workflow cannot do it:
+#   GitHub > Settings > Branches (or Rules) > add a rule for `main`:
+#     require a pull request before merging, require the status check `ci`,
+#     block force pushes.
+#   Mark ONLY `ci` as required. It sums up every other job, so adding an app
+#   never means editing branch protection again.
+#
+# How it fits together (decision record: docs/specs/_root/0002-ci-pipeline.md):
+#   changes    works out what the diff touches (toolings/ci/changes.sh)
+#   typecheck  turbo `check` for the affected TypeScript workspaces
+#   rust       cargo test + clippy ratchet per affected Tauri app (toolings/ci/clippy.ts)
+#   size       gzipped JS and CSS against toolings/ci/budgets.json (toolings/ci/size.ts)
+#   ci         passes only when everything above passed or was skipped on purpose
+#
+# Third party actions are pinned to full commit SHAs. The version is in the comment.
+# No secrets are used. Pull requests from forks get none and need none.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to the same pull request cancels the older run. Runs on main are
+# never cancelled, so a red main is never hidden.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  BUN_VERSION: 1.4.2 # same as packageManager in package.json and release.yml
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      ts: ${{ steps.diff.outputs.ts }}
+      rust: ${{ steps.diff.outputs.rust }}
+      size: ${{ steps.diff.outputs.size }}
+      base: ${{ steps.diff.outputs.base }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - id: diff
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: toolings/ci/changes.sh
+
+  typecheck:
+    needs: changes
+    if: needs.changes.outputs.ts == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      # Files tsc needs that are gitignored, so a clean checkout lacks them.
+      - name: Generate route trees and types
+        run: |
+          bun toolings/ci/routes.ts apps/*/
+          cd www
+          bun run i18n
+          bun run generate-routes
+          bun run cf-typegen
+      - name: Typecheck affected workspaces
+        env:
+          BASE: ${{ needs.changes.outputs.base }}
+        run: |
+          if [ -n "$BASE" ]; then
+            bunx turbo run check --filter="...[$BASE]"
+          else
+            bunx turbo run check
+          fi
+
+  rust:
+    needs: changes
+    if: needs.changes.outputs.rust != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.changes.outputs.rust) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: System packages for Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libsoup-3.0-dev libayatana-appindicator3-dev librsvg2-dev
+      # Current stable, like release.yml. Not pinned on purpose: a pinned
+      # rust-toolchain.toml could break the Windows release builds. A new Rust
+      # release can bring new clippy lints and turn the ratchet red.
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy
+          rustup default stable
+          rustc --version
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: apps/${{ matrix.app }}/src-tauri -> target
+          key: ${{ matrix.app }}
+          # Pull requests read the cache, only main writes it.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # tauri::generate_context needs the frontendDist folder to exist to compile.
+      - run: mkdir -p apps/${{ matrix.app }}/dist
+      - name: cargo test
+        run: cargo test --manifest-path apps/${{ matrix.app }}/src-tauri/Cargo.toml
+      - name: cargo clippy and the ratchet
+        run: |
+          out="$RUNNER_TEMP/clippy.jsonl"
+          code=0
+          cargo clippy --manifest-path apps/${{ matrix.app }}/src-tauri/Cargo.toml \
+            --all-targets --message-format=json > "$out" || code=$?
+          ratchet=0
+          bun toolings/ci/clippy.ts check "${{ matrix.app }}" "$out" || ratchet=$?
+          if [ "$code" -ne 0 ]; then echo "cargo clippy exited with $code"; fi
+          [ "$code" -eq 0 ] && [ "$ratchet" -eq 0 ]
+
+  size:
+    needs: changes
+    if: needs.changes.outputs.size != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: ${{ fromJSON(needs.changes.outputs.size) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      # `vite build` directly: `bun run build` repeats tsc, which the typecheck job owns.
+      - name: Build
+        run: |
+          if [ "${{ matrix.workspace }}" = www ]; then dir=www; else dir=apps/${{ matrix.workspace }}; fi
+          cd "$dir"
+          bun run i18n
+          bunx vite build
+      - name: Measure against the budget
+        run: bun toolings/ci/size.ts ${{ matrix.workspace }}
+
+  # The only job to mark required in branch protection. Runs last, even after a
+  # failure or a cancel, so the result is always reported. A job the change filter
+  # skipped is fine. Anything failed or cancelled is not, and neither is `changes`
+  # itself not succeeding (then everything downstream is skipped, which must not
+  # look like a pass).
+  ci:
+    name: ci
+    needs: [changes, typecheck, rust, size]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sum up
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          TYPECHECK: ${{ needs.typecheck.result }}
+          RUST: ${{ needs.rust.result }}
+          SIZE: ${{ needs.size.result }}
+        run: |
+          echo "changes=$CHANGES typecheck=$TYPECHECK rust=$RUST size=$SIZE"
+          if [ "$CHANGES" != success ]; then
+            echo "changes did not succeed, so nothing was decided about the diff."
+            exit 1
+          fi
+          for result in "$TYPECHECK" "$RUST" "$SIZE"; do
+            case "$result" in
+              success | skipped) ;;
+              *) echo "a job finished as '$result'."; exit 1 ;;
+            esac
+          done
+          echo "All needed jobs passed or were skipped on purpose."

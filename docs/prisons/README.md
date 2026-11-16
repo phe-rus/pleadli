@@ -6,6 +6,7 @@ Police, DPP, Courts, and Lawyers will use the same vault shape later. **This vau
 
 ## Start here
 
+0. [[REVIEW-2026-10-08]]: READ FIRST, what the Service is, what HQ does, the impact, the Apple structure, the countries, decisions D1-D7.
 1. [[PLAN]] — what we do next, in what order, and what “done” means for each stage.
 2. [[PRODUCT]] — what the product is. Authoritative product model.
 3. [[product/principles|Product principles]] — principles P1 to P12, decisions, operating-model contract.

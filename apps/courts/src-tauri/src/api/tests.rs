@@ -18,7 +18,7 @@ const DAY: i64 = 24 * HOUR;
 async fn app() -> Router {
     let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-    router(AppState { pool, vault_root: std::env::temp_dir().join(format!("courts-vault-{}", uuid::Uuid::new_v4())) })
+    router(AppState { pool, vault_root: std::env::temp_dir().join(format!("courts-vault-{}", uuid::Uuid::new_v4())), orchestra: None })
 }
 
 async fn call(app: &Router, method: Method, path: &str, body: Option<Value>) -> (StatusCode, Value) {
@@ -666,7 +666,7 @@ async fn app_with_parts() -> (Router, sqlx::SqlitePool, std::path::PathBuf) {
     let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
     let vault_root = std::env::temp_dir().join(format!("courts-vault-{}", uuid::Uuid::new_v4()));
-    (router(AppState { pool: pool.clone(), vault_root: vault_root.clone() }), pool, vault_root)
+    (router(AppState { pool: pool.clone(), vault_root: vault_root.clone(), orchestra: None }), pool, vault_root)
 }
 
 fn b64(bytes: &[u8]) -> String {
@@ -868,4 +868,134 @@ async fn the_returns_count_what_was_recorded_in_the_period_and_no_more() {
     assert_eq!(r["openCases"], 1);
     assert_eq!(r["backlog"][0]["count"], 1);
     assert_eq!(r["recordings"], 0);
+}
+
+#[tokio::test]
+async fn order_preview_is_read_only_and_uses_the_issue_wording() {
+    let app = app().await;
+    let case = new_case(&app, "PREVIEW/1").await;
+    let (_, order) = post(&app, "/api/orders", json!({ "caseId": case, "kind": "remand", "fields": { "accused": "Okello John" } })).await;
+    let id = order["id"].as_str().unwrap();
+    let path = format!("/api/orders/{id}");
+    let (status, preview) = get(&app, &format!("{path}/preview")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(preview["content"].is_null());
+    assert!(!preview["blockers"].as_array().unwrap().is_empty());
+    set_profile(&app).await;
+    call(&app, Method::PUT, &path, Some(json!({ "fields": { "accused": "Okello John", "prison": "Kampala Remand Prison", "remandUntil": now() + 14 * DAY } }))).await;
+    let before = get(&app, &path).await.1;
+    let history_before = get(&app, "/api/audit").await.1;
+    let (_, preview) = get(&app, &format!("{path}/preview")).await;
+    assert_eq!(preview["blockers"], json!([]));
+    assert!(preview["content"]["paragraphs"][1].as_str().unwrap().contains("Kampala Remand Prison"));
+    assert_eq!(get(&app, &path).await.1, before);
+    assert_eq!(get(&app, "/api/audit").await.1, history_before);
+    assert!(before["reference"].is_null());
+    assert!(before["contentSha256"].is_null());
+    let (status, issued) = post(&app, &format!("{path}/issue"), json!({})).await;
+    assert_eq!(status, StatusCode::OK);
+    // Date is deliberately assigned again at issue, which may cross midnight.
+    for field in ["court", "heading", "caseNumber", "caseTitle", "paragraphs", "signatory", "signatoryTitle"] {
+        assert_eq!(preview["content"][field], issued["content"][field]);
+    }
+    assert_eq!(get(&app, &format!("{path}/preview")).await.1["content"], issued["content"]);
+    assert_eq!(get(&app, "/api/orders/unknown/preview").await.0, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn attachments_are_sealed_case_scoped_checked_and_included_in_restore() {
+    use pleadli_node_core::{snapshot::Documents, vault};
+    use crate::domain::orchestra::{RecordingVault, seal_restored};
+    let (app, pool, root) = app_with_parts().await;
+    let case = new_case(&app, "CRB ATTACH/2026").await;
+    let other = new_case(&app, "CRB OTHER/2026").await;
+    let original = b"Original scan transcription. Not admitted as evidence.";
+    let (status, added) = post(&app, &format!("/api/cases/{case}/attachments"), json!({"name":"statement.txt", "contentBase64":b64(original)})).await;
+    assert_eq!(status, StatusCode::OK, "{added}");
+    let id = added["id"].as_str().unwrap();
+    assert_eq!(added["size"], original.len());
+    assert!(added.get("storedPath").is_none());
+    let sealed = std::fs::read(root.join(vault::relative_path_for(id))).unwrap();
+    assert_ne!(sealed, original);
+    assert!(!sealed.windows(original.len()).any(|w| w == original));
+    let path = format!("/api/cases/{case}/attachments/{id}/content");
+    assert_eq!(get(&app, &path).await.1["contentBase64"], b64(original));
+    assert_eq!(get(&app, &format!("/api/cases/{other}/attachments/{id}/content")).await.0, StatusCode::NOT_FOUND);
+    assert_eq!(get(&app, &format!("/api/cases/{case}/attachments")).await.1.as_array().unwrap().len(), 1);
+    assert_eq!(sqlx::query_scalar::<_, i64>("SELECT count(*) FROM exhibits").fetch_one(&pool).await.unwrap(), 0);
+    let source = RecordingVault(root.clone());
+    let names = source.list().unwrap();
+    assert_eq!(names, vec![format!("attachments/{id}")]);
+    let incoming = root.with_extension("incoming-test");
+    let restored = root.with_extension("restored-test");
+    for name in names {
+        let path = incoming.join(&name);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let mut bytes = Vec::new(); source.open(&name).unwrap().read_to_end(&mut bytes).unwrap();
+        std::fs::write(path, bytes).unwrap();
+    }
+    assert_eq!(seal_restored(&incoming, &restored).unwrap(), 1);
+    assert_eq!(crate::domain::attachments::read(&pool, &restored, &case, id).await.unwrap().1, original);
+    assert!(!incoming.exists());
+    std::fs::write(root.join(vault::relative_path_for(id)), b"broken").unwrap();
+    assert_eq!(get(&app, &path).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    std::fs::remove_dir_all(root).unwrap();
+    std::fs::remove_dir_all(restored).unwrap();
+}
+
+#[tokio::test]
+async fn attachments_reject_bad_names_types_size_and_unknown_cases_without_files() {
+    let (app, pool, root) = app_with_parts().await;
+    let case = new_case(&app, "CRB VALIDATE/2026").await;
+    let path = format!("/api/cases/{case}/attachments");
+    for (name, data) in [("../scan.pdf", b"%PDF-1.7".as_slice()), ("scan.pdf", b"<html>text</html>"), ("script.html", b"hello"), ("empty.txt", b""), ("null.txt", b"null\0")] {
+        assert_eq!(post(&app, &path, json!({"name":name,"contentBase64":b64(data)})).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    }
+    assert_eq!(post(&app, &path, json!({"name":"large.txt","contentBase64":"a".repeat(14*1024*1024)})).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(post(&app, "/api/cases/missing/attachments", json!({"name":"file.txt","contentBase64":b64(b"original")})).await.0, StatusCode::NOT_FOUND);
+    assert_eq!(sqlx::query_scalar::<_, i64>("SELECT count(*) FROM attachments").fetch_one(&pool).await.unwrap(), 0);
+    assert!(!root.exists());
+}
+
+#[tokio::test]
+async fn attachments_survive_a_complete_encrypted_backup_and_restore() {
+    use pleadli_node_core::{backup, snapshot, vault};
+    use crate::domain::orchestra::{RecordingVault, seal_restored};
+    // SQLCipher export needs a real database file, as the desktop app uses.
+    let source = std::env::temp_dir().join(format!("courts-backup-source-{}", uuid::Uuid::new_v4()));
+    std::fs::create_dir_all(&source).unwrap();
+    let root = source.join("vault");
+    let pool = SqlitePoolOptions::new().max_connections(1).connect_with(pleadli_node_core::db::connect_options(&source.join("courts.db"))).await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    let app = router(AppState { pool: pool.clone(), vault_root: root.clone(), orchestra: None });
+    let case = new_case(&app, "CRB BACKUP/2026").await;
+    let original = b"Synthetic supporting statement for backup acceptance.";
+    let (status, added) = post(&app, &format!("/api/cases/{case}/attachments"), json!({"name":"backup-statement.txt", "contentBase64":b64(original)})).await;
+    assert_eq!(status, StatusCode::OK);
+    let id = added["id"].as_str().unwrap();
+    let data = root.with_extension("backup-work");
+    let destination = root.with_extension("restore-data");
+    let secret = backup::institution_key(&[3u8;16]);
+    let public = (&secret).into();
+    let mut bytes = Vec::new();
+    let (meta, _) = snapshot::write(&pool, &RecordingVault(root.clone()), &data, &public, "courts", "test-computer", crate::db::latest_migration(), &mut bytes).await.unwrap();
+    assert_eq!(meta.documents, 1);
+    assert_eq!(meta.missing, 0);
+    assert!(!bytes.windows(original.len()).any(|w| w == original));
+    let phrase = "0C1G60R30C1G60R30C1G60R30DHSKXPR"; // Test-only entropy [3;16].
+    snapshot::stage(&destination, &bytes[..], phrase, "courts", crate::db::latest_migration(), &["cases","sittings"]).await.unwrap();
+    let restored_root = destination.join("vault");
+    let incoming = destination.join("vault-incoming");
+    let db_path = destination.join("courts.db");
+    assert_eq!(snapshot::apply_pending_sealed(&destination, &db_path, &restored_root, &incoming).unwrap().unwrap().documents, 1);
+    assert_eq!(seal_restored(&incoming, &restored_root).unwrap(), 1);
+    let restored_pool = SqlitePoolOptions::new().max_connections(1).connect_with(pleadli_node_core::db::connect_options(&db_path)).await.unwrap();
+    assert_eq!(crate::domain::attachments::read(&restored_pool, &restored_root, &case, id).await.unwrap().1, original);
+    assert_eq!(vault::read(&restored_root, &vault::relative_path_for(id), id).unwrap(), original);
+    restored_pool.close().await;
+    std::fs::remove_dir_all(root).unwrap();
+    std::fs::remove_dir_all(data).unwrap();
+    std::fs::remove_dir_all(destination).unwrap();
+    pool.close().await;
+    std::fs::remove_dir_all(source).unwrap();
 }

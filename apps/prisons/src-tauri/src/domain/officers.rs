@@ -23,6 +23,9 @@ const MAX_FAILED_ATTEMPTS: i64 = 5;
 const LOCK_MS: i64 = 5 * 60 * 1000;
 const MIN_PASSWORD_LEN: usize = 8;
 
+/// What a new Head Office's first account signs in with until it is changed.
+pub const HEAD_OFFICE_DEFAULT_PASSCODE: &str = "000000";
+
 fn now_ms() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
@@ -357,16 +360,35 @@ pub async fn create_first_admin(
     if count > 0 {
         return Err(OfficerError::AlreadyInitialised);
     }
-    let role = if is_head_office(conn).await? { "hq_admin" } else { "oic" };
+    let head_office = is_head_office(conn).await?;
+    let role = if head_office { "hq_admin" } else { "oic" };
     let actor = Actor::system("first launch");
     check_badge_prefix(conn, &normalize_badge(badge_number)).await?;
-    insert_officer(conn, &actor, badge_number, name, role, true, Secret::Set(password), ProfileInput::default(), "account.bootstrap").await
+    // No password typed: a facility's first account signs in with its badge
+    // (when the policy is badge only), Head Office's with the default passcode.
+    let secret = match (password.is_empty(), head_office) {
+        (true, true) => Secret::DefaultPasscode,
+        (true, false) => {
+            // A new facility signs in on badges unless it chose otherwise.
+            let policy = auth_policy::get_conn(conn).await?;
+            if policy.mode != "badge_only" {
+                let input = auth_policy::AuthPolicyInput { mode: "badge_only".into(), idle_timeout_minutes: policy.idle_timeout_minutes, absolute_lifetime_hours: policy.absolute_lifetime_hours };
+                auth_policy::save(conn, &actor, input).await.map_err(|e| OfficerError::InvalidSecret(e.to_string()))?;
+            }
+            Secret::BadgeOnly
+        }
+        (false, _) if head_office && password == HEAD_OFFICE_DEFAULT_PASSCODE => Secret::DefaultPasscode,
+        (false, _) => Secret::Set(password),
+    };
+    insert_officer(conn, &actor, badge_number, name, role, true, secret, ProfileInput::default(), "account.bootstrap").await
 }
 
 /// What an account signs in with when it is created.
 enum Secret<'a> {
     Set(&'a str),
     BadgeOnly,
+    /// Head Office's first account only: `HEAD_OFFICE_DEFAULT_PASSCODE`.
+    DefaultPasscode,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -396,6 +418,7 @@ async fn insert_officer(
             }
             (unusable_hash()?, true)
         }
+        Secret::DefaultPasscode => (argon_hash(HEAD_OFFICE_DEFAULT_PASSCODE)?, false),
     };
     let photo = clean_photo(profile.photo_data)?;
 
@@ -676,7 +699,8 @@ pub async fn check_credentials(
 /// known administrator account of the right kind exists to sign in with.
 #[cfg(debug_assertions)]
 pub async fn ensure_dev_account(pool: &SqlitePool, head_office: bool) -> Result<(String, String), OfficerError> {
-    const PASSWORD: &str = "dev-password-1";
+    // Head Office's dev account uses the same default passcode a new Head Office starts on.
+    let password = if head_office { HEAD_OFFICE_DEFAULT_PASSCODE } else { "dev-password-1" };
     let (badge, name, role) = if head_office {
         ("DEV-HQ", "Development Head Office", "hq_admin")
     } else {
@@ -691,7 +715,8 @@ pub async fn ensure_dev_account(pool: &SqlitePool, head_office: bool) -> Result<
     match existing {
         None => {
             let mut tx = crate::db::begin_write(pool).await?;
-            insert_officer(&mut tx, &actor, badge, name, role, true, Secret::Set(PASSWORD), ProfileInput::default(), "account.dev_seed").await?;
+            let secret = if head_office { Secret::DefaultPasscode } else { Secret::Set(password) };
+            insert_officer(&mut tx, &actor, badge, name, role, true, secret, ProfileInput::default(), "account.dev_seed").await?;
             tx.commit().await?;
         }
         // The dev account is only useful while it can sign in with the known
@@ -700,23 +725,39 @@ pub async fn ensure_dev_account(pool: &SqlitePool, head_office: bool) -> Result<
         // otherwise strand the installation, so restore it through the normal
         // audited update.
         Some((id, current_role, is_admin, active, hash)) => {
-            if current_role != role || !is_admin || !active || !verify_password(PASSWORD, &hash) {
+            if current_role != role || !is_admin || !active || !verify_password(password, &hash) {
                 let mut tx = crate::db::begin_write(pool).await?;
                 let input = UpdateOfficerInput {
                     name: name.to_string(),
                     role: role.to_string(),
                     is_admin: true,
                     active: true,
-                    password: Some(PASSWORD.to_string()),
+                    // The passcode is shorter than a password may be, so it is set below.
+                    password: if head_office { None } else { Some(password.to_string()) },
                     passwordless: Some(false),
                     profile: ProfileInput::default(),
                 };
                 update_officer(&mut tx, &actor, &id, input).await?;
+                if head_office {
+                    sqlx::query("UPDATE officers SET password_hash = ?, failed_attempts = 0, locked_until = NULL WHERE id = ?").bind(argon_hash(password)?).bind(&id).execute(&mut *tx).await?;
+                }
                 tx.commit().await?;
             }
         }
     }
-    Ok((badge.to_string(), PASSWORD.to_string()))
+    if !head_office {
+        // A facility signs in on badges by default, and so does its dev account.
+        let mut tx = crate::db::begin_write(pool).await?;
+        sqlx::query("UPDATE auth_policy SET mode = 'badge_only' WHERE id = 'default'").execute(&mut *tx).await?;
+        sqlx::query("UPDATE officers SET passwordless = 1, password_hash = ?, failed_attempts = 0, locked_until = NULL WHERE badge_number = ?")
+            .bind(unusable_hash()?)
+            .bind(badge)
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
+        return Ok((badge.to_string(), String::new()));
+    }
+    Ok((badge.to_string(), password.to_string()))
 }
 
 #[cfg(test)]

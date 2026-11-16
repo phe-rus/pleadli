@@ -31,7 +31,7 @@ async fn fresh_state(port: u16) -> AppState {
     let network = std::sync::Arc::new(crate::domain::network::Runtime::load(&pool).await.unwrap());
     let lan = std::sync::Arc::new(super::Lan::new(vault_root.with_extension("lan")));
     let lan = std::sync::Arc::new(std::sync::Arc::try_unwrap(lan).ok().unwrap().with_port(port));
-    AppState { pool, vault_root, lock: std::sync::Arc::new(crate::domain::lock::Runtime::new(false)), security: std::sync::Arc::new(security), network, lan }
+    AppState { pool, vault_root, lock: std::sync::Arc::new(crate::domain::lock::Runtime::new(false)), security: std::sync::Arc::new(security), network, lan, orchestra: None }
 }
 
 /// What setup sends, for one advocate working alone.
@@ -564,6 +564,85 @@ async fn in_a_firm_everyone_signs_in_and_only_an_advocate_files() {
     for expected in ["setup_completed", "signed_in", "sign_in_failed", "signed_out", "usages_changed"] {
         assert!(actions.contains(&expected), "{expected} in {actions:?}");
     }
+}
+
+#[tokio::test]
+async fn an_in_flight_staff_addition_rechecks_changed_practice_settings() {
+    let state = fresh_state(0).await;
+    let pool = state.pool.clone();
+    let app = router(state);
+    assert_eq!(post(&app, "/api/setup/complete", setup_payload("basic", Some("123456"), "firm", "advocate", json!([]))).await.0, StatusCode::OK);
+    let installation = |setting| json!({ "officeName": "Nabirye & Co.", "region": "Kampala", "language": "en", "accent": "navy", "logo": null, "setting": setting, "practiceKind": "private" });
+    let person = || serde_json::from_value(json!({ "name": "Clerk", "role": "paralegal", "secret": "654321" })).unwrap();
+    // The request has already read the old protection before Settings changes.
+    let previous = crate::domain::staff::Protection::Basic;
+    assert_eq!(put(&app, "/api/installation", installation("alone")).await.0, StatusCode::OK);
+    assert!(crate::domain::staff::create(&pool, previous, person()).await.is_err());
+    assert_eq!(put(&app, "/api/installation", installation("firm")).await.0, StatusCode::OK);
+    assert_eq!(put(&app, "/api/installation/protection", json!({ "protection": "none" })).await.0, StatusCode::OK);
+    assert!(crate::domain::staff::create(&pool, previous, person()).await.is_err());
+    assert_eq!(get(&app, "/api/staff").await.1.as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn an_inactive_person_cannot_rejoin_a_solo_practice() {
+    check_reactivation("alone", "basic").await;
+}
+
+#[tokio::test]
+async fn an_inactive_person_cannot_rejoin_a_practice_without_sign_in() {
+    check_reactivation("firm", "none").await;
+}
+
+async fn check_reactivation(setting: &str, protection: &str) {
+    let app = fresh_app().await;
+    let people = json!([{ "name": "Clerk", "role": "paralegal", "secret": "654321" }]);
+    let (status, body) = post(&app, "/api/setup/complete", setup_payload("basic", Some("123456"), "firm", "advocate", people)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (_, people) = get(&app, "/api/staff").await;
+    let clerk = people.as_array().unwrap().iter().find(|p| p["name"] == "Clerk").unwrap()["id"].as_str().unwrap();
+    let path = format!("/api/staff/{clerk}");
+    let person = |active| json!({ "name": "Clerk", "role": "paralegal", "isAdmin": false, "active": active });
+    let installation = |setting| json!({ "officeName": "Nabirye & Co.", "region": "Kampala", "language": "en", "accent": "navy", "logo": null, "setting": setting, "practiceKind": "private" });
+    assert_eq!(put(&app, "/api/installation", installation("alone")).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(put(&app, "/api/installation/protection", json!({ "protection": "none" })).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    let (_, current) = get(&app, "/api/installation").await;
+    assert_eq!(current["setting"], "firm");
+    assert_eq!(current["protection"], "basic");
+    let (status, body) = put(&app, &path, person(false)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, body) = put(&app, "/api/installation", installation(setting)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    if protection == "none" {
+        let (status, body) = put(&app, "/api/installation/protection", json!({ "protection": "none" })).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+    }
+    let (_, before) = get(&app, "/api/audit").await;
+    let changes = |audit: &Value| audit.as_array().unwrap().iter().filter(|e| e["action"] == "staff_changed").count();
+    let mut activation = person(true);
+    activation["name"] = json!("Changed name");
+    activation["role"] = json!("advocate");
+    let (status, denied) = put(&app, &path, activation).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{denied}");
+    let (_, people) = get(&app, "/api/staff").await;
+    let unchanged = people.as_array().unwrap().iter().find(|p| p["id"] == clerk).unwrap();
+    assert_eq!(unchanged["active"], false);
+    assert_eq!(unchanged["name"], "Clerk", "the entire rejected edit rolls back");
+    assert_eq!(unchanged["role"], "paralegal");
+    assert_eq!(get(&app, "/api/session/status").await.1["actor"]["name"], "A. Nabirye");
+    assert_eq!(changes(&get(&app, "/api/audit").await.1), changes(&before), "no successful change event for a refusal");
+
+    assert_eq!(put(&app, "/api/installation", installation("firm")).await.0, StatusCode::OK);
+    if protection == "none" {
+        assert_eq!(put(&app, "/api/installation/protection", json!({ "protection": "basic", "secret": "123456" })).await.0, StatusCode::OK);
+    }
+    let (status, body) = put(&app, &path, person(true)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    post(&app, "/api/session/sign-out", json!({})).await;
+    assert_eq!(get(&app, "/api/matters").await.0, StatusCode::LOCKED);
+    let (status, body) = post(&app, "/api/session/sign-in", json!({ "staffId": clerk, "secret": "654321" })).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["status"], "signed_in");
 }
 
 #[tokio::test]

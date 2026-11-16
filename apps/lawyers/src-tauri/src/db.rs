@@ -6,7 +6,9 @@
 //! The steps that do not depend on the application live in
 //! `packages/node-core` (`db`); this file keeps the order and what is
 //! Lawyers' own. Papers are sealed in the vault (`<data>/vault`, node-core's
-//! `vault`); backups and restore arrive with the stage that needs them.
+//! `vault`). Backups are Pleadli Orchestra's (domain/orchestra.rs): a restore
+//! staged from Settings is put in place first, with the papers left plain in
+//! `vault-incoming` and sealed again here once the key is open.
 
 use sqlx::sqlite::SqlitePool;
 use std::path::{Path, PathBuf};
@@ -23,9 +25,25 @@ pub struct Db {
 
 const DB_FILE: &str = "lawyers.db";
 
+/// The newest migration this build has: a backup from a newer build is refused.
+pub fn latest_migration() -> i64 {
+    sqlx::migrate!("./migrations").iter().map(|m| m.version).max().unwrap_or(0)
+}
+
 pub async fn startup(data_dir: &Path) -> Result<Db, StartupError> {
     let db_path = data_dir.join(DB_FILE);
     std::fs::create_dir_all(data_dir).map_err(|e| StartupError::Fatal(format!("could not create the data folder: {e}")))?;
+
+    let vault_root = data_dir.join("vault");
+    let incoming = data_dir.join("vault-incoming");
+
+    // A backup staged for restore goes in place first, before anything opens
+    // the database; the current database and vault are kept aside.
+    match pleadli_node_core::snapshot::apply_pending_sealed(data_dir, &db_path, &vault_root, &incoming) {
+        Ok(Some(applied)) => log::info!("backup restored: {} papers", applied.documents),
+        Ok(None) => {}
+        Err(e) => return Err(StartupError::Fatal(format!("could not put the restored backup in place: {e}"))),
+    }
 
     core::finish_interrupted_encryption(&db_path);
     let (db_keys, state) = core::open_keys(keys::SERVICE, data_dir, &db_path)?;
@@ -36,10 +54,17 @@ pub async fn startup(data_dir: &Path) -> Result<Db, StartupError> {
     core::snapshot_if_migrating(&pool, &migrator, data_dir, opened.existed, "lawyers").await;
     migrator.run(&pool).await.map_err(|e| StartupError::Fatal(format!("migration failed: {e}")))?;
 
+    // Restored papers, plain until now, sealed under this computer's key.
+    match pleadli_node_core::snapshot::seal_restored(&incoming, &vault_root) {
+        Ok(0) => {}
+        Ok(n) => log::info!("restored papers sealed: {n}"),
+        Err(e) => return Err(StartupError::Fatal(format!("could not seal the restored papers (they are kept): {e}"))),
+    }
+
     #[cfg(debug_assertions)]
     crate::domain::seed::seed_if_empty(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
 
-    Ok(Db { pool, vault_root: data_dir.join("vault") })
+    Ok(Db { pool, vault_root })
 }
 
 #[cfg(test)]

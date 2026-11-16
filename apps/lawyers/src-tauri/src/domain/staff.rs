@@ -264,9 +264,19 @@ pub async fn create(pool: &SqlitePool, protection: Protection, input: PersonInpu
     if protection == Protection::None {
         return invalid("With no sign-in, only one person uses this copy. Choose a protection level first.");
     }
-    let mut conn = pool.acquire().await?;
-    let id = insert(&mut conn, protection, &input, None).await?;
-    drop(conn);
+    let mut tx = pool.begin().await?;
+    let current: Option<(String, String)> = sqlx::query_as("SELECT setting, protection FROM installation WHERE id = 'this'").fetch_optional(&mut *tx).await?;
+    let Some((setting, stored_protection)) = current else {
+        return invalid("This copy is not set up yet.");
+    };
+    if setting == "alone" {
+        return invalid("Working alone, you are the only person. Change the practice to a firm in Settings to add people.");
+    }
+    if stored_protection != protection.as_str() {
+        return invalid("The sign-in settings changed. Try adding the person again.");
+    }
+    let id = insert(&mut tx, protection, &input, None).await?;
+    tx.commit().await?;
     Ok(get(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?)
 }
 
@@ -296,6 +306,17 @@ pub async fn update(pool: &SqlitePool, id: &str, input: UpdateStaffInput) -> Res
     .rows_affected();
     if found == 0 {
         return Err(DomainError::NotFound("That person is not in this practice.".to_string()));
+    }
+    if input.active {
+        let current: Option<(String, String)> = sqlx::query_as("SELECT setting, protection FROM installation WHERE id = 'this'").fetch_optional(&mut *tx).await?;
+        if let Some((setting, protection)) = current {
+            if setting == "alone" || protection == "none" {
+                let active: i64 = sqlx::query_scalar("SELECT count(*) FROM staff WHERE active = 1").fetch_one(&mut *tx).await?;
+                if active > 1 {
+                    return invalid("To activate another person, choose a firm and enable sign-in in Settings first.");
+                }
+            }
+        }
     }
     let admins: i64 = sqlx::query_scalar("SELECT count(*) FROM staff WHERE is_admin = 1 AND active = 1").fetch_one(&mut *tx).await?;
     if admins == 0 {

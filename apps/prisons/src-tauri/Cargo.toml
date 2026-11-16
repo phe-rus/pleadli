@@ -1,6 +1,6 @@
 [package]
 name = "prisons"
-version = "0.1.0"
+version = "0.1.2"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -55,7 +55,7 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 axum-server = { version = "0.8", features = ["tls-rustls-no-provider"] }
 local-ip-address = "0.6"
 qrcode = "0.14"
-pleadli-node-core = { path = "../../../packages/node-core" }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["orchestra"] }
 
 [dev-dependencies]
 # A fixed key for tests that run domain code without a startup.

@@ -32,6 +32,9 @@ pub enum AttachmentError {
     /// The request itself is not acceptable (unknown entity type, empty or
     /// oversized file). Never a server fault.
     Rejected(String),
+    /// The record names a file that is not on this computer: a document from
+    /// an older build whose file was never found. Its row stays so the gap shows.
+    Missing,
 }
 
 impl fmt::Display for AttachmentError {
@@ -40,6 +43,7 @@ impl fmt::Display for AttachmentError {
             AttachmentError::Io(e) => write!(f, "{e}"),
             AttachmentError::Db(e) => write!(f, "{e}"),
             AttachmentError::Rejected(reason) => write!(f, "{reason}"),
+            AttachmentError::Missing => write!(f, "the file is not on this computer"),
         }
     }
 }
@@ -182,6 +186,8 @@ pub fn read_bytes(vault_root: &Path, attachment: &Attachment) -> Result<Vec<u8>,
 
 fn vault_error(e: vault::VaultError) -> AttachmentError {
     match e {
+        vault::VaultError::BadPath => AttachmentError::Missing,
+        vault::VaultError::Io(e) if e.kind() == std::io::ErrorKind::NotFound => AttachmentError::Missing,
         vault::VaultError::Io(e) => AttachmentError::Io(e),
         other => AttachmentError::Io(std::io::Error::other(other.to_string())),
     }

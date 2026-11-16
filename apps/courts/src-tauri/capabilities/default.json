@@ -9,6 +9,7 @@
     "core:default",
     "opener:default",
     "dialog:default",
+    "process:allow-restart",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
     "notification:default",
@@ -23,6 +24,7 @@
     "core:window:allow-is-maximized",
     "core:window:allow-start-dragging",
     "core:window:allow-start-resize-dragging",
-    "core:window:allow-toggle-maximize"
+    "core:window:allow-toggle-maximize",
+    "updater:default"
   ]
 }

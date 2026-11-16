@@ -18,7 +18,7 @@ export function LeftPillar() {
   const { data: brand } = useBrand()
 
   return (
-    <div className={cn('flex shrink-0 flex-col overflow-hidden bg-sidebar print:hidden', leftOpen ? 'border-r border-sidebar-border' : 'w-0')}>
+    <div inert={!leftOpen} data-open={leftOpen} className={cn('shell-sidebar flex shrink-0 flex-col overflow-hidden bg-sidebar print:hidden', leftOpen ? 'border-r border-sidebar-border' : 'w-0')}>
       {/* `w-0 min-w-full`: as wide as the pillar, but adds nothing to how wide
           the pillar is, so folding hides the contents rather than squeezing them. */}
       <header data-tauri-drag-region className="flex h-12 w-0 min-w-full shrink-0 items-center overflow-hidden">

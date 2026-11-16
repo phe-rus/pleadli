@@ -136,6 +136,7 @@ const OPEN_BY_DESIGN: &[&str] = &[
     "/api/capture/{token}/photo",
     "/api/auth/bootstrap",
     "/api/auth/bootstrap-status",
+    "/api/auth/desk",
     "/api/auth/devices/enrol",
     "/api/auth/login",
     "/api/system/dev/activation-code",
@@ -429,6 +430,65 @@ async fn a_discharge_gate_is_met_or_waived_only_by_an_authorising_oic() {
     assert!(body["exceptionGates"].as_str().unwrap().contains("property_outstanding"));
 
     let (_, prisoner) = send(&h.router, Call::new(Method::GET, &format!("/api/prisons/prisoners/{id}")).token(&officer)).await;
+    assert_eq!(prisoner["currentStatus"], "released");
+}
+
+#[tokio::test]
+async fn an_unknown_release_type_cannot_discharge_a_prisoner() {
+    let h = harness().await;
+    let admin = bootstrap(&h).await;
+    let (status, created) = send(&h.router, Call::new(Method::POST, "/api/prisons/receptions").token(&admin).body(reception_body(json!([])))).await;
+    assert_eq!(status, StatusCode::OK, "{created}");
+    let id = created["prisoner"]["id"].as_str().unwrap();
+    let audit_before: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM audit_log").fetch_one(&h.node.pool).await.unwrap();
+
+    for release_type in ["", "unknown", "BAIL"] {
+        let input = json!({ "prisonerId": id, "releaseType": release_type, "releasedAt": chrono::Utc::now().timestamp_millis() });
+        let (status, body) = send(&h.router, Call::new(Method::POST, "/api/prisons/releases").token(&admin).body(input)).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{release_type}: {body}");
+        assert_eq!(body["code"], "INVALID_RELEASE_TYPE");
+    }
+
+    let (_, prisoner) = send(&h.router, Call::new(Method::GET, &format!("/api/prisons/prisoners/{id}")).token(&admin)).await;
+    assert_eq!(prisoner["currentStatus"], "in_custody");
+    assert!(crate::domain::releases::list_for_prisoner(&h.node.pool, id).await.unwrap().is_empty());
+    let stays = crate::domain::custody::list_stays(&h.node.pool, id).await.unwrap();
+    assert_eq!(stays.len(), 1);
+    assert!(stays[0].exited_at.is_none());
+    let audit_after: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM audit_log").fetch_one(&h.node.pool).await.unwrap();
+    assert_eq!(audit_before, audit_after);
+}
+
+#[tokio::test]
+async fn discharge_closes_the_stay_once_and_a_repeat_leaves_no_extra_records() {
+    let h = harness().await;
+    let admin = bootstrap(&h).await;
+    let (status, created) = send(&h.router, Call::new(Method::POST, "/api/prisons/receptions").token(&admin).body(reception_body(json!([])))).await;
+    assert_eq!(status, StatusCode::OK, "{created}");
+    let id = created["prisoner"]["id"].as_str().unwrap();
+    let before = crate::domain::custody::list_stays(&h.node.pool, id).await.unwrap();
+    assert_eq!(before.len(), 1);
+    assert!(before[0].exited_at.is_none());
+
+    let now = chrono::Utc::now().timestamp_millis();
+    let input = json!({ "prisonerId": id, "releaseType": "bail", "releasedAt": now, "orderedBy": "Fictional court", "basis": "Test order" });
+    let (status, release) = send(&h.router, Call::new(Method::POST, "/api/prisons/releases").token(&admin).body(input.clone())).await;
+    assert_eq!(status, StatusCode::OK, "{release}");
+    let stays = crate::domain::custody::list_stays(&h.node.pool, id).await.unwrap();
+    assert_eq!(stays.len(), 1);
+    assert_eq!(stays[0].id, before[0].id);
+    assert_eq!(stays[0].exited_at, Some(now));
+    assert_eq!(stays[0].exit_kind.as_deref(), Some("discharge"));
+    assert_eq!(stays[0].exit_ref.as_deref(), release["id"].as_str());
+
+    let audit_before: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM audit_log").fetch_one(&h.node.pool).await.unwrap();
+    let (status, repeated) = send(&h.router, Call::new(Method::POST, "/api/prisons/releases").token(&admin).body(input)).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{repeated}");
+    assert_eq!(repeated["code"], "NOT_IN_CUSTODY");
+    assert_eq!(crate::domain::releases::list_for_prisoner(&h.node.pool, id).await.unwrap().len(), 1);
+    let audit_after: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM audit_log").fetch_one(&h.node.pool).await.unwrap();
+    assert_eq!(audit_after, audit_before, "a refused repeat must not write an audit event");
+    let (_, prisoner) = send(&h.router, Call::new(Method::GET, &format!("/api/prisons/prisoners/{id}")).token(&admin)).await;
     assert_eq!(prisoner["currentStatus"], "released");
 }
 
@@ -767,4 +827,40 @@ async fn the_estate_is_for_head_office_roles_and_starts_empty_rather_than_zero()
     let oic = bootstrap(&facility).await;
     let (status, _) = send(&facility.router, Call::new(Method::GET, "/api/hq/estate").token(&oic)).await;
     assert_eq!(status, StatusCode::FORBIDDEN);
+}
+
+
+#[tokio::test]
+async fn setup_refuses_other_countries_instead_of_applying_uganda_law() {
+    let h = harness().await;
+    for (country, jurisdiction) in [("Kenya", "ug"), ("DR Congo", "ug"), ("Kenya", "ke"), ("DR Congo", "cd"), ("Uganda", "unknown")] {
+        let mut body = setup_body("UP-0142", "{SEQ:4}/{YEAR}");
+        body["profile"]["country"] = json!(country);
+        body["profile"]["jurisdiction"] = json!(jurisdiction);
+        let (status, result) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body(body)).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{result}");
+        let (_, state) = send(&h.router, Call::new(Method::GET, "/api/system/state")).await;
+        assert_eq!(state["bootstrap"], true, "a refused setup must not initialise the facility");
+    }
+    let mut body = setup_body("UP-0142", "{SEQ:4}/{YEAR}");
+    body["profile"].as_object_mut().unwrap().remove("jurisdiction");
+    body["profile"].as_object_mut().unwrap().remove("country");
+    let (status, result) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body(body)).await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    let token = result["token"].as_str().unwrap();
+    let (_, profile) = send(&h.router, Call::new(Method::GET, "/api/prisons/facility").token(token)).await;
+    assert_eq!(profile["jurisdiction"], "ug");
+    assert_eq!(profile["country"], "Uganda");
+}
+
+
+#[tokio::test]
+async fn unsupported_stored_jurisdiction_cannot_compute_uganda_custody_dates() {
+    let h = harness().await;
+    for (jurisdiction, country) in [("cd", "DR Congo"), ("ke", "Kenya"), ("ug", "Kenya")] {
+        sqlx::query("UPDATE facility_profile SET jurisdiction = ?, country = ? WHERE id = 'default'")
+            .bind(jurisdiction).bind(country).execute(&h.node.pool).await.unwrap();
+        assert!(crate::domain::legal::overview(&h.node.pool).await.is_err());
+        assert!(crate::domain::obligations::derive(&h.node.pool, 0).await.is_err());
+    }
 }

@@ -86,3 +86,27 @@ pub async fn import_file(app: AppHandle, extension: String) -> Result<Option<Ope
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("file").to_string();
     Ok(Some(OpenedFile { name, content_base64: base64::engine::general_purpose::STANDARD.encode(bytes) }))
 }
+
+/// Which office programs this computer has (Word, Excel, LibreOffice), so a
+/// paper can offer "Open in Word" only where Word is.
+#[tauri::command]
+pub async fn office_apps() -> pleadli_node_core::office::OfficeApps {
+    pleadli_node_core::office::detect()
+}
+
+/// A copy of a paper in the temporary folder, opened in the program the
+/// system uses for it (Word for a .doc where Office is installed).
+#[tauri::command]
+pub async fn open_paper_file(name: String, data: String) -> Result<(), String> {
+    let lower = name.to_lowercase();
+    if ![".doc", ".docx", ".xlsx", ".csv", ".pdf"].iter().any(|ext| lower.ends_with(ext)) {
+        return Err("This kind of file is not opened from here.".into());
+    }
+    let safe: String = name.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '.' { c } else { '-' }).collect();
+    let dir = std::env::temp_dir().join("pleadli-prisons");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(safe);
+    let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
+    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    tauri_plugin_opener::open_path(&path, None::<&str>).map_err(|e| e.to_string())
+}

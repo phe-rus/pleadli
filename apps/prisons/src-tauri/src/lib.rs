@@ -22,6 +22,9 @@ pub fn run_headless(data_dir: std::path::PathBuf) -> Result<(), Box<dyn std::err
         match db::startup(&data_dir, &vault_root, None).await {
             Ok(started) => {
                 let node = node::Node::new(started.pool, vault_root, data_dir);
+                let orchestra = domain::orchestra::start(node.pool.clone(), node.data_dir.clone(), node.vault_root.clone());
+                tokio::spawn(orchestra.clone().run());
+                let _ = node.orchestra.set(orchestra);
                 tokio::spawn(api::network::supervise(node.clone()));
                 tokio::spawn(api::network::supervise_lan(node.clone()));
                 tokio::spawn(transport::discovery::supervise(node.clone()));
@@ -104,6 +107,10 @@ pub fn run() {
                         log::info!("snapshot before migration: {}", snapshot.display());
                     }
                     let node = node::Node::new(started.pool, vault_root, data_dir);
+                    // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
+                    let orchestra = domain::orchestra::start(node.pool.clone(), node.data_dir.clone(), node.vault_root.clone());
+                    tauri::async_runtime::spawn(orchestra.clone().run());
+                    let _ = node.orchestra.set(orchestra);
 
                     // The desktop shell reaches the node in process: no socket.
                     tauri::async_runtime::block_on(domain::nodeconfig::load_remote(&node));
@@ -173,7 +180,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::api::pick_file, commands::api::restart_app,
             commands::files::export_file,
             commands::files::import_file,
-            commands::files::open_document
+            commands::files::open_document,
+            commands::files::office_apps,
+            commands::files::open_paper_file
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

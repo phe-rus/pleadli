@@ -28,6 +28,8 @@ export const estateFacilitySchema = z.object({
     .object({ id: z.string(), reference: z.string(), periodFrom: z.number(), periodTo: z.number(), receivedAt: z.number() })
     .nullable(),
   returnState: returnStateSchema,
+  /** The people this prison last reported past a limit the law sets (D2). */
+  urgent: z.array(z.object({ name: z.string(), number: z.string().nullable(), kind: z.string(), since: z.number() })).default([]),
 })
 export type EstateFacility = z.infer<typeof estateFacilitySchema>
 

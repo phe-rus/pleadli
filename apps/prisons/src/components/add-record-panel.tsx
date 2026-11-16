@@ -227,7 +227,7 @@ export function AddRecordPanel({
                           }}
                           className="flex w-full flex-col items-start gap-2 rounded-lg border border-border/60 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
                         >
-                          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                          <span className="flex size-8 items-center justify-center text-muted-foreground">
                             <HugeiconsIcon icon={r.icon} size={16} />
                           </span>
                           <span className="text-sm font-medium">{r.label}</span>

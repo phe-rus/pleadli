@@ -12,7 +12,11 @@ use tauri::Manager;
 #[cfg(debug_assertions)]
 pub async fn run_headless(data_dir: std::path::PathBuf) -> Result<(), String> {
     let router = match db::startup(&data_dir).await {
-        Ok(db) => api::router(api::AppState { pool: db.pool, vault_root: db.vault_root }),
+        Ok(db) => {
+            let orchestra = domain::orchestra::start(db.pool.clone(), data_dir.clone(), db.vault_root.clone());
+            tokio::spawn(orchestra.clone().run());
+            api::router(api::AppState { pool: db.pool, vault_root: db.vault_root, orchestra: Some(orchestra) })
+        }
         Err(db::StartupError::Recovery(reason)) => api::recovery_router(reason),
         Err(db::StartupError::Fatal(reason)) => return Err(reason),
     };
@@ -44,6 +48,8 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
@@ -52,7 +58,10 @@ pub fn run() {
 
             let router = match tauri::async_runtime::block_on(db::startup(&data_dir)) {
                 Ok(db) => {
-                    let router = api::router(api::AppState { pool: db.pool.clone(), vault_root: db.vault_root.clone() });
+                    // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
+                    let orchestra = domain::orchestra::start(db.pool.clone(), data_dir.clone(), db.vault_root.clone());
+                    tauri::async_runtime::spawn(orchestra.clone().run());
+                    let router = api::router(api::AppState { pool: db.pool.clone(), vault_root: db.vault_root.clone(), orchestra: Some(orchestra) });
                     app.manage(db);
                     router
                 }
@@ -110,7 +119,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![commands::api::api_request])
+        .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::documents::export_document, commands::documents::save_attachment])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

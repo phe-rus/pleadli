@@ -58,7 +58,7 @@ export function useLocaleFromProfile() {
   const { data: profile } = useQuery({ ...facilityProfileOptions(), retry: false, enabled: !!session && (can('prisoner.read') || can('node.manage')) })
   useEffect(() => changeLocale(profile?.language), [profile?.language])
 }
-export { LanguageSelect } from './language-select'
+export { LanguageSelect, SidebarLanguageSelect } from './language-select'
 
 /** A label used mid-sentence, lower-cased as English, Kiswahili and French
  * write it. Display only. */

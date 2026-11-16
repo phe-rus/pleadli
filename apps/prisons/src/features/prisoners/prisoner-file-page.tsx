@@ -6,14 +6,12 @@ import { HistoryTab } from './profile/history-tab'
 import { LegalTab } from './profile/legal-tab'
 import { PrisonerDocument } from './profile/prisoner-document'
 import { PropertyTab } from './profile/property-tab'
-import { Edit02Icon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Button } from '@pleadli/ui/button'
+import { DropdownMenuItem } from '@pleadli/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
 import { useState } from 'react'
 import { m } from '@/paraglide/messages'
 
-export const prisonerTabIds = ['legal', 'care', 'property', 'history'] as const
+export const prisonerTabIds = ['overview', 'legal', 'care', 'property', 'history'] as const
 export type PrisonerTab = (typeof prisonerTabIds)[number]
 
 /**
@@ -34,53 +32,52 @@ export function PrisonerFilePage({ prisonerId, tab, onTabChange }: { prisonerId:
     )
   }
 
-  const current: PrisonerTab = tab ?? 'legal'
+  const current: PrisonerTab = tab ?? 'overview'
   const setTab = (value: string) => onTabChange(value as PrisonerTab)
 
   return (
     <PrisonerDocument
       prisonerId={prisonerId}
       onOpenTab={setTab}
-      actions={
-        <Createpanel
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          isDirty={editDirty}
-          trigger={
-            <Button size="sm" variant="ghost">
-              <HugeiconsIcon icon={Edit02Icon} />
-              {m.route_prisoners_edit_details()}
-            </Button>
-          }
-          headings={{ title: m.route_prisoners_edit_prisoner_details(), description: m.route_prisoners_update_identity_category_and_notes() }}
-        >
-          <EditPrisonerForm prisoner={prisoner} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
-        </Createpanel>
-      }
+      actions={<DropdownMenuItem onClick={() => setEditOpen(true)}>{m.route_prisoners_edit_details()}</DropdownMenuItem>}
     >
-      <div className="border-t border-border/60 pt-4">
-        <Tabs value={current} onValueChange={(value) => setTab(String(value))}>
-          <TabsList variant="line" className="max-w-full flex-wrap">
-            <TabsTrigger value="legal">{m.route_prisoners_legal()}</TabsTrigger>
-            <TabsTrigger value="care">{m.route_prisoners_care_and_contact()}</TabsTrigger>
-            <TabsTrigger value="property">{m.route_prisoners_property_and_documents()}</TabsTrigger>
-            <TabsTrigger value="history">{m.route_prisoners_history()}</TabsTrigger>
-          </TabsList>
+      {(overview) => (
+        <>
+          <Createpanel
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            isDirty={editDirty}
+            headings={{ title: m.route_prisoners_edit_prisoner_details(), description: m.route_prisoners_update_identity_category_and_notes() }}
+          >
+            <EditPrisonerForm prisoner={prisoner} onSuccess={() => setEditOpen(false)} onDirtyChange={setEditDirty} />
+          </Createpanel>
+          <div className="border-t border-border/60 pt-4">
+            <Tabs value={current} onValueChange={(value) => setTab(String(value))}>
+              <TabsList aria-label={m.paper_prisoner_record()} className="h-auto! min-h-10 max-w-full justify-start! overflow-x-auto rounded-xl bg-foreground/[0.045] p-1 [&>[data-slot=tabs-trigger]]:shrink-0 [&>[data-slot=tabs-trigger]]:rounded-lg [&>[data-slot=tabs-trigger]]:px-3 [&>[data-slot=tabs-trigger]]:py-1.5 [&>[data-slot=tabs-trigger]]:data-active:shadow-xs">
+                <TabsTrigger value="overview">{m.workspace_overview()}</TabsTrigger>
+                <TabsTrigger value="legal">{m.route_prisoners_legal()}</TabsTrigger>
+                <TabsTrigger value="care">{m.route_prisoners_care_and_contact()}</TabsTrigger>
+                <TabsTrigger value="property">{m.route_prisoners_property_and_documents()}</TabsTrigger>
+                <TabsTrigger value="history">{m.route_prisoners_history()}</TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="legal" className="pt-4">
-            <LegalTab prisonerId={prisonerId} />
-          </TabsContent>
-          <TabsContent value="care" className="pt-4">
-            <CareTab prisonerId={prisonerId} />
-          </TabsContent>
-          <TabsContent value="property" className="pt-4">
-            <PropertyTab prisonerId={prisonerId} />
-          </TabsContent>
-          <TabsContent value="history" className="pt-4">
-            <HistoryTab prisonerId={prisonerId} />
-          </TabsContent>
-        </Tabs>
-      </div>
+              <TabsContent value="overview" className="pt-4">{overview}</TabsContent>
+              <TabsContent value="legal" className="pt-4">
+                <LegalTab prisonerId={prisonerId} />
+              </TabsContent>
+              <TabsContent value="care" className="pt-4">
+                <CareTab prisonerId={prisonerId} />
+              </TabsContent>
+              <TabsContent value="property" className="pt-4">
+                <PropertyTab prisonerId={prisonerId} />
+              </TabsContent>
+              <TabsContent value="history" className="pt-4">
+                <HistoryTab prisonerId={prisonerId} />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </>
+      )}
     </PrisonerDocument>
   )
 }

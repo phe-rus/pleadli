@@ -29,11 +29,15 @@
     "@tauri-apps/plugin-notification": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-os": "^2",
+    "@tauri-apps/plugin-process": "^2",
     "date-fns": "^4.4.0",
     "motion": "^13.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^4.5.4"
+    "zod": "^4.5.4",
+    "pdf-lib": "^1.17.1",
+    "docx": "^9.8.1",
+    "@tauri-apps/plugin-updater": "^2"
   },
   "devDependencies": {
     "@inlang/plugin-message-format": "^4.4.4",

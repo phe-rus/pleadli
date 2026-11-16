@@ -25,11 +25,11 @@ use super::audit::{self, AuditEntry};
 use super::authz::Actor;
 use super::error::DomainError;
 use super::prisoners::Prisoner;
+use super::jurisdiction::JurisdictionRules;
+#[cfg(test)]
+use super::jurisdiction::UGANDA;
 use super::time::{add_calendar, now_ms, whole_years_between, DAY_MS};
 
-pub const REMISSION_MIN_LENGTH_DAYS: i64 = 30;
-pub const PAROLE_WINDOW_MONTHS: i64 = 6;
-pub const S88_CYCLE_YEARS: i64 = 4;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -102,11 +102,11 @@ pub async fn active_for_conn(conn: &mut SqliteConnection, prisoner_id: &str) -> 
         .await
 }
 
-pub fn compute_clocks(prisoner: &Prisoner, sentence: Option<&Sentence>, now: i64) -> Clocks {
+pub fn compute_clocks(prisoner: &Prisoner, sentence: Option<&Sentence>, now: i64, rules: &JurisdictionRules) -> Clocks {
     let mut clocks = Clocks { days_held: ((now - prisoner.admitted_at) / DAY_MS).max(0), ..Clocks::default() };
 
     if prisoner.status == "unconvicted" {
-        let days = if prisoner.high_court_only_offence { 180 } else { 60 };
+        let days = rules.mandatory_bail_days(prisoner.high_court_only_offence);
         clocks.mandatory_bail_on = Some(add_calendar(prisoner.admitted_at, 0, 0, days));
     }
 
@@ -120,28 +120,28 @@ pub fn compute_clocks(prisoner: &Prisoner, sentence: Option<&Sentence>, now: i64
 
     let ends = add_calendar(sentence.starts_on, sentence.term_years, sentence.term_months, sentence.term_days);
     let length_days = (ends - sentence.starts_on) / DAY_MS;
-    let remission = if length_days > REMISSION_MIN_LENGTH_DAYS { length_days / 3 } else { 0 };
+    let remission = if ends > add_calendar(sentence.starts_on, 0, rules.remission_min_months, 0) { length_days / rules.remission_divisor } else { 0 };
     let release_due = (ends - remission * DAY_MS + sentence.remission_forfeited_days * DAY_MS).clamp(sentence.starts_on, ends);
 
     clocks.sentence_ends_on = Some(ends);
     clocks.remission_days = Some(remission);
     clocks.release_due_on = Some(release_due);
 
-    if ends >= add_calendar(sentence.starts_on, 3, 0, 0) {
-        clocks.parole_window_opens_on = Some(add_calendar(release_due, 0, -PAROLE_WINDOW_MONTHS, 0));
+    if ends >= add_calendar(sentence.starts_on, rules.parole_min_years, 0, 0) {
+        clocks.parole_window_opens_on = Some(add_calendar(release_due, 0, -rules.parole_window_months, 0));
     }
-    clocks.reviewable = ends > add_calendar(sentence.starts_on, 7, 0, 0);
+    clocks.reviewable = ends > add_calendar(sentence.starts_on, rules.review_term_over_years, 0, 0);
     clocks
 }
 
 /// The date of the k-th four-yearly review mark (k >= 1).
-pub fn review_mark(sentence: &Sentence, k: i64) -> i64 {
-    add_calendar(sentence.starts_on, S88_CYCLE_YEARS * k, 0, 0)
+pub fn review_mark(sentence: &Sentence, k: i64, rules: &JurisdictionRules) -> i64 {
+    add_calendar(sentence.starts_on, rules.review_cycle_years * k, 0, 0)
 }
 
 /// How many four-year marks have already passed.
-pub fn review_marks_passed(sentence: &Sentence, now: i64) -> i64 {
-    whole_years_between(sentence.starts_on, now) / S88_CYCLE_YEARS
+pub fn review_marks_passed(sentence: &Sentence, now: i64, rules: &JurisdictionRules) -> i64 {
+    whole_years_between(sentence.starts_on, now) / rules.review_cycle_years
 }
 
 /// Records a sentence, superseding any earlier one. Setting a sentence is
@@ -264,8 +264,8 @@ mod tests {
     #[test]
     fn mandatory_bail_uses_the_constitutional_thresholds() {
         let admitted = day(2026, 1, 1);
-        let both = compute_clocks(&prisoner("unconvicted", admitted, false), None, admitted);
-        let high = compute_clocks(&prisoner("unconvicted", admitted, true), None, admitted);
+        let both = compute_clocks(&prisoner("unconvicted", admitted, false), None, admitted, &UGANDA);
+        let high = compute_clocks(&prisoner("unconvicted", admitted, true), None, admitted, &UGANDA);
         assert_eq!(both.mandatory_bail_on, Some(day(2026, 3, 2)));
         assert_eq!(high.mandatory_bail_on, Some(day(2026, 6, 30)));
     }
@@ -273,7 +273,7 @@ mod tests {
     #[test]
     fn one_third_remission_brings_the_release_date_forward() {
         let start = day(2026, 1, 1);
-        let clocks = compute_clocks(&prisoner("convicted", start, false), Some(&sentence(3, 0, 0, start)), start);
+        let clocks = compute_clocks(&prisoner("convicted", start, false), Some(&sentence(3, 0, 0, start)), start, &UGANDA);
         assert_eq!(clocks.sentence_ends_on, Some(day(2029, 1, 1)));
         let remission = clocks.remission_days.unwrap();
         assert_eq!(remission, 365 * 3 / 3 + 0); // 1096 days / 3
@@ -285,8 +285,28 @@ mod tests {
     #[test]
     fn a_sentence_of_a_month_or_less_earns_no_remission() {
         let start = day(2026, 1, 1);
-        let clocks = compute_clocks(&prisoner("convicted", start, false), Some(&sentence(0, 0, 30, start)), start);
+        let clocks = compute_clocks(&prisoner("convicted", start, false), Some(&sentence(0, 0, 30, start)), start, &UGANDA);
         assert_eq!(clocks.remission_days, Some(0));
         assert_eq!(clocks.release_due_on, clocks.sentence_ends_on);
     }
+
+    #[test]
+    fn remission_eligibility_uses_a_calendar_month_including_february() {
+        for (y, m, d) in [(2026, 1, 1), (2026, 1, 31), (2024, 1, 31), (2026, 2, 1)] {
+            let start = day(y, m, d);
+            let p = prisoner("convicted", start, false);
+            let month = compute_clocks(&p, Some(&sentence(0, 1, 0, start)), start, &UGANDA);
+            assert_eq!(month.remission_days, Some(0), "one calendar month never exceeds one month");
+            let over = compute_clocks(&p, Some(&sentence(0, 1, 1, start)), start, &UGANDA);
+            assert!(over.remission_days.unwrap() > 0, "one month and a day qualifies");
+        }
+    }
+
+    #[test]
+    fn thirty_days_can_exceed_a_short_calendar_month() {
+        let start = day(2026, 2, 1);
+        let clocks = compute_clocks(&prisoner("convicted", start, false), Some(&sentence(0, 0, 30, start)), start, &UGANDA);
+        assert_eq!(clocks.remission_days, Some(10));
+    }
+
 }

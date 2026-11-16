@@ -5,14 +5,25 @@ import { useCallback, useEffect } from 'react'
 import { identityForPath } from './tab-identity'
 import { useWorkspace, type WorkspaceTab } from './tabs-store'
 
+/** Navigates to a saved location such as `/prisoners?view=remand`. */
+export function useGo() {
+  const navigate = useNavigate()
+  return useCallback(
+    (to: string) => {
+      const [path, query = ''] = to.split('?')
+      void navigate({ to: path as never, search: Object.fromEntries(new URLSearchParams(query)) as never })
+    },
+    [navigate],
+  )
+}
+
 /** Moving between tabs. Activating a tab is navigating to its route, since
  * the URL decides what is open; closing the tab in view moves to the tab
  * beside it (or Today) so the route never keeps showing a closed tab. */
 export function useTabActions() {
   const { tabs, activeKey, closeTab } = useWorkspace()
-  const navigate = useNavigate()
-
-  const activate = useCallback((tab: WorkspaceTab) => void navigate({ to: tab.to as never }), [navigate])
+  const go = useGo()
+  const activate = useCallback((tab: WorkspaceTab) => go(tab.to), [go])
 
   const close = useCallback(
     (key: string) => {

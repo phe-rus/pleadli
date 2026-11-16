@@ -6,7 +6,6 @@ import { useVisits } from './queries'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { cn } from '@pleadli/ui/lib/utils'
-import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 import { m } from '@/paraglide/messages'
@@ -36,24 +35,6 @@ export function VisitsPage() {
   const columns: DataTableColumnDef<VisitListItem>[] = useMemo(
     () => [
       selectColumn(),
-      {
-        accessorKey: 'id',
-        header: 'ID',
-        cell: ({ row }) => (
-          <span className="cursor-pointer rounded-md bg-primary/15 px-3 py-1 text-xs" onClick={() => setOpenId(row.original.id)}>
-            {row.original.id}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'prisonerId',
-        header: m.route_visits_prisoner_id(),
-        cell: ({ row }) => (
-          <Link to="/prisoners/$prisonerId" params={{ prisonerId: row.original.prisonerId }} className="inline-block rounded-md bg-primary/15 px-3 py-1 text-xs">
-            {row.original.prisonerId}
-          </Link>
-        ),
-      },
       { id: 'prisoner', accessorFn: (row) => visitListItemFullName(row), header: m.route_visits_prisoner() },
       { accessorKey: 'visitorName', header: m.route_visits_visitor() },
       { accessorKey: 'visitorId', header: m.route_visits_visitor_id(), cell: ({ getValue }) => getValue<string | null>() ?? '·' },
@@ -144,6 +125,7 @@ export function VisitsPage() {
         </div>
 
         <DataTable
+        onRowOpen={(row) => setOpenId(row.id)}
           aria-label={m.route_visits_visits()}
           data={filtered}
           columns={columns}

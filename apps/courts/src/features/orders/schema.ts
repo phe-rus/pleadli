@@ -68,3 +68,5 @@ export type Order = z.infer<typeof orderSchema>
 
 export type CreateOrderInput = { caseId: string; sittingId: string | null; kind: string; title: string | null; fields: OrderFields }
 export type UpdateOrderInput = { title: string | null; fields: OrderFields }
+
+export const orderPreviewSchema = z.object({ content: orderContentSchema.nullable(), blockers: z.array(z.string()) })

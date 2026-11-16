@@ -113,6 +113,7 @@ fn pending_label(kind: Option<&str>) -> String {
 }
 
 pub async fn derive(pool: &SqlitePool, now: i64) -> Result<Vec<Obligation>, sqlx::Error> {
+    let rules = super::jurisdiction::for_pool(pool).await?;
     let mut out: Vec<Obligation> = Vec::new();
 
     let resolved: HashSet<String> = sqlx::query_scalar("SELECT key FROM obligation_resolutions").fetch_all(pool).await?.into_iter().collect();
@@ -120,11 +121,36 @@ pub async fn derive(pool: &SqlitePool, now: i64) -> Result<Vec<Obligation>, sqlx
     let prisoners = sqlx::query_as::<_, Prisoner>("SELECT * FROM prisoners WHERE current_status = 'in_custody'").fetch_all(pool).await?;
     let sentence_by_prisoner: HashMap<String, Sentence> =
         sentences::list_active(pool).await?.into_iter().map(|s| (s.prisoner_id.clone(), s)).collect();
+    // Who has a court date ahead. A remand prisoner with none is one the
+    // court system has lost track of: the prison is the only one who knows.
+    let with_court_date: HashSet<String> = sqlx::query_scalar("SELECT DISTINCT prisoner_id FROM court_productions WHERE state = 'scheduled'")
+        .fetch_all(pool)
+        .await?
+        .into_iter()
+        .collect();
 
     for p in &prisoners {
         let name = name_of(&p.first_name, &p.last_name);
         let sentence = sentence_by_prisoner.get(&p.id);
-        let clocks = compute_clocks(p, sentence, now);
+        let clocks = compute_clocks(p, sentence, now, rules);
+
+        if p.status == "unconvicted" && !with_court_date.contains(&p.id) {
+            let key = format!("no_court_date:{}", p.id);
+            if !resolved.contains(&key) {
+                out.push(Obligation {
+                    key,
+                    kind: "no_court_date".into(),
+                    group: "exception",
+                    prisoner_id: Some(p.id.clone()),
+                    prisoner_name: Some(name.clone()),
+                    title: "On remand with no court date".into(),
+                    detail: Some(format!("Held {} days with nothing in the court diary. Ask the court for the next date and record it.", clocks.days_held)),
+                    due_at: Some(p.admitted_at),
+                    procedure: Some(Procedure { kind: "file".into(), id: Some(p.id.clone()) }),
+                    resolvable: true,
+                });
+            }
+        }
 
         if p.documents_pending {
             out.push(Obligation {
@@ -159,7 +185,7 @@ pub async fn derive(pool: &SqlitePool, now: i64) -> Result<Vec<Obligation>, sqlx
         if let Some(threshold) = clocks.mandatory_bail_on {
             let key = format!("mandatory_bail:{}", p.id);
             if threshold <= now + BAIL_LOOKAHEAD_DAYS * DAY_MS && !resolved.contains(&key) {
-                let days = if p.high_court_only_offence { 180 } else { 60 };
+                let days = rules.mandatory_bail_days(p.high_court_only_offence);
                 out.push(Obligation {
                     key,
                     kind: "mandatory_bail".into(),
@@ -214,14 +240,14 @@ pub async fn derive(pool: &SqlitePool, now: i64) -> Result<Vec<Obligation>, sqlx
         }
 
         if let (true, Some(sentence)) = (clocks.reviewable, sentence) {
-            let passed = review_marks_passed(sentence, now);
+            let passed = review_marks_passed(sentence, now, rules);
             let overdue_key = format!("review:{}:{}", p.id, passed);
             let (k, key) = if passed >= 1 && !resolved.contains(&overdue_key) {
                 (passed, overdue_key)
             } else {
                 (passed + 1, format!("review:{}:{}", p.id, passed + 1))
             };
-            let due = review_mark(sentence, k);
+            let due = review_mark(sentence, k, rules);
             if due <= now + REVIEW_LOOKAHEAD_DAYS * DAY_MS && !resolved.contains(&key) {
                 out.push(Obligation {
                     key,
@@ -229,7 +255,7 @@ pub async fn derive(pool: &SqlitePool, now: i64) -> Result<Vec<Obligation>, sqlx
                     group: "due",
                     prisoner_id: Some(p.id.clone()),
                     prisoner_name: Some(name.clone()),
-                    title: format!("s.88 review bundle: year {}", k * 4),
+                    title: format!("s.88 review bundle: year {}", k * rules.review_cycle_years),
                     detail: Some("OIC statement on work and conduct, medical officer's report, social worker's assessment, to Head Office.".into()),
                     due_at: Some(due),
                     procedure: Some(Procedure { kind: "file".into(), id: Some(p.id.clone()) }),

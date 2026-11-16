@@ -37,7 +37,7 @@ Code: `domain/sentences.rs`; table `sentences`.
 - `compute_clocks()` derives from prisoner state + active sentence + now: entitlement, review marks (`review_marks_passed` feeds the s.88 / parole cycle F2.8).
 - Remand (no sentence yet) is handled through clocks tied to the court diary and the mandatory-bail thresholds in the obligations engine.
 
-**Uganda-specific numbers live in the obligations engine, not the core.** `domain/obligations.rs` currently hardcodes the 60/180-day mandatory-bail thresholds (Art. 23(6)) inside its procedure derivation. When a jurisdiction pack exists, these become pack data; until then they stay in the engine and `product/status.md` marks them.
+**Update, 12 October 2026:** `domain/jurisdiction.rs` now supplies Uganda's implemented legal parameters. Clocks and obligation details use the same selected rules. The selection validates the stored jurisdiction and country; unsupported profiles cannot silently compute Uganda dates. Remission eligibility uses a calendar month, not a fixed 30 days. Other country rules are not implemented.
 
 ### 4. Court diary — production and outcome (F2.4)
 
@@ -74,7 +74,7 @@ Code: `domain/releases.rs`; 0023 adds `basis`, `authorised_by`, `exception_reaso
 | court diary with outcomes | `implemented` (node) |
 | two-ended transfer + dossier + receipt | `implemented` (node) |
 | discharge with exception | `implemented` (node) |
-| jurisdiction-pack data (thresholds, kinds) | `research` — currently inline in core; `JURISDICTIONS.md` |
+| jurisdiction pack | Uganda calculation parameters extracted and selected from the profile; other countries, instruments and registers still require pack work, see `JURISDICTIONS.md` |
 
 ## Rule
 

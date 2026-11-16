@@ -24,6 +24,8 @@ pub mod hq;
 pub mod inbox;
 pub mod network;
 pub mod numbering;
+pub mod orchestra;
+pub mod paper;
 pub mod prisons;
 pub mod recovery;
 pub mod report_drafts;
@@ -71,7 +73,9 @@ pub fn route_table(node: NodeRef) -> RouteTable {
         .merge(numbering::routes(node.clone()))
         .merge(capture::routes(node.clone()))
         .merge(documents::routes(node.clone()))
+        .merge(paper::routes(node.clone()))
         .merge(report_drafts::routes(node.clone()))
+        .merge(orchestra::routes(node.clone()))
         .merge(system::routes(node))
 }
 

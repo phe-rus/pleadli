@@ -35,7 +35,7 @@ export const initialDraft: Draft = {
   adminName: '',
   adminPassword: '',
   adminPasswordAgain: '',
-  authMode: 'password',
+  authMode: 'badge_only',
 }
 
 /** Zod takes a function so the words are chosen when the check runs, in the
@@ -74,7 +74,9 @@ export const adminSchema = (badgePrefix: string) =>
     .object({
       adminBadge: z.string().trim().min(1, { error: () => m.setup_err_admin_badge() }),
       adminName: z.string().trim().min(1, { error: () => m.setup_err_admin_name() }),
-      adminPassword: z.string().min(8, { error: () => m.setup_err_password_length() }),
+      // Optional: left empty, a facility's administrator signs in with the
+      // badge and Head Office's with the default passcode 000000.
+      adminPassword: z.string().refine((v) => v === '' || v.length >= 8, { error: () => m.setup_err_password_length() }),
       adminPasswordAgain: z.string(),
     })
     .refine((v) => !badgePrefix || v.adminBadge.trim().toUpperCase().startsWith(badgePrefix.trim().toUpperCase()), {

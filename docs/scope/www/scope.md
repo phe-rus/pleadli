@@ -18,6 +18,7 @@ The multi tenant admin platform for the whole Pleadli family: BetterAuth sign in
 | 5 | Docs site (`/docs/applications` etc) | Existing | existing |
 | 6 | Institution templates (backend) | Existing | existing |
 | 7 | Institution template editor UI | Next slice | in-progress |
+| 8 | Purchases, seats and keys | Stage 1 | planned |
 
 ## Existing
 
@@ -45,6 +46,13 @@ Server functions (`listTemplates`/`updateTemplate`/`deleteTemplate`) and the DB 
 The admin drawer for editing a template only exposes `institutionType`/`name`/`description`. `defaultUnits`, `defaultEntitlements`, and `formSchema` (the case form builder) have real backend support but no editor UI, so they're stuck at hardcoded defaults for every institution.
 **Done when:** an admin can edit a template's default units, default entitlements, and case form schema from the UI, and a newly created organization actually gets seeded from those edited values.
 - [ ] Design it (spec): `/architect institution template editor UI`
+
+## Stage 1: a way to be paid
+
+### 8. Purchases, seats and keys · needs a decision · GA
+Orchestra already issues licences, keys, verify links and backups (see `docs/platform/ORCHESTRA-API.md`), but nothing takes payment. Add a purchase flow (mobile money, card, or invoice for institutions), seat counts, and key issue, revoke and recovery. This replaces the "Billing" line under Deferred.
+**Done when:** a firm can buy seats, receives licence keys, can add and revoke seats, and every purchase and key action is recorded in an audit trail.
+- [ ] Design it (spec): `/architect purchases, seats and keys`
 
 ## Deferred
 Real candidate gaps for a platform like this, not yet confirmed as requirements, surfaced by the recon pass, not decided in scope:

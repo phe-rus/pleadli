@@ -24,7 +24,7 @@ export function CenterHeader() {
   const station = useInstallation().data?.mode === 'station'
 
   return (
-    <header data-tauri-drag-region className="relative flex h-12 shrink-0 items-center border-b border-border/40 bg-background/80 backdrop-blur-xl print:hidden">
+    <header data-tauri-drag-region className="relative flex h-12 shrink-0 items-center gap-1 bg-background/80 backdrop-blur-xl print:hidden">
       {!leftOpen && (
         <div className="flex shrink-0 items-center gap-3 ps-4 pe-2">
           <Controls />
@@ -44,12 +44,14 @@ export function CenterHeader() {
           </>
         )}
         {import.meta.env.DEV && <DevModeSwitch compact />}
+        <span className="shell-capsule">
         <Button size="icon-sm" variant="ghost" disabled={!hasSeveral} onClick={() => cycle(-1)} aria-label={m["workspace.previous_tab"]()} title={m["workspace.previous_tab_with"]({ key: shortcut('⇧Tab') })} className="cursor-pointer">
           <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
         </Button>
         <Button size="icon-sm" variant="ghost" disabled={!hasSeveral} onClick={() => cycle(1)} aria-label={m["workspace.next_tab"]()} title={m["workspace.next_tab_with"]({ key: shortcut('Tab') })} className="cursor-pointer">
           <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
         </Button>
+        </span>
       </nav>
     </header>
   )

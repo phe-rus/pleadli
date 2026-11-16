@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use std::path::PathBuf;
 
+use crate::domain::attachments;
 use crate::domain::audit::{self, AuditEntry, Verification};
 use crate::domain::cases::{self, Case, CaseInput, CaseSummary, Party, PartyInput};
 use crate::domain::error::DomainError;
@@ -39,6 +40,8 @@ pub struct AppState {
     pub pool: SqlitePool,
     /// Where sealed files live (recorded audio): `<data folder>/vault`.
     pub vault_root: PathBuf,
+    /// Pleadli Orchestra (the licence, papers to /verify, daily backups); none in tests.
+    pub orchestra: Option<std::sync::Arc<pleadli_node_core::orchestra::Orchestra>>,
 }
 
 pub struct ApiError(pub StatusCode, pub &'static str, pub String);
@@ -194,6 +197,16 @@ async fn get_case(State(s): State<AppState>, Path(id): Path<String>) -> ApiResul
     }))
 }
 
+async fn list_attachments(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<attachments::Attachment>> {
+    Ok(Json(attachments::list(&s.pool, &id).await?))
+}
+async fn add_attachment(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<attachments::AddInput>) -> ApiResult<attachments::Attachment> {
+    Ok(Json(attachments::add(&s.pool, &s.vault_root, &id, input).await?))
+}
+async fn attachment_content(State(s): State<AppState>, Path((case_id, id)): Path<(String, String)>) -> ApiResult<attachments::FileContent> {
+    Ok(Json(attachments::content(&s.pool, &s.vault_root, &case_id, &id).await?))
+}
+
 async fn update_case(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<CaseInput>) -> ApiResult<Case> {
     Ok(Json(cases::update(&s.pool, &id, input).await?))
 }
@@ -262,6 +275,10 @@ async fn update_order(State(s): State<AppState>, Path(id): Path<String>, Json(in
 async fn discard_order(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
     orders::discard(&s.pool, &id).await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn preview_order(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<orders::OrderPreview> {
+    Ok(Json(orders::preview(&s.pool, &id).await?))
 }
 
 async fn issue_order(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Order> {
@@ -447,6 +464,8 @@ pub fn router(state: AppState) -> Router {
         .route("/cases/{id}/conclude", post(conclude_case))
         .route("/cases/{id}/reopen", post(reopen_case))
         .route("/cases/{id}/parties", post(add_party))
+        .route("/cases/{id}/attachments", get(list_attachments).post(add_attachment))
+        .route("/cases/{case_id}/attachments/{id}/content", get(attachment_content))
         .route("/cases/{id}/sittings", post(schedule_sitting))
         .route("/parties/{id}", axum::routing::put(update_party).delete(remove_party))
         .route("/sittings/{id}", get(get_sitting).put(reschedule_sitting))
@@ -481,8 +500,13 @@ pub fn router(state: AppState) -> Router {
         .route("/orders", post(create_order).get(list_orders))
         .route("/orders/{id}", get(get_order).put(update_order).delete(discard_order))
         .route("/orders/{id}/issue", post(issue_order))
+        .route("/orders/{id}/preview", get(preview_order))
         .route("/audit", get(recent_audit))
-        .route("/audit/verify", get(verify_audit));
+        .route("/audit/verify", get(verify_audit))
+        .merge(match state.orchestra.clone() {
+            Some(o) => Router::new().nest("/orchestra", orchestra::routes(o)),
+            None => Router::new(),
+        });
 
     Router::new().nest("/api", api).fallback(not_found).layer(DefaultBodyLimit::max(16 * 1024 * 1024)).with_state(state)
 }
@@ -518,6 +542,8 @@ pub async fn serve_dev(router: Router) {
         log::warn!("dev API stopped: {e}");
     }
 }
+
+pub mod orchestra;
 
 #[cfg(test)]
 mod tests;

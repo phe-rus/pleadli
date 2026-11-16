@@ -150,6 +150,7 @@ impl From<AttachmentError> for ApiError {
         match err {
             AttachmentError::Db(e) => e.into(),
             AttachmentError::Rejected(reason) => ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "DOCUMENT_REJECTED", &reason),
+            AttachmentError::Missing => ApiError::new(StatusCode::NOT_FOUND, "FILE_MISSING", "This file is not on this computer."),
             AttachmentError::Io(e) => {
                 log::error!("vault error: {e}");
                 ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "VAULT_ERROR", "The document store could not be read or written.")

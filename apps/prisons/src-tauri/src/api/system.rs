@@ -173,7 +173,8 @@ async fn setup_facility(
             // administrator created next.
             facility_profile::save(c, &actor, profile).await?;
             numbering::save_config(c, &actor, numbering).await?;
-            officers::create_first_admin(c, &admin.badge_number, &admin.name, &admin.password).await?;
+            // The policy comes before the administrator: with badge only, the
+            // first account is created to sign in with its badge.
             let current = auth_policy::get_conn(c).await?;
             auth_policy::save(
                 c,
@@ -181,6 +182,7 @@ async fn setup_facility(
                 AuthPolicyInput { mode: auth_mode, idle_timeout_minutes: current.idle_timeout_minutes, absolute_lifetime_hours: current.absolute_lifetime_hours },
             )
             .await?;
+            officers::create_first_admin(c, &admin.badge_number, &admin.name, &admin.password).await?;
             Ok(())
         })
     })
@@ -212,7 +214,8 @@ async fn setup_head_office(
         return Err(ApiError::conflict("NOT_A_HEAD_OFFICE", "This installation is set up as a facility."));
     }
     let HeadOfficeSetupBody { profile, admin } = body;
-    let (badge, password) = (admin.badge_number.clone(), admin.password.clone());
+    let badge = admin.badge_number.clone();
+    let password = if admin.password.is_empty() { officers::HEAD_OFFICE_DEFAULT_PASSCODE.to_string() } else { admin.password.clone() };
     write(&node, |c| {
         Box::pin(async move {
             let actor = Actor::system("first launch");

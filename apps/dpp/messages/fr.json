@@ -1267,7 +1267,8 @@
       "passphrase": "Phrase secrète de la sauvegarde",
       "passphrase_placeholder": "Phrase secrète de la sauvegarde (au moins 10 caractères)",
       "saved": "Sauvegarde enregistrée",
-      "title": "Faire une sauvegarde"
+      "title": "Faire une sauvegarde",
+      "admin_only": "Seul un administrateur de ce parquet crée ou restaure un fichier de sauvegarde."
     },
     "confirm_placeholder": "Confirmez la phrase secrète",
     "gate": {
@@ -2275,5 +2276,158 @@
     "title": "Mise à jour",
     "version": "Version",
     "no_build": "Aucune mise à jour n'est encore publiée pour ce type d'ordinateur."
+  },
+  "orchestra": {
+    "settings": {
+      "group": "Pleadli",
+      "licence": "Licence Pleadli",
+      "licence_about": "L'essai ou la licence de cet ordinateur, et les documents que pleadli.com/verify peut confirmer.",
+      "backups": "Sauvegardes quotidiennes",
+      "backups_about": "Une copie verrouillée de tout le dossier, envoyée une fois par jour au stockage de votre institution. La sauvegarde par phrase secrète, sous Sauvegarde, reste telle quelle."
+    },
+    "state": {
+      "licensed": "Licence de {institution}",
+      "trial": "Essai · {days} jours restants",
+      "trial_ended": "Essai terminé",
+      "licence_ended": "Licence terminée"
+    },
+    "licence": {
+      "this_computer": "Cet ordinateur",
+      "trial_about": "Tout fonctionne pendant les 30 jours d'essai. L'essai se termine le {date}.",
+      "trial_ended_about": "Les 30 jours d'essai sont terminés. Une licence de votre institution rétablit les sauvegardes quotidiennes et les documents vérifiables sur pleadli.com.",
+      "never_locked": "Les dossiers ne sont jamais verrouillés. Chaque dossier, décision et document reste ouvert et continue de fonctionner.",
+      "check_now": "Vérifier maintenant",
+      "checking": "Vérification…",
+      "checked": "pleadli.com a répondu",
+      "institution": "Institution",
+      "address": "Adresse Orchestra",
+      "seats": "Ordinateurs sur cette licence",
+      "expires": "Fin de la licence",
+      "valid_until": "Fonctionne hors ligne jusqu'au {date}",
+      "last_contact": "Dernier contact avec pleadli.com",
+      "never": "Pas encore",
+      "device": "Numéro de l'ordinateur",
+      "device_hint": "À lire si l'assistance Pleadli demande de quel ordinateur il s'agit.",
+      "cannot_verify": "Cette copie de Pleadli DPP ne peut pas encore vérifier les licences. Installez la version publiée."
+    },
+    "activate": {
+      "title": "Clé de licence",
+      "about": "Saisissez la clé remise par l'administrateur de votre institution. Elle sert une fois, sur cet ordinateur.",
+      "hint": "L'administrateur trouve la clé sur pleadli.com/orchestra, sous Licences.",
+      "ask_admin": "Un administrateur de ce parquet saisit la clé de licence.",
+      "key": "Clé",
+      "activate": "Activer",
+      "activating": "Activation…",
+      "done": "Cet ordinateur a une licence"
+    },
+    "papers": {
+      "title": "Documents vérifiables",
+      "about": "Les actes d'accusation, les instructions à la police et les autres documents délivrés par ce parquet sont connus de pleadli.com/verify par leur code et leur empreinte. Leur texte ne quitte jamais cet ordinateur.",
+      "office": "Délivré par",
+      "office_hint": "Le service nommé quand quelqu'un vérifie un document.",
+      "sent": "Connus de pleadli.com",
+      "waiting": "En attente d'internet",
+      "failed": "{count} documents ont été refusés par pleadli.com. Vérifiez le service qui les délivre.",
+      "send_now": "Envoyer maintenant",
+      "sent_now": "{count} documents envoyés"
+    },
+    "backups": {
+      "title": "Sauvegarde quotidienne",
+      "about": "Tout le dossier et chaque document, verrouillés sur cet ordinateur avec la clé de récupération de votre institution. Seule la phrase de récupération les ouvre, et Pleadli n'en garde jamais de copie.",
+      "daily": "Une sauvegarde se fait d'elle-même une fois par jour tant que Pleadli DPP est ouvert et en ligne.",
+      "none_approved": "Aucun stockage n'est encore approuvé pour cet ordinateur. Votre administrateur le fait sur pleadli.com/orchestra, sous Sauvegardes.",
+      "now": "Sauvegarder maintenant",
+      "running": "Sauvegarde en cours…",
+      "done": "Sauvegarde terminée",
+      "partly": "Sauvegardé sur {ok} des {total} stockages",
+      "last": "Dernière sauvegarde",
+      "never": "Aucune pour l'instant",
+      "key": "Clé de récupération",
+      "key_hint": "Correspond à l'empreinte imprimée sur la feuille de la phrase de récupération.",
+      "admin_only": "Un administrateur de ce parquet gère les sauvegardes quotidiennes.",
+      "needs_licence_title": "Les sauvegardes demandent une licence",
+      "needs_licence": "Une fois cet ordinateur sous licence, il sauvegarde vers le stockage choisi par votre institution. Vous pouvez toujours restaurer une sauvegarde ci-dessous."
+    },
+    "storage": {
+      "title": "Où vont les sauvegardes",
+      "about": "Choisi par votre institution sur pleadli.com/orchestra.",
+      "approved": "Approuvé",
+      "waiting": "Pas encore approuvé",
+      "test": "Tester",
+      "testing": "Test…",
+      "works": "{label} fonctionne"
+    },
+    "history": {
+      "title": "Sauvegardes récentes",
+      "ok": "Faite",
+      "failed": "Échouée"
+    },
+    "kind": {
+      "s3": "Stockage S3",
+      "folder": "Dossier ou disque",
+      "sftp": "Serveur SFTP"
+    },
+    "restore": {
+      "title": "Restaurer une sauvegarde",
+      "about": "Choisissez un fichier de sauvegarde et saisissez la phrase de récupération. La sauvegarde est entièrement vérifiée, puis mise en place au redémarrage de Pleadli DPP.",
+      "kept_aside": "Ce qui se trouve sur cet ordinateur est mis de côté, pas supprimé.",
+      "file": "Fichier de sauvegarde",
+      "file_type": "Sauvegarde Pleadli",
+      "choose": "Choisir…",
+      "change": "Changer…",
+      "phrase": "Phrase de récupération",
+      "phrase_hint": "8 groupes de 4, d'après la feuille imprimée par votre institution.",
+      "restore": "Vérifier et restaurer",
+      "checking": "Vérification de la sauvegarde…",
+      "ready_title": "Prête à restaurer",
+      "ready": "La sauvegarde du {date}, avec {documents} documents, est vérifiée et prête. Redémarrez Pleadli DPP pour la mettre en place.",
+      "missing": "{count} documents n'ont pas pu être lus lors de cette sauvegarde et n'y figurent pas.",
+      "restart": "Redémarrer maintenant",
+      "restart_browser": "Redémarrez l'application depuis le terminal pour terminer",
+      "pending_title": "Une restauration attend",
+      "pending_badge": "Au prochain démarrage",
+      "pending": "Une sauvegarde vérifiée sera mise en place au prochain démarrage de Pleadli DPP.",
+      "cancel": "Annuler la restauration"
+    },
+    "bar": {
+      "trial": "Essai de Pleadli DPP : {days} jours restants.",
+      "trial_ended": "L'essai est terminé. Chaque dossier reste ouvert.",
+      "licence_ended": "La licence est terminée. Chaque dossier reste ouvert.",
+      "go_online": "Connectez bientôt cet ordinateur à internet pour garder sa licence à jour.",
+      "get_licence": "Licence",
+      "open": "Ouvrir",
+      "ask_admin": "Votre administrateur peut ajouter une licence."
+    },
+    "reason": {
+      "revoked": "La licence de votre institution a été révoquée sur pleadli.com.",
+      "suspended": "Votre institution est suspendue sur Pleadli Orchestra.",
+      "expired": "La licence a atteint sa date de fin.",
+      "removed": "La licence a été retirée sur pleadli.com.",
+      "unknown": "La licence n'est plus valide, ou cet ordinateur est resté trop longtemps hors ligne."
+    },
+    "error": {
+      "offline": "pleadli.com est injoignable. Vérifiez internet et réessayez.",
+      "unknown_key": "Aucune licence n'a cette clé. Vérifiez-la avec votre administrateur.",
+      "seats_full": "Tous les ordinateurs de cette licence sont utilisés. Votre administrateur peut en libérer un sur pleadli.com/orchestra.",
+      "revoked": "Cette licence a été révoquée.",
+      "suspended": "Votre institution n'est pas active sur Pleadli Orchestra.",
+      "expired": "Cette licence est terminée.",
+      "wrong_application": "Cette clé est pour une autre application Pleadli.",
+      "invalid": "pleadli.com n'a pas accepté la demande. Vérifiez la clé.",
+      "licence_needed": "Il faut une licence sur cet ordinateur.",
+      "no_recovery_phrase": "Votre institution n'a pas encore défini sa phrase de récupération. L'administrateur le fait d'abord, sur pleadli.com/orchestra sous Sauvegardes.",
+      "no_storage": "Aucun stockage n'est encore prévu pour les sauvegardes.",
+      "storage_not_approved": "Cet ordinateur n'est pas encore approuvé pour ce stockage.",
+      "storage_host_key": "La clé du serveur n'est pas celle que votre institution a enregistrée. Rien n'a été envoyé. Prévenez votre administrateur.",
+      "storage_denied": "Le stockage a refusé le nom d'utilisateur, le mot de passe ou la clé d'accès.",
+      "storage_unreachable": "Le stockage est injoignable. Vérifiez le disque, le réseau ou internet.",
+      "backup_running": "Une sauvegarde est déjà en cours.",
+      "unknown_office": "Ce service ne figure pas sur cette licence.",
+      "restore_phrase": "La phrase de récupération n'ouvre pas cette sauvegarde. Vérifiez chaque groupe de quatre.",
+      "restore_unreadable": "Ce fichier n'est pas une sauvegarde Pleadli complète.",
+      "restore_wrong_app": "C'est une sauvegarde d'une autre application Pleadli.",
+      "restore_newer": "Cette sauvegarde vient d'une version plus récente de Pleadli DPP. Mettez à jour d'abord, puis restaurez.",
+      "general": "Cela n'a pas fonctionné. Réessayez."
+    }
   }
 }

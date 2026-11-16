@@ -1,6 +1,6 @@
 name: Release
 
-# Builds a Pleadli desktop app for Windows and publishes the signed installer to
+# Builds a Pleadli desktop app for Windows and publishes updater signed installers to
 # the public phe-rus/pleadli-releases repository (this repository is private,
 # so installed copies could not download from it). Each app also keeps a
 # rolling release `<app>-latest` whose latest.json is the endpoint its updater
@@ -21,13 +21,18 @@ on:
         description: App to release
         required: true
         type: choice
-        options: [dpp, lawyers, prisons, police, all]
+        options: [dpp, lawyers, prisons, police, courts, all]
+      bootstrap_courts:
+        description: Explicitly allow the first Courts 0.1.0 release when no public feed exists
+        type: boolean
+        default: false
   push:
     tags:
       - 'dpp-v*'
       - 'lawyers-v*'
       - 'prisons-v*'
       - 'police-v*'
+      - 'courts-v*'
 
 permissions:
   contents: read
@@ -47,7 +52,7 @@ jobs:
             app="${{ inputs.app }}"
           fi
           if [ "$app" = "all" ]; then
-            echo 'apps=["dpp","lawyers","prisons","police"]' >> "$GITHUB_OUTPUT"
+            echo 'apps=["dpp","lawyers","prisons","police","courts"]' >> "$GITHUB_OUTPUT"
           else
             echo "apps=[\"$app\"]" >> "$GITHUB_OUTPUT"
           fi
@@ -55,18 +60,24 @@ jobs:
   windows:
     needs: plan
     runs-on: windows-latest
+    concurrency:
+      group: desktop-release-${{ matrix.app }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
         app: ${{ fromJson(needs.plan.outputs.apps) }}
     env:
       RELEASES_REPO: phe-rus/pleadli-releases
+      RELEASE_APP: ${{ matrix.app }}
+      RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || '' }}
+      BOOTSTRAP_COURTS: ${{ github.event_name == 'workflow_dispatch' && inputs.bootstrap_courts || false }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.4.2
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -80,34 +91,52 @@ jobs:
           cache-on-failure: true
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
-      # Police and Prisons carry Cloudflare's tunnel program beside them (remote access).
-      - name: Fetch cloudflared for Windows
-        if: matrix.app == 'police' || matrix.app == 'prisons'
-        shell: bash
-        run: |
-          mkdir -p apps/${{ matrix.app }}/src-tauri/binaries
-          curl -fsSL -o apps/${{ matrix.app }}/src-tauri/binaries/cloudflared-x86_64-pc-windows-msvc.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
+      - name: Verify release tooling
+        run: bun test toolings/releases
 
-      - name: Read version
+      - name: Validate release configuration and tag
         id: version
         shell: bash
-        run: echo "version=$(node -p "require('./apps/${{ matrix.app }}/src-tauri/tauri.conf.json').version")" >> "$GITHUB_OUTPUT"
+        run: bun toolings/releases/release.ts preflight "$RELEASE_APP" "$RELEASE_TAG"
 
-      # The releases repository has none of this repository's commits, so the
-      # release (and its tag, on that repository's main) is made there first;
-      # tauri-action then only uploads to it.
-      - name: Make sure the release exists
+      - name: Require an update newer than the published feed
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          tag="${{ matrix.app }}-v${{ steps.version.outputs.version }}"
-          gh release view "$tag" -R "$RELEASES_REPO" >/dev/null 2>&1 || \
-            gh release create "$tag" -R "$RELEASES_REPO" --target main --title "Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}" --notes "Windows installer for Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}. Installed copies update themselves."
+          bun toolings/releases/previous-feed.ts "$RELEASE_APP" "$RELEASE_VERSION" previous-feed/latest.json "$BOOTSTRAP_COURTS"
 
-      - name: Build, sign and publish
+      # The tunnel sidecar is pinned and checked before it enters the installer.
+      - name: Fetch verified cloudflared for Windows
+        if: matrix.app == 'police' || matrix.app == 'prisons'
+        shell: bash
+        run: |
+          version=$(bun -e 'console.log((await Bun.file("toolings/releases/cloudflared.json").json()).version)')
+          expected=$(bun -e 'console.log((await Bun.file("toolings/releases/cloudflared.json").json()).sha256)')
+          binary="apps/$RELEASE_APP/src-tauri/binaries/cloudflared-x86_64-pc-windows-msvc.exe"
+          mkdir -p "$(dirname "$binary")"
+          curl --fail --location --retry 3 -o "$binary" "https://github.com/cloudflare/cloudflared/releases/download/$version/cloudflared-windows-amd64.exe"
+          printf '%s  %s\n' "$expected" "$binary" | sha256sum --check --strict
+
+      # The public repository has separate commits. Build into a draft there,
+      # and refuse to replace any installer already available to customers.
+      - name: Prepare draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tag="$RELEASE_APP-v$RELEASE_VERSION"
+          if gh release view "$tag" -R "$RELEASES_REPO" --json isDraft > release-state.json; then
+            bun -e 'if (!(await Bun.file("release-state.json").json()).isDraft) throw new Error("This version is already public. Raise the app version.")'
+          else
+            gh release create "$tag" -R "$RELEASES_REPO" --draft --target main --title "Pleadli $RELEASE_APP $RELEASE_VERSION" --notes "Windows installers for Pleadli $RELEASE_APP $RELEASE_VERSION. Includes signed updater artifacts; Windows publisher verification is separate."
+          fi
+
+      - name: Build and upload draft artifacts
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
@@ -120,20 +149,33 @@ jobs:
           repo: pleadli-releases
           tagName: ${{ matrix.app }}-v${{ steps.version.outputs.version }}
           releaseName: Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}
-          releaseBody: Windows installer for Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}. Installed copies update themselves.
-          releaseDraft: false
+          releaseBody: Windows installers for Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}. Includes signed updater artifacts; Windows publisher verification is separate.
+          releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
 
-      # The updater reads a fixed address: copy this version's latest.json to
-      # the app's rolling `<app>-latest` release.
-      - name: Point the updater at this version
+      - name: Validate draft assets and upload checksums
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          tag="${{ matrix.app }}-v${{ steps.version.outputs.version }}"
-          gh release download "$tag" -R "$RELEASES_REPO" -p latest.json -D updater --clobber
-          gh release view "${{ matrix.app }}-latest" -R "$RELEASES_REPO" >/dev/null 2>&1 || \
-            gh release create "${{ matrix.app }}-latest" -R "$RELEASES_REPO" --title "Pleadli ${{ matrix.app }}: update feed" --notes "Read by installed copies to find updates. Download installers from the versioned releases." --latest=false
-          gh release upload "${{ matrix.app }}-latest" updater/latest.json -R "$RELEASES_REPO" --clobber
+          tag="$RELEASE_APP-v$RELEASE_VERSION"
+          gh release download "$tag" -R "$RELEASES_REPO" -D candidate
+          bun toolings/releases/release.ts artifacts "$RELEASE_APP" candidate "$RELEASE_VERSION"
+          gh release upload "$tag" candidate/SHA256SUMS.txt -R "$RELEASES_REPO" --clobber
+
+      - name: Publish validated candidate and advance updater
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tag="$RELEASE_APP-v$RELEASE_VERSION"
+          # Recheck immediately before publication. All jobs for this app serialize.
+          bun toolings/releases/previous-feed.ts "$RELEASE_APP" "$RELEASE_VERSION" current-feed/latest.json "$BOOTSTRAP_COURTS"
+          gh release edit "$tag" -R "$RELEASES_REPO" --draft=false
+          if bun -e 'process.exit((await Bun.file("current-feed/latest.json").json()).firstRelease === true ? 0 : 1)'; then
+            gh release create "$RELEASE_APP-latest" -R "$RELEASES_REPO" --target main --title "Pleadli $RELEASE_APP updates" --notes "Rolling signed updater feed. Installers are in versioned releases."
+          fi
+          gh release upload "$RELEASE_APP-latest" candidate/latest.json -R "$RELEASES_REPO" --clobber

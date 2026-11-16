@@ -102,7 +102,7 @@ export function RightPanel({ prisonerId, controls }: { prisonerId: string | null
         className="absolute inset-y-0 left-0 z-20 w-1 cursor-col-resize touch-none outline-none transition-colors hover:bg-primary/40 focus-visible:bg-primary/60 active:bg-primary/60 motion-reduce:transition-none"
       />
       <div style={{ width }} className="flex h-full flex-col">
-        <header data-tauri-drag-region className="flex h-9 shrink-0 items-center gap-1 border-b border-border/20 bg-background pr-2 pl-3">
+        <header data-tauri-drag-region className="flex h-12 shrink-0 items-center gap-1 border-b border-border/40 bg-background pr-2 pl-3">
           <div role="tablist" aria-label={m.shell_right_panel()} className="flex gap-0.5 rounded-md bg-foreground/5 p-0.5">
             {tab('assistant', m.shell_right_assistant())}
             {prisonerId && tab('record', m.shell_right_record())}

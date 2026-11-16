@@ -114,7 +114,7 @@ function Editor({ draft }: { draft: Draft }) {
   const status = save.isPending ? m.reports_saving() : dirty ? m.reports_unsaved() : savedAt ? m.reports_saved({ when: formatDistanceToNowStrict(savedAt, { addSuffix: true }) }) : ''
 
   return (
-    <article className="page [--page-max:64rem]">
+    <article className="page">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link to="/reports" className={buttonVariants({ size: 'sm', variant: 'ghost' })}>
           <HugeiconsIcon icon={ArrowLeft01Icon} />

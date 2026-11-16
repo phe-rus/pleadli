@@ -1,6 +1,8 @@
 # Pleadli DPP: security
 
-Stage 7 of `PLAN.md`, built 2026-09-21. It follows the design of Pleadli Prisons D14 (`docs/prisons/SECURITY.md`) and reuses its key handling and sealed vault. DPP has no sign-in and no head office: one prosecutor owns the installation. No login does not mean no security, so the application protects its own data.
+The storage design below began in Stage 7 of `PLAN.md`, built 2026-09-21. It follows the design of Pleadli Prisons D14 (`docs/prisons/SECURITY.md`) and reuses its key handling and sealed vault.
+
+Current checkout correction, 12 October 2026: DPP now has office/HQ setup and named local users. Protection can be a local PIN, a password plus authenticator code, or no sign in for a workspace used by one person. Internet access is not required by those identity checks. Office/HQ labels do not establish a working multi computer network; see [the operating mode review](../platform/SOLO-INSTITUTION-READINESS-2026-10-12.md). Storage encryption and application sign in protect different boundaries.
 
 ## What protects what
 

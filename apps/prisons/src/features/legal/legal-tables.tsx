@@ -4,8 +4,7 @@ import { instrumentKindLabel, instrumentStatusLabels } from '@/features/custody/
 import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { Button, buttonVariants } from '@pleadli/ui/button'
-import { cn } from '@pleadli/ui/lib/utils'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 import type { DiaryEntry, PendingInstrumentRow, SentenceRow, ThresholdRow, UnsentencedRow } from './schema'
@@ -13,24 +12,22 @@ import { m } from '@/paraglide/messages'
 
 const DAY_MS = 86_400_000
 
-function IdBadge({ prisonerId }: { prisonerId: string }) {
-  return (
-    <Link to="/prisoners/$prisonerId" params={{ prisonerId }} className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block')}>
-      {prisonerId}
-    </Link>
-  )
+/** Every row here is a person: clicking it opens their file. */
+function useOpenPrisoner() {
+  const navigate = useNavigate()
+  return (row: { prisonerId: string }) => void navigate({ to: '/prisoners/$prisonerId', params: { prisonerId: row.prisonerId } })
 }
 
 const dateOrDash = (ms: number | null) => (ms == null ? '·' : format(ms, 'd MMM yyyy'))
 
 export function DiaryTable({ diary }: { diary: readonly DiaryEntry[] }) {
+  const openPrisoner = useOpenPrisoner()
   const [outcomeFor, setOutcomeFor] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const now = Date.now()
 
   const columns: DataTableColumnDef<DiaryEntry>[] = useMemo(
     () => [
-      { accessorKey: 'prisonerId', header: m.legal_prisoner_id(), cell: ({ row }) => <IdBadge prisonerId={row.original.prisonerId} /> },
       { accessorKey: 'prisonerName', header: m.legal_name() },
       { accessorKey: 'courtReference', header: m.legal_court(), cell: ({ row }) => row.original.courtReference ?? '·' },
       { accessorKey: 'productionDate', header: m.legal_date_and_time(), cell: ({ row }) => format(row.original.productionDate, 'EEE d MMM yyyy p') },
@@ -62,6 +59,7 @@ export function DiaryTable({ diary }: { diary: readonly DiaryEntry[] }) {
   return (
     <>
       <DataTable
+        onRowOpen={openPrisoner}
         aria-label={m.legal_court_diary()}
         data={diary as DiaryEntry[]}
         columns={columns}
@@ -82,9 +80,9 @@ export function DiaryTable({ diary }: { diary: readonly DiaryEntry[] }) {
 }
 
 export function ThresholdTable({ rows }: { rows: readonly ThresholdRow[] }) {
+  const openPrisoner = useOpenPrisoner()
   const columns: DataTableColumnDef<ThresholdRow>[] = useMemo(
     () => [
-      { accessorKey: 'prisonerId', header: m.legal_prisoner_id(), cell: ({ row }) => <IdBadge prisonerId={row.original.prisonerId} /> },
       { accessorKey: 'prisonerName', header: m.legal_name() },
       { accessorKey: 'admittedAt', header: m.legal_admitted(), cell: ({ row }) => dateOrDash(row.original.admittedAt) },
       { accessorKey: 'daysHeld', header: m.legal_days_held() },
@@ -109,6 +107,7 @@ export function ThresholdTable({ rows }: { rows: readonly ThresholdRow[] }) {
   )
   return (
     <DataTable
+        onRowOpen={openPrisoner}
       aria-label={m.legal_remand_thresholds()}
       data={rows as ThresholdRow[]}
       columns={columns}
@@ -120,9 +119,9 @@ export function ThresholdTable({ rows }: { rows: readonly ThresholdRow[] }) {
 }
 
 export function SentenceTable({ rows, unsentenced }: { rows: readonly SentenceRow[]; unsentenced: readonly UnsentencedRow[] }) {
+  const openPrisoner = useOpenPrisoner()
   const columns: DataTableColumnDef<SentenceRow>[] = useMemo(
     () => [
-      { accessorKey: 'prisonerId', header: m.legal_prisoner_id(), cell: ({ row }) => <IdBadge prisonerId={row.original.prisonerId} /> },
       { accessorKey: 'prisonerName', header: m.legal_name() },
       { accessorKey: 'termText', header: m.legal_sentence() },
       { accessorKey: 'startsOn', header: m.legal_runs_from(), cell: ({ row }) => dateOrDash(row.original.startsOn) },
@@ -153,6 +152,7 @@ export function SentenceTable({ rows, unsentenced }: { rows: readonly SentenceRo
         </div>
       )}
       <DataTable
+        onRowOpen={openPrisoner}
         aria-label={m.legal_sentences()}
         data={rows as SentenceRow[]}
         columns={columns}
@@ -165,9 +165,9 @@ export function SentenceTable({ rows, unsentenced }: { rows: readonly SentenceRo
 }
 
 export function PendingInstrumentTable({ rows }: { rows: readonly PendingInstrumentRow[] }) {
+  const openPrisoner = useOpenPrisoner()
   const columns: DataTableColumnDef<PendingInstrumentRow>[] = useMemo(
     () => [
-      { accessorKey: 'prisonerId', header: m.legal_prisoner_id(), cell: ({ row }) => <IdBadge prisonerId={row.original.prisonerId} /> },
       { accessorKey: 'prisonerName', header: m.legal_name() },
       { accessorKey: 'kind', header: m.legal_document(), cell: ({ row }) => instrumentKindLabel(row.original.kind) },
       { accessorKey: 'status', header: m.legal_state(), cell: ({ row }) => <Badge variant="destructive">{instrumentStatusLabels[row.original.status] ?? row.original.status}</Badge> },
@@ -182,6 +182,7 @@ export function PendingInstrumentTable({ rows }: { rows: readonly PendingInstrum
   )
   return (
     <DataTable
+        onRowOpen={openPrisoner}
       aria-label={m.legal_instruments_pending()}
       data={rows as PendingInstrumentRow[]}
       columns={columns}

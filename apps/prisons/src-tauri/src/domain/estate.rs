@@ -41,7 +41,8 @@ const MAX_COUNT: i64 = 1_000_000;
 // The facility's report
 // ---------------------------------------------------------------------
 
-/// What a facility says about itself: counts and its own clock, nothing else.
+/// What a facility says about itself: counts and its own clock, and the names
+/// of the people past a limit the law sets (D2), nothing else.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StatusReport {
@@ -59,10 +60,29 @@ pub struct StatusReport {
     /// from older builds.
     #[serde(default)]
     pub exchange: Option<ExchangeReport>,
+    /// The people past a limit the law sets: the only names that ever cross to
+    /// Head Office (decision D2). Absent from older builds.
+    #[serde(default)]
+    pub urgent: Vec<UrgentPerson>,
 }
 
 /// The facility's own account of its exchange: a state word, how much is
 /// waiting, and the last thing that went wrong. No records, no names.
+/// One person past a limit the law sets, as Head Office sees them: who, where
+/// they are numbered, which limit, and since when. Nothing else about them.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct UrgentPerson {
+    pub name: String,
+    pub number: Option<String>,
+    /// past_bail_limit | overheld
+    pub kind: String,
+    pub since: i64,
+}
+
+const URGENT_KINDS: [&str; 2] = ["past_bail_limit", "overheld"];
+const MAX_URGENT: usize = 500;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExchangeReport {
@@ -94,7 +114,31 @@ pub async fn build_report(pool: &SqlitePool) -> Result<StatusReport, sqlx::Error
         None
     };
     let exchange = Some(ExchangeReport { state: finished.state, pending: waiting, last_success_at: finished.last_success_at, last_error });
-    Ok(StatusReport { held, convicted, unconvicted, civil, in_transit, capacity, app_version: env!("CARGO_PKG_VERSION").to_string(), as_at: now_ms(), exchange })
+    let urgent = urgent_people(pool).await?;
+    Ok(StatusReport { held, convicted, unconvicted, civil, in_transit, capacity, app_version: env!("CARGO_PKG_VERSION").to_string(), as_at: now_ms(), exchange, urgent })
+}
+
+/// Who is past a limit the law sets: on remand past the mandatory-bail
+/// threshold, or still held after the release date. From the same obligations
+/// the facility's own Today shows, so the two never disagree.
+async fn urgent_people(pool: &SqlitePool) -> Result<Vec<UrgentPerson>, sqlx::Error> {
+    let now = now_ms();
+    let numbers: std::collections::HashMap<String, Option<String>> =
+        sqlx::query_as::<_, (String, Option<String>)>("SELECT id, prisoner_number FROM prisoners WHERE current_status = 'in_custody'").fetch_all(pool).await?.into_iter().collect();
+    let mut out = Vec::new();
+    for o in super::obligations::derive(pool, now).await? {
+        let kind = match o.kind.as_str() {
+            "mandatory_bail" if o.due_at.is_some_and(|d| d <= now) => "past_bail_limit",
+            "discharge_due" if o.due_at.is_some_and(|d| d < now) => "overheld",
+            _ => continue,
+        };
+        let (Some(id), Some(name), Some(since)) = (o.prisoner_id, o.prisoner_name, o.due_at) else { continue };
+        out.push(UrgentPerson { name: name.chars().take(120).collect(), number: numbers.get(&id).cloned().flatten(), kind: kind.into(), since });
+        if out.len() >= MAX_URGENT {
+            break;
+        }
+    }
+    Ok(out)
 }
 
 /// The report without its clock, so an unchanged facility hashes the same.
@@ -108,6 +152,7 @@ fn digest(report: &StatusReport) -> String {
         report.capacity,
         &report.app_version,
         report.exchange.as_ref().map(|e| (e.state.clone(), e.pending)),
+        &report.urgent,
     );
     format!("{:x}", Sha256::digest(serde_json::to_string(&stable).unwrap_or_default().as_bytes()))
 }
@@ -170,6 +215,8 @@ fn plausible(report: &StatusReport) -> bool {
         && report.convicted + report.unconvicted + report.civil <= report.held
         && report.app_version.len() <= 32
         && report.exchange.as_ref().is_none_or(|e| REPORTABLE_STATES.contains(&e.state.as_str()) && (0..=MAX_COUNT).contains(&e.pending))
+        && report.urgent.len() <= MAX_URGENT
+        && report.urgent.iter().all(|u| URGENT_KINDS.contains(&u.kind.as_str()) && !u.name.trim().is_empty() && u.name.len() <= 120 && u.number.as_ref().is_none_or(|n| n.len() <= 40))
 }
 
 /// Head Office side of `/api/network/v1/status`. The facility is resolved from
@@ -191,7 +238,8 @@ pub async fn receive_status(pool: &SqlitePool, sync_token: &str, report: StatusR
     sqlx::query(
         "UPDATE facilities SET last_contact_at = ?, reported_held = ?, reported_convicted = ?, reported_unconvicted = ?, reported_civil = ?,
                 reported_in_transit = ?, reported_capacity = ?, status_reported_at = ?, app_version = ?,
-                reported_exchange_state = ?, reported_pending = ?, reported_last_success_at = ?, reported_last_error = ?
+                reported_exchange_state = ?, reported_pending = ?, reported_last_success_at = ?, reported_last_error = ?,
+                reported_urgent = ?
          WHERE id = ?",
     )
     .bind(now_ms())
@@ -207,6 +255,7 @@ pub async fn receive_status(pool: &SqlitePool, sync_token: &str, report: StatusR
     .bind(report.exchange.as_ref().map(|e| e.pending))
     .bind(report.exchange.as_ref().and_then(|e| e.last_success_at))
     .bind(report.exchange.as_ref().and_then(|e| e.last_error.as_ref().map(|m| m.chars().take(200).collect::<String>())))
+    .bind(serde_json::to_string(&report.urgent).unwrap_or_else(|_| "[]".into()))
     .bind(&facility_id)
     .execute(pool)
     .await?;
@@ -275,6 +324,8 @@ pub struct EstateFacility {
     pub population_as_at: Option<i64>,
     pub latest_return: Option<LatestReturn>,
     pub return_state: ReturnState,
+    /// The people this facility last reported past a limit (D2).
+    pub urgent: Vec<UrgentPerson>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -388,6 +439,7 @@ struct FacilityRow {
     reported_capacity: Option<i64>,
     status_reported_at: Option<i64>,
     created_at: i64,
+    reported_urgent: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -424,7 +476,7 @@ fn contact_of(status: &str, last_contact_at: Option<i64>, now: i64) -> Contact {
 pub async fn estate(pool: &SqlitePool, now: i64) -> Result<Estate, sqlx::Error> {
     let facilities: Vec<FacilityRow> = sqlx::query_as(
         "SELECT id, name, facility_number, location, region, status, last_contact_at, reported_held, reported_unconvicted,
-                reported_capacity, status_reported_at, created_at
+                reported_capacity, status_reported_at, created_at, reported_urgent
          FROM facilities WHERE status <> 'revoked' ORDER BY region, name",
     )
     .fetch_all(pool)
@@ -503,6 +555,7 @@ pub async fn estate(pool: &SqlitePool, now: i64) -> Result<Estate, sqlx::Error> 
             population_as_at: row.status_reported_at,
             latest_return: latest,
             return_state,
+            urgent: row.reported_urgent.as_deref().and_then(|j| serde_json::from_str(j).ok()).unwrap_or_default(),
         };
         match regions.last_mut().filter(|r| r.region == row.region) {
             Some(region) => region.facilities.push(facility),
@@ -595,7 +648,7 @@ mod tests {
     }
 
     fn report(held: i64) -> StatusReport {
-        StatusReport { held, convicted: 1, unconvicted: held - 1, civil: 0, in_transit: 0, capacity: Some(100), app_version: "0.1.0".into(), as_at: 5, exchange: None }
+        StatusReport { held, convicted: 1, unconvicted: held - 1, civil: 0, in_transit: 0, capacity: Some(100), app_version: "0.1.0".into(), as_at: 5, exchange: None, urgent: Vec::new() }
     }
 
     #[test]

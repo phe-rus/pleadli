@@ -171,6 +171,9 @@ function RestoreCard() {
 }
 
 export function BackupPane() {
+  const { data: status } = useSecurityStatus()
+  // The whole record leaves in one file, and a restore replaces it: an administrator's act.
+  if (status?.actor?.role !== 'administrator') return <SettingsCard description={m["security.backup.admin_only"]()} />
   return (
     <>
       <BackupCard />

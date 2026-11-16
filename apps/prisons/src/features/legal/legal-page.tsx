@@ -1,7 +1,8 @@
 import { RemandList } from '@/features/court-productions'
 import { DiaryTable, PendingInstrumentTable, SentenceTable, ThresholdTable } from './legal-tables'
 import { useLegalOverview } from './queries'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
+import { Segmented } from '@pleadli/ui/segmented'
+import { useState } from 'react'
 import { m } from '@/paraglide/messages'
 
 /**
@@ -12,46 +13,39 @@ import { m } from '@/paraglide/messages'
  */
 export function LegalPage() {
   const { data: legal } = useLegalOverview()
+  const [view, setView] = useState<'diary' | 'thresholds' | 'sentences' | 'instruments' | 's118'>('diary')
   const overdueThresholds = legal.thresholds.filter((t) => t.daysRemaining < 0).length
 
   return (
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m.route_legal_legal()}</h1>
+          <h1>{m.nav_court()}</h1>
           <p className="md:max-w-xl">
             {m.route_legal_the_court_diary_the_dates_the()}
           </p>
         </div>
       </header>
 
-      <Tabs defaultValue="diary">
-        <TabsList variant="line">
-          <TabsTrigger value="diary">{m.route_legal_court_diary({ length: legal.diary.length })}</TabsTrigger>
-          <TabsTrigger value="thresholds">
-            {m.route_legal_remand_thresholds({ length: legal.thresholds.length })}{overdueThresholds > 0 ? m.route_legal_past({ overdueThresholds }) : ''})
-          </TabsTrigger>
-          <TabsTrigger value="sentences">{m.route_legal_sentences({ length: legal.sentences.length })}</TabsTrigger>
-          <TabsTrigger value="instruments">{m.route_legal_documents_pending({ length: legal.pendingInstruments.length })}</TabsTrigger>
-          <TabsTrigger value="s118">{m.route_legal_s_118_list()}</TabsTrigger>
-        </TabsList>
+      <Segmented
+        label={m.nav_court()}
+        value={view}
+        onChange={setView}
+        className="max-w-full flex-wrap self-start"
+        items={[
+          { value: 'diary', label: m.route_legal_court_diary({ length: legal.diary.length }) },
+          { value: 'thresholds', label: m.route_legal_remand_thresholds({ length: legal.thresholds.length }) + (overdueThresholds > 0 ? m.route_legal_past({ overdueThresholds }) : '') + ')' },
+          { value: 'sentences', label: m.route_legal_sentences({ length: legal.sentences.length }) },
+          { value: 'instruments', label: m.route_legal_documents_pending({ length: legal.pendingInstruments.length }) },
+          { value: 's118', label: m.route_legal_s_118_list() },
+        ]}
+      />
 
-        <TabsContent value="diary" className="pt-4">
-          <DiaryTable diary={legal.diary} />
-        </TabsContent>
-        <TabsContent value="thresholds" className="pt-4">
-          <ThresholdTable rows={legal.thresholds} />
-        </TabsContent>
-        <TabsContent value="sentences" className="pt-4">
-          <SentenceTable rows={legal.sentences} unsentenced={legal.unsentenced} />
-        </TabsContent>
-        <TabsContent value="instruments" className="pt-4">
-          <PendingInstrumentTable rows={legal.pendingInstruments} />
-        </TabsContent>
-        <TabsContent value="s118" className="pt-4">
-          <RemandList />
-        </TabsContent>
-      </Tabs>
+      {view === 'diary' && <DiaryTable diary={legal.diary} />}
+      {view === 'thresholds' && <ThresholdTable rows={legal.thresholds} />}
+      {view === 'sentences' && <SentenceTable rows={legal.sentences} unsentenced={legal.unsentenced} />}
+      {view === 'instruments' && <PendingInstrumentTable rows={legal.pendingInstruments} />}
+      {view === 's118' && <RemandList />}
     </article>
   )
 }

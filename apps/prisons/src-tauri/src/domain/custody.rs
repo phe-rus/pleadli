@@ -386,10 +386,11 @@ pub struct PrisonerFile {
 }
 
 pub async fn prisoner_file(pool: &SqlitePool, id: &str) -> Result<PrisonerFile, DomainError> {
+    let rules = super::jurisdiction::for_pool(pool).await?;
     let now = super::time::now_ms();
     let prisoner = prisoners::get_prisoner(pool, id).await?.ok_or(DomainError::NotFound("That prisoner"))?;
     let sentence = sentences::active_for(pool, id).await?;
-    let clocks = sentences::compute_clocks(&prisoner, sentence.as_ref(), now);
+    let clocks = sentences::compute_clocks(&prisoner, sentence.as_ref(), now, rules);
     let next_court_at: Option<i64> =
         sqlx::query_scalar("SELECT MIN(production_date) FROM court_productions WHERE prisoner_id = ? AND state = 'scheduled'").bind(id).fetch_one(pool).await?;
     let open_transfer = super::transfers::list_for_prisoner(pool, id)

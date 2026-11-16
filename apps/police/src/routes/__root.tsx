@@ -40,8 +40,8 @@ function RootComponent() {
     <>
       <HeadContent />
       <main className={cn(
-        "flex flex-col bg-background h-svh transition-colors",
-        'rounded-sm shadow-lg! border border-border/25 typeset',
+        "flex min-h-0 flex-col overflow-hidden bg-background h-full transition-colors",
+        'typeset',
         // The floating-window chrome (fixed height, shadow, border) is
         // desktop-app styling, not something that belongs on a printed
         // page. A record's own print route relies on this being reset
@@ -59,7 +59,7 @@ function RootComponent() {
           disableTransitionOnChange
         >
           <div className={cn(
-            'relative isolate transition-colors wrap-anywhere',
+            'relative isolate min-h-0 flex-1 overflow-hidden transition-colors wrap-anywhere print:flex-none print:overflow-visible',
             'selection:bg-primary/15'
           )}>
             <TooltipProvider>

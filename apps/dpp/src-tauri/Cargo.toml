@@ -1,6 +1,6 @@
 [package]
 name = "dpp"
-version = "0.1.0"
+version = "0.1.2"
 description = "Pleadli DPP: prosecution review and charging decisions"
 authors = ["Pleadli"]
 edition = "2021"
@@ -56,7 +56,7 @@ qrcode = "0.14"
 # AI Assist calls its provider over HTTPS from here, so the key never reaches the webview.
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 pleadli-interchange = { path = "../../../packages/interchange" }
-pleadli-node-core = { path = "../../../packages/node-core", features = ["ai"] }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["ai", "orchestra"] }
 
 [dev-dependencies]
 # A fixed key for tests that run domain code without a startup.

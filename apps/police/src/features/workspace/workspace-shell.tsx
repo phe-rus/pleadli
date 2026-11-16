@@ -72,7 +72,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   return (
-    <div className="h-svh w-full overflow-hidden print:h-auto print:overflow-visible">
+    <div className="h-full min-h-0 w-full overflow-hidden print:h-auto print:overflow-visible">
       <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} />
       <div className="flex h-full w-full flex-col overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
         <div className="flex min-h-0 flex-1 print:block">

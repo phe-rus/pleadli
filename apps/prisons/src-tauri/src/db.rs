@@ -15,6 +15,11 @@ use crate::domain::backup::{self, RestoreApplied};
 use crate::domain::keys;
 use crate::domain::vault;
 
+/// The newest migration this build has: a backup from a newer build is refused.
+pub fn latest_migration() -> i64 {
+    sqlx::migrate!("./migrations").iter().map(|m| m.version).max().unwrap_or(0)
+}
+
 pub struct Startup {
     pub pool: SqlitePool,
     /// Set when a staged restore was applied on this start.
@@ -36,6 +41,15 @@ pub struct Startup {
 pub async fn startup(data_dir: &Path, vault_root: &Path, legacy_vault: Option<&Path>) -> Result<Startup, StartupError> {
     let db_path = data_dir.join("prisons.db");
     let incoming = data_dir.join(vault::INCOMING_DIR);
+
+    // An Orchestra backup staged for restore (Settings, Daily backups): the
+    // current database and vault are set aside and the documents left plain
+    // in `incoming`, sealed below by adopt_documents like a passphrase restore.
+    match pleadli_node_core::snapshot::apply_pending_sealed(data_dir, &db_path, vault_root, &incoming) {
+        Ok(Some(applied)) => log::info!("Orchestra backup restored: {} documents", applied.documents),
+        Ok(None) => {}
+        Err(e) => return Err(StartupError::Fatal(format!("could not put the restored backup in place: {e}"))),
+    }
 
     core::finish_interrupted_encryption(&db_path);
     let restored = backup::apply_pending_restore(data_dir, &db_path, &incoming).map_err(|e| StartupError::Fatal(format!("could not apply the staged restore: {e}")))?;

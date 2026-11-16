@@ -363,6 +363,49 @@ fn paragraphs(kind: &str, title: &str, fields: &OrderFields, offence: Option<&st
     }
 }
 
+/// A read only rendering of saved facts. No reference, signature record, audit
+/// entry or stored wording is created until the explicit issue action.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderPreview {
+    pub content: Option<OrderContent>,
+    pub blockers: Vec<String>,
+}
+
+pub async fn preview(pool: &SqlitePool, id: &str) -> Result<OrderPreview, DomainError> {
+    let order = get(pool, id).await?.ok_or_else(|| DomainError::NotFound("Order not found.".to_string()))?;
+    if order.status != "draft" {
+        return Ok(OrderPreview { content: order.content, blockers: vec![] });
+    }
+    let profile = sqlx::query_as::<_, (String, Option<String>, Option<String>)>(
+        "SELECT name, title, court_name FROM bench_profile WHERE id = 'default'",
+    ).fetch_optional(pool).await?;
+    let (signatory, signatory_title, court) = profile.unwrap_or_default();
+    let mut blockers = Vec::new();
+    if signatory.trim().is_empty() {
+        blockers.push("Set your name in Settings before issuing.".to_string());
+    }
+    let court = court.filter(|c| !c.trim().is_empty());
+    if court.is_none() {
+        blockers.push("Set your court in Settings before issuing.".to_string());
+    }
+    let offence: Option<String> = sqlx::query_scalar("SELECT offence FROM cases WHERE id = ?")
+        .bind(&order.case_id).fetch_one(pool).await?;
+    let wording = paragraphs(&order.kind, &order.title, &order.fields, offence.as_deref());
+    let content = match wording {
+        Ok((heading, paragraphs)) => Some(OrderContent {
+            court: court.unwrap_or_else(|| "[Court not set]".to_string()),
+            heading, case_number: order.court_number, case_title: order.case_title,
+            paragraphs, date: long_date(chrono::Utc::now().timestamp_millis()),
+            signatory: if signatory.trim().is_empty() { "[Name not set]".to_string() } else { signatory },
+            signatory_title,
+        }),
+        Err(DomainError::Invalid(message)) => { blockers.push(message); None },
+        Err(error) => return Err(error),
+    };
+    Ok(OrderPreview { content, blockers })
+}
+
 /// Renders the wording, references and freezes a draft. A named judicial
 /// officer and court are required: an order is signed and headed with them.
 pub async fn issue(pool: &SqlitePool, id: &str) -> Result<Order, DomainError> {

@@ -1,14 +1,13 @@
 import { CommandMenu } from '@/components/command-menu'
-import { Controls } from '@/components/toolbar/controls'
 import { useLocaleFromProfile } from '@/features/i18n'
 import { useHqConfig, usePermissions, useSession } from '@/features/session'
 import { useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, type FC, type PropsWithChildren } from 'react'
 import { AssistantProvider } from './assistant/assistant-store'
 import { CenterHeader } from './center-header'
+import { LicenceBar } from '@/features/orchestra'
 import { LeftPillar } from './left-pillar'
 import { RightPanel } from './right-panel'
-import { StatusBar } from './statusbar'
 import { useSyncActiveTabTitle, useTabActions } from './tab-actions'
 import { identityForPath, tabFromIdentity } from './tab-identity'
 import { useWorkspace, WorkspaceProvider } from './tabs-store'
@@ -17,22 +16,20 @@ import { useWorkspace, WorkspaceProvider } from './tabs-store'
  * a prisoner's file or a procedure opens (or focuses) its tab the moment it
  * is visited, however it was reached. */
 function ActiveTabSync({ pathname }: { pathname: string }) {
-  const { openTab, setSidebarView, setLeftOpen, rightLocked, setRightOpen } = useWorkspace()
+  const { openTab, rightLocked, setRightOpen } = useWorkspace()
   const locked = useRef(rightLocked)
   locked.current = rightLocked
   const { data: hqConfig } = useHqConfig()
   const isHeadOffice = hqConfig?.isHeadOffice ?? false
   useSyncActiveTabTitle(pathname)
+  // The prisoners list keeps its folder in the address, and its tab with it.
+  const view = useLocation({ select: (location) => (location.search as { view?: unknown }).view })
+  const href = typeof view === 'string' ? `${pathname}?view=${view}` : pathname
 
   useEffect(() => {
-    const identity = identityForPath(pathname)
+    const identity = identityForPath(href)
     if (identity) openTab(tabFromIdentity(identity, isHeadOffice))
-    // Opening the inbox, from anywhere, brings its message list into the sidebar.
-    if (pathname === '/inbox') {
-      setSidebarView('inbox')
-      setLeftOpen(true)
-    }
-  }, [pathname, isHeadOffice, openTab, setSidebarView, setLeftOpen])
+  }, [href, isHeadOffice, openTab])
 
   // Moving to another tab folds the right pillar away, unless it is locked.
   useEffect(() => {
@@ -82,34 +79,38 @@ function useShellShortcuts() {
 }
 
 function ShellFrame({ prisonerId, children }: { prisonerId: string | null; children: React.ReactNode }) {
-  const { commandOpen, setCommandOpen, rightOpen } = useWorkspace()
+  const { commandOpen, setCommandOpen } = useWorkspace()
   const canSearch = useShellShortcuts()
-  // The window's buttons belong at the window's own top-right corner: in the
-  // right pillar's header while it is open, in the centre header otherwise.
-  const controls = <Controls />
+  // A new place opens at its top, as a Mac window does; switching folders
+  // inside one place keeps the position.
+  const scroller = useRef<HTMLDivElement>(null)
+  const pathname = useLocation({ select: (location) => location.pathname })
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: 0 })
+  }, [pathname])
 
   return (
-    <div className="h-svh w-full overflow-hidden print:h-auto print:overflow-visible">
+    <div className="h-full min-h-0 w-full overflow-hidden print:h-auto print:overflow-visible">
       {canSearch && <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} />}
-      <div className="flex h-full w-full flex-col overflow-hidden rounded-md border border-border/60 bg-background shadow-2xl print:block print:h-auto print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
+      <div className="flex h-full w-full flex-col overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
         <div className="flex min-h-0 flex-1 print:block">
           <LeftPillar />
           <div className="flex min-w-0 flex-1 flex-col print:block">
-            <CenterHeader controls={rightOpen ? null : controls} />
+            <CenterHeader onRecord={prisonerId !== null} />
+            <LicenceBar />
             <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background print:block print:overflow-visible">
-              <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto print:overflow-visible">{children}</div>
+              <div ref={scroller} className="no-scrollbar min-h-0 flex-1 overflow-y-auto print:overflow-visible">{children}</div>
             </main>
           </div>
-          <RightPanel prisonerId={prisonerId} controls={rightOpen ? controls : null} />
+          <RightPanel prisonerId={prisonerId} controls={null} />
         </div>
-        <StatusBar />
       </div>
     </div>
   )
 }
 
 /** The prisons workspace: three columns, each with a header of its own. The
- * left pillar (ribbon and sidebar) and the right pillar (assistant and record
+ * left pillar (the sidebar) and the right pillar (assistant and record
  * context) run the full height like piers; between them the centre holds the
  * tabs over the page, and grows back when either pillar folds away. Together
  * the three headers read as one bar. What is open is remembered per officer. */

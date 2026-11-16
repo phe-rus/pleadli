@@ -18,7 +18,18 @@
 				"dist/**"
 			]
 		},
-		"check": {},
+		"check": {
+			"outputs": []
+		},
+		"typecheck": {
+			"outputs": []
+		},
+		"lint": {
+			"outputs": []
+		},
+		"format": {
+			"cache": false
+		},
 		"deploy": {
 			"dependsOn": [
 				"build"

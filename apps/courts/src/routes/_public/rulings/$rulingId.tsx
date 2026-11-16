@@ -1,12 +1,13 @@
+import { DocumentActions } from '@/features/documents/document-actions'
 import { Createpanel } from '@/components/create-panel'
 import { DateField } from '@/components/date-field'
 import { Tag } from '@/components/status-tag'
+import { useProfile } from '@/features/profile'
+import { useQueryClient } from '@tanstack/react-query'
 import { CitationSearch } from '@/features/library'
-import { DeliverForm, RulingSheet, rulingKindLabel, rulingOptions, updateRuling, useDiscardRuling, useRuling } from '@/features/rulings'
+import { DeliverForm, RulingPaper, RulingSheet, rulingKindLabel, rulingOptions, updateRuling, useDiscardRuling, useRuling } from '@/features/rulings'
 import { ApiError, messageOf } from '@/lib/api'
 import { fromDateInput, toIsoDay } from '@/lib/day'
-import { PrinterIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import { RichTextInput, richTextToPlainText } from '@pleadli/rich-text'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
@@ -32,12 +33,16 @@ export const Route = createFileRoute('/_public/rulings/$rulingId')({
 
 type Saved = 'idle' | 'saving' | 'saved' | 'failed'
 
-/** One decision. A draft is written here: the text saves as you go (a power cut
- * loses at most the last second or two), with the library beside it. A delivered
- * decision is the sheet itself, ready to print. */
+/** Drafts can be written or read as paper. Autosave remains explicit about
+ * failure; delivered decisions display their frozen content. */
 function RouteComponent() {
   const { rulingId } = Route.useParams()
   const { data: ruling } = useRuling(rulingId)
+  const { data: profile } = useProfile()
+  const queryClient = useQueryClient()
+  const [reading, setReading] = useState(false)
+  const [body, setBody] = useState(ruling?.body ?? '')
+  const pendingSave = useRef<Promise<boolean> | null>(null)
   const discard = useDiscardRuling()
   const navigate = useNavigate()
   const [delivering, setDelivering] = useState(false)
@@ -50,21 +55,36 @@ function RouteComponent() {
   const latest = useRef({ title, reserved })
   latest.current = { title, reserved }
 
-  const save = useCallback(async () => {
-    if (!dirty.current) return true
-    dirty.current = false
-    setSaved('saving')
-    try {
-      await updateRuling(rulingId, { title: latest.current.title.trim() || 'Untitled', body: bodyRef.current, reservedOn: fromDateInput(latest.current.reserved) })
-      setSaved('saved')
-      return true
-    } catch (error) {
-      dirty.current = true
-      setSaved('failed')
-      t.error('The draft could not be saved', { description: messageOf(error) })
-      return false
+  const save = useCallback((): Promise<boolean> => {
+    if (pendingSave.current) return pendingSave.current
+    if (!dirty.current) return Promise.resolve(true)
+    const request = async () => {
+      setSaved('saving')
+      try {
+        // Serialize writes, including edits made while a previous write awaits.
+        // Delivery waits for the same promise, so it cannot overtake autosave.
+        while (dirty.current) {
+          dirty.current = false
+          const updated = await updateRuling(rulingId, {
+            title: latest.current.title.trim() || 'Untitled', body: bodyRef.current,
+            reservedOn: fromDateInput(latest.current.reserved),
+          })
+          queryClient.setQueryData(rulingOptions(rulingId).queryKey, updated)
+        }
+        setSaved('saved')
+        return true
+      } catch (error) {
+        dirty.current = true
+        setSaved('failed')
+        t.error('The draft could not be saved', { description: messageOf(error) })
+        return false
+      } finally {
+        pendingSave.current = null
+      }
     }
-  }, [rulingId])
+    pendingSave.current = request()
+    return pendingSave.current
+  }, [rulingId, queryClient])
 
   const touch = useCallback(() => {
     dirty.current = true
@@ -104,9 +124,15 @@ function RouteComponent() {
             <>
               {days != null ? <Tag tone="urgent">{days === 1 ? 'Reserved 1 day' : `Reserved ${days} days`}</Tag> : <Tag tone="open">Draft</Tag>}
               <Tag tone="stopped">{saved === 'saving' ? 'Saving…' : saved === 'saved' ? 'Saved' : saved === 'failed' ? 'Not saved' : 'Saves as you write'}</Tag>
+              <Button size="sm" variant="secondary" onClick={() => setReading((value) => !value)}>
+                {reading ? 'Write' : 'Read draft'}
+              </Button>
+              {reading && <DocumentActions title={`Draft - ${title}`} />}
+              {saved === 'failed' && <Button size="sm" variant="secondary" onClick={() => void save()}>Retry save</Button>}
               <Button
                 size="sm"
                 variant="secondary"
+                disabled={saved === 'saving' || pendingSave.current !== null}
                 onClick={() => {
                   if (!window.confirm('Discard this draft?')) return
                   dirty.current = false
@@ -135,17 +161,26 @@ function RouteComponent() {
           ) : (
             <>
               {ruling.intact === false ? <Tag tone="urgent">Changed since delivery</Tag> : <Tag tone="done">Delivered, unchanged</Tag>}
-              <Button size="sm" variant="secondary" onClick={() => window.print()}>
-                <HugeiconsIcon icon={PrinterIcon} />
-                Print
-              </Button>
+<DocumentActions title={ruling.reference ?? ruling.title} />
             </>
           )}
         </div>
       </header>
 
+      {draft && reading && (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground print:hidden">Reading view of your current draft. Check the save status before leaving. This decision has not been delivered.</p>
+          <RulingPaper draft content={{
+            court: profile?.courtName || '[Court not set]',
+            heading: ruling.kind === 'judgment' ? 'JUDGMENT' : 'RULING',
+            title: title.trim() || 'Untitled', caseNumber: ruling.courtNumber,
+            caseTitle: ruling.caseTitle, body, deliveredOn: '',
+            signatory: profile?.name || '[Name not set]', signatoryTitle: profile?.title ?? null,
+          }} />
+        </div>
+      )}
       {draft ? (
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className={reading ? 'hidden' : 'grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]'} inert={reading}>
           <section aria-label="The decision" className="flex flex-col gap-4">
             <Field>
               <FieldLabel>Title</FieldLabel>
@@ -171,11 +206,12 @@ function RouteComponent() {
             <Field>
               <FieldLabel>Text</FieldLabel>
               <RichTextInput
-                value={ruling.body}
+                value={bodyRef.current}
                 editorClassName="min-h-[28rem] max-h-[60vh]"
                 placeholder="Write the decision. Headings, lists and numbered paragraphs are in the toolbar."
                 onChange={(json) => {
                   bodyRef.current = richTextToPlainText(json).trim() ? json : ''
+                  setBody(bodyRef.current)
                   touch()
                 }}
               />

@@ -1,5 +1,6 @@
 import { areaMeta } from '@/data/navigationItems'
 import { documentKindLabel, isDocumentKind, type DocumentKind } from '@/features/documents/schema'
+import { prisonerFolder } from '@/features/prisoners/folders'
 import type { WorkspaceTab } from './tabs-store'
 import { m } from '@/paraglide/messages'
 
@@ -25,7 +26,14 @@ const procedureTitles: Record<string, string> = {
 
 /** Which tab, if any, a pathname is open as. Nothing is guessed: only routes
  * that parse as a known area, a prisoner file or a procedure have a tab. */
-export function identityForPath(pathname: string): TabIdentity | null {
+export function identityForPath(href: string): TabIdentity | null {
+  const [pathname, query = ''] = href.split('?')
+  // The prisoners list is one tab whichever folder it shows; the tab
+  // remembers the folder, so coming back to it returns there.
+  if (pathname.replace(/\/$/, '') === '/prisoners') {
+    const view = new URLSearchParams(query).get('view')
+    return { kind: 'area', key: 'area:/prisoners', to: view ? `/prisoners?view=${view}` : '/prisoners' }
+  }
   if (pathname === '/') return { kind: 'today', key: 'today', to: '/' }
 
   const prisonerMatch = /^\/prisoners\/([^/]+)$/.exec(pathname)
@@ -64,11 +72,12 @@ export function identityForPath(pathname: string): TabIdentity | null {
 /** The title a tab opens with. A prisoner file takes the person's name once
  * the record has loaded (`useSyncActiveTabTitle`); until then it is honest
  * about being a file. */
-function identityTitle(identity: TabIdentity, isHeadOffice: boolean): string {
+function identityTitle(identity: TabIdentity, _isHeadOffice: boolean): string {
   switch (identity.kind) {
     case 'today':
-      return isHeadOffice ? m.workspace_overview() : m.workspace_today()
+      return m.workspace_today()
     case 'area':
+      if (identity.key === 'area:/prisoners') return prisonerFolder(new URLSearchParams(identity.to.split('?')[1] ?? '').get('view') ?? undefined).label()
       // A settings section is still the Settings tab: name it from the area, not the path.
       return areaMeta(identity.key.slice('area:'.length))?.label ?? identity.to
     case 'procedure':

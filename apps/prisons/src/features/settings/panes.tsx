@@ -16,6 +16,8 @@ import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { format } from 'date-fns/format'
 import { useRef, useState } from 'react'
+import { Switch } from '@pleadli/ui/switch'
+import { isObligationAlertsEnabled, setObligationAlertsEnabled } from '@/hooks/use-obligation-alerts'
 
 /** The facility's own identity, in the place an administrator looks for it. */
 export function FacilityPane() {
@@ -190,6 +192,26 @@ function LogoCard() {
         </div>
         <p>{custom ? m.brand_logo_custom() : m.brand_logo_default()}</p>
       </div>
+    </SettingsCard>
+  )
+}
+
+/** The desktop's own notifications, moved here from Today: a switch is a
+ * setting, not something to work with. */
+export function NotificationsPane() {
+  const [enabled, setEnabled] = useState(isObligationAlertsEnabled)
+  return (
+    <SettingsCard title={m.settings_alerts_title()} description={m.settings_alerts_description()} hint={m.settings_alerts_hint()}>
+      <label className="flex items-center justify-between gap-4">
+        <strong>{m.settings_alerts_toggle()}</strong>
+        <Switch
+          checked={enabled}
+          onCheckedChange={(checked) => {
+            setObligationAlertsEnabled(checked)
+            setEnabled(checked)
+          }}
+        />
+      </label>
     </SettingsCard>
   )
 }

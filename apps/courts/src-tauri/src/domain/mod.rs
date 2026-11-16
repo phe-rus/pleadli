@@ -1,9 +1,11 @@
+pub mod attachments;
 pub mod audit;
 pub mod cases;
 pub mod error;
 pub mod exhibits;
 pub mod keys;
 pub mod library;
+pub mod orchestra;
 pub mod orders;
 pub mod overview;
 pub mod profile;

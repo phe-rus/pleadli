@@ -11,7 +11,7 @@ import { useGo, useTabActions } from './tab-actions'
 import { tabIcon } from './tab-icon'
 import { MAX_RECENTS, useWorkspace, type SectionId } from './tabs-store'
 
-const rowClass = 'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left text-base outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
+const rowClass = 'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
 
 /** One folding group of the sidebar. The fold state is remembered; the height
  * eases with CSS only, and not at all when the person prefers reduced
@@ -61,7 +61,7 @@ function CountChip({ value, tone }: { value: number; tone: 'open' | 'due' }) {
 
 function Row({ icon, label, active, onOpen, chip }: { icon: NavItem['icon']; label: string; active: boolean; onOpen: () => void; chip?: ReactNode }) {
   return (
-    <div className={cn('flex items-center rounded-md transition-colors duration-100 hover:bg-secondary/70 motion-reduce:transition-none', active && 'bg-secondary text-primary')}>
+    <div className={cn('flex items-center rounded-md transition-colors duration-100 hover:bg-secondary/70 motion-reduce:transition-none', active && 'bg-sidebar-accent text-sidebar-accent-foreground shadow-xs')}>
       <button type="button" onClick={onOpen} aria-current={active ? 'page' : undefined} className={cn(rowClass, active && 'font-medium')}>
         <HugeiconsIcon icon={icon} className="size-4.5 shrink-0 text-muted-foreground" />
         <span className="truncate">{label}</span>
@@ -104,7 +104,7 @@ function SidebarProfile() {
 }
 
 /** The left sidebar: where you have been and what is open, then the areas in
- * three groups. Small and contextual on purpose. The main ways in are search,
+ * bench, register, reference and office groups. Small and contextual on purpose. The main ways in are search,
  * quick actions and tabs. Counts are read from the record, and a chip shows
  * only when there is work behind it. */
 export function Navigator() {
@@ -127,21 +127,24 @@ export function Navigator() {
     <aside
       aria-label="Sidebar"
       inert={!leftOpen}
-      className={cn('shrink-0 overflow-hidden bg-background transition-[width] duration-200 ease-out motion-reduce:transition-none print:hidden', leftOpen ? 'w-78' : 'w-0')}
+      className={cn('min-h-0 w-64 shrink-0 overflow-hidden bg-sidebar print:hidden')}
     >
-      <div className="flex h-full w-78 flex-col">
+      <div className="flex h-full w-64 flex-col">
         <div className="px-2 pt-2 pb-1">
           <button
             type="button"
             onClick={() => setCommandOpen(true)}
-            className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md border border-border/50 bg-background px-2 text-xs text-muted-foreground transition-colors outline-none hover:border-border/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="flex h-8 w-full cursor-pointer items-center gap-2 rounded-md border border-border/50 bg-background px-2 text-xs text-muted-foreground transition-colors outline-none hover:border-border/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <HugeiconsIcon icon={Search01Icon} className="size-3.5 shrink-0" />
-            <span className="truncate">Search cases, people, court numbers</span>
+            <span className="truncate">Search cases and people</span>
           </button>
         </div>
 
         <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pt-1 pb-2">
+          {courtsNav.filter((item) => !item.section).map((item) => (
+            <Row key={item.to} icon={item.icon} label={item.label} active={isNavActive(item, pathname, search)} onOpen={() => go(item.to)} />
+          ))}
           {recent.length > 0 && (
             <Section id="recent" label="Recent">
               {recent.map((item) => (

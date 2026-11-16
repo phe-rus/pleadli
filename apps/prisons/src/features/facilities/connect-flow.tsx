@@ -241,7 +241,7 @@ function FacilityCard({ facility }: { facility: FacilityLookup }) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
+        <span className="flex size-9 shrink-0 items-center justify-center text-muted-foreground">
           <HugeiconsIcon icon={PrisonIcon} size={18} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">

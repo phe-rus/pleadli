@@ -24,10 +24,7 @@ function RouteComponent() {
           <p className="md:max-w-md">{m.route_movements_transfers_in_and_out_from_order()}</p>
         </div>
         <div className="page-actions">
-          <Link to="/procedures/reception" className={buttonVariants({ size: 'sm' })}>
-            {m.route_movements_reception()}
-          </Link>
-          <Link to="/procedures/receive" className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
+          <Link to="/procedures/receive" className={buttonVariants({ size: 'sm' })}>
             {m.route_movements_receive_a_transfer()}
           </Link>
         </div>

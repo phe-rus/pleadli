@@ -1,4 +1,5 @@
 import { CommandMenu } from '@/components/command-menu'
+import { LicenceBar } from '@/features/orchestra'
 import { useIntakeAlerts } from '@/hooks/use-intake-alerts'
 import { useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, type FC, type PropsWithChildren } from 'react'
@@ -72,13 +73,14 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
   useIntakeAlerts()
 
   return (
-    <div className="h-svh w-full overflow-hidden print:h-auto print:overflow-visible">
+    <div className="h-full min-h-0 w-full overflow-hidden print:h-auto print:overflow-visible">
       <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} />
       <div className="flex h-full w-full flex-col overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
         <div className="flex min-h-0 flex-1 print:block">
           <LeftPillar />
           <div className="flex min-w-0 flex-1 flex-col print:block">
             <CenterHeader />
+            <LicenceBar />
             <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background print:block print:overflow-visible">
               <div ref={scroller} className="no-scrollbar min-h-0 flex-1 overflow-y-auto print:overflow-visible">{children}</div>
             </main>

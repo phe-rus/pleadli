@@ -27,7 +27,7 @@ export type WorkspaceTab = {
   lastActiveAt?: number
 }
 export type RecentItem = { key: string; kind: TabKind; title: string; subtitle?: string; to: string }
-export type SectionId = 'pinned' | 'recent' | 'areas'
+export type SectionId = 'pinned' | 'recent' | 'areas' | 'prisoners' | 'work' | 'prison'
 /** What the sidebar shows: the workspace (pinned, open, recent, areas) or the
  * inbox as a list of messages. */
 export type SidebarView = 'workspace' | 'inbox'
@@ -77,7 +77,7 @@ const INITIAL: Persisted = {
   recents: [],
   leftOpen: true,
   sidebarView: 'workspace',
-  sections: { pinned: true, recent: true, areas: true },
+  sections: { pinned: true, recent: true, areas: true, prisoners: true, work: true, prison: true },
   areasTouched: false,
   rightOpen: false,
   rightMode: 'assistant',
@@ -163,7 +163,7 @@ const OUTSIDE: WorkspaceContextValue = {
   tabs: [],
   recents: [],
   activeKey: null,
-  sections: { pinned: true, recent: true, areas: true },
+  sections: { pinned: true, recent: true, areas: true, prisoners: true, work: true, prison: true },
   toggleSection: noop,
   openTab: noop,
   renameTab: noop,

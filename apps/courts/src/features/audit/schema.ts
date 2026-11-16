@@ -21,6 +21,7 @@ export type Verification = z.infer<typeof verificationSchema>
 const words: Record<string, string> = {
   profile_saved: 'Bench details saved',
   case_registered: 'Case registered',
+  attachment_added: 'Original file attached',
   case_updated: 'Case details changed',
   case_concluded: 'Case concluded',
   case_reopened: 'Case reopened',

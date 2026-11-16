@@ -144,3 +144,9 @@ Shared infrastructure (`D.3`):
 | — | Cloudflare Tunnel never provisioned (`provision()` has no caller) | **Wired 2026-09-20**: `POST /api/hq/network/cloudflare/provision`, `domain/tunnel_connector.rs`. Not run against Cloudflare; X9 now also covers the run token |
 
 See `SECURITY.md` for the two blockers that gate any real facility use.
+
+## Jurisdiction and prisoner file update, 12 October 2026
+
+Uganda remains the operational default. Calculation parameters now live in `domain/jurisdiction.rs`, selected from the installation profile before sentence clocks, legal queues, obligations, prisoner files or discharge assessments compute dates. Unsupported ids and country mismatches are refused. Remission eligibility uses a calendar month. Other statutory edge cases remain research. DR Congo is next, Kenya follows, and both remain unavailable for operational use until their own laws and procedures are verified.
+
+Law and jurisdiction is visible in Settings and linked from Today and the prisoner identity header. The file opens Overview with segmented navigation directly beneath the identity. See [the delivery record](../DELIVERY-JURISDICTION-2026-10-12.md) for checks, screenshots and the unrelated sign-in test mismatch still blocking a clean full test suite. This is not a full legal compliance certification or a published release.

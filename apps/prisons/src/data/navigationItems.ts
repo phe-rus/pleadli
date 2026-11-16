@@ -89,7 +89,7 @@ export const prisonsNav: readonly SidebarNavItem[] = [
   },
   {
     icon: GavelIcon,
-    get label() { return m.nav_legal() },
+    get label() { return m.nav_court() },
     to: '/legal',
     facilityOnly: true,
     requires: ['prisoner.read'],
@@ -110,7 +110,7 @@ export const prisonsNav: readonly SidebarNavItem[] = [
     get section() { return m.nav_people() },
     children: [
       { icon: HandshakeIcon, get label() { return m.nav_visits() }, to: '/visits', requires: ['prisoner.read'] },
-      { icon: Message01Icon, get label() { return m.nav_requests_and_grievances() }, to: '/requests', requires: ['prisoner.read'] },
+      { icon: Message01Icon, get label() { return m.nav_requests() }, to: '/requests', requires: ['prisoner.read'] },
     ],
   },
   {
@@ -118,7 +118,7 @@ export const prisonsNav: readonly SidebarNavItem[] = [
     get label() { return m.nav_reports() },
     get section() { return m.nav_institution() },
     children: [
-      { icon: FileEditIcon, get label() { return m.nav_reports_library() }, to: '/reports', exact: true, requires: ['report.read', 'hq.reports'] },
+      { icon: FileEditIcon, get label() { return m.nav_reports() }, to: '/reports', exact: true, requires: ['report.read', 'hq.reports'] },
       { icon: FileEditIcon, get label() { return m.nav_reports_new() }, to: '/reports/new', requires: ['report.generate'] },
     ],
   },

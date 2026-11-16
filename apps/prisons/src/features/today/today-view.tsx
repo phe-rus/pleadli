@@ -1,19 +1,17 @@
 import { Createpanel } from '@/components/create-panel'
 import { FacilityProfileForm } from '@/features/facility'
-import { useToday } from '@/features/obligations'
-import { isObligationAlertsEnabled, setObligationAlertsEnabled, useObligationAlerts } from '@/hooks/use-obligation-alerts'
+import { useObligationActions, useToday } from '@/features/obligations'
+import { useObligationAlerts } from '@/hooks/use-obligation-alerts'
 import { buttonVariants } from '@pleadli/ui/button'
-import { Switch } from '@pleadli/ui/switch'
 import { Link } from '@tanstack/react-router'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { m } from '@/paraglide/messages'
 import { AttentionSection } from './attention-section'
 import { CustodySection } from './custody-section'
 import { DocumentsSection } from './documents-section'
-import { OperationsSection } from './operations-section'
-import { OverviewChart } from './overview-chart'
 import { RecentSection } from './recent-section'
 import { TodayHeader } from './today-header'
+import { CannotWait, CourtToday, InAndOut, splitDay } from './day-sections'
 
 /**
  * The facility's working home (docs/prisons/product/08 1.3), read top to
@@ -26,41 +24,33 @@ import { TodayHeader } from './today-header'
  */
 export function TodayView() {
   const { data: today } = useToday()
-  const [alerts, setAlerts] = useState(isObligationAlertsEnabled)
   const [profileOpen, setProfileOpen] = useState(false)
   const [profileDirty, setProfileDirty] = useState(false)
   const openProfile = useCallback(() => setProfileOpen(true), [])
   useObligationAlerts()
+  // Today reads as the prison's day: what cannot wait, court, who comes and goes, then the rest.
+  const day = useMemo(() => splitDay(today.obligations, today.now), [today.obligations, today.now])
+  const { action, drawers } = useObligationActions()
 
   return (
-    <article className="page [--page-max:72rem]">
+    <article className="page">
       <TodayHeader
         today={today}
         actions={
-          <>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              {m.today_desktop_alerts()}
-              <Switch
-                checked={alerts}
-                onCheckedChange={(checked) => {
-                  setObligationAlertsEnabled(checked)
-                  setAlerts(checked)
-                }}
-              />
-            </label>
-            <Link to="/procedures/reception" className={buttonVariants({ size: 'sm' })}>
-              {m.today_receive_someone()}
-            </Link>
-          </>
+          <Link to="/procedures/reception" className={buttonVariants({ size: 'sm' })}>
+            {m.today_receive_someone()}
+          </Link>
         }
       />
 
-      <AttentionSection today={today} onSetupProfile={openProfile} />
-      <OperationsSection today={today} />
+      <CannotWait obligations={day.cannotWait} now={today.now} action={action} />
+      <CourtToday obligations={day.court} now={today.now} action={action} />
+      <InAndOut obligations={day.inOut} now={today.now} action={action} />
+      <AttentionSection today={{ ...today, obligations: day.rest }} onSetupProfile={openProfile} />
       <CustodySection today={today} />
-      <OverviewChart />
       <RecentSection today={today} />
       <DocumentsSection today={today} />
+      {drawers}
 
       <Createpanel
         open={profileOpen}

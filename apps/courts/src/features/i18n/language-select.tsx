@@ -103,17 +103,16 @@ export function LanguageSelect() {
       className="z-50 print:hidden"
     >
       <motion.div
-        layout
-        transition={{ type: 'spring', damping: 26, stiffness: 360, mass: 0.7 }}
+        layout={!reduceMotion}
+        transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 28, stiffness: 380, mass: 0.65 }}
         className={cn(
-          'flex overflow-hidden',
+          'floating-language-surface flex overflow-hidden',
           growsUp ? 'flex-col-reverse' : 'flex-col',
-          open && 'rounded-xl border border-border bg-background shadow-md',
         )}
       >
         <Button
           type="button"
-          variant="secondary"
+          variant="ghost"
           size="sm"
           aria-label={`Language: ${localeNames[current]}`}
           aria-haspopup="listbox"
@@ -127,11 +126,11 @@ export function LanguageSelect() {
             }
             setOpen((prev) => !prev)
           }}
-          className="ml-auto h-9 w-fit gap-1.5 rounded-full px-3"
+          className="floating-language-trigger"
         >
-          <HugeiconsIcon icon={Globe02Icon} className="shrink-0" />
+          <HugeiconsIcon icon={Globe02Icon} className="size-4 shrink-0 text-muted-foreground" />
           <span>{current.toUpperCase()}</span>
-          <motion.span animate={{ rotate: open ? 180 : 0 }} className="shrink-0">
+          <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: reduceMotion ? 0 : 0.18 }} className="shrink-0 text-muted-foreground">
             <HugeiconsIcon icon={ArrowDown01Icon} className="size-3.5" />
           </motion.span>
         </Button>
@@ -144,7 +143,7 @@ export function LanguageSelect() {
               initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: growsUp ? 6 : -6 }}
               animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className={cn('flex w-48 flex-col gap-0.5 p-1', growsUp ? 'mb-1' : 'mt-1')}
+              className={cn('flex w-52 flex-col gap-0.5 p-1', growsUp ? 'mb-1' : 'mt-1')}
             >
               {selectableLocales.map((locale) => {
                 const active = locale === current
@@ -159,12 +158,11 @@ export function LanguageSelect() {
                       changeLocale(locale)
                     }}
                     className={cn(
-                      'flex items-center justify-between gap-2 rounded-md px-2 py-1 text-left',
-                      active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground',
+                      'floating-language-option',
                     )}
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
-                      <span className="uppercase">{locale}</span>
+                      <span className="floating-language-code">{locale}</span>
                       <span className="truncate">{localeNames[locale]}</span>
                     </span>
                     {active && <HugeiconsIcon icon={Tick02Icon} className="size-4" />}

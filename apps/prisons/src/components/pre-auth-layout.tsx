@@ -3,6 +3,8 @@ import { PrisonIcon } from '@hugeicons/core-free-icons'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { BrandLogo } from '@/features/brand'
+import { Controls } from '@/components/toolbar/controls'
+import { cn } from '@pleadli/ui/lib/utils'
 import { m } from '@/paraglide/messages'
 
 /** Shared visual shell for every screen that renders before an officer is
@@ -17,16 +19,23 @@ export function PreAuthLayout({ children }: { children: ReactNode }) {
     // which the root layout's wrapping divs don't provide (they size to
     // content, not the window); `h-svh` sidesteps that, matching the root
     // `<main>`'s own `h-svh`.
-    <div className="grid h-svh grid-cols-1 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+    // The window has no title bar of its own, so the window buttons and the
+    // drag region live here, as in every other Pleadli app.
+    <div data-tauri-drag-region className="grid h-svh grid-cols-1 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
       <BrandPanel />
-      <div className="relative flex items-center justify-center overflow-hidden bg-background p-8">{children}</div>
+      <div data-tauri-drag-region className="relative flex items-center justify-center overflow-y-auto bg-background p-8">
+        <div className="absolute top-3 right-3">
+          <Controls />
+        </div>
+        {children}
+      </div>
     </div>
   )
 }
 
 function BrandPanel() {
   return (
-    <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground md:flex">
+    <div data-tauri-drag-region className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground md:flex">
       <HugeiconsIcon
         icon={PrisonIcon}
         size={420}
@@ -75,17 +84,20 @@ export function ScreenHeader({
   icon,
   title,
   description,
+  centered,
 }: {
   icon: typeof PrisonIcon
   title: string
   description: string
+  /** For a screen whose controls sit on the middle axis (signing in, waiting). */
+  centered?: boolean
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05, duration: 0.25 }}
-      className="flex flex-col gap-3"
+      className={cn('flex flex-col gap-3', centered && 'items-center text-center')}
     >
       <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15">
         <HugeiconsIcon icon={icon} size={20} />

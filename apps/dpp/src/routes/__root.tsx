@@ -38,13 +38,13 @@ function RootComponent() {
     <>
       <HeadContent />
       <main className={cn(
-        "flex flex-col bg-background h-svh transition-colors",
-        'rounded-sm shadow-lg! border border-border/25 typeset',
+        "flex min-h-0 flex-col overflow-hidden bg-background h-full transition-colors",
+        'typeset',
         'print:h-auto print:overflow-visible print:rounded-none print:border-none print:shadow-none',
       )}>
         <WindowResizeHandles />
           <div className={cn(
-            'relative isolate transition-colors wrap-anywhere',
+            'relative isolate min-h-0 flex-1 overflow-hidden transition-colors wrap-anywhere print:flex-none print:overflow-visible',
             'selection:bg-primary/15'
           )}>
             <TooltipProvider>

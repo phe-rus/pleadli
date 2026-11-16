@@ -83,6 +83,7 @@ pub struct Authoriser {
 }
 
 pub async fn assess(conn: &mut SqliteConnection, prisoner_id: &str) -> Result<DischargeAssessment, sqlx::Error> {
+    let rules = super::jurisdiction::for_conn(conn).await?;
     let prisoner = prisoners::get_prisoner_conn(conn, prisoner_id).await?.ok_or(sqlx::Error::RowNotFound)?;
     let mut gates = Vec::new();
 
@@ -140,7 +141,7 @@ pub async fn assess(conn: &mut SqliteConnection, prisoner_id: &str) -> Result<Di
 
     let release_due_on = sentences::active_for_conn(conn, prisoner_id)
         .await?
-        .and_then(|s| sentences::compute_clocks(&prisoner, Some(&s), now_ms()).release_due_on);
+        .and_then(|s| sentences::compute_clocks(&prisoner, Some(&s), now_ms(), rules).release_due_on);
     let blocked = gates.iter().any(|g| g.blocking && !g.met);
     Ok(DischargeAssessment { in_custody: prisoner.current_status == "in_custody", gates, release_due_on, blocked })
 }

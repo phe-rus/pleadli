@@ -50,6 +50,7 @@ use crate::domain::totp::{self, Enrolment};
 use crate::domain::usages::{self, UsagesInput};
 
 mod network;
+pub mod orchestra;
 
 pub use network::Lan;
 
@@ -68,6 +69,8 @@ pub struct AppState {
     pub network: Arc<crate::domain::network::Runtime>,
     /// The office's listener.
     pub lan: Arc<Lan>,
+    /// Pleadli Orchestra (the licence, papers to /verify, daily backups); none in tests.
+    pub orchestra: Option<Arc<pleadli_node_core::orchestra::Orchestra>>,
 }
 
 pub struct ApiError(pub StatusCode, pub &'static str, pub String);
@@ -409,10 +412,6 @@ async fn list_staff(State(s): State<AppState>) -> ApiResult<Vec<Staff>> {
 
 async fn create_staff(State(s): State<AppState>, Json(input): Json<PersonInput>) -> ApiResult<Staff> {
     require_admin(&s)?;
-    let setting = installation::get(&s.pool).await?.map(|i| i.setting);
-    if setting.as_deref() == Some("alone") {
-        return Err(DomainError::Invalid("Working alone, you are the only person. Change the practice to a firm in Settings to add people.".to_string()).into());
-    }
     let created = staff::create(&s.pool, s.security.protection(), input).await?;
     let _ = audit::log(&s.pool, audit::Entry::new("staff_added").subject("staff", &created.id)).await;
     Ok(Json(created))
@@ -1343,6 +1342,10 @@ pub fn core(state: AppState) -> Router {
         .route("/documents/{id}/file", post(file_document))
         .route("/audit", get(recent_audit))
         .route("/audit/verify", get(verify_audit))
+        .merge(match state.orchestra.clone() {
+            Some(o) => Router::new().nest("/orchestra", orchestra::routes(o)),
+            None => Router::new(),
+        })
         .layer(middleware::from_fn_with_state(state.clone(), gate));
 
     Router::new()

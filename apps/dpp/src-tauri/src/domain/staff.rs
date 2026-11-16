@@ -237,9 +237,16 @@ pub async fn insert(conn: &mut SqliteConnection, protection: Protection, input: 
 }
 
 pub async fn create(pool: &SqlitePool, protection: Protection, input: PersonInput) -> Result<Staff, DomainError> {
-    let mut conn = pool.acquire().await?;
-    let id = insert(&mut conn, protection, &input, None).await?;
-    drop(conn);
+    if protection == Protection::None {
+        return invalid("With no sign-in, only one person uses this copy. Choose a protection level first.");
+    }
+    let mut tx = pool.begin().await?;
+    let current: Option<String> = sqlx::query_scalar("SELECT protection FROM installation WHERE id = 'this'").fetch_optional(&mut *tx).await?;
+    if current.as_deref() != Some(protection.as_str()) {
+        return invalid("The sign-in settings changed. Try adding the person again.");
+    }
+    let id = insert(&mut tx, protection, &input, None).await?;
+    tx.commit().await?;
     Ok(get(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?)
 }
 
@@ -259,6 +266,15 @@ pub async fn update(pool: &SqlitePool, id: &str, input: UpdateStaffInput) -> Res
         .rows_affected();
     if found == 0 {
         return Err(DomainError::NotFound("That person is not on this installation.".to_string()));
+    }
+    if input.active {
+        let protection: Option<String> = sqlx::query_scalar("SELECT protection FROM installation WHERE id = 'this'").fetch_optional(&mut *tx).await?;
+        if protection.as_deref() == Some("none") {
+            let active: i64 = sqlx::query_scalar("SELECT count(*) FROM staff WHERE active = 1").fetch_one(&mut *tx).await?;
+            if active > 1 {
+                return invalid("With no sign-in, only one person uses this copy. Choose a protection level before activating another person.");
+            }
+        }
     }
     let admins: i64 = sqlx::query_scalar("SELECT count(*) FROM staff WHERE role = 'administrator' AND active = 1").fetch_one(&mut *tx).await?;
     if admins == 0 {

@@ -15,8 +15,22 @@ import { m } from '@/paraglide/messages'
  * 401 or 403 when the answer is no.
  */
 
-const DEV_PORT = Number(import.meta.env.VITE_PLEADLI_DEV_PORT) || 47922
-const DEV_BASE_URL = `http://127.0.0.1:${DEV_PORT}`
+const DEV_BASE_URL = `http://127.0.0.1:${devPort()}`
+
+/** The browser dev page talks to the development node on 47922; opening it
+ * with `?api=47923` points this tab at another port on this machine, such as
+ * a relay for a browser outside this computer's loopback. The choice lasts
+ * for the tab. */
+function devPort() {
+  const fallback = String(Number(import.meta.env.VITE_PLEADLI_DEV_PORT) || 47922)
+  try {
+    const asked = new URLSearchParams(window.location.search).get('api')
+    if (asked && /^\d{4,5}$/.test(asked)) sessionStorage.setItem('pleadli:prisons:api-port', asked)
+    return sessionStorage.getItem('pleadli:prisons:api-port') ?? fallback
+  } catch {
+    return fallback
+  }
+}
 const TOKEN_KEY = 'pleadli:prisons:session'
 
 export class ApiError extends Error {

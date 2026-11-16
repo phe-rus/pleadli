@@ -24,7 +24,7 @@ export type NavItem = {
   search?: Record<string, string>
   exact?: boolean
   count?: NavCount
-  /** Sidebar group. Today has none: it is on the ribbon. */
+  /** Sidebar group. Today has none: it leads the sidebar. */
   section?: NavSection
 }
 

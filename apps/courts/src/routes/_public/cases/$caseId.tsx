@@ -18,8 +18,10 @@ import {
   type Party,
 } from '@/features/cases'
 import { ExhibitRulingForm, exhibitStatusLabel, MarkExhibitForm, producerLabel, type Exhibit } from '@/features/exhibits'
-import { OrderForm, orderKindLabel } from '@/features/orders'
-import { RulingCreateForm, rulingKindLabel } from '@/features/rulings'
+import { CaseAttachments } from '@/features/attachments/case-attachments'
+import { CaseDocuments } from '@/features/cases/case-documents'
+import { OrderForm } from '@/features/orders'
+import { RulingCreateForm } from '@/features/rulings'
 import { purposeLabel, reasonLabel, responsibleLabel, SittingActions, SittingForm, sittingStatusLabels, type Adjournment, type Sitting } from '@/features/sittings'
 import { messageOf } from '@/lib/api'
 import { plural } from '@/lib/present'
@@ -203,7 +205,7 @@ function RouteComponent() {
                 )}
               </PanelButton>
               <PanelButton label="Draft an order" title="Draft an order" description="Choose the kind of order and give the facts.">
-                {({ close, setDirty: report }) => <OrderForm caseId={caseId} accused={accused} onSuccess={close} onDirtyChange={report} />}
+                {({ close, setDirty: report }) => <OrderForm caseId={caseId} accused={accused} onSuccess={(order) => { close(); void navigate({ to: '/orders/$orderId', params: { orderId: order.id } }) }} onDirtyChange={report} />}
               </PanelButton>
               <Button size="sm" variant="secondary" onClick={() => setConclude(true)}>
                 Conclude
@@ -220,6 +222,9 @@ function RouteComponent() {
           )}
         </div>
       </header>
+
+      <CaseDocuments orders={detail.orders} rulings={detail.rulings} sittings={detail.sittings} />
+      <CaseAttachments caseId={caseId} />
 
       <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
         {facts
@@ -287,7 +292,7 @@ function RouteComponent() {
                             <Link to="/sittings/$sittingId" params={{ sittingId: s.id }} className={openLink}>Open</Link>
                             {s.status === 'adjourned' && (
                               <PanelButton label="Draft order" title="Order of adjournment" description="Starts from what was recorded when the sitting was adjourned." variant="ghost" icon={false}>
-                                {({ close, setDirty: report }) => <OrderForm caseId={caseId} sittingId={s.id} kind="adjournment" onSuccess={close} onDirtyChange={report} />}
+                                {({ close, setDirty: report }) => <OrderForm caseId={caseId} sittingId={s.id} kind="adjournment" onSuccess={(order) => { close(); void navigate({ to: '/orders/$orderId', params: { orderId: order.id } }) }} onDirtyChange={report} />}
                               </PanelButton>
                             )}
                           </>
@@ -320,62 +325,7 @@ function RouteComponent() {
             )}
           </section>
 
-          <section aria-labelledby="decisions" className="page-section">
-            <h2 id="decisions">Rulings and judgments</h2>
-            {detail.rulings.length === 0 ? (
-              <EmptyNote>No decision has been drafted for this case.</EmptyNote>
-            ) : (
-              <RowList>
-                {detail.rulings.map((r) => (
-                  <Row
-                    key={r.id}
-                    aligned
-                    marker={r.status === 'draft' && r.reservedOn ? 'urgent' : undefined}
-                    title={
-                      <Link to="/rulings/$rulingId" params={{ rulingId: r.id }} className="text-foreground">
-                        {r.reference ?? r.title}
-                      </Link>
-                    }
-                    summary={`${rulingKindLabel(r.kind)}${r.status === 'delivered' && r.deliveredOn ? `, delivered ${format(r.deliveredOn, 'PP')}` : r.reservedOn ? `, reserved ${format(r.reservedOn, 'PP')}, not yet delivered` : ', draft'}.`}
-                    trailing={
-                      <>
-                        {r.status === 'delivered' ? <Tag tone="done">Delivered</Tag> : r.reservedOn ? <Tag tone="urgent">Reserved</Tag> : <Tag tone="open">Draft</Tag>}
-                        <Link to="/rulings/$rulingId" params={{ rulingId: r.id }} className={openLink}>Open</Link>
-                      </>
-                    }
-                  />
-                ))}
-              </RowList>
-            )}
-          </section>
 
-          <section aria-labelledby="orders" className="page-section">
-            <h2 id="orders">Orders</h2>
-            {detail.orders.length === 0 ? (
-              <EmptyNote>No order has been drafted for this case.</EmptyNote>
-            ) : (
-              <RowList>
-                {detail.orders.map((o) => (
-                  <Row
-                    key={o.id}
-                    aligned
-                    title={
-                      <Link to="/orders/$orderId" params={{ orderId: o.id }} className="text-foreground">
-                        {o.reference ?? o.title}
-                      </Link>
-                    }
-                    summary={`${orderKindLabel(o.kind)}${o.issuedAt ? `, issued ${format(o.issuedAt, 'PP')}` : ', not yet issued'}.`}
-                    trailing={
-                      <>
-                        {o.status === 'issued' ? <Tag tone="done">Issued</Tag> : <Tag tone="open">Draft</Tag>}
-                        <Link to="/orders/$orderId" params={{ orderId: o.id }} className={openLink}>Open</Link>
-                      </>
-                    }
-                  />
-                ))}
-              </RowList>
-            )}
-          </section>
         </div>
 
         <div className="flex flex-col gap-8">

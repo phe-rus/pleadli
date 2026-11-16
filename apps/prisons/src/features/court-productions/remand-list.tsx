@@ -1,8 +1,7 @@
 import { daysInCustody, mandatoryBailThresholdDays, prisonerFullName } from '@/features/prisoners'
 import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
-import { cn } from '@pleadli/ui/lib/utils'
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useMemo } from 'react'
 import { useRemandList } from './queries'
@@ -13,22 +12,10 @@ import { m } from '@/paraglide/messages'
  * detention, and the date last appeared in court, derived from the diary. */
 export function RemandList() {
   const { data: remand } = useRemandList()
+  const navigate = useNavigate()
 
   const columns: DataTableColumnDef<RemandListEntry>[] = useMemo(
     () => [
-      {
-        accessorKey: 'prisonerId',
-        header: m.court_productions_prisoner_id(),
-        cell: ({ row }) => (
-          <Link
-            to="/prisoners/$prisonerId"
-            params={{ prisonerId: row.original.prisonerId }}
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block')}
-          >
-            {row.original.prisonerId}
-          </Link>
-        ),
-      },
       {
         id: 'name',
         accessorFn: (row) => prisonerFullName({ firstName: row.firstName, lastName: row.lastName, otherNames: null }),
@@ -57,6 +44,7 @@ export function RemandList() {
 
   return (
     <DataTable
+        onRowOpen={(row) => void navigate({ to: '/prisoners/$prisonerId', params: { prisonerId: row.prisonerId } })}
       aria-label={m.court_productions_remand_list()}
       data={remand}
       columns={columns}

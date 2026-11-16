@@ -39,9 +39,11 @@ _archive
 **/worker-configuration.d.ts
 **/.claude/
 **/.turbo/
-apps/police/src-tauri/Cargo.lock
 **/.tanstack
 
 # A browser profile created with a literal "~" path; never commit it.
 /~/
 __pycache__/
+
+# CI uses this root lockfile for reproducible desktop releases.
+!/bun.lock

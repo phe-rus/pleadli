@@ -136,6 +136,9 @@ type DataTableProps<TData extends RowData> = {
   customSearchbar?: (props: CustomSearchbarProps<TData>) => React.ReactNode
   /** Column ids that start hidden; the reader can still show them from Columns. */
   initialHidden?: string[]
+  /** Opens a row's record when the row is clicked anywhere that is not
+   * itself a control (a box, link or button keeps its own click). */
+  onRowOpen?: (row: TData) => void
 }
 
 /**
@@ -156,6 +159,7 @@ export function DataTable<TData extends RowData>({
   footer,
   customSearchbar,
   initialHidden,
+  onRowOpen,
   "aria-label": ariaLabel,
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState("")
@@ -456,7 +460,12 @@ export function DataTable<TData extends RowData>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() ? "selected" : undefined}
-                  onClick={() => {
+                  className={onRowOpen ? "cursor-pointer" : undefined}
+                  onClick={(event) => {
+                    if (onRowOpen) {
+                      if (!(event.target as HTMLElement).closest("a, button, input, label, [role=checkbox], [role=menuitem]")) onRowOpen(row.original)
+                      return
+                    }
                     if (!onSelectedRowsChange) return
                     row.toggleSelected()
                     onSelectedRowsChange(selectedRows)

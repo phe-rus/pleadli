@@ -9,9 +9,6 @@ use super::authz::Actor;
 use super::error::DomainError;
 use super::time::now_ms;
 
-/// The jurisdictions this build has a pack for. A pack is the seam, not a
-/// country dropdown: terminology, thresholds and instruments live with it.
-pub const JURISDICTIONS: &[&str] = &["ug"];
 /// Languages with a complete catalogue. Others fall back to English.
 pub const LANGUAGES: &[&str] = &["en", "sw", "fr"];
 
@@ -101,9 +98,12 @@ pub async fn save(conn: &mut SqliteConnection, actor: &Actor, input: SaveFacilit
             ));
         }
     }
-    if let Some(jurisdiction) = input.jurisdiction.as_deref() {
-        if !JURISDICTIONS.contains(&jurisdiction) {
-            return Err(DomainError::rejected("That jurisdiction is not available in this version."));
+    let jurisdiction = input.jurisdiction.as_deref().unwrap_or(&before.jurisdiction);
+    let pack = super::jurisdiction::rules(jurisdiction)
+        .ok_or_else(|| DomainError::rejected("That jurisdiction is not available in this version. Uganda is currently supported."))?;
+    if let Some(country) = clean(&input.country) {
+        if !country.eq_ignore_ascii_case(pack.country) {
+            return Err(DomainError::rejected("The country must match the legal jurisdiction. Congo (DRC) and Kenya need their own legal packs."));
         }
     }
     if let Some(language) = input.language.as_deref() {
@@ -127,8 +127,8 @@ pub async fn save(conn: &mut SqliteConnection, actor: &Actor, input: SaveFacilit
     .bind(clean(&input.region))
     .bind(input.approved_capacity)
     .bind(now_ms())
-    .bind(clean(&input.country))
-    .bind(input.jurisdiction)
+    .bind(pack.country)
+    .bind(pack.id)
     .bind(input.language)
     .bind(badge_prefix)
     .bind(document_prefix)

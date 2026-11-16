@@ -68,7 +68,7 @@ function Reader({ id }: { id: string }) {
   ]
 
   return (
-    <div className="page max-w-3xl">
+    <div className="page">
       <header className="flex flex-col gap-1">
         <h1>{item.subject}</h1>
         <p>

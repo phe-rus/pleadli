@@ -26,6 +26,8 @@ tauri-plugin-window-state = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-os = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
 log = "0.4"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 sqlx = { version = "0.9", features = ["sqlite", "runtime-tokio", "migrate", "macros"] }
@@ -36,7 +38,7 @@ tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "ma
 axum = "0.8"
 tower-http = { version = "0.6", features = ["cors"] }
 tower = { version = "0.5", features = ["util"] }
-pleadli-node-core = { path = "../../../packages/node-core" }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["orchestra"] }
 
 [dev-dependencies]
 # A fixed key for tests that run domain code without a startup.

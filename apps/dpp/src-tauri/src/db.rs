@@ -31,6 +31,11 @@ pub struct Db {
 
 const DB_FILE: &str = "dpp.db";
 
+/// The newest migration this build has: a backup from a newer build is refused.
+pub fn latest_migration() -> i64 {
+    sqlx::migrate!("./migrations").iter().map(|m| m.version).max().unwrap_or(0)
+}
+
 /// `legacy_vault` is where older builds kept plaintext documents (in the user's
 /// own Documents folder); it is read only to move what is there into the sealed
 /// vault, and a file there is touched only when a document in the database
@@ -43,6 +48,11 @@ pub async fn startup(data_dir: &Path, legacy_vault: Option<&Path>) -> Result<Db,
     crate::domain::attachments::clear_opened(&data_dir.join("opened"));
 
     core::finish_interrupted_encryption(&db_path);
+    // Both kinds of restore stage the same way (`restore-pending`: the plain
+    // database and each document under its attachment id): a passphrase
+    // backup (backup.rs) and an Orchestra backup (snapshot::stage, opened with
+    // the recovery phrase). So this one step puts either in place, and the
+    // documents go to `vault-incoming` to be sealed again by adopt_documents.
     let restored = backup::apply_pending_restore(data_dir, &db_path, &vault_root, &incoming).map_err(|e| StartupError::Fatal(format!("could not apply the staged restore: {e}")))?;
 
     let (db_keys, state) = core::open_keys(keys::SERVICE, data_dir, &db_path)?;

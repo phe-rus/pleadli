@@ -41,7 +41,7 @@ function TabItem({ tab, dragging, onDragging }: { tab: WorkspaceTab; dragging: s
       className={cn(
         // Tabs share the strip like a browser's: they open long and give way
         // evenly as they multiply, down to a readable minimum.
-        'group/tab relative flex h-8 min-w-28 items-center gap-1.5 rounded-t-lg pr-1.5 pl-3 text-sm whitespace-nowrap select-none',
+        'group/tab relative flex h-8 min-w-28 items-center gap-1.5 rounded-lg pr-1.5 pl-3 text-sm whitespace-nowrap select-none',
         fixed ? 'flex-[0_1_9rem]' : 'flex-[0_1_15rem]',
         'transition-colors duration-100 motion-reduce:transition-none',
         active
@@ -102,8 +102,8 @@ export function TabStrip() {
   }, [activeKey, tabs.length])
 
   return (
-    <div data-tauri-drag-region className="flex min-w-0 flex-1 items-end self-stretch">
-      <div ref={listRef} role="tablist" aria-label="Open tabs" className="no-scrollbar flex min-w-0 items-end gap-1 overflow-x-auto pl-2">
+    <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center self-stretch">
+      <div ref={listRef} role="tablist" aria-label="Open tabs" className="no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto pl-2">
         {tabs.map((tab) => (
           <TabItem key={tab.key} tab={tab} dragging={dragging} onDragging={setDragging} />
         ))}

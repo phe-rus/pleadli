@@ -325,8 +325,11 @@ pub async fn complete_setup(pool: &SqlitePool, input: SetupInput) -> Result<Inst
 
 pub async fn update(pool: &SqlitePool, input: UpdateInstallationInput) -> Result<Installation, DomainError> {
     check_common(&input.language, &input.accent, &input.logo, &input.office_name, &input.setting, &input.practice_kind)?;
+    // The count and setting must see one database snapshot. A concurrent
+    // staff change cannot slip between validation and this transaction's write.
+    let mut tx = pool.begin().await?;
     if input.setting == "alone" {
-        let others: i64 = sqlx::query_scalar("SELECT count(*) FROM staff WHERE active = 1").fetch_one(pool).await?;
+        let others: i64 = sqlx::query_scalar("SELECT count(*) FROM staff WHERE active = 1").fetch_one(&mut *tx).await?;
         if others > 1 {
             return invalid("Other people still use this copy. Make them inactive in People first.");
         }
@@ -340,12 +343,13 @@ pub async fn update(pool: &SqlitePool, input: UpdateInstallationInput) -> Result
         .bind(&input.setting)
         .bind(&input.practice_kind)
         .bind(chrono::Utc::now().timestamp_millis())
-        .execute(pool)
+        .execute(&mut *tx)
         .await?
         .rows_affected();
     if found == 0 {
         return invalid("This copy is not set up yet.");
     }
+    tx.commit().await?;
     let _ = audit::log(pool, Entry::new("installation_changed")).await;
     Ok(get(pool).await?.ok_or(sqlx::Error::RowNotFound)?)
 }
@@ -374,8 +378,12 @@ pub async fn set_jurisdiction(pool: &SqlitePool, jurisdiction: &str, region: Opt
 /// password for it; everyone else gets theirs from the administrator in People.
 pub async fn set_protection(pool: &SqlitePool, admin_id: &str, level: Protection, secret: Option<&str>) -> Result<Installation, DomainError> {
     if level == Protection::None {
-        let others: i64 = sqlx::query_scalar("SELECT count(*) FROM staff WHERE active = 1").fetch_one(pool).await?;
-        if others > 1 {
+        let changed = sqlx::query("UPDATE installation SET protection = 'none', updated_at = ? WHERE id = 'this' AND (SELECT count(*) FROM staff WHERE active = 1) = 1")
+            .bind(chrono::Utc::now().timestamp_millis())
+            .execute(pool)
+            .await?
+            .rows_affected();
+        if changed == 0 {
             return invalid("With no sign-in only one person can use this copy. Make the others inactive first.");
         }
     } else {
@@ -385,8 +393,8 @@ pub async fn set_protection(pool: &SqlitePool, admin_id: &str, level: Protection
             // A password without the phone: they link it at the next sign-in.
             staff::set_second_factor(pool, admin_id, None).await?;
         }
+        sqlx::query("UPDATE installation SET protection = ?, updated_at = ? WHERE id = 'this'").bind(level.as_str()).bind(chrono::Utc::now().timestamp_millis()).execute(pool).await?;
     }
-    sqlx::query("UPDATE installation SET protection = ?, updated_at = ? WHERE id = 'this'").bind(level.as_str()).bind(chrono::Utc::now().timestamp_millis()).execute(pool).await?;
     let _ = audit::log(pool, Entry::new("protection_changed").detail(level.as_str())).await;
     Ok(get(pool).await?.ok_or(sqlx::Error::RowNotFound)?)
 }

@@ -61,6 +61,9 @@ pub struct Node {
     pub discovery_listening: AtomicBool,
     /// Head Office's `cloudflared` process, when there is one.
     pub connector: crate::domain::tunnel_connector::Connector,
+    /// Pleadli Orchestra (the licence, papers to /verify, daily backups), set at
+    /// start; never set in tests.
+    pub orchestra: std::sync::OnceLock<Arc<pleadli_node_core::orchestra::Orchestra>>,
 }
 
 pub type NodeRef = Arc<Node>;
@@ -77,6 +80,7 @@ impl Node {
             network_lan_listening: AtomicBool::new(false),
             discovery_listening: AtomicBool::new(false),
             connector: Default::default(),
+            orchestra: std::sync::OnceLock::new(),
         })
     }
 }

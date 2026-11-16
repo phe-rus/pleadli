@@ -574,6 +574,8 @@ impl From<BackupError> for ApiError {
 /// The backup's bytes, for the browser during development. The desktop app
 /// writes the same bytes to a path the prosecutor picks (`commands::backup`).
 async fn create_backup(State(s): State<AppState>, Json(input): Json<PassphraseInput>) -> Result<Response, ApiError> {
+    // A backup is the whole record in one file; restoring replaces it.
+    require_admin(&s)?;
     let mut bytes = Vec::new();
     backup::write_backup(&s.pool, &s.vault_root, &s.data_dir, &input.passphrase, &mut bytes).await?;
     Ok(Response::builder()
@@ -592,6 +594,7 @@ struct RestoreInput {
 }
 
 async fn stage_restore(State(s): State<AppState>, Json(input): Json<RestoreInput>) -> ApiResult<Staged> {
+    require_admin(&s)?;
     let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, input.data_base64.as_bytes())
         .map_err(|_| ApiError(StatusCode::UNPROCESSABLE_ENTITY, "INVALID", "That is not a backup file.".to_string()))?;
     Ok(Json(backup::stage_restore(&s.data_dir, &bytes[..], &input.passphrase).await?))
@@ -1238,8 +1241,8 @@ async fn verify_paper(State(s): State<AppState>, Query(q): Query<PrintVerifyQuer
     Ok(Json(pleadli_node_core::paper::verify(&s.pool, &q.code).await.map_err(DomainError::from)?))
 }
 
-pub fn router(state: AppState) -> Router {
-    let api = Router::new()
+pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestra::Orchestra>>) -> Router {
+    let mut api = Router::new()
         .route("/people", post(create_person).get(search_people))
         .route("/people/{id}", get(get_person).put(update_person))
         .route("/prosecution-files", post(create_file).get(list_files))
@@ -1358,6 +1361,10 @@ pub fn router(state: AppState) -> Router {
         .route("/staff/{id}", axum::routing::put(update_staff))
         .route("/staff/{id}/secret", axum::routing::put(set_staff_secret))
         .route("/staff/{id}/second-factor", delete(reset_second_factor));
+    // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
+    if let Some(o) = orchestra {
+        api = api.nest("/orchestra", orchestra::routes(o));
+    }
 
     // Status is always readable (the lock screen needs it). Unlocking is the
     // one thing a locked app allows; everything else is closed until then.
@@ -1449,6 +1456,8 @@ pub async fn serve_dev(router: Router) {
         log::warn!("dev API stopped: {e}");
     }
 }
+
+pub mod orchestra;
 
 #[cfg(test)]
 mod tests;

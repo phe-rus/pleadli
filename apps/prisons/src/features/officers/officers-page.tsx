@@ -6,13 +6,12 @@ import { FacilityOfficerProfile, OfficerProfile } from './officer-profile'
 import { useOfficers } from './queries'
 import { officerRoleLabel, type Officer } from './schema'
 import { useHqConfig, usePermissions } from '@/features/session'
-import { AddCircleIcon, ShieldKeyIcon } from '@hugeicons/core-free-icons'
+import { ShieldKeyIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
-import { cn } from '@pleadli/ui/lib/utils'
 import { format } from 'date-fns/format'
 import { useMemo, useState } from 'react'
 import { m } from '@/paraglide/messages'
@@ -27,7 +26,7 @@ export function OfficersPage() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m.route_officers_accounts()}</h1>
+          <h1>{m.nav_officers()}</h1>
           <p className="md:max-w-lg">
             {config?.isHeadOffice
               ? m.route_officers_every_account_in_head_office_and()
@@ -83,7 +82,6 @@ function AccountsPanel({ headOffice }: { headOffice: boolean }) {
           onOpenChange={setAddOpen}
           trigger={
             <Button size="sm">
-              <HugeiconsIcon icon={AddCircleIcon} />
               {m.route_officers_add_account()}
             </Button>
           }
@@ -143,15 +141,6 @@ function OfficersTable({
     () => [
       selectColumn(),
       {
-        accessorKey: 'id',
-        header: 'ID',
-        cell: ({ row }) => (
-          <span className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'cursor-pointer')} onClick={() => onSelect(row.original)}>
-            {row.original.id}
-          </span>
-        ),
-      },
-      {
         accessorKey: 'name',
         header: m.route_officers_name(),
         cell: ({ row }) => (
@@ -171,7 +160,7 @@ function OfficersTable({
       {
         accessorKey: 'isAdmin',
         header: m.route_officers_administrator(),
-        cell: ({ row }) => (row.original.isAdmin ? <Badge>{m.route_officers_administrator()}</Badge> : <span className="text-muted-foreground">{m.route_officers_no()}</span>),
+        cell: ({ row }) => (row.original.isAdmin ? <span>{m.route_officers_administrator()}</span> : <span className="text-muted-foreground">{m.route_officers_no()}</span>),
       },
       {
         accessorKey: 'active',
@@ -211,6 +200,7 @@ function OfficersTable({
 
   return (
     <DataTable
+        onRowOpen={onSelect}
       aria-label={m.route_officers_officers()}
       data={officers}
       columns={columns}
@@ -236,9 +226,7 @@ function FacilityOfficersPanel() {
         accessorKey: 'badgeNumber',
         header: m.route_officers_badge_number(),
         cell: ({ row }) => (
-          <span className="cursor-pointer rounded-md bg-primary/15 px-3 py-1 text-xs" onClick={() => setViewing(row.original)}>
-            {row.original.badgeNumber}
-          </span>
+<span className="tabular-nums">{row.original.badgeNumber}</span>
         ),
       },
       {
@@ -260,7 +248,7 @@ function FacilityOfficersPanel() {
       {
         accessorKey: 'isAdmin',
         header: m.route_officers_administrator(),
-        cell: ({ row }) => (row.original.isAdmin ? <Badge>{m.route_officers_administrator()}</Badge> : <span className="text-muted-foreground">{m.route_officers_no()}</span>),
+        cell: ({ row }) => (row.original.isAdmin ? <span>{m.route_officers_administrator()}</span> : <span className="text-muted-foreground">{m.route_officers_no()}</span>),
       },
       {
         accessorKey: 'active',
@@ -289,6 +277,7 @@ function FacilityOfficersPanel() {
       </Createpanel>
 
       <DataTable
+        onRowOpen={setViewing}
         aria-label={m.route_officers_facility_officers()}
         data={officers ?? []}
         columns={columns}

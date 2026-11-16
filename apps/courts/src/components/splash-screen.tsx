@@ -10,6 +10,7 @@ export const SplashScreen: FC<splashScreenProps> = ({
   children
 }) => {
   const [minElapsed, setMinElapsed] = useState(false)
+  const [opened, setOpened] = useState(false)
   const isLoading = useRouterState({
     select: (s) => s.status === 'pending',
   })
@@ -19,7 +20,12 @@ export const SplashScreen: FC<splashScreenProps> = ({
     return () => clearTimeout(timeout)
   }, [])
 
-  if (isLoading || !minElapsed) {
+  // The startup screen must never replace window chrome during navigation.
+  useLayoutEffect(() => {
+    if (minElapsed && !isLoading) setOpened(true)
+  }, [minElapsed, isLoading])
+
+  if (!opened) {
     return (
       <article className='flex h-svh w-full flex-col items-center justify-center gap-4 bg-background'>
         <div>

@@ -65,7 +65,7 @@ export function NewReportPage() {
     range && generate.mutate({ kind: 'monthly_return', from: range.from, to: range.to }, { onSuccess: (report) => open(report.id), onError: fail(m.reports_could_not_produce()) })
 
   return (
-    <article className="page [--page-max:64rem]">
+    <article className="page">
       <header className="page-header">
         <div>
           <h1>{m.reports_new_heading()}</h1>

@@ -1,3 +1,4 @@
+import { DocumentActions } from '@/features/documents/document-actions'
 import { PanelButton } from '@/components/add-panel'
 import { Row, RowList } from '@/components/operational-row'
 import { EmptyNote } from '@/components/planned'
@@ -6,6 +7,7 @@ import { ExhibitRulingForm, exhibitStatusLabel, MarkExhibitForm, producerLabel, 
 import { RulingCreateForm } from '@/features/rulings'
 import { purposeLabel, reasonLabel, responsibleLabel, SittingActions, sittingStatusLabels } from '@/features/sittings'
 import { Appearances, NoteComposer, NoteRow, sittingOptions, useSignRecord, useSitting, custodyText } from '@/features/sitting-record'
+import { RecordPaper } from '@/features/sitting-record/record-paper'
 import { RecordingSection } from '@/features/recordings'
 import { messageOf } from '@/lib/api'
 import { Button } from '@pleadli/ui/button'
@@ -85,6 +87,7 @@ function RouteComponent() {
   const { sittingId } = Route.useParams()
   const { data: detail } = useSitting(sittingId)
   const navigate = useNavigate()
+  const [reading, setReading] = useState(false)
   const sign = useSignRecord()
   const { sitting, record } = detail
   const c = detail.case
@@ -97,7 +100,7 @@ function RouteComponent() {
 
   return (
     <article className="page">
-      <header className="page-header">
+      <header className="page-header print:hidden">
         <div>
           <h1>
             <Link to="/cases/$caseId" params={{ caseId: c.id }} className="text-foreground">
@@ -110,6 +113,10 @@ function RouteComponent() {
           </p>
         </div>
         <div className="page-actions">
+          <Button size="sm" variant="secondary" onClick={() => setReading((value) => !value)}>
+            {reading ? 'Return to sitting' : 'Read record'}
+          </Button>
+          {reading && <DocumentActions title={`Working record - ${c.courtNumber}`} />}
           <Tag tone={statusTone[sitting.status as keyof typeof statusTone] ?? 'neutral'}>{sittingStatusLabels[sitting.status] ?? sitting.status}</Tag>
           {sitting.status === 'scheduled' && <SittingActions sitting={sitting} caseId={c.id} adjournDefaults={notProduced ? { reason: 'prisoner_not_produced', responsible: 'prisons' } : undefined} />}
           {c.status === 'open' && (
@@ -142,6 +149,8 @@ function RouteComponent() {
         </div>
       </header>
 
+      {reading && <RecordPaper detail={detail} />}
+      <div className={reading ? 'hidden' : 'contents'} inert={reading}>
       {sitting.outcome && (
         <p>
           <strong>{sitting.status === 'held' ? 'Outcome' : 'Note'}.</strong> {sitting.outcome}
@@ -268,6 +277,7 @@ function RouteComponent() {
             )}
           </section>
         </div>
+      </div>
       </div>
     </article>
   )

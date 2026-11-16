@@ -9,5 +9,6 @@ export function tabIcon({ kind, to }: { kind: TabKind; to: string }) {
   if (kind === 'prisoner') return PrisonerIcon
   if (kind === 'procedure') return ArrowDataTransferHorizontalIcon
   if (kind === 'document' || kind === 'report') return File02Icon
-  return areaMeta(to)?.icon ?? Home01Icon
+  const path = to.split('?')[0]
+  return (areaMeta(path) ?? areaMeta(`/${path.split('/')[1]}`))?.icon ?? Home01Icon
 }

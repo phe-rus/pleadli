@@ -12,7 +12,11 @@ use tauri::Manager;
 #[cfg(debug_assertions)]
 pub async fn run_headless(data_dir: std::path::PathBuf) -> Result<(), String> {
     let router = match db::startup(&data_dir, None).await {
-        Ok(db) => api::router(api::AppState { pool: db.pool, vault_root: db.vault_root, data_dir: db.data_dir, security: db.security }),
+        Ok(db) => {
+            let orchestra = domain::orchestra::start(db.pool.clone(), db.data_dir.clone(), db.vault_root.clone());
+            tokio::spawn(orchestra.clone().run());
+            api::router(api::AppState { pool: db.pool, vault_root: db.vault_root, data_dir: db.data_dir, security: db.security }, Some(orchestra))
+        }
         Err(db::StartupError::Recovery(reason)) => api::recovery_router(data_dir, reason),
         Err(db::StartupError::Fatal(reason)) => return Err(reason),
     };
@@ -74,12 +78,15 @@ pub fn run() {
 
             let router = match tauri::async_runtime::block_on(db::startup(&data_dir, legacy_vault.as_deref())) {
                 Ok(db) => {
+                    // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
+                    let orchestra = domain::orchestra::start(db.pool.clone(), db.data_dir.clone(), db.vault_root.clone());
+                    tauri::async_runtime::spawn(orchestra.clone().run());
                     let router = api::router(api::AppState {
                         pool: db.pool.clone(),
                         vault_root: db.vault_root.clone(),
                         data_dir: db.data_dir.clone(),
                         security: db.security.clone(),
-                    });
+                    }, Some(orchestra));
                     app.manage(db);
                     router
                 }

@@ -1,13 +1,11 @@
 import { admissionInstrumentLabel, custodyStatusLabel, pendingDocumentTypeLabel, prisonerFullName, prisonerStatusLabel, type Prisoner } from './schema'
 import { usePrisoners } from './queries'
+import { prisonerFolder } from './folders'
 import { UniformChip } from '@/features/numbering'
 import { PrisonerAvatar } from './prisoner-avatar'
-import { AddCircleIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { buttonVariants } from '@pleadli/ui/button'
-import { cn } from '@pleadli/ui/lib/utils'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useEffect, useMemo } from 'react'
@@ -19,9 +17,11 @@ import { m } from '@/paraglide/messages'
  * link with ?open= redirects straight there, same pattern DPP's Files
  * list uses.
  */
-export function PrisonersPage({ openId }: { openId?: string }) {
+export function PrisonersPage({ openId, view }: { openId?: string; view?: string }) {
   const navigate = useNavigate()
-  const { data: prisoners } = usePrisoners('')
+  const { data: everyone } = usePrisoners('')
+  const folder = prisonerFolder(view)
+  const prisoners = useMemo(() => everyone.filter(folder.match), [everyone, folder])
 
   useEffect(() => {
     if (openId) {
@@ -32,19 +32,6 @@ export function PrisonersPage({ openId }: { openId?: string }) {
   const columns: DataTableColumnDef<Prisoner>[] = useMemo(() => {
     return [
       selectColumn(),
-      {
-        accessorKey: 'id',
-        header: 'ID',
-        cell: ({ row }) => (
-          <Link
-            to="/prisoners/$prisonerId"
-            params={{ prisonerId: row.original.id }}
-            className={cn('rounded-md bg-primary/15 px-3 py-1 text-xs', 'inline-block')}
-          >
-            {row.original.id}
-          </Link>
-        ),
-      },
       {
         id: 'name',
         accessorFn: (row) => prisonerFullName(row),
@@ -58,9 +45,9 @@ export function PrisonersPage({ openId }: { openId?: string }) {
       },
       {
         id: 'prisonerNumber',
-        accessorFn: (row) => row.prisonerNumber ?? row.id,
+        accessorFn: (row) => row.prisonerNumber ?? '',
         header: m.route_prisoners_prisoner_number(),
-        cell: ({ row }) => <span className="font-mono text-xs">{row.original.prisonerNumber ?? row.original.id}</span>,
+        cell: ({ row }) => <span className="tabular-nums">{row.original.prisonerNumber ?? '·'}</span>,
       },
       { accessorKey: 'otherNames', header: m.route_prisoners_other_names(), cell: ({ row }) => row.original.otherNames ?? '·' },
       { accessorKey: 'nationalId', header: m.route_prisoners_national_id(), cell: ({ row }) => row.original.nationalId ?? '·' },
@@ -115,23 +102,23 @@ export function PrisonersPage({ openId }: { openId?: string }) {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m.route_prisoners_population()}</h1>
-          <p className="md:max-w-md">{m.route_prisoners_everyone_this_facility_holds_or_has()}</p>
+          <h1>{folder.label()}</h1>
+          <p className="md:max-w-md">{folder.note()}</p>
         </div>
         <div className="page-actions">
           <Link to="/procedures/reception" className={buttonVariants({ size: 'sm' })}>
-            <HugeiconsIcon icon={AddCircleIcon} />
             {m.route_prisoners_receive_someone()}
           </Link>
         </div>
       </header>
 
       <DataTable
+        onRowOpen={(row) => void navigate({ to: '/prisoners/$prisonerId', params: { prisonerId: row.id } })}
         aria-label={m.route_prisoners_prisoners()}
         data={prisoners}
         columns={columns}
         getRowId={(row) => row.id}
-        emptyMessage={m.route_prisoners_no_prisoners_admitted_yet()}
+        emptyMessage={everyone.length === 0 ? m.route_prisoners_no_prisoners_admitted_yet() : m.folder_empty()}
         searchPlaceholder={m.route_prisoners_search_prisoners()}
       />
     </article>

@@ -4,7 +4,7 @@ import { m } from '@/paraglide/messages'
 /** Uganda, the one jurisdiction this build has. The regions are the Uganda
  * Prisons Service regions facilities are registered under. The numbering
  * default is provisional: no official format was found in public sources
- * (docs/prisons/RESEARCH.md), so a facility is asked to confirm it. */
+ * (docs/prisons/research/findings.md), so a facility is asked to confirm it. */
 export const ugRegions = [
   'Southern',
   'Northern',
@@ -33,6 +33,13 @@ export const ugPack: JurisdictionPack = {
     return m.jurisdiction_ug_name()
   },
   country: 'Uganda',
+  sources: [
+    { label: () => m.jurisdiction_act_source(), url: 'https://www.mia.go.ug/sites/default/files/resources/Prisons%20Act%20Uganda%202006.pdf' },
+    { label: () => m.jurisdiction_bail_source(), url: 'https://www.jsc.go.ug/publications/citizens-handbook-english-version/' },
+  ],
+  get service() {
+    return m.jurisdiction_ug_service()
+  },
   timezone: {
     id: 'Africa/Kampala',
     get label() {
@@ -42,4 +49,10 @@ export const ugPack: JurisdictionPack = {
   regions: ugRegions,
   numbering: { pattern: '{SEQ:4}/{YEAR}', reset: 'yearly', provisional: true },
   examples: { facilityCode: 'UG-LUZ-001', badge: 'UP-0142' },
+}
+
+/** Uganda only. The backend independently applies the same constitutional
+ * thresholds. These values must never be reused for a planned country. */
+export function ugMandatoryBailDays(highCourtOnly: boolean) {
+  return highCourtOnly ? 180 : 60
 }

@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T00:00:00Z",
+  "title": "Design System: Pleadli",
+  "extensions": {
+    "colorMeta": {
+      "page-grey": { "role": "neutral", "displayName": "Page Grey", "canonical": "oklch(0.982 0.003 255)", "tonalRamp": ["oklch(0.17 0.008 260)","oklch(0.3 0.012 260)","oklch(0.45 0.015 258)","oklch(0.6 0.014 257)","oklch(0.75 0.01 256)","oklch(0.88 0.008 255)","oklch(0.955 0.006 255)","oklch(0.982 0.003 255)"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(0.21 0.015 260)", "tonalRamp": ["oklch(0.15 0.012 260)","oklch(0.21 0.015 260)","oklch(0.3 0.015 260)","oklch(0.4 0.017 259)","oklch(0.5 0.018 258)","oklch(0.62 0.015 257)","oklch(0.75 0.01 256)","oklch(0.9 0.006 255)"] },
+      "accent-police": { "role": "primary", "displayName": "Registry Teal", "canonical": "oklch(0.511 0.096 186.391)", "tonalRamp": ["oklch(0.25 0.05 187)","oklch(0.34 0.07 187)","oklch(0.43 0.085 187)","oklch(0.511 0.096 186.391)","oklch(0.62 0.09 187)","oklch(0.74 0.07 187)","oklch(0.86 0.04 187)","oklch(0.95 0.02 187)"] },
+      "accent-dpp-courts": { "role": "primary", "displayName": "Court Amber", "canonical": "oklch(0.852 0.199 91.936)", "tonalRamp": ["oklch(0.4 0.09 92)","oklch(0.5 0.12 92)","oklch(0.62 0.15 92)","oklch(0.74 0.18 92)","oklch(0.852 0.199 91.936)","oklch(0.9 0.14 94)","oklch(0.95 0.08 95)","oklch(0.98 0.03 96)"] },
+      "accent-lawyers": { "role": "primary", "displayName": "Counsel Indigo", "canonical": "oklch(0.379 0.146 265.522)", "tonalRamp": ["oklch(0.2 0.08 265)","oklch(0.29 0.12 265)","oklch(0.379 0.146 265.522)","oklch(0.48 0.15 265)","oklch(0.6 0.13 265)","oklch(0.74 0.09 265)","oklch(0.87 0.045 265)","oklch(0.95 0.02 265)"] },
+      "seal-red": { "role": "secondary", "displayName": "Seal Red", "canonical": "oklch(0.577 0.215 27.3)", "tonalRamp": ["oklch(0.3 0.1 27)","oklch(0.4 0.15 27)","oklch(0.5 0.19 27)","oklch(0.577 0.215 27.3)","oklch(0.68 0.19 27)","oklch(0.79 0.12 27)","oklch(0.9 0.06 27)","oklch(0.96 0.025 27)"] }
+    },
+    "typographyMeta": {
+      "page-title": { "displayName": "Page title", "purpose": "Once per page, large and tight." },
+      "group-title": { "displayName": "Group title", "purpose": "Small, quiet label above a group." }
+    },
+    "shadows": [
+      { "name": "resting-sheet", "value": "0 1px 2px oklch(0.3 0.02 260 / 0.05), 0 1px 3px oklch(0.3 0.02 260 / 0.06)", "purpose": "Cards and table frames." },
+      { "name": "field", "value": "0 1px 2px oklch(0.3 0.02 260 / 0.05)", "purpose": "Inputs and selects." },
+      { "name": "raised", "value": "0 2px 4px oklch(0.3 0.02 260 / 0.04), 0 4px 12px oklch(0.3 0.02 260 / 0.07)", "purpose": "Menus and popovers." },
+      { "name": "floating", "value": "0 4px 8px oklch(0.3 0.02 260 / 0.04), 0 12px 32px oklch(0.3 0.02 260 / 0.1)", "purpose": "Dialogs and the language selector." }
+    ],
+    "motion": [
+      { "name": "sidebar-ease", "value": "320ms cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Sidebar open and close." },
+      { "name": "theme-fade", "value": "0.3s ease", "purpose": "Colour transitions between themes." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "48rem" },
+      { "name": "wide", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action per view, in the institution accent.",
+      "html": "<button class=\"ds-btn-primary\">Save changes</button>",
+      "css": ".ds-btn-primary{background:oklch(0.511 0.096 186.391);color:#fff;height:36px;padding:0 14px;border:1px solid transparent;border-radius:10px;font:550 14px/1.6 'Inter Variable',Inter,system-ui,sans-serif;cursor:pointer;transition:background .15s,transform .1s}.ds-btn-primary:hover{background:oklch(0.511 0.096 186.391 / .8)}.ds-btn-primary:active{transform:translateY(1px)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 2px oklch(0.511 0.096 186.391 / .3)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting actions on a Wash fill.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary{background:oklch(0.955 0.006 255);color:oklch(0.25 0.015 260);height:36px;padding:0 14px;border:1px solid transparent;border-radius:10px;font:550 14px/1.6 'Inter Variable',Inter,system-ui,sans-serif;cursor:pointer}.ds-btn-secondary:hover{background:oklch(0.93 0.007 255)}.ds-btn-secondary:focus-visible{outline:none;box-shadow:0 0 0 2px oklch(0.511 0.096 186.391 / .3)}"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Sheet White field with a Field Edge border.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search files\" />",
+      "css": ".ds-input{height:36px;width:220px;padding:0 14px;background:oklch(1 0 0);color:oklch(0.21 0.015 260);border:1px solid oklch(0.88 0.008 255);border-radius:10px;box-shadow:0 1px 2px oklch(0.3 0.02 260 / .05);font:14px 'Inter Variable',Inter,system-ui,sans-serif}.ds-input::placeholder{color:oklch(0.5 0.018 258)}.ds-input:focus-visible{outline:none;border-color:oklch(0.511 0.096 186.391);box-shadow:0 0 0 2px oklch(0.511 0.096 186.391 / .3)}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "A sheet lifted off the page.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Custody register</div><div class=\"ds-card-body\">14 open files</div></div>",
+      "css": ".ds-card{background:oklch(1 0 0);color:oklch(0.21 0.015 260);border-radius:12px;padding:16px;width:240px;box-shadow:0 1px 2px oklch(0.3 0.02 260 / .05),0 1px 3px oklch(0.3 0.02 260 / .06);outline:1px solid oklch(0.21 0.015 260 / .1);font:14px/1.6 'Inter Variable',Inter,system-ui,sans-serif}.ds-card-title{font-weight:600}.ds-card-body{color:oklch(0.5 0.018 258)}"
+    },
+    {
+      "name": "Group Title",
+      "kind": "custom",
+      "description": "Quiet label above a group.",
+      "html": "<div class=\"ds-group\">Recent files</div>",
+      "css": ".ds-group{font:600 13px/20px 'Inter Variable',Inter,system-ui,sans-serif;color:oklch(0.5 0.018 258)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clerk's Desk",
+    "overview": "Pleadli looks like a well-kept desk in a registry office: a quiet cool-grey surface, with the work laid on it as white sheets. The papers users produce are the hero, so the chrome stays plain, exact and unhurried. All five apps share this base; only one accent per institution differs.",
+    "keyCharacteristics": [
+      "Cool-grey page, white lifted sheets, crisp neutral ink",
+      "One accent per institution, never two on one screen",
+      "Inter throughout; papers switch to serif on their own sheet",
+      "12px sheet radius, soft layered shadows, hairline borders",
+      "Full-height attached sidebar with a rounded window frame and glass capsules in the toolbar",
+      "Light and dark themes with identical structure"
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "A screen carries its institution's accent on the primary action, focus ring and active nav, and nowhere else.", "section": "colors" },
+      { "name": "The Sheet Rule", "body": "What the user works on sits on Sheet White over Page Grey. Never put a white card on white.", "section": "colors" },
+      { "name": "The Semantic Type Rule", "body": "Sizes and weights come from tags and slots, never from classes on content.", "section": "typography" },
+      { "name": "The Attached Sidebar Rule", "body": "The sidebar is full height and attached. Floating glass is reserved for toolbar capsules.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do lay content on Sheet White over Page Grey, with the 12px radius and resting shadow.",
+      "Do use the institution's accent once per view: primary action, focus, active nav.",
+      "Do keep one primary action per view.",
+      "Do build every list as a DataTable with a comprehensive set of fields.",
+      "Do set type through semantic tags and slots.",
+      "Do design for light and dark with the same structure."
+    ],
+    "donts": [
+      "Don't float the sidebar or add glass outside toolbar capsules.",
+      "Don't use a second accent colour or gradient text on a screen.",
+      "Don't put inline text size or weight on content markup.",
+      "Don't use em-dashes in copy.",
+      "Don't make it look like a generic SaaS dashboard.",
+      "Don't use the legacy cream and amber palette from globals.css."
+    ]
+  }
+}

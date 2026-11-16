@@ -1,5 +1,5 @@
-import { queryOptions, useMutation, useSuspenseQuery } from '@tanstack/react-query'
-import { createOrder, discardOrder, getOrder, getOrders, issueOrder, updateOrder } from './data'
+import { queryOptions, useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { createOrder, discardOrder, getOrder, getOrders, getOrderPreview, issueOrder, updateOrder } from './data'
 import type { CreateOrderInput, UpdateOrderInput } from './schema'
 
 export const ordersOptions = (status = '') => queryOptions({ queryKey: ['orders', status] as const, queryFn: () => getOrders(status) })
@@ -12,3 +12,5 @@ export const useCreateOrder = () => useMutation({ mutationFn: (input: CreateOrde
 export const useUpdateOrder = () => useMutation({ mutationFn: (v: { id: string; input: UpdateOrderInput }) => updateOrder(v.id, v.input) })
 export const useDiscardOrder = () => useMutation({ mutationFn: (id: string) => discardOrder(id) })
 export const useIssueOrder = () => useMutation({ mutationFn: (id: string) => issueOrder(id) })
+
+export const useOrderPreview = (id: string, enabled: boolean) => useQuery({ queryKey: ['order-preview', id], queryFn: () => getOrderPreview(id), enabled })

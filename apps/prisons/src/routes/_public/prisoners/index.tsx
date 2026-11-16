@@ -2,8 +2,10 @@ import { PrisonersPage, prisonersOptions } from '@/features/prisoners'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/prisoners/')({
-  validateSearch: (search: Record<string, unknown>): { open?: string } =>
-    typeof search.open === 'string' ? { open: search.open } : {},
+  validateSearch: (search: Record<string, unknown>): { open?: string; view?: string } => ({
+    ...(typeof search.open === 'string' ? { open: search.open } : {}),
+    ...(typeof search.view === 'string' ? { view: search.view } : {}),
+  }),
   loader: async ({ context }) => {
     await context.queryClient.query({ ...prisonersOptions(''), staleTime: 'static' })
   },
@@ -11,6 +13,6 @@ export const Route = createFileRoute('/_public/prisoners/')({
 })
 
 function RouteComponent() {
-  const { open } = Route.useSearch()
-  return <PrisonersPage openId={open} />
+  const { open, view } = Route.useSearch()
+  return <PrisonersPage openId={open} view={view} />
 }

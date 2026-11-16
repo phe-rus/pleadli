@@ -47,7 +47,7 @@ export function IdentityStep({ draft, errors, update }: StepProps) {
         <SelectField label={m.setup_region()} value={draft.region} onChange={(region) => update({ region })} options={pack.regions.map((r) => ({ value: r, label: r }))} placeholder={m.setup_region_placeholder()} />
       </div>
       <div className="flex flex-col gap-2">
-        <Fact label={m.setup_fact_jurisdiction()} value={pack.name} purpose={m.setup_fact_jurisdiction_purpose()} />
+        <Fact label={m.setup_fact_jurisdiction()} value={pack.name} purpose={m.jurisdiction_setup_note()} />
         <Fact label={m.setup_fact_language()} value={localeNames.en} purpose={m.setup_fact_language_purpose()} />
         <Fact label={m.setup_fact_timezone()} value={pack.timezone.label} purpose={m.setup_fact_timezone_purpose()} />
       </div>
@@ -126,7 +126,7 @@ export function Preview({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function AdministratorStep({ draft, errors, update }: StepProps) {
+export function AdministratorStep({ draft, errors, update, headOffice = false }: StepProps & { headOffice?: boolean }) {
   return (
     <div className="flex flex-col gap-4">
       <TextField
@@ -146,9 +146,9 @@ export function AdministratorStep({ draft, errors, update }: StepProps) {
         onChange={(adminPassword) => update({ adminPassword })}
         error={errors.adminPassword}
         autoComplete="new-password"
-        description={m.setup_admin_password_description()}
+        description={headOffice ? m.setup_admin_password_hq_hint() : m.setup_admin_password_facility_hint()}
       />
-      <TextField label={m.setup_admin_password_again()} type="password" value={draft.adminPasswordAgain} onChange={(adminPasswordAgain) => update({ adminPasswordAgain })} error={errors.adminPasswordAgain} autoComplete="new-password" />
+      {draft.adminPassword !== '' && <TextField label={m.setup_admin_password_again()} type="password" value={draft.adminPasswordAgain} onChange={(adminPasswordAgain) => update({ adminPasswordAgain })} error={errors.adminPasswordAgain} autoComplete="new-password" />}
     </div>
   )
 }

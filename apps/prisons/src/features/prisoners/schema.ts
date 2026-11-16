@@ -1,3 +1,4 @@
+import { ugMandatoryBailDays } from '@/features/jurisdiction'
 import * as z from 'zod'
 import { m } from '@/paraglide/messages'
 
@@ -119,7 +120,7 @@ export function prisonerFullName(prisoner: Pick<Prisoner, 'firstName' | 'lastNam
  * Act's own unreformed 120/360-day text — see docs/prisons/PRODUCT.md
  * §Custody & Remand tracking for the citation and the discrepancy. */
 export function mandatoryBailThresholdDays(highCourtOnlyOffence: boolean) {
-  return highCourtOnlyOffence ? 180 : 60
+  return ugMandatoryBailDays(highCourtOnlyOffence)
 }
 
 export function daysInCustody(admittedAt: number) {

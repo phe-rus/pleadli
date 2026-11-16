@@ -11,6 +11,9 @@ use tauri::Manager;
 /// is not set up yet) and who is signed in. Under basic or full protection the
 /// app always starts with nobody signed in.
 async fn app_state(pool: sqlx::SqlitePool, vault_root: std::path::PathBuf, data_dir: std::path::PathBuf) -> Result<api::AppState, sqlx::Error> {
+    // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
+    let orchestra = domain::orchestra::start(pool.clone(), data_dir.clone(), vault_root.clone());
+    tauri::async_runtime::spawn(orchestra.clone().run());
     let security = domain::security::Security::new();
     security.load(&pool).await?;
     let legacy_locked = !security.is_installed() && domain::lock::is_enabled(&pool).await?;
@@ -22,6 +25,7 @@ async fn app_state(pool: sqlx::SqlitePool, vault_root: std::path::PathBuf, data_
         security: std::sync::Arc::new(security),
         network: std::sync::Arc::new(network),
         lan: std::sync::Arc::new(api::Lan::new(data_dir)),
+        orchestra: Some(orchestra),
     })
 }
 
