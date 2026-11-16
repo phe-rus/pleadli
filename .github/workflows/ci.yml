@@ -155,6 +155,8 @@ jobs:
       - name: cargo test
         run: cargo test --manifest-path apps/${{ matrix.app }}/src-tauri/Cargo.toml
       - name: cargo clippy and the ratchet
+        # Runs even when cargo test failed, so one run reports both results.
+        if: ${{ !cancelled() }}
         run: |
           out="$RUNNER_TEMP/clippy.jsonl"
           code=0
