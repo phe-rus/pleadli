@@ -3,6 +3,7 @@ import * as m from '@/paraglide/messages'
 import { Building03Icon, Certificate01Icon, Mail01Icon, Search01Icon, ShieldUserIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { LinkArrow } from '@/components/link-arrow'
 
 export const Route = createFileRoute('/_public/docs/how-it-works')({
   head: () => seo({ title: `${m["docs.how.title"]()} · Pleadli`, description: m["docs.how.lead"](), path: '/docs/how-it-works' }),
@@ -19,12 +20,12 @@ function PostOffice() {
         <span className="text-sm font-semibold">{m["docs.how.fig.station"]()}</span>
         <span className="text-sm text-muted-foreground">{m["docs.how.fig.station_do"]()}</span>
       </div>
-      <span className="text-center text-primary">→</span>
+      <LinkArrow className="mx-auto text-primary-ink" />
       <div className={`${box} bg-primary/[0.07] ring-primary/20`}>
         <span className="text-sm font-semibold">{m["docs.how.fig.relay"]()}</span>
         <span className="text-sm text-muted-foreground">{m["docs.how.fig.relay_do"]()}</span>
       </div>
-      <span className="text-center text-primary">→</span>
+      <LinkArrow className="mx-auto text-primary-ink" />
       <div className={box}>
         <span className="text-sm font-semibold">{m["docs.how.fig.dpp"]()}</span>
         <span className="text-sm text-muted-foreground">{m["docs.how.fig.dpp_do"]()}</span>
@@ -60,7 +61,7 @@ function RouteComponent() {
       ))}
       <p className="rounded-xl bg-muted/50 p-4 text-sm text-muted-foreground">
         {m["docs.how.status_note"]()}{' '}
-        <Link to="/roadmap" className="font-medium text-primary">{m["nav.roadmap"]()} →</Link>
+        <Link to="/roadmap" className="font-medium text-primary">{m["nav.roadmap"]()} <LinkArrow /></Link>
       </p>
     </div>
   )

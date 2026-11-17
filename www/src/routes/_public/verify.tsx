@@ -35,7 +35,7 @@ function RouteComponent() {
   const result = Route.useLoaderData()
 
   return (
-    <article className="container flex w-full flex-col md:max-w-3xl">
+    <article className="container flex w-full flex-col md:max-w-6xl">
       <section className="editorial-hero">
         <h1 className="text-4xl! font-semibold tracking-tight md:text-6xl!">{m["verify.title"]()}</h1>
         <p className="md:max-w-xl md:text-lg!">{m["verify.lead"]()}</p>

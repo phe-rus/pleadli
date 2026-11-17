@@ -25,6 +25,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { format } from '@/lib/date'
+import { RecordTabsView } from '@pleadli/shell'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/_public/investigations/$caseId')({
@@ -91,6 +92,7 @@ function RouteComponent() {
   const navigate = useNavigate()
   const [editOpen, setEditOpen] = useState(false)
   const [editDirty, setEditDirty] = useState(false)
+  const [tab, setTab] = useState('overview')
   const { data: workspace } = useCaseWorkspace(caseId)
   const exportDocument = useExportCaseDocument(caseId)
 
@@ -159,31 +161,18 @@ function RouteComponent() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <Section title={m["cases.people_involved"]()} count={people.length}>
-          {people.map((p) => (
-            <Link
-              key={p.id}
-              to="/search/people/$personId"
-              params={{ personId: p.personId }}
-              className="flex items-center justify-between gap-3 rounded-md px-1.5 py-1.5 transition-colors hover:bg-muted/60"
-            >
-              <span className="truncate text-xs font-medium">{casePersonName(p)}</span>
-              <span className="shrink-0 text-xs text-muted-foreground">{caseRoleLabel(p.role)}</span>
-            </Link>
-          ))}
-        </Section>
-
-        <Section title={m["investigation.timeline"]()} count={timeline.length}>
-          {timeline.map((event, index) => (
-            <div key={index} className="flex items-center justify-between gap-3 px-1.5 py-1.5">
-              <span className="text-xs">{event.label}</span>
-              <span className="shrink-0 text-xs text-muted-foreground">{format(event.at, 'PP')}</span>
-            </div>
-          ))}
-        </Section>
-
-
+      <RecordTabsView
+        labels={{
+          overview: { label: m["investigation.tab_overview"](), empty: '', action: '' },
+          papers: { label: m["investigation.tab_papers"](), empty: m["investigation.empty_papers"](), action: '' },
+          people: { label: m["investigation.tab_people"](), empty: '', action: '' },
+          history: { label: m["investigation.tab_history"](), empty: '', action: '' },
+        }}
+        value={tab}
+        onValueChange={setTab}
+        content={{
+          overview: (
+            <div className="grid grid-cols-1 gap-8 p-4 md:grid-cols-2">
         <Section title={m["common.custody"]()} count={custodyRecords.length}>
           {custodyRecords.map((record) => {
             const compliance = record.status === 'in_custody' ? custodyCompliance(record) : null
@@ -236,13 +225,48 @@ function RouteComponent() {
             />
           ))}
         </Section>
-      </div>
-
+            </div>
+          ),
+          people: (
+            <div className="p-4 md:max-w-xl">
+        <Section title={m["cases.people_involved"]()} count={people.length}>
+          {people.map((p) => (
+            <Link
+              key={p.id}
+              to="/search/people/$personId"
+              params={{ personId: p.personId }}
+              className="flex items-center justify-between gap-3 rounded-md px-1.5 py-1.5 transition-colors hover:bg-muted/60"
+            >
+              <span className="truncate text-xs font-medium">{casePersonName(p)}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">{caseRoleLabel(p.role)}</span>
+            </Link>
+          ))}
+        </Section>
+            </div>
+          ),
+          history: (
+            <div className="p-4 md:max-w-xl">
+        <Section title={m["investigation.timeline"]()} count={timeline.length}>
+          {timeline.map((event, index) => (
+            <div key={index} className="flex items-center justify-between gap-3 px-1.5 py-1.5">
+              <span className="text-xs">{event.label}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">{format(event.at, 'PP')}</span>
+            </div>
+          ))}
+        </Section>
+            </div>
+          ),
+          papers: (
+            <div className="flex flex-col gap-8 p-4">
       <CaseBinder reference={kase.reference} summary={kase.summary} statements={statements} exhibits={exhibits} chargeSheets={chargeSheets} />
 
       <section className="md:max-w-md">
         <AttachmentsField entityType={entityTypes.case} entityId={kase.id} label={m["common.files"]()} />
       </section>
+            </div>
+          ),
+        }}
+      />
     </article>
   )
 }

@@ -3,6 +3,8 @@ import * as m from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import type { RouterAppContext } from '@/router'
 import appCss from '@pleadli/ui/globals.css?url'
+import workspaceCss from '@pleadli/ui/workspace.css?url'
+import siteCss from '@/styles/site.css?url'
 import { GooeyToaster } from "@pleadli/ui/goey-toaster"
 import { cn } from '@pleadli/ui/lib/utils'
 import { TooltipProvider } from '@pleadli/ui/tooltip'
@@ -39,7 +41,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { charSet: "utf-8" },
       { name: "theme-color", content: "#fffcf1" },
       { name: 'application-name', content: 'Pleadli' },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: defaultTitle },
       { name: 'description', content: defaultDescription },
       { name: 'robots', content: 'index, follow' },
@@ -60,10 +62,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { name: 'twitter:image', content: `${SITE}/og-image.png` },
     ],
     links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
+      { rel: 'stylesheet', href: appCss },
+      { rel: 'stylesheet', href: workspaceCss },
+      { rel: 'stylesheet', href: siteCss },
       // ?v=2: the mark changed on 2026-10-08; a new address tells browsers and
       // search engines to fetch it again instead of keeping the old one.
       { rel: 'icon', href: '/favicon.svg?v=2', type: 'image/svg+xml' },

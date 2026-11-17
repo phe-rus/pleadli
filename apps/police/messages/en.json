@@ -187,7 +187,8 @@
     "cases": "Cases",
     "exhibits": "Exhibits",
     "charge_sheets": "Charge sheets",
-    "statistics": "Statistics"
+    "statistics": "Statistics",
+    "postbox": "Postbox"
   },
   "nav_sections": {
     "front_desk": "Front desk",
@@ -1224,6 +1225,11 @@
     "search": "Search cases"
   },
   "investigation": {
+    "tab_overview": "The case",
+    "tab_papers": "Papers",
+    "tab_people": "People",
+    "tab_history": "History",
+    "empty_papers": "No statements, exhibits or charge sheets on this case yet.",
     "tl_opened": "Case {reference} opened",
     "tl_statement": "Statement taken from {name}",
     "tl_arrested": "{name} arrested, {status}",
@@ -2108,5 +2114,46 @@
       "restore_newer": "This backup was made by a newer Pleadli Police. Update first, then restore.",
       "general": "That did not work. Try again."
     }
+  },
+  "shell": {
+    "right_panel": {
+      "title": "Side panel",
+      "empty": "Nothing here yet.",
+      "open": "Show side panel",
+      "close": "Hide side panel",
+      "lock": "Keep side panel open",
+      "unlock": "Let side panel close",
+      "resize": "Resize side panel",
+      "widen": "Make side panel wider",
+      "narrow": "Make side panel narrower"
+    },
+    "error": {
+      "title": "This page did not load",
+      "body": "Something went wrong while opening it. Your work is safe. Try again.",
+      "retry": "Try again"
+    },
+    "record_tabs": {
+      "overview_label": "Overview",
+      "overview_empty": "The summary of this record will appear here.",
+      "overview_action": "Add details",
+      "papers_label": "Papers",
+      "papers_empty": "Documents and statements attached to this record go here.",
+      "papers_action": "Add a paper",
+      "people_label": "People",
+      "people_empty": "The people linked to this record go here.",
+      "people_action": "Add a person",
+      "history_label": "History",
+      "history_empty": "What was done to this record, and when, goes here.",
+      "history_action": "See activity"
+    }
+  },
+  "postbox": {
+    "empty_inbox": "Nothing has arrived yet.",
+    "empty_outbox": "Nothing is waiting to be sent.",
+    "inbox": "Inbox",
+    "intro": "Referrals and receipts to and from the DPP and courts arrive here.",
+    "outbox": "Outbox",
+    "status": "Not switched on yet. It will work once your office is connected to Pleadli.",
+    "title": "Postbox"
   }
 }

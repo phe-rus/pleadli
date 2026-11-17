@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="-4 -4 72 72">
+  <!-- The favicon artwork with breathing room, so small sizes never clip its corners. -->
+  <rect x="2" y="2" width="39" height="39" rx="12" fill="#3f3112"/>
+  <rect x="23" y="23" width="39" height="39" rx="12" fill="#e1a73d"/>
+  <path d="M23 35a12 12 0 0 1 12-12h6v6a12 12 0 0 1-12 12h-6z" fill="#9a6a22"/>
+</svg>

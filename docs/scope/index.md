@@ -23,10 +23,14 @@ _These are recommendations to keep the build orderly, not requirements. A worksp
 
 Order recommended after the audit in `docs/platform/AUDIT-2026-11-17.md`. Do one stage, run `/clear`, then start the next from these files.
 
-1. **Stage 0, hygiene and gates:** `_root` features 5 (CI), 6 (Turbo tasks), 9 (code health), 10 (budgets).
-2. **Stage 1, first trusted app:** `lawyers` feature 4 (pilot readiness) and `www` feature 8 (purchases, seats and keys).
-3. **Stage 2, shared core:** `_root` features 11, 12, 13.
-4. **Later, not yet scoped:** files that travel (Word round trip, Drive and OneDrive), the institution link and civilian portal, Police mobile, National ID, bring your own AI, extensions, the world website and film, security review and signed installers. Each becomes a row only when its stage is next.
+1. **Stage 1, UI and UX, one large stage, first:** `_root` features 14, 26, 27, 15. One shape for all five apps, one shared shell package, one settings, brand and onboarding, then plain language and guided tasks (Police and Prisons first). Cuts roughly 5,000 lines of duplicated shell. See `docs/platform/APP-SHAPE.md`.
+2. **Stage 2, hygiene and gates:** `_root` features 5 (CI, already in progress), 6 (Turbo tasks), 9 (code health), 10 (budgets). Can run beside Stage 1.
+3. **Stage 3, first trusted app:** `lawyers` feature 4 (pilot readiness) and `www` feature 8 (purchases, seats and keys).
+4. **Stage 4, shared core:** `_root` features 11, 12, 13. Smaller after Stage 1, which already moves the shell.
+5. **Stage 5, sign in and the postbox network:** `_root` features 25, 16, 17, 18. No peer to peer: sealed packages through pleadli.com on the free Cloudflare plan and one domain.
+6. **Stage 6, the public:** `_root` features 19 to 23, one flow at a time, after a legal review. Find an office first, then Report to police.
+7. **Stage 7, the field:** `_root` feature 24, phone layouts.
+8. **Later, not yet scoped:** files that travel (Word round trip, Drive and OneDrive), National ID, bring your own AI, extensions, the world website and film, security review and signed installers. Each becomes a row only when its stage is next.
 
 ## Legend
 

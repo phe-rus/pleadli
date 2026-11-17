@@ -1,0 +1,35 @@
+{
+  "name": "@pleadli/shell",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@hugeicons/core-free-icons": "^4.3.0",
+    "@hugeicons/react": "^1.1.10",
+    "@pleadli/ui": "workspace:*",
+    "@tauri-apps/api": "^2.0.0"
+  },
+  "peerDependencies": {
+    "@tanstack/react-router": "^1.0.0",
+    "react": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-router": "latest",
+    "@types/bun": "^1.4.2",
+    "@types/react": "^19.2.0",
+    "react": "^19.2.0",
+    "typescript": "^7.0.2"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./model": "./src/model/index.ts",
+    "./view": "./src/view/index.ts",
+    "./live": "./src/live/index.ts",
+    "./lib/*": "./src/lib/*.ts",
+    "./shell.css": "./src/styles/shell.css"
+  }
+}

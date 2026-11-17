@@ -35,8 +35,8 @@ function RouteComponent() {
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {horizons.map((h) => (
-          <Card key={h.label()} className="gap-4 rounded-3xl border-border/50 bg-muted/30 p-8">
-            <span className={cn('w-fit rounded-full px-3 py-1 text-xs font-semibold', h.tone)}>{h.label()}</span>
+          <Card key={h.label()} className="gap-4 rounded-2xl border-border/60 bg-card p-7 shadow-xs">
+            <span className={cn('w-fit rounded-md px-2.5 py-1 text-xs font-semibold', h.tone)}>{h.label()}</span>
             <ul className="flex flex-col gap-3 pl-0">
               {h.items.map((item, i) => (
                 <li key={i} className="flex gap-2 pl-0">
@@ -56,11 +56,11 @@ function RouteComponent() {
             <div key={app.name} className="grid grid-cols-1 gap-3 py-6 md:grid-cols-[12rem_1fr_1fr] md:gap-8">
               <h3 className="text-base! font-semibold">{app.name}</h3>
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold tracking-wide text-primary uppercase">{m["roadmap.ready"]()}</span>
+                <span className="text-xs font-semibold text-primary-ink">{m["roadmap.ready"]()}</span>
                 <p>{app.ready()}</p>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{m["roadmap.coming"]()}</span>
+                <span className="text-xs font-semibold text-muted-foreground">{m["roadmap.coming"]()}</span>
                 <p>{app.coming()}</p>
               </div>
             </div>

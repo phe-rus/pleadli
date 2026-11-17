@@ -1,17 +1,15 @@
 import { seo } from '@/lib/seo'
-import { Badge } from '@pleadli/ui/badge'
 import { Card, CardDescription, CardTitle } from '@pleadli/ui/card'
 import { getProducts } from '@/data/products'
 import {
   CheckmarkCircle02Icon,
   CircleIcon,
-  Folder02Icon,
   MinusSignCircleIcon,
 } from '@hugeicons/core-free-icons'
 import * as m from '@/paraglide/messages'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { cn } from 'cn'
+import { cn } from '@pleadli/ui/lib/utils'
 
 export const Route = createFileRoute('/_public/docs/documents')({
   head: () => seo({ title: `${m["docs.documents.title"]()} · Pleadli`, description: m["docs.documents.lead"](), path: '/docs/documents' }),
@@ -46,10 +44,6 @@ function RouteComponent() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <Badge variant="outline">
-          <HugeiconsIcon icon={Folder02Icon} data-icon="inline-start" />
-          {m["docs.nav.documents"]()}
-        </Badge>
         <h1 className="text-3xl!">{m["docs.documents.title"]()}</h1>
         <p>{m["docs.documents.lead"]()}</p>
       </div>
@@ -72,7 +66,10 @@ function RouteComponent() {
               key={product.slug}
               to="/products/$slug"
               params={{ slug: product.slug }}
-              className="flex items-start gap-3 rounded-lg border p-3 hover:border-primary/40"
+              className={cn(
+                'flex items-start gap-3 rounded-lg border p-3',
+                'hover:border-primary/40',
+              )}
             >
               <StatusIcon state={product.documents.state} />
               <div className="flex flex-col gap-0.5">

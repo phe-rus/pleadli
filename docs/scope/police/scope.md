@@ -136,5 +136,31 @@ Code in `apps/police/src/features/session/session-gate.tsx`, `apps/police/src/fe
 ## Deferred
 - **Per action admin credential check for Police's own sensitive actions**: `_root`'s officer identity spec introduces this pattern for Prisons; whether Police's main desktop app should adopt it for any of its own sensitive actions (beyond the remote server's existing bearer token login, which is unrelated) was not decided and is not currently planned · needs a decision
 
+## Shape gaps
+
+From the app shape audit of 2026-11-17 (`docs/platform/APP-SHAPE-AUDIT.md`, spec 0003). Score 56% against 36 rules checked. In priority order. A rule can be broken on purpose only by writing a line `**Deviation:** <rule id>, <reason>` here.
+
+1. [ ] NT1 (Partial): No developer tools in release builds: F12, Ctrl Shift I and Inspect are off.
+2. [ ] SH7 (Missing): A status bar sits at the foot of the page. Fixed by feature 26 (shared shell).
+3. [ ] SH8 (Missing): An optional right panel slot works the same way in every app. Fixed by feature 26 (shared shell).
+4. [ ] SH9 (Missing): The tab strip, tabs store, header, quick add, licence bar and status bar come from `@pleadli/shell`, not a copy. Fixed by feature 26 (shared shell).
+5. [ ] PG2 (Missing): Record pages show the tabs Overview, Papers, People, History first, in that order. Fixed by feature 26 (shared shell).
+6. [ ] PG4 (Missing): Settings has these sections in order: Profile and sign in, Language and appearance, Backup, Licence, Connections, Setup. Fixed by feature 27 (settings, brand, onboarding).
+7. [ ] PG8 (Missing): An error says what happened in plain words, what to do, and offers a retry. Fixed by feature 26 (shared shell).
+8. [ ] PG9 (Missing): Loading shows a calm placeholder shaped like the content, not a bare spinner. Fixed by feature 26 (shared shell).
+9. [ ] TK4 (Missing): Phone, tablet and desktop breakpoints are defined once, in the shell package. Fixed by feature 26 (shared shell).
+10. [ ] MO1 (Missing): Page, tab, panel and hover motion are named values in one shared place. Fixed by feature 26 (shared shell).
+11. [ ] NT5 (Missing): Ctrl T opens a new tab and Ctrl S saves. Fixed by feature 26 (shared shell).
+12. [ ] CS1 (Missing): The Rust API is split by domain and no `api/mod.rs` is over 600 lines.
+13. [ ] PG1 (Partial): Lists use the shared table and no hand built tables.
+14. [ ] PG5 (Partial): A Connections section always exists and says "Not connected" where there is no connection yet. Fixed by feature 27 (settings, brand, onboarding).
+15. [ ] PG6 (Partial): First run steps in order: Language, Who is this office, First person and sign in, Backup choice, Recovery option. Fixed by feature 27 (settings, brand, onboarding).
+16. [ ] PL2 (Partial): English, Swahili and French are all complete.
+17. [ ] CF3 (Partial): Content text takes its size and weight from the global type, not inline sizes.
+18. [ ] CF5 (Partial): Icon only buttons carry a label for screen readers and a hover title.
+19. [ ] NT2 (Partial): No browser page behaviours: Ctrl wheel zoom, F5 reload, pull to refresh, dragging links and images.
+20. [ ] NT3 (Partial): Chrome is not selectable, content is.
+21. [ ] NT4 (Partial): Right click on a record, row or tab shows the app menu. Text fields show the native menu. The browser menu never shows.
+
 ## Legend
 See `docs/scope/index.md` for the shared legend.

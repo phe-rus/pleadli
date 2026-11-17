@@ -2,7 +2,7 @@ import { admissionInstrumentLabel, prisonerStatusLabel } from '@/features/prison
 import { healthEventTypeLabel } from '@/features/health-events'
 import { releaseTypeLabel } from '@/features/releases'
 import { visitStatusLabel, visitTypeLabel } from '@/features/visits'
-import { useWorkspace } from '@/features/workspace/tabs-store'
+import { useWorkspace } from '@pleadli/shell'
 import { ArrowLeft01Icon, PrinterIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button, buttonVariants } from '@pleadli/ui/button'

@@ -25,7 +25,11 @@ export async function getSession() {
   return sessionSchema.parse(await api('GET', '/api/auth/session'))
 }
 
+/** Set when someone signs out on purpose, so the sign-in screen does not put them straight back in. */
+export const NO_AUTO_SIGN_IN = 'pleadli.noAutoSignIn'
+
 export async function signOut() {
+  try { sessionStorage.setItem(NO_AUTO_SIGN_IN, '1') } catch { /* private window: auto sign-in may repeat, harmless */ }
   try {
     await api('POST', '/api/auth/logout')
   } finally {
@@ -46,4 +50,12 @@ export async function setDevRole(isHeadOffice: boolean) {
 export async function getDeskOfficers() {
   const rows = (await api('GET', '/api/auth/desk')) as { badgeNumber: string; name: string; role: string; passwordless: boolean }[]
   return Array.isArray(rows) ? rows : []
+}
+
+/** An administrator who still signed in on the badge alone chooses a password
+ * and is signed in with it. Works once, only on the node's own machine. */
+export async function setFirstPassword(badgeNumber: string, newPassword: string) {
+  const result = signInResultSchema.parse(await api('POST', '/api/auth/set-first-password', { body: { badgeNumber, newPassword } }))
+  setSessionToken(result.token)
+  return result
 }

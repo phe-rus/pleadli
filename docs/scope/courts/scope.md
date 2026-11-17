@@ -89,5 +89,28 @@ Was one flat page (every card stacked, no categories), same gap independently fo
 
 - **D10, field validation with a real magistrate and a real court clerk**: the single highest-leverage open decision named in `docs/courts/PROPOSAL.md` since the proposal was approved (2026-09-21). Everything built so far (the shape of a sitting, appearance states, note kinds, exhibit labels, order wording) is desk-research only and explicitly unvalidated against a real courtroom. Not a code task; needs the engineer to arrange the conversation.
 
+## Shape gaps
+
+From the app shape audit of 2026-11-17 (`docs/platform/APP-SHAPE-AUDIT.md`, spec 0003). Score 58% against 36 rules checked. In priority order. A rule can be broken on purpose only by writing a line `**Deviation:** <rule id>, <reason>` here.
+
+1. [ ] NT1 (Partial): No developer tools in release builds: F12, Ctrl Shift I and Inspect are off.
+2. [ ] SH7 (Missing): A status bar sits at the foot of the page. Fixed by feature 26 (shared shell).
+3. [ ] SH8 (Missing): An optional right panel slot works the same way in every app. Fixed by feature 26 (shared shell).
+4. [ ] SH9 (Missing): The tab strip, tabs store, header, quick add, licence bar and status bar come from `@pleadli/shell`, not a copy. Fixed by feature 26 (shared shell).
+5. [ ] PG2 (Missing): Record pages show the tabs Overview, Papers, People, History first, in that order. Fixed by feature 26 (shared shell).
+6. [ ] PG5 (Missing): A Connections section always exists and says "Not connected" where there is no connection yet. Fixed by feature 27 (settings, brand, onboarding).
+7. [ ] PG6 (Missing): First run steps in order: Language, Who is this office, First person and sign in, Backup choice, Recovery option. Fixed by feature 27 (settings, brand, onboarding).
+8. [ ] PG8 (Missing): An error says what happened in plain words, what to do, and offers a retry. Fixed by feature 26 (shared shell).
+9. [ ] PG9 (Missing): Loading shows a calm placeholder shaped like the content, not a bare spinner. Fixed by feature 26 (shared shell).
+10. [ ] PL2 (Missing): English, Swahili and French are all complete.
+11. [ ] TK4 (Missing): Phone, tablet and desktop breakpoints are defined once, in the shell package. Fixed by feature 26 (shared shell).
+12. [ ] MO1 (Missing): Page, tab, panel and hover motion are named values in one shared place. Fixed by feature 26 (shared shell).
+13. [ ] NT5 (Missing): Ctrl T opens a new tab and Ctrl S saves. Fixed by feature 26 (shared shell).
+14. [ ] SH3 (Partial): The foot of the sidebar shows the signed in person with language, settings and sign out.
+15. [ ] PG4 (Partial): Settings has these sections in order: Profile and sign in, Language and appearance, Backup, Licence, Connections, Setup. Fixed by feature 27 (settings, brand, onboarding).
+16. [ ] NT2 (Partial): No browser page behaviours: Ctrl wheel zoom, F5 reload, pull to refresh, dragging links and images.
+17. [ ] NT3 (Partial): Chrome is not selectable, content is.
+18. [ ] NT4 (Partial): Right click on a record, row or tab shows the app menu. Text fields show the native menu. The browser menu never shows.
+
 ## Legend
 See `docs/scope/index.md` for the shared legend.

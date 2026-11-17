@@ -4,6 +4,7 @@ import * as m from '@/paraglide/messages'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Stat } from '@pleadli/ui/stat'
 import { createFileRoute, getRouteApi, useNavigate } from '@tanstack/react-router'
+import { cn } from '@pleadli/ui/lib/utils'
 
 export const Route = createFileRoute('/_protected/orchestra/$orgId/')({
   component: RouteComponent,
@@ -42,7 +43,10 @@ function RouteComponent() {
         </section>
       )}
 
-      <section className="flex flex-col gap-2 rounded-2xl bg-card p-5 ring-1 ring-border/70">
+      <section className={cn(
+        'flex flex-col gap-2 rounded-2xl bg-card p-5',
+        'ring-1 ring-border/70',
+      )}>
         <span className="text-sm text-muted-foreground">{m["orch.address"]()}</span>
         <span className="font-mono text-xl font-semibold">{institution.address ?? m["orch.address_none"]()}</span>
         <p className="text-sm text-muted-foreground">{m["orch.address_hint"]()}</p>

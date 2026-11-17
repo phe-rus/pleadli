@@ -5,7 +5,7 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { format } from 'date-fns/format'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { identityForPath } from '../tab-identity'
-import { useWorkspace } from '../tabs-store'
+import { useWorkspace } from '@pleadli/shell'
 import { m } from '@/paraglide/messages'
 import type { AssistantContext, ChatMessage } from './assistant-client'
 import { useAssistant } from './assistant-store'
@@ -114,7 +114,8 @@ function Thinking() {
  * something invented. */
 export function AssistantPanel() {
   const { messages, pending, draft, setDraft, send, retry, stop, clear } = useAssistant()
-  const { tabs, activeKey, rightOpen, rightMode } = useWorkspace()
+  const { tabs, activeKey, rightOpen, extras } = useWorkspace()
+  const rightMode = extras.rightMode === 'record' ? 'record' : 'assistant'
   const active = tabs.find((tab) => tab.key === activeKey)
   const identity = active ? identityForPath(active.to) : null
   const record = active && identity?.kind === 'prisoner' ? { kind: 'prisoner' as const, id: identity.recordId, name: active.title } : null

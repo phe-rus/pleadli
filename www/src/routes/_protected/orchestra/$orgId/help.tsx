@@ -5,12 +5,13 @@ import { writeToPleadli } from '@/functions/orchestra.func'
 import { APPLICATIONS } from '@/lib/orchestra'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
-import { t } from '@pleadli/ui/goey-toaster'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Input } from '@pleadli/ui/input'
 import { Textarea } from '@pleadli/ui/textarea'
-import { createFileRoute, getRouteApi, useRouter } from '@tanstack/react-router'
+import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { useState } from 'react'
+import { cn } from '@pleadli/ui/lib/utils'
+import { useServerMutation } from '@/lib/use-server-mutation'
 
 export const Route = createFileRoute('/_protected/orchestra/$orgId/help')({
   component: RouteComponent,
@@ -20,26 +21,21 @@ const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
 
 function RouteComponent() {
   const { institution, reports } = institutionRoute.useLoaderData()
-  const router = useRouter()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [application, setApplication] = useState<string>('')
-  const [busy, setBusy] = useState(false)
-
-  const send = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setBusy(true)
-    try {
-      await writeToPleadli({ data: { organizationId: institution.id, title, body, application: (application || undefined) as (typeof APPLICATIONS)[number] | undefined } })
-      t.success(m["orch.help.sent"]())
+  const sendMutation = useServerMutation(writeToPleadli, {
+    success: () => m["orch.help.sent"](),
+    onSuccess: () => {
       setTitle('')
       setBody('')
-      void router.invalidate()
-    } catch (e) {
-      t.error(m["orch.failed"](), { description: e instanceof Error ? e.message : undefined })
-    } finally {
-      setBusy(false)
-    }
+    },
+  })
+  const busy = sendMutation.isPending
+
+  const send = (event: React.FormEvent) => {
+    event.preventDefault()
+    sendMutation.mutate({ organizationId: institution.id, title, body, application: (application || undefined) as (typeof APPLICATIONS)[number] | undefined })
   }
 
   return (
@@ -48,7 +44,10 @@ function RouteComponent() {
         <h1>{m["orch.nav.help"]()}</h1>
         <p className="text-muted-foreground">{m["orch.help.lead"]()}</p>
       </header>
-      <form onSubmit={send} className="flex flex-col gap-3 rounded-2xl bg-card p-5 ring-1 ring-border/70">
+      <form onSubmit={send} className={cn(
+        'flex flex-col gap-3 rounded-2xl bg-card p-5',
+        'ring-1 ring-border/70',
+      )}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5 text-sm">
             {m["orch.help.title_field"]()}

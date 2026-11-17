@@ -112,6 +112,7 @@ impl From<OfficerError> for ApiError {
             "INVALID_CREDENTIALS" => StatusCode::UNAUTHORIZED,
             "BADGE_TAKEN" | "LAST_ADMIN_GUARD" | "ALREADY_INITIALISED" | "DELETE_NOT_ALLOWED" | "CANNOT_DELETE_SELF" => StatusCode::CONFLICT,
             "NOT_FOUND" => StatusCode::NOT_FOUND,
+            "ADMIN_PASSWORD_REQUIRED" => StatusCode::FORBIDDEN,
             "INVALID_ROLE" | "WEAK_PASSWORD" | "INVALID_PHOTO" | "BADGE_FORMAT" | "BADGE_ONLY_NOT_ALLOWED" => StatusCode::UNPROCESSABLE_ENTITY,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
@@ -124,6 +125,7 @@ impl From<ReleaseError> for ApiError {
         let message = err.to_string();
         match err {
             ReleaseError::Db(e) => e.into(),
+            ReleaseError::InvalidReleaseType => ApiError::new(StatusCode::UNPROCESSABLE_ENTITY, "INVALID_RELEASE_TYPE", &message),
             ReleaseError::NotInCustody => ApiError::conflict("NOT_IN_CUSTODY", &message),
             ReleaseError::GatesUnmet(_) => ApiError::conflict("DISCHARGE_GATES_UNMET", &message),
             ReleaseError::ExceptionNeedsAuthority => ApiError::new(StatusCode::FORBIDDEN, "EXCEPTION_NEEDS_OIC", &message),

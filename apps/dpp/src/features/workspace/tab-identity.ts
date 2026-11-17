@@ -1,7 +1,8 @@
 import { areaMeta } from '@/data/navigationItems'
 import { fileViews, isFileView } from '@/features/prosecution-files/schema'
 import * as m from '@/paraglide/messages'
-import type { WorkspaceTab } from './tabs-store'
+import { DashboardBrowsingIcon, File02Icon, FolderViewIcon } from '@hugeicons/core-free-icons'
+import type { Location, TabIdentity as ShellIdentity } from '@pleadli/shell'
 
 /** A stable identity for one location: the tab key, its kind, and where it
  * lives. Anything the prosecutor can open in the workspace has one, an area
@@ -43,11 +44,18 @@ export function identityForLocation(pathname: string, search: Record<string, unk
   return null
 }
 
+/** The shell's view of a location. Stores no display text: a record tab starts
+ * untitled and is renamed with the record's own title once it loads. */
+export function resolveIdentity({ pathname, search }: Location): ShellIdentity | null {
+  const identity = identityForLocation(pathname, search)
+  return identity ? { key: identity.key, kind: identity.kind, to: identity.to, title: '' } : null
+}
+
 /** A tab's title for display, worked out at render time so it follows the
  * current language. Only a record's own title (a file's title, a document's
  * reference) is stored on the tab; areas and Overview are named from their
  * location every time they are drawn. */
-export function tabTitle(tab: { kind: WorkspaceTab['kind']; title: string; to: string }): string {
+export function tabTitle(tab: { kind: string; title: string; to: string }): string {
   switch (tab.kind) {
     case 'overview':
       return m["tabs.overview"]()
@@ -55,7 +63,7 @@ export function tabTitle(tab: { kind: WorkspaceTab['kind']; title: string; to: s
       return tab.title || m["tabs.file"]()
     case 'document':
       return tab.title || m["tabs.document"]()
-    case 'area': {
+    default: {
       const [pathname, query = ''] = tab.to.split('?')
       const search = Object.fromEntries(new URLSearchParams(query))
       if (pathname === '/files') {
@@ -69,8 +77,11 @@ export function tabTitle(tab: { kind: WorkspaceTab['kind']; title: string; to: s
   }
 }
 
-/** Stores no display text: a record tab starts untitled and is renamed with
- * the record's own title once it loads (see `tabTitle`). */
-export function tabFromIdentity(identity: TabIdentity): WorkspaceTab {
-  return { key: identity.key, kind: identity.kind, title: '', to: identity.to }
+/** The icon a tab or recent item carries: the area's own icon, or one for the kind of record it is. */
+export function tabIcon({ kind, to }: { kind: string; to: string }) {
+  if (kind === 'overview') return DashboardBrowsingIcon
+  if (kind === 'file') return FolderViewIcon
+  if (kind === 'document') return File02Icon
+  const [pathname, query = ''] = to.split('?')
+  return areaMeta(pathname, Object.fromEntries(new URLSearchParams(query)))?.icon ?? DashboardBrowsingIcon
 }

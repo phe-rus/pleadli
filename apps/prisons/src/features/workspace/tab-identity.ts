@@ -1,7 +1,8 @@
 import { areaMeta } from '@/data/navigationItems'
 import { documentKindLabel, isDocumentKind, type DocumentKind } from '@/features/documents/schema'
 import { prisonerFolder } from '@/features/prisoners/folders'
-import type { WorkspaceTab } from './tabs-store'
+import { ArrowDataTransferHorizontalIcon, File02Icon, Home01Icon, PrisonerIcon } from '@hugeicons/core-free-icons'
+import type { Location, TabIdentity as ShellIdentity } from '@pleadli/shell'
 import { m } from '@/paraglide/messages'
 
 /** A stable identity for one path: the tab key, its kind, and where it
@@ -70,32 +71,46 @@ export function identityForPath(href: string): TabIdentity | null {
 }
 
 /** The title a tab opens with. A prisoner file takes the person's name once
- * the record has loaded (`useSyncActiveTabTitle`); until then it is honest
- * about being a file. */
-function identityTitle(identity: TabIdentity, _isHeadOffice: boolean): string {
+ * the record has loaded; until then it is honest about being a file. */
+function identityTitle(identity: TabIdentity): string {
   switch (identity.kind) {
-    case 'today':
+    case "today":
       return m.workspace_today()
-    case 'area':
-      if (identity.key === 'area:/prisoners') return prisonerFolder(new URLSearchParams(identity.to.split('?')[1] ?? '').get('view') ?? undefined).label()
+    case "area":
+      if (identity.key === "area:/prisoners") return prisonerFolder(new URLSearchParams(identity.to.split("?")[1] ?? "").get("view") ?? undefined).label()
       // A settings section is still the Settings tab: name it from the area, not the path.
-      return areaMeta(identity.key.slice('area:'.length))?.label ?? identity.to
-    case 'procedure':
+      return areaMeta(identity.key.slice("area:".length))?.label ?? identity.to
+    case "procedure":
       return procedureTitles[identity.procedureKind]
-    case 'document':
+    case "document":
       return documentKindLabel[identity.documentKind]
-    case 'report':
+    case "report":
       return m.workspace_report()
-    case 'prisoner':
+    case "prisoner":
       return m.workspace_prisoner_file()
   }
 }
 
-export function tabFromIdentity(identity: TabIdentity, isHeadOffice: boolean): WorkspaceTab {
-  return {
-    key: identity.key,
-    kind: identity.kind,
-    title: identityTitle(identity, isHeadOffice),
-    to: identity.to,
-  }
+/** The shell's view of a location. The prisoners list keeps its folder in the address, and its tab with it. */
+export function resolveIdentity({ pathname, search }: Location): ShellIdentity | null {
+  const identity = identityForPath(typeof search.view === "string" ? `${pathname}?view=${search.view}` : pathname)
+  return identity ? { key: identity.key, kind: identity.kind, to: identity.to, title: identityTitle(identity) } : null
+}
+
+/** What a tab or recent item is called now. Today, areas and procedures are
+ * named in the current language each time; a record keeps its own saved name. */
+export function tabLabel(tab: { kind: string; to: string; title: string }): string {
+  if (tab.kind === "prisoner" || tab.kind === "document" || tab.kind === "report") return tab.title
+  const identity = identityForPath(tab.to)
+  return identity ? identityTitle(identity) : tab.title
+}
+
+/** The icon a tab carries: the area's own icon, or one for the kind of record it is. */
+export function tabIcon({ kind, to }: { kind: string; to: string }) {
+  if (kind === "today") return Home01Icon
+  if (kind === "prisoner") return PrisonerIcon
+  if (kind === "procedure") return ArrowDataTransferHorizontalIcon
+  if (kind === "document" || kind === "report") return File02Icon
+  const path = to.split("?")[0]
+  return (areaMeta(path) ?? areaMeta(`/${path.split("/")[1]}`))?.icon ?? Home01Icon
 }

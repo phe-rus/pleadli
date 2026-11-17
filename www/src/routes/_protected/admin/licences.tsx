@@ -8,6 +8,7 @@ import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Input } from '@pleadli/ui/input'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
+import { cn } from '@pleadli/ui/lib/utils'
 
 export const Route = createFileRoute('/_protected/admin/licences')({
   loader: () => listLicencesStaff(),
@@ -169,7 +170,10 @@ function RouteComponent() {
             <DialogTitle>The licence key</DialogTitle>
             <DialogDescription>Give it to the institution now. It is not shown again; only its last four characters are kept.</DialogDescription>
           </DialogHeader>
-          <p className="rounded-xl bg-muted p-4 text-center font-mono text-lg tracking-wider select-all">{key}</p>
+          <p className={cn(
+            'rounded-xl bg-muted p-4 text-center font-mono text-lg',
+            'tracking-wider select-all',
+          )}>{key}</p>
           <Button
             onClick={() => {
               void navigator.clipboard.writeText(key ?? '')

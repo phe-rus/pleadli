@@ -18,6 +18,7 @@
     "@pleadli/forms-tables": "workspace:*",
     "@pleadli/paper": "workspace:*",
     "@pleadli/rich-text": "workspace:*",
+    "@pleadli/shell": "workspace:*",
     "@pleadli/setup": "workspace:*",
     "@pleadli/ui": "workspace:*",
     "@tanstack/react-form": "^1.33.5",

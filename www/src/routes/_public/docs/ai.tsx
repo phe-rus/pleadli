@@ -1,5 +1,4 @@
 import { seo } from '@/lib/seo'
-import { Badge } from '@pleadli/ui/badge'
 import { Card, CardDescription, CardTitle } from '@pleadli/ui/card'
 import { getProducts } from '@/data/products'
 import * as m from '@/paraglide/messages'
@@ -9,11 +8,10 @@ import {
   MinusSignCircleIcon,
   Robot01Icon,
   ShieldQuestionMarkIcon,
-  SparklesIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { cn } from 'cn'
+import { cn } from '@pleadli/ui/lib/utils'
 
 export const Route = createFileRoute('/_public/docs/ai')({
   head: () => seo({ title: `${m["docs.ai.title"]()} · Pleadli`, description: m["docs.ai.lead"](), path: '/docs/ai' }),
@@ -41,10 +39,6 @@ function RouteComponent() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <Badge variant="outline">
-          <HugeiconsIcon icon={SparklesIcon} data-icon="inline-start" />
-          {m["docs.nav.ai"]()}
-        </Badge>
         <h1 className="text-3xl!">{m["docs.ai.title"]()}</h1>
         <p>{m["docs.ai.lead"]()}</p>
       </div>
@@ -66,7 +60,10 @@ function RouteComponent() {
               key={product.slug}
               to="/products/$slug"
               params={{ slug: product.slug }}
-              className="flex items-start gap-3 rounded-lg border p-3 hover:border-primary/40"
+              className={cn(
+                'flex items-start gap-3 rounded-lg border p-3',
+                'hover:border-primary/40',
+              )}
             >
               <StatusIcon state={product.ai.state} />
               <div className="flex flex-col gap-0.5">
@@ -90,7 +87,10 @@ function RouteComponent() {
         </ul>
       </div>
 
-      <div className="flex items-start gap-3 rounded-lg border border-dashed p-4">
+      <div className={cn(
+        'flex items-start gap-3 rounded-lg border border-dashed',
+        'p-4',
+      )}>
         <HugeiconsIcon icon={ShieldQuestionMarkIcon} className="mt-0.5 size-5! shrink-0 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">{m["docs.ai.privilege"]()}</p>
       </div>

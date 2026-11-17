@@ -1057,7 +1057,14 @@
     "reopen_failed": "Could not reopen the matter",
     "reopened": "Matter reopened",
     "sections": "Matter sections",
+    "rt": {
+      "empty_history": "Nothing has been done on this matter yet. Each action will be listed here.",
+      "empty_overview": "Nothing recorded on this file yet.",
+      "empty_papers": "No papers on this matter yet. Drafts, filings and uploads appear here.",
+      "empty_people": "No parties added yet. Add the other side, witnesses and the court here."
+    },
     "seg": {
+      "people": "Parties",
       "activity": "File history",
       "matter": "The file",
       "money": "Accounts and time",
@@ -1113,7 +1120,8 @@
     },
     "tasks": "Bring-ups",
     "time": "Time sheets",
-    "today": "Today"
+    "today": "Today",
+    "postbox": "Postbox"
   },
   "network": {
     "address": "Address",
@@ -1924,8 +1932,8 @@
     "none": "No time was recorded in this period.",
     "period": {
       "30": "30 days",
-      "365": "A year",
-      "90": "90 days"
+      "90": "90 days",
+      "365": "A year"
     },
     "period_label": "Period",
     "recorded": "Time recorded"
@@ -2260,5 +2268,58 @@
       "restore_newer": "This backup was made by a newer Pleadli Lawyers. Update first, then restore.",
       "general": "That did not work. Try again."
     }
+  },
+  "shell": {
+    "right_panel": {
+      "title": "Side panel",
+      "empty": "Nothing here yet.",
+      "open": "Show side panel",
+      "close": "Hide side panel",
+      "lock": "Keep side panel open",
+      "unlock": "Let side panel close",
+      "resize": "Resize side panel",
+      "widen": "Make side panel wider",
+      "narrow": "Make side panel narrower"
+    },
+    "tabs": {
+      "open_tabs": "Open tabs",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "pin_named": "Pin {title}",
+      "unpin_named": "Unpin {title}",
+      "close_named": "Close {title}",
+      "close_with": "Close ({key})",
+      "previous_with": "Previous tab ({key})",
+      "next_with": "Next tab ({key})"
+    },
+    "loading": "Loading",
+    "error": {
+      "title": "This page did not load",
+      "body": "Something went wrong while opening it. Your work is safe. Try again.",
+      "retry": "Try again"
+    },
+    "record_tabs": {
+      "overview_label": "Overview",
+      "overview_empty": "The summary of this matter will appear here.",
+      "overview_action": "Add details",
+      "papers_label": "Documents",
+      "papers_empty": "Documents attached to this matter go here.",
+      "papers_action": "Add a document",
+      "people_label": "People",
+      "people_empty": "The people linked to this matter go here.",
+      "people_action": "Add a person",
+      "history_label": "History",
+      "history_empty": "What was done to this matter, and when, goes here.",
+      "history_action": "See activity"
+    }
+  },
+  "postbox": {
+    "empty_inbox": "Nothing has arrived yet.",
+    "empty_outbox": "Nothing is waiting to be sent.",
+    "inbox": "Inbox",
+    "intro": "Papers to and from courts, clients and other firms arrive here.",
+    "outbox": "Outbox",
+    "status": "Not switched on yet. It will work once your office is connected to Pleadli.",
+    "title": "Postbox"
   }
 }

@@ -1,5 +1,5 @@
 import { useHqConfig, usePermissions } from '@/features/session'
-import { useWorkspace } from '@/features/workspace/tabs-store'
+import { useWorkspace } from '@pleadli/shell'
 import { ApiError } from '@/lib/api'
 import { ArrowDown01Icon, ArrowLeft01Icon, ArrowUp01Icon, Delete02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'

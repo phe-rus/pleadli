@@ -7,6 +7,7 @@ import {
   LegalDocument01Icon,
   Search01Icon,
   Settings01Icon,
+  Mail01Icon,
   Task01Icon,
   UserGroupIcon,
   Analytics01Icon,
@@ -66,6 +67,7 @@ export const dppNav: readonly NavItem[] = [
   { label: m["nav.item.police_stations"], icon: NetworkIcon, to: '/connections', section: 'office' },
   { label: m["nav.item.workload"], icon: Analytics01Icon, to: '/capacity', section: 'office' },
   { label: m["nav.item.statistics"], icon: ChartBarLineIcon, to: '/reports', section: 'office' },
+  { label: m["nav.item.postbox"], icon: Mail01Icon, to: '/postbox', section: 'office' },
 
   { label: m["nav.item.cases"], icon: KanbanIcon, to: '/cases' },
   { label: m["nav.item.search"], icon: Search01Icon, to: '/search' },

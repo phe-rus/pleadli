@@ -5,7 +5,7 @@ import { Card } from '@pleadli/ui/card'
 import { Separator } from '@pleadli/ui/separator'
 import { type CapabilityNote, productBySlug, getProducts, getReadinessLabel } from '@/data/products'
 import {
-  ArrowRight02Icon,
+  Download01Icon,
   CheckmarkCircle02Icon,
   CircleIcon,
   MinusSignCircleIcon,
@@ -14,10 +14,14 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import * as m from '@/paraglide/messages'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { getReleases } from '@/functions/releases.func'
-import { cn } from 'cn'
+import { cn } from '@pleadli/ui/lib/utils'
+import { MorphWindow } from '@/components/morph-window'
 import { ProductPreview } from '@/components/product-preview'
+import { Reveal } from '@/components/reveal'
 import { productPresentation } from '@/data/product-presentation'
 import { DownloadActions } from '@/components/download-actions'
+
+const wrap = 'container w-full md:max-w-6xl'
 
 export const Route = createFileRoute('/_public/products/$slug')({
   loader: async ({ params }) => {
@@ -40,7 +44,10 @@ export const Route = createFileRoute('/_public/products/$slug')({
 function CapabilityRow({ label, note }: { label: string; note: CapabilityNote }) {
   const icon = note.state === true ? CheckmarkCircle02Icon : note.state === 'partial' ? MinusSignCircleIcon : CircleIcon
   return (
-    <div className="flex flex-col gap-1.5 border-b border-border/60 py-4 last:border-0">
+    <div className={cn(
+      'flex flex-col gap-1.5 border-b border-border/60 py-4',
+      'last:border-0',
+    )}>
       <div className="flex items-center gap-2">
         <HugeiconsIcon
           icon={icon}
@@ -65,39 +72,71 @@ function RouteComponent() {
   const { slug, availability } = Route.useLoaderData()
   const product = productBySlug(slug)!
   const story = productPresentation(slug)
+  const hasScreens = true
 
   return (
-    <article className="container flex w-full flex-col gap-5 md:max-w-5xl">
-      <section className="flex flex-col items-center gap-5 py-16 text-center md:py-24">
-        <div className="flex items-center gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <HugeiconsIcon icon={product.icon} className="size-6!" />
+    <article className="flex flex-col">
+      <div className="flow-root bg-muted/60">
+        <section className={cn(wrap, 'pt-12 md:pt-16')}>
+          <Reveal immediate className="flex max-w-4xl flex-col items-start gap-5">
+            <div className="flex items-center gap-3">
+              <span className="grid size-11 place-items-center rounded-xl border border-border/60 bg-background text-primary-ink">
+                <HugeiconsIcon icon={product.icon} className="size-6!" />
+              </span>
+              <Badge variant={product.readiness === 'building' ? 'default' : 'secondary'}>{getReadinessLabel()[product.readiness]}</Badge>
+            </div>
+            <h1 className="text-4xl! font-semibold tracking-tight md:text-5xl!">{product.name}</h1>
+            <p className="text-2xl! font-normal leading-snug! tracking-tight md:text-3xl!">
+              <span className="font-medium text-primary-ink">{story.title}</span> {story.lead}
+            </p>
+            <p className="text-sm text-muted-foreground">{product.institution}</p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Button size="lg" className="rounded-md px-5" nativeButton={false} render={<a href="#download" />}>
+                <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
+                {m['product.download_title']({ name: product.name })}
+              </Button>
+              <Button size="lg" variant="ghost" className="rounded-md" nativeButton={false} render={<Link to="/roadmap" />}>
+                {m['product.see_roadmap']()}
+              </Button>
+            </div>
+          </Reveal>
+        </section>
+        <Reveal immediate className={cn(wrap, 'relative z-10 mt-10 -mb-24 md:-mb-40')}>
+          <div className="mx-auto max-w-4xl">
+            {hasScreens ? (
+              <ProductPreview product={product} />
+            ) : (
+              <figure className="flex flex-col gap-5">
+                <MorphWindow product={product} />
+                <figcaption className="mx-auto max-w-xl text-center text-xs leading-relaxed text-muted-foreground">{m['product.mockup_note']()}</figcaption>
+              </figure>
+            )}
           </div>
-          <Badge variant={product.readiness === 'building' ? 'default' : 'secondary'}>
-            {getReadinessLabel()[product.readiness]}
-          </Badge>
-        </div>
-        <div>
-          <h1 className="text-3xl md:max-w-2xl md:text-5xl!">{product.name}</h1>
-          <p className="mx-auto mt-4 max-w-3xl text-3xl! font-semibold tracking-tight md:text-5xl!">{story.title}</p>
-          <p className="mx-auto mt-5 max-w-xl text-base! text-muted-foreground">{story.lead}</p>
-        </div>
-        <p className="text-sm text-muted-foreground">{product.institution}</p>
-      </section>
+        </Reveal>
+      </div>
 
-      <div className={`product-showcase product-tone-${slug} rounded-3xl p-4 sm:p-10`}><ProductPreview product={product} /></div>
-
-      <section className="grid gap-6 py-16 md:grid-cols-3">
-        {product.homePoints.map((point, index) => <div key={point} className="rounded-3xl bg-muted/40 p-7"><span className="text-sm font-medium text-primary">0{index + 1}</span><p className="mt-4 text-lg! font-medium leading-relaxed">{point}</p></div>)}
+      <div className={cn(wrap, 'flex flex-col gap-5 pt-32 md:pt-56')}>
+        <section className="grid divide-y divide-border/60 border-y border-border/60 md:grid-cols-3 md:divide-x md:divide-y-0">
+          {product.homePoints.map((point, index) => (
+            <Reveal key={point} delay={index * 0.06} className="flex flex-col gap-3 py-8 md:px-8 md:first:pl-0 md:last:pr-0">
+              <span className="text-sm font-semibold text-primary-ink">0{index + 1}</span>
+              <p className="text-lg! font-medium leading-snug!">{point}</p>
+            </Reveal>
+          ))}
+        </section>
+      <section className="pt-16 md:pt-24">
+        <h2 className="text-3xl! font-bold tracking-tight md:text-4xl!">{m['preview.details']()}</h2>
       </section>
-      <details className="rounded-3xl border border-border/60 px-6 py-5 sm:px-10">
-        <summary className="cursor-pointer text-base font-medium">{m['preview.details']()}</summary>
+      <div className="flex flex-col divide-y divide-border/60">
       <section className="flex flex-col gap-3 py-10">
         <h2 className="text-xl!">{m["product.problem"]()}</h2>
         <p className="md:max-w-2xl">{product.problem}</p>
       </section>
 
-      <section className="flex flex-col gap-3 rounded-lg border border-primary/20 bg-primary/5 p-5 md:p-6">
+      <section className={cn(
+        'flex flex-col gap-3 rounded-lg border border-primary/20',
+        'bg-primary/5 p-5 md:p-6',
+      )}>
         <h2 className="text-sm! font-medium tracking-wide text-primary uppercase">{m["product.in_use"]()}</h2>
         <p className="md:max-w-2xl">{product.usage}</p>
       </section>
@@ -137,7 +176,10 @@ function RouteComponent() {
           {product.workflows.map((workflow, index) => (
             <div key={workflow.title} className="relative flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                <span className={cn(
+                  'flex size-6 shrink-0 items-center justify-center rounded-full',
+                  'bg-primary/10 text-xs font-semibold text-primary',
+                )}>
                   {index + 1}
                 </span>
                 {index < product.workflows.length - 1 && (
@@ -155,7 +197,10 @@ function RouteComponent() {
         <h2 className="text-xl!">{m["product.features"]()}</h2>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {product.features.map((feature) => (
-            <div key={feature} className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+            <div key={feature} className={cn(
+              'flex items-start gap-2 rounded-lg border p-3',
+              'text-sm',
+            )}>
               <HugeiconsIcon icon={CheckmarkCircle02Icon} className="mt-0.5 size-4! shrink-0 text-primary" />
               {feature}
             </div>
@@ -185,7 +230,10 @@ function RouteComponent() {
         </div>
         <ul className="flex flex-col gap-2">
           {product.notYetBuilt.map((item) => (
-            <li key={item} className="flex items-start gap-2 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+            <li key={item} className={cn(
+              'flex items-start gap-2 rounded-lg border border-dashed',
+              'p-3 text-sm text-muted-foreground',
+            )}>
               <HugeiconsIcon icon={CircleIcon} className="mt-0.5 size-3.5! shrink-0 text-muted-foreground/50" />
               {item}
             </li>
@@ -198,42 +246,32 @@ function RouteComponent() {
         <p className="md:max-w-2xl text-muted-foreground">{product.interchange}</p>
       </section>
 
-      </details>
+      </div>
 
-      <section className="flex flex-col items-start gap-4 py-16 md:py-20">
-        <div className="flex flex-col md:max-w-md">
-          <h2 className="text-2xl!">{m["product.download_title"]({ name: product.name })}</h2>
-          <p>
-            {product.download.platforms.join(m["product.and"]())}. {product.download.state}
+      <section id="download" className="flex scroll-mt-24 flex-col items-start gap-5 py-16 md:py-24">
+        <div className="flex max-w-xl flex-col gap-3">
+          <h2 className="text-3xl! font-bold tracking-tight">{m['product.download_title']({ name: product.name })}</h2>
+          <p className="text-base! leading-relaxed text-muted-foreground">
+            {product.download.platforms.join(m['product.and']())}. {product.download.state}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <DownloadActions name={product.name} availability={availability} />
-          <Button size="lg" variant="outline" nativeButton={false} render={<Link to="/roadmap" />}>
-            {m["product.see_roadmap"]()}
-            <HugeiconsIcon icon={ArrowRight02Icon} data-icon="inline-end" />
-          </Button>
-        </div>
+        <DownloadActions name={product.name} availability={availability} align="start" />
       </section>
 
-      <section className="flex flex-col gap-3 border-t border-border/60 py-10">
-        <h2 className="text-lg! text-muted-foreground">{m["product.others"]()}</h2>
-        <div className="flex flex-wrap gap-2">
+      <section className="flex flex-col gap-4 border-t border-border/60 py-10">
+        <h2 className="text-base! font-medium text-muted-foreground">{m['product.others']()}</h2>
+        <div className="flex flex-wrap gap-x-6 gap-y-3">
           {getProducts()
             .filter((p) => p.slug !== product.slug)
             .map((p) => (
-              <Link
-                key={p.slug}
-                to="/products/$slug"
-                params={{ slug: p.slug }}
-                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <HugeiconsIcon icon={p.icon} className="size-3.5!" />
+              <Link key={p.slug} to="/products/$slug" params={{ slug: p.slug }} className="inline-flex items-center gap-2 text-base font-medium text-primary-ink hover:underline">
+                <HugeiconsIcon icon={p.icon} className="size-4!" />
                 {p.name}
               </Link>
             ))}
         </div>
       </section>
+      </div>
     </article>
   )
 }

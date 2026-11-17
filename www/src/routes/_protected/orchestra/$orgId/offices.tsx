@@ -3,11 +3,12 @@ import { officeKindFor, officeKindLabel, officeKinds } from '@/data/orchestra'
 import { addOffice } from '@/functions/orchestra.func'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
-import { t } from '@pleadli/ui/goey-toaster'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Input } from '@pleadli/ui/input'
-import { createFileRoute, getRouteApi, useRouter } from '@tanstack/react-router'
+import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { useState } from 'react'
+import { cn } from '@pleadli/ui/lib/utils'
+import { useServerMutation } from '@/lib/use-server-mutation'
 
 export const Route = createFileRoute('/_protected/orchestra/$orgId/offices')({
   component: RouteComponent,
@@ -17,26 +18,21 @@ const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
 
 function RouteComponent() {
   const { institution, offices } = institutionRoute.useLoaderData()
-  const router = useRouter()
   const [name, setName] = useState('')
   const [kind, setKind] = useState(officeKindFor[institution.institutionType] ?? 'office')
   const [district, setDistrict] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const add = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setBusy(true)
-    try {
-      await addOffice({ data: { organizationId: institution.id, name, kind, district: district || undefined } })
-      t.success(m["orch.offices.added"]())
+  const addMutation = useServerMutation(addOffice, {
+    success: () => m["orch.offices.added"](),
+    onSuccess: () => {
       setName('')
       setDistrict('')
-      void router.invalidate()
-    } catch (e) {
-      t.error(m["orch.failed"](), { description: e instanceof Error ? e.message : undefined })
-    } finally {
-      setBusy(false)
-    }
+    },
+  })
+  const busy = addMutation.isPending
+
+  const add = (event: React.FormEvent) => {
+    event.preventDefault()
+    addMutation.mutate({ organizationId: institution.id, name, kind, district: district || undefined })
   }
 
   return (
@@ -52,7 +48,10 @@ function RouteComponent() {
         ))}
       </Group>
       {institution.kind === 'institution' && (
-        <form onSubmit={add} className="flex flex-col gap-3 rounded-2xl bg-card p-5 ring-1 ring-border/70">
+        <form onSubmit={add} className={cn(
+          'flex flex-col gap-3 rounded-2xl bg-card p-5',
+          'ring-1 ring-border/70',
+        )}>
           <h2 className="text-base! font-semibold">{m["orch.reg.add_office"]()}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_1fr]">
             <Input required minLength={2} placeholder={m["orch.reg.office_name"]()} value={name} onChange={(e) => setName(e.target.value)} />

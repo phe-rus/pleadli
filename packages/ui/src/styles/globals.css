@@ -5,10 +5,8 @@
 @import "./typeset.css";
 
 @custom-variant dark (&: is(.dark *));
-@source '../**/**/*.{tsx,ts}';
-@source '**/**/**/*.{tsx,ts}';
-@source '../components/**/*.{tsx,ts}';
-@source '../../../../apps/**/*.{tsx,ts}';
+/* The UI package and its sibling packages only. Each app declares its own source. */
+@source '../**/*.{tsx,ts}';
 @source '../../../*/src/**/*.{tsx,ts}';
 
 @utility container {
@@ -188,6 +186,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -231,6 +230,8 @@
 }
 
 :root {
+  /* Accent for text and icons on a page background: the accent pulled toward the ink so it keeps contrast. */
+  --primary-ink: color-mix(in oklch, var(--primary) 62%, black);
   --background: oklch(0.9904 0.0148 94.1935);
   --foreground: oklch(0.3214 0.0503 84.849);
   --card: oklch(0.9904 0.0148 94.1935);
@@ -303,6 +304,7 @@
 }
 
 .dark {
+  --primary-ink: color-mix(in oklch, var(--primary) 72%, white);
   --background: oklch(0.2094 0.0042 84.5894);
   --foreground: oklch(0.9605 0.0108 95.1644);
   --card: oklch(0.2485 0.008 84.5923);
@@ -367,11 +369,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    transition:
-      background-color 0.3s ease,
-      color 0.3s ease,
-      border-color 0.3s ease;
-    scrollbar-width: none;
+    scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
 
@@ -386,14 +384,6 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
-}
-
-body::-webkit-scrollbar {
-  @apply w-0 hidden;
-}
-
-div {
-  @apply no-scrollbar;
 }
 
 input[type="number"]::-webkit-outer-spin-button,

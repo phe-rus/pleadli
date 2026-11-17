@@ -3,7 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useLocation, useNavigate } from '@tanstack/react-router'
-import { useWorkspace } from '@/features/workspace/tabs-store'
+import { useWorkspace } from '@pleadli/shell'
 import { useUnreadCount } from './queries'
 import { m } from '@/paraglide/messages'
 
@@ -14,7 +14,7 @@ export function InboxBell() {
   const navigate = useNavigate()
   const active = useLocation({ select: (location) => location.pathname === '/inbox' })
   const { data: unread = 0 } = useUnreadCount()
-  const { setSidebarView, setLeftOpen } = useWorkspace()
+  const { setExtra, setLeftOpen } = useWorkspace()
   const label = unread > 0 ? `Inbox, ${unread} unread` : m.notifications_inbox()
 
   return (
@@ -26,7 +26,7 @@ export function InboxBell() {
       title={label}
       onClick={() => {
         // The message list opens in the sidebar, even if it was folded away.
-        setSidebarView('inbox')
+        setExtra('sidebarView', 'inbox')
         setLeftOpen(true)
         void navigate({ to: '/inbox' })
       }}
@@ -52,13 +52,13 @@ export function InboxBell() {
 export function InboxCount() {
   const navigate = useNavigate()
   const { data: unread = 0 } = useUnreadCount()
-  const { setSidebarView, setLeftOpen } = useWorkspace()
+  const { setExtra, setLeftOpen } = useWorkspace()
   if (unread === 0) return null
   return (
     <button
       type="button"
       onClick={() => {
-        setSidebarView('inbox')
+        setExtra('sidebarView', 'inbox')
         setLeftOpen(true)
         void navigate({ to: '/inbox' })
       }}

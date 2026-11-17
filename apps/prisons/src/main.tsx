@@ -1,12 +1,15 @@
-import { Loaders } from '@/components/loaders'
 import { RouteError } from '@/features/diagnostics'
 import { Queryprovider, queryContext } from '@/lib/query-context'
 import "@/routes/styles/globals.css"
+import { createRouteDefaults } from '@pleadli/shell'
+import { shellConfig } from '@/features/workspace/config'
 import { RouterProvider, createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import ReactDOM from 'react-dom/client'
 import { routeTree } from './routeTree.gen'
 import { startUpdateChecks } from '@/lib/updater'
+
+const routeDefaults = createRouteDefaults(shellConfig)
 
 const getRouter = () => {
     const queryClient = queryContext()
@@ -18,7 +21,7 @@ const getRouter = () => {
         scrollRestoration: true,
         defaultPreload: 'intent',
         defaultPreloadStaleTime: 0,
-        defaultPendingComponent: () => <Loaders />,
+        defaultPendingComponent: routeDefaults.defaultPendingComponent,
         defaultErrorComponent: RouteError,
         Wrap: ({ children }) => {
             return (

@@ -6,6 +6,7 @@ import { Input } from '@pleadli/ui/input'
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import * as z from 'zod'
+import { cn } from '@pleadli/ui/lib/utils'
 
 export const Route = createFileRoute('/_authentication/forgot-account')({
   component: RouteComponent,
@@ -37,7 +38,10 @@ function RouteComponent() {
   })
 
   return (
-    <article className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-4">
+    <article className={cn(
+      'mx-auto flex min-h-dvh max-w-sm flex-col justify-center',
+      'px-4',
+    )}>
       <h1 className="mb-1 text-2xl font-semibold">Reset password</h1>
       <p className="mb-6 text-sm text-muted-foreground">
         Enter your email and we'll send you a reset link.

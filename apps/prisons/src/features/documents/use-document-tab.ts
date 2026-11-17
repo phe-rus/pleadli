@@ -1,4 +1,4 @@
-import { useWorkspace } from '@/features/workspace/tabs-store'
+import { useWorkspace } from '@pleadli/shell'
 import { useEffect } from 'react'
 import { documentKindLabel, type DocumentKind } from './schema'
 

@@ -1,6 +1,7 @@
 @import "@pleadli/ui/globals.css";
 @import "@pleadli/ui/workspace.css";
-@source "../src/**/*.{tsx,ts}";
+@import "@pleadli/shell/shell.css";
+@source "../../**/*.{tsx,ts}";
 
 /* Prisons's own accent: a calm maroon, as restrained as Police's teal, and
    apart from the urgent red so a button never reads as a warning. Everything else about the look is @pleadli/ui/workspace.css. */

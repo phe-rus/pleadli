@@ -517,7 +517,8 @@
     "index": "Jalada",
     "details": "Maelezo",
     "case": "Kesi",
-    "activity": "Shughuli"
+    "activity": "Shughuli",
+    "people": "Watu"
   },
   "file_ws": {
     "a_count": "Kosa moja",
@@ -800,7 +801,8 @@
       "inbox": "Kikasha",
       "police_stations": "Vituo vya polisi",
       "workload": "Mzigo wa kazi",
-      "recent": "Za karibuni"
+      "recent": "Za karibuni",
+      "postbox": "Sanduku la posta"
     },
     "section": {
       "files": "Majalada",
@@ -2429,5 +2431,47 @@
       "restore_newer": "Nakala hii ilitengenezwa na Pleadli DPP mpya zaidi. Sasisha kwanza, kisha urejeshe.",
       "general": "Hilo halikufanikiwa. Jaribu tena."
     }
+  },
+  "shell": {
+    "right_panel": {
+      "title": "Kidirisha cha pembeni",
+      "empty": "Hakuna kitu hapa bado.",
+      "open": "Onyesha kidirisha cha pembeni",
+      "close": "Ficha kidirisha cha pembeni",
+      "lock": "Weka kidirisha wazi",
+      "unlock": "Ruhusu kidirisha kufungwa",
+      "resize": "Badilisha ukubwa wa kidirisha",
+      "widen": "Panua kidirisha",
+      "narrow": "Punguza kidirisha"
+    },
+    "error": {
+      "title": "Ukurasa haukufunguka",
+      "body": "Kuna tatizo lilitokea wakati wa kuufungua. Kazi yako iko salama. Jaribu tena.",
+      "retry": "Jaribu tena"
+    },
+    "record_tabs": {
+      "overview_label": "Muhtasari",
+      "overview_empty": "Muhtasari wa jalada hili utaonekana hapa.",
+      "overview_action": "Ongeza maelezo",
+      "papers_label": "Nyaraka",
+      "papers_empty": "Nyaraka zilizoambatishwa kwenye jalada hili zinakaa hapa.",
+      "papers_action": "Ongeza nyaraka",
+      "people_label": "Watu",
+      "people_empty": "Watu waliounganishwa na jalada hili wanakaa hapa.",
+      "people_action": "Ongeza mtu",
+      "history_label": "Historia",
+      "history_empty": "Kilichofanywa kwenye jalada hili, na lini, kinakaa hapa.",
+      "history_action": "Tazama shughuli"
+    },
+    "loading": "Inapakia"
+  },
+  "postbox": {
+    "empty_inbox": "Hakuna kilichofika bado.",
+    "empty_outbox": "Hakuna kinachosubiri kutumwa.",
+    "inbox": "Zilizopokelewa",
+    "intro": "Majalada, rufaa na maamuzi kwenda na kutoka polisi na mahakamani yanafika hapa.",
+    "outbox": "Za kutuma",
+    "status": "Bado haijawashwa. Itafanya kazi ofisi yako ikiunganishwa na Pleadli.",
+    "title": "Sanduku la posta"
   }
 }

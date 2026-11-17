@@ -4,48 +4,19 @@ import { listModels } from './data'
 import { api } from '@/lib/api'
 import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
-import { AlertCircleIcon, ArrowUp02Icon, Cancel01Icon, Delete02Icon, SparklesIcon } from '@hugeicons/core-free-icons'
+import { AlertCircleIcon, ArrowUp02Icon, Delete02Icon, SparklesIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { EventType, type StreamChunk } from '@tanstack/ai'
 import { stream, useChat } from '@tanstack/ai-react'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link, useLocation } from '@tanstack/react-router'
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as z from 'zod'
 import { assistContext } from './context'
 import { useAssistSettings } from './queries'
 import { documentOptions } from '@/features/documents/queries'
 import { useQuery } from '@tanstack/react-query'
-
-// ---------------------------------------------------------------- open or closed, everywhere
-
-const KEY = 'pleadli:dpp:assist-open'
-const listeners = new Set<() => void>()
-function readOpen() {
-  try {
-    return localStorage.getItem(KEY) === '1'
-  } catch {
-    return false
-  }
-}
-let open = readOpen()
-export function setAssistOpen(next: boolean | ((was: boolean) => boolean)) {
-  open = typeof next === 'function' ? next(open) : next
-  try {
-    localStorage.setItem(KEY, open ? '1' : '0')
-  } catch {}
-  listeners.forEach((l) => l())
-}
-export function useAssistOpen() {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l)
-      return () => listeners.delete(l)
-    },
-    () => open,
-  )
-}
 
 // ---------------------------------------------------------------- where the prosecutor is
 
@@ -245,41 +216,44 @@ function ModelPicker({ provider }: { provider: string }) {
   )
 }
 
-/** Assist, docked on the right of every screen, opened from the ribbon. It
- * knows where the prosecutor is: on a file it reads that file (with the law
- * and the office's history); elsewhere it answers about the office and the
- * platform. The conversation starts fresh for each file. */
-export function AssistDock() {
-  const isOpen = useAssistOpen()
+/** What Assist says on the left of the side panel header: its name, and whether
+ * it is on a file or on the office. */
+export function AssistHeader() {
+  const { fileId } = usePlace()
+  return (
+    <h2 className="flex shrink-0 items-center gap-2 text-base">
+      <HugeiconsIcon icon={SparklesIcon} className="size-5 text-primary" />
+      {m["assist.title"]()}
+      <span className="text-xs font-normal text-muted-foreground">{fileId ? m["assist.dock.on_file"]() : m["assist.dock.on_office"]()}</span>
+    </h2>
+  )
+}
+
+/** Assist, in the side panel of every screen. It knows where the prosecutor is:
+ * on a file it reads that file (with the law and the office's history);
+ * elsewhere it answers about the office and the platform. The conversation
+ * starts fresh for each file. */
+export function AssistSidePanel() {
   const { fileId, place } = usePlace()
   const { data: settings } = useAssistSettings()
-  if (!isOpen) return null
   return (
-    <aside aria-label={m["assist.title"]()} className="flex w-[24rem] shrink-0 flex-col gap-3 border-l border-border/40 bg-background p-3 print:hidden">
-      <header className="flex items-center justify-between gap-2">
-        <h2 className="flex shrink-0 items-center gap-2 text-base">
-          <HugeiconsIcon icon={SparklesIcon} className="size-5 text-primary" />
-          {m["assist.title"]()}
-          <span className="text-xs font-normal text-muted-foreground">{fileId ? m["assist.dock.on_file"]() : m["assist.dock.on_office"]()}</span>
-        </h2>
-        <div className="flex min-w-0 items-center gap-1">
-          {settings?.ready && <ModelPicker provider={settings.provider} />}
-          <Button size="icon-sm" variant="ghost" onClick={() => setAssistOpen(false)} aria-label={m["board.close"]()}>
-            <HugeiconsIcon icon={Cancel01Icon} />
-          </Button>
+    <div className="flex h-full flex-col gap-3 p-3">
+      {settings?.ready && (
+        <div className="flex justify-end">
+          <ModelPicker provider={settings.provider} />
         </div>
-      </header>
+      )}
       {!settings?.ready ? (
         <div className="flex flex-col gap-3 rounded-2xl bg-secondary/50 p-4">
           <strong>{m["assist.off_title"]()}</strong>
           <p className="text-muted-foreground">{m["assist.off_body"]()}</p>
-          <Link to="/settings/$section" params={{ section: 'assist' }} className="w-fit">
+          <Link to="/settings/$section" params={{ section: "assist" }} className="w-fit">
             {m["assist.open_settings"]()}
           </Link>
         </div>
       ) : (
-        <Conversation key={fileId ?? 'office'} fileId={fileId} place={place} />
+        <Conversation key={fileId ?? "office"} fileId={fileId} place={place} />
       )}
-    </aside>
+    </div>
   )
 }

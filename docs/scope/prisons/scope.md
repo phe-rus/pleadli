@@ -254,5 +254,29 @@ Real, evidenced adoption factors from `docs/prisons/research/findings.md` §12, 
 - **Extend the sync network to the other 8 domains** (Visits, Requests, Court Productions, Releases, Transfers, Health Events, Property, Programmes): feature 22's v1 syncs only the core Prisoner record; the same pattern repeats for the rest once it is proven in the field · from spec [prisons/0001](../../specs/prisons/0001-head-office-peer-sync-network/index.md), blocks nothing about feature 22 shipping
 - **"Torrent like," version aware incremental sync**: feature 22's v1 is a deliberately simple full snapshot push every time; the engineer named a version aware, partial update model as the real long term direction once full snapshot sync has run long enough to show where it strains · from spec [prisons/0001](../../specs/prisons/0001-head-office-peer-sync-network/index.md)
 
+## Shape gaps
+
+From the app shape audit of 2026-11-17 (`docs/platform/APP-SHAPE-AUDIT.md`, spec 0003). Score 61% against 36 rules checked. In priority order. A rule can be broken on purpose only by writing a line `**Deviation:** <rule id>, <reason>` here.
+
+1. [ ] NT1 (Partial): No developer tools in release builds: F12, Ctrl Shift I and Inspect are off.
+2. [ ] SH7 (Missing): A status bar sits at the foot of the page. Fixed by feature 26 (shared shell).
+3. [ ] SH9 (Missing): The tab strip, tabs store, header, quick add, licence bar and status bar come from `@pleadli/shell`, not a copy. Fixed by feature 26 (shared shell).
+4. [ ] PG9 (Missing): Loading shows a calm placeholder shaped like the content, not a bare spinner. Fixed by feature 26 (shared shell).
+5. [ ] CF1 (Missing): No text smaller than 11px.
+6. [ ] CF3 (Missing): Content text takes its size and weight from the global type, not inline sizes.
+7. [ ] CF5 (Missing): Icon only buttons carry a label for screen readers and a hover title.
+8. [ ] TK4 (Missing): Phone, tablet and desktop breakpoints are defined once, in the shell package. Fixed by feature 26 (shared shell).
+9. [ ] MO1 (Missing): Page, tab, panel and hover motion are named values in one shared place. Fixed by feature 26 (shared shell).
+10. [ ] NT5 (Missing): Ctrl T opens a new tab and Ctrl S saves. Fixed by feature 26 (shared shell).
+11. [ ] PG1 (Partial): Lists use the shared table and no hand built tables.
+12. [ ] PG2 (Partial): Record pages show the tabs Overview, Papers, People, History first, in that order. Fixed by feature 26 (shared shell).
+13. [ ] PG4 (Partial): Settings has these sections in order: Profile and sign in, Language and appearance, Backup, Licence, Connections, Setup. Fixed by feature 27 (settings, brand, onboarding).
+14. [ ] PG6 (Partial): First run steps in order: Language, Who is this office, First person and sign in, Backup choice, Recovery option. Fixed by feature 27 (settings, brand, onboarding).
+15. [ ] PG7 (Partial): Empty states use the shared pattern: what this place is for, and one button.
+16. [ ] PL2 (Partial): English, Swahili and French are all complete.
+17. [ ] NT2 (Partial): No browser page behaviours: Ctrl wheel zoom, F5 reload, pull to refresh, dragging links and images.
+18. [ ] NT3 (Partial): Chrome is not selectable, content is.
+19. [ ] NT4 (Partial): Right click on a record, row or tab shows the app menu. Text fields show the native menu. The browser menu never shows.
+
 ## Legend
 See `docs/scope/index.md` for the shared legend.

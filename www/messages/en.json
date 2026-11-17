@@ -351,6 +351,8 @@
     },
     "made_lead": "Not a system imported from elsewhere. Pleadli starts from the forms, the languages and the conditions of the offices that will use it.",
     "made_title": "Made for how East Africa works",
+    "open_lead": "The roadmap is public: what is built, what is being built now, and what is still to come.",
+    "open_title": "Open about where we are.",
     "partners": {
       "oversight": "Commanders and ministries see figures, delays and who is held too long, while case files stay with the office that owns them.",
       "oversight_title": "Oversight without opening files",
@@ -688,6 +690,13 @@
     "next": "Next screenshot",
     "pause": "Pause screenshot tour",
     "play": "Play screenshot tour",
+    "previous": "Previous screenshot",
+    "today": "Today",
+    "incidents": "Incidents",
+    "file": "The file cover",
+    "stages": "Case stages",
+    "register": "Criminal register",
+    "remand": "Case and remand tracker",
     "real_note": "Explore a development version with fictional records. Available downloads may differ."
   },
   "pricing": {

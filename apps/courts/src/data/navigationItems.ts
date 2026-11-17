@@ -9,6 +9,7 @@ import {
   Settings01Icon,
   Task01Icon,
   Files01Icon,
+  Mail01Icon,
 } from '@hugeicons/core-free-icons'
 
 export type NavIcon = typeof DashboardBrowsingIcon
@@ -55,6 +56,7 @@ export const courtsNav: readonly NavItem[] = [
 
   { label: 'Library', icon: BookOpen01Icon, to: '/library', section: 'reference' },
 
+  { label: 'Postbox', icon: Mail01Icon, to: '/postbox', section: 'office' },
   { label: 'Returns', icon: ChartBarLineIcon, to: '/reports', section: 'office' },
   { label: 'Settings', icon: Settings01Icon, to: '/settings', section: 'office' },
 ] as const

@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { defineRelationsPart, sql } from "drizzle-orm";
 import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
@@ -153,56 +153,80 @@ export const entitlement = sqliteTable("entitlement", {
   enabled: integer("enabled", { mode: "boolean" }).default(true).notNull(),
 });
 
-export const userRelations = relations(user, ({ many }) => ({
-  sessions: many(session),
-  accounts: many(account),
-  memberships: many(membership),
-}));
-
-export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, {
-    fields: [session.userId],
-    references: [user.id],
-  }),
-}));
-
-export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, {
-    fields: [account.userId],
-    references: [user.id],
-  }),
-}));
-
-export const organizationRelations = relations(organization, ({ many }) => ({
-  organizationUnits: many(organizationUnit),
-  entitlements: many(entitlement),
-}));
-
-export const organizationUnitRelations = relations(
-  organizationUnit,
-  ({ one, many }) => ({
-    organization: one(organization, {
-      fields: [organizationUnit.organizationId],
-      references: [organization.id],
-    }),
-    memberships: many(membership),
+export const authRelations = defineRelationsPart(
+  {
+    user,
+    session,
+    account,
+    verification,
+    institutionTemplate,
+    organization,
+    organizationUnit,
+    membership,
+    entitlement,
+  },
+  (r) => ({
+    user: {
+      sessions: r.many.session({
+        from: r.user.id,
+        to: r.session.userId,
+      }),
+      accounts: r.many.account({
+        from: r.user.id,
+        to: r.account.userId,
+      }),
+      memberships: r.many.membership({
+        from: r.user.id,
+        to: r.membership.userId,
+      }),
+    },
+    session: {
+      user: r.one.user({
+        from: r.session.userId,
+        to: r.user.id,
+      }),
+    },
+    account: {
+      user: r.one.user({
+        from: r.account.userId,
+        to: r.user.id,
+      }),
+    },
+    organization: {
+      organizationUnits: r.many.organizationUnit({
+        from: r.organization.id,
+        to: r.organizationUnit.organizationId,
+      }),
+      entitlements: r.many.entitlement({
+        from: r.organization.id,
+        to: r.entitlement.organizationId,
+      }),
+    },
+    organizationUnit: {
+      organization: r.one.organization({
+        from: r.organizationUnit.organizationId,
+        to: r.organization.id,
+      }),
+      memberships: r.many.membership({
+        from: r.organizationUnit.id,
+        to: r.membership.organizationUnitId,
+      }),
+    },
+    membership: {
+      user: r.one.user({
+        from: r.membership.userId,
+        to: r.user.id,
+      }),
+      organizationUnit: r.one.organizationUnit({
+        from: r.membership.organizationUnitId,
+        to: r.organizationUnit.id,
+      }),
+    },
+    entitlement: {
+      organization: r.one.organization({
+        from: r.entitlement.organizationId,
+        to: r.organization.id,
+      }),
+    },
   }),
 );
-
-export const membershipRelations = relations(membership, ({ one }) => ({
-  user: one(user, {
-    fields: [membership.userId],
-    references: [user.id],
-  }),
-  organizationUnit: one(organizationUnit, {
-    fields: [membership.organizationUnitId],
-    references: [organizationUnit.id],
-  }),
-}));
-
-export const entitlementRelations = relations(entitlement, ({ one }) => ({
-  organization: one(organization, {
-    fields: [entitlement.organizationId],
-    references: [organization.id],
-  }),
-}));

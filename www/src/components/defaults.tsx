@@ -1,9 +1,13 @@
 import { Button } from '@pleadli/ui/button'
 import type { ErrorComponentProps } from '@tanstack/react-router'
+import { cn } from '@pleadli/ui/lib/utils'
 
 export function DefaultBoundary({ error, reset }: ErrorComponentProps) {
   return (
-    <main className="container mx-auto flex flex-col gap-3 p-8 pt-20">
+    <main className={cn(
+      'container mx-auto flex flex-col gap-3 p-8',
+      'pt-20',
+    )}>
       <h1 className="text-2xl font-semibold">Something went wrong</h1>
       <p className="text-sm text-muted-foreground">{error instanceof Error ? error.message : 'Unexpected error.'}</p>
       <Button size="sm" className="w-fit" onClick={reset}>

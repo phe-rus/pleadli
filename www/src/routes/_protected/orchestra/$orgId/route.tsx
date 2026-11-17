@@ -4,6 +4,7 @@ import * as m from '@/paraglide/messages'
 import { Building03Icon, ComputerIcon, DashboardBrowsingIcon, DatabaseIcon, HelpCircleIcon, Key01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import { Dashboard } from '@pleadli/ui/sidebar'
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
+import { cn } from '@pleadli/ui/lib/utils'
 
 export const Route = createFileRoute('/_protected/orchestra/$orgId')({
   loader: ({ params }) => getInstitution({ data: { organizationId: params.orgId } }),
@@ -31,18 +32,27 @@ function RouteComponent() {
       addOns={{
         enableNavigation: true,
         identity: (
-          <span className="inline-flex max-w-full truncate rounded-full bg-foreground/[0.06] px-2.5 py-0.5 font-mono text-[0.7rem] text-muted-foreground">
+          <span className={cn(
+            'inline-flex max-w-full truncate rounded-full bg-foreground/[0.06] px-2.5',
+            'py-0.5 font-mono text-[0.7rem] text-muted-foreground',
+          )}>
             {institution.address ?? m["orch.status.pending_title"]()}
           </span>
         ),
         footer: (
           <div className="flex flex-col gap-0.5 border-t border-border/60 pt-3">
-            <Link to="/" className="rounded-lg px-2 py-1.5 text-[0.8125rem] text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground">
+            <Link to="/" className={cn(
+              'rounded-lg px-2 py-1.5 text-[0.8125rem] text-muted-foreground hover:bg-foreground/[0.05]',
+              'hover:text-foreground',
+            )}>
               {m["orch.website"]()}
             </Link>
             <button
               type="button"
-              className="cursor-pointer rounded-lg px-2 py-1.5 text-start text-[0.8125rem] text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground"
+              className={cn(
+                'cursor-pointer rounded-lg px-2 py-1.5 text-start text-[0.8125rem]',
+                'text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground',
+              )}
               onClick={() => authClient.signOut({ fetchOptions: { onSuccess: () => { window.location.href = '/' } } })}
             >
               {m["orch.sign_out"]()}

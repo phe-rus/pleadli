@@ -21,6 +21,7 @@ use super::time::{eat_hour, now_ms};
 #[derive(Debug)]
 pub enum ReleaseError {
     Db(sqlx::Error),
+    InvalidReleaseType,
     NotInCustody,
     GatesUnmet(Vec<GateCheck>),
     ExceptionNeedsAuthority,
@@ -37,6 +38,7 @@ impl std::fmt::Display for ReleaseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ReleaseError::Db(err) => write!(f, "{err}"),
+            ReleaseError::InvalidReleaseType => write!(f, "Choose one of the listed release types."),
             ReleaseError::NotInCustody => write!(f, "This person is not in custody here, so there is no one to discharge."),
             ReleaseError::GatesUnmet(gates) => {
                 let unmet: Vec<&str> = gates.iter().filter(|g| g.blocking && !g.met).map(|g| g.label.as_str()).collect();
@@ -196,12 +198,28 @@ pub struct CreateReleaseInput {
     pub exception: Option<ExceptionRequest>,
 }
 
+/// The release types the form offers (apps/prisons/src/features/releases/schema.ts).
+/// Anything else is refused before any custody change, because an unknown value
+/// would otherwise discharge the prisoner (status_for_release treats it as released).
+pub const RELEASE_TYPES: [&str; 7] = [
+    "bail",
+    "full_remission",
+    "partial_remission",
+    "parole",
+    "release_on_licence",
+    "acquittal",
+    "erroneous_release_correction",
+];
+
 pub async fn create_release(
     conn: &mut SqliteConnection,
     actor: &Actor,
     input: CreateReleaseInput,
     authoriser: Option<Authoriser>,
 ) -> Result<Release, ReleaseError> {
+    if !RELEASE_TYPES.contains(&input.release_type.as_str()) {
+        return Err(ReleaseError::InvalidReleaseType);
+    }
     let correction = input.release_type == "erroneous_release_correction";
     let assessment = assess(conn, &input.prisoner_id).await?;
 

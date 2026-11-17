@@ -3,12 +3,12 @@
 //! and every change is audited.
 //!
 //! * `badge_only` an account may be marked as signing in with its badge
-//!   alone. The default for a new facility: the first account is created
-//!   that way. Refused on Head Office, refused while this machine serves LAN
+//!   alone. The default for a new facility, but never an administrator, who
+//!   always needs a password (so the first account has one). Refused on Head Office, refused while this machine serves LAN
 //!   workstations, and never honoured for a workstation sign-in. Anyone may
 //!   still be given a password, and then it is asked for.
 //! * `password`   every account needs a password
-//! * `pin`        non-administrators may use a 4 to 8 digit PIN instead
+//! * `pin`        anyone, administrators included, may use a 4 to 8 digit passcode instead
 //!
 //! Head Office always uses a secret; its first account starts on the default
 //! passcode, `officers::HEAD_OFFICE_DEFAULT_PASSCODE`.
@@ -51,11 +51,17 @@ pub async fn get_conn(conn: &mut SqliteConnection) -> Result<AuthPolicy, sqlx::E
 }
 
 impl AuthPolicy {
-    /// May this account use a PIN in place of a password?
-    pub fn allows_pin(&self, is_admin: bool) -> bool {
-        self.mode == "pin" && !is_admin
+    /// May an account use a short passcode (4 to 8 digits) in place of a password?
+    /// Everyone may, administrators included, while the facility is on `pin`.
+    /// What keeps a short secret safe is the lockout after five wrong tries and
+    /// the encrypted database, not its length. An administrator still needs a
+    /// real password to sign in from a LAN workstation (see `check_credentials`).
+    pub fn allows_pin(&self) -> bool {
+        self.mode == "pin"
     }
 
+    /// Badge alone, no secret: a facility's default. Protection is something it
+    /// turns on, so administrators may be open too. Never on Head Office.
     pub fn allows_passwordless(&self, _is_admin: bool, head_office: bool) -> bool {
         self.mode == "badge_only" && !head_office
     }

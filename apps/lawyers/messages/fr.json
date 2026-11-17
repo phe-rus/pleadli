@@ -1057,7 +1057,14 @@
     "reopen_failed": "Le dossier n'a pas pu être rouvert",
     "reopened": "Dossier rouvert",
     "sections": "Sections du dossier",
+    "rt": {
+      "empty_history": "Rien n'a encore été fait sur ce dossier. Chaque action sera listée ici.",
+      "empty_overview": "Rien n'est encore enregistré dans ce dossier.",
+      "empty_papers": "Aucune pièce pour ce dossier. Les projets, dépôts et fichiers ajoutés apparaîtront ici.",
+      "empty_people": "Aucune partie ajoutée. Ajoutez ici la partie adverse, les témoins et la juridiction."
+    },
     "seg": {
+      "people": "Parties",
       "activity": "Historique du dossier",
       "matter": "Le dossier",
       "money": "Comptes et temps",
@@ -1113,7 +1120,8 @@
     },
     "tasks": "Rappels",
     "time": "Feuilles de temps",
-    "today": "Aujourd'hui"
+    "today": "Aujourd'hui",
+    "postbox": "Boîte postale"
   },
   "network": {
     "address": "Adresse",
@@ -1924,8 +1932,8 @@
     "none": "Aucun temps saisi sur cette période.",
     "period": {
       "30": "30 jours",
-      "365": "Un an",
-      "90": "90 jours"
+      "90": "90 jours",
+      "365": "Un an"
     },
     "period_label": "Période",
     "recorded": "Temps saisi"
@@ -2260,5 +2268,58 @@
       "restore_newer": "Cette sauvegarde vient d'une version plus récente de Pleadli Lawyers. Mettez à jour d'abord, puis restaurez.",
       "general": "Cela n'a pas fonctionné. Réessayez."
     }
+  },
+  "shell": {
+    "right_panel": {
+      "title": "Panneau latéral",
+      "empty": "Rien ici pour le moment.",
+      "open": "Afficher le panneau latéral",
+      "close": "Masquer le panneau latéral",
+      "lock": "Garder le panneau ouvert",
+      "unlock": "Laisser le panneau se fermer",
+      "resize": "Redimensionner le panneau",
+      "widen": "Élargir le panneau",
+      "narrow": "Rétrécir le panneau"
+    },
+    "tabs": {
+      "open_tabs": "Onglets ouverts",
+      "pin": "Épingler",
+      "unpin": "Désépingler",
+      "pin_named": "Épingler {title}",
+      "unpin_named": "Désépingler {title}",
+      "close_named": "Fermer {title}",
+      "close_with": "Fermer ({key})",
+      "previous_with": "Onglet précédent ({key})",
+      "next_with": "Onglet suivant ({key})"
+    },
+    "loading": "Chargement",
+    "error": {
+      "title": "Cette page ne s'est pas chargée",
+      "body": "Un problème est survenu à l'ouverture. Votre travail est en sécurité. Réessayez.",
+      "retry": "Réessayer"
+    },
+    "record_tabs": {
+      "overview_label": "Aperçu",
+      "overview_empty": "Le résumé de cette affaire apparaîtra ici.",
+      "overview_action": "Ajouter des détails",
+      "papers_label": "Documents",
+      "papers_empty": "Les documents rattachés à cette affaire se trouvent ici.",
+      "papers_action": "Ajouter un document",
+      "people_label": "Personnes",
+      "people_empty": "Les personnes liées à cette affaire se trouvent ici.",
+      "people_action": "Ajouter une personne",
+      "history_label": "Historique",
+      "history_empty": "Ce qui a été fait sur cette affaire, et quand, se trouve ici.",
+      "history_action": "Voir l'activité"
+    }
+  },
+  "postbox": {
+    "empty_inbox": "Rien n'est encore arrivé.",
+    "empty_outbox": "Rien n'attend d'être envoyé.",
+    "inbox": "Réception",
+    "intro": "Les pièces échangées avec les tribunaux, les clients et les autres cabinets arrivent ici.",
+    "outbox": "Envoi",
+    "status": "Pas encore activée. Elle fonctionnera dès que votre bureau sera relié à Pleadli.",
+    "title": "Boîte postale"
   }
 }

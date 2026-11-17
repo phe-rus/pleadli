@@ -1,0 +1,19 @@
+/* workspace.css makes the page a fixed, transparent frame for the native app
+   windows. The website scrolls like a normal page and paints its own background. */
+@media screen {
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    overflow-x: clip;
+    overscroll-behavior: auto;
+    background: var(--background);
+  }
+}
+
+/* The pinned story needs scroll-linked motion. For visitors who ask for less, show the
+   plain stack at every width instead. */
+@media (prefers-reduced-motion: reduce) {
+  .story-pinned { display: none !important; }
+  .story-stacked { display: block !important; }
+}

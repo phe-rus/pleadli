@@ -2,8 +2,9 @@ import { useState } from 'react'
 import * as m from '@/paraglide/messages'
 import { getLocale, locales, setLocale, type Locale } from '@/paraglide/runtime'
 import { Popover, PopoverContent, PopoverTrigger } from '@pleadli/ui/popover'
-import { LanguageSkillIcon } from '@hugeicons/core-free-icons'
+import { ArrowDown01Icon, LanguageSkillIcon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { cn } from '@pleadli/ui/lib/utils'
 
 const names: Record<Locale, string> = { en: 'English', sw: 'Kiswahili', fr: 'Français' }
 
@@ -11,16 +12,42 @@ const names: Record<Locale, string> = { en: 'English', sw: 'Kiswahili', fr: 'Fra
 export function LanguageSwitch({ className }: { className?: string }) {
   const [open, setOpen] = useState(false)
   const locale = getLocale()
-  return <Popover open={open} onOpenChange={setOpen}>
-    <PopoverTrigger render={<button type="button" aria-label={m['nav.language']()} className={className ?? 'flex h-9 items-center gap-2 rounded-full px-3 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'} />}>
-      <HugeiconsIcon icon={LanguageSkillIcon} className="size-4!" />
-      <span>{names[locale]}</span><span aria-hidden="true" className="text-[10px] opacity-60">⌄</span>
-    </PopoverTrigger>
-    <PopoverContent align="end" className="w-48 gap-1 rounded-2xl border-border/50 p-2 shadow-xl">
-      <span className="px-3 py-2 text-xs text-muted-foreground">{m['nav.language']()}</span>
-      {locales.map(language => <button key={language} type="button" aria-pressed={locale === language} onClick={() => { setOpen(false); setLocale(language) }} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm hover:bg-muted aria-pressed:bg-muted aria-pressed:font-medium">
-        {names[language]}{locale === language && <span aria-hidden="true">✓</span>}
-      </button>)}
-    </PopoverContent>
-  </Popover>
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <button
+            type="button"
+            aria-label={m['nav.language']()}
+            className={cn(
+              'flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm',
+              'text-foreground/75 transition-colors hover:text-foreground',
+              className,
+            )}
+          />
+        }
+      >
+        <HugeiconsIcon icon={LanguageSkillIcon} className="size-4.5!" />
+        <span className="hidden font-medium uppercase sm:inline">{locale}</span>
+        <HugeiconsIcon icon={ArrowDown01Icon} className={cn('size-3.5! transition-transform', open && 'rotate-180')} />
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-48 gap-0.5 rounded-xl border-border/60 p-1.5 shadow-lg">
+        {locales.map((language) => (
+          <button
+            key={language}
+            type="button"
+            aria-pressed={locale === language}
+            onClick={() => { setOpen(false); setLocale(language) }}
+            className={cn(
+              'flex items-center justify-between rounded-lg px-3 py-2',
+              'text-left text-sm hover:bg-muted aria-pressed:font-medium',
+            )}
+          >
+            {names[language]}
+            {locale === language && <HugeiconsIcon icon={Tick02Icon} aria-hidden="true" className="size-4 text-primary-ink" />}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  )
 }

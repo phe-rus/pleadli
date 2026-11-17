@@ -1,5 +1,6 @@
 @import "@pleadli/ui/globals.css";
 @import "@pleadli/ui/workspace.css";
+@import "@pleadli/shell/shell.css";
 @source "../**/*.{tsx,ts}";
 
 /* Police's own accent. Everything else about the look is @pleadli/ui/workspace.css. */

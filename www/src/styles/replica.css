@@ -1,0 +1,324 @@
+/* Generated from packages/ui workspace.css + pages.css: the desktop apps' own styles, scoped to .replica so the website is unchanged. */
+/* Page rhythm, side panels and printed paper: one definition for every Pleadli
+   app. Imported by workspace.css. An app's own globals.css holds only its accent
+   (and, rarely, a width override such as --page-max). */
+
+/* ---------- Page rhythm ----------
+   Every route is one <article class="page"> made of a <header class="page-header">
+   followed by <section class="page-section"> blocks. Spacing lives here, once.
+   One width for every page, as a Mac app keeps one: the content never jumps as
+   you move between places. An app may widen it with --page-max on :root. */
+.replica .page {
+  width: 100%;
+  max-width: var(--page-max, 72rem);
+  margin-inline: auto;
+  padding-inline: 1rem;
+  padding-block: 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: page-in 160ms ease-out;
+
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+    padding-block-start: 1.5rem;
+  }
+
+  @media (width >= 90rem) {
+    padding-inline: 2rem;
+  }
+}
+
+/* ---------- Side panels ----------
+   Every side panel (record forms, Add record) is the same shape: a header, one
+   scrolling body, and a footer pinned to the bottom edge. Nothing inside sets
+   a width of its own, and nothing is centred: the panel is anchored to the
+   right, its content runs left to right in one column. */
+.replica .panel-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+}
+
+.replica .panel-body {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  /* A form's own footer stays at the bottom edge of the panel, whether the
+     form is short (it sits at the foot) or long (it sticks while scrolling). */
+  & > [data-slot="drawer-footer"] {
+    position: sticky;
+    bottom: -1rem;
+    z-index: 1;
+    margin: auto -1rem -1rem;
+    padding: 0.75rem 1rem;
+    background: var(--card);
+    border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+  }
+}
+
+/* Kept so older markup still compiles: every page has the same width unless an
+   app sets --page-narrow-max. */
+.replica .page-narrow {
+  --page-max: var(--page-narrow-max, 72rem);
+}
+
+.replica .page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+
+  & > :first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  & > :first-child p {
+    max-width: 65ch;
+  }
+}
+
+.replica .page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.replica .page-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+
+  & h2 {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+}
+
+.replica .section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+
+.replica {
+  --primary: oklch(0.511 0.096 186.391);
+  --primary-foreground: oklch(0.984 0.014 180.72);
+  --ring: oklch(0.737 0.021 106.9);
+  --sidebar-primary: oklch(0.6 0.118 184.704);
+  --sidebar-primary-foreground: oklch(0.984 0.014 180.72);
+  --primary-ink: color-mix(in oklch, var(--primary) 62%, black);
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
+  
+  /* The Pleadli workspace look, shared by every app: a soft off-white page with
+     what you work on (cards, lists, panels, forms) lifted onto white with a gentle
+     shadow, rounded corners, crisp neutral ink, and comfortable controls.
+     Import after globals.css. Each app keeps its own accent (--primary, --ring,
+     --sidebar-primary, charts) in its own stylesheet; setup may replace it. */
+  & {
+    --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --background: oklch(0.982 0.003 255);
+    --foreground: oklch(0.21 0.015 260);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.21 0.015 260);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.21 0.015 260);
+    --secondary: oklch(0.955 0.006 255);
+    --secondary-foreground: oklch(0.25 0.015 260);
+    --muted: oklch(0.955 0.006 255);
+    --muted-foreground: oklch(0.5 0.018 258);
+    --accent: oklch(0.955 0.006 255);
+    --accent-foreground: oklch(0.21 0.015 260);
+    --destructive: oklch(0.577 0.215 27.3);
+    --border: oklch(0.915 0.006 255);
+    --input: oklch(0.88 0.008 255);
+    --radius: 0.75rem;
+    --sidebar: oklch(0.982 0.003 255);
+    --sidebar-foreground: oklch(0.3 0.015 260);
+    --sidebar-accent: oklch(1 0 0);
+    --sidebar-accent-foreground: oklch(0.21 0.015 260);
+    --sidebar-border: oklch(0.915 0.006 255);
+    --shadow-xs: 0 1px 2px oklch(0.3 0.02 260 / 0.05);
+    --shadow-sm: 0 1px 2px oklch(0.3 0.02 260 / 0.05), 0 1px 3px oklch(0.3 0.02 260 / 0.06);
+    --shadow-md: 0 2px 4px oklch(0.3 0.02 260 / 0.04), 0 4px 12px oklch(0.3 0.02 260 / 0.07);
+    --shadow-lg: 0 4px 8px oklch(0.3 0.02 260 / 0.04), 0 12px 32px oklch(0.3 0.02 260 / 0.1);
+    --ui-text: 0.875rem;
+    --table-text: 0.875rem;
+    --control-h: 2.25rem;
+    --control-h-sm: 2rem;
+    --control-h-lg: 2.5rem;
+    --control-px: 0.875rem;
+    --control-px-lg: 1.125rem;
+  }
+  
+  
+  /* ---------- Surfaces ----------
+     What you work on is lifted onto white: cards, lists and tables, inputs. */
+  [data-slot="card"] {
+    box-shadow: var(--shadow-sm);
+    --tw-ring-color: color-mix(in oklab, var(--border) 90%, transparent);
+  }
+  
+  [data-slot="input"]:not([data-slot="input-group"] *),
+  [data-slot="textarea"],
+  [data-slot="input-group"],
+  [data-slot="select-trigger"] {
+    background-color: var(--card);
+    box-shadow: var(--shadow-xs);
+  }
+  
+  [data-slot="button"] {
+    font-weight: 550;
+  }
+  
+  /* Side panels are white sheets over the page. */
+  [data-slot="drawer-popup"] {
+    background-color: var(--card);
+  }
+  
+  [data-slot="data-table-frame"] {
+    background: var(--card);
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  [data-slot="data-table-frame"] [data-slot="table-head"] {
+    height: 2.5rem;
+    color: var(--muted-foreground);
+    font-weight: 500;
+    background: color-mix(in oklab, var(--muted) 55%, var(--card));
+  }
+  
+  [data-slot="data-table-frame"] [data-slot="table-cell"] {
+    padding-block: 0.625rem;
+  }
+  
+  [data-slot="data-table-frame"] [data-slot="table-row"] {
+    border-color: color-mix(in oklab, var(--border) 70%, transparent);
+  }
+  
+  
+  /* A paper is serif throughout: its headings follow the sheet, not the app. */
+  .paper :is(h1, h2, h3, h4, h5, h6) {
+    font-family: inherit;
+  }
+  
+  /* ---------- Type, the Mac way ----------
+     A large, tight page title; group titles small and quiet above their group;
+     section titles a step up from body. Set once here, never on the markup. */
+  .page-header h1,
+  [data-slot="page-title"] {
+    font-size: 1.75rem;
+    line-height: 2.125rem;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+  }
+  
+  .page-header h1 + p,
+  .page-header :first-child > p {
+    color: var(--muted-foreground);
+  }
+  
+  [data-slot="group-title"] {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    letter-spacing: 0;
+  }
+  
+  [data-slot="group-footer"] {
+    font-size: 0.75rem;
+    line-height: 1.1rem;
+  }
+  
+  .page-section > h2,
+  .page-section .section-head h2 {
+    font-size: 1.0625rem;
+    line-height: 1.5rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  
+  /* ---------- The shell, one definition for every Pleadli app ----------
+     The window's corner and the toolbar's glass capsules. The sidebar stays full
+     height and attached, on its own grey (the user preferred it to a floating pane,
+     2026-10-08). */
+  & {
+    --shell-radius: 12px;
+    --shell-inset: 6px;
+    --shell-inner-radius: calc(var(--shell-radius) - var(--shell-inset));
+    --glass: color-mix(in oklab, var(--sidebar) 72%, transparent);
+    --glass-edge: color-mix(in oklab, var(--foreground) 9%, transparent);
+    --glass-shine: color-mix(in oklab, white 55%, transparent);
+  }
+  
+  /* Toolbar controls that belong together sit in one capsule of glass, as
+     Safari and Finder group theirs, instead of standing loose in the bar. */
+  .shell-capsule {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    padding: 2px;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--background) 70%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    backdrop-filter: blur(20px) saturate(1.5);
+    box-shadow:
+      inset 0 0 0 1px var(--glass-edge),
+      0 1px 2px color-mix(in oklab, black 8%, transparent);
+  }
+  .shell-capsule > :is(button, a) {
+    border-radius: 9999px;
+  }
+  
+  /* The window itself in the desktop app: the outer, largest radius. */
+  .shell-window {
+    border-radius: var(--shell-radius);
+  }
+  
+  /* The native window is transparent behind the single rounded app frame. */
+  
+  .shell-sidebar {
+    width: 16rem;
+    transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .shell-sidebar[data-open="false"] { width: 0; }
+  .shell-sidebar > * {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 180ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .shell-sidebar[data-open="false"] > * { opacity: 0; transform: translateX(-8px); }
+  @media (prefers-reduced-motion: reduce) {
+    .shell-sidebar, .shell-sidebar > * { transition: none; }
+  }
+  
+}

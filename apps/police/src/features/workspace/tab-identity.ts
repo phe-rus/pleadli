@@ -1,6 +1,7 @@
 import * as m from '@/paraglide/messages'
 import { areaMeta } from '@/data/navigationItems'
-import type { WorkspaceTab } from './tabs-store'
+import { BinocularsIcon, Home01Icon, File02Icon, UserIcon } from '@hugeicons/core-free-icons'
+import type { Location, TabIdentity as ShellIdentity } from '@pleadli/shell'
 
 /** A stable identity for one location: the tab key, its kind, and where it
  * lives. Anything the officer can open in the workspace has one, an area
@@ -46,16 +47,27 @@ function titleFor(identity: TabIdentity): string {
   }
 }
 
+/** The shell's view of a location. */
+export function resolveIdentity({ pathname, search }: Location): ShellIdentity | null {
+  const identity = identityForLocation(pathname, { view: typeof search.view === 'string' ? search.view : undefined })
+  return identity ? { key: identity.key, kind: identity.kind, to: identity.to, title: titleFor(identity) } : null
+}
+
 /** The words a tab or recent item shows. Overview and areas are named in the
  * current language every time they are drawn, since their saved title keeps
  * the language it was opened in; a record keeps its own saved name (a case
  * reference, a person's name). */
-export function tabLabel(tab: { kind: WorkspaceTab['kind']; to: string; title: string }): string {
+export function tabLabel(tab: { kind: string; to: string; title: string }): string {
   if (tab.kind === 'overview') return m["nav.today"]()
   if (tab.kind === 'area') return areaMeta(tab.to.split('?')[0])?.label ?? tab.title
   return tab.title
 }
 
-export function tabFromIdentity(identity: TabIdentity): WorkspaceTab {
-  return { key: identity.key, kind: identity.kind, title: titleFor(identity), to: identity.to }
+/** The icon a tab carries: the area's own icon, or one for the kind of record it is. */
+export function tabIcon({ kind, to }: { kind: string; to: string }) {
+  if (kind === 'overview') return Home01Icon
+  if (kind === 'case') return BinocularsIcon
+  if (kind === 'person') return UserIcon
+  if (kind === 'chargesheet') return File02Icon
+  return areaMeta(to.split('?')[0])?.icon ?? Home01Icon
 }

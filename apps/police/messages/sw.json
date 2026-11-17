@@ -187,7 +187,8 @@
     "cases": "Kesi",
     "exhibits": "Vielelezo",
     "charge_sheets": "Hati za mashtaka",
-    "statistics": "Takwimu"
+    "statistics": "Takwimu",
+    "postbox": "Sanduku la posta"
   },
   "nav_sections": {
     "front_desk": "Mapokezi",
@@ -1224,6 +1225,11 @@
     "search": "Tafuta kesi"
   },
   "investigation": {
+    "tab_overview": "Kesi",
+    "tab_papers": "Nyaraka",
+    "tab_people": "Watu",
+    "tab_history": "Historia",
+    "empty_papers": "Hakuna maelezo, vielelezo au hati za mashtaka kwenye kesi hii bado.",
     "tl_opened": "Kesi {reference} imefunguliwa",
     "tl_statement": "Maelezo yamechukuliwa kutoka kwa {name}",
     "tl_arrested": "{name} amekamatwa, {status}",
@@ -2108,5 +2114,46 @@
       "restore_newer": "Nakala hii ilitengenezwa na Pleadli Police mpya zaidi. Sasisha kwanza, kisha urejeshe.",
       "general": "Hilo halikufanikiwa. Jaribu tena."
     }
+  },
+  "shell": {
+    "right_panel": {
+      "title": "Kidirisha cha pembeni",
+      "empty": "Hakuna kitu hapa bado.",
+      "open": "Onyesha kidirisha cha pembeni",
+      "close": "Ficha kidirisha cha pembeni",
+      "lock": "Weka kidirisha wazi",
+      "unlock": "Ruhusu kidirisha kufungwa",
+      "resize": "Badilisha ukubwa wa kidirisha",
+      "widen": "Panua kidirisha",
+      "narrow": "Punguza kidirisha"
+    },
+    "error": {
+      "title": "Ukurasa haukufunguka",
+      "body": "Kuna tatizo lilitokea wakati wa kuufungua. Kazi yako iko salama. Jaribu tena.",
+      "retry": "Jaribu tena"
+    },
+    "record_tabs": {
+      "overview_label": "Muhtasari",
+      "overview_empty": "Muhtasari wa rekodi hii utaonekana hapa.",
+      "overview_action": "Ongeza maelezo",
+      "papers_label": "Karatasi",
+      "papers_empty": "Nyaraka na maelezo yaliyoambatishwa kwenye rekodi hii yanakaa hapa.",
+      "papers_action": "Ongeza karatasi",
+      "people_label": "Watu",
+      "people_empty": "Watu waliounganishwa na rekodi hii wanakaa hapa.",
+      "people_action": "Ongeza mtu",
+      "history_label": "Historia",
+      "history_empty": "Kilichofanywa kwenye rekodi hii, na lini, kinakaa hapa.",
+      "history_action": "Tazama shughuli"
+    }
+  },
+  "postbox": {
+    "empty_inbox": "Hakuna kilichofika bado.",
+    "empty_outbox": "Hakuna kinachosubiri kutumwa.",
+    "inbox": "Zilizopokelewa",
+    "intro": "Rufaa na stakabadhi kwenda na kutoka kwa DPP na mahakamani zinafika hapa.",
+    "outbox": "Za kutuma",
+    "status": "Bado haijawashwa. Itafanya kazi ofisi yako ikiunganishwa na Pleadli.",
+    "title": "Sanduku la posta"
   }
 }

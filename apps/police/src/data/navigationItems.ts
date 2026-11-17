@@ -19,6 +19,7 @@ import {
   Notebook01Icon,
   Search01Icon,
   Settings01Icon,
+  Mail01Icon,
   Share08Icon,
   ShieldKeyIcon,
   SirenIcon,
@@ -92,6 +93,7 @@ export const policeNav: readonly NavItem[] = [
   { get label() { return m["nav.armory"]() }, icon: GunIcon, to: '/stores/armory', section: 'station' },
   { get label() { return m["nav.impounded_assets"]() }, icon: ArchiveIcon, to: '/stores/impounded', section: 'station' },
   { get label() { return m["nav.statistics"]() }, icon: BarChartIcon, to: '/reports', section: 'station' },
+  { get label() { return m["nav.postbox"]() }, icon: Mail01Icon, to: '/postbox', section: 'station' },
 
   { get label() { return m["nav.search"]() }, icon: Search01Icon, to: '/search', exact: true },
   { get label() { return m["nav.station_profile"]() }, icon: Building06Icon, to: '/station/profile' },

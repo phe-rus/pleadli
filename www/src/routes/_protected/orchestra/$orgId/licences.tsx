@@ -4,12 +4,13 @@ import { requestLicence } from '@/functions/orchestra.func'
 import { APPLICATIONS } from '@/lib/orchestra'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
-import { t } from '@pleadli/ui/goey-toaster'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Input } from '@pleadli/ui/input'
 import { Textarea } from '@pleadli/ui/textarea'
-import { createFileRoute, getRouteApi, useRouter } from '@tanstack/react-router'
+import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { useState } from 'react'
+import { cn } from '@pleadli/ui/lib/utils'
+import { useServerMutation } from '@/lib/use-server-mutation'
 
 export const Route = createFileRoute('/_protected/orchestra/$orgId/licences')({
   component: RouteComponent,
@@ -19,27 +20,20 @@ const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
 
 function RouteComponent() {
   const { institution, licences, computers, requests } = institutionRoute.useLoaderData()
-  const router = useRouter()
   // The app this kind of institution uses: a police HQ asks for Pleadli Police.
   const usual = APPLICATIONS.find((a) => a === institution.institutionType) ?? 'police'
   const [application, setApplication] = useState<(typeof APPLICATIONS)[number]>(usual)
   const [seats, setSeats] = useState(1)
   const [message, setMessage] = useState('')
-  const [busy, setBusy] = useState(false)
+  const sendMutation = useServerMutation(requestLicence, {
+    success: () => m["orch.lic.sent"](),
+    onSuccess: () => setMessage(''),
+  })
+  const busy = sendMutation.isPending
 
-  const send = async (event: React.FormEvent) => {
+  const send = (event: React.FormEvent) => {
     event.preventDefault()
-    setBusy(true)
-    try {
-      await requestLicence({ data: { organizationId: institution.id, application, seats, message: message || undefined } })
-      t.success(m["orch.lic.sent"]())
-      setMessage('')
-      void router.invalidate()
-    } catch (e) {
-      t.error(m["orch.failed"](), { description: e instanceof Error ? e.message : undefined })
-    } finally {
-      setBusy(false)
-    }
+    sendMutation.mutate({ organizationId: institution.id, application, seats, message: message || undefined })
   }
 
   const reqStatus = (s: string) => (s === 'done' ? m["orch.lic.req_done"]() : s === 'declined' ? m["orch.lic.req_declined"]() : m["orch.lic.req_open"]())
@@ -66,7 +60,10 @@ function RouteComponent() {
       </Group>
 
       {institution.status === 'active' && (
-        <form onSubmit={send} className="flex flex-col gap-3 rounded-2xl bg-card p-5 ring-1 ring-border/70">
+        <form onSubmit={send} className={cn(
+          'flex flex-col gap-3 rounded-2xl bg-card p-5',
+          'ring-1 ring-border/70',
+        )}>
           <h2 className="text-base! font-semibold">{m["orch.lic.request_title"]()}</h2>
           <p className="text-sm text-muted-foreground">{m["orch.lic.request_lead"]()}</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

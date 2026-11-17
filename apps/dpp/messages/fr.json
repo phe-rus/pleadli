@@ -517,7 +517,8 @@
     "index": "Le dossier",
     "details": "Détails",
     "case": "Affaire",
-    "activity": "Historique"
+    "activity": "Historique",
+    "people": "Personnes"
   },
   "file_ws": {
     "a_count": "Un chef",
@@ -800,7 +801,8 @@
       "inbox": "Boîte de réception",
       "police_stations": "Postes de police",
       "workload": "Charge de travail",
-      "recent": "Récents"
+      "recent": "Récents",
+      "postbox": "Boîte postale"
     },
     "section": {
       "files": "Dossiers",
@@ -2429,5 +2431,47 @@
       "restore_newer": "Cette sauvegarde vient d'une version plus récente de Pleadli DPP. Mettez à jour d'abord, puis restaurez.",
       "general": "Cela n'a pas fonctionné. Réessayez."
     }
+  },
+  "shell": {
+    "right_panel": {
+      "title": "Panneau latéral",
+      "empty": "Rien ici pour le moment.",
+      "open": "Afficher le panneau latéral",
+      "close": "Masquer le panneau latéral",
+      "lock": "Garder le panneau ouvert",
+      "unlock": "Laisser le panneau se fermer",
+      "resize": "Redimensionner le panneau",
+      "widen": "Élargir le panneau",
+      "narrow": "Rétrécir le panneau"
+    },
+    "error": {
+      "title": "Cette page ne s'est pas chargée",
+      "body": "Un problème est survenu à l'ouverture. Votre travail est en sécurité. Réessayez.",
+      "retry": "Réessayer"
+    },
+    "record_tabs": {
+      "overview_label": "Aperçu",
+      "overview_empty": "Le résumé de ce dossier apparaîtra ici.",
+      "overview_action": "Ajouter des détails",
+      "papers_label": "Documents",
+      "papers_empty": "Les documents rattachés à ce dossier se trouvent ici.",
+      "papers_action": "Ajouter un document",
+      "people_label": "Personnes",
+      "people_empty": "Les personnes liées à ce dossier se trouvent ici.",
+      "people_action": "Ajouter une personne",
+      "history_label": "Historique",
+      "history_empty": "Ce qui a été fait sur ce dossier, et quand, se trouve ici.",
+      "history_action": "Voir l'activité"
+    },
+    "loading": "Chargement"
+  },
+  "postbox": {
+    "empty_inbox": "Rien n'est encore arrivé.",
+    "empty_outbox": "Rien n'attend d'être envoyé.",
+    "inbox": "Réception",
+    "intro": "Les dossiers, renvois et décisions échangés avec la police et les tribunaux arrivent ici.",
+    "outbox": "Envoi",
+    "status": "Pas encore activée. Elle fonctionnera dès que votre bureau sera relié à Pleadli.",
+    "title": "Boîte postale"
   }
 }

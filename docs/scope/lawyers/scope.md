@@ -48,5 +48,29 @@ Lawyers is the fastest route to a paying customer (private, decides quickly, pra
 - [ ] Verify it: `/check verify lawyers pilot readiness`
 - [ ] Test it: `/test lawyers pilot readiness`
 
+## Shape gaps
+
+From the app shape audit of 2026-11-17 (`docs/platform/APP-SHAPE-AUDIT.md`, spec 0003). Score 61% against 36 rules checked. In priority order. A rule can be broken on purpose only by writing a line `**Deviation:** <rule id>, <reason>` here.
+
+1. [ ] NT1 (Partial): No developer tools in release builds: F12, Ctrl Shift I and Inspect are off.
+2. [ ] SH7 (Missing): A status bar sits at the foot of the page. Fixed by feature 26 (shared shell).
+3. [ ] SH8 (Missing): An optional right panel slot works the same way in every app. Fixed by feature 26 (shared shell).
+4. [ ] SH9 (Missing): The tab strip, tabs store, header, quick add, licence bar and status bar come from `@pleadli/shell`, not a copy. Fixed by feature 26 (shared shell).
+5. [ ] PG8 (Missing): An error says what happened in plain words, what to do, and offers a retry. Fixed by feature 26 (shared shell).
+6. [ ] PG9 (Missing): Loading shows a calm placeholder shaped like the content, not a bare spinner. Fixed by feature 26 (shared shell).
+7. [ ] TK4 (Missing): Phone, tablet and desktop breakpoints are defined once, in the shell package. Fixed by feature 26 (shared shell).
+8. [ ] MO1 (Missing): Page, tab, panel and hover motion are named values in one shared place. Fixed by feature 26 (shared shell).
+9. [ ] NT5 (Missing): Ctrl T opens a new tab and Ctrl S saves. Fixed by feature 26 (shared shell).
+10. [ ] CS1 (Missing): The Rust API is split by domain and no `api/mod.rs` is over 600 lines.
+11. [ ] PG1 (Partial): Lists use the shared table and no hand built tables.
+12. [ ] PG2 (Partial): Record pages show the tabs Overview, Papers, People, History first, in that order. Fixed by feature 26 (shared shell).
+13. [ ] PG4 (Partial): Settings has these sections in order: Profile and sign in, Language and appearance, Backup, Licence, Connections, Setup. Fixed by feature 27 (settings, brand, onboarding).
+14. [ ] PG6 (Partial): First run steps in order: Language, Who is this office, First person and sign in, Backup choice, Recovery option. Fixed by feature 27 (settings, brand, onboarding).
+15. [ ] CF3 (Partial): Content text takes its size and weight from the global type, not inline sizes.
+16. [ ] CF5 (Partial): Icon only buttons carry a label for screen readers and a hover title.
+17. [ ] NT2 (Partial): No browser page behaviours: Ctrl wheel zoom, F5 reload, pull to refresh, dragging links and images.
+18. [ ] NT3 (Partial): Chrome is not selectable, content is.
+19. [ ] NT4 (Partial): Right click on a record, row or tab shows the app menu. Text fields show the native menu. The browser menu never shows.
+
 ## Legend
 See `docs/scope/index.md` for the shared legend.

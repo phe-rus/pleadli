@@ -68,7 +68,7 @@ export function FacilitySetup({ onBack, onCreated, onDone }: { onBack: () => voi
       }
     }
     if (index === 2) {
-      const found = errorsOf(adminSchema(draft.badgePrefix).safeParse(draft))
+      const found = errorsOf(adminSchema(draft.badgePrefix, true).safeParse(draft))
       return Object.keys(found).length ? setErrors(found) : goTo(3)
     }
     if (index === 3) {

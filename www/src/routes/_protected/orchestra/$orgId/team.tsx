@@ -1,11 +1,12 @@
 import { inviteAdministrator, removeAdministrator } from '@/functions/orchestra.func'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
-import { t } from '@pleadli/ui/goey-toaster'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Input } from '@pleadli/ui/input'
-import { createFileRoute, getRouteApi, useRouter } from '@tanstack/react-router'
+import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { useState } from 'react'
+import { cn } from '@pleadli/ui/lib/utils'
+import { useServerMutation } from '@/lib/use-server-mutation'
 
 export const Route = createFileRoute('/_protected/orchestra/$orgId/team')({
   component: RouteComponent,
@@ -15,24 +16,18 @@ const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
 
 function RouteComponent() {
   const { institution, members, role } = institutionRoute.useLoaderData()
-  const router = useRouter()
   const [email, setEmail] = useState('')
-  const [busy, setBusy] = useState(false)
   const owner = role === 'owner'
+  const inviteMutation = useServerMutation(inviteAdministrator, {
+    success: () => m["orch.team.invited_ok"](),
+    onSuccess: () => setEmail(''),
+  })
+  const removeMutation = useServerMutation(removeAdministrator)
+  const busy = inviteMutation.isPending
 
-  const invite = async (event: React.FormEvent) => {
+  const invite = (event: React.FormEvent) => {
     event.preventDefault()
-    setBusy(true)
-    try {
-      await inviteAdministrator({ data: { organizationId: institution.id, email } })
-      t.success(m["orch.team.invited_ok"]())
-      setEmail('')
-      void router.invalidate()
-    } catch (e) {
-      t.error(m["orch.failed"](), { description: e instanceof Error ? e.message : undefined })
-    } finally {
-      setBusy(false)
-    }
+    inviteMutation.mutate({ organizationId: institution.id, email })
   }
 
   return (
@@ -52,10 +47,8 @@ function RouteComponent() {
                 <Button
                   size="xs"
                   variant="ghost"
-                  onClick={async () => {
-                    await removeAdministrator({ data: { organizationId: institution.id, memberId: p.id } })
-                    void router.invalidate()
-                  }}
+                  disabled={removeMutation.isPending}
+                  onClick={() => removeMutation.mutate({ organizationId: institution.id, memberId: p.id })}
                 >
                   {m["orch.team.remove"]()}
                 </Button>
@@ -65,7 +58,10 @@ function RouteComponent() {
         ))}
       </Group>
       {owner ? (
-        <form onSubmit={invite} className="flex flex-col gap-3 rounded-2xl bg-card p-5 ring-1 ring-border/70">
+        <form onSubmit={invite} className={cn(
+          'flex flex-col gap-3 rounded-2xl bg-card p-5',
+          'ring-1 ring-border/70',
+        )}>
           <h2 className="text-base! font-semibold">{m["orch.team.invite"]()}</h2>
           <p className="text-sm text-muted-foreground">{m["orch.team.invite_hint"]()}</p>
           <div className="flex gap-2">

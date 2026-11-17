@@ -4,7 +4,7 @@ import { docsNav } from '@/data/docs'
 import { ArrowDown01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute, Link, Outlet, useLocation } from '@tanstack/react-router'
-import { cn } from 'cn'
+import { cn } from '@pleadli/ui/lib/utils'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/_public/docs')({
@@ -52,13 +52,19 @@ function RouteComponent() {
         </Popover>
       </div>
 
-      <nav className="hidden md:sticky md:top-16 md:flex md:w-52 md:shrink-0 md:flex-col md:gap-1 md:rounded-2xl md:bg-muted/40 md:p-3">
+      <nav className={cn(
+        'hidden md:sticky md:top-24 md:flex md:w-52 md:shrink-0',
+        'md:flex-col md:border-l md:border-border/60',
+      )}>
         {docsNav.map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            className="rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-            activeProps={{ className: 'bg-background font-medium text-primary shadow-sm' }}
+            className={cn(
+              '-ml-px border-l-2 border-transparent px-4 py-2 text-sm',
+              'text-muted-foreground transition-colors hover:text-foreground',
+            )}
+            activeProps={{ className: 'border-primary font-medium text-foreground' }}
             activeOptions={{ exact: true }}
           >
             {item.title}
@@ -66,7 +72,10 @@ function RouteComponent() {
         ))}
       </nav>
 
-      <div className="guide-reading min-w-0 flex-1 rounded-3xl bg-card p-6 leading-relaxed sm:p-10">
+      <div className={cn(
+        'guide-reading min-w-0 flex-1 md:max-w-3xl',
+        'leading-relaxed',
+      )}>
         <Outlet />
       </div>
     </article>

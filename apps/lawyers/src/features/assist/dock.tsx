@@ -1,46 +1,17 @@
 import { documentOptions } from '@/features/documents/queries'
 import { mattersOptions } from '@/features/matters/queries'
 import * as m from '@/paraglide/messages'
-import { Cancel01Icon, SparklesIcon } from '@hugeicons/core-free-icons'
+import { SparklesIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useActor } from '@/features/installation'
-import { useState, useSyncExternalStore } from 'react'
+import { useState } from 'react'
 import { AssistPanel } from './assist-panel'
 import { setAssistModel, useAssistModel } from './model-choice'
 import { useAssistModels, useAssistSettings } from './queries'
-
-// ---------------------------------------------------------------- open or closed, everywhere
-
-const KEY = 'pleadli:lawyers:assist-open'
-const listeners = new Set<() => void>()
-function readOpen() {
-  try {
-    return localStorage.getItem(KEY) === '1'
-  } catch {
-    return false
-  }
-}
-let open = readOpen()
-export function setAssistOpen(next: boolean | ((was: boolean) => boolean)) {
-  open = typeof next === 'function' ? next(open) : next
-  try {
-    localStorage.setItem(KEY, open ? '1' : '0')
-  } catch {}
-  listeners.forEach((l) => l())
-}
-export function useAssistOpen() {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l)
-      return () => listeners.delete(l)
-    },
-    () => open,
-  )
-}
 
 /** The matter on screen, if any: a matter's page, or the matter a document
  * on screen belongs to. */
@@ -109,34 +80,36 @@ function ModelPicker({ provider }: { provider: string }) {
   )
 }
 
-/** Assist, docked on the right of every screen and opened from the title bar.
- * On a matter (or one of its documents) it works on that matter; elsewhere it
- * asks which. */
-export function AssistDock() {
-  const isOpen = useAssistOpen()
+/** What Assist says on the left of the side panel header: its name, and
+ * whether it is on a matter. */
+export function AssistHeader() {
   const inView = useMatterInView()
-  const [picked, setPicked] = useState('')
+  return (
+    <h2 className="flex shrink-0 items-center gap-2 text-base">
+      <HugeiconsIcon icon={SparklesIcon} className="size-5 text-primary" />
+      {m["nav.assist"]()}
+      {inView && <span className="text-xs font-normal text-muted-foreground">{m["assist.dock.on_matter"]()}</span>}
+    </h2>
+  )
+}
+
+/** Assist, in the side panel of every screen. On a matter (or one of its
+ * documents) it works on that matter; elsewhere it asks which. */
+export function AssistSidePanel() {
+  const inView = useMatterInView()
+  const [picked, setPicked] = useState("")
   const { data: settings } = useAssistSettings()
-  if (!isOpen) return null
   const matterId = inView ?? picked
   return (
-    <aside aria-label={m["nav.assist"]()} className="flex w-[24rem] shrink-0 flex-col gap-3 overflow-y-auto border-l border-border/40 bg-background p-3 print:hidden">
-      <header className="flex items-center justify-between gap-2">
-        <h2 className="flex shrink-0 items-center gap-2 text-base">
-          <HugeiconsIcon icon={SparklesIcon} className="size-5 text-primary" />
-          {m["nav.assist"]()}
-          {inView && <span className="text-xs font-normal text-muted-foreground">{m["assist.dock.on_matter"]()}</span>}
-        </h2>
-        <div className="flex min-w-0 items-center gap-1">
-          {settings?.ready && <ModelPicker provider={settings.provider} />}
-        <Button size="icon-sm" variant="ghost" onClick={() => setAssistOpen(false)} aria-label={m["assist.dock.close"]()} title={m["assist.dock.close"]()}>
-          <HugeiconsIcon icon={Cancel01Icon} />
-        </Button>
+    <div className="flex flex-col gap-3 p-3">
+      {settings?.ready && (
+        <div className="flex justify-end">
+          <ModelPicker provider={settings.provider} />
         </div>
-      </header>
+      )}
       {settings?.ready && !inView && <MatterPicker value={picked} onChange={setPicked} />}
       {matterId ? <AssistPanel key={matterId} matterId={matterId} /> : !settings?.ready && <AssistPanelOff />}
-    </aside>
+    </div>
   )
 }
 

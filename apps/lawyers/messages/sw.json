@@ -1057,7 +1057,14 @@
     "reopen_failed": "Shauri halikuweza kufunguliwa tena",
     "reopened": "Shauri limefunguliwa tena",
     "sections": "Sehemu za shauri",
+    "rt": {
+      "empty_history": "Hakuna kilichofanywa kwenye shauri hili bado. Kila hatua itaorodheshwa hapa.",
+      "empty_overview": "Hakuna kilichorekodiwa kwenye jalada hili bado.",
+      "empty_papers": "Hakuna nyaraka za shauri hili bado. Rasimu, hati zilizowasilishwa na faili zitaonekana hapa.",
+      "empty_people": "Hakuna wahusika walioongezwa. Ongeza upande wa pili, mashahidi na mahakama hapa."
+    },
     "seg": {
+      "people": "Wahusika",
       "activity": "Historia ya jalada",
       "matter": "Jalada",
       "money": "Hesabu na muda",
@@ -1113,7 +1120,8 @@
     },
     "tasks": "Vikumbusho",
     "time": "Rekodi za muda",
-    "today": "Leo"
+    "today": "Leo",
+    "postbox": "Sanduku la posta"
   },
   "network": {
     "address": "Anwani",
@@ -1924,8 +1932,8 @@
     "none": "Hakuna muda uliorekodiwa katika kipindi hiki.",
     "period": {
       "30": "Siku 30",
-      "365": "Mwaka",
-      "90": "Siku 90"
+      "90": "Siku 90",
+      "365": "Mwaka"
     },
     "period_label": "Kipindi",
     "recorded": "Muda uliorekodiwa"
@@ -2260,5 +2268,58 @@
       "restore_newer": "Nakala hii ilitengenezwa na Pleadli Lawyers mpya zaidi. Sasisha kwanza, kisha urejeshe.",
       "general": "Hilo halikufanikiwa. Jaribu tena."
     }
+  },
+  "shell": {
+    "right_panel": {
+      "title": "Kidirisha cha pembeni",
+      "empty": "Hakuna kitu hapa bado.",
+      "open": "Onyesha kidirisha cha pembeni",
+      "close": "Ficha kidirisha cha pembeni",
+      "lock": "Weka kidirisha wazi",
+      "unlock": "Ruhusu kidirisha kufungwa",
+      "resize": "Badilisha ukubwa wa kidirisha",
+      "widen": "Panua kidirisha",
+      "narrow": "Punguza kidirisha"
+    },
+    "tabs": {
+      "open_tabs": "Vichupo vilivyofunguliwa",
+      "pin": "Bandika",
+      "unpin": "Ondoa kubandika",
+      "pin_named": "Bandika {title}",
+      "unpin_named": "Ondoa kubandika {title}",
+      "close_named": "Funga {title}",
+      "close_with": "Funga ({key})",
+      "previous_with": "Kichupo kilichotangulia ({key})",
+      "next_with": "Kichupo kinachofuata ({key})"
+    },
+    "loading": "Inapakia",
+    "error": {
+      "title": "Ukurasa haukufunguka",
+      "body": "Kuna tatizo lilitokea wakati wa kuufungua. Kazi yako iko salama. Jaribu tena.",
+      "retry": "Jaribu tena"
+    },
+    "record_tabs": {
+      "overview_label": "Muhtasari",
+      "overview_empty": "Muhtasari wa shauri hili utaonekana hapa.",
+      "overview_action": "Ongeza maelezo",
+      "papers_label": "Nyaraka",
+      "papers_empty": "Nyaraka zilizoambatishwa kwenye shauri hili zinakaa hapa.",
+      "papers_action": "Ongeza nyaraka",
+      "people_label": "Watu",
+      "people_empty": "Watu waliounganishwa na shauri hili wanakaa hapa.",
+      "people_action": "Ongeza mtu",
+      "history_label": "Historia",
+      "history_empty": "Kilichofanywa kwenye shauri hili, na lini, kinakaa hapa.",
+      "history_action": "Tazama shughuli"
+    }
+  },
+  "postbox": {
+    "empty_inbox": "Hakuna kilichofika bado.",
+    "empty_outbox": "Hakuna kinachosubiri kutumwa.",
+    "inbox": "Zilizopokelewa",
+    "intro": "Nyaraka kwenda na kutoka mahakamani, kwa wateja na ofisi nyingine zinafika hapa.",
+    "outbox": "Za kutuma",
+    "status": "Bado haijawashwa. Itafanya kazi ofisi yako ikiunganishwa na Pleadli.",
+    "title": "Sanduku la posta"
   }
 }

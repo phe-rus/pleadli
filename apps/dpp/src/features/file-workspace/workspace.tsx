@@ -19,11 +19,11 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { RecordTabsView } from '@pleadli/shell'
 import { ChronologyPanel } from './decision-panels'
 import { hearingKindLabel, useHearings } from '@/features/court'
 import { FileTasks } from '@/features/board'
-import { useFileItems } from '@/features/file-index'
 import { CaseTab } from '@/features/pipeline'
 import { FileBinder } from '@/features/paper/file-binder'
 import { filePersonRoles } from '@/features/prosecution-files/schema'
@@ -33,20 +33,23 @@ import * as m from '@/paraglide/messages'
  * (every document), and what happened. Older links still land: each old tab
  * name maps to the tab that now holds it. */
 export const fileTabs = [
-  { id: 'case', get label() { return m["file_tab.case"]() } },
+  { id: 'overview', get label() { return m["file_tab.case"]() } },
   { id: 'papers', get label() { return m["file_tab.index"]() } },
-  { id: 'activity', get label() { return m["file_tab.activity"]() } },
+  { id: 'people', get label() { return m["file_tab.people"]() } },
+  { id: 'history', get label() { return m["file_tab.activity"]() } },
 ] as const
 
 const legacyTabs = {
+  case: 'overview',
+  activity: 'history',
   index: 'papers',
   file: 'papers',
   material: 'papers',
-  chronology: 'activity',
-  documents: 'activity',
-  review: 'case',
-  decisions: 'case',
-  court: 'case',
+  chronology: 'history',
+  documents: 'history',
+  review: 'overview',
+  decisions: 'overview',
+  court: 'overview',
 } as const
 
 export type FileTabId = (typeof fileTabs)[number]['id'] | keyof typeof legacyTabs
@@ -55,7 +58,7 @@ export function isFileTab(value: unknown): value is FileTabId {
   return fileTabs.some((tab) => tab.id === value) || (typeof value === 'string' && value in legacyTabs)
 }
 
-const canonicalTab = (tab: FileTabId): (typeof fileTabs)[number]['id'] => (tab in legacyTabs ? legacyTabs[tab as keyof typeof legacyTabs] : (tab as 'case'))
+const canonicalTab = (tab: FileTabId): (typeof fileTabs)[number]['id'] => (tab in legacyTabs ? legacyTabs[tab as keyof typeof legacyTabs] : (tab as 'overview'))
 
 function Fact({ label, value }: { label: string; value: string | null | undefined }) {
   return (
@@ -71,12 +74,12 @@ function Fact({ label, value }: { label: string; value: string | null | undefine
  * header never scrolls away with the tabs' contents, so the state and the next
  * step are always in view. */
 export function FileWorkspace({ fileId, tab }: { fileId: string; tab: FileTabId }) {
+  const navigate = useNavigate()
   const { data: file } = useProsecutionFile(fileId)
   const { data: charges } = useChargesForFile(fileId)
   const { data: connections } = useConnectionsQuiet()
   const { data: people } = useFilePeople(fileId)
   const { data: hearings = [] } = useHearings(fileId)
-  const { data: papers = [] } = useFileItems(fileId)
 
   if (!file) {
     return (
@@ -132,43 +135,28 @@ export function FileWorkspace({ fileId, tab }: { fileId: string; tab: FileTabId 
           </div>
         </div>
 
-        {/* One file, three ways of looking at it, chosen like a Mac's segmented control. */}
-        <nav aria-label={m["file_ws.sections"]()} className="flex justify-center">
-          <div role="tablist" className="flex rounded-[0.625rem] bg-foreground/[0.055] p-0.5">
-            {fileTabs.map((item) => {
-              const active = item.id === canonicalTab(tab)
-              return (
-                <Link
-                  key={item.id}
-                  to="/files/$fileId"
-                  params={{ fileId }}
-                  search={{ tab: item.id }}
-                  replace
-                  role="tab"
-                  aria-selected={active}
-                  className={cn(
-                    'flex min-w-28 items-center justify-center gap-1.5 rounded-lg px-4 py-1 text-[0.8125rem] no-underline transition-all duration-150 motion-reduce:transition-none',
-                    active ? 'bg-background font-medium text-foreground shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {item.label}
-                  {item.id === 'papers' && papers.length ? <span className="text-xs text-muted-foreground tabular-nums">{papers.length}</span> : null}
-                </Link>
-              )
-            })}
-          </div>
-        </nav>
       </header>
 
-      {canonicalTab(tab) === 'case' && <CaseTab file={file} />}
-      {canonicalTab(tab) === 'papers' && (
-        <FileBinder fileId={fileId} />
-      )}
-      {canonicalTab(tab) === 'activity' && (
-        <div className="flex flex-col gap-8">
-          <ChronologyPanel fileId={fileId} />
-        </div>
-      )}
+      <RecordTabsView
+        labels={{
+          overview: { label: m["file_tab.case"](), empty: '', action: '' },
+          papers: { label: m["file_tab.index"](), empty: '', action: '' },
+          people: { label: m["file_tab.people"](), empty: '', action: '' },
+          history: { label: m["file_tab.activity"](), empty: '', action: '' },
+        }}
+        value={canonicalTab(tab)}
+        onValueChange={(id) => void navigate({ to: '/files/$fileId', params: { fileId }, search: { tab: id as FileTabId }, replace: true })}
+        content={{
+          overview: <CaseTab file={file} />,
+          papers: <FileBinder fileId={fileId} />,
+          people: <FilePanel fileId={fileId} />,
+          history: (
+            <div className="flex flex-col gap-8">
+              <ChronologyPanel fileId={fileId} />
+            </div>
+          ),
+        }}
+      />
     </article>
     </div>
   )

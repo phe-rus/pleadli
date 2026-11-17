@@ -46,7 +46,8 @@ export const signInSchema = z.object({
 export const bootstrapSchema = z.object({
   badgeNumber: z.string().min(1, { error: () => m.validation_badge_required() }),
   name: z.string().min(1, { error: () => m.validation_name_required() }),
-  password: z.string().min(8, { error: () => m.validation_password_min_8() }),
+  // Nothing (a facility starts open), a passcode of 4 to 8 digits, or a password of 8 or more characters.
+  password: z.string().refine((value) => value === '' || value.length >= 8 || /^\d{4,8}$/.test(value), { error: () => m.validation_password_min_8() }),
 })
 
 export type BootstrapInput = z.infer<typeof bootstrapSchema>

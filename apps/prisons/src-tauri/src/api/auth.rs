@@ -21,6 +21,7 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/auth/bootstrap-status", Need::Device, bootstrap_status)
         .post("/api/auth/bootstrap", Need::Onboarding, bootstrap)
         .post("/api/auth/login", Need::Device, login)
+        .post("/api/auth/set-first-password", Need::Device, set_first_password)
         .get("/api/auth/desk", Need::Device, desk)
         .post("/api/auth/logout", Need::Session, logout)
         .get("/api/auth/session", Need::Session, current_session)
@@ -224,4 +225,27 @@ async fn enrol_device(State(node): State<NodeRef>, Json(body): Json<EnrolBody>) 
         Some(enrolled) => Ok(Json(enrolled)),
         None => Err(ApiError::new(StatusCode::UNAUTHORIZED, "INVALID_ENROLMENT_CODE", "That code is invalid or has expired.")),
     }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetFirstPasswordBody {
+    badge_number: String,
+    new_password: String,
+}
+
+/// An administrator who still signs in on the badge alone chooses a password
+/// and is signed in with it. See `officers::set_first_password`.
+async fn set_first_password(
+    State(node): State<NodeRef>,
+    ingress: Option<Extension<Ingress>>,
+    Extension(device): Extension<CallerDevice>,
+    Json(body): Json<SetFirstPasswordBody>,
+) -> Result<Json<SessionInfo>, ApiError> {
+    let key = format!("login:{:?}", ingress.map(|Extension(i)| i));
+    if !node.limiter.check(&key, LOGIN_LIMIT_PER_MINUTE, Duration::from_secs(60)) {
+        return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "TOO_MANY_ATTEMPTS", "Too many sign-in attempts. Wait a minute and try again."));
+    }
+    officers::set_first_password(&node.pool, &body.badge_number, &body.new_password, device.0.as_deref()).await?;
+    Ok(Json(sessions::sign_in(&node.pool, &body.badge_number, &body.new_password, device.0.as_deref()).await?))
 }

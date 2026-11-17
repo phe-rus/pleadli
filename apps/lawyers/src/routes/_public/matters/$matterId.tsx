@@ -11,9 +11,8 @@ import { PapersSection } from '@/features/papers'
 import { MoneySection } from '@/features/money'
 import { custodyLabel } from '@/features/clients'
 import { DocumentCreateForm, MatterPapers } from '@/features/documents'
-import { setAssistOpen } from '@/features/assist/dock'
+import { RecordTabsView, useWorkspace, type RecordTabsLabels } from '@pleadli/shell'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
-import { Segmented } from '@pleadli/ui/segmented'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@pleadli/ui/dropdown-menu'
 import { MoreHorizontalIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -25,16 +24,21 @@ import { TaskForm, TaskRow } from '@/features/tasks'
 import { ApiError, messageOf } from '@/lib/api'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
-import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
 import { useState } from 'react'
 
-const matterTabs = ['matter', 'papers', 'notes', 'money', 'activity'] as const
+const matterTabs = ['overview', 'papers', 'people', 'history', 'notes', 'money'] as const
+// Saved tabs from before the shared frame used these names.
+const legacyTabs: Record<string, MatterTab> = { matter: 'overview', activity: 'history' }
 type MatterTab = (typeof matterTabs)[number]
 
 export const Route = createFileRoute('/_public/matters/$matterId')({
-  validateSearch: (search: Record<string, unknown>): { tab?: MatterTab } => (matterTabs.includes(search.tab as MatterTab) ? { tab: search.tab as MatterTab } : {}),
+  validateSearch: (search: Record<string, unknown>): { tab?: MatterTab } => {
+    const wanted = legacyTabs[search.tab as string] ?? search.tab
+    return matterTabs.includes(wanted as MatterTab) ? { tab: wanted as MatterTab } : {}
+  },
   loader: async ({ context, params }) => {
     try {
       await context.queryClient.query({ ...matterOptions(params.matterId), staleTime: 'static' })
@@ -70,8 +74,9 @@ function RouteComponent() {
   const reopen = useReopenMatter()
   const removeTime = useRemoveTime()
   const navigate = useNavigate()
-  const tab = Route.useSearch().tab ?? 'matter'
+  const tab = Route.useSearch().tab ?? 'overview'
   const [panel, setPanel] = useState<'edit' | 'document' | 'close' | null>(null)
+  const { setRightOpen } = useWorkspace()
   const [dirty, setDirty] = useState(false)
   const m = detail.matter
   const open = m.status === 'open'
@@ -95,12 +100,11 @@ function RouteComponent() {
     [m_["mp.fact.notes"](), m.notes],
   ]
 
-  const tabLabel: Record<MatterTab, string> = {
-    matter: m_["mp.seg.matter"](),
-    papers: m_["mp.seg.papers"](),
-    notes: m_["mp.seg.notes"](),
-    money: m_["mp.seg.money"](),
-    activity: m_["mp.seg.activity"](),
+  const recordLabels: RecordTabsLabels = {
+    overview: { label: m_["mp.seg.matter"](), empty: m_["mp.rt.empty_overview"](), action: '' },
+    papers: { label: m_["mp.seg.papers"](), empty: m_["mp.rt.empty_papers"](), action: '' },
+    people: { label: m_["mp.seg.people"](), empty: m_["mp.rt.empty_people"](), action: '' },
+    history: { label: m_["mp.seg.activity"](), empty: m_["mp.rt.empty_history"](), action: '' },
   }
   const documentPanel = (close: () => void, report: (dirty: boolean) => void) => (
     <DocumentCreateForm
@@ -171,7 +175,7 @@ function RouteComponent() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => setPanel('edit')}>{m_["mp.edit"]()}</DropdownMenuItem>
                 {open && court && <DropdownMenuItem onClick={() => setPanel('document')}>{m_["mp.draft_document"]()}</DropdownMenuItem>}
-                <DropdownMenuItem onClick={() => setAssistOpen(true)}>{m_["nav.assist"]()}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRightOpen(true)}>{m_["nav.assist"]()}</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {open ? (
                   <DropdownMenuItem onClick={() => setPanel('close')}>{m_["mp.close"]()}</DropdownMenuItem>
@@ -187,22 +191,75 @@ function RouteComponent() {
           </div>
         </div>
 
-        {/* One matter, five ways of looking at it, chosen like a Mac's segmented control. */}
-        <div className="flex justify-center">
-          <Segmented
-            label={m_["mp.sections"]()}
-            value={tab}
-            items={matterTabs.map((id) => ({ value: id, label: tabLabel[id] }))}
-            render={(item, props) => (
-              <Link key={item.value} to="/matters/$matterId" params={{ matterId }} search={{ tab: item.value }} replace className={props.className} role={props.role} aria-selected={props['aria-selected']}>
-                {props.children}
-              </Link>
-            )}
-          />
-        </div>
       </header>
 
-      {tab === 'matter' && (
+      <RecordTabsView
+        labels={recordLabels}
+        value={tab}
+        onValueChange={(id) => void navigate({ to: "/matters/$matterId", params: { matterId }, search: { tab: id as MatterTab }, replace: true })}
+        extra={[
+          { id: 'notes', label: m_["mp.seg.notes"](), content: (
+<section aria-labelledby="notes" className="page-section">
+            <div className="section-head">
+              <h2 id="notes">{m_["mp.notes"]()}</h2>
+            </div>
+            {open && <NoteComposer matterId={matterId} />}
+            {detail.notes.length === 0 ? (
+              <EmptyNote>{m_["mp.no_notes"]()}</EmptyNote>
+            ) : (
+              <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
+                {detail.notes.map((note) => (
+                  <NoteRow key={note.id} note={note} editable={open} />
+                ))}
+              </div>
+            )}
+          </section>
+          ) },
+          { id: 'money', label: m_["mp.seg.money"](), content: (
+        <div className="flex flex-col gap-8">
+<MoneySection matterId={matterId} clientId={m.clientId} engagement={m.engagement} open={open} />
+<section aria-labelledby="time" className="page-section">
+            <div className="section-head">
+              <h2 id="time">{m_["mp.time"]()}</h2>
+              {open && (
+                <PanelButton label={m_["mp.record"]()} title={m_["mp.record_time"]()} description={m_["mp.record_time_description"]()} variant="ghost" icon={false}>
+                  {({ close, setDirty: report }) => <TimeForm matterId={matterId} onSuccess={close} onDirtyChange={report} />}
+                </PanelButton>
+              )}
+            </div>
+            {detail.time.length === 0 ? (
+              <EmptyNote>{m_["mp.no_time"]()}</EmptyNote>
+            ) : (
+              <>
+                <p className="text-muted-foreground">{m_["mp.time_total"]({ duration: durationText(minutes) })}</p>
+                <RowList>
+                  {detail.time.slice(0, 8).map((e) => (
+                    <Row
+                      key={e.id}
+                      aligned
+                      title={e.description}
+                      summary={format(e.workedOn, 'd MMM yyyy')}
+                      trailing={
+                        <>
+                          <Tag tone="neutral">{durationText(e.minutes)}</Tag>
+                          {open && (
+                            <Button size="sm" variant="ghost" onClick={() => removeTime.mutate(e.id, { onError: (error) => t.error(m_["mp.remove_failed"](), { description: messageOf(error) }) })}>
+                              {m_["mp.remove"]()}
+                            </Button>
+                          )}
+                        </>
+                      }
+                    />
+                  ))}
+                </RowList>
+              </>
+            )}
+          </section>
+        </div>
+          ) },
+        ]}
+        content={{
+          overview: (
         <div className="flex flex-col gap-8">
           <StageStepper matter={m} />
           {court && (
@@ -288,80 +345,19 @@ function RouteComponent() {
             )}
           </section>
           )}
+          </div>
+          ),
+          people: (
           <PartiesSection matter={m} parties={detail.parties} />
-        </div>
-      )}
-
-      {tab === 'papers' && (
+          ),
+          papers: (
         <div className="flex flex-col gap-8">
           <MatterPapers matterId={matterId} matterType={m.matterType} stage={m.stage} documents={detail.documents} open={open} matterTitle={m.courtNumber ? `${m.courtNumber}, ${m.title}` : m.title} clientName={detail.client.name} />
           <PapersSection matterId={matterId} open={open} />
           {court && <FilingsSection matterId={matterId} matterTitle={m.courtNumber ? `${m.courtNumber}, ${m.title}` : m.title} court={m.courtName} open={open} filings={detail.filings} documents={detail.documents} />}
         </div>
-      )}
-
-      {tab === 'notes' && (
-<section aria-labelledby="notes" className="page-section">
-            <div className="section-head">
-              <h2 id="notes">{m_["mp.notes"]()}</h2>
-            </div>
-            {open && <NoteComposer matterId={matterId} />}
-            {detail.notes.length === 0 ? (
-              <EmptyNote>{m_["mp.no_notes"]()}</EmptyNote>
-            ) : (
-              <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
-                {detail.notes.map((note) => (
-                  <NoteRow key={note.id} note={note} editable={open} />
-                ))}
-              </div>
-            )}
-          </section>
-      )}
-
-      {tab === 'money' && (
-        <div className="flex flex-col gap-8">
-<MoneySection matterId={matterId} clientId={m.clientId} engagement={m.engagement} open={open} />
-<section aria-labelledby="time" className="page-section">
-            <div className="section-head">
-              <h2 id="time">{m_["mp.time"]()}</h2>
-              {open && (
-                <PanelButton label={m_["mp.record"]()} title={m_["mp.record_time"]()} description={m_["mp.record_time_description"]()} variant="ghost" icon={false}>
-                  {({ close, setDirty: report }) => <TimeForm matterId={matterId} onSuccess={close} onDirtyChange={report} />}
-                </PanelButton>
-              )}
-            </div>
-            {detail.time.length === 0 ? (
-              <EmptyNote>{m_["mp.no_time"]()}</EmptyNote>
-            ) : (
-              <>
-                <p className="text-muted-foreground">{m_["mp.time_total"]({ duration: durationText(minutes) })}</p>
-                <RowList>
-                  {detail.time.slice(0, 8).map((e) => (
-                    <Row
-                      key={e.id}
-                      aligned
-                      title={e.description}
-                      summary={format(e.workedOn, 'd MMM yyyy')}
-                      trailing={
-                        <>
-                          <Tag tone="neutral">{durationText(e.minutes)}</Tag>
-                          {open && (
-                            <Button size="sm" variant="ghost" onClick={() => removeTime.mutate(e.id, { onError: (error) => t.error(m_["mp.remove_failed"](), { description: messageOf(error) }) })}>
-                              {m_["mp.remove"]()}
-                            </Button>
-                          )}
-                        </>
-                      }
-                    />
-                  ))}
-                </RowList>
-              </>
-            )}
-          </section>
-        </div>
-      )}
-
-      {tab === 'activity' && (
+          ),
+          history: (
 <section aria-labelledby="history" className="page-section">
             <h2 id="history">{m_["mp.history"]()}</h2>
             {!history || history.length === 0 ? (
@@ -374,7 +370,9 @@ function RouteComponent() {
               </RowList>
             )}
           </section>
-      )}
+          ),
+        }}
+      />
 
       <Createpanel open={panel === 'close'} onOpenChange={(next) => !next && closePanel()} isDirty={dirty} headings={{ title: m_["mp.close_title"](), description: m_["mp.close_description"]() }}>
         <CloseMatterForm matterId={matterId} onDirtyChange={setDirty} onSuccess={closePanel} />

@@ -6,8 +6,8 @@ import { readFile } from 'node:fs/promises'
 
 test('real signup cannot claim platform admin; trusted admin provisioning still works', async () => {
   const sqlite = new Database(':memory:')
-  sqlite.exec(await readFile(new URL('../.migrations/0000_deep_mongu.sql', import.meta.url), 'utf8'))
-  mock.module('../src/db', () => ({ db: drizzle(sqlite) }))
+  sqlite.exec(await readFile(new URL('../.migrations/20260922070618_deep_mongu/migration.sql', import.meta.url), 'utf8'))
+  mock.module('../src/db', () => ({ db: drizzle({ client: sqlite }) }))
   mock.module('cloudflare:workers', () => ({ env: {
     BETTER_AUTH_URL: 'http://localhost:3000',
     BETTER_AUTH_SECRET: 'isolated-signup-test-secret-with-more-than-thirty-two-characters',

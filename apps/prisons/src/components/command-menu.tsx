@@ -1,7 +1,7 @@
 import { visibleNav } from '@/data/navigationItems'
 import { entityTypeLabel, useSearch, type SearchResult } from '@/features/search'
 import { useHqConfig, useSession } from '@/features/session'
-import { useWorkspace } from '@/features/workspace/tabs-store'
+import { useWorkspace } from '@pleadli/shell'
 import { parseSearchRoute } from '@/lib/parse-search-route'
 import { ArrowDataTransferHorizontalIcon, CourtHouseIcon, Login02Icon, Message01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import type { HugeiconsProps } from '@hugeicons/react'

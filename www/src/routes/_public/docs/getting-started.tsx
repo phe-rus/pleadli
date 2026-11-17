@@ -1,6 +1,7 @@
 import { seo } from '@/lib/seo'
 import * as m from '@/paraglide/messages'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { LinkArrow } from '@/components/link-arrow'
 
 export const Route = createFileRoute('/_public/docs/getting-started')({
   head: () => seo({ title: `${m["docs.start.title"]()} · Pleadli`, description: m["docs.start.lead"](), path: '/docs/getting-started' }),
@@ -32,7 +33,7 @@ function Steps({ steps, from, muted }: { steps: typeof today; from: number; mute
             <p>{step.text()}</p>
             {from + i === 1 && (
               <Link to="/downloads" className="w-fit text-sm font-medium text-primary">
-                {m["nav.downloads"]()} →
+                {m["nav.downloads"]()} <LinkArrow />
               </Link>
             )}
           </div>

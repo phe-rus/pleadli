@@ -351,6 +351,8 @@
     },
     "made_lead": "Pas un système importé d'ailleurs. Pleadli part des formulaires, des langues et des conditions des bureaux qui l'utiliseront.",
     "made_title": "Conçu pour l'Afrique de l'Est telle qu'elle fonctionne",
+    "open_lead": "La feuille de route est publique : ce qui est construit, ce qui se construit maintenant et ce qui reste à venir.",
+    "open_title": "Transparents sur notre avancement.",
     "partners": {
       "oversight": "Commandants et ministères voient les chiffres, les retards et qui est détenu trop longtemps, tandis que les dossiers restent au bureau qui les détient.",
       "oversight_title": "Superviser sans ouvrir les dossiers",
@@ -688,6 +690,13 @@
     "next": "Capture suivante",
     "pause": "Mettre la visite en pause",
     "play": "Lancer la visite des écrans",
+    "previous": "Capture précédente",
+    "today": "Aujourd’hui",
+    "incidents": "Incidents",
+    "file": "La couverture du dossier",
+    "stages": "Étapes de l’affaire",
+    "register": "Registre pénal",
+    "remand": "Affaire et suivi de la détention",
     "real_note": "Découvrez une version en développement avec des dossiers fictifs. Les versions disponibles peuvent différer."
   },
   "pricing": {

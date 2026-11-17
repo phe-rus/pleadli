@@ -1,7 +1,7 @@
 import { NodeWaiting } from '@/components/node-waiting'
 import { PreAuthLayout, ScreenHeader, screenTransition } from '@/components/pre-auth-layout'
 import { useBootstrapFirstAccount, useSessionToken, useSystemState } from './queries'
-import { getDeskOfficers, signIn } from './data'
+import { getDeskOfficers, setDevRole, setFirstPassword, signIn } from './data'
 import { useQuery } from '@tanstack/react-query'
 import { officerRoleLabel } from '@/features/officers/schema'
 import { onSessionChange, ApiError } from '@/lib/api'
@@ -83,6 +83,10 @@ const initials = (r: Recent) =>
 
 function BootstrapScreen({ headOffice }: { headOffice: boolean }) {
   const bootstrap = useBootstrapFirstAccount()
+  // A facility starts on a six digit passcode, as setting up a phone does; a longer
+  // password stays one tap away. Head Office keeps its own passcode flow.
+  const [usePasscode, setUsePasscode] = useState(false)
+  const [protect, setProtect] = useState(headOffice)
   const form = useAppForm({
     defaultValues: { badgeNumber: '', name: '', password: '' },
     onSubmit: async ({ value }) => {
@@ -116,8 +120,41 @@ function BootstrapScreen({ headOffice }: { headOffice: boolean }) {
         >
           <form.AppField name="badgeNumber">{(f) => <f.input label={m.session_badge_number()} autoComplete="username" autoFocus />}</form.AppField>
           <form.AppField name="name">{(f) => <f.input label={m.session_full_name()} autoComplete="name" />}</form.AppField>
-          <form.AppField name="password">{(f) => <f.input type="password" label={m.setup_admin_password()} autoComplete="new-password" />}</form.AppField>
-          <p className="-mt-2 text-[0.8125rem] text-muted-foreground">{m.session_bootstrap_password_hint()}</p>
+          {!headOffice && !protect ? (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[0.8125rem] text-muted-foreground">{m.setup_open_hint()}</p>
+              <button type="button" onClick={() => { setProtect(true); setUsePasscode(true) }} className="cursor-pointer self-start text-[0.8125rem] text-primary hover:underline">
+                {m.setup_protect_with_passcode()}
+              </button>
+            </div>
+          ) : usePasscode ? (
+            <form.AppField name="password">
+              {(f) => (
+                <div className="flex flex-col items-center gap-2">
+                  <PinField label={m.sign_in_passcode()} value={f.state.value} onChange={f.handleChange} autoComplete="new-password" />
+                  <p className="text-center text-[0.8125rem] text-muted-foreground">{m.setup_passcode_hint()}</p>
+                  <button type="button" onClick={() => { f.handleChange(''); setUsePasscode(false) }} className="cursor-pointer text-[0.8125rem] text-primary hover:underline">
+                    {m.sign_in_use_password()}
+                  </button>
+                  {!headOffice && (
+                    <button type="button" onClick={() => { f.handleChange(''); setProtect(false) }} className="cursor-pointer text-[0.8125rem] text-muted-foreground hover:text-foreground">
+                      {m.setup_skip_protection()}
+                    </button>
+                  )}
+                </div>
+              )}
+            </form.AppField>
+          ) : (
+            <>
+              <form.AppField name="password">{(f) => <f.input type="password" label={m.setup_admin_password()} autoComplete="new-password" />}</form.AppField>
+              <p className="-mt-2 text-[0.8125rem] text-muted-foreground">{m.session_bootstrap_password_hint()}</p>
+              {!headOffice && (
+                <button type="button" onClick={() => { form.setFieldValue('password', ''); setUsePasscode(true) }} className="cursor-pointer self-start text-[0.8125rem] text-primary hover:underline">
+                  {m.sign_in_use_passcode()}
+                </button>
+              )}
+            </>
+          )}
           <form.AppForm>
             <div className="*:w-full">
               <form.submit label={m.session_create_account()} />
@@ -164,6 +201,8 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
   const [password, setPassword] = useState('')
   const [error, setError] = useState<Error | null>(null)
   const [busy, setBusy] = useState(false)
+  // An administrator who used to sign in on the badge alone chooses a password.
+  const [choosing, setChoosing] = useState(false)
   // On badges alone, an officer who has been given a password is asked for it.
   const [askPassword, setAskPassword] = useState(needsPassword)
   const secretLabel = authMode === 'pin' && !headOffice ? m.session_password_or_pin() : m.session_password()
@@ -172,14 +211,35 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
   // a longer password switches to the password field.
   const [passcode, setPasscode] = useState(headOffice)
 
+  // Development builds only: the backend makes sure the seeded account exists with
+  // its known secret, then it signs in, so there is nothing to remember or type.
+  const devSignIn = async () => {
+    if (!import.meta.env.DEV) return
+    setBusy(true)
+    try {
+      const account = await setDevRole(headOffice)
+      await go(account.badgeNumber, account.password)
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error(String(e)))
+      setBusy(false)
+    }
+  }
+
   const go = async (badgeNumber: string, pass: string) => {
     setBusy(true)
     setError(null)
     try {
-      const result = await signIn(badgeNumber.trim(), pass)
+      const result = choosing ? await setFirstPassword(badgeNumber.trim(), pass) : await signIn(badgeNumber.trim(), pass)
       rememberOfficer({ badge: badgeNumber.trim(), name: result.officer.name, role: officerRoleLabel(result.officer.role) })
       setPassword('')
     } catch (e) {
+      if (e instanceof ApiError && e.code === 'ADMIN_PASSWORD_REQUIRED') {
+        setChoosing(true)
+        setAskPassword(true)
+        setPassword('')
+        setError(e)
+        return
+      }
       if (!askPassword && pass === '') {
         setAskPassword(true)
         return
@@ -213,6 +273,7 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
   }
 
   const back = () => {
+    setChoosing(false)
     setChosen(null)
     setPassword('')
     setError(null)
@@ -235,10 +296,10 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
               <strong>{chosen.name ?? chosen.badge}</strong>
               <span className="text-[0.8125rem] text-muted-foreground">{[m.sign_in_badge({ badge: chosen.badge }), chosen.role].filter(Boolean).join(' · ')}</span>
             </div>
-            {askPassword && passcode ? (
+            {askPassword && passcode && !choosing ? (
               <PinField label={m.sign_in_passcode()} value={password} onChange={setPassword} onComplete={(code) => void go(chosen.badge, code)} autoFocus disabled={busy} error={error} autoComplete="current-password" />
             ) : askPassword ? (
-              <PasswordField autoFocus placeholder={secretLabel} aria-label={secretLabel} autoComplete="current-password" value={password} busy={busy} error={error} onChange={(e) => setPassword(e.target.value)} className="max-w-72" />
+              <PasswordField autoFocus placeholder={choosing ? m.sign_in_choose_password() : secretLabel} aria-label={choosing ? m.sign_in_choose_password() : secretLabel} autoComplete={choosing ? 'new-password' : 'current-password'} value={password} busy={busy} error={error} onChange={(e) => setPassword(e.target.value)} className="max-w-72" />
             ) : (
               busy && <p className="text-muted-foreground">{m.sign_in_signing_in()}</p>
             )}
@@ -317,12 +378,29 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
                 </button>
               ))}
             </div>
+            {error && (
+              <p role="alert" className="max-w-xs text-center text-destructive">
+                {error.message}
+              </p>
+            )}
             <button type="button" onClick={() => setTyping(true)} className="cursor-pointer text-[0.8125rem] text-muted-foreground hover:text-foreground">
               {m.sign_in_other_officer()}
             </button>
           </div>
         )}
         {chosen && askPassword && <p className="text-center text-[0.8125rem] text-muted-foreground">{m.sign_in_forgot()}</p>}
+        {/* Development builds only: the seeded account, so nobody is locked out of their own test install.
+            import.meta.env.DEV is false in a production build, so this is removed from release bundles. */}
+        {import.meta.env.DEV && !chosen && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void devSignIn()}
+            className="mx-auto w-fit cursor-pointer rounded-full bg-muted px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+          >
+            Continue as development officer
+          </button>
+        )}
       </motion.div>
     </PreAuthLayout>
   )

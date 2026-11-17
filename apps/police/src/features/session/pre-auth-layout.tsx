@@ -1,5 +1,5 @@
 import * as m from '@/paraglide/messages'
-import { Controls } from '@/components/toolbar/controls'
+import { DesktopControls } from '@pleadli/shell'
 import { NetworkIcon, PoliceBadgeIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -26,7 +26,7 @@ export function PreAuthLayout({ mode, children }: { mode?: Mode; children: React
       <BrandPanel mode={mode} />
       <div data-tauri-drag-region className="relative flex items-center justify-center overflow-y-auto bg-background p-8">
         <div className="absolute top-3 right-3">
-          <Controls />
+          <DesktopControls labels={{ group: m['window.controls'](), close: m['window.close'](), minimize: m['window.minimize'](), maximize: m['window.maximize']() }} />
         </div>
         {children}
       </div>

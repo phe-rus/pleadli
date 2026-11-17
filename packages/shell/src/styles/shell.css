@@ -1,0 +1,22 @@
+/* Motion and breakpoints, defined once for every app and the website replicas.
+   Import after the app's globals. */
+:root {
+  --shell-motion-page: 180ms;
+  --shell-motion-tab: 100ms;
+  --shell-motion-panel: 200ms;
+  --shell-motion-hover: 100ms;
+
+  /* Phone, tablet, desktop. Read them in CSS with the matching @media below. */
+  --shell-bp-tablet: 48rem;
+  --shell-bp-desktop: 64rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --shell-motion-page: 0ms;
+    --shell-motion-tab: 0ms;
+    --shell-motion-panel: 0ms;
+    --shell-motion-hover: 0ms;
+  }
+}
+

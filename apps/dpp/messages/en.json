@@ -517,7 +517,8 @@
     "index": "The file",
     "details": "Details",
     "case": "Case",
-    "activity": "Activity"
+    "activity": "Activity",
+    "people": "People"
   },
   "file_ws": {
     "a_count": "A count",
@@ -800,7 +801,8 @@
       "inbox": "Inbox",
       "police_stations": "Police stations",
       "workload": "Workload",
-      "recent": "Recent"
+      "recent": "Recent",
+      "postbox": "Postbox"
     },
     "section": {
       "files": "Files",
@@ -2429,5 +2431,47 @@
       "restore_newer": "This backup was made by a newer Pleadli DPP. Update first, then restore.",
       "general": "That did not work. Try again."
     }
+  },
+  "shell": {
+    "right_panel": {
+      "title": "Side panel",
+      "empty": "Nothing here yet.",
+      "open": "Show side panel",
+      "close": "Hide side panel",
+      "lock": "Keep side panel open",
+      "unlock": "Let side panel close",
+      "resize": "Resize side panel",
+      "widen": "Make side panel wider",
+      "narrow": "Make side panel narrower"
+    },
+    "error": {
+      "title": "This page did not load",
+      "body": "Something went wrong while opening it. Your work is safe. Try again.",
+      "retry": "Try again"
+    },
+    "record_tabs": {
+      "overview_label": "Overview",
+      "overview_empty": "The summary of this file will appear here.",
+      "overview_action": "Add details",
+      "papers_label": "Documents",
+      "papers_empty": "Documents attached to this file go here.",
+      "papers_action": "Add a document",
+      "people_label": "People",
+      "people_empty": "The people linked to this file go here.",
+      "people_action": "Add a person",
+      "history_label": "History",
+      "history_empty": "What was done to this file, and when, goes here.",
+      "history_action": "See activity"
+    },
+    "loading": "Loading"
+  },
+  "postbox": {
+    "empty_inbox": "Nothing has arrived yet.",
+    "empty_outbox": "Nothing is waiting to be sent.",
+    "inbox": "Inbox",
+    "intro": "Case files, referrals and decisions to and from police and courts arrive here.",
+    "outbox": "Outbox",
+    "status": "Not switched on yet. It will work once your office is connected to Pleadli.",
+    "title": "Postbox"
   }
 }

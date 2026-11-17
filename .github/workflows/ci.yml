@@ -102,6 +102,12 @@ jobs:
           else
             bunx turbo run check
           fi
+      # The shared shell: pure logic tests, and the budget that keeps it shared.
+      - name: Shell tests
+        run: bun test
+        working-directory: packages/shell
+      - name: Shell budget
+        run: bun toolings/ci/shell-budget.ts
 
   rust:
     needs: changes
@@ -137,6 +143,8 @@ jobs:
           key: ${{ matrix.app }}
           # Pull requests read the cache, only main writes it.
           save-if: ${{ github.ref == 'refs/heads/main' }}
+          # Keep what compiled even when a test fails, so a re-run is quick.
+          cache-on-failure: true
       # tauri::generate_context needs the frontendDist folder to exist to compile.
       - run: mkdir -p apps/${{ matrix.app }}/dist
       # Tauri checks that each sidecar in externalBin exists at build time (the real

@@ -351,6 +351,8 @@
     },
     "made_lead": "Si mfumo ulioletwa kutoka kwingine. Pleadli inaanza na fomu, lugha na mazingira ya ofisi zitakazoitumia.",
     "made_title": "Imetengenezwa kwa namna Afrika Mashariki inavyofanya kazi",
+    "open_lead": "Ramani ya njia iko wazi: kilichojengwa, kinachojengwa sasa, na kinachokuja.",
+    "open_title": "Wazi kuhusu tulipo.",
     "partners": {
       "oversight": "Makamanda na wizara wanaona takwimu, ucheleweshaji na nani anashikiliwa muda mrefu, huku majalada yakibaki kwa ofisi inayoyamiliki.",
       "oversight_title": "Usimamizi bila kufungua majalada",
@@ -688,6 +690,13 @@
     "next": "Picha inayofuata",
     "pause": "Sitisha picha za skrini",
     "play": "Endeleza picha za skrini",
+    "previous": "Picha ya awali",
+    "today": "Leo",
+    "incidents": "Matukio",
+    "file": "Jalada la shauri",
+    "stages": "Hatua za shauri",
+    "register": "Rejista ya jinai",
+    "remand": "Shauri na ufuatiliaji wa mahabusu",
     "real_note": "Angalia toleo linalotengenezwa lenye kumbukumbu za mfano. Matoleo yanayopatikana yanaweza kutofautiana."
   },
   "pricing": {

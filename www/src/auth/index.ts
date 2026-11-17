@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { admin, bearer } from 'better-auth/plugins'
-import { drizzleAdapter } from '@better-auth/drizzle-adapter'
+import { drizzleAdapter } from '@better-auth/drizzle-adapter/relations-v2'
 import { env } from 'cloudflare:workers'
 import { db } from '../db'
 import * as authSchema from '../db/auth-schema'

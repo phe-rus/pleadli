@@ -135,7 +135,7 @@ export function OfficerForm({ officer, onSuccess }: OfficerFormProps) {
       <form.Subscribe selector={(state) => [state.values.passwordless, state.values.isAdmin] as const}>
         {([passwordless, isAdmin]) => (
           <>
-            {!isAdmin && !config?.isHeadOffice && (config?.authMode === 'badge_only' || officer?.passwordless) && (
+            {!config?.isHeadOffice && (config?.authMode === 'badge_only' || officer?.passwordless) && (
               <form.AppField name="passwordless">
                 {(f) => (
                   <Field orientation="horizontal" className="items-start">

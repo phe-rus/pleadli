@@ -17,6 +17,7 @@
     "@inlang/paraglide-js": "^2.25.4",
     "@pleadli/forms-tables": "workspace:*",
     "@pleadli/rich-text": "workspace:*",
+    "@pleadli/shell": "workspace:*",
     "@pleadli/ui": "workspace:*",
     "@tanstack/react-form": "^1.33.5",
     "@tanstack/react-query": "^5.102.8",

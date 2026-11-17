@@ -30,6 +30,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
+import { RecordTabsView } from '@pleadli/shell'
 import { useState } from 'react'
 import { ApiError } from '@/lib/api'
 
@@ -156,6 +157,7 @@ function RouteComponent() {
   const { data: detail } = useCase(caseId)
   const { data: history } = useAudit(caseId, 30)
   const reopen = useReopenCase()
+  const [tab, setTab] = useState('overview')
   const navigate = useNavigate()
   const [conclude, setConclude] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -223,9 +225,18 @@ function RouteComponent() {
         </div>
       </header>
 
-      <CaseDocuments orders={detail.orders} rulings={detail.rulings} sittings={detail.sittings} />
-      <CaseAttachments caseId={caseId} />
-
+      <RecordTabsView
+        labels={{
+          overview: { label: 'The case', empty: 'Nothing recorded on this case yet.', action: '' },
+          papers: { label: 'Papers', empty: 'No papers or exhibits on this case yet.', action: '' },
+          people: { label: 'People', empty: 'No one has been recorded in this case yet.', action: '' },
+          history: { label: 'History', empty: 'Nothing has been recorded yet.', action: '' },
+        }}
+        value={tab}
+        onValueChange={setTab}
+        content={{
+          overview: (
+            <div className="flex flex-col gap-8">
       <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
         {facts
           .filter(([, value]) => value)
@@ -236,29 +247,6 @@ function RouteComponent() {
             </div>
           ))}
       </dl>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-8">
-          <section aria-labelledby="people" className="page-section">
-            <div className="section-head">
-              <h2 id="people">People</h2>
-              {open && (
-                <PanelButton label="Add" title="Add a person" description="Someone in this case: the accused, the complainant, or counsel." variant="ghost">
-                  {({ close, setDirty: report }) => <PartyForm caseId={caseId} onSuccess={close} onDirtyChange={report} />}
-                </PanelButton>
-              )}
-            </div>
-            {detail.parties.length === 0 ? (
-              <EmptyNote>No one has been recorded in this case yet. Add the accused first.</EmptyNote>
-            ) : (
-              <RowList>
-                {detail.parties.map((p) => (
-                  <PartyRow key={p.id} party={p} editable={open} caseId={caseId} />
-                ))}
-              </RowList>
-            )}
-          </section>
-
           <section aria-labelledby="sittings" className="page-section">
             <div className="section-head">
               <h2 id="sittings">Sittings</h2>
@@ -304,7 +292,12 @@ function RouteComponent() {
               </RowList>
             )}
           </section>
-
+            </div>
+          ),
+          papers: (
+            <div className="flex flex-col gap-8">
+      <CaseDocuments orders={detail.orders} rulings={detail.rulings} sittings={detail.sittings} />
+      <CaseAttachments caseId={caseId} />
           <section aria-labelledby="exhibits" className="page-section">
             <div className="section-head">
               <h2 id="exhibits">Exhibits</h2>
@@ -325,10 +318,30 @@ function RouteComponent() {
             )}
           </section>
 
-
-        </div>
-
-        <div className="flex flex-col gap-8">
+            </div>
+          ),
+          people: (
+          <section aria-labelledby="people" className="page-section">
+            <div className="section-head">
+              <h2 id="people">People</h2>
+              {open && (
+                <PanelButton label="Add" title="Add a person" description="Someone in this case: the accused, the complainant, or counsel." variant="ghost">
+                  {({ close, setDirty: report }) => <PartyForm caseId={caseId} onSuccess={close} onDirtyChange={report} />}
+                </PanelButton>
+              )}
+            </div>
+            {detail.parties.length === 0 ? (
+              <EmptyNote>No one has been recorded in this case yet. Add the accused first.</EmptyNote>
+            ) : (
+              <RowList>
+                {detail.parties.map((p) => (
+                  <PartyRow key={p.id} party={p} editable={open} caseId={caseId} />
+                ))}
+              </RowList>
+            )}
+          </section>
+          ),
+          history: (
           <section aria-labelledby="history" className="page-section">
             <h2 id="history">History of this case</h2>
             {!history || history.length === 0 ? (
@@ -345,8 +358,9 @@ function RouteComponent() {
               </RowList>
             )}
           </section>
-        </div>
-      </div>
+          ),
+        }}
+      />
 
       <Createpanel
         open={conclude}
