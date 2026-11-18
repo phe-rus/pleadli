@@ -1715,6 +1715,21 @@ pub async fn serve_dev(app: Router) {
 
 #[cfg(test)]
 mod tests {
+    /// The router without the sign-in guard, as an administrator: handlers read who is acting from
+    /// the request, which the guard normally supplies.
+    fn as_admin(router: Router) -> Router {
+        router.layer(axum::middleware::from_fn(|mut request: axum::extract::Request, next: axum::middleware::Next| async move {
+            request.extensions_mut().insert(Actor {
+                officer_id: "test-admin".into(),
+                name: "Test Administrator".into(),
+                rank: None,
+                badge_number: None,
+                role: "admin".into(),
+            });
+            next.run(request).await
+        }))
+    }
+
     use super::*;
     use axum::http::{Method, Request};
     use serde_json::{json, Value};
@@ -1743,7 +1758,7 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
         let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
-        let app = routes(db.pool.clone(), vault_root);
+        let app = as_admin(routes(db.pool.clone(), vault_root));
 
         // Nothing is served outside /api.
         assert_eq!(call(&app, Method::GET, "/custody", None).await.0, StatusCode::NOT_FOUND);
@@ -1800,7 +1815,7 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
         let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
-        let app = routes(db.pool.clone(), vault_root);
+        let app = as_admin(routes(db.pool.clone(), vault_root));
 
         let plain = json!({ "name": "Ada Okello", "rank": "Inspector", "post": "OC CID", "role": "officer", "badgeNumber": "", "password": "", "personId": null, "notes": null });
         let (status, ada) = call(&app, Method::POST, "/api/officers", Some(plain)).await;
