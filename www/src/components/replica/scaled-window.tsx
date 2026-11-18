@@ -12,7 +12,7 @@ const WHOLE: Region = { x: 0, y: 0, w: WINDOW_W, h: WINDOW_H }
 /** A desktop app drawn at its real window size (1280 x 860) and scaled to fit, so it is the same
  * layout a person sees on a laptop, never stretched or reflowed. A region shows only part of it.
  * The corner follows the size it is shown at: a small window gets a small corner, never a pill. */
-export function ScaledWindow({ children, className, accent, region = WHOLE }: { children: ReactNode; className?: string; accent?: Record<string, string>; region?: Region }) {
+export function ScaledWindow({ children, className, accent, region = WHOLE, bare = false }: { children: ReactNode; className?: string; accent?: Record<string, string>; region?: Region; bare?: boolean }) {
   const box = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(560)
   useEffect(() => {
@@ -29,8 +29,8 @@ export function ScaledWindow({ children, className, accent, region = WHOLE }: { 
   return (
     <div
       ref={box}
-      className={cn('relative w-full overflow-hidden bg-background shadow-[0_1px_2px_#0000000d,0_12px_30px_-18px_#00000047] ring-1 ring-black/10', className)}
-      style={{ aspectRatio: `${region.w} / ${region.h}`, borderRadius: radius }}
+      className={cn('relative w-full overflow-hidden bg-background', !bare && 'shadow-[0_1px_2px_#0000000d,0_12px_30px_-18px_#00000047] ring-1 ring-black/10', className)}
+      style={{ aspectRatio: `${region.w} / ${region.h}`, borderRadius: bare ? 0 : radius }}
     >
       <div
         className="replica absolute top-0 left-0 origin-top-left select-none"

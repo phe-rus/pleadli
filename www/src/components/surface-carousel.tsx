@@ -3,10 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LazyMount } from '@/components/lazy-mount'
 import { PaperSpecimen, type SpecimenKind } from '@/components/paper-specimen'
-import { ProductWindow } from '@/components/replica/product-window'
-import type { Region } from '@/components/replica/scaled-window'
 import { Reveal } from '@/components/reveal'
 import { getProducts } from '@/data/products'
 import * as m from '@/paraglide/messages'
@@ -14,23 +11,23 @@ import * as m from '@/paraglide/messages'
 const wrap = 'container w-full md:max-w-6xl'
 const control = cn('grid size-10 place-items-center rounded-full bg-muted text-foreground/80', 'transition-colors hover:bg-border hover:text-foreground')
 
-type Item = { key: string; width: string } & ({ app: string; region: Region } | { paper: SpecimenKind })
+type Item = { key: string; width: string } & ({ app: string; image: string; w: number; h: number } | { paper: SpecimenKind })
 
-/** Each item is cut to its own shape from the window it comes from: the wide bench, the tall station list,
- * a low strip of the prosecutor's desk. Between them, two papers as they print. */
+/** Each item is cut to its own shape from the app it comes from (scripts/build-window-images.sh): the wide bench,
+ * the tall station list, a low strip of the prosecutor's desk. Between them, two papers as they print. */
 const items: Item[] = [
-  { key: 'courts', app: 'courts', region: { x: 0, y: 0, w: 1280, h: 740 }, width: 'min(84vw, 42rem)' },
+  { key: 'courts', app: 'courts', image: 'courts-bench', w: 1344, h: 778, width: 'min(84vw, 42rem)' },
   { key: 'summons', paper: 'summons', width: 'min(58vw, 15rem)' },
-  { key: 'dpp', app: 'dpp', region: { x: 256, y: 0, w: 1024, h: 520 }, width: 'min(84vw, 34rem)' },
-  { key: 'police', app: 'police', region: { x: 0, y: 0, w: 900, h: 860 }, width: 'min(78vw, 25rem)' },
-  { key: 'lawyers', app: 'lawyers', region: { x: 0, y: 0, w: 1280, h: 600 }, width: 'min(84vw, 38rem)' },
+  { key: 'dpp', app: 'dpp', image: 'dpp-desk', w: 1100, h: 558, width: 'min(84vw, 34rem)' },
+  { key: 'police', app: 'police', image: 'police-cells', w: 800, h: 764, width: 'min(78vw, 25rem)' },
+  { key: 'lawyers', app: 'lawyers', image: 'lawyers-register', w: 1216, h: 570, width: 'min(84vw, 38rem)' },
   { key: 'charge', paper: 'charge_sheet', width: 'min(58vw, 15rem)' },
-  { key: 'prisons', app: 'prisons', region: { x: 256, y: 0, w: 900, h: 620 }, width: 'min(84vw, 30rem)' },
+  { key: 'prisons', app: 'prisons', image: 'prisons-held', w: 960, h: 661, width: 'min(84vw, 30rem)' },
 ]
 
 /** One strip across the page: the five apps and their papers, running off the right edge.
  * It moves by itself until the visitor pauses it, stays still for anyone who asks for less motion, and
- * builds only the windows that are near the screen. */
+ * uses small pictures, so it holds almost nothing in memory. */
 export function SurfaceCarousel() {
   const products = getProducts()
   const reduce = useReducedMotion()
@@ -86,9 +83,17 @@ export function SurfaceCarousel() {
                 <li key={item.key} className="shrink-0 snap-start" style={{ width: item.width }}>
                   <figure className="m-0 flex flex-col gap-3">
                     {'app' in item ? (
-                      <LazyMount aspect={`${item.region.w} / ${item.region.h}`} margin="320px">
-                        <ProductWindow slug={item.app} region={item.region} />
-                      </LazyMount>
+                      <div className="[container-type:inline-size]">
+                        <img
+                          src={`/images/windows/${item.image}.webp`}
+                          alt=""
+                          width={item.w}
+                          height={item.h}
+                          loading="lazy"
+                          decoding="async"
+                          className="block h-auto w-full rounded-[clamp(2px,0.9cqw,8px)] shadow-[0_1px_2px_#0000000d,0_12px_30px_-18px_#00000047] ring-1 ring-black/10"
+                        />
+                      </div>
                     ) : (
                       <PaperSpecimen kind={item.paper} specimen="Specimen" />
                     )}
