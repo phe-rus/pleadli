@@ -11,3 +11,6 @@ export const fileToCourt = (id: string, courtLevel: string, filedBy: string) => 
 
 export const pickCourtPackage = () => invoke<string | null>('pick_court_package')
 export const saveCourtPackage = (sealed: Sealed) => invoke<boolean>('save_court_package', { name: sealed.name, contentBase64: sealed.file })
+
+/** This office's own fingerprint: the code the registry types to confirm it. */
+export const ownFingerprint = async () => ((await api('GET', '/api/interchange/identity')) as { fingerprint: string } | null)?.fingerprint ?? null

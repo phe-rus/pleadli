@@ -2512,6 +2512,7 @@
     "level_high": "Haute Cour",
     "filed_by": "Déposé par",
     "file_button": "Déposer",
-    "filed_notice": "Dépôt enregistré. Envoyez-le au greffe."
+    "filed_notice": "Dépôt enregistré. Envoyez-le au greffe.",
+    "check_code": "Vérifiez que le code propre du greffe correspond à celui qu'il vous lit :"
   }
 }

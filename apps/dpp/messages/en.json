@@ -2512,6 +2512,7 @@
     "level_high": "High Court",
     "filed_by": "Filed by",
     "file_button": "File",
-    "filed_notice": "Filing saved. Send it to the registry."
+    "filed_notice": "Filing saved. Send it to the registry.",
+    "check_code": "Check the registry's own code matches what it reads out to you:"
   }
 }

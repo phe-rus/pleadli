@@ -1,4 +1,4 @@
-import { answerInvite, fileToCourt, importCourtPackage, listCourtLinks, pickCourtPackage, saveCourtPackage, type CourtLink } from '@/features/court-exchange/data'
+import { ownFingerprint, answerInvite, fileToCourt, importCourtPackage, listCourtLinks, pickCourtPackage, saveCourtPackage, type CourtLink } from '@/features/court-exchange/data'
 import { listFiles } from '@/features/prosecution-files/data'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
@@ -25,7 +25,9 @@ function RouteComponent() {
   const [level, setLevel] = useState<'magistrate' | 'high'>('magistrate')
   const [by, setBy] = useState('')
 
+  const [own, setOwn] = useState<string | null>(null)
   const load = useCallback(async () => {
+    setOwn(await ownFingerprint())
     setLinks(await listCourtLinks())
     setFiles(await listFiles('all'))
   }, [])
@@ -89,7 +91,12 @@ function RouteComponent() {
                   {l.courtName}
                   <Badge variant={l.status === 'trusted' ? 'default' : 'secondary'}>{status(l.status)}</Badge>
                 </span>
-                {l.status === 'answered' && <span className="text-muted-foreground">{m["court_exchange.read_code"]()} <span className="font-mono text-foreground">{l.fingerprint}</span></span>}
+                {l.status === "answered" && (
+                  <>
+                    <span className="text-muted-foreground">{m["court_exchange.read_code"]()} <span className="font-mono text-foreground">{own}</span></span>
+                    <span className="text-muted-foreground">{m["court_exchange.check_code"]()} <span className="font-mono text-foreground">{l.fingerprint}</span></span>
+                  </>
+                )}
                 {l.reason && <span className="text-muted-foreground">{l.reason}</span>}
               </div>
             ))}
