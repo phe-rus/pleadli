@@ -68,3 +68,6 @@ Sign-in on return: badge, Enter, password, Enter (3 steps). Test officer: badge 
 - F1 explained, not a bug: the trial start is the earlier of the database and the OS keystore, and the keystore survives reinstalls. A fresh database on a development machine that has run Police before inherits the old start. On a truly new computer the trial starts at day 0.
 - F6 (part): an incident now has "Open a case from this": the case starts with the incident linked, its summary filled in and the reporter as complainant. Seen in the real window. Starting an incident from a diary entry is still to do.
 - F8: a case with no custody, bond, referral or people shows a "Next steps" card (statement, exhibit, book in, medical exam, refer). Typechecked; not yet seen rendered, because the case I opened already had records.
+- F2: an empty station's Today shows a "Where to start" card (diary, incident, case). Typechecked only: the test station has records, so it was not seen rendered.
+- Date of birth now appears in a person's exported document. Compiles; the export itself was not opened. Imports and the DPP hand-over still do not carry it.
+- Still open: F3 (diary entry to incident/case), F4, F9, F10, and the remaining legal review.

@@ -16,6 +16,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Group, GroupRow, RowIcon } from '@pleadli/ui/grouped'
 import { FirstRunTour } from './first-run-tour'
 import { Stat } from '@pleadli/ui/stat'
+import { buttonVariants } from '@pleadli/ui/button'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 /** Someone in the cells is listed under the time limits once the record puts
@@ -142,6 +143,18 @@ export function OverviewPage() {
 
       {limits.length === 0 && liveBackup.length === 0 && pendingReferrals.length === 0 && (
         <EmptyNote icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} />}>{m["attention.empty"]()}</EmptyNote>
+      )}
+
+      {activity.length === 0 && cases.length === 0 && (
+        <aside className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-4">
+          <h2 className="text-sm font-medium">{m["today.start_title"]()}</h2>
+          <p className="text-xs text-muted-foreground">{m["today.start_hint"]()}</p>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/sd-log" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["today.start_diary"]()}</Link>
+            <Link to="/incidents" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["today.start_incident"]()}</Link>
+            <Link to="/investigations" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["today.start_case"]()}</Link>
+          </div>
+        </aside>
       )}
 
       {activity.length > 0 && (

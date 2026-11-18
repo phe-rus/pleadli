@@ -1850,7 +1850,12 @@
     "limit_near": "Zimebaki {time}. Lazima afikishwe mahakamani au aachiliwe kabla ya {deadline}.",
     "waiting_reply": "Zinasubiri jibu",
     "referred_to": "Imetumwa kwa {destination} {when}",
-    "just_happened": "Yaliyotokea sasa hivi"
+    "just_happened": "Yaliyotokea sasa hivi",
+    "start_title": "Pa kuanzia",
+    "start_hint": "Kituo hiki bado hakina rekodi. Siku ya kawaida huanza na shajara ya kituo; tukio au kesi hufuata.",
+    "start_diary": "Andika kwenye shajara ya kituo",
+    "start_incident": "Andika tukio",
+    "start_case": "Fungua kesi"
   },
   "viewer": {
     "no_preview": "Faili ya aina hii haiwezi kuonyeshwa hapa. Ifungue kwa programu yake kupitia menyu.",

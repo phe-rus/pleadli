@@ -869,6 +869,14 @@ async fn build_person_document(pool: &SqlitePool, vault_root: &Path, id: &str) -
         fields: vec![
             ("Name".to_string(), format!("{} {}", person.first_name, person.last_name)),
             ("Other names".to_string(), person.other_names.clone().unwrap_or_else(|| "·".to_string())),
+            (
+                "Date of birth".to_string(),
+                match person.date_of_birth.as_deref() {
+                    Some(d) if person.date_of_birth_estimated => format!("{d} (estimated)"),
+                    Some(d) => d.to_string(),
+                    None => "·".to_string(),
+                },
+            ),
             ("Phone".to_string(), person.phone.clone().unwrap_or_else(|| "·".to_string())),
             ("National ID".to_string(), person.national_id.clone().unwrap_or_else(|| "·".to_string())),
             ("Address".to_string(), person.address.clone().unwrap_or_else(|| "·".to_string())),

@@ -1850,7 +1850,12 @@
     "limit_near": "{time} left. Must be in court or released by {deadline}.",
     "waiting_reply": "Waiting for a reply",
     "referred_to": "Sent to {destination} {when}",
-    "just_happened": "Just happened"
+    "just_happened": "Just happened",
+    "start_title": "Where to start",
+    "start_hint": "This station has no records yet. A normal day begins with the station diary; an incident or a case follows from it.",
+    "start_diary": "Write in the station diary",
+    "start_incident": "Record an incident",
+    "start_case": "Open a case"
   },
   "viewer": {
     "no_preview": "This kind of file cannot be shown here. Open it in its own program from the menu.",
