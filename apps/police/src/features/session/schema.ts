@@ -13,7 +13,7 @@ export const installationSchema = z.object({
   mode: z.enum(['station', 'command']).nullable(),
   commandLevel: z.string().nullable(),
   needsAdministrator: z.boolean(),
-  authMode: z.enum(['badge_only', 'password']),
+  authMode: z.enum(['badge_only', 'password', 'pin', 'full']),
   name: z.string().nullable(),
   existingOfficers: z.array(existingOfficerSchema),
 })
@@ -72,7 +72,7 @@ export const commandSetupSchema = z.object({
 export type CommandSetupInput = z.infer<typeof commandSetupSchema>
 
 export const authPolicySchema = z.object({
-  mode: z.enum(['badge_only', 'password']),
+  mode: z.enum(['badge_only', 'password', 'pin', 'full']),
   idleTimeoutMinutes: z.number(),
   updatedAt: z.number().nullable(),
 })

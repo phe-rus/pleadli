@@ -2,7 +2,8 @@ import * as m from '@/paraglide/messages'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { onSessionEnded } from '@/lib/api'
-import { Onboarding } from './onboarding'
+import { useBrandLogo } from '@/features/brand'
+import { loadAccent, SharedSetup, SharedSignIn } from './shared-flow'
 import { installationOptions, meOptions, useInstallation, useMe } from './queries'
 import { ScreenFrame } from './screen-frame'
 import { SignInScreen } from './sign-in-screen'
@@ -22,6 +23,8 @@ export function SessionGate({ children, onChange }: { children: ReactNode; onCha
   // installation is read again the screen would be empty; this keeps the
   // progress screen up across that gap.
   const [settingUp, setSettingUp] = useState(false)
+  const logo = useBrandLogo().src
+  useEffect(loadAccent, [])
 
   useEffect(() => {
     if (me) setSettingUp(false)
@@ -72,7 +75,11 @@ export function SessionGate({ children, onChange }: { children: ReactNode; onCha
       </ScreenFrame>
     )
   }
-  if (!installation.installed) return <Onboarding installation={installation} onDone={() => { setSettingUp(true); changed() }} />
-  if (!me) return <SignInScreen installation={installation} onSignedIn={changed} />
+  if (!installation.installed) return <SharedSetup onDone={() => { setSettingUp(true); changed() }} />
+  if (!me) {
+    // A PIN or a phone code uses the same sign-in as every Pleadli app; a station still on badge only (or badge and password) keeps its own until an administrator moves it.
+    if (installation.authMode === 'pin' || installation.authMode === 'full') return <SharedSignIn officeName={installation.name} logo={logo} onSignedIn={changed} />
+    return <SignInScreen installation={installation} onSignedIn={changed} />
+  }
   return <>{children}</>
 }

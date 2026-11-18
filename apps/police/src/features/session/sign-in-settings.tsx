@@ -14,6 +14,8 @@ import { authEventLabel } from './schema'
 const modes = () => [
   { value: 'badge_only', label: m["sign_in_settings.badge_only"]() },
   { value: 'password', label: m["sign_in_settings.badge_password"]() },
+  { value: 'pin', label: m["sign_in_settings.pin"]() },
+  { value: 'full', label: m["sign_in_settings.full"]() },
 ]
 
 const timeouts = () => [
@@ -36,10 +38,12 @@ export function SignInSettings() {
   const command = installation?.mode === 'command'
   const [mode, setMode] = useState<string | null>(null)
   const [timeout, setTimeoutValue] = useState<string | null>(null)
+  const [secret, setSecret] = useState('')
 
   if (!policy) return null
   const shownMode = command ? 'password' : (mode ?? policy.mode)
   const shownTimeout = timeout ?? String(policy.idleTimeoutMinutes)
+  const kindChanges = !command && (shownMode === 'pin') !== (policy.mode === 'pin')
   const changed = shownMode !== policy.mode || shownTimeout !== String(policy.idleTimeoutMinutes)
 
   return (
@@ -56,7 +60,8 @@ export function SignInSettings() {
         onSubmit={async (event) => {
           event.preventDefault()
           try {
-            await save.mutateAsync({ mode: shownMode as 'badge_only' | 'password', idleTimeoutMinutes: Number(shownTimeout) })
+            await save.mutateAsync({ mode: shownMode as 'badge_only' | 'password' | 'pin' | 'full', idleTimeoutMinutes: Number(shownTimeout), adminSecret: kindChanges ? secret : undefined })
+            setSecret('')
             setMode(null)
             setTimeoutValue(null)
             t.success(m["sign_in_settings.saved"]())
@@ -66,7 +71,7 @@ export function SignInSettings() {
         }}
         action={
           admin && !command ? (
-            <Button type="submit" size="sm" disabled={!changed || save.isPending}>
+            <Button type="submit" size="sm" disabled={!changed || save.isPending || (kindChanges && !secret.trim())}>
               {m["common.save"]()}
             </Button>
           ) : undefined
@@ -104,6 +109,15 @@ export function SignInSettings() {
             </Select>
           </label>
         </div>
+        {kindChanges && admin && (
+          <div className="flex flex-col gap-2">
+            <label className="flex flex-col gap-1.5">
+              <span>{shownMode === 'pin' ? m["sign_in_settings.admin_secret_pin"]() : m["sign_in_settings.admin_secret_password"]()}</span>
+              <input type="password" inputMode={shownMode === 'pin' ? 'numeric' : undefined} autoComplete="new-password" value={secret} onChange={(e) => setSecret(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2" />
+            </label>
+            <p className="text-muted-foreground">{m["sign_in_settings.secret_note"]()}</p>
+          </div>
+        )}
         {shownMode === 'password' && !command && <p className="text-muted-foreground">{m["sign_in_settings.password_note"]()}</p>}
       </SettingsCard>
 

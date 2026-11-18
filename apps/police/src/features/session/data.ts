@@ -88,7 +88,7 @@ export async function getAuthPolicy() {
   return authPolicySchema.parse(await api('/auth/policy'))
 }
 
-export async function saveAuthPolicy(input: { mode: 'badge_only' | 'password'; idleTimeoutMinutes: number }) {
+export async function saveAuthPolicy(input: { mode: 'badge_only' | 'password' | 'pin' | 'full'; idleTimeoutMinutes: number; adminSecret?: string }) {
   return authPolicySchema.parse(await api('/auth/policy', { method: 'PUT', body: JSON.stringify(input) }))
 }
 
@@ -100,4 +100,24 @@ export async function listAuthEvents() {
  * first active administrator, so a test install needs no badge or password typed. */
 export async function devSignIn() {
   keepBrowserToken(await api('/auth/dev-sign-in', { method: 'POST' }))
+}
+
+// ---- The shared setup and sign-in (a PIN, or a password with an authenticator).
+
+export type SignInPerson = { id: string; name: string; rank: string | null; secretKind: 'pin' | 'password'; needsEnrolment: boolean }
+export const listSignInPeople = async () => (await api('/auth/people')) as SignInPerson[]
+
+type Enrolment = { secret: string; uri: string; svg: string }
+export const requestSecondFactor = async (name: string) => (await api('/system/second-factor', { method: 'POST', body: JSON.stringify({ name }) })) as Enrolment
+
+type Outcome = { status: 'signed_in'; token?: string } | { status: 'code' } | { status: 'enrol'; enrolment: Enrolment }
+export async function sharedSignIn(attempt: { staffId: string; secret: string; code?: string; enrolSecret?: string }) {
+  const result = (await api('/auth/shared-sign-in', { method: 'POST', body: JSON.stringify(attempt) })) as Outcome
+  if (result.status === 'signed_in') keepBrowserToken(result)
+  return result
+}
+
+export async function completeSharedSetup(payload: { officeName: string; region: string | null; model: string; protection: string; administrator: unknown; people: unknown[] }) {
+  const { officeName, region, model, protection, administrator, people } = payload
+  keepBrowserToken(await api('/system/onboarding/shared', { method: 'POST', body: JSON.stringify({ officeName, region, model, protection, administrator, people }) }))
 }

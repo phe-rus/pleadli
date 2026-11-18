@@ -86,7 +86,7 @@ pub struct ApiResponse {
 
 /// Paths whose success starts a session (the response carries the token).
 fn starts_session(path: &str) -> bool {
-    matches!(path, "/api/auth/sign-in" | "/api/auth/first-password" | "/api/system/onboarding/station" | "/api/system/onboarding/command")
+    matches!(path, "/api/auth/sign-in" | "/api/auth/first-password" | "/api/system/onboarding/station" | "/api/system/onboarding/command" | "/api/system/onboarding/shared" | "/api/auth/shared-sign-in")
 }
 
 #[tauri::command]
@@ -128,7 +128,7 @@ pub async fn api_request(
         if let Some(object) = body.as_object_mut() {
             object.remove("token");
         }
-    } else if path_only == "/api/auth/sign-out" || status == 401 && path_only != "/api/auth/sign-in" {
+    } else if path_only == "/api/auth/sign-out" || status == 401 && path_only != "/api/auth/sign-in" && path_only != "/api/auth/shared-sign-in" {
         // Signed out, or the node says the session is over.
         session.set(None);
     }

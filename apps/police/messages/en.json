@@ -918,7 +918,12 @@
     "trail": "Sign-in trail",
     "trail_desc": "Every sign-in, refusal, sign-out and change to these settings, newest first.",
     "nothing": "Nothing has been recorded yet.",
-    "badge_suffix": ", badge {badge}"
+    "badge_suffix": ", badge {badge}",
+    "pin": "A 6-digit PIN for everyone",
+    "full": "Password and authenticator code",
+    "admin_secret_pin": "Your new 6-digit PIN",
+    "admin_secret_password": "Your new password",
+    "secret_note": "Moving to or from PINs changes what a secret is. Every other officer must have theirs set again on the Officers page before they can sign in."
   },
   "shift_log": {
     "method": {

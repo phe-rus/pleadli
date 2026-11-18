@@ -918,7 +918,12 @@
     "trail": "Kumbukumbu za kuingia",
     "trail_desc": "Kila kuingia, kukataliwa, kutoka na mabadiliko ya mipangilio hii, ya karibuni kwanza.",
     "nothing": "Bado hakuna kilichorekodiwa.",
-    "badge_suffix": ", beji {badge}"
+    "badge_suffix": ", beji {badge}",
+    "pin": "PIN ya tarakimu 6 kwa kila mtu",
+    "full": "Nenosiri na msimbo wa kithibitishaji",
+    "admin_secret_pin": "PIN yako mpya ya tarakimu 6",
+    "admin_secret_password": "Nenosiri lako jipya",
+    "secret_note": "Kuhamia au kutoka kwenye PIN hubadilisha siri ni nini. Kila afisa mwingine lazima awekewe upya siri yake kwenye ukurasa wa Maafisa kabla ya kuingia."
   },
   "shift_log": {
     "method": {
