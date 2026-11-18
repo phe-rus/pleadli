@@ -37,3 +37,27 @@ Also not built: civilian reporting to police, appointments, the office directory
 - *Can offices send each other cases today?* By export and import (USB or e-mail). DPP can receive sealed files. The automatic Postbox is not live.
 - *Does it work without internet?* Yes, every app. Internet is for licences, updates, backups to your own storage, and the connecting services.
 - *Can the public report crimes through it?* No. Not built, and it needs legal review first.
+
+## The live database check, step by step (item 2 above)
+
+I could not run this: wrangler's login had expired and could not reach Cloudflare. Run `bunx wrangler login` first, then from `www/`:
+
+```
+bunx wrangler d1 execute pleadli --remote --command "select name from d1_migrations order by id"
+```
+
+Compare with the folders in `www/.migrations`:
+
+```
+20260922070618_deep_mongu
+20261007222138_orchestra
+20261007231441_app_api
+20261008020536_common_nova
+20261008020537_fancy_wrecking_crew
+20261118031226_bumpy_snowbird      <- the relay tables, new, not on the live database yet
+```
+
+- If the live list holds the same first five under older names (for example `0000_deep_mongu.sql`), the database is fine and only the tracker names differ. Do **not** run `bun run db:remote`: it would try to re-apply the first five and fail ("table account already exists"). Apply only the sixth file by hand: `bunx wrangler d1 execute pleadli --remote --file .migrations/20261118031226_bumpy_snowbird/migration.sql`.
+- If the live list is missing some of the first five, stop and ask: that is a different problem.
+- Back up first: `bunx wrangler d1 export pleadli --remote --output pleadli-before-relay.sql`.
+- The relay tables are not needed until the Postbox is switched on, so this can wait until after the presentation.
