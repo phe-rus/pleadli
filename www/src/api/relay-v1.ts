@@ -99,7 +99,7 @@ async function post(request: Request, caller: Caller) {
   if ((await sha256Of(bytes)) !== claimed) throw new RelayError(400, 'hash_mismatch', 'The body does not match x-pleadli-sha256.')
 
   const key = blobKey(to, id)
-  await env.RELAY.put(key, bytes, { httpMetadata: { contentType: 'application/octet-stream' } })
+  await env.POSTBOX.put(key, bytes, { httpMetadata: { contentType: 'application/octet-stream' } })
   const postedAt = new Date(now)
   await db.insert(relayMessage).values({
     id,
@@ -145,7 +145,7 @@ async function mine(id: string, caller: Caller) {
 
 async function fetchBytes(id: string, caller: Caller) {
   const row = await mine(id, caller)
-  const object = await env.RELAY.get(row.blobKey)
+  const object = await env.POSTBOX.get(row.blobKey)
   if (!object) throw new RelayError(404, 'not_found', 'No such message.')
   if (!row.deliveredAt) await db.update(relayMessage).set({ deliveredAt: new Date() }).where(eq(relayMessage.id, id))
   return new Response(object.body, {
@@ -155,7 +155,7 @@ async function fetchBytes(id: string, caller: Caller) {
 
 async function ack(id: string, caller: Caller) {
   const row = await mine(id, caller)
-  await env.RELAY.delete(row.blobKey)
+  await env.POSTBOX.delete(row.blobKey)
   await db.update(relayMessage).set({ ackedAt: new Date(), deliveredAt: row.deliveredAt ?? new Date() }).where(eq(relayMessage.id, id))
   return json({ ok: true })
 }
@@ -206,7 +206,7 @@ export async function sweepRelay() {
     .from(relayMessage)
     .where(and(isNull(relayMessage.ackedAt), lt(relayMessage.expiresAt, new Date(now))))
     .limit(500)
-  for (const row of stale) await env.RELAY.delete(row.blobKey)
+  for (const row of stale) await env.POSTBOX.delete(row.blobKey)
   const old = await db.delete(relayMessage).where(lt(relayMessage.postedAt, new Date(now - LIMITS.historyDays * DAY)))
   return { expired: stale.length, pruned: old.meta?.changes ?? 0 }
 }

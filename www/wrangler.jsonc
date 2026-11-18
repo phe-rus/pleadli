@@ -22,8 +22,8 @@
     ],
 	"r2_buckets": [
 		{
-			"binding": "RELAY",
-			"bucket_name": "pleadli-relay"
+			"binding": "POSTBOX",
+			"bucket_name": "pleadli-post"
 		}
 	],
 	"triggers": {

@@ -54,7 +54,7 @@ relay_message      the envelope, never the letter
 
 No `deleted_at`: when bytes are removed from R2 the row keeps its status, and the whole row is pruned by the sweeper at the history limit. The civilian and field traffic in `PUBLIC-AND-FIELD-API.md` adds **no tables**: it is sealed `relay_message` rows with a different `kind`, plus the existing `paper`, `tracking_code` and `tracking_event`.
 
-R2 bucket `pleadli-relay`, key `relay/<to_address>/<message id>`. Per office: at most 500 MB queued and 60 posts per hour; both are numbers in config, not code.
+R2 bucket `pleadli-post`, binding `POSTBOX`, key `relay/<to_address>/<message id>`. Per office: at most 500 MB queued and 60 posts per hour; both are numbers in config, not code.
 
 ## 4a. The free-plan budget (verified against developers.cloudflare.com on 2026-11-18)
 
