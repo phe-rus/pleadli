@@ -77,3 +77,5 @@ Sign-in on return: badge, Enter, password, Enter (3 steps). Test officer: badge 
 - F4 done (debug builds only): the development sign-in now shows its error under the button. Compiles; not triggered.
 - Import: "Date of birth (YYYY-MM-DD)" is now a mappable person column. Compiles; not run with a file.
 - Not done: F9 not checked; DPP hand-over has no date of birth (no separate hand-over exists); referral destinations and case statuses are still fixed lists, not in the rules pack.
+- F9 resolved by reading the code: an incident stores the reporting person and its paper prints "Reported by". The original finding was an incident created without choosing that person. With "Open a case from this" the reporter now flows into the case as complainant.
+- Rules pack for referral destinations and case statuses: deliberately not done. They are menus with translated labels (English and Kiswahili), and the pack holds only English text, so moving them would lose the translations. It is worth doing together with Kenya and DRC packs, when the lists differ by country, and with a labels-per-language field in the pack.
