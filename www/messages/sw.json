@@ -787,7 +787,7 @@
     "guide_title": "Mwongozo kidogo. Mwanzo mzuri.",
     "guide_work": "Elewa kufanya kazi peke yako, na wenzako na huduma za mtandaoni.",
     "intro_lead": "Mashauri, nyaraka na shughuli zako za kila siku, pamoja. Programu maalumu kwa polisi, waendesha mashtaka, mahakama, mawakili na magereza. Fanya kazi peke yako, bila intaneti, au na taasisi yako.",
-    "intro_title": "Pleadli Legal Orchestra",
+    "intro_title": "Pleadli",
     "ownership": "Tunaunda kwa kuzingatia kazi za ndani na ufikiaji makini wa kumbukumbu. Miunganiko inapaswa kusaidia majukumu ya taasisi.",
     "ownership_title": "Kumbukumbu zako ni muhimu.",
     "slogan": "Mahali bora pa kazi yako.",
@@ -921,8 +921,7 @@
     "h_now": "Sasa",
     "later": {
       "1": "Pleadli Police kwenye simu: utumaji, maombi ya msaada na trafiki.",
-      "2": "Programu kwa umma: kuripoti uhalifu, kuomba msaada, kufuatilia shauri, kupanga kutembelea gereza, kumpata wakili, kujisajili makazi kwa polisi wa eneo.",
-      "3": "Visakinishi vilivyosainiwa, na Pleadli kwa macOS na Linux."
+      "2": "Visakinishi vilivyosainiwa, na Pleadli kwa macOS na Linux."
     },
     "lead": "Kinachojengwa sasa, kinachofuata na kitakachofuata baadaye, kisha kila programu inachofanya leo. Kwa ukweli: kitu kinaitwa tayari tu baada ya kuendeshwa na kukaguliwa.",
     "next": {
@@ -945,7 +944,7 @@
     "about_title": "Kuhusu Pleadli | Lengo letu na watu wetu",
     "contact_title": "Wasiliana na Pleadli | Msaada, majaribio na ushirikiano",
     "downloads_title": "Pakua Pleadli | Programu za kazi za kisheria",
-    "home_title": "Pleadli Legal Orchestra | Mahali bora pa kazi yako.",
+    "home_title": "Pleadli | Mahali bora pa kazi yako.",
     "licensing_title": "Leseni za Pleadli | Watu binafsi, ofisi na taasisi",
     "products_title": "Gundua Pleadli | Programu kwa kila sehemu ya haki"
   },
@@ -1021,5 +1020,46 @@
     "title": "Je, karatasi hii ni halali?",
     "withdrawn": "Imeondolewa",
     "withdrawn_body": "Karatasi hii ilikuwa halali lakini iliondolewa tarehe {date}. Usiitegemee."
+  },
+  "journey": {
+    "eyebrow": "Shauri moja, tangu mwanzo hadi mwisho",
+    "title": "Fuata shauri moja. Ona kila karatasi inayoachwa nyuma.",
+    "lead": "Wizi unaripotiwa kituoni. Mtu anapoachiliwa, ofisi tano zimehifadhi kumbukumbu zake na kuchapisha karatasi zake. Kila karatasi ina msimbo ambao yeyote anaweza kuukagua.",
+    "specimen": "Karatasi ya mfano",
+    "verify": "Ikague kwenye pleadli.com/verify",
+    "s1_who": "Polisi",
+    "s1_title": "Kituoni",
+    "s1_body": "Taarifa inakuwa shauri. Maelezo, vielelezo na kikomo cha saa 48 za mahabusu vinabaki mbele yako, na dhamana inachapishwa na msimbo wake.",
+    "s2_who": "DPP",
+    "s2_title": "Mwendesha mashtaka anaamua",
+    "s2_body": "Jalada linafika na nyaraka zake. Mwendesha mashtaka analipitia, anathibitisha shtaka na kusaini hati ya mashtaka.",
+    "s3_who": "Mahakama",
+    "s3_title": "Mbele ya mahakama",
+    "s3_body": "Masjala inapanga kikao, inatoa wito na kuandika kila amri, kuahirishwa na uamuzi.",
+    "s4_who": "Mawakili",
+    "s4_title": "Kwa mshtakiwa",
+    "s4_body": "Wakili anaweka maelekezo, mteja na ada pamoja, na anaandikia mahakama kwa muundo ambao mahakama inatarajia.",
+    "s5_who": "Magereza",
+    "s5_title": "Kizuizini, kisha kuachiliwa",
+    "s5_body": "Mapokezi, tarehe za mahakama na huduma za kila siku viko kwenye jalada moja. Kuachiliwa kunakaguliwa dhidi ya kila mamlaka kabla mtu yeyote hajaondoka.",
+    "honest": "Leo kila ofisi huhifadhi kumbukumbu yake na kuchapisha karatasi zake. Kupitisha shauri kutoka ofisi moja hadi nyingine kupitia sanduku la posta kumejengwa kwa toleo la kwanza na bado halijaanza kutumika."
+  },
+  "twoways": {
+    "title": "Karatasi unapohitaji karatasi. Mtandaoni unapoweza.",
+    "lead": "Hakuna kilichofungiwa ndani ya programu. Kila karatasi inaweza kutoka kwa njia ya zamani au mpya, na zote mbili zinaweza kukaguliwa.",
+    "paper_title": "Njia ya karatasi",
+    "paper_lead": "Fanya kazi kama ofisi yako inavyofanya, na uitumie programu kama kumbukumbu yako.",
+    "paper_1": "Chapisha karatasi, ipige muhuri na uisaini kwa mkono",
+    "paper_2": "Ihifadhi kama PDF ili kutuma au kuweka kwenye jalada",
+    "paper_3": "Ifungue kwenye Word au Excel na uibadilishe",
+    "paper_4": "Skani kinachofika kwa karatasi na ukiambatishe kwenye shauri",
+    "post_title": "Njia ya sanduku la posta",
+    "post_lead": "Tuma karatasi hiyo hiyo kwa ofisi nyingine, ikiwa imefungwa kwa muhuri, pamoja na viambatisho vyake.",
+    "post_1": "Kifurushi kilichofungwa: karatasi, viambatisho vyake na aliyetuma",
+    "post_2": "Ofisi inayopokea inakagua mtumaji kabla ya kukubali",
+    "post_3": "Risiti inarudi, ili ujue imefika",
+    "post_4": "Inafanya kazi kupitia kompyuta za ofisi yako mwenyewe, si kupitia sisi tu",
+    "status": "Toleo la kwanza limejengwa. Bado halijaanza kutumika.",
+    "offline": "Kila kitu upande wa kushoto kinafanya kazi bila intaneti kabisa."
   }
 }

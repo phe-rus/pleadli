@@ -787,7 +787,7 @@
     "guide_title": "Quelques repères. Un bon départ.",
     "guide_work": "Comprenez le travail individuel, en équipe et avec les services en ligne.",
     "intro_lead": "Vos affaires, vos documents et votre journée de travail, réunis. Des applications dédiées à la police, au parquet, aux tribunaux, aux avocats et aux prisons. Travaillez seul, hors ligne ou avec votre institution.",
-    "intro_title": "Pleadli Legal Orchestra",
+    "intro_title": "Pleadli",
     "ownership": "Nous concevons autour du travail local et d’un accès attentif aux dossiers. Les connexions doivent soutenir les responsabilités de l’institution.",
     "ownership_title": "Vos dossiers comptent.",
     "slogan": "Un meilleur espace pour votre travail.",
@@ -921,8 +921,7 @@
     "h_now": "Maintenant",
     "later": {
       "1": "Pleadli Police sur téléphone : dispatch, appels de renfort et circulation.",
-      "2": "Une application pour le public : signaler un crime, appeler à l'aide, suivre une affaire, réserver une visite en prison, trouver un avocat, déclarer sa résidence à la police locale.",
-      "3": "Installateurs signés, et Pleadli pour macOS et Linux."
+      "2": "Installateurs signés, et Pleadli pour macOS et Linux."
     },
     "lead": "Ce qui se construit maintenant, ce qui vient ensuite et après, puis ce que fait chaque application aujourd'hui. Honnête : une chose n'est dite prête qu'après avoir été lancée et vérifiée.",
     "next": {
@@ -945,7 +944,7 @@
     "about_title": "À propos de Pleadli | Notre mission et notre équipe",
     "contact_title": "Contacter Pleadli | Assistance, projets pilotes et partenariats",
     "downloads_title": "Télécharger Pleadli | Applications pour les métiers de la justice",
-    "home_title": "Pleadli Legal Orchestra | Un meilleur espace pour votre travail.",
+    "home_title": "Pleadli | Un meilleur espace pour votre travail.",
     "licensing_title": "Licences Pleadli | Particuliers, cabinets et institutions",
     "products_title": "Découvrez Pleadli | Des applications pour chaque métier de la justice"
   },
@@ -1021,5 +1020,46 @@
     "title": "Ce document est-il authentique ?",
     "withdrawn": "Retiré",
     "withdrawn_body": "Ce document était authentique mais a été retiré le {date}. Ne vous y fiez pas."
+  },
+  "journey": {
+    "eyebrow": "Une affaire, du début à la fin",
+    "title": "Suivez une affaire. Voyez chaque pièce qu’elle laisse derrière elle.",
+    "lead": "Un vol est signalé dans un poste. Quand la personne est libérée, cinq services ont chacun tenu leur propre dossier et imprimé leurs propres pièces. Chaque pièce porte un code que n’importe qui peut vérifier.",
+    "specimen": "Pièce de démonstration",
+    "verify": "À vérifier sur pleadli.com/verify",
+    "s1_who": "Police",
+    "s1_title": "Au poste",
+    "s1_body": "Le signalement devient une affaire. Dépositions, pièces à conviction et limite de 48 heures de garde à vue restent sous les yeux, et le cautionnement est imprimé avec son code.",
+    "s2_who": "Ministère public",
+    "s2_title": "Le procureur décide",
+    "s2_body": "Le dossier arrive avec ses pièces. Le procureur l’examine, arrête la qualification et signe l’acte d’accusation.",
+    "s3_who": "Tribunaux",
+    "s3_title": "Devant le tribunal",
+    "s3_body": "Le greffe fixe l’audience, délivre la citation et consigne chaque ordonnance, renvoi et décision.",
+    "s4_who": "Avocats",
+    "s4_title": "Pour l’accusé",
+    "s4_body": "L’avocat réunit le mandat, le client et les honoraires, et écrit au tribunal dans la forme qu’il attend.",
+    "s5_who": "Prisons",
+    "s5_title": "En détention, puis libéré",
+    "s5_body": "Écrou, dates d’audience et soins quotidiens sont réunis dans un seul dossier. La libération est vérifiée au regard de chaque titre avant que quiconque ne sorte.",
+    "honest": "Aujourd’hui, chaque service tient son dossier et imprime ses pièces. Faire passer une affaire d’un service au suivant par la boîte postale est construit en première version et n’est pas encore utilisé."
+  },
+  "twoways": {
+    "title": "Du papier quand il faut du papier. En ligne quand c’est possible.",
+    "lead": "Rien n’est enfermé dans l’application. Chaque pièce peut partir par l’ancienne voie ou la nouvelle, et les deux peuvent être vérifiées.",
+    "paper_title": "La voie papier",
+    "paper_lead": "Travaillez comme votre service travaille déjà, et gardez l’application comme dossier.",
+    "paper_1": "Imprimez la pièce, tamponnez-la et signez-la à la main",
+    "paper_2": "Enregistrez-la en PDF pour l’envoyer ou la classer",
+    "paper_3": "Ouvrez-la dans Word ou Excel et modifiez-la",
+    "paper_4": "Numérisez ce qui arrive sur papier et joignez-le à l’affaire",
+    "post_title": "La voie boîte postale",
+    "post_lead": "Envoyez la même pièce à un autre service, scellée, avec ses pièces jointes.",
+    "post_1": "Un colis scellé : la pièce, ses pièces jointes et l’expéditeur",
+    "post_2": "Le service destinataire vérifie l’expéditeur avant d’accepter",
+    "post_3": "Un accusé de réception revient, pour savoir que c’est arrivé",
+    "post_4": "Passe par les ordinateurs de votre propre service, pas seulement par nous",
+    "status": "Première version construite. Pas encore utilisée.",
+    "offline": "Tout ce qui est à gauche fonctionne sans aucun accès à internet."
   }
 }

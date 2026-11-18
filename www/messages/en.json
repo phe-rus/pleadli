@@ -787,7 +787,7 @@
     "guide_title": "A little guidance. A good start.",
     "guide_work": "Understand working on your own, with colleagues and with online services.",
     "intro_lead": "Your cases, papers and working day, brought together. Dedicated apps for police, prosecutors, courts, lawyers and prisons. Work on your own, offline, or with your institution.",
-    "intro_title": "Pleadli Legal Orchestra",
+    "intro_title": "Pleadli",
     "ownership": "We design around local work and careful access to records. Connections should support an institution’s responsibilities, not take them away.",
     "ownership_title": "Your records matter.",
     "slogan": "A better place for your work.",
@@ -921,8 +921,7 @@
     "h_now": "Now",
     "later": {
       "1": "Pleadli Police on the phone: dispatch, backup calls and traffic.",
-      "2": "An app for the public: report a crime, call for help, follow a case, book a prison visit, find an advocate, register residence with the local police.",
-      "3": "Signed installers, and Pleadli for macOS and Linux."
+      "2": "Signed installers, and Pleadli for macOS and Linux."
     },
     "lead": "What is being built now, what comes next and what comes after, then what each app does today. Kept honest: something is called ready only once it has been run and checked.",
     "next": {
@@ -945,7 +944,7 @@
     "about_title": "About Pleadli | Our purpose and the people behind it",
     "contact_title": "Contact Pleadli | Support, pilots and partnerships",
     "downloads_title": "Download Pleadli | Desktop apps for legal work",
-    "home_title": "Pleadli Legal Orchestra | A better place for your work.",
+    "home_title": "Pleadli | A better place for your work.",
     "licensing_title": "Pleadli licensing | Individuals, practices and institutions",
     "products_title": "Explore Pleadli | Apps for every part of justice"
   },
@@ -1021,5 +1020,46 @@
     "title": "Is this paper genuine?",
     "withdrawn": "Withdrawn",
     "withdrawn_body": "This paper was genuine but was withdrawn on {date}. Do not rely on it."
+  },
+  "journey": {
+    "eyebrow": "One case, start to finish",
+    "title": "Follow one case. See every paper it leaves behind.",
+    "lead": "A theft is reported at a station. By the time the person is released, five offices have each kept their own record and printed their own papers. Each paper carries a code anyone can check.",
+    "specimen": "Specimen paper",
+    "verify": "Check it on pleadli.com/verify",
+    "s1_who": "Police",
+    "s1_title": "At the station",
+    "s1_body": "The report becomes a case. Statements, exhibits and the 48-hour custody limit stay in view, and the bond is printed with its own code.",
+    "s2_who": "DPP",
+    "s2_title": "The prosecutor decides",
+    "s2_body": "The file arrives with its papers. The prosecutor reviews it, settles the charge and signs the charge sheet.",
+    "s3_who": "Courts",
+    "s3_title": "Before the court",
+    "s3_body": "The registry fixes the sitting, issues the summons and records every order, adjournment and ruling.",
+    "s4_who": "Lawyers",
+    "s4_title": "For the accused",
+    "s4_body": "The advocate keeps the brief, the client and the fees together, and writes to the court in the form the court expects.",
+    "s5_who": "Prisons",
+    "s5_title": "In custody, then released",
+    "s5_body": "Admission, court dates and daily care are kept in one file. Release is checked against every authority before anyone leaves.",
+    "honest": "Today each office keeps its own record and prints its own papers. Passing a case from one office to the next through the postbox is built as a first version and is not yet in use."
+  },
+  "twoways": {
+    "title": "Paper when you need paper. Online when you can.",
+    "lead": "Nothing is locked inside the app. Every paper can leave on the old route or the new one, and either one can be checked.",
+    "paper_title": "The paper way",
+    "paper_lead": "Work the way your office already works, and keep the app as your record.",
+    "paper_1": "Print the paper, stamp it and sign it by hand",
+    "paper_2": "Save it as a PDF to send or file",
+    "paper_3": "Open it in Word or Excel and change it",
+    "paper_4": "Scan what arrives on paper and attach it to the case",
+    "post_title": "The postbox way",
+    "post_lead": "Send the same paper to another office, sealed, with its attachments.",
+    "post_1": "A sealed package: the paper, its attachments and who sent it",
+    "post_2": "The receiving office checks the sender before it accepts",
+    "post_3": "A receipt comes back, so you know it arrived",
+    "post_4": "Works through your own office computers, not only through us",
+    "status": "First version built. Not yet in use.",
+    "offline": "Everything on the left works with no internet at all."
   }
 }

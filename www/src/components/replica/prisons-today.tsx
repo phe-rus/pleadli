@@ -76,7 +76,6 @@ export function PrisonsToday() {
       product="Pleadli Prisons" office="Luzira Upper Prison" crest="/images/brand/prisons-crest.svg"
       sections={sections}
       user={{ initials: 'SA', name: 'Screenshot Admin', sub: 'Badge 0142' }}
-      banner={<div className="flex h-8 shrink-0 items-center justify-center gap-2 bg-amber-500/10 text-xs text-amber-800">The trial has ended. Every record stays open. <span className="font-medium">Licence</span></div>}
       screens={[
         { row: 'Today', tab: { icon: DashboardBrowsingIcon, label: 'Today' }, content: <PrisonsTodayPage /> },
         { row: 'Everyone held', tab: { icon: Folder01Icon, label: 'Everyone held' }, content: <ListPage title="Everyone held" action="Receive someone" groups={[{ title: "Held now · 1", items: [

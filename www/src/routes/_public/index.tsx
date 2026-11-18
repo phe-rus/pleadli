@@ -12,6 +12,8 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import * as m from '@/paraglide/messages'
 import { cn } from '@pleadli/ui/lib/utils'
 import { LinkArrow } from '@/components/link-arrow'
+import { CaseJourney } from '@/components/case-journey'
+import { TwoWays } from '@/components/two-ways'
 
 export const Route = createFileRoute('/_public/')({
   head: () => seo({ title: m['seo.home_title'](), description: m['site.description'](), path: '/' }),
@@ -22,7 +24,7 @@ const wrap = 'container w-full md:max-w-6xl'
 const horizon = () => [
   { label: m['roadmap.h_now'](), dot: 'bg-primary', items: [m['roadmap.now.1'](), m['roadmap.now.2'](), m['roadmap.now.3'](), m['roadmap.now.4']()] },
   { label: m['roadmap.h_next'](), dot: 'bg-primary/40', items: [m['roadmap.next.1'](), m['roadmap.next.2'](), m['roadmap.next.3'](), m['roadmap.next.4']()] },
-  { label: m['roadmap.h_later'](), dot: 'bg-border', items: [m['roadmap.later.1'](), m['roadmap.later.2'](), m['roadmap.later.3']()] },
+  { label: m['roadmap.h_later'](), dot: 'bg-border', items: [m['roadmap.later.1'](), m['roadmap.later.2']()] },
 ]
 
 function RouteComponent() {
@@ -42,6 +44,10 @@ function RouteComponent() {
       <div className="bg-muted/60">
         <PinnedStory />
       </div>
+
+      <CaseJourney />
+
+      <TwoWays />
 
       <section className="border-t border-border/60" aria-label={m["launch.everyday"]()}>
         <div className={cn(wrap, "py-16 md:py-24")}>

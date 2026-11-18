@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_public/roadmap')({
 const horizons = [
   { label: () => m["roadmap.h_now"](), items: [() => m["roadmap.now.1"](), () => m["roadmap.now.2"](), () => m["roadmap.now.3"](), () => m["roadmap.now.4"]()], tone: 'bg-primary text-primary-foreground' },
   { label: () => m["roadmap.h_next"](), items: [() => m["roadmap.next.1"](), () => m["roadmap.next.2"](), () => m["roadmap.next.3"](), () => m["roadmap.next.4"]()], tone: 'bg-primary/15 text-primary' },
-  { label: () => m["roadmap.h_later"](), items: [() => m["roadmap.later.1"](), () => m["roadmap.later.2"](), () => m["roadmap.later.3"]()], tone: 'bg-muted text-muted-foreground' },
+  { label: () => m["roadmap.h_later"](), items: [() => m["roadmap.later.1"](), () => m["roadmap.later.2"]()], tone: 'bg-muted text-muted-foreground' },
 ]
 
 const apps = [
