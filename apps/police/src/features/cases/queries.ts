@@ -1,5 +1,5 @@
 import { queryOptions, useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createCase, exportCaseDocument, getCaseWorkspace, listCasePeople, listCases, updateCase } from './data'
+import { createCase, exportCaseDocument, getCaseWorkspace, listCaseAccess, listCasePeople, listCases, updateCase } from './data'
 import type { DocumentFormat } from './data'
 import type { CreateCaseInput } from './schema'
 import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
@@ -22,6 +22,10 @@ export const casePeopleOptions = (caseId: string) =>
     queryFn: () => listCasePeople(caseId),
     enabled: Boolean(caseId),
   })
+
+export function useCaseAccess(caseId: string, enabled: boolean) {
+  return useQuery({ queryKey: ['cases', 'access', caseId] as const, queryFn: () => listCaseAccess(caseId), enabled: enabled && Boolean(caseId) })
+}
 
 export function useCasePeople(caseId: string) {
   return useQuery(casePeopleOptions(caseId))

@@ -328,7 +328,9 @@
     "restricted_tag": "Imezuiliwa",
     "restricted_hidden": "Imezuiliwa. Ni msimamizi au afisa aliyeizuia tu anayeweza kufungua kesi hii.",
     "restricted_title": "Kesi hii imezuiliwa",
-    "back_to_cases": "Rudi kwenye kesi"
+    "back_to_cases": "Rudi kwenye kesi",
+    "access_label": "Maafisa wanaoweza pia kuifungua",
+    "access_hint": "Wasimamizi na wewe mnaweza kuifungua daima. Weka alama kwa afisa mwingine anayehitaji."
   },
   "command": {
     "fallback_name": "Kamandi",

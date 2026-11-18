@@ -502,6 +502,7 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
                 people: Vec::new(),
                 restricted: false,
                 actor_id: None,
+                access_officer_ids: None,
             };
             cases::create_case(pool, vault_root, input).await.map(|_| ()).map_err(|e| e.to_string())
         }

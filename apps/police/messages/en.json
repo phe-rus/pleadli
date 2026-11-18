@@ -328,7 +328,9 @@
     "restricted_tag": "Restricted",
     "restricted_hidden": "Restricted. Only an administrator or the officer who restricted it can open this case.",
     "restricted_title": "This case is restricted",
-    "back_to_cases": "Back to cases"
+    "back_to_cases": "Back to cases",
+    "access_label": "Officers who may also open it",
+    "access_hint": "Administrators and you can always open it. Tick any other officer who needs to."
   },
   "command": {
     "fallback_name": "Command",

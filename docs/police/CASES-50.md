@@ -176,6 +176,10 @@ The murder bond already granted in CRB 18 before the fix is still in the test da
 | No PF3 or post-mortem | New "Medical records" page: kind, person, case, hospital, doctor, requested and examined dates, findings; the examined person is added to the case | PF3 recorded for CRB 17 and listed |
 | No restricted view for sensitive cases | "Restricted case" switch. Administrators and the officer who restricted it see it; others see the reference number and a notice. Hidden from case lists, the case page, people, statements, exhibits, custody, charge sheets, referrals, bonds, medical records, a person's page and the Today feed | As a second, non-admin officer: list row hidden, case page refused with a clear message, medical list and feed empty of it |
 
-Limits of the restricted view: it hides records from screens and lists. Printed or exported documents, the DPP hand-over, search results and the file browser do not yet respect it, and only one officer (the one who restricted it) plus administrators can open a case. A named access list is still to do.
+Restricted cases also have a named access list: tick other officers in the case form to let them open it (administrators and the officer who restricted it always can). Verified as a second officer: with access he opens the case, exports it and finds it in search; with access removed, the case page, its access list, its export, whole-station exports (PDF, Word, Excel, Markdown) and its files all refuse or leave it out.
+
+Limits that remain: a person who appears in a restricted case still shows by name in search and the people list (their page hides the case); the DPP hand-over and the raw vault-file route have not been checked against restriction; whole-station exports are refused to a non-administrator whenever any restricted case they cannot open exists, rather than being filtered.
 
 Bug found and fixed on the way: editing a case before its people had loaded saved an empty people list and erased everyone on the case. The form now waits for the people before it can save.
+
+Also fixed: a form whose own check refused to save (for example a completed medical record with no date) showed nothing. The save button now shows the reason underneath, for every form.

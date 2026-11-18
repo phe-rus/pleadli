@@ -110,7 +110,10 @@ async fn get_person_handler(
 /// frontend's `save()` dialog already resolved), so this writes to a
 /// throwaway temp file server-side and streams those bytes back as a
 /// normal file download instead.
-async fn export_all_markdown_handler(State(state): State<AppState>) -> Result<Response, ApiError> {
+async fn export_all_markdown_handler(State(state): State<AppState>, Extension(actor): Extension<Actor>) -> Result<Response, ApiError> {
+    if !cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "This export would include restricted cases you may not open. Ask an administrator to export it.".to_string()));
+    }
     let temp_path = std::env::temp_dir().join(format!("pleadli-police-vault-{}.zip", uuid::Uuid::new_v4()));
     documents::export_all_markdown(&state.pool, &state.vault_root, &temp_path)
         .await
@@ -125,7 +128,10 @@ async fn export_all_markdown_handler(State(state): State<AppState>) -> Result<Re
         .unwrap())
 }
 
-async fn export_all_xlsx_handler(State(state): State<AppState>) -> Result<Response, ApiError> {
+async fn export_all_xlsx_handler(State(state): State<AppState>, Extension(actor): Extension<Actor>) -> Result<Response, ApiError> {
+    if !cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "This export would include restricted cases you may not open. Ask an administrator to export it.".to_string()));
+    }
     let temp_path = std::env::temp_dir().join(format!("pleadli-police-data-{}.xlsx", uuid::Uuid::new_v4()));
     documents::export_all_xlsx(&state.pool, &temp_path)
         .await
@@ -150,8 +156,12 @@ fn document_content_type(format: &str) -> &'static str {
 
 async fn export_all_document_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(format): Path<String>,
 ) -> Result<Response, ApiError> {
+    if !cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "This export would include restricted cases you may not open. Ask an administrator to export it.".to_string()));
+    }
     let parsed = documents::DocumentFormat::parse(&format)
         .ok_or((StatusCode::BAD_REQUEST, "Invalid document format.".to_string()))?;
     let temp_path = std::env::temp_dir().join(format!("pleadli-police-data-{}.{format}", uuid::Uuid::new_v4()));
@@ -217,8 +227,12 @@ async fn export_person_document_handler(
 
 async fn export_case_document_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path((id, format)): Path<(String, String)>,
 ) -> Result<Response, ApiError> {
+    if !cases::can_open(&state.pool, &id, &actor).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
     let parsed = documents::DocumentFormat::parse(&format)
         .ok_or((StatusCode::BAD_REQUEST, "Invalid document format.".to_string()))?;
     export_record_document(&format, "case", |path| async move {
@@ -229,8 +243,13 @@ async fn export_case_document_handler(
 
 async fn export_charge_sheet_document_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path((id, format)): Path<(String, String)>,
 ) -> Result<Response, ApiError> {
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    if !cases::may_see_entity(&state.pool, "charge_sheet", &id, &hidden).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
     let parsed = documents::DocumentFormat::parse(&format)
         .ok_or((StatusCode::BAD_REQUEST, "Invalid document format.".to_string()))?;
     export_record_document(&format, "charge-sheet", |path| async move {
@@ -323,12 +342,18 @@ async fn get_reports_summary_handler(
 
 async fn search_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<SearchResult>>, ApiError> {
-    search::search(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    let found = search::search(&state.pool, &params.query).await.map_err(internal_error)?;
+    let mut kept = Vec::with_capacity(found.len());
+    for result in found {
+        if cases::may_see_entity(&state.pool, &result.entity_type, &result.id, &hidden).await.map_err(internal_error)? {
+            kept.push(result);
+        }
+    }
+    Ok(Json(kept))
 }
 
 async fn list_recent_activity_handler(State(state): State<AppState>) -> Result<Json<Vec<ActivityItem>>, ApiError> {
@@ -832,7 +857,8 @@ async fn create_case_handler(
     Json(mut input): Json<CreateCaseInput>,
 ) -> Result<Json<Case>, ApiError> {
     input.actor_id = Some(actor.officer_id.clone());
-    cases::create_case(&state.pool, &state.vault_root, input).await.map(|c| Json(cases::apply_access(c, &actor))).map_err(internal_error)
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    cases::create_case(&state.pool, &state.vault_root, input).await.map(|c| Json(cases::apply_access(c, &hidden))).map_err(internal_error)
 }
 
 async fn update_case_handler(
@@ -845,10 +871,9 @@ async fn update_case_handler(
         return Err(restricted_refusal());
     }
     input.actor_id = Some(actor.officer_id.clone());
-    cases::update_case(&state.pool, &state.vault_root, &id, input)
-        .await
-        .map(|c| Json(cases::apply_access(c, &actor)))
-        .map_err(internal_error)
+    let updated = cases::update_case(&state.pool, &state.vault_root, &id, input).await.map_err(internal_error)?;
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    Ok(Json(cases::apply_access(updated, &hidden)))
 }
 
 async fn list_cases_handler(
@@ -856,10 +881,22 @@ async fn list_cases_handler(
     Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<Case>>, ApiError> {
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
     cases::list_cases(&state.pool, &params.query)
         .await
-        .map(|list| Json(list.into_iter().map(|c| cases::apply_access(c, &actor)).collect()))
+        .map(|list| Json(list.into_iter().map(|c| cases::apply_access(c, &hidden)).collect()))
         .map_err(internal_error)
+}
+
+async fn get_case_access_handler(
+    State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<String>>, ApiError> {
+    if !cases::can_open(&state.pool, &id, &actor).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
+    cases::access_list(&state.pool, &id).await.map(Json).map_err(internal_error)
 }
 
 async fn list_case_people_handler(
@@ -1150,8 +1187,13 @@ struct EntityQuery {
 
 async fn list_attachments_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<EntityQuery>,
 ) -> Result<Json<Vec<Attachment>>, ApiError> {
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    if !cases::may_see_entity(&state.pool, &params.entity_type, &params.entity_id, &hidden).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
     attachments::list_attachments(&state.pool, &params.entity_type, &params.entity_id)
         .await
         .map(Json)
@@ -1160,12 +1202,18 @@ async fn list_attachments_handler(
 
 async fn list_all_attachments_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<Attachment>>, ApiError> {
-    attachments::list_all(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    let all = attachments::list_all(&state.pool, &params.query).await.map_err(internal_error)?;
+    let mut kept = Vec::with_capacity(all.len());
+    for item in all {
+        if cases::may_see_entity(&state.pool, &item.entity_type, &item.entity_id, &hidden).await.map_err(internal_error)? {
+            kept.push(item);
+        }
+    }
+    Ok(Json(kept))
 }
 
 async fn get_attachment_route_handler(
@@ -1285,12 +1333,17 @@ async fn delete_attachment_handler(
 
 async fn get_attachment_file_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
 ) -> Result<Response, ApiError> {
     let attachment = attachments::get_attachment(&state.pool, &id)
         .await
         .map_err(internal_error)?
         .ok_or((StatusCode::NOT_FOUND, "attachment not found".to_string()))?;
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    if !cases::may_see_entity(&state.pool, &attachment.entity_type, &attachment.entity_id, &hidden).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
 
     let bytes = tokio::fs::read(attachments::absolute_path(&state.vault_root, &attachment.stored_path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?)
         .await
@@ -1524,6 +1577,7 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/cases", post(create_case_handler).get(list_cases_handler))
         .route("/cases/{id}", put(update_case_handler))
         .route("/cases/{id}/people", get(list_case_people_handler))
+        .route("/cases/{id}/access", get(get_case_access_handler))
         .route("/cases/{id}/workspace", get(get_case_workspace_handler))
         .route("/cases/{id}/export/{format}", get(export_case_document_handler))
         .route("/statements", post(create_statement_handler).get(list_statements_handler))

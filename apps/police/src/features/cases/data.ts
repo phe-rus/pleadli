@@ -23,6 +23,10 @@ export async function listCases(query: string) {
   return z.array(caseSchema).parse(cases)
 }
 
+export async function listCaseAccess(caseId: string) {
+  return z.array(z.string()).parse(await api(`/cases/${encodeURIComponent(caseId)}/access`))
+}
+
 export async function listCasePeople(caseId: string) {
   const people = await api(`/cases/${encodeURIComponent(caseId)}/people`)
   return z.array(casePersonSchema).parse(people)

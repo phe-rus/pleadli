@@ -16,7 +16,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { useStore } from '@tanstack/react-form'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
-import { useCasePeople, useCreateCase, useUpdateCase } from './queries'
+import { useOfficers } from '@/features/officers'
+import { useCaseAccess, useCasePeople, useCreateCase, useUpdateCase } from './queries'
 import { caseRoleLabel, caseRoles, caseStatuses, casePersonName, type Case, type CasePerson } from './schema'
 
 export type CaseFormProps = {
@@ -32,6 +33,13 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
   const updateCase = useUpdateCase()
   const { data: incidents } = useSuspenseQuery(incidentsOptions(''))
   const { data: existingPeople } = useCasePeople(existingCase?.id ?? '')
+  const { data: officers } = useOfficers()
+  const { data: savedAccess } = useCaseAccess(existingCase?.id ?? '', Boolean(existingCase?.restricted))
+  // null until the saved list has arrived, so saving early leaves it unchanged rather than emptying it.
+  const [access, setAccess] = useState<string[] | null>(existingCase?.restricted ? null : [])
+  useEffect(() => {
+    if (savedAccess && access === null) setAccess(savedAccess)
+  }, [savedAccess, access])
   const { data: knownPeople } = useQuery(peopleSearchOptions(''))
 
   const rowsOf = (list: CasePerson[] | undefined): PersonRoleRow[] =>
@@ -80,6 +88,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
         const input = {
           ...value,
           people: people.map(({ personId, role }) => ({ personId, role })),
+          ...(access ? { accessOfficerIds: access } : {}),
         }
         const result = existingCase
           ? await updateCase.mutateAsync({ id: existingCase.id, input })
@@ -128,6 +137,26 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
               <FieldLabel>{m["cases.restricted_label"]()}</FieldLabel>
               <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
               <FieldDescription>{m["cases.restricted_hint"]()}</FieldDescription>
+              {f.state.value && (
+                <div className="mt-2 flex flex-col gap-1">
+                  <FieldLabel>{m["cases.access_label"]()}</FieldLabel>
+                  <FieldDescription>{m["cases.access_hint"]()}</FieldDescription>
+                  {(officers ?? []).filter((o) => o.active && o.role !== 'admin' && o.id !== existingCase?.restrictedBy).map((o) => (
+                    <label key={o.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={(access ?? []).includes(o.id)}
+                        disabled={access === null}
+                        onChange={(e) => {
+                          setAccess((prev) => (e.target.checked ? [...(prev ?? []), o.id] : (prev ?? []).filter((id) => id !== o.id)))
+                          setPeopleDirty(true)
+                        }}
+                      />
+                      {o.name}
+                    </label>
+                  ))}
+                </div>
+              )}
             </Field>
           )}
         </form.AppField>

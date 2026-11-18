@@ -822,7 +822,7 @@ mod tests {
     use crate::domain::cases::{self, CreateCaseInput};
 
     fn case_input(reference: &str) -> CreateCaseInput {
-        CreateCaseInput { reference: reference.into(), summary: "Case".into(), status: "open".into(), incident_id: None, people: vec![], restricted: false, actor_id: None }
+        CreateCaseInput { reference: reference.into(), summary: "Case".into(), status: "open".into(), incident_id: None, people: vec![], restricted: false, actor_id: None, access_officer_ids: None }
     }
 
     /// Files are stored relative to the vault; renaming a case moves its whole

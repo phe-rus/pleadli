@@ -77,6 +77,8 @@ export const createCaseSchema = z.object({
   incidentId: z.string().nullable(),
   people: z.array(casePersonInputSchema),
   restricted: z.boolean(),
+  /** Officers who may open a restricted case besides administrators and its owner. Left out, the list is unchanged. */
+  accessOfficerIds: z.array(z.string()).optional(),
 })
 
 export type CreateCaseInput = z.infer<typeof createCaseSchema>

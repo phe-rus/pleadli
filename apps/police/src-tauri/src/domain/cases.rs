@@ -70,6 +70,34 @@ pub struct CreateCaseInput {
     /** The officer making the change, filled in by the server and never read from the request. */
     #[serde(skip_deserializing, default)]
     pub actor_id: Option<String>,
+    /** Officers, besides administrators and the one who restricted it, who may open a restricted case.
+     * None leaves the list as it is. */
+    #[serde(default)]
+    pub access_officer_ids: Option<Vec<String>>,
+}
+
+/** Replace who may open a restricted case. A case that is not restricted has no list. */
+async fn set_case_access(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    case_id: &str,
+    restricted: bool,
+    officer_ids: &Option<Vec<String>>,
+) -> Result<(), sqlx::Error> {
+    if !restricted {
+        sqlx::query("DELETE FROM case_access WHERE case_id = ?").bind(case_id).execute(&mut **tx).await?;
+        return Ok(());
+    }
+    let Some(officer_ids) = officer_ids else { return Ok(()) };
+    sqlx::query("DELETE FROM case_access WHERE case_id = ?").bind(case_id).execute(&mut **tx).await?;
+    for officer_id in officer_ids {
+        sqlx::query("INSERT OR IGNORE INTO case_access (case_id, officer_id) VALUES (?, ?)").bind(case_id).bind(officer_id).execute(&mut **tx).await?;
+    }
+    Ok(())
+}
+
+/** The officers named as allowed to open a restricted case. */
+pub async fn access_list(pool: &SqlitePool, case_id: &str) -> Result<Vec<String>, sqlx::Error> {
+    sqlx::query_scalar("SELECT officer_id FROM case_access WHERE case_id = ?").bind(case_id).fetch_all(pool).await
 }
 
 async fn set_case_people(
@@ -135,6 +163,7 @@ pub async fn create_case(pool: &SqlitePool, vault_root: &Path, input: CreateCase
         .await?;
 
     set_case_people(&mut tx, &id, &input.people).await?;
+    set_case_access(&mut tx, &id, input.restricted, &input.access_officer_ids).await?;
     tx.commit().await?;
 
     let record = get_case(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
@@ -160,6 +189,7 @@ pub async fn update_case(pool: &SqlitePool, vault_root: &Path, id: &str, input: 
         .await?;
 
     set_case_people(&mut tx, id, &input.people).await?;
+    set_case_access(&mut tx, id, input.restricted, &input.access_officer_ids).await?;
     tx.commit().await?;
 
     let record = get_case(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
@@ -354,6 +384,7 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
             people,
             restricted: false,
             actor_id: None,
+            access_officer_ids: None,
         },
     )
     .await?;
@@ -392,16 +423,10 @@ pub async fn ensure_case_person(pool: &SqlitePool, case_id: &str, person_id: &st
     Ok(())
 }
 
-/** Whether this officer may see a case's content: any case that is not restricted, or one that is and
- * the officer is an administrator or the one who restricted it. */
-pub fn may_view(restricted: bool, restricted_by: Option<&str>, actor: &super::sessions::Actor) -> bool {
-    !restricted || actor.role == "admin" || restricted_by == Some(actor.officer_id.as_str())
-}
-
-/** The case as this officer may see it. A restricted case they may not open keeps its reference and
- * status, so the register still counts it, but loses its summary, incident and people. */
-pub fn apply_access(mut case: Case, actor: &super::sessions::Actor) -> Case {
-    case.can_view = may_view(case.restricted, case.restricted_by.as_deref(), actor);
+/** The case as an officer may see it, given the restricted cases hidden from them. A hidden case keeps
+ * its reference and status, so the register still counts it, but loses its summary, incident and people. */
+pub fn apply_access(mut case: Case, hidden: &[String]) -> Case {
+    case.can_view = !hidden.iter().any(|id| *id == case.id);
     if !case.can_view {
         case.summary = String::new();
         case.incident_id = None;
@@ -411,18 +436,50 @@ pub fn apply_access(mut case: Case, actor: &super::sessions::Actor) -> Case {
     case
 }
 
-/** The restricted cases this officer may not see: lists of papers leave out anything that belongs to them. */
+/** The restricted cases this officer may not see: administrators see all, and so do the officer who
+ * restricted a case and anyone on its access list. Lists of papers leave out whatever belongs to these. */
 pub async fn hidden_case_ids(pool: &SqlitePool, actor: &super::sessions::Actor) -> Result<Vec<String>, sqlx::Error> {
     if actor.role == "admin" {
         return Ok(vec![]);
     }
-    sqlx::query_scalar("SELECT id FROM cases WHERE restricted = 1 AND COALESCE(restricted_by, '') <> ?")
-        .bind(&actor.officer_id)
-        .fetch_all(pool)
-        .await
+    sqlx::query_scalar(
+        "SELECT id FROM cases WHERE restricted = 1 AND COALESCE(restricted_by, '') <> ?1
+         AND id NOT IN (SELECT case_id FROM case_access WHERE officer_id = ?1)",
+    )
+    .bind(&actor.officer_id)
+    .fetch_all(pool)
+    .await
 }
 
 /** Whether this officer may open the case with this id (a case that does not exist is open to all). */
 pub async fn can_open(pool: &SqlitePool, id: &str, actor: &super::sessions::Actor) -> Result<bool, sqlx::Error> {
     Ok(!hidden_case_ids(pool, actor).await?.iter().any(|hidden| hidden == id))
+}
+
+/** The case a record belongs to, when it belongs to one: how files, search results and exports of a
+ * restricted case are found from the record they hang off. */
+pub async fn entity_case_id(pool: &SqlitePool, entity_type: &str, entity_id: &str) -> Result<Option<String>, sqlx::Error> {
+    let found: Option<Option<String>> = match entity_type {
+        "case" => return Ok(Some(entity_id.to_string())),
+        "custody_record" => sqlx::query_scalar("SELECT case_id FROM custody_records WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
+        "bond" => sqlx::query_scalar("SELECT case_id FROM bonds WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
+        "statement" => sqlx::query_scalar("SELECT case_id FROM statements WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
+        "exhibit" => sqlx::query_scalar("SELECT case_id FROM exhibits WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
+        "charge_sheet" => sqlx::query_scalar("SELECT case_id FROM charge_sheets WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
+        "referral" => sqlx::query_scalar("SELECT case_id FROM referrals WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
+        "medical_exam" => sqlx::query_scalar("SELECT case_id FROM medical_exams WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
+        _ => None,
+    };
+    Ok(found.flatten())
+}
+
+/** Whether this officer may see a record of this kind (a record with no case is open to all). */
+pub async fn may_see_entity(pool: &SqlitePool, entity_type: &str, entity_id: &str, hidden: &[String]) -> Result<bool, sqlx::Error> {
+    if hidden.is_empty() {
+        return Ok(true);
+    }
+    Ok(match entity_case_id(pool, entity_type, entity_id).await? {
+        Some(case_id) => !hidden.iter().any(|h| *h == case_id),
+        None => true,
+    })
 }
