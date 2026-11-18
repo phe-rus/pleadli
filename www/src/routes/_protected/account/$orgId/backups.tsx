@@ -13,11 +13,11 @@ import { Textarea } from '@pleadli/ui/textarea'
 import { createFileRoute, getRouteApi, useRouter } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 
-export const Route = createFileRoute('/_protected/orchestra/$orgId/backups')({
+export const Route = createFileRoute('/_protected/account/$orgId/backups')({
   component: RouteComponent,
 })
 
-const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
+const institutionRoute = getRouteApi('/_protected/account/$orgId')
 type Data = ReturnType<typeof institutionRoute.useLoaderData>
 type Machine = Data['computers'][number]
 type Storage = Data['storage'][number]

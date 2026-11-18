@@ -211,7 +211,7 @@
       "real_title": "Ce qui est réel aujourd'hui : le modèle organisationnel",
       "size_body": "C'est ce même modèle qui permet à une application Pleadli de servir un utilisateur seul, une équipe ou une grande organisation : un avocat seul et un cabinet utilisent tous deux Pleadli Lawyers avec le même modèle, structuré différemment. La forme de la hiérarchie revient à chaque organisation ; Pleadli ne suppose pas que toute institution ressemble à une force de police.",
       "size_title": "Un modèle, toutes tailles",
-      "status_note": "Les applications et leurs dossiers existent aujourd'hui, et Pleadli DPP reçoit déjà des dossiers scellés. L'envoi depuis Pleadli Police, le relais Orchestra, les adresses, les certificats, la vérification des pièces et le suivi des affaires sont en construction ; voir la feuille de route.",
+      "status_note": "Les applications et leurs dossiers existent aujourd'hui, et Pleadli DPP reçoit déjà des dossiers scellés. L'envoi depuis Pleadli Police et le relais Orchestra sont encore en conception et ne sont pas construits. Les adresses, les certificats, la vérification des pièces et le suivi des affaires sont en construction ; voir la feuille de route.",
       "title": "Comment fonctionne Pleadli"
     },
     "index": {
@@ -232,7 +232,68 @@
       "getting_started": "Bien démarrer",
       "how_it_works": "Fonctionnement",
       "overview": "Aperçu",
+      "postbox": "La boîte postale",
+      "procurement": "Pour les achats",
       "security": "Sécurité"
+    },
+    "postbox": {
+      "lead": "La boîte postale est la façon dont un bureau enverra un dossier à un autre par pleadli.com, comme une lettre verrouillée par la poste. La poste la transporte et ne peut pas la lire.",
+      "limits": {
+        "design": "Aucune date n'est promise. La conception est rédigée et en cours de relecture ; la feuille de route indique ce qui est construit.",
+        "down": "Si pleadli.com est injoignable, l'application garde le fichier et réessaie. Rien n'est perdu, et la clé USB et le courriel restent en secours.",
+        "location": "La première version tourne sur pleadli.com, dont le stockage est hors d'Ouganda. Les institutions publiques devraient utiliser un relais dans le pays, que la conception permet mais qui n'existe pas encore.",
+        "metadata": "Pleadli verra qui a écrit à qui, quand, et la taille du fichier. Elle ne verra pas le contenu."
+      },
+      "limits_title": "À savoir avant de compter dessus",
+      "rules": {
+        "licence": "Seuls les ordinateurs sous licence peuvent envoyer. Les dossiers d'un ordinateur ne sont jamais verrouillés, avec ou sans licence.",
+        "reads": "Pleadli n'ouvre jamais un paquet. Elle garde des octets verrouillés et une étiquette indiquant à qui ils sont destinés.",
+        "removed": "Les octets sont supprimés dès que le bureau les relève, et au plus tard après 30 jours si personne ne le fait.",
+        "strangers": "Pas de courrier non sollicité. Un bureau ne reçoit que d'un bureau qu'il a approuvé, et c'est un administrateur nommé qui prend cette décision."
+      },
+      "rules_title": "Les règles qu'elle respectera",
+      "status_body": "Cette page décrit ce que fera la boîte postale et les règles qu'elle respectera. Elle ne fonctionne pas encore. Aujourd'hui, les fichiers passent d'un bureau à l'autre par export et import (clé USB ou courriel), et Pleadli DPP peut déjà recevoir des fichiers scellés.",
+      "status_title": "En conception, pas encore construite",
+      "steps": {
+        "collect": {
+          "body": "L'application du bureau destinataire vérifie le courrier toutes les dix à quinze minutes, le relève, le vérifie et l'ouvre. Une personne décide de l'accepter ou non.",
+          "title": "Relever"
+        },
+        "post": {
+          "body": "L'application envoie le fichier verrouillé à pleadli.com, adressé à un seul bureau. Elle ne fait que des appels sortants ; aucun ordinateur n'accepte de connexion de l'extérieur.",
+          "title": "Poster"
+        },
+        "progress": {
+          "body": "L'expéditeur voit une ligne de suivi simple : Envoyé, Remis, Ouvert, Accepté, comme pour un colis.",
+          "title": "Suivre"
+        },
+        "seal": {
+          "body": "L'application signe le fichier et le verrouille pour que seul le bureau destinataire puisse l'ouvrir.",
+          "title": "Sceller"
+        }
+      },
+      "steps_title": "Comment elle fonctionnera",
+      "title": "La boîte postale"
+    },
+    "procurement": {
+      "contact_body": "Pour une démonstration, un pilote ou un accord, écrivez-nous depuis la page de contact.",
+      "contact_link": "Page de contact",
+      "contact_title": "Parlons-en",
+      "law_body": "La possibilité et la manière dont le public peut signaler à un poste par le système demandent un examen juridique avant toute construction. Les amendes forfaitaires demandent les règles de la direction de la circulation. Pleadli ne revendique ni l'un ni l'autre aujourd'hui.",
+      "law_title": "Ce qui attend encore une décision",
+      "lead": "Une page pour un comité. Tout est présenté tel qu'il est aujourd'hui ; ce qui n'est pas construit est dit comme tel.",
+      "licence_body": "Chaque ordinateur peut utiliser chaque application gratuitement pendant 30 jours. Ensuite, l'application et ses dossiers continuent de fonctionner ; une licence ajoute les connexions, la sauvegarde vers votre propre stockage et les mises à jour. Une licence couvre un nombre d'ordinateurs pour une période. Pleadli délivre les licences directement jusqu'à l'ouverture du paiement en ligne. Les institutions publiques sont sous licence par accord, pour un district, une région ou tout le pays.",
+      "licence_title": "La licence",
+      "print": "Imprimer cette page",
+      "records_body": "Sur les ordinateurs du bureau, dans une base de données chiffrée. L'entreprise Pleadli ne détient pas les dossiers d'une institution. Ce que pleadli.com détient est minime : l'adresse de l'institution, ses licences, les ordinateurs qui se signalent, la réussite ou l'échec des sauvegardes, et l'empreinte de chaque pièce émise pour que le public puisse la vérifier.",
+      "records_title": "Où sont les dossiers",
+      "status_body": "Les cinq applications existent et sont complétées un bureau à la fois ; les pages Produits et Feuille de route donnent l'état de chacune en une phrase. Les licences, le signalement des ordinateurs, les sauvegardes vers le stockage du bureau et la vérification des pièces fonctionnent aujourd'hui sur pleadli.com. La boîte postale (envoi de fichiers entre bureaux par pleadli.com), le signalement par les citoyens et les outils pour la circulation et les agents de service sont en conception et ne sont pas construits.",
+      "status_title": "Ce qui est construit et ce qui ne l'est pas",
+      "title": "Pleadli pour les achats",
+      "what_body": "Pleadli est une famille de cinq applications distinctes pour le système judiciaire ougandais : Police, Directeur des poursuites publiques, Tribunaux, Avocats et Prisons. Chacune est conçue pour son propre bureau et fonctionne sur les ordinateurs de ce bureau. Elles sont prévues pour travailler ensemble, mais aucune n'a besoin des autres.",
+      "what_title": "Ce que c'est",
+      "works_body": "Chaque application fonctionne entièrement hors ligne. Internet ne sert qu'aux licences, aux mises à jour, aux sauvegardes vers le stockage propre du bureau et aux services de liaison ci-dessous.",
+      "works_title": "Sans internet"
     },
     "products_link": "la page des produits",
     "read_more": "En savoir plus",
@@ -430,7 +491,7 @@
   },
   "orch": {
     "add_another": "En inscrire une autre",
-    "address": "Adresse Orchestra",
+    "address": "Adresse Pleadli",
     "address_hint": "Votre adresse fixe sur l'Orchestre. Les bureaux avec qui vous travaillez l'utilisent pour vous envoyer des dossiers scellés ; elle ne change jamais.",
     "address_none": "Délivrée après vérification",
     "bk": {
@@ -456,7 +517,7 @@
         "has": "Autorisé",
         "last": "Dernière sauvegarde {date}",
         "never": "Pas encore de sauvegarde",
-        "none": "Aucun ordinateur n'a encore la mise à jour Orchestra.",
+        "none": "Aucun ordinateur n'a encore la dernière mise à jour Pleadli.",
         "remove": "Retirer l'accès",
         "removed": "Accès retiré. L'ordinateur a pu garder le secret : changez-le sur votre stockage, puis redonnez l'accès aux autres avec le nouveau.",
         "title": "Ordinateurs",
@@ -496,7 +557,7 @@
         "label": "Nom",
         "label_hint": "Par exemple : Centre national de données",
         "needs_key": "Configurez d'abord la phrase de récupération.",
-        "no_computers": "Aucun ordinateur ne peut encore recevoir l'accès. Un ordinateur apparaît ici dès que son application a la mise à jour Orchestra et une licence.",
+        "no_computers": "Aucun ordinateur ne peut encore recevoir l'accès. Un ordinateur apparaît ici dès que son application a la dernière mise à jour Pleadli et une licence.",
         "password": "Mot de passe",
         "path": "Chemin",
         "path_hint": "Tel que chaque ordinateur le voit, par exemple \\\\serveur\\sauvegardes ou E:\\Pleadli",
@@ -521,7 +582,7 @@
     "cert_note": "Votre certificat est délivré à vos applications lors de leur première connexion à l'Orchestre, avec une prochaine mise à jour.",
     "choose_title": "Choisissez une institution",
     "comp": {
-      "empty": "Aucun ordinateur ne s'est encore signalé. Vos applications commenceront avec leur mise à jour Orchestra.",
+      "empty": "Aucun ordinateur ne s'est encore signalé. Vos applications commenceront avec la dernière mise à jour Pleadli.",
       "lead": "Les ordinateurs qui font tourner vos applications Pleadli, tels qu'ils se signalent à l'Orchestre. Chacun n'est connu que par un code tiré de sa machine, jamais par ce qu'il contient.",
       "licensed": "Sous licence",
       "seen": "Vu pour la dernière fois le {date}",
@@ -565,7 +626,7 @@
       "send": "Envoyer la demande",
       "sent": "Demande envoyée"
     },
-    "name": "Pleadli Orchestra",
+    "name": "Pleadli Account",
     "nav": {
       "backups": "Sauvegardes",
       "computers": "Ordinateurs",
@@ -604,7 +665,7 @@
       "district": "District ou ville",
       "email": "E-mail de contact",
       "failed": "Impossible d'envoyer l'inscription",
-      "lead": "Un siège s'inscrit une fois et liste ses bureaux ; un avocat ou un cabinet inscrit son cabinet. Pleadli vérifie chaque inscription avec vous avant de délivrer votre adresse Orchestra.",
+      "lead": "Un siège s'inscrit une fois et liste ses bureaux ; un avocat ou un cabinet inscrit son cabinet. Pleadli vérifie chaque inscription avec vous avant de délivrer votre adresse Pleadli.",
       "name": "Nom",
       "name_hint_institution": "Tel qu'elle est officiellement désignée, par exemple Albertine Region Police.",
       "name_hint_practice": "Votre nom d'avocat, ou celui de votre cabinet.",
@@ -624,7 +685,7 @@
     "status": {
       "declined": "Motif : {note}. Écrivez à Pleadli s'il s'agit d'une erreur.",
       "declined_title": "Inscription refusée",
-      "pending": "Pleadli vous contactera à {email} ou au {phone} pour confirmer que cette inscription est authentique. Votre adresse Orchestra sera délivrée une fois confirmée. En attendant, vous pouvez ajouter des bureaux et inviter des administrateurs.",
+      "pending": "Pleadli vous contactera à {email} ou au {phone} pour confirmer que cette inscription est authentique. Votre adresse Pleadli sera délivrée une fois confirmée. En attendant, vous pouvez ajouter des bureaux et inviter des administrateurs.",
       "pending_title": "En attente de vérification",
       "suspended": "Cette institution est suspendue sur l'Orchestre. Ses applications et ses dossiers continuent de fonctionner. Écrivez à Pleadli pour la rétablir.",
       "suspended_title": "Suspendue"

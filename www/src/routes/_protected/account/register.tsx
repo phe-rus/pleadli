@@ -1,6 +1,6 @@
 import { NativeSelect } from '@/components/native-select'
 import { officeKindFor, officeKindLabel, officeKinds, typeLabel } from '@/data/orchestra'
-import { registerInstitution } from '@/functions/orchestra.func'
+import { registerInstitution } from '@/functions/account.func'
 import * as m from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import { Button } from '@pleadli/ui/button'
@@ -10,7 +10,7 @@ import { Segmented } from '@pleadli/ui/segmented'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 
-export const Route = createFileRoute('/_protected/orchestra/register')({
+export const Route = createFileRoute('/_protected/account/register')({
   component: RouteComponent,
 })
 
@@ -51,7 +51,7 @@ function RouteComponent() {
         data: { kind, institutionType, name, country, district: district || undefined, contactEmail: email, contactPhone: phone, offices: offices.filter((o) => o.name.trim().length >= 2) },
       })
       t.success(m["orch.reg.sent"]())
-      void navigate({ to: '/orchestra/$orgId', params: { orgId: id } })
+      void navigate({ to: '/account/$orgId', params: { orgId: id } })
     } catch (e) {
       t.error(m["orch.reg.failed"](), { description: e instanceof Error ? e.message : undefined })
     } finally {

@@ -211,7 +211,7 @@
       "real_title": "Kilicho halisi leo: mfumo wa mashirika",
       "size_body": "Mfumo huo huo wa mashirika ndio unaoruhusu programu ya Pleadli kumhudumia mtumiaji mmoja, timu, au shirika kubwa; wakili mmoja na kampuni ya mawakili wote hutumia Pleadli Lawyers kupitia mfumo huo huo, uliopangwa tofauti. Umbo la ngazi ni la kila shirika kuamua; Pleadli haidhanii kila taasisi inafanana na jeshi la polisi.",
       "size_title": "Mfumo mmoja, ukubwa wowote",
-      "status_note": "Programu na kumbukumbu zake zipo leo, na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa. Kuyatuma kutoka Pleadli Police, relay ya Orchestra, anwani, vyeti, uhakiki wa nyaraka na ufuatiliaji wa mashauri vinajengwa sasa; tazama Ramani ya kazi.",
+      "status_note": "Programu na kumbukumbu zake zipo leo, na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa. Kuyatuma kutoka Pleadli Police na relay ya Orchestra bado viko kwenye usanifu na havijajengwa. Anwani, vyeti, uhakiki wa nyaraka na ufuatiliaji wa mashauri vinajengwa sasa; tazama Ramani ya kazi.",
       "title": "Jinsi Pleadli inavyofanya kazi"
     },
     "index": {
@@ -232,7 +232,68 @@
       "getting_started": "Kuanza",
       "how_it_works": "Jinsi inavyofanya kazi",
       "overview": "Muhtasari",
+      "postbox": "Sanduku la posta",
+      "procurement": "Kwa ununuzi",
       "security": "Usalama"
+    },
+    "postbox": {
+      "lead": "Sanduku la posta ni njia ambayo ofisi moja itatuma jalada kwa nyingine kupitia pleadli.com, kama barua iliyofungwa kupitia posta. Posta inaibeba na haiwezi kuisoma.",
+      "limits": {
+        "design": "Hakuna tarehe iliyoahidiwa. Muundo umeandikwa na unakaguliwa; angalia Ramani ya njia kuona kilichojengwa.",
+        "down": "Ikiwa pleadli.com haipatikani, programu inalishikilia jalada na kujaribu tena. Hakuna kinachopotea, na USB na barua pepe hubaki kama njia mbadala.",
+        "location": "Toleo la kwanza linaendeshwa kwenye pleadli.com, ambayo hifadhi yake iko nje ya Uganda. Taasisi za umma zinapaswa kutumia kituo cha ndani ya nchi, ambacho muundo unaruhusu lakini bado hakipo.",
+        "metadata": "Pleadli itaona nani alimwandikia nani, lini, na ukubwa wa jalada. Haitaona yaliyomo."
+      },
+      "limits_title": "Ya kujua kabla ya kulitegemea",
+      "rules": {
+        "licence": "Kompyuta zenye leseni pekee zinaweza kutuma. Kumbukumbu kwenye kompyuta hazifungwi kamwe, ziwe na leseni au la.",
+        "reads": "Pleadli haifungui kifurushi kamwe. Inashikilia baiti zilizofungwa na lebo inayosema ni za nani.",
+        "removed": "Baiti hufutwa mara ofisi inapozichukua, na baada ya siku 30 zaidi ikiwa hakuna anayezichukua.",
+        "strangers": "Hakuna barua zisizoombwa. Ofisi inaweza kupokea tu kutoka ofisi iliyoikubali, na msimamizi aliyetajwa ndiye anayefanya uamuzi huo."
+      },
+      "rules_title": "Kanuni litakazofuata",
+      "status_body": "Ukurasa huu unaeleza sanduku la posta litakachofanya na kanuni litakazofuata. Bado halifanyi kazi. Leo, majalada husafirishwa kati ya ofisi kwa kutoa na kuingiza (kijiti cha USB au barua pepe), na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa.",
+      "status_title": "Linaundwa kwenye karatasi, halijajengwa",
+      "steps": {
+        "collect": {
+          "body": "Programu ya ofisi inayopokea hukagua barua kila baada ya dakika kumi hadi kumi na tano, inazichukua, inazihakiki na kuzifungua. Mtu ndiye anayeamua kukubali au la.",
+          "title": "Kuchukua"
+        },
+        "post": {
+          "body": "Programu inatuma jalada lililofungwa kwa pleadli.com, likiwa na anwani ya ofisi moja. Inapiga simu kwenda nje tu; hakuna kompyuta inayokubali muunganisho kutoka nje.",
+          "title": "Kutuma"
+        },
+        "progress": {
+          "body": "Mtumaji anaona mstari rahisi wa hatua: Imetumwa, Imefika, Imefunguliwa, Imekubaliwa, kama kwa kifurushi cha mjumbe.",
+          "title": "Kufuatilia"
+        },
+        "seal": {
+          "body": "Programu inalitia sahihi jalada na kulifunga ili ofisi inayopokea pekee iweze kulifungua.",
+          "title": "Kufunga"
+        }
+      },
+      "steps_title": "Litakavyofanya kazi",
+      "title": "Sanduku la posta"
+    },
+    "procurement": {
+      "contact_body": "Kwa maonyesho, majaribio au makubaliano, tuandikie kupitia ukurasa wa mawasiliano.",
+      "contact_link": "Ukurasa wa mawasiliano",
+      "contact_title": "Tuzungumze",
+      "law_body": "Iwapo na jinsi umma unavyoweza kuripoti kituoni kupitia mfumo kunahitaji mapitio ya kisheria kabla ya kujenga. Faini za papo hapo zinahitaji kanuni za idara ya trafiki. Pleadli haidai lolote kati ya hayo leo.",
+      "law_title": "Kinachosubiri uamuzi",
+      "lead": "Ukurasa mmoja kwa kamati. Kila kitu kimeelezwa kama kilivyo leo; kisichojengwa kinasema hivyo.",
+      "licence_body": "Kila kompyuta inaweza kutumia kila programu bila malipo kwa siku 30. Baada ya hapo programu na kumbukumbu zake zinaendelea kufanya kazi; leseni inaongeza miunganisho, nakala rudufu kwenye hifadhi yako mwenyewe, na masasisho. Leseni inashughulikia idadi ya kompyuta kwa kipindi fulani. Pleadli inatoa leseni moja kwa moja hadi malipo ya mtandaoni yafunguliwe. Taasisi za umma hupewa leseni kwa makubaliano, kwa wilaya, kanda au nchi nzima.",
+      "licence_title": "Leseni inavyotolewa",
+      "print": "Chapisha ukurasa huu",
+      "records_body": "Kwenye kompyuta za ofisi yenyewe, ndani ya hifadhidata iliyosimbwa. Kampuni ya Pleadli haishikilii kumbukumbu za taasisi. Kinachoshikiliwa na pleadli.com ni kidogo: anwani ya taasisi, leseni zake, kompyuta zinazoripoti, mafanikio au kushindwa kwa nakala rudufu, na alama ya kila hati iliyotolewa ili umma uweze kuihakiki.",
+      "records_title": "Kumbukumbu ziko wapi",
+      "status_body": "Programu tano zipo na zinakamilishwa ofisi moja baada ya nyingine; kurasa za Bidhaa na Ramani ya njia zinaeleza hali ya kila moja kwa sentensi. Leseni, kuripoti kwa kompyuta, nakala rudufu kwenye hifadhi ya ofisi na kuhakiki hati zinafanya kazi leo kwenye pleadli.com. Sanduku la posta (kutuma majalada kati ya ofisi kupitia pleadli.com), kuripoti kwa wananchi, na zana za trafiki na maafisa walio zamuni vinaundwa kwenye karatasi na havijajengwa.",
+      "status_title": "Kilichojengwa na kisichojengwa",
+      "title": "Pleadli kwa ununuzi",
+      "what_body": "Pleadli ni familia ya programu tano tofauti kwa mfumo wa haki wa Uganda: Polisi, Mkurugenzi wa Mashtaka ya Umma, Mahakama, Mawakili na Magereza. Kila moja imeundwa kwa ofisi yake na inafanya kazi kwenye kompyuta za ofisi hiyo. Zimeundwa kufanya kazi pamoja, lakini hakuna inayohitaji nyingine.",
+      "what_title": "Ni nini",
+      "works_body": "Kila programu inafanya kazi kikamilifu nje ya mtandao. Intaneti inahitajika tu kwa leseni, masasisho, nakala rudufu kwenye hifadhi ya ofisi yenyewe, na huduma za kuunganisha zilizoelezwa hapa chini.",
+      "works_title": "Bila intaneti"
     },
     "products_link": "ukurasa wa bidhaa",
     "read_more": "Soma zaidi",
@@ -430,8 +491,8 @@
   },
   "orch": {
     "add_another": "Sajili nyingine",
-    "address": "Anwani ya Orchestra",
-    "address_hint": "Anwani yako ya kudumu kwenye Orchestra. Ofisi mnazofanya kazi nazo zinaitumia kukutumia majalada yaliyofungwa; haibadiliki kamwe.",
+    "address": "Anwani ya Pleadli",
+    "address_hint": "Anwani yako ya kudumu kwenye Pleadli. Ofisi mnazofanya kazi nazo zinaitumia kukutumia majalada yaliyofungwa; haibadiliki kamwe.",
     "address_none": "Itatolewa baada ya ukaguzi",
     "bk": {
       "empty": "Bado hakuna hifadhi iliyoripotiwa.",
@@ -456,7 +517,7 @@
         "has": "Ina ruhusa",
         "last": "Hifadhi ya mwisho {date}",
         "never": "Bado hakuna hifadhi",
-        "none": "Bado hakuna kompyuta yenye sasisho la Orchestra.",
+        "none": "Bado hakuna kompyuta yenye sasisho jipya la Pleadli.",
         "remove": "Ondoa ruhusa",
         "removed": "Ruhusa imeondolewa. Huenda kompyuta imebaki na siri: ibadilishe kwenye hifadhi yenu, kisha zipe kompyuta nyingine ruhusa tena kwa siri mpya.",
         "title": "Kompyuta",
@@ -496,7 +557,7 @@
         "label": "Jina",
         "label_hint": "Kwa mfano: Kituo cha Taifa cha Data",
         "needs_key": "Weka kifungu cha urejeshaji kwanza.",
-        "no_computers": "Bado hakuna kompyuta inayoweza kupewa ruhusa. Kompyuta huonekana hapa programu yake ikiwa na sasisho la Orchestra na leseni.",
+        "no_computers": "Bado hakuna kompyuta inayoweza kupewa ruhusa. Kompyuta huonekana hapa programu yake ikiwa na sasisho jipya la Pleadli na leseni.",
         "password": "Nenosiri",
         "path": "Njia",
         "path_hint": "Kama kila kompyuta inavyoiona, kwa mfano \\\\server\\backups au E:\\Pleadli",
@@ -518,11 +579,11 @@
       "storage": "Hifadhi yenu",
       "storage_none": "Bado hakuna hifadhi iliyounganishwa. Ongeza kituo cha data cha serikali, seva yenu au diski."
     },
-    "cert_note": "Cheti chako kinatolewa kwa programu zako mara ya kwanza zinapounganishwa na Orchestra, katika sasisho la programu linalokuja.",
+    "cert_note": "Cheti chako kinatolewa kwa programu zako mara ya kwanza zinapounganishwa na Pleadli, katika sasisho la programu linalokuja.",
     "choose_title": "Chagua taasisi",
     "comp": {
-      "empty": "Bado hakuna kompyuta iliyoripoti. Programu zako zinaanza kuripoti na sasisho lao la Orchestra.",
-      "lead": "Kompyuta zinazoendesha programu zako za Pleadli, kama zinavyoripoti kwa Orchestra. Kila moja inajulikana kwa namba iliyotengenezwa kutoka kwa mashine yake tu, kamwe si kwa chochote kilichohifadhiwa ndani yake.",
+      "empty": "Bado hakuna kompyuta iliyoripoti. Programu zako zinaanza kuripoti na sasisho jipya la Pleadli.",
+      "lead": "Kompyuta zinazoendesha programu zako za Pleadli, kama zinavyoripoti kwa Pleadli. Kila moja inajulikana kwa namba iliyotengenezwa kutoka kwa mashine yake tu, kamwe si kwa chochote kilichohifadhiwa ndani yake.",
       "licensed": "Ina leseni",
       "seen": "Ilionekana mwisho {date}",
       "trial": "Majaribio, siku {days} zimebaki",
@@ -565,7 +626,7 @@
       "send": "Tuma ombi",
       "sent": "Ombi limetumwa"
     },
-    "name": "Pleadli Orchestra",
+    "name": "Pleadli Account",
     "nav": {
       "backups": "Hifadhi",
       "computers": "Kompyuta",
@@ -604,7 +665,7 @@
       "district": "Wilaya au mji",
       "email": "Barua pepe ya mawasiliano",
       "failed": "Haikuwezekana kutuma usajili",
-      "lead": "Makao makuu yanajisajili mara moja na kuorodhesha ofisi zake; wakili au kampuni inasajili ofisi yake. Pleadli inahakiki kila usajili nawe kabla ya kutoa anwani yako ya Orchestra.",
+      "lead": "Makao makuu yanajisajili mara moja na kuorodhesha ofisi zake; wakili au kampuni inasajili ofisi yake. Pleadli inahakiki kila usajili nawe kabla ya kutoa anwani yako ya Pleadli.",
       "name": "Jina",
       "name_hint_institution": "Kama inavyojulikana rasmi, kwa mfano Albertine Region Police.",
       "name_hint_practice": "Jina lako kama wakili, au jina la kampuni yako.",
@@ -624,9 +685,9 @@
     "status": {
       "declined": "Sababu: {note}. Iandikie Pleadli kama hili ni kosa.",
       "declined_title": "Usajili umekataliwa",
-      "pending": "Pleadli itawasiliana nawe kupitia {email} au {phone} kuthibitisha kuwa usajili huu ni halali. Anwani yako ya Orchestra itatolewa ukishathibitishwa. Wakati huo unaweza kuongeza ofisi na kualika wasimamizi.",
+      "pending": "Pleadli itawasiliana nawe kupitia {email} au {phone} kuthibitisha kuwa usajili huu ni halali. Anwani yako ya Pleadli itatolewa ukishathibitishwa. Wakati huo unaweza kuongeza ofisi na kualika wasimamizi.",
       "pending_title": "Inasubiri kukaguliwa",
-      "suspended": "Taasisi hii imesimamishwa kwenye Orchestra. Programu na kumbukumbu zake zinaendelea kufanya kazi. Iandikie Pleadli kuirudisha.",
+      "suspended": "Taasisi hii imesimamishwa kwenye Pleadli. Programu na kumbukumbu zake zinaendelea kufanya kazi. Iandikie Pleadli kuirudisha.",
       "suspended_title": "Imesimamishwa"
     },
     "team": {

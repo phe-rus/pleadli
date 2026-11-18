@@ -1,4 +1,4 @@
-import { inviteAdministrator, removeAdministrator } from '@/functions/orchestra.func'
+import { inviteAdministrator, removeAdministrator } from '@/functions/account.func'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
@@ -8,11 +8,11 @@ import { useState } from 'react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useServerMutation } from '@/lib/use-server-mutation'
 
-export const Route = createFileRoute('/_protected/orchestra/$orgId/team')({
+export const Route = createFileRoute('/_protected/account/$orgId/team')({
   component: RouteComponent,
 })
 
-const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
+const institutionRoute = getRouteApi('/_protected/account/$orgId')
 
 function RouteComponent() {
   const { institution, members, role } = institutionRoute.useLoaderData()

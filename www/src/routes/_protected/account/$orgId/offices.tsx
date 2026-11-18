@@ -1,6 +1,6 @@
 import { NativeSelect } from '@/components/native-select'
 import { officeKindFor, officeKindLabel, officeKinds } from '@/data/orchestra'
-import { addOffice } from '@/functions/orchestra.func'
+import { addOffice } from '@/functions/account.func'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
@@ -10,11 +10,11 @@ import { useState } from 'react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useServerMutation } from '@/lib/use-server-mutation'
 
-export const Route = createFileRoute('/_protected/orchestra/$orgId/offices')({
+export const Route = createFileRoute('/_protected/account/$orgId/offices')({
   component: RouteComponent,
 })
 
-const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
+const institutionRoute = getRouteApi('/_protected/account/$orgId')
 
 function RouteComponent() {
   const { institution, offices } = institutionRoute.useLoaderData()

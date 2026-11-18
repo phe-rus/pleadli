@@ -82,9 +82,8 @@ export const Dashboard: FC<DashboardProps> = ({
   }, [])
 
   useEffect(() => {
-    if (!isMobile) {
-      setOpen(true)
-    }
+    // Open beside the page on a laptop; closed over it on a phone.
+    setOpen(!isMobile)
   }, [isMobile])
 
   const isExpanded = open || isPeeking
@@ -106,6 +105,9 @@ export const Dashboard: FC<DashboardProps> = ({
           )}
           <aside
             ref={ref}
+            onClick={(event) => {
+              if (isMobile && open && (event.target as HTMLElement).closest('a')) setOpen(false)
+            }}
             onMouseEnter={() => {
               if (!open && !isMobile) setIsPeeking(true)
             }}

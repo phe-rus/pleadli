@@ -66,7 +66,7 @@ export const registerInstitution = createServerFn({ method: 'POST' })
 
 const orgIdSchema = z.object({ organizationId: z.string().min(1) })
 
-/** Everything one institution sees about itself on /orchestra. */
+/** Everything one institution sees about itself on /account. */
 export const getInstitution = createServerFn({ method: 'GET' })
   .middleware([SessionMiddleware])
   .validator(orgIdSchema)

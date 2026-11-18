@@ -7,7 +7,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import * as z from 'zod'
 import { memberOf, requireUser } from './members'
 
-/** Backups on /orchestra (docs/platform/ORCHESTRA-BACKUP.md). Everything secret
+/** Backups on /account (docs/platform/ORCHESTRA-BACKUP.md). Everything secret
  * is made or sealed in the administrator's browser; these only keep the
  * public key, the plain settings and the seals. */
 

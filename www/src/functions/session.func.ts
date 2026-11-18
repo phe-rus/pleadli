@@ -6,7 +6,7 @@ export const getCurrentSession = createServerFn({ method: 'GET' })
   .middleware([SessionMiddleware])
   .handler(async ({ context }) => context.session)
 
-/** Any signed-in person: institutions on /orchestra and staff on /admin.
+/** Any signed-in person: institutions on /account and staff on /admin.
  * /admin checks the staff role itself, and every staff server function runs
  * behind AdminMiddleware. */
 const protectedSession = createServerFn({ method: 'GET' })

@@ -15,6 +15,8 @@ export const docsNav = [
   { slug: 'security', get title() { return m["docs.nav.security"]() }, to: '/docs/security' },
   { slug: 'documents', get title() { return m["docs.nav.documents"]() }, to: '/docs/documents' },
   { slug: 'ai', get title() { return m["docs.nav.ai"]() }, to: '/docs/ai' },
+  { slug: 'postbox', get title() { return m["docs.nav.postbox"]() }, to: '/docs/postbox' },
+  { slug: 'procurement', get title() { return m["docs.nav.procurement"]() }, to: '/docs/procurement' },
 ] as const
 
 export const orgModel = [

@@ -53,7 +53,7 @@ export function GroupRow({
 } & Omit<ComponentProps<'div'>, 'onClick' | 'children'>) {
   const interactive = !!onClick || !!render
   const classes = cn(
-    'group/row relative flex min-h-11 w-full items-center gap-3 px-3.5 py-2 text-left no-underline text-foreground outline-none',
+    'group/row relative flex min-h-11 w-full items-center max-sm:flex-wrap gap-3 px-3.5 py-2 text-left no-underline text-foreground outline-none',
     // The hairline between rows starts after the icon, as on a Mac.
     'after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/70 last:after:hidden',
     icon && 'after:start-12',
@@ -64,10 +64,10 @@ export function GroupRow({
     <>
       {icon && <span className="flex size-6.5 shrink-0 items-center justify-center rounded-md [&_svg]:size-4">{icon}</span>}
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate">{label}</span>
-        {detail && <span className="truncate text-[0.8125rem] text-muted-foreground">{detail}</span>}
+        <span className="truncate max-sm:whitespace-normal max-sm:break-words">{label}</span>
+        {detail && <span className="truncate max-sm:whitespace-normal max-sm:break-words text-[0.8125rem] text-muted-foreground">{detail}</span>}
       </span>
-      {value !== undefined && <span className="flex shrink-0 items-center gap-2 text-muted-foreground">{value}</span>}
+      {value !== undefined && <span className="flex shrink-0 items-center gap-2 text-muted-foreground max-sm:order-last max-sm:basis-full max-sm:text-[0.8125rem]">{value}</span>}
       {chevron && (
         <svg viewBox="0 0 8 14" aria-hidden className="h-3 w-2 shrink-0 fill-none stroke-muted-foreground/60 stroke-[1.6]">
           <path d="M1.5 1.5L6.5 7l-5 5.5" strokeLinecap="round" strokeLinejoin="round" />

@@ -1,7 +1,7 @@
 import { NativeSelect } from '@/components/native-select'
 import { CONTACT } from '@/data/contact'
 import { appLabel } from '@/data/orchestra'
-import { writeToPleadli } from '@/functions/orchestra.func'
+import { writeToPleadli } from '@/functions/account.func'
 import { APPLICATIONS } from '@/lib/orchestra'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
@@ -13,11 +13,11 @@ import { useState } from 'react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useServerMutation } from '@/lib/use-server-mutation'
 
-export const Route = createFileRoute('/_protected/orchestra/$orgId/help')({
+export const Route = createFileRoute('/_protected/account/$orgId/help')({
   component: RouteComponent,
 })
 
-const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
+const institutionRoute = getRouteApi('/_protected/account/$orgId')
 
 function RouteComponent() {
   const { institution, reports } = institutionRoute.useLoaderData()

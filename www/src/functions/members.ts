@@ -3,13 +3,13 @@ import { orchestraMember } from '@/db/orchestra-schema'
 import { redirect } from '@tanstack/react-router'
 import { eq, inArray, or } from 'drizzle-orm'
 
-/** Who may act on an institution on /orchestra. Kept out of the server-function
+/** Who may act on an institution on /account. Kept out of the server-function
  * files: an export there that is not a server function goes to the browser,
  * and these reach the database. */
 
 /** The signed-in person, or a redirect to sign in. */
 export function requireUser(session: { user: { id: string; email: string } } | null) {
-  if (!session) throw redirect({ to: '/login', search: { redirect: '/orchestra' } as never })
+  if (!session) throw redirect({ to: '/login', search: { redirect: '/account' } as never })
   return session.user
 }
 

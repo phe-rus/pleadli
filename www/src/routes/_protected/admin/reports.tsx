@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_protected/admin/reports')({
 
 const kindName: Record<string, string> = { crash: 'Crash', issue: 'Issue', question: 'Question' }
 
-/** Crash reports, issues and questions from the apps and from /orchestra,
+/** Crash reports, issues and questions from the apps and from /account,
  * answered here. They never carry case data. */
 function RouteComponent() {
   const rows = Route.useLoaderData()

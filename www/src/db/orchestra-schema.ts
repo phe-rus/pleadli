@@ -40,7 +40,7 @@ export const licence = sqliteTable(
   (t) => [index('licence_org').on(t.organizationId)],
 )
 
-/** "We would like a licence": made from /orchestra until online payment opens,
+/** "We would like a licence": made from /account until online payment opens,
  * answered by Pleadli staff, who then issue the licence. */
 export const licenceRequest = sqliteTable('licence_request', {
   id: text('id').primaryKey(),
@@ -136,7 +136,7 @@ export const storageSeal = sqliteTable(
 )
 
 /** A crash report, an issue or a question, sent from an app only when someone
- * presses Send, or written on /orchestra. Never carries case data. */
+ * presses Send, or written on /account. Never carries case data. */
 export const supportReport = sqliteTable(
   'support_report',
   {

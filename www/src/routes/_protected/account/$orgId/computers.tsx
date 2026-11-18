@@ -4,11 +4,11 @@ import * as m from '@/paraglide/messages'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/_protected/orchestra/$orgId/computers')({
+export const Route = createFileRoute('/_protected/account/$orgId/computers')({
   component: RouteComponent,
 })
 
-const institutionRoute = getRouteApi('/_protected/orchestra/$orgId')
+const institutionRoute = getRouteApi('/_protected/account/$orgId')
 
 function RouteComponent() {
   const { computers, offices } = institutionRoute.useLoaderData()

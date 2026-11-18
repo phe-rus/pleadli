@@ -211,7 +211,7 @@
       "real_title": "What's real today: the organizational model",
       "size_body": "The same organizational model is what lets a Pleadli application serve an individual user, a team, or a larger organization, an individual lawyer and a law firm both use Pleadli Lawyers through the same model, structured differently. The hierarchy shape is up to each organization, Pleadli doesn't assume every institution looks like a police force.",
       "size_title": "One model, any size",
-      "status_note": "The apps and their records exist today, and Pleadli DPP can already receive sealed files. Sending them from Pleadli Police, the Orchestra relay, addresses, certificates, paper checking and case tracking are being built now; see the Roadmap.",
+      "status_note": "The apps and their records exist today, and Pleadli DPP can already receive sealed files. Sending them from Pleadli Police and the Orchestra relay are still in design and not built. Addresses, certificates, paper checking and case tracking are being built now; see the Roadmap.",
       "title": "How Pleadli works"
     },
     "index": {
@@ -232,7 +232,68 @@
       "getting_started": "Getting started",
       "how_it_works": "How it works",
       "overview": "Overview",
+      "postbox": "The Postbox",
+      "procurement": "For procurement",
       "security": "Security"
+    },
+    "postbox": {
+      "lead": "The Postbox is how one office will send a case file to another through pleadli.com, like a locked letter through a post office. The post office carries it and cannot read it.",
+      "limits": {
+        "design": "No date is promised. The design is written and is being reviewed; see the Roadmap for what is built.",
+        "down": "If pleadli.com is unreachable, the app keeps the file and tries again. Nothing is lost, and USB and e-mail remain as a fallback.",
+        "location": "The first version runs on pleadli.com, whose storage is outside Uganda. Public institutions should use an in-country relay, which the design allows but which does not exist yet.",
+        "metadata": "Pleadli will see who wrote to whom, when, and how large the file was. It will not see the contents."
+      },
+      "limits_title": "What to know before relying on it",
+      "rules": {
+        "licence": "Only licensed computers can send. Records on a computer are never locked, licensed or not.",
+        "reads": "Pleadli never opens a package. It holds locked bytes and a label saying who they are for.",
+        "removed": "The bytes are deleted as soon as the office collects them, and after 30 days at most if nobody does.",
+        "strangers": "No unsolicited mail. An office can only receive from an office it has approved, and a named administrator makes that decision."
+      },
+      "rules_title": "The rules it will keep",
+      "status_body": "This page describes what the Postbox will do and the rules it will keep. It does not work yet. Today, files move between offices by export and import (a USB stick or e-mail), and Pleadli DPP can already receive sealed files.",
+      "status_title": "In design, not built",
+      "steps": {
+        "collect": {
+          "body": "The receiving office's app checks for mail every ten to fifteen minutes, collects it, verifies it and opens it. A person decides whether to accept it.",
+          "title": "Collect"
+        },
+        "post": {
+          "body": "The app sends the locked file to pleadli.com, addressed to one office. It only ever calls out; no computer accepts a connection from outside.",
+          "title": "Post"
+        },
+        "progress": {
+          "body": "The sender sees a plain progress line: Sent, Delivered, Opened, Accepted, as with a courier parcel.",
+          "title": "Follow"
+        },
+        "seal": {
+          "body": "The app signs the file and locks it so that only the receiving office can open it.",
+          "title": "Seal"
+        }
+      },
+      "steps_title": "How it will work",
+      "title": "The Postbox"
+    },
+    "procurement": {
+      "contact_body": "For a demonstration, a pilot, or an agreement, write to us from the contact page.",
+      "contact_link": "Contact page",
+      "contact_title": "Talk to us",
+      "law_body": "Whether and how members of the public may report to a station through the system needs legal review before it is built. Fixed-penalty notices need the traffic directorate's rules. Pleadli does not claim either today.",
+      "law_title": "What still needs a decision",
+      "lead": "One page for a committee. Everything here is stated as it is today; what is not built says so.",
+      "licence_body": "Each computer may use each application free for 30 days. After that the application and its records keep working; a licence adds connections, backup to your own storage, and updates. A licence covers a number of computers for a period. Pleadli issues licences directly until online payment opens. Public institutions are licensed through an agreement, for a district, a region or the whole country.",
+      "licence_title": "How it is licensed",
+      "print": "Print this page",
+      "records_body": "On the office's own computers, in an encrypted database. Pleadli the company does not hold an institution's records. What pleadli.com holds is small: the institution's address, its licences, which computers report, backup success or failure, and a fingerprint of each paper issued so the public can check it.",
+      "records_title": "Where the records are",
+      "status_body": "The five applications exist and are being completed one office at a time; the Products and Roadmap pages state each one's status in a sentence. Licences, computer reporting, backups to the office's own storage and paper checking work on pleadli.com today. The Postbox (sending files between offices through pleadli.com), public reporting by civilians, and tools for traffic and on-duty officers are in design and are not built.",
+      "status_title": "What is built and what is not",
+      "title": "Pleadli for procurement",
+      "what_body": "Pleadli is a family of five separate applications for Uganda's justice system: Police, the Director of Public Prosecutions, Courts, Lawyers and Prisons. Each is built for its own office and works on that office's own computers. They are designed to work together, but none needs the others.",
+      "what_title": "What it is",
+      "works_body": "Every application works fully offline. Internet is only needed for licences, updates, backups to the office's own storage, and the connecting services below.",
+      "works_title": "Without internet"
     },
     "products_link": "the products page",
     "read_more": "Read more",
@@ -430,8 +491,8 @@
   },
   "orch": {
     "add_another": "Register another",
-    "address": "Orchestra address",
-    "address_hint": "Your fixed address on the Orchestra. Offices you work with use it to send you sealed files; it never changes.",
+    "address": "Pleadli address",
+    "address_hint": "Your fixed address on Pleadli. Offices you work with use it to send you sealed files; it never changes.",
     "address_none": "Issued after review",
     "bk": {
       "empty": "No backup reported yet.",
@@ -456,7 +517,7 @@
         "has": "Has access",
         "last": "Last backup {date}",
         "never": "No backup yet",
-        "none": "No computer has the Orchestra update yet.",
+        "none": "No computer has the latest Pleadli update yet.",
         "remove": "Remove access",
         "removed": "Access removed. The computer may have kept the secret: change it at your storage, then give the others access again with the new one.",
         "title": "Computers",
@@ -496,7 +557,7 @@
         "label": "Name",
         "label_hint": "For example: National Data Centre",
         "needs_key": "Set up the recovery phrase first.",
-        "no_computers": "No computer can receive access yet. A computer appears here once its app has the Orchestra update and a licence.",
+        "no_computers": "No computer can receive access yet. A computer appears here once its app has the latest Pleadli update and a licence.",
         "password": "Password",
         "path": "Path",
         "path_hint": "As every computer sees it, for example \\\\server\\backups or E:\\Pleadli",
@@ -518,11 +579,11 @@
       "storage": "Your storage",
       "storage_none": "No storage connected yet. Add your government data centre, your own server or a drive."
     },
-    "cert_note": "Your certificate is issued to your apps the first time they connect to the Orchestra, in a coming app update.",
+    "cert_note": "Your certificate is issued to your apps the first time they connect to Pleadli, in a coming app update.",
     "choose_title": "Choose an institution",
     "comp": {
-      "empty": "No computer has reported yet. Your apps begin reporting with their Orchestra update.",
-      "lead": "The computers running your Pleadli apps, as they report to the Orchestra. Each is known only by a code made from its machine, never by anything stored on it.",
+      "empty": "No computer has reported yet. Your apps begin reporting with the latest Pleadli update.",
+      "lead": "The computers running your Pleadli apps, as they report to Pleadli. Each is known only by a code made from its machine, never by anything stored on it.",
       "licensed": "Licensed",
       "seen": "Last seen {date}",
       "trial": "Trial, {days} days left",
@@ -565,7 +626,7 @@
       "send": "Send request",
       "sent": "Request sent"
     },
-    "name": "Pleadli Orchestra",
+    "name": "Pleadli Account",
     "nav": {
       "backups": "Backups",
       "computers": "Computers",
@@ -604,7 +665,7 @@
       "district": "District or town",
       "email": "Contact email",
       "failed": "Could not send the registration",
-      "lead": "A headquarters registers once and lists its offices; an advocate or firm registers its practice. Pleadli checks every registration with you before issuing your Orchestra address.",
+      "lead": "A headquarters registers once and lists its offices; an advocate or firm registers its practice. Pleadli checks every registration with you before issuing your Pleadli address.",
       "name": "Name",
       "name_hint_institution": "As it is officially known, for example Albertine Region Police.",
       "name_hint_practice": "Your name as an advocate, or your firm's name.",
@@ -624,9 +685,9 @@
     "status": {
       "declined": "Reason: {note}. Write to Pleadli if this is a mistake.",
       "declined_title": "Registration declined",
-      "pending": "Pleadli will contact you at {email} or {phone} to confirm this registration is genuine. Your Orchestra address is issued once it is confirmed. Meanwhile you can add offices and invite administrators.",
+      "pending": "Pleadli will contact you at {email} or {phone} to confirm this registration is genuine. Your Pleadli address is issued once it is confirmed. Meanwhile you can add offices and invite administrators.",
       "pending_title": "Waiting for review",
-      "suspended": "This institution is suspended on the Orchestra. Its apps and records keep working. Write to Pleadli to restore it.",
+      "suspended": "This institution is suspended on Pleadli. Its apps and records keep working. Write to Pleadli to restore it.",
       "suspended_title": "Suspended"
     },
     "team": {
