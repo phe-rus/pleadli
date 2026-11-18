@@ -21,6 +21,8 @@ backup = ["dep:x25519-dalek", "dep:hkdf", "dep:aes-gcm", "dep:base64", "dep:serd
 storage = ["backup", "dep:reqwest", "reqwest/stream", "dep:tokio", "tokio/fs", "tokio/io-util", "dep:hmac", "dep:russh", "dep:russh-sftp"]
 # Pleadli Orchestra for the apps (docs/platform/ORCHESTRA-API.md): the trial,
 # the signed licence, the heartbeat, papers sent to /verify, daily backups.
+# The Postbox (docs/platform/RELAY-DESIGN.md): an outbox, an inbox and the relay calls.
+postbox = ["dep:reqwest", "dep:serde_json", "dep:tokio"]
 orchestra = ["storage", "dep:ed25519-dalek", "dep:machine-uid", "tokio/sync"]
 
 [dependencies]
