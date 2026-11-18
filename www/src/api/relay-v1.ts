@@ -1,6 +1,7 @@
 import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
-import { relayLink, relayMessage } from '@/db/relay-schema'
+import { relayLink, relayMessage, relayOffice } from '@/db/relay-schema'
+import { sign, type Signed } from '@/lib/orchestra-signing'
 import { connected, whoOwns } from '@/lib/relay-links.server'
 import { identify, sha256Of, type Caller } from '@/lib/computer-auth.server'
 import { env } from 'cloudflare:workers'
@@ -219,6 +220,57 @@ async function myConnections(caller: Caller) {
   return json({ items })
 }
 
+const KEY32 = /^[A-Za-z0-9_-]{43}$/
+const YEAR = 365 * DAY
+
+/** An office registers its two public keys (Ed25519 to sign, X25519 to be
+ * sealed to) and receives a certificate signed by Pleadli (RELAY-DESIGN.md
+ * section 7). An office can only certify an address its licensed institution
+ * owns. Same keys again within six months return the same certificate; new
+ * keys are a rotation and supersede the old one. */
+async function putIdentity(request: Request, caller: Caller) {
+  if (!caller.licensed) throw new RelayError(403, 'licence_needed', 'A certificate needs a licence.')
+  const body = (await request.json().catch(() => null)) as { ed25519?: unknown; x25519?: unknown } | null
+  const ed = typeof body?.ed25519 === 'string' ? body.ed25519 : ''
+  const x = typeof body?.x25519 === 'string' ? body.x25519 : ''
+  if (!KEY32.test(ed) || !KEY32.test(x)) throw new RelayError(400, 'bad_request', 'Send {"ed25519","x25519"}: each a 32-byte public key in base64url.')
+  const owner = await whoOwns(caller.address)
+  if (!owner || owner.organizationId !== caller.organizationId) throw new RelayError(403, 'forbidden', 'That address is not yours.')
+
+  const now = Date.now()
+  const [existing] = await db.select().from(relayOffice).where(eq(relayOffice.address, caller.address))
+  const old = existing?.certificate as Signed | null | undefined
+  if (old && existing?.ed25519Pub === ed && existing.x25519Pub === x) {
+    const issuedAt = Number(JSON.parse(atob(old.payload.replace(/-/g, '+').replace(/_/g, '/'))).issuedAt)
+    if (now - issuedAt < YEAR / 2) return json({ ok: true, certificate: old })
+  }
+  const certificate = await sign({
+    type: 'office-certificate',
+    address: caller.address,
+    institution: owner.name,
+    ed25519: ed,
+    x25519: x,
+    relay: 'pleadli.com',
+    issuedAt: now,
+    expiresAt: now + YEAR,
+  })
+  const values = { organizationId: caller.organizationId, ed25519Pub: ed, x25519Pub: x, certificate, relay: 'pleadli.com', name: owner.name, updatedAt: new Date(now) }
+  if (existing) await db.update(relayOffice).set(values).where(eq(relayOffice.address, caller.address))
+  else await db.insert(relayOffice).values({ address: caller.address, ...values })
+  return json({ ok: true, certificate }, existing ? 200 : 201)
+}
+
+/** The certificate for an address, to seal to it. Only for an office of one's
+ * own institution or one connected to this office; anything else is
+ * `not_found`, so the list of offices cannot be walked. */
+async function getCertificate(address: string, caller: Caller) {
+  if (!ADDRESS.test(address)) throw new RelayError(404, 'not_found', 'No certificate.')
+  const [row] = await db.select().from(relayOffice).where(eq(relayOffice.address, address))
+  const allowed = row && (row.organizationId === caller.organizationId || (await connected(caller.address, address)))
+  if (!row?.certificate || !allowed) throw new RelayError(404, 'not_found', 'No certificate.')
+  return json({ certificate: row.certificate })
+}
+
 /** /api/orchestra/v1/relay/<call> */
 export async function handleRelayV1(request: Request, call: string) {
   try {
@@ -230,6 +282,8 @@ export async function handleRelayV1(request: Request, call: string) {
     if (method === 'POST' && parts.length === 1 && parts[0] === 'messages') return await post(request, caller)
     if (method === 'POST' && parts.length === 1 && parts[0] === 'connections') return await askToConnect(request, caller)
     if (method === 'GET' && parts.length === 1 && parts[0] === 'connections') return await myConnections(caller)
+    if (method === 'PUT' && parts.length === 1 && parts[0] === 'identity') return await putIdentity(request, caller)
+    if (method === 'GET' && parts.length === 2 && parts[0] === 'certificates') return await getCertificate(parts[1], caller)
     if (method === 'GET' && parts.length === 1 && parts[0] === 'inbox') return await inbox(url, caller)
     if (method === 'GET' && parts.length === 1 && parts[0] === 'outbox') return await outboxStatus(url, caller)
     if (method === 'GET' && parts.length === 2 && parts[0] === 'messages') return await fetchBytes(parts[1], caller)

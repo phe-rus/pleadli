@@ -12,6 +12,7 @@ export const Route = createFileRoute('/api/orchestra/v1/$')({
     handlers: {
       GET: ({ request, params }) => route(request, params._splat ?? ''),
       POST: ({ request, params }) => route(request, params._splat ?? ''),
+      PUT: ({ request, params }) => route(request, params._splat ?? ''),
     },
   },
 })
