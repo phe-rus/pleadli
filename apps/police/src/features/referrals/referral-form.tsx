@@ -11,7 +11,8 @@ import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { Textarea } from '@pleadli/ui/textarea'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { listChargeSheets } from '@/features/legal-forms'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useCreateReferral, useUpdateReferral } from './queries'
 import { referralDestinationTypes, referralStatuses, createReferralSchema, type Referral } from './schema'
 
@@ -108,6 +109,10 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
           )}
         </form.AppField>
 
+        <form.Subscribe selector={(s) => [s.values.caseId, s.values.destinationType] as const}>
+          {([caseId, destination]) => <NoChargeWarning caseId={caseId} destination={destination} />}
+        </form.Subscribe>
+
         <div className="grid grid-cols-2 gap-3">
           <form.AppField name="destinationType">
             {(f) => <f.select label={m["referrals.destination_type"]()} options={[...referralDestinationTypes]} />}
@@ -167,4 +172,12 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
       </DrawerFooter>
     </form>
   )
+}
+
+/** A referral to the prosecutor should carry a proposed charge, because the
+ * prosecutor's file starts from it. Not a block: the prosecutor can add one. */
+function NoChargeWarning({ caseId, destination }: { caseId: string; destination: string }) {
+  const { data } = useQuery({ queryKey: ['charge-sheets', 'for-referral'], queryFn: () => listChargeSheets(''), staleTime: 15_000 })
+  if (!caseId || destination !== 'dpp' || !data || data.some((c) => c.caseId === caseId)) return null
+  return <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">{m["referrals.no_charge_warning"]()}</p>
 }

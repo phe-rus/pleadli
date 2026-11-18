@@ -776,7 +776,8 @@
       "telecom": "Kampuni ya simu (rekodi za mteja, kuzuia)",
       "bank": "Benki au Benki Kuu ya Uganda"
     },
-    "destination_label": "Mahali pa kupeleka"
+    "destination_label": "Mahali pa kupeleka",
+    "no_charge_warning": "Kesi hii bado haina hati ya mashtaka, kwa hiyo mwendesha mashtaka ataipokea bila shtaka lililopendekezwa. Rekodi shtaka kwanza, au iwasilishe hivyo na mwendesha mashtaka ataliongeza."
   },
   "search": {
     "entity": {

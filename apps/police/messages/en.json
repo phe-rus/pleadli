@@ -776,7 +776,8 @@
       "telecom": "Telecom company (subscriber records, freeze)",
       "bank": "Bank or Bank of Uganda"
     },
-    "destination_label": "Destination"
+    "destination_label": "Destination",
+    "no_charge_warning": "This case has no charge sheet yet, so the prosecutor will receive it with no proposed charge. Record the charge first, or refer it anyway and the prosecutor adds it."
   },
   "search": {
     "entity": {
