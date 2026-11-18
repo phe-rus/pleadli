@@ -1,7 +1,7 @@
 import { CloudShell } from '@/components/cloud-shell'
 import { getInstitution } from '@/functions/account.func'
 import * as m from '@/paraglide/messages'
-import { Building03Icon, ComputerIcon, DashboardBrowsingIcon, DatabaseIcon, HelpCircleIcon, Key01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
+import { Building03Icon, ComputerIcon, DashboardBrowsingIcon, DatabaseIcon, HelpCircleIcon, Key01Icon, Mailbox01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
@@ -21,6 +21,7 @@ function RouteComponent() {
     { icon: Key01Icon, label: m["orch.nav.licences"](), to: `${base}/licences` },
     { icon: ComputerIcon, label: m["orch.nav.computers"](), to: `${base}/computers` },
     { icon: DatabaseIcon, label: m["orch.nav.backups"](), to: `${base}/backups` },
+    { icon: Mailbox01Icon, label: m["orch.nav.postbox"](), to: `${base}/postbox` },
     { icon: UserGroupIcon, label: m["orch.nav.team"](), to: `${base}/team` },
     { icon: HelpCircleIcon, label: m["orch.nav.help"](), to: `${base}/help` },
   ]

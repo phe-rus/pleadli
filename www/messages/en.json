@@ -634,6 +634,7 @@
       "licences": "Licences",
       "offices": "Offices",
       "overview": "Overview",
+      "postbox": "Postbox",
       "team": "Team"
     },
     "office": {
@@ -658,6 +659,24 @@
       "licences": "Licences",
       "none": "None yet",
       "offices": "Offices"
+    },
+    "postbox": {
+      "approve": "Approve",
+      "ask_detail": "asks to send you files",
+      "asking_title": "Asking to connect with you",
+      "connected_title": "Connected",
+      "decline": "Decline",
+      "declined": "Declined",
+      "done": "Saved",
+      "empty": "No connections yet. An office asks from its Pleadli app; you decide here.",
+      "ended_title": "Declined or ended",
+      "lead": "Which offices may send to yours, and which you may send to. Pleadli carries sealed files between approved offices and never reads them.",
+      "note": "The Postbox is being built. Your apps do not send through it yet: for now, files move by export and import.",
+      "revoke": "End connection",
+      "revoke_hint": "Mail still waiting between you is deleted.",
+      "revoked": "Ended",
+      "sent_title": "Waiting for their answer",
+      "waiting": "Mail waiting to be collected"
     },
     "reg": {
       "add_office": "Add an office",

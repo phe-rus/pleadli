@@ -634,6 +634,7 @@
       "licences": "Licences",
       "offices": "Bureaux",
       "overview": "Aperçu",
+      "postbox": "Boîte postale",
       "team": "Équipe"
     },
     "office": {
@@ -658,6 +659,24 @@
       "licences": "Licences",
       "none": "Aucune",
       "offices": "Bureaux"
+    },
+    "postbox": {
+      "approve": "Approuver",
+      "ask_detail": "demande à vous envoyer des fichiers",
+      "asking_title": "Demandes de connexion avec vous",
+      "connected_title": "Connectés",
+      "decline": "Refuser",
+      "declined": "Refusée",
+      "done": "Enregistré",
+      "empty": "Aucune connexion pour l'instant. Un bureau la demande depuis son application Pleadli ; vous décidez ici.",
+      "ended_title": "Refusés ou terminés",
+      "lead": "Quels bureaux peuvent écrire au vôtre, et auxquels vous pouvez écrire. Pleadli transporte des fichiers scellés entre bureaux approuvés et ne les lit jamais.",
+      "note": "La boîte postale est en construction. Vos applications ne l'utilisent pas encore : pour l'instant, les fichiers passent par export et import.",
+      "revoke": "Mettre fin à la connexion",
+      "revoke_hint": "Le courrier encore en attente entre vous est supprimé.",
+      "revoked": "Terminée",
+      "sent_title": "En attente de leur réponse",
+      "waiting": "Courrier en attente de retrait"
     },
     "reg": {
       "add_office": "Ajouter un bureau",

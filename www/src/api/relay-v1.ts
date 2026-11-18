@@ -1,9 +1,10 @@
 import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
-import { relayMessage } from '@/db/relay-schema'
+import { relayLink, relayMessage } from '@/db/relay-schema'
+import { connected, whoOwns } from '@/lib/relay-links.server'
 import { identify, sha256Of, type Caller } from '@/lib/computer-auth.server'
 import { env } from 'cloudflare:workers'
-import { and, asc, count, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 
 /** The postbox relay, build step 1 (docs/platform/RELAY-DESIGN.md sections 3
  * to 5): post sealed bytes to an office, collect them, acknowledge, and see
@@ -11,7 +12,8 @@ import { and, asc, count, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm'
  *
  * The relay never reads a package: it routes on the labels the sender states
  * next to the bytes. This skeleton has no connections yet (step 2), so for
- * safety a computer may only post to an address its OWN institution owns;
+ * safety a computer may post to an address its OWN institution owns, or to
+ * one joined to it by an approved connection (relay-links.server.ts);
  * anything else answers `not_connected`. */
 
 /** Numbers are config, not logic (RELAY-DESIGN.md section 4). */
@@ -80,8 +82,8 @@ async function post(request: Request, caller: Caller) {
     return json({ ok: true, id, postedAt: again.postedAt.getTime(), duplicate: true })
   }
 
-  if (!(await ownsAddress(caller, to))) {
-    throw new RelayError(403, 'not_connected', 'No approved connection to that office. Ask to connect first.', { to })
+  if (!(await ownsAddress(caller, to)) && !(await connected(caller.address, to))) {
+    throw new RelayError(403, 'not_connected', 'No approved connection to that office. Ask to connect first (POST /connections).', { to })
   }
 
   const now = Date.now()
@@ -175,6 +177,48 @@ async function outboxStatus(url: URL, caller: Caller) {
   return json({ items })
 }
 
+/** Ask to connect to an office. A named administrator of that office decides
+ * on Pleadli Account; the station sees the answer in GET /connections. */
+async function askToConnect(request: Request, caller: Caller) {
+  if (!caller.licensed) throw new RelayError(403, 'licence_needed', 'Asking to connect needs a licence.')
+  const body = (await request.json().catch(() => null)) as { to?: unknown } | null
+  const to = typeof body?.to === 'string' ? body.to.trim() : ''
+  if (!ADDRESS.test(to)) throw new RelayError(400, 'bad_request', 'Send {"to": "<Orchestra address>"}.')
+  const owner = await whoOwns(to)
+  // The same answer for "no such office" and "not open to you": nothing to learn by guessing.
+  if (!owner || to === caller.address) throw new RelayError(404, 'not_found', 'No such office.')
+  const [old] = await db
+    .select()
+    .from(relayLink)
+    .where(or(and(eq(relayLink.fromAddress, caller.address), eq(relayLink.toAddress, to)), and(eq(relayLink.fromAddress, to), eq(relayLink.toAddress, caller.address))))
+  if (old && (old.status === 'requested' || old.status === 'approved')) return json({ ok: true, id: old.id, status: old.status, duplicate: true })
+  if (old && old.status === 'declined' && old.decidedAt && Date.now() - old.decidedAt.getTime() < 7 * DAY) {
+    throw new RelayError(429, 'slow_down', 'That office declined recently. Try again in a few days.', { retryAfterSeconds: 86_400 })
+  }
+  const id = old?.id ?? crypto.randomUUID()
+  const values = { fromAddress: caller.address, toAddress: to, status: 'requested', requestedBy: caller.computerId, decidedBy: null, reason: null, createdAt: new Date(), decidedAt: null }
+  if (old) await db.update(relayLink).set(values).where(eq(relayLink.id, id))
+  else await db.insert(relayLink).values({ id, ...values })
+  return json({ ok: true, id, status: 'requested' }, 201)
+}
+
+/** My connections, both directions, with the other office's name and status. */
+async function myConnections(caller: Caller) {
+  const rows = await db
+    .select()
+    .from(relayLink)
+    .where(or(eq(relayLink.fromAddress, caller.address), eq(relayLink.toAddress, caller.address)))
+    .orderBy(desc(relayLink.createdAt))
+    .limit(200)
+  const items = await Promise.all(
+    rows.map(async (r) => {
+      const other = r.fromAddress === caller.address ? r.toAddress : r.fromAddress
+      return { id: r.id, address: other, name: (await whoOwns(other))?.name ?? other, direction: r.fromAddress === caller.address ? 'asked' : 'asked_of_me', status: r.status, reason: r.status === 'declined' ? r.reason : null, decidedAt: r.decidedAt?.getTime() ?? null }
+    }),
+  )
+  return json({ items })
+}
+
 /** /api/orchestra/v1/relay/<call> */
 export async function handleRelayV1(request: Request, call: string) {
   try {
@@ -184,6 +228,8 @@ export async function handleRelayV1(request: Request, call: string) {
     const parts = call.split('/').filter(Boolean)
     const method = request.method
     if (method === 'POST' && parts.length === 1 && parts[0] === 'messages') return await post(request, caller)
+    if (method === 'POST' && parts.length === 1 && parts[0] === 'connections') return await askToConnect(request, caller)
+    if (method === 'GET' && parts.length === 1 && parts[0] === 'connections') return await myConnections(caller)
     if (method === 'GET' && parts.length === 1 && parts[0] === 'inbox') return await inbox(url, caller)
     if (method === 'GET' && parts.length === 1 && parts[0] === 'outbox') return await outboxStatus(url, caller)
     if (method === 'GET' && parts.length === 2 && parts[0] === 'messages') return await fetchBytes(parts[1], caller)
