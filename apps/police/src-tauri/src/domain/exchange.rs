@@ -243,6 +243,23 @@ pub async fn list_incoming(pool: &SqlitePool) -> Result<Vec<Incoming>, DomainErr
     Ok(sqlx::query_as("SELECT i.id, i.kind, i.in_reply_to, i.sent_at, i.received_at, i.payload, c.office_name FROM exchange_incoming i JOIN dpp_connections c ON c.id = i.connection_id ORDER BY i.received_at DESC").fetch_all(pool).await?)
 }
 
+#[derive(Debug, Clone, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct Outgoing {
+    pub id: String,
+    pub kind: String,
+    pub seq: i64,
+    pub prepared_at: i64,
+    pub exported_at: Option<i64>,
+    pub route: Option<String>,
+    pub office_name: String,
+    pub police_reference: Option<String>,
+}
+
+pub async fn list_outgoing(pool: &SqlitePool) -> Result<Vec<Outgoing>, DomainError> {
+    Ok(sqlx::query_as("SELECT o.id, o.kind, o.seq, o.prepared_at, o.exported_at, o.route, c.office_name, json_extract(o.payload, '$.policeReference') AS police_reference FROM exchange_outgoing o JOIN dpp_connections c ON c.id = o.connection_id ORDER BY o.prepared_at DESC").fetch_all(pool).await?)
+}
+
 fn claim_role(role: &str) -> &'static str {
     match role {
         "suspect" | "accused" => "accused",

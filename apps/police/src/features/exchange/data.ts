@@ -59,3 +59,6 @@ export async function savePackage(sealed: Sealed): Promise<boolean> {
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
   return true
 }
+
+export type Outgoing = { id: string; kind: string; seq: number; preparedAt: number; exportedAt: number | null; route: string | null; officeName: string; policeReference: string | null }
+export const listOutgoing = (): Promise<Outgoing[]> => api('/exchange/outgoing')

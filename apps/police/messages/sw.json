@@ -2205,7 +2205,17 @@
     "intro": "Rufaa na stakabadhi kwenda na kutoka kwa DPP na mahakamani zinafika hapa.",
     "outbox": "Za kutuma",
     "status": "Bado haijawashwa. Itafanya kazi ofisi yako ikiunganishwa na Pleadli.",
-    "title": "Sanduku la posta"
+    "title": "Sanduku la posta",
+    "sent": "Zilizotumwa",
+    "empty_sent": "Hakuna kilichotumwa bado.",
+    "search": "Tafuta",
+    "select": "Chagua ujumbe ili kuusoma.",
+    "from": "Kutoka",
+    "to": "Kwa",
+    "referral_subject": "Rufaa {reference}",
+    "by_postbox": "Kwa sanduku la posta",
+    "by_file": "Imehifadhiwa kama faili",
+    "referral_body": "Kesi hii ilitumwa kwa {office} kama kifurushi kilichofungwa. Ofisi hiyo pekee ndiyo inaweza kukifungua."
   },
   "tour": {
     "title": "Ziara fupi",

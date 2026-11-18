@@ -1572,6 +1572,7 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/exchange/accept-invite", post(exchange::accept_invite))
         .route("/exchange/import", post(exchange::import_package))
         .route("/exchange/incoming", get(exchange::list_incoming))
+        .route("/exchange/outgoing", get(exchange::list_outgoing))
         .route("/exchange/referrals/{id}/export", post(exchange::export_referral))
         .route("/hq/stations", get(hq::list_stations).post(hq::register_station))
         .route("/hq/stations/{id}/activation-code", post(hq::issue_code))

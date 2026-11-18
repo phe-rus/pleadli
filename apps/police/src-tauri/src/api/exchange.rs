@@ -73,6 +73,10 @@ pub async fn import_package(State(state): State<AppState>, Extension(actor): Ext
     exchange::import_package(&state.pool, &decode(&input.file)?).await.map(Json).map_err(domain_error)
 }
 
+pub async fn list_outgoing(State(state): State<AppState>) -> Result<Json<Vec<exchange::Outgoing>>, ApiError> {
+    exchange::list_outgoing(&state.pool).await.map(Json).map_err(domain_error)
+}
+
 pub async fn list_incoming(State(state): State<AppState>) -> Result<Json<Vec<Incoming>>, ApiError> {
     exchange::list_incoming(&state.pool).await.map(Json).map_err(domain_error)
 }

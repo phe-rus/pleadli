@@ -1,6 +1,9 @@
 import * as m from '@/paraglide/messages'
-import { PostboxView, type PostboxLabels } from '@pleadli/shell'
-import { createFileRoute } from '@tanstack/react-router'
+import { listIncoming, listOutgoing, type Incoming, type Outgoing } from '@/features/exchange/data'
+import { PostboxView, type PostboxLabels, type PostboxMessage } from '@pleadli/shell'
+import { buttonVariants } from '@pleadli/ui/button'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/postbox/')({ component: RouteComponent })
 
@@ -10,9 +13,54 @@ const useLabels = (): PostboxLabels => ({
   intro: m['postbox.intro'](),
   inbox: { label: m['postbox.inbox'](), empty: m['postbox.empty_inbox']() },
   outbox: { label: m['postbox.outbox'](), empty: m['postbox.empty_outbox']() },
+  sent: { label: m['postbox.sent'](), empty: m['postbox.empty_sent']() },
   status: m['postbox.status'](),
+  search: m['postbox.search'](),
+  select: m['postbox.select'](),
+  from: m['postbox.from'](),
+  to: m['postbox.to'](),
 })
 
+const field = (body: Record<string, string | undefined>, ...keys: string[]) => keys.map((k) => body[k]).filter(Boolean).join(' · ')
+
+function parse(payload: string): Record<string, string | undefined> {
+  try {
+    return JSON.parse(payload)
+  } catch {
+    return {}
+  }
+}
+
 function RouteComponent() {
-  return <PostboxView labels={useLabels()} />
+  const labels = useLabels()
+  const [incoming, setIncoming] = useState<Incoming[]>([])
+  const [outgoing, setOutgoing] = useState<Outgoing[]>([])
+  useEffect(() => {
+    // Before the station has an exchange identity these answer with nothing.
+    listIncoming().then(setIncoming).catch(() => {})
+    listOutgoing().then(setOutgoing).catch(() => {})
+  }, [])
+
+  const messages = useMemo<PostboxMessage[]>(
+    () => [
+      ...incoming.map((i) => {
+        const body = parse(i.payload)
+        const subject = i.kind === 'receipt' ? m['exchange.receipt']() : m['exchange.decision']()
+        return { id: i.id, box: 'inbox' as const, unread: true, party: i.officeName, at: i.receivedAt, subject: `${subject}: ${body.policeReference ?? ''}`.trim(), preview: field(body, 'outcome', 'decisionType', 'dppReference', 'reason'), body: <p className="whitespace-pre-wrap">{field(body, 'policeReference', 'outcome', 'decisionType', 'dppReference', 'reason')}</p> }
+      }),
+      ...outgoing.map((o) => ({
+        id: o.id,
+        box: (o.route === 'postbox' && !o.exportedAt ? 'outbox' : 'sent') as 'outbox' | 'sent',
+        party: o.officeName,
+        at: o.exportedAt ?? o.preparedAt,
+        subject: m['postbox.referral_subject']({ reference: o.policeReference ?? '' }),
+        preview: o.route === 'postbox' ? m['postbox.by_postbox']() : m['postbox.by_file'](),
+        body: <p>{m['postbox.referral_body']({ office: o.officeName })}</p>,
+        state: o.route === 'postbox' ? m['postbox.by_postbox']() : m['postbox.by_file'](),
+      })),
+    ],
+    [incoming, outgoing],
+  )
+
+  return <PostboxView labels={labels} messages={messages} actions={<Link to="/exchange" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m['exchange.title']()}</Link>} />
 }

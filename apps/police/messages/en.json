@@ -2205,7 +2205,17 @@
     "intro": "Referrals and receipts to and from the DPP and courts arrive here.",
     "outbox": "Outbox",
     "status": "Not switched on yet. It will work once your office is connected to Pleadli.",
-    "title": "Postbox"
+    "title": "Postbox",
+    "sent": "Sent",
+    "empty_sent": "Nothing has been sent yet.",
+    "search": "Search",
+    "select": "Select a message to read it.",
+    "from": "From",
+    "to": "To",
+    "referral_subject": "Referral {reference}",
+    "by_postbox": "By postbox",
+    "by_file": "Saved as a file",
+    "referral_body": "This case was sent to {office} as a sealed package. Only that office can open it."
   },
   "tour": {
     "title": "A quick tour",
