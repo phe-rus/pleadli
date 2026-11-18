@@ -135,6 +135,13 @@ export const prisonsNav: readonly SidebarNavItem[] = [
   },
   {
     icon: Mail01Icon,
+    get label() { return m.nav_court_orders() },
+    to: '/court-orders',
+    requires: ['court.manage'],
+    get section() { return m.nav_institution() },
+  },
+  {
+    icon: Mail01Icon,
     get label() { return m.nav_postbox() },
     to: '/postbox',
     get section() { return m.nav_institution() },

@@ -17,6 +17,7 @@
 
 pub mod auth;
 pub mod capture;
+pub mod court_orders;
 pub mod documents;
 pub mod error;
 pub mod guard;
@@ -68,6 +69,7 @@ pub fn route_table(node: NodeRef) -> RouteTable {
     RouteTable::new(node.clone())
         .merge(auth::routes(node.clone()))
         .merge(prisons::routes(node.clone()))
+        .merge(court_orders::routes(node.clone()))
         .merge(hq::routes(node.clone()))
         .merge(inbox::routes(node.clone()))
         .merge(numbering::routes(node.clone()))
