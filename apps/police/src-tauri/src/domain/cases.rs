@@ -426,7 +426,7 @@ pub async fn ensure_case_person(pool: &SqlitePool, case_id: &str, person_id: &st
 /** The case as an officer may see it, given the restricted cases hidden from them. A hidden case keeps
  * its reference and status, so the register still counts it, but loses its summary, incident and people. */
 pub fn apply_access(mut case: Case, hidden: &[String]) -> Case {
-    case.can_view = !hidden.iter().any(|id| *id == case.id);
+    case.can_view = !hidden.contains(&case.id);
     if !case.can_view {
         case.summary = String::new();
         case.incident_id = None;
@@ -486,7 +486,7 @@ pub async fn may_see_entity(pool: &SqlitePool, entity_type: &str, entity_id: &st
         return person_visible(pool, entity_id, hidden).await;
     }
     Ok(match entity_case_id(pool, entity_type, entity_id).await? {
-        Some(case_id) => !hidden.iter().any(|h| *h == case_id),
+        Some(case_id) => !hidden.contains(&case_id),
         None => true,
     })
 }
@@ -498,7 +498,7 @@ pub async fn person_visible(pool: &SqlitePool, person_id: &str, hidden: &[String
         return Ok(true);
     }
     let case_ids: Vec<String> = sqlx::query_scalar("SELECT case_id FROM case_people WHERE person_id = ?").bind(person_id).fetch_all(pool).await?;
-    Ok(case_ids.is_empty() || case_ids.iter().any(|c| !hidden.iter().any(|h| h == c)))
+    Ok(case_ids.is_empty() || case_ids.iter().any(|c| !hidden.contains(c)))
 }
 
 /** Whether this officer may read a vault file by its stored path: a file attached to a restricted case's records is not theirs to read. */
