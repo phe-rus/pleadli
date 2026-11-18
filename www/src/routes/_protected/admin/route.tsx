@@ -1,7 +1,8 @@
 import { CloudShell } from '@/components/cloud-shell'
 import { adminGroups } from '@/data/admin'
 import { stopImpersonating } from '@/functions/admin.func'
-import { JusticeScale01Icon } from '@hugeicons/core-free-icons'
+import { getStaffOverview } from '@/functions/staff.func'
+import { Building03Icon, Globe02Icon, JusticeScale01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
@@ -13,21 +14,23 @@ export const Route = createFileRoute('/_protected/admin')({
       throw redirect({ to: '/' })
     }
   },
+  loader: () => getStaffOverview(),
   component: RouteComponent,
 })
 
 /** Pleadli Admin: staff only. */
 function RouteComponent() {
   const { session } = Route.useRouteContext()
+  const o = Route.useLoaderData()
   const [isStoppingImpersonation, setIsStoppingImpersonation] = useState(false)
   const impersonatedBy = session.session.impersonatedBy
 
   return (
     <CloudShell
-      brand={{ to: '/admin', label: 'Pleadli Admin', icon: JusticeScale01Icon }}
-      groups={adminGroups}
-      signedInAs={session.user.email}
-      links={[{ to: '/account', label: 'Pleadli Account' }, { to: '/', label: 'pleadli.com' }]}
+      brand={{ to: '/admin', product: 'Pleadli Admin', office: 'Staff', icon: JusticeScale01Icon }}
+      groups={adminGroups({ waiting: o.waiting.length, requests: o.openRequests, reports: o.openReports, crashes: o.crashes })}
+      person={{ name: session.user.name, sub: session.user.email }}
+      links={[{ icon: Building03Icon, to: '/account', label: 'Pleadli Account' }, { icon: Globe02Icon, to: '/', label: 'pleadli.com' }]}
       signOutLabel="Sign out"
       openMenuLabel="Open menu"
       closeMenuLabel="Close menu"

@@ -106,8 +106,7 @@ function Group({ group }: { group: ShellGroup }) {
 export function CloudShell({
   brand,
   groups,
-  identity,
-  signedInAs,
+  person,
   links,
   signOutLabel,
   openMenuLabel,
@@ -115,14 +114,13 @@ export function CloudShell({
   banner,
   children,
 }: {
-  brand: { to: string; label: string; icon: IconSvgElement }
+  /** Product on the first line, the office or area on the second, as the apps show theirs. */
+  brand: { to: string; product: string; office: string; icon: IconSvgElement }
   groups: readonly ShellGroup[]
-  /** A small line under the brand, such as an institution's address. */
-  identity?: ReactNode
-  /** The signed-in email, shown at the foot beside its avatar. */
-  signedInAs?: string
-  /** Quiet links above the foot (switch institution, the other area, the website). */
-  links?: { to: string; label: string }[]
+  /** Who is signed in: name, then a quiet line under it. */
+  person: { name: string; sub: string }
+  /** Other places to go (switch institution, the other area, the website), as rows after the groups. */
+  links?: ShellItem[]
   signOutLabel: string
   openMenuLabel: string
   closeMenuLabel: string
@@ -141,7 +139,7 @@ export function CloudShell({
     setOpen(window.matchMedia('(min-width: 768px)').matches)
   }, [])
 
-  const initials = (signedInAs ?? '?').slice(0, 2).toUpperCase()
+  const initials = person.name.split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase()
   const toggleLabel = open ? closeMenuLabel : openMenuLabel
 
   return (
@@ -149,15 +147,15 @@ export function CloudShell({
       {open && <div aria-hidden className="fixed inset-0 z-40 bg-foreground/20 md:hidden" onClick={() => setOpen(false)} />}
 
       <aside
-        aria-label={brand.label}
+        aria-label={brand.product}
         inert={!open}
         onClick={(e) => {
           if (window.matchMedia('(max-width: 767px)').matches && (e.target as HTMLElement).closest('a')) setOpen(false)
         }}
         className={cn(
-          'fixed inset-y-0 start-0 z-50 flex w-64 shrink-0 flex-col bg-sidebar transition-[transform,margin] duration-200 ease-out motion-reduce:transition-none',
+          'fixed inset-y-0 start-0 z-50 flex w-72 shrink-0 flex-col bg-sidebar transition-[transform,margin] duration-200 ease-out motion-reduce:transition-none',
           'md:static md:z-auto',
-          open ? 'translate-x-0 border-e border-sidebar-border' : '-translate-x-full md:-ms-64',
+          open ? 'translate-x-0 border-e border-sidebar-border' : '-translate-x-full md:-ms-72',
         )}
       >
         <div className="flex h-12 shrink-0 items-center justify-end px-3">
@@ -166,44 +164,44 @@ export function CloudShell({
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 px-4 pb-3">
+        <div className="px-4 pb-3">
           <Link to={brand.to} className="flex min-w-0 items-center gap-2.5 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-            <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
-              <HugeiconsIcon icon={brand.icon} className="size-4" />
+            <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
+              <HugeiconsIcon icon={brand.icon} className="size-[1.125rem]" />
             </span>
-            <span className="min-w-0 truncate text-[0.9375rem] font-semibold">{brand.label}</span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-[0.8125rem] leading-4 font-semibold">{brand.product}</span>
+              <span className="truncate text-[0.6875rem] leading-4 text-muted-foreground">{brand.office}</span>
+            </span>
           </Link>
-          {identity}
         </div>
 
         <nav className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-3">
           {groups.map((g) => <Group key={g.id} group={g} />)}
+          {links?.length ? <div className="mt-auto flex flex-col gap-px pt-4">{links.map((l) => <Place key={l.to} item={l} />)}</div> : null}
         </nav>
 
-        <div className="flex flex-col gap-1 border-t border-sidebar-border px-2 py-2">
-          {links?.map((l) => (
-            <Link key={l.to} to={l.to} className={cn(row, 'text-muted-foreground hover:text-foreground')}>
-              <span className="truncate">{l.label}</span>
-            </Link>
-          ))}
-          <span className="flex min-w-0 items-center gap-2 px-1.5 pt-1">
+        <div className="flex items-center gap-1 px-2 py-2">
+          <span className="flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1">
             <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-primary/80 to-primary text-[0.6875rem] font-semibold text-primary-foreground">
               {initials}
             </span>
-            <span className="truncate text-[0.8125rem] text-foreground" title={signedInAs}>{signedInAs}</span>
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-[0.8125rem] font-medium text-foreground">{person.name}</span>
+              <span className="truncate text-[0.6875rem] text-muted-foreground">{person.sub}</span>
+            </span>
           </span>
-          <div className="flex items-center justify-between gap-1">
-            <LanguageSwitch className="h-8 px-1.5 text-xs md:h-7" />
-            <button
-              type="button"
-              onClick={signOut}
-              disabled={pending}
-              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[0.8125rem] font-medium text-destructive outline-none hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive/40 disabled:opacity-60 md:h-7"
-            >
-              <HugeiconsIcon icon={Logout03Icon} className="size-4" />
-              {signOutLabel}
-            </button>
-          </div>
+          <LanguageSwitch className="h-8 px-1 text-xs md:h-7 [&>span]:inline!" />
+          <button
+            type="button"
+            onClick={signOut}
+            disabled={pending}
+            aria-label={signOutLabel}
+            title={signOutLabel}
+            className={cn(iconButton, 'text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-60')}
+          >
+            <HugeiconsIcon icon={Logout03Icon} className="size-4" />
+          </button>
         </div>
       </aside>
 
@@ -219,7 +217,7 @@ export function CloudShell({
             <button type="button" className={iconButton} aria-label={toggleLabel} title={toggleLabel} onClick={() => setOpen(true)}>
               <PaneIcon />
             </button>
-            <span className="min-w-0 truncate text-sm font-semibold md:hidden">{brand.label}</span>
+            <span className="min-w-0 truncate text-sm font-semibold md:hidden">{brand.office}</span>
           </div>
         )}
         <div className="no-scrollbar flex-1 overflow-y-auto">{children}</div>

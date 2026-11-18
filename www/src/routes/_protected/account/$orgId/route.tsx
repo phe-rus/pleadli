@@ -1,8 +1,7 @@
 import { CloudShell, type ShellGroup } from '@/components/cloud-shell'
 import { getInstitution } from '@/functions/account.func'
 import * as m from '@/paraglide/messages'
-import { Building03Icon, ComputerIcon, DashboardBrowsingIcon, DatabaseIcon, HelpCircleIcon, Key01Icon, Mailbox01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
-import { cn } from '@pleadli/ui/lib/utils'
+import { Building03Icon, Globe02Icon, JusticeScale01Icon, ComputerIcon, DashboardBrowsingIcon, DatabaseIcon, HelpCircleIcon, Key01Icon, Mailbox01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_protected/account/$orgId')({
@@ -41,21 +40,13 @@ function RouteComponent() {
   ]
   return (
     <CloudShell
-      brand={{ to: '/account', label: institution.name, icon: Building03Icon }}
+      brand={{ to: '/account', product: m["orch.name"](), office: institution.name, icon: Building03Icon }}
       groups={groups}
-      identity={(
-        <span className={cn(
-          'inline-flex max-w-full truncate rounded-full bg-foreground/[0.06] px-2.5',
-          'py-0.5 font-mono text-[0.7rem] text-muted-foreground',
-        )}>
-          {institution.address ?? m["orch.status.pending_title"]()}
-        </span>
-      )}
-      signedInAs={viewer.email}
+      person={{ name: viewer.name, sub: viewer.email }}
       links={[
-        ...(institutions.length > 1 ? [{ to: '/account', label: m["orch.switch_institution"]() }] : []),
-        ...(viewer.staff ? [{ to: '/admin', label: m["orch.go_admin"]() }] : []),
-        { to: '/', label: m["orch.website"]() },
+        ...(institutions.length > 1 ? [{ icon: Building03Icon, to: '/account', label: m["orch.switch_institution"]() }] : []),
+        ...(viewer.staff ? [{ icon: JusticeScale01Icon, to: '/admin', label: m["orch.go_admin"]() }] : []),
+        { icon: Globe02Icon, to: '/', label: m["orch.website"]() },
       ]}
       signOutLabel={m["orch.sign_out"]()}
       openMenuLabel={m["orch.nav.menu"]()}

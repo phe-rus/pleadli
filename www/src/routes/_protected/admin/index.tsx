@@ -1,10 +1,8 @@
-import { getStaffOverview } from '@/functions/staff.func'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Stat } from '@pleadli/ui/stat'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_protected/admin/')({
-  loader: () => getStaffOverview(),
   component: RouteComponent,
 })
 
@@ -13,7 +11,14 @@ const appName: Record<string, string> = { police: 'Police', dpp: 'DPP', courts: 
 /** What staff look at first: who is waiting for review, what needs an answer,
  * and how many computers run Pleadli. */
 function RouteComponent() {
-  const o = Route.useLoaderData()
+  const o = getRouteApi('/_protected/admin').useLoaderData()
+  const attention: { key: string; text: string; to: string }[] = []
+  if (o.waiting.length) attention.push({ key: 'w', text: `Institutions waiting for review: ${o.waiting.length}`, to: '/admin/institutions' })
+  if (o.openRequests) attention.push({ key: 'r', text: `Licence requests to answer: ${o.openRequests}`, to: '/admin/licences' })
+  if (o.crashes) attention.push({ key: 'c', text: `Crashes reported: ${o.crashes}`, to: '/admin/reports' })
+  if (o.openReports) attention.push({ key: 'p', text: `Reports to answer: ${o.openReports}`, to: '/admin/reports' })
+  if (o.failedBackups) attention.push({ key: 'b', text: `Failed backups this week: ${o.failedBackups}`, to: '/admin/computers' })
+  if (o.licences.expiringSoon) attention.push({ key: 'l', text: `Licences ending within 30 days: ${o.licences.expiringSoon}`, to: '/admin/licences' })
   const navigate = useNavigate()
   return (
     <article className="container flex flex-col gap-8 py-10 md:max-w-5xl">
@@ -21,6 +26,12 @@ function RouteComponent() {
         <h1>Overview</h1>
         <p className="text-muted-foreground">Pleadli Orchestra today.</p>
       </header>
+
+      <Group title="Needs your attention">
+        {attention.length ? attention.map((a) => (
+          <GroupRow key={a.key} label={a.text} chevron render={({ className, children }) => <Link to={a.to as never} className={className}>{children}</Link>} />
+        )) : <GroupRow label="Nothing is waiting. All answered." />}
+      </Group>
 
       {o.waiting.length > 0 && (
         <Group title={`Waiting for review (${o.waiting.length})`}>
