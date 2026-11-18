@@ -13,6 +13,7 @@ pub enum IdentityKind {
     DppOffice,
     CourtRegistry,
     PrisonFacility,
+    LawFirm,
 }
 
 /// What can be shared: enough to verify a signature and to seal a package for

@@ -249,3 +249,46 @@ pub struct CustodyReceiptPayload {
     pub decided_at: i64,
     pub decided_by: Option<String>,
 }
+
+pub const KIND_COURT_NOTICE: &str = "court_notice";
+pub const KIND_COURT_NOTICE_RECEIPT: &str = "court_notice_receipt";
+
+/// A notice from a court registry to counsel on a case: the date of a sitting,
+/// or the wording of an order. Every field is the court's claim; the firm reads
+/// it, chooses the matter it belongs to, and files it itself.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CourtNoticePayload {
+    /// The court's own id for the sitting or order, used to answer it.
+    pub notice_key: String,
+    /// `hearing` or `order`.
+    pub kind: String,
+    pub court_name: String,
+    pub court_number: String,
+    pub case_title: String,
+    /// What the notice is called: "Notice of hearing", "Ruling", the order's title.
+    pub title: String,
+    /// A hearing: when and why, and where.
+    pub at: Option<i64>,
+    pub purpose: Option<String>,
+    pub courtroom: Option<String>,
+    /// An order: the wording as issued, and the court's reference.
+    pub paragraphs: Vec<String>,
+    pub reference: Option<String>,
+    pub issued_at: i64,
+    pub issued_by: Option<String>,
+}
+
+/// The firm's answer: whether it filed the notice against a matter.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CourtNoticeReceiptPayload {
+    pub notice_package_id: String,
+    pub notice_key: String,
+    /// `filed` or `returned`.
+    pub outcome: String,
+    pub reason: Option<String>,
+    pub received_at: i64,
+    pub decided_at: i64,
+    pub decided_by: Option<String>,
+}
