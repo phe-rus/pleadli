@@ -165,3 +165,17 @@ Update: the offence list now lives in the rules pack (see `RULES.md`), shown in 
 
 Limit: the bond rule looks at charge sheets only. A case with no charge sheet yet is not checked.
 The murder bond already granted in CRB 18 before the fix is still in the test data.
+
+### Built after the live run (2026-11-18, night)
+
+| Gap | What was built | Verified on screen |
+|-----|----------------|--------------------|
+| No remand status | Custody status "Remanded by a court" | Selectable in the booking form |
+| Too few referral destinations | Hospital, Probation and Social Welfare, Government Analytical Laboratory, Cybercrime unit, Telecom, Bank | All listed in the referral form |
+| 48-hour limit fixed in code | Now read from the rules pack (sourced rule, 48 hours; 7 day transfer window) | Custody shows 48.0h remaining |
+| No PF3 or post-mortem | New "Medical records" page: kind, person, case, hospital, doctor, requested and examined dates, findings; the examined person is added to the case | PF3 recorded for CRB 17 and listed |
+| No restricted view for sensitive cases | "Restricted case" switch. Administrators and the officer who restricted it see it; others see the reference number and a notice. Hidden from case lists, the case page, people, statements, exhibits, custody, charge sheets, referrals, bonds, medical records, a person's page and the Today feed | As a second, non-admin officer: list row hidden, case page refused with a clear message, medical list and feed empty of it |
+
+Limits of the restricted view: it hides records from screens and lists. Printed or exported documents, the DPP hand-over, search results and the file browser do not yet respect it, and only one officer (the one who restricted it) plus administrators can open a case. A named access list is still to do.
+
+Bug found and fixed on the way: editing a case before its people had loaded saved an empty people list and erased everyone on the case. The form now waits for the people before it can save.

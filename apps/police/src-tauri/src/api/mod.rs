@@ -377,12 +377,24 @@ async fn list_shift_handovers_handler(
 
 async fn get_person_profile_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<PersonProfile>>, ApiError> {
-    people::get_person_profile(&state.pool, &id)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let profile = people::get_person_profile(&state.pool, &id).await.map_err(internal_error)?;
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    // A person's page never shows a restricted case this officer may not open, nor its papers.
+    let profile = profile.map(|mut p| {
+        let out = |case_id: Option<&str>| case_id.is_some_and(|c| hidden.iter().any(|h| h == c));
+        p.cases.retain(|c| !hidden.contains(&c.id));
+        p.case_roles.retain(|r| !hidden.contains(&r.case_id));
+        p.statements.retain(|r| !out(r.case_id.as_deref()));
+        p.custody_records.retain(|r| !out(r.case_id.as_deref()));
+        p.bonds.retain(|r| !out(r.case_id.as_deref()));
+        p.exhibits.retain(|r| !out(r.case_id.as_deref()));
+        p.charge_sheets.retain(|r| !out(Some(r.case_id.as_str())));
+        p
+    });
+    Ok(Json(profile))
 }
 
 #[derive(Deserialize)]
@@ -714,12 +726,11 @@ async fn update_referral_handler(
 
 async fn list_referrals_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<Referral>>, ApiError> {
-    referrals::list_referrals(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let rows = referrals::list_referrals(&state.pool, &params.query).await.map_err(internal_error)?;
+    visible(&state.pool, &actor, rows, |r| Some(r.case_id.as_str())).await
 }
 
 async fn create_charge_sheet_handler(
@@ -745,12 +756,11 @@ async fn update_charge_sheet_handler(
 
 async fn list_charge_sheets_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<ChargeSheet>>, ApiError> {
-    charge_sheets::list_charge_sheets(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let rows = charge_sheets::list_charge_sheets(&state.pool, &params.query).await.map_err(internal_error)?;
+    visible(&state.pool, &actor, rows, |r| Some(r.case_id.as_str())).await
 }
 
 async fn create_exhibit_handler(
@@ -776,12 +786,11 @@ async fn update_exhibit_handler(
 
 async fn list_exhibits_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<Exhibit>>, ApiError> {
-    exhibits::list_exhibits(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let rows = exhibits::list_exhibits(&state.pool, &params.query).await.map_err(internal_error)?;
+    visible(&state.pool, &actor, rows, |r| r.case_id.as_deref()).await
 }
 
 async fn create_exhibit_movement_handler(
@@ -805,38 +814,62 @@ async fn list_exhibit_movements_handler(
         .map_err(internal_error)
 }
 
+type Actor = crate::domain::sessions::Actor;
+
+/** A list of papers, without those that belong to a restricted case this officer may not see. */
+async fn visible<T>(pool: &sqlx::SqlitePool, actor: &Actor, rows: Vec<T>, case_of: impl Fn(&T) -> Option<&str>) -> Result<Json<Vec<T>>, ApiError> {
+    let hidden = cases::hidden_case_ids(pool, actor).await.map_err(internal_error)?;
+    Ok(Json(rows.into_iter().filter(|row| !case_of(row).is_some_and(|id| hidden.iter().any(|h| h == id))).collect()))
+}
+
+fn restricted_refusal() -> ApiError {
+    (StatusCode::FORBIDDEN, "This case is restricted. Only an administrator or the officer who restricted it can open it.".to_string())
+}
+
 async fn create_case_handler(
     State(state): State<AppState>,
-    Json(input): Json<CreateCaseInput>,
+    Extension(actor): Extension<Actor>,
+    Json(mut input): Json<CreateCaseInput>,
 ) -> Result<Json<Case>, ApiError> {
-    cases::create_case(&state.pool, &state.vault_root, input).await.map(Json).map_err(internal_error)
+    input.actor_id = Some(actor.officer_id.clone());
+    cases::create_case(&state.pool, &state.vault_root, input).await.map(|c| Json(cases::apply_access(c, &actor))).map_err(internal_error)
 }
 
 async fn update_case_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
-    Json(input): Json<CreateCaseInput>,
+    Json(mut input): Json<CreateCaseInput>,
 ) -> Result<Json<Case>, ApiError> {
+    if !cases::can_open(&state.pool, &id, &actor).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
+    input.actor_id = Some(actor.officer_id.clone());
     cases::update_case(&state.pool, &state.vault_root, &id, input)
         .await
-        .map(Json)
+        .map(|c| Json(cases::apply_access(c, &actor)))
         .map_err(internal_error)
 }
 
 async fn list_cases_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<Case>>, ApiError> {
     cases::list_cases(&state.pool, &params.query)
         .await
-        .map(Json)
+        .map(|list| Json(list.into_iter().map(|c| cases::apply_access(c, &actor)).collect()))
         .map_err(internal_error)
 }
 
 async fn list_case_people_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<CasePerson>>, ApiError> {
+    if !cases::can_open(&state.pool, &id, &actor).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
     cases::list_case_people(&state.pool, &id)
         .await
         .map(Json)
@@ -845,8 +878,12 @@ async fn list_case_people_handler(
 
 async fn get_case_workspace_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<CaseWorkspace>>, ApiError> {
+    if !cases::can_open(&state.pool, &id, &actor).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
     cases::get_case_workspace(&state.pool, &id)
         .await
         .map(Json)
@@ -980,12 +1017,11 @@ async fn update_statement_handler(
 
 async fn list_statements_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<Statement>>, ApiError> {
-    statements::list_statements(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let rows = statements::list_statements(&state.pool, &params.query).await.map_err(internal_error)?;
+    visible(&state.pool, &actor, rows, |r| r.case_id.as_deref()).await
 }
 
 async fn create_custody_record_handler(
@@ -1011,12 +1047,11 @@ async fn update_custody_record_handler(
 
 async fn list_custody_records_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<CustodyRecord>>, ApiError> {
-    custody::list_records(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let rows = custody::list_records(&state.pool, &params.query).await.map_err(internal_error)?;
+    visible(&state.pool, &actor, rows, |r| r.case_id.as_deref()).await
 }
 
 async fn get_rules_handler(State(state): State<AppState>) -> Result<Json<crate::domain::rules::Pack>, ApiError> {
@@ -1036,6 +1071,36 @@ async fn import_rules_handler(
         .await
         .map(Json)
         .map_err(|reason| (StatusCode::UNPROCESSABLE_ENTITY, reason))
+}
+
+async fn create_medical_handler(
+    State(state): State<AppState>,
+    Json(input): Json<crate::domain::medical::CreateMedicalExamInput>,
+) -> Result<Json<crate::domain::medical::MedicalExam>, ApiError> {
+    if let Some(reason) = crate::domain::medical::problem(&input) {
+        return Err((StatusCode::UNPROCESSABLE_ENTITY, reason));
+    }
+    crate::domain::medical::create_exam(&state.pool, input).await.map(Json).map_err(internal_error)
+}
+
+async fn update_medical_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<crate::domain::medical::CreateMedicalExamInput>,
+) -> Result<Json<crate::domain::medical::MedicalExam>, ApiError> {
+    if let Some(reason) = crate::domain::medical::problem(&input) {
+        return Err((StatusCode::UNPROCESSABLE_ENTITY, reason));
+    }
+    crate::domain::medical::update_exam(&state.pool, &id, input).await.map(Json).map_err(internal_error)
+}
+
+async fn list_medical_handler(
+    State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
+    Query(params): Query<SearchParams>,
+) -> Result<Json<Vec<crate::domain::medical::MedicalExam>>, ApiError> {
+    let rows = crate::domain::medical::list_exams(&state.pool, &params.query).await.map_err(internal_error)?;
+    visible(&state.pool, &actor, rows, |r| r.case_id.as_deref()).await
 }
 
 async fn create_bond_handler(
@@ -1064,12 +1129,11 @@ async fn update_bond_handler(
 
 async fn list_bonds_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<Bond>>, ApiError> {
-    bonds::list_bonds(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let rows = bonds::list_bonds(&state.pool, &params.query).await.map_err(internal_error)?;
+    visible(&state.pool, &actor, rows, |r| r.case_id.as_deref()).await
 }
 
 // Tauri's IPC bridge auto-converts JS camelCase args to snake_case Rust
@@ -1472,6 +1536,8 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/prints/library", get(paper_library))
         .route("/custody", post(create_custody_record_handler).get(list_custody_records_handler))
         .route("/custody/{id}", put(update_custody_record_handler))
+        .route("/medical", post(create_medical_handler).get(list_medical_handler))
+        .route("/medical/{id}", put(update_medical_handler))
         .route("/rules", get(get_rules_handler))
         .route("/rules/import", post(import_rules_handler))
         .route("/bonds", post(create_bond_handler).get(list_bonds_handler))

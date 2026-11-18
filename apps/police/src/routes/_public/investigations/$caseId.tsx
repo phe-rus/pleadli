@@ -25,6 +25,8 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { format } from '@/lib/date'
+import { ApiError } from '@/lib/api'
+import { buttonVariants } from '@pleadli/ui/button'
 import { RecordTabsView } from '@pleadli/shell'
 import { useState } from 'react'
 
@@ -35,6 +37,21 @@ export const Route = createFileRoute('/_public/investigations/$caseId')({
       staleTime: 'static',
     })
     if (!workspace) throw notFound()
+  },
+  // A restricted case this officer may not open is a refusal with a reason, not a page that failed.
+  errorComponent: ({ error }) => {
+    if (error instanceof ApiError && error.status === 403) {
+      return (
+        <article className="page">
+          <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
+            <h1>{m["cases.restricted_title"]()}</h1>
+            <p className="text-muted-foreground">{m["cases.restricted_hidden"]()}</p>
+            <Link to="/investigations" className={buttonVariants({ variant: 'secondary' })}>{m["cases.back_to_cases"]()}</Link>
+          </div>
+        </article>
+      )
+    }
+    throw error
   },
   component: RouteComponent,
 })

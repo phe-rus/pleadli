@@ -18,15 +18,19 @@ A pack with a `reviewed` rule that names no reviewer, or a `sourced` or `reviewe
 - Settings > Legal rules shows the pack, each rule's status and citation, and (administrators only) "Choose a file" to load a newer pack.
 - A newer pack must have a higher `version` than the one in force.
 
-## Rules in force today (all `draft`, none reviewed by a legal officer)
+## Rules in force today (none reviewed by a legal officer)
 | Rule | Drives |
 |------|--------|
-| `bond.not_police_bailable` | Refuses a police bond for those offences; the refusal shows the rule's text and "awaiting legal review" |
-| `juvenile.age` (18) | The "Juvenile" chip on a person and the notice when booking them in |
-| `juvenile.custody_guidance` | The guidance text in that notice |
+| `custody.limit_hours` (48, `sourced`) | The custody clock everywhere: lists, Today, the status bar, the person page |
+| `custody.transfer_window_days` (7, `sourced`) | The window for someone arrested in another police area |
+| `bond.not_police_bailable` (`draft`) | Refuses a police bond for those offences; the refusal shows the rule's text and "awaiting legal review" |
+| `juvenile.age` (18, `draft`) | The "Juvenile" chip on a person and the notice when booking them in |
+| `juvenile.custody_guidance` (`draft`) | The guidance text in that notice |
 
 ## Still in code, to move into the pack
-The 48-hour custody limit (`custodyCompliance`), referral destinations, and case statuses are still fixed in the app.
+Referral destinations, custody statuses and case statuses are still fixed lists in the app.
+
+The built-in pack is version 3 (versions 1 and 2 were earlier test loads).
 
 ## How to improve a rule
 A legal officer edits the JSON (adds the citation, their name and date, sets `status`), raises `version`, and an administrator loads it. Later: the same pack pushed from Pleadli Cloud to every station.

@@ -7,6 +7,7 @@ import { custodyRecordsOptions } from '@/features/custody/queries'
 import { custodyCompliance } from '@/features/custody/schema'
 import { referralsOptions } from '@/features/referrals/queries'
 import { useInstallation } from '@/features/session'
+import { useRules } from '@/features/rules/queries'
 import { useQuery } from '@tanstack/react-query'
 
 /** How many hours before a custody deadline the sidebar starts to call it due.
@@ -41,6 +42,8 @@ export function useStationCounts(): StationCounts | undefined {
   // A Command holds none of these records, and does not ask for them.
   const { data: installation } = useInstallation()
   const enabled = installation?.mode === 'station'
+  // The limits custody is counted against come from the legal rules, so they are loaded with the station's figures.
+  useRules()
   const { data: custody } = useQuery({ ...custodyRecordsOptions(''), enabled })
   const { data: cases } = useQuery({ ...casesOptions(''), enabled })
   const { data: referrals } = useQuery({ ...referralsOptions(''), enabled })

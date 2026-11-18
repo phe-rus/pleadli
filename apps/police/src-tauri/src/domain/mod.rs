@@ -17,6 +17,7 @@ pub mod installation;
 pub mod incidents;
 pub mod keys;
 pub mod markdown;
+pub mod medical;
 pub mod officers;
 pub mod orchestra;
 pub mod people;

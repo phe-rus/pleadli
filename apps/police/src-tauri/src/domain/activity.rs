@@ -151,6 +151,8 @@ pub async fn recent(pool: &SqlitePool) -> Result<Vec<ActivityItem>, sqlx::Error>
     let mut case_items: Vec<ActivityItem> = cases::list_cases(pool, "")
         .await?
         .into_iter()
+        // A restricted case never appears in the station's shared feed.
+        .filter(|c| !c.restricted)
         .map(|c| ActivityItem {
             id: c.id.clone(),
             entity_type: "case".to_string(),

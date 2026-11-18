@@ -11,6 +11,7 @@ export const custodyStatuses = [
   { value: 'released_no_charge', get label() { return m["custody.status.released_without_charge"]() } },
   { value: 'released_on_bond', get label() { return m["custody.status.released_on_bond"]() } },
   { value: 'produced_in_court', get label() { return m["custody.status.produced_in_court"]() } },
+  { value: 'remanded', get label() { return m["custody.status.remanded"]() } },
   { value: 'referred_to_dpp', get label() { return m["custody.status.referred_to_dpp"]() } },
 ] as const
 
@@ -60,6 +61,15 @@ export function custodyPersonName(record: CustodyRecord) {
 
 const HOUR_MS = 60 * 60 * 1000
 
+/** The two limits custody is counted against. They come from the legal rules in force and are set
+ * when those load (see features/rules); these are the values until then. */
+let limitHours = 48
+let transferWindowDays = 7
+export function setCustodyLimits(limits: { hours?: number | null; transferDays?: number | null }) {
+  if (limits.hours && limits.hours > 0) limitHours = limits.hours
+  if (limits.transferDays && limits.transferDays > 0) transferWindowDays = limits.transferDays
+}
+
 export type CustodyCompliance = {
   /** The deadline actually binding right now, and what it's measured
    * against — per the research, verified for the two non-transfer states,
@@ -91,13 +101,13 @@ export function custodyCompliance(record: Pick<CustodyRecord, 'arrestedAt' | 'cr
   let basis: CustodyCompliance['basis']
 
   if (!record.crossJurisdictionTransfer) {
-    deadline = record.arrestedAt + 48 * HOUR_MS
+    deadline = record.arrestedAt + limitHours * HOUR_MS
     basis = 'arrest+48h'
   } else if (!record.transferredAt) {
-    deadline = record.arrestedAt + 7 * 24 * HOUR_MS
+    deadline = record.arrestedAt + transferWindowDays * 24 * HOUR_MS
     basis = 'transfer-window+7d'
   } else {
-    deadline = record.transferredAt + 48 * HOUR_MS
+    deadline = record.transferredAt + limitHours * HOUR_MS
     basis = 'post-transfer+48h (inferred)'
   }
 

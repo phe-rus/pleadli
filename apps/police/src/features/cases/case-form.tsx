@@ -10,11 +10,12 @@ import { useAppForm } from '@pleadli/forms-tables/forms'
 import { Button } from '@pleadli/ui/button'
 import { DrawerFooter } from '@pleadli/ui/drawer'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@pleadli/ui/field'
+import { Switch } from '@pleadli/ui/switch'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { useStore } from '@tanstack/react-form'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCasePeople, useCreateCase, useUpdateCase } from './queries'
 import { caseRoleLabel, caseRoles, caseStatuses, casePersonName, type Case, type CasePerson } from './schema'
 
@@ -33,13 +34,21 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
   const { data: existingPeople } = useCasePeople(existingCase?.id ?? '')
   const { data: knownPeople } = useQuery(peopleSearchOptions(''))
 
-  const [people, setPeople] = useState<PersonRoleRow[]>(() =>
-    (existingPeople ?? []).map((p: CasePerson) => ({
-      personId: p.personId,
-      personName: casePersonName(p),
-      role: p.role,
-    })),
-  )
+  const rowsOf = (list: CasePerson[] | undefined): PersonRoleRow[] =>
+    (list ?? []).map((p: CasePerson) => ({ personId: p.personId, personName: casePersonName(p), role: p.role }))
+  const [people, setPeople] = useState<PersonRoleRow[]>(() => rowsOf(existingPeople))
+  // Saving a case replaces its people with this list, so an edit must never start from an empty
+  // list that is only empty because the real one has not arrived yet. The list is filled in when it
+  // arrives, and the form cannot be saved before that.
+  const peopleReady = !existingCase || existingPeople !== undefined
+  const seeded = useRef(existingPeople !== undefined)
+  useEffect(() => {
+    if (existingPeople !== undefined && !seeded.current) {
+      seeded.current = true
+      setPeople(rowsOf(existingPeople))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seeded once, when the list first arrives
+  }, [existingPeople])
   // The people-role list lives outside `form`'s own fields, so its own
   // edits (adding/removing someone) wouldn't otherwise register as unsaved
   // work — tracked separately and combined with the form's real isDirty
@@ -56,6 +65,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
       summary: existingCase?.summary ?? '',
       status: existingCase?.status ?? 'open',
       incidentId: existingCase?.incidentId ?? (null as string | null),
+      restricted: existingCase?.restricted ?? false,
     },
     validators: {
       onSubmit: ({ value }) => {
@@ -65,6 +75,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
       },
     },
     onSubmit: async ({ value }) => {
+      if (!peopleReady) return
       try {
         const input = {
           ...value,
@@ -110,6 +121,16 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
             {(f) => <f.select label={m["common.status"]()} options={[...caseStatuses]} />}
           </form.AppField>
         </div>
+
+        <form.AppField name="restricted">
+          {(f) => (
+            <Field>
+              <FieldLabel>{m["cases.restricted_label"]()}</FieldLabel>
+              <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
+              <FieldDescription>{m["cases.restricted_hint"]()}</FieldDescription>
+            </Field>
+          )}
+        </form.AppField>
 
         {!existingCase && <FieldDescription>{m["cases.reference_hint"]()}</FieldDescription>}
 
@@ -210,7 +231,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={existingCase ? m["common.save_changes"]() : m["cases.submit"]()} />
+          <form.submit label={existingCase ? m["common.save_changes"]() : m["cases.submit"]()} disabled={!peopleReady} />
         </form.AppForm>
       </DrawerFooter>
     </form>

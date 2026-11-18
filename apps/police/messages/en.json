@@ -188,7 +188,8 @@
     "exhibits": "Exhibits",
     "charge_sheets": "Charge sheets",
     "statistics": "Statistics",
-    "postbox": "Postbox"
+    "postbox": "Postbox",
+    "medical": "Medical records"
   },
   "nav_sections": {
     "front_desk": "Front desk",
@@ -321,7 +322,13 @@
       "dpp": "No case is waiting on the DPP.",
       "closed": "No case has been closed yet.",
       "all": "No case has been opened yet."
-    }
+    },
+    "restricted_label": "Restricted case",
+    "restricted_hint": "Only an administrator and the officer who restricts it can open it. Use it for child victims, sexual offences and informants. It stays out of the station feed.",
+    "restricted_tag": "Restricted",
+    "restricted_hidden": "Restricted. Only an administrator or the officer who restricted it can open this case.",
+    "restricted_title": "This case is restricted",
+    "back_to_cases": "Back to cases"
   },
   "command": {
     "fallback_name": "Command",
@@ -399,7 +406,8 @@
       "released_without_charge": "Released without charge",
       "released_on_bond": "Released on bond",
       "produced_in_court": "Produced in court",
-      "referred_to_dpp": "Referred to DPP"
+      "referred_to_dpp": "Referred to DPP",
+      "remanded": "Remanded by a court"
     },
     "limit_title": "48-hour custody limit",
     "past_limit": "{name} is past the constitutional custody limit.",
@@ -756,7 +764,13 @@
       "dpp_resident_state_attorney": "DPP (Resident State Attorney)",
       "courts": "Courts",
       "another_station_unit": "Another station / unit",
-      "other": "Other"
+      "other": "Other",
+      "hospital": "Hospital or health unit (medical examination)",
+      "welfare": "Probation and Social Welfare Officer",
+      "government_analyst": "Government Analytical Laboratory",
+      "cybercrime": "Cybercrime unit",
+      "telecom": "Telecom company (subscriber records, freeze)",
+      "bank": "Bank or Bank of Uganda"
     },
     "destination_label": "Destination"
   },
@@ -2212,5 +2226,39 @@
     "no_citation": "No citation yet",
     "reviewed_by": "Reviewed by {name} on {date}",
     "awaiting_one": "This guidance is a working rule and is awaiting legal review."
+  },
+  "medical": {
+    "kind": {
+      "0": "K",
+      "1": "i",
+      "2": "n",
+      "3": "d",
+      "pf3": "Police medical form (PF3)",
+      "post_mortem": "Post-mortem"
+    },
+    "status": {
+      "requested": "Requested",
+      "completed": "Completed"
+    },
+    "person": "Person examined (or the deceased)",
+    "person_required": "Choose the person examined.",
+    "date_required": "A completed examination needs the date it was done.",
+    "facility": "Hospital or facility",
+    "facility_placeholder": "e.g. Mulago National Referral Hospital",
+    "examiner": "Examining doctor",
+    "examiner_placeholder": "Name of the doctor",
+    "requested_at": "Requested at",
+    "examined_at": "Examined at",
+    "findings": "Findings",
+    "findings_placeholder": "What the examination found",
+    "record": "Record an examination",
+    "add_desc": "A police medical form (PF3) for an injured person, or a post-mortem for a death.",
+    "recorded": "Examination recorded",
+    "record_failed": "Could not record the examination",
+    "updated": "Examination updated",
+    "update_failed": "Could not update the examination",
+    "empty": "No medical examination has been recorded yet.",
+    "summary": "{total} records, {waiting} waiting for the examination",
+    "kind_label": "Kind"
   }
 }

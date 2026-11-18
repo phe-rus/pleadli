@@ -30,6 +30,12 @@ pub struct Case {
     pub incident_summary: Option<String>,
     pub people_count: i64,
     pub created_at: i64,
+    /** Shown only to administrators and the officer who restricted it. */
+    pub restricted: bool,
+    pub restricted_by: Option<String>,
+    /** Whether the officer asking may see the case's content. Set on the way out, never stored. */
+    #[sqlx(skip)]
+    pub can_view: bool,
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
@@ -59,6 +65,11 @@ pub struct CreateCaseInput {
     pub status: String,
     pub incident_id: Option<String>,
     pub people: Vec<CasePersonInput>,
+    #[serde(default)]
+    pub restricted: bool,
+    /** The officer making the change, filled in by the server and never read from the request. */
+    #[serde(skip_deserializing, default)]
+    pub actor_id: Option<String>,
 }
 
 async fn set_case_people(
@@ -110,7 +121,7 @@ pub async fn create_case(pool: &SqlitePool, vault_root: &Path, input: CreateCase
         (input.reference.trim().to_string(), None, None)
     };
 
-    sqlx::query("INSERT INTO cases (id, reference, summary, status, incident_id, crb_year, crb_number) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO cases (id, reference, summary, status, incident_id, crb_year, crb_number, restricted, restricted_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&id)
         .bind(&reference)
         .bind(&input.summary)
@@ -118,6 +129,8 @@ pub async fn create_case(pool: &SqlitePool, vault_root: &Path, input: CreateCase
         .bind(&input.incident_id)
         .bind(crb_year)
         .bind(crb_number)
+        .bind(input.restricted)
+        .bind(if input.restricted { input.actor_id.clone() } else { None })
         .execute(&mut *tx)
         .await?;
 
@@ -133,11 +146,15 @@ pub async fn update_case(pool: &SqlitePool, vault_root: &Path, id: &str, input: 
     let old_reference: Option<String> = sqlx::query_scalar("SELECT reference FROM cases WHERE id = ?").bind(id).fetch_optional(pool).await?;
     let mut tx = pool.begin().await?;
 
-    sqlx::query("UPDATE cases SET reference = ?, summary = ?, status = ?, incident_id = ? WHERE id = ?")
+    sqlx::query("UPDATE cases SET reference = ?, summary = ?, status = ?, incident_id = ?, restricted = ?,
+         restricted_by = CASE WHEN ? = 1 THEN COALESCE(restricted_by, ?) ELSE NULL END WHERE id = ?")
         .bind(&input.reference)
         .bind(&input.summary)
         .bind(&input.status)
         .bind(&input.incident_id)
+        .bind(input.restricted)
+        .bind(input.restricted)
+        .bind(&input.actor_id)
         .bind(id)
         .execute(&mut *tx)
         .await?;
@@ -168,7 +185,7 @@ pub async fn list_cases(pool: &SqlitePool, query: &str) -> Result<Vec<Case>, sql
     if trimmed.is_empty() {
         return sqlx::query_as::<_, Case>(
             "SELECT
-                c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at,
+                c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at, c.restricted, c.restricted_by,
                 i.summary AS incident_summary,
                 (SELECT COUNT(*) FROM case_people cp WHERE cp.case_id = c.id) AS people_count
              FROM cases c
@@ -182,7 +199,7 @@ pub async fn list_cases(pool: &SqlitePool, query: &str) -> Result<Vec<Case>, sql
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, Case>(
         "SELECT
-            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at,
+            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at, c.restricted, c.restricted_by,
             i.summary AS incident_summary,
             (SELECT COUNT(*) FROM case_people cp WHERE cp.case_id = c.id) AS people_count
          FROM cases c
@@ -199,7 +216,7 @@ pub async fn list_cases(pool: &SqlitePool, query: &str) -> Result<Vec<Case>, sql
 pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Case>, sqlx::Error> {
     sqlx::query_as::<_, Case>(
         "SELECT
-            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at,
+            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at, c.restricted, c.restricted_by,
             i.summary AS incident_summary,
             (SELECT COUNT(*) FROM case_people cp WHERE cp.case_id = c.id) AS people_count
          FROM cases c
@@ -213,7 +230,7 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<Case>, sqlx::Error> {
 pub async fn get_case(pool: &SqlitePool, id: &str) -> Result<Option<Case>, sqlx::Error> {
     sqlx::query_as::<_, Case>(
         "SELECT
-            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at,
+            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at, c.restricted, c.restricted_by,
             i.summary AS incident_summary,
             (SELECT COUNT(*) FROM case_people cp WHERE cp.case_id = c.id) AS people_count
          FROM cases c
@@ -228,7 +245,7 @@ pub async fn get_case(pool: &SqlitePool, id: &str) -> Result<Option<Case>, sqlx:
 pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<Case>, sqlx::Error> {
     sqlx::query_as::<_, Case>(
         "SELECT
-            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at,
+            c.id, c.reference, c.summary, c.status, c.incident_id, c.created_at, c.restricted, c.restricted_by,
             i.summary AS incident_summary,
             (SELECT COUNT(*) FROM case_people cp2 WHERE cp2.case_id = c.id) AS people_count
          FROM cases c
@@ -335,6 +352,8 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
             status: "open".to_string(),
             incident_id: incident_ids.first().cloned(),
             people,
+            restricted: false,
+            actor_id: None,
         },
     )
     .await?;
@@ -371,4 +390,39 @@ pub async fn ensure_case_person(pool: &SqlitePool, case_id: &str, person_id: &st
         Some(_) => {}
     }
     Ok(())
+}
+
+/** Whether this officer may see a case's content: any case that is not restricted, or one that is and
+ * the officer is an administrator or the one who restricted it. */
+pub fn may_view(restricted: bool, restricted_by: Option<&str>, actor: &super::sessions::Actor) -> bool {
+    !restricted || actor.role == "admin" || restricted_by == Some(actor.officer_id.as_str())
+}
+
+/** The case as this officer may see it. A restricted case they may not open keeps its reference and
+ * status, so the register still counts it, but loses its summary, incident and people. */
+pub fn apply_access(mut case: Case, actor: &super::sessions::Actor) -> Case {
+    case.can_view = may_view(case.restricted, case.restricted_by.as_deref(), actor);
+    if !case.can_view {
+        case.summary = String::new();
+        case.incident_id = None;
+        case.incident_summary = None;
+        case.people_count = 0;
+    }
+    case
+}
+
+/** The restricted cases this officer may not see: lists of papers leave out anything that belongs to them. */
+pub async fn hidden_case_ids(pool: &SqlitePool, actor: &super::sessions::Actor) -> Result<Vec<String>, sqlx::Error> {
+    if actor.role == "admin" {
+        return Ok(vec![]);
+    }
+    sqlx::query_scalar("SELECT id FROM cases WHERE restricted = 1 AND COALESCE(restricted_by, '') <> ?")
+        .bind(&actor.officer_id)
+        .fetch_all(pool)
+        .await
+}
+
+/** Whether this officer may open the case with this id (a case that does not exist is open to all). */
+pub async fn can_open(pool: &SqlitePool, id: &str, actor: &super::sessions::Actor) -> Result<bool, sqlx::Error> {
+    Ok(!hidden_case_ids(pool, actor).await?.iter().any(|hidden| hidden == id))
 }

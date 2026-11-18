@@ -188,7 +188,8 @@
     "exhibits": "Vielelezo",
     "charge_sheets": "Hati za mashtaka",
     "statistics": "Takwimu",
-    "postbox": "Sanduku la posta"
+    "postbox": "Sanduku la posta",
+    "medical": "Rekodi za kitabibu"
   },
   "nav_sections": {
     "front_desk": "Mapokezi",
@@ -321,7 +322,13 @@
       "dpp": "Hakuna kesi inayosubiri DPP.",
       "closed": "Hakuna kesi iliyofungwa bado.",
       "all": "Hakuna kesi iliyofunguliwa bado."
-    }
+    },
+    "restricted_label": "Kesi iliyozuiliwa",
+    "restricted_hint": "Ni msimamizi na afisa aliyeizuia tu wanaoweza kuifungua. Itumie kwa watoto walioathirika, makosa ya kijinsia na watoa taarifa. Haionekani kwenye mlisho wa kituo.",
+    "restricted_tag": "Imezuiliwa",
+    "restricted_hidden": "Imezuiliwa. Ni msimamizi au afisa aliyeizuia tu anayeweza kufungua kesi hii.",
+    "restricted_title": "Kesi hii imezuiliwa",
+    "back_to_cases": "Rudi kwenye kesi"
   },
   "command": {
     "fallback_name": "Kamandi",
@@ -399,7 +406,8 @@
       "released_without_charge": "Ameachiliwa bila shtaka",
       "released_on_bond": "Ameachiliwa kwa dhamana",
       "produced_in_court": "Amefikishwa mahakamani",
-      "referred_to_dpp": "Amepelekwa kwa DPP"
+      "referred_to_dpp": "Amepelekwa kwa DPP",
+      "remanded": "Amepelekwa rumande na mahakama"
     },
     "limit_title": "Kikomo cha mahabusu cha saa 48",
     "past_limit": "{name} amepita kikomo cha kikatiba cha mahabusu.",
@@ -756,7 +764,13 @@
       "dpp_resident_state_attorney": "DPP (Mwanasheria wa Serikali Mkazi)",
       "courts": "Mahakama",
       "another_station_unit": "Kituo / kitengo kingine",
-      "other": "Nyingine"
+      "other": "Nyingine",
+      "hospital": "Hospitali au kituo cha afya (uchunguzi wa kitabibu)",
+      "welfare": "Afisa wa Uangalizi na Ustawi wa Jamii",
+      "government_analyst": "Maabara ya Mkemia Mkuu wa Serikali",
+      "cybercrime": "Kitengo cha makosa ya mtandao",
+      "telecom": "Kampuni ya simu (rekodi za mteja, kuzuia)",
+      "bank": "Benki au Benki Kuu ya Uganda"
     },
     "destination_label": "Mahali pa kupeleka"
   },
@@ -2212,5 +2226,39 @@
     "no_citation": "Bado hakuna rejeleo",
     "reviewed_by": "Imekaguliwa na {name} tarehe {date}",
     "awaiting_one": "Mwongozo huu ni sheria ya kazi na unasubiri ukaguzi wa kisheria."
+  },
+  "medical": {
+    "kind": {
+      "0": "A",
+      "1": "i",
+      "2": "n",
+      "3": "a",
+      "pf3": "Fomu ya matibabu ya polisi (PF3)",
+      "post_mortem": "Uchunguzi wa maiti"
+    },
+    "status": {
+      "requested": "Imeombwa",
+      "completed": "Imekamilika"
+    },
+    "person": "Aliyechunguzwa (au marehemu)",
+    "person_required": "Chagua aliyechunguzwa.",
+    "date_required": "Uchunguzi uliokamilika unahitaji tarehe ulipofanyika.",
+    "facility": "Hospitali au kituo",
+    "facility_placeholder": "k.m. Hospitali ya Rufaa ya Mulago",
+    "examiner": "Daktari aliyechunguza",
+    "examiner_placeholder": "Jina la daktari",
+    "requested_at": "Ilipoombwa",
+    "examined_at": "Ilipofanyika",
+    "findings": "Matokeo",
+    "findings_placeholder": "Yaliyopatikana kwenye uchunguzi",
+    "record": "Andika uchunguzi",
+    "add_desc": "Fomu ya matibabu ya polisi (PF3) kwa aliyejeruhiwa, au uchunguzi wa maiti kwa kifo.",
+    "recorded": "Uchunguzi umeandikwa",
+    "record_failed": "Imeshindwa kuandika uchunguzi",
+    "updated": "Uchunguzi umesasishwa",
+    "update_failed": "Imeshindwa kusasisha uchunguzi",
+    "empty": "Bado hakuna uchunguzi wa kitabibu ulioandikwa.",
+    "summary": "Rekodi {total}, {waiting} zinasubiri uchunguzi",
+    "kind_label": "Aina"
   }
 }

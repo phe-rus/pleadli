@@ -10,6 +10,12 @@ export const referralDestinationTypes = [
   { value: 'dpp', get label() { return m["referrals.destination.dpp_resident_state_attorney"]() } },
   { value: 'court', get label() { return m["referrals.destination.courts"]() } },
   { value: 'other_station', get label() { return m["referrals.destination.another_station_unit"]() } },
+  { value: 'hospital', get label() { return m["referrals.destination.hospital"]() } },
+  { value: 'welfare', get label() { return m["referrals.destination.welfare"]() } },
+  { value: 'government_analyst', get label() { return m["referrals.destination.government_analyst"]() } },
+  { value: 'cybercrime', get label() { return m["referrals.destination.cybercrime"]() } },
+  { value: 'telecom', get label() { return m["referrals.destination.telecom"]() } },
+  { value: 'bank', get label() { return m["referrals.destination.bank"]() } },
   { value: 'other', get label() { return m["referrals.destination.other"]() } },
 ] as const
 

@@ -1,9 +1,31 @@
 {
   "country": "UG",
   "name": "Uganda",
-  "version": 1,
+  "version": 3,
   "updatedOn": "2026-11-18",
   "rules": [
+    {
+      "id": "custody.limit_hours",
+      "title": "Hours a person may be held before being brought to court",
+      "kind": "number",
+      "value": 48,
+      "citation": "Constitution of Uganda 1995, Art. 23(4); Police Act, Cap. 303, s. 25(1)",
+      "status": "sourced",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Checked against the primary text in docs/police/research/custody-and-bonds.md. Not yet reviewed by a legal officer."
+    },
+    {
+      "id": "custody.transfer_window_days",
+      "title": "Days allowed to transfer a person arrested in another police area",
+      "kind": "number",
+      "value": 7,
+      "citation": "Police Act, Cap. 303, s. 25(2)",
+      "status": "sourced",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Checked against the primary text in docs/police/research/custody-and-bonds.md. Not yet reviewed by a legal officer."
+    },
     {
       "id": "bond.not_police_bailable",
       "title": "Offences police cannot release on a police bond",

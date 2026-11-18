@@ -45,6 +45,9 @@ export const caseSchema = z.object({
   incidentSummary: z.string().nullable(),
   peopleCount: z.number(),
   createdAt: z.number(),
+  restricted: z.boolean().default(false),
+  restrictedBy: z.string().nullable().optional(),
+  canView: z.boolean().default(true),
 })
 
 export type Case = z.infer<typeof caseSchema>
@@ -73,6 +76,7 @@ export const createCaseSchema = z.object({
   status: z.string().min(1, { error: () => m["validation.status_is_required"]() }),
   incidentId: z.string().nullable(),
   people: z.array(casePersonInputSchema),
+  restricted: z.boolean(),
 })
 
 export type CreateCaseInput = z.infer<typeof createCaseSchema>

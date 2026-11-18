@@ -103,12 +103,17 @@ function RouteComponent() {
               {shown.map((c) => (
                 <GroupRow
                   key={c.id}
-                  label={<span className="font-medium">{c.reference}</span>}
-                  detail={[c.summary, c.incidentSummary].filter(Boolean).join(' · ')}
+                  label={
+                    <span className="flex items-center gap-2 font-medium">
+                      {c.reference}
+                      {c.restricted && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">{m["cases.restricted_tag"]()}</span>}
+                    </span>
+                  }
+                  detail={c.canView ? [c.summary, c.incidentSummary].filter(Boolean).join(' · ') : m["cases.restricted_hidden"]()}
                   value={
                     <span className="flex flex-col items-end text-xs leading-tight">
                       <span>{format(c.createdAt, 'd MMM yyyy')}</span>
-                      <span>{c.peopleCount === 1 ? m["cases.people_one"]() : m["cases.people"]({ count: c.peopleCount })}</span>
+                      {c.canView && <span>{c.peopleCount === 1 ? m["cases.people_one"]() : m["cases.people"]({ count: c.peopleCount })}</span>}
                     </span>
                   }
                   chevron

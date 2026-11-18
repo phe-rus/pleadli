@@ -2,6 +2,7 @@ import * as m from '@/paraglide/messages'
 import {
   AlarmClock,
   AlertCircleIcon,
+  StethoscopeIcon,
   ArchiveIcon,
   BarChartIcon,
   BinocularsIcon,
@@ -87,6 +88,7 @@ export const policeNav: readonly NavItem[] = [
   { get label() { return m["nav.exhibits"]() }, icon: FingerPrintCheckIcon, to: '/evidence', section: 'papers' },
   { get label() { return m["nav.charge_sheets"]() }, icon: File02Icon, to: '/legal-forms', section: 'papers' },
   { get label() { return m["nav.referrals"]() }, icon: Share08Icon, to: '/referrals', section: 'papers' },
+  { get label() { return m["nav.medical"]() }, icon: StethoscopeIcon, to: '/medical', section: 'papers' },
 
   { get label() { return m["nav.officers"]() }, icon: ShieldKeyIcon, to: '/station/officers', section: 'station' },
   { get label() { return m["nav.duty_roster"]() }, icon: UserIcon, to: '/roster', section: 'station' },

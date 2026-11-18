@@ -3,7 +3,7 @@ import { Loading03Icon } from "@hugeicons/core-free-icons"
 import { Button } from "@pleadli/ui/button"
 import { useFormContext } from "../contexts"
 
-export function Submit({ label }: { label: string }) {
+export function Submit({ label, disabled = false }: { label: string; disabled?: boolean }) {
   const form = useFormContext()
 
   return (
@@ -16,7 +16,7 @@ export function Submit({ label }: { label: string }) {
       ]}
     >
       {([isSubmitting, canSubmit, isDirty, isTouched]) => {
-        const isDisabled = isSubmitting || !canSubmit || !isDirty || !isTouched
+        const isDisabled = disabled || isSubmitting || !canSubmit || !isDirty || !isTouched
         return (
           <Button type="submit" disabled={isDisabled}>
             {isSubmitting && <HugeiconsIcon icon={Loading03Icon} className="animate-spin" />}
