@@ -802,7 +802,8 @@
       "police_stations": "Vituo vya polisi",
       "workload": "Mzigo wa kazi",
       "recent": "Za karibuni",
-      "postbox": "Sanduku la posta"
+      "postbox": "Sanduku la posta",
+      "courts": "Mahakama"
     },
     "section": {
       "files": "Majalada",
@@ -2485,5 +2486,32 @@
     "dealt_with": "Imeshughulikiwa",
     "open_incoming": "Fungua kwenye Zinazoingia",
     "resubmission": "Imewasilishwa tena"
+  },
+  "court_exchange": {
+    "title": "Mahakama",
+    "intro": "Wasilisha jalada la mashtaka kwa msajili wa mahakama kama faili iliyofungwa, kisha pokea risiti yenye nambari ya kesi ya mahakama yenyewe. Inafanya kazi bila intaneti.",
+    "registries": "Wasajili wa mahakama",
+    "registries_desc": "Msajili hutuma faili ya mwaliko. Ifungue, hifadhi jibu lako, kisha msomee msajili msimbo unaoonyeshwa hapa ili akuthibitishe. Baada ya hapo fungua uthibitisho wake.",
+    "contact": "Mtu wa kuwasiliana naye ofisini hapa",
+    "open_invite": "Fungua mwaliko",
+    "open_court_file": "Fungua faili kutoka mahakamani",
+    "none": "Hakuna msajili aliyealika ofisi hii bado.",
+    "status_answered": "Imejibiwa, inasubiri mahakama",
+    "status_trusted": "Anaaminika",
+    "status_declined": "Imekataliwa",
+    "read_code": "Msomee msajili msimbo huu:",
+    "answered_notice": "Umejibu {court}. Watumie faili hiyo na uwasomee msimbo ulioko hapa chini.",
+    "file_to": "Wasilisha kwa {court}",
+    "file_to_a_court": "Wasilisha mahakamani",
+    "file_ready": "Chagua jalada. Linahitaji mshtakiwa na shtaka. Msajili analisajili kwa nambari yake mwenyewe.",
+    "file_wait": "Inapatikana baada ya msajili kuthibitisha ofisi hii.",
+    "prosecution_file": "Jalada la mashtaka",
+    "choose_file": "Chagua jalada",
+    "court_level": "Ngazi ya mahakama",
+    "level_magistrate": "Mahakama ya hakimu",
+    "level_high": "Mahakama Kuu",
+    "filed_by": "Imewasilishwa na",
+    "file_button": "Wasilisha",
+    "filed_notice": "Wasilisho limehifadhiwa. Litume kwa msajili."
   }
 }

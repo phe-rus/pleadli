@@ -65,7 +65,7 @@ export const dppNav: readonly NavItem[] = [
 
   { label: m["nav.item.people"], icon: UserGroupIcon, to: '/people', section: 'office' },
   { label: m["nav.item.police_stations"], icon: NetworkIcon, to: '/connections', section: 'office' },
-  { label: () => 'Courts', icon: NetworkIcon, to: '/courts', section: 'office' },
+  { label: m["nav.item.courts"], icon: NetworkIcon, to: '/courts', section: 'office' },
   { label: m["nav.item.workload"], icon: Analytics01Icon, to: '/capacity', section: 'office' },
   { label: m["nav.item.statistics"], icon: ChartBarLineIcon, to: '/reports', section: 'office' },
   { label: m["nav.item.postbox"], icon: Mail01Icon, to: '/postbox', section: 'office' },

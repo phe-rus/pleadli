@@ -802,7 +802,8 @@
       "police_stations": "Police stations",
       "workload": "Workload",
       "recent": "Recent",
-      "postbox": "Postbox"
+      "postbox": "Postbox",
+      "courts": "Courts"
     },
     "section": {
       "files": "Files",
@@ -2485,5 +2486,32 @@
     "dealt_with": "Dealt with",
     "open_incoming": "Open in Incoming",
     "resubmission": "Resubmission"
+  },
+  "court_exchange": {
+    "title": "Courts",
+    "intro": "File a prosecution file to a court registry as a sealed file, and take back the receipt with the court's own case number. Works with no internet.",
+    "registries": "Court registries",
+    "registries_desc": "The registry sends an invitation file. Open it, save your answer, and read the registry the code shown here so it can confirm you. Then open its confirmation.",
+    "contact": "Who to reach at this office",
+    "open_invite": "Open an invitation",
+    "open_court_file": "Open a file from the court",
+    "none": "No registry has invited this office yet.",
+    "status_answered": "Answered, waiting for the court",
+    "status_trusted": "Trusted",
+    "status_declined": "Declined",
+    "read_code": "Read the registry this code:",
+    "answered_notice": "Answered {court}. Send the file back and read them the code below.",
+    "file_to": "File to {court}",
+    "file_to_a_court": "File to a court",
+    "file_ready": "Choose a file. It needs an accused and a charge. The registry registers it with its own number.",
+    "file_wait": "Available once a registry has confirmed this office.",
+    "prosecution_file": "Prosecution file",
+    "choose_file": "Choose a file",
+    "court_level": "Court level",
+    "level_magistrate": "Magistrates court",
+    "level_high": "High Court",
+    "filed_by": "Filed by",
+    "file_button": "File",
+    "filed_notice": "Filing saved. Send it to the registry."
   }
 }

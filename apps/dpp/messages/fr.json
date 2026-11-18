@@ -802,7 +802,8 @@
       "police_stations": "Postes de police",
       "workload": "Charge de travail",
       "recent": "Récents",
-      "postbox": "Boîte postale"
+      "postbox": "Boîte postale",
+      "courts": "Tribunaux"
     },
     "section": {
       "files": "Dossiers",
@@ -2485,5 +2486,32 @@
     "dealt_with": "Traité",
     "open_incoming": "Ouvrir dans Reçus",
     "resubmission": "Nouvelle transmission"
+  },
+  "court_exchange": {
+    "title": "Tribunaux",
+    "intro": "Déposez un dossier de poursuite auprès d'un greffe de tribunal sous forme de fichier scellé, et récupérez le reçu portant le numéro d'affaire attribué par le tribunal. Fonctionne sans internet.",
+    "registries": "Greffes des tribunaux",
+    "registries_desc": "Le greffe envoie un fichier d'invitation. Ouvrez-le, enregistrez votre réponse, puis lisez au greffe le code affiché ici pour qu'il vous confirme. Ouvrez ensuite sa confirmation.",
+    "contact": "Personne à joindre dans ce bureau",
+    "open_invite": "Ouvrir une invitation",
+    "open_court_file": "Ouvrir un fichier du tribunal",
+    "none": "Aucun greffe n'a encore invité ce bureau.",
+    "status_answered": "Réponse envoyée, en attente du tribunal",
+    "status_trusted": "Approuvé",
+    "status_declined": "Refusé",
+    "read_code": "Lisez ce code au greffe :",
+    "answered_notice": "Réponse envoyée à {court}. Renvoyez le fichier et lisez-leur le code ci-dessous.",
+    "file_to": "Déposer auprès de {court}",
+    "file_to_a_court": "Déposer auprès du tribunal",
+    "file_ready": "Choisissez un dossier. Il faut un accusé et une charge. Le greffe l'enregistre sous son propre numéro.",
+    "file_wait": "Disponible une fois qu'un greffe a confirmé ce bureau.",
+    "prosecution_file": "Dossier de poursuite",
+    "choose_file": "Choisir un dossier",
+    "court_level": "Niveau de juridiction",
+    "level_magistrate": "Tribunal d'instance",
+    "level_high": "Haute Cour",
+    "filed_by": "Déposé par",
+    "file_button": "Déposer",
+    "filed_notice": "Dépôt enregistré. Envoyez-le au greffe."
   }
 }
