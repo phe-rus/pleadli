@@ -28,15 +28,17 @@ pub async fn get_cloudflare_tunnel_state(_who: super::api::SignedIn, state: Stat
 pub async fn start_sidecar_if_configured(
     app: &AppHandle,
     pool: &sqlx::SqlitePool,
+    orchestra: &pleadli_node_core::orchestra::Orchestra,
     sidecar: &CloudflaredSidecar,
 ) -> Result<Option<String>, String> {
-    if cloudflare_tunnel::get_config(pool).await.map_err(|e| e.to_string())?.is_none() {
-        return Ok(None);
-    }
-
-    let result = cloudflare_tunnel::provision(pool, remote_server::DEFAULT_PORT)
-        .await
-        .map_err(|e| e.to_string())?;
+    // Own Cloudflare details, if an administrator saved them; otherwise Pleadli provides the tunnel.
+    let result = if cloudflare_tunnel::get_config(pool).await.map_err(|e| e.to_string())?.is_some() {
+        cloudflare_tunnel::provision(pool, remote_server::DEFAULT_PORT).await.map_err(|e| e.to_string())?
+    } else {
+        let (hostname, run_token) = orchestra.tunnel(remote_server::DEFAULT_PORT).await.map_err(|e| e.to_string())?;
+        cloudflare_tunnel::save_tunnel_state(pool, "pleadli", &hostname, &run_token).await.map_err(|e| e.to_string())?;
+        cloudflare_tunnel::ProvisionResult { hostname, run_token }
+    };
 
     let command = app
         .shell()

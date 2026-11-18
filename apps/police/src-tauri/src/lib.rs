@@ -98,6 +98,7 @@ pub fn run() {
             // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
             let orchestra = domain::orchestra::start(db.pool.clone(), data_dir.clone(), db.vault_root.clone());
             tauri::async_runtime::spawn(orchestra.clone().run());
+            app.manage(orchestra.clone());
             let router = api::router(db.pool.clone(), db.vault_root.clone(), Some(orchestra));
             #[cfg(debug_assertions)]
             tauri::async_runtime::spawn(api::serve_dev(router.clone()));
@@ -139,7 +140,8 @@ pub fn run() {
                 let pool = db.pool.clone();
                 tauri::async_runtime::spawn(async move {
                     let sidecar = app_handle.state::<CloudflaredSidecar>();
-                    if let Err(e) = commands::cloudflare::start_sidecar_if_configured(&app_handle, &pool, &sidecar).await {
+                    let orchestra = app_handle.state::<std::sync::Arc<pleadli_node_core::orchestra::Orchestra>>();
+                    if let Err(e) = commands::cloudflare::start_sidecar_if_configured(&app_handle, &pool, &orchestra, &sidecar).await {
                         log::warn!("could not start cloudflared on launch: {e}");
                     }
                 });

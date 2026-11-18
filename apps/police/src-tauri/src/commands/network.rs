@@ -44,6 +44,7 @@ pub async fn set_remote_access_enabled(_who: super::api::AdminSignedIn,
     db: State<'_, Db>,
     remote: State<'_, RemoteServer>,
     sidecar: State<'_, CloudflaredSidecar>,
+    orchestra: State<'_, std::sync::Arc<pleadli_node_core::orchestra::Orchestra>>,
     enabled: bool,
 ) -> Result<RemoteAccessStatus, String> {
     let mut remote_guard = remote.0.lock().await;
@@ -60,7 +61,7 @@ pub async fn set_remote_access_enabled(_who: super::api::AdminSignedIn,
             .map_err(|e| e.to_string())?;
             *remote_guard = Some(handle);
         }
-        if let Err(e) = cloudflare::start_sidecar_if_configured(&app, &db.pool, &sidecar).await {
+        if let Err(e) = cloudflare::start_sidecar_if_configured(&app, &db.pool, &orchestra, &sidecar).await {
             log::warn!("remote access is on locally, but the Cloudflare tunnel failed to start: {e}");
         }
     } else {

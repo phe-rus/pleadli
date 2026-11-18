@@ -108,7 +108,7 @@ pub async fn get_tunnel_state(pool: &SqlitePool) -> Result<Option<TunnelState>, 
     .await
 }
 
-async fn save_tunnel_state(
+pub(crate) async fn save_tunnel_state(
     pool: &SqlitePool,
     tunnel_id: &str,
     hostname: &str,

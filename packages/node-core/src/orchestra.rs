@@ -723,6 +723,18 @@ impl Orchestra {
         Ok(sent)
     }
 
+    /// Asks pleadli.com for this office's remote-access tunnel (docs/police/remote-access.md):
+    /// the address it will answer at and the token `cloudflared` runs with. Needs a licence.
+    pub async fn tunnel(&self, port: u16) -> Result<(String, String), OrchestraError> {
+        let token = self.get("token").await?.ok_or_else(|| OrchestraError::Api { status: 401, error: "unauthorised".into(), message: "Connect this computer to its office first.".into() })?;
+        let answer = self.call(reqwest::Method::POST, "tunnel", Some(json!({ "port": port })), Some(&token)).await?;
+        let field = |k: &str| answer.get(k).and_then(|v| v.as_str()).map(str::to_string);
+        match (field("hostname"), field("token")) {
+            (Some(h), Some(t)) => Ok((h, t)),
+            _ => Err(OrchestraError::Api { status: 502, error: "bad_answer".into(), message: "Pleadli answered without a tunnel.".into() }),
+        }
+    }
+
     // ---- backups ----
 
     /// Locks the whole record (database and documents) to the institution's

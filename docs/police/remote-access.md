@@ -27,7 +27,22 @@ officer who made it (Settings → Network → Recent remote activity).
   Tunnel and starts `cloudflared` as a bundled sidecar process, making the
   station reachable from anywhere at `<station-name>.<domain>`.
 
-## What you need to do once, yourself
+## Default: Pleadli provides the tunnel (2026-11-18)
+
+A station does nothing but turn Remote access on. Its computer asks pleadli.com (`POST /api/orchestra/v1/tunnel`, signed in with the computer token, active licence required). Pleadli creates or reuses the tunnel `st-<office address>`, points `st-<office address>.pleadli.com` at it, and returns the address and a run token; the app starts `cloudflared` with it. The station page still carries search and alerts only.
+
+Owner, once, on pleadli.com (not done yet, so the call answers 503 until then):
+
+```
+cd www
+bunx wrangler secret put CF_TUNNEL_API_TOKEN   # Account: Cloudflare Tunnel Edit, Zone: DNS Edit (pleadli.com only)
+bunx wrangler secret put CF_ACCOUNT_ID
+bunx wrangler secret put CF_ZONE_ID
+```
+
+Not yet run against the live API. Traffic passes Cloudflare outside Uganda (open decision 7). The per-station route below stays in Settings as "Use my own Cloudflare account instead".
+
+## Own Cloudflare account (advanced)
 
 The app cannot create a Cloudflare account, an API token, or a DNS zone for
 itself — that's real setup, done once:

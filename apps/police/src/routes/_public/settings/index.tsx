@@ -210,7 +210,12 @@ function NetworkTab() {
         <p className="text-xs text-muted-foreground">
           {m["settings.tunnel_desc"]()}
         </p>
-        <CloudflareForm />
+        <details className="group">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">{m["settings.own_cloudflare"]()}</summary>
+          <div className="mt-3">
+            <CloudflareForm />
+          </div>
+        </details>
       </div>
 
       <div className="flex items-center justify-between">
