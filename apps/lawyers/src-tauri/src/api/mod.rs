@@ -1261,6 +1261,13 @@ pub fn core(state: AppState) -> Router {
         .route("/overview", get(get_overview))
         .route("/clients", post(create_client).get(list_clients))
         .route("/clients/{id}", get(get_client).put(update_client))
+        .route("/notices/identity", get(notices_api::get_identity).post(notices_api::create_identity))
+        .route("/notices/links", get(notices_api::list_links).post(notices_api::create_invite))
+        .route("/notices/links/{id}/trust", post(notices_api::trust_link))
+        .route("/notices/import", post(notices_api::import_package))
+        .route("/notices/incoming", get(notices_api::list_incoming))
+        .route("/notices/incoming/{id}/file", post(notices_api::file_notice))
+        .route("/notices/incoming/{id}/return", post(notices_api::return_notice))
         .route("/matters", post(create_matter).get(list_matters))
         .route("/matters/{id}", get(get_matter).put(update_matter))
         .route("/matters/{id}/close", post(close_matter))
@@ -1400,3 +1407,93 @@ pub async fn serve_dev(router: Router) {
 
 #[cfg(test)]
 mod tests;
+
+mod notices_api {
+    use super::*;
+    use crate::domain::court_notices::{self, Link as CourtLink, FirmIdentity, Imported, IncomingNotice};
+    use base64::{engine::general_purpose::STANDARD as B64, Engine};
+    use serde::{Deserialize, Serialize};
+
+    fn decode(file: &str) -> Result<Vec<u8>, ApiError> {
+        B64.decode(file).map_err(|_| ApiError(StatusCode::UNPROCESSABLE_ENTITY, "INVALID", "That is not a package file.".to_string()))
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Sealed<T: Serialize> {
+        #[serde(flatten)]
+        value: T,
+        file: String,
+        name: String,
+    }
+    #[derive(Serialize)]
+    pub struct Nothing {}
+
+    pub async fn get_identity(State(s): State<AppState>) -> ApiResult<Option<FirmIdentity>> {
+        Ok(Json(court_notices::get_identity(&s.pool).await?))
+    }
+    #[derive(Deserialize)]
+    pub struct IdentityInput {
+        name: String,
+        jurisdiction: Option<String>,
+    }
+    pub async fn create_identity(State(s): State<AppState>, Json(i): Json<IdentityInput>) -> ApiResult<FirmIdentity> {
+        Ok(Json(court_notices::create_identity(&s.pool, &i.name, i.jurisdiction.as_deref()).await?))
+    }
+    pub async fn list_links(State(s): State<AppState>) -> ApiResult<Vec<CourtLink>> {
+        Ok(Json(court_notices::list_links(&s.pool).await?))
+    }
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct InviteInput {
+        intended_court: String,
+        valid_days: i64,
+    }
+    pub async fn create_invite(State(s): State<AppState>, Json(i): Json<InviteInput>) -> ApiResult<Sealed<CourtLink>> {
+        let (link, bytes) = court_notices::create_invite(&s.pool, &i.intended_court, i.valid_days).await?;
+        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "firm-invitation.pxpkg".into() }))
+    }
+    #[derive(Deserialize)]
+    pub struct TrustInput {
+        fingerprint: String,
+    }
+    pub async fn trust_link(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<TrustInput>) -> ApiResult<Sealed<CourtLink>> {
+        let (link, bytes) = court_notices::trust_link(&s.pool, &id, &i.fingerprint).await?;
+        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "firm-confirmation.pxpkg".into() }))
+    }
+    #[derive(Deserialize)]
+    pub struct FileInput {
+        file: String,
+    }
+    pub async fn import_package(State(s): State<AppState>, Json(i): Json<FileInput>) -> ApiResult<Imported> {
+        Ok(Json(court_notices::import_package(&s.pool, &decode(&i.file)?).await?))
+    }
+    pub async fn list_incoming(State(s): State<AppState>) -> ApiResult<Vec<IncomingNotice>> {
+        Ok(Json(court_notices::list_incoming(&s.pool).await?))
+    }
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct FileNoticeInput {
+        matter_id: String,
+        decided_by: String,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Filed {
+        made_id: String,
+    }
+    pub async fn file_notice(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FileNoticeInput>) -> ApiResult<Sealed<Filed>> {
+        let (made_id, bytes) = court_notices::file_notice(&s.pool, &id, &i.matter_id, &i.decided_by).await?;
+        Ok(Json(Sealed { value: Filed { made_id }, file: B64.encode(bytes), name: "firm-receipt.pxpkg".into() }))
+    }
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct ReturnInput {
+        reason: String,
+        decided_by: String,
+    }
+    pub async fn return_notice(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<ReturnInput>) -> ApiResult<Sealed<Nothing>> {
+        let bytes = court_notices::return_notice(&s.pool, &id, &i.reason, &i.decided_by).await?;
+        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name: "firm-receipt.pxpkg".into() }))
+    }
+}

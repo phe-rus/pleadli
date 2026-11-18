@@ -157,7 +157,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::export::save_pdf, commands::export::save_export, commands::export::office_apps, commands::export::open_paper_file])
+        .invoke_handler(tauri::generate_handler![commands::api::api_request, commands::export::save_pdf, commands::export::save_export, commands::export::office_apps, commands::export::open_paper_file, commands::export::pick_court_package, commands::export::save_court_package])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

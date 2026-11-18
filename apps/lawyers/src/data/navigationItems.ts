@@ -72,6 +72,7 @@ export const lawyersNav: readonly NavItem[] = [
   { get label() { return m["nav.money"]() }, icon: Invoice01Icon, to: '/money', section: 'office' },
   { get label() { return m["nav.time"]() }, icon: ChartBarLineIcon, to: '/time', section: 'office' },
   { get label() { return m["nav.statistics"]() }, icon: ChartHistogramIcon, to: '/statistics', section: 'office' },
+  { get label() { return m["nav.court_notices"]() }, icon: Mail01Icon, to: '/court-notices', section: 'office' },
   { get label() { return m["nav.postbox"]() }, icon: Mail01Icon, to: '/postbox', section: 'office' },
 
   { get label() { return m["nav.calendar"]() }, icon: Calendar03Icon, to: '/calendar' },

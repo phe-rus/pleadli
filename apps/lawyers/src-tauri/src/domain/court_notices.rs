@@ -252,7 +252,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
-pub struct Incoming {
+pub struct IncomingNotice {
     pub id: String,
     pub court_name: Option<String>,
     pub status: String,
@@ -264,7 +264,7 @@ pub struct Incoming {
     pub payload: String,
 }
 
-pub async fn list_incoming(pool: &SqlitePool) -> Result<Vec<Incoming>, DomainError> {
+pub async fn list_incoming(pool: &SqlitePool) -> Result<Vec<IncomingNotice>, DomainError> {
     Ok(sqlx::query_as("SELECT i.id, l.court_name, i.status, i.sent_at, i.received_at, i.decided_at, i.return_reason, i.matter_id, i.payload FROM notices_in i JOIN court_links l ON l.id = i.link_id ORDER BY i.received_at DESC").fetch_all(pool).await?)
 }
 
