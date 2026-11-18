@@ -8,13 +8,16 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { PropsWithChildren, useState } from 'react'
 import { useLockStatus, useRecoverPin, useUnlock } from './queries'
 import { recoverSchema } from './schema'
-import { PinField } from '@pleadli/ui/pin-field'
+import { PasswordField, PinField } from '@pleadli/ui/pin-field'
 import { useIdleLock } from './use-idle-lock'
 
 function UnlockForm({ cooldownRemaining }: { cooldownRemaining: number | null }) {
   const unlockMutation = useUnlock()
   const [pin, setPin] = useState('')
   const [failures, setFailures] = useState(0)
+  // The lock accepts a PIN of 6 to 64 characters, so one that is not exactly
+  // six digits needs a plain field; the six boxes only fit a six-digit PIN.
+  const [plain, setPlain] = useState(false)
   const unlock = async (value: string) => {
     try {
       await unlockMutation.mutateAsync({ pin: value })
@@ -25,12 +28,22 @@ function UnlockForm({ cooldownRemaining }: { cooldownRemaining: number | null })
       setPin('')
     }
   }
+  const busy = unlockMutation.isPending || cooldownRemaining != null
 
-  // Six places that fill as the PIN is typed; the sixth unlocks, as on an iPhone.
   return (
     <div className="flex flex-col items-center gap-3">
-      <PinField label={m["lock.pin"]()} value={pin} onChange={setPin} onComplete={(v) => void unlock(v)} autoFocus disabled={unlockMutation.isPending || cooldownRemaining != null} error={failures} />
+      {plain ? (
+        <form className="w-full max-w-xs" onSubmit={(e) => { e.preventDefault(); if (pin) void unlock(pin) }}>
+          <PasswordField aria-label={m["lock.pin"]()} placeholder={m["lock.pin"]()} value={pin} onChange={(e) => setPin(e.target.value)} autoFocus disabled={busy} busy={unlockMutation.isPending} error={failures} />
+        </form>
+      ) : (
+        // Six places that fill as the PIN is typed; the sixth unlocks, as on an iPhone.
+        <PinField label={m["lock.pin"]()} value={pin} onChange={setPin} onComplete={(v) => void unlock(v)} autoFocus disabled={busy} error={failures} />
+      )}
       <p className="min-h-5 text-[0.8125rem] text-muted-foreground">{cooldownRemaining != null ? m["lock.wait"]({ seconds: String(cooldownRemaining) }) : ''}</p>
+      <button type="button" className="cursor-pointer text-[0.8125rem] text-muted-foreground hover:text-foreground" onClick={() => { setPin(''); setPlain((v) => !v) }}>
+        {plain ? m["lock.six_digits"]() : m["lock.longer_pin"]()}
+      </button>
     </div>
   )
 }
