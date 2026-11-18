@@ -49,5 +49,27 @@
     "confirmed": "{office} imethibitishwa. Itumie faili ya uthibitisho.",
     "registered_notice": "Limesajiliwa kama {number}. Tuma risiti.",
     "returned_notice": "Limerudishwa. Tuma risiti."
+  },
+  "prison": {
+    "title": "Magereza",
+    "desc": "Gereza hualika msajili huyu kwa faili. Ifungue, hifadhi jibu lako, kisha liambie gereza msimbo ulioonyeshwa hapa ili likuthibitishe. Kisha fungua uthibitisho wake. Baada ya hapo amri za rumande na za kuachiliwa zinaweza kutumwa kwake.",
+    "contact": "Mtu wa kuwasiliana naye kwa msajili huyu",
+    "open_invite": "Fungua mwaliko",
+    "open_file": "Fungua faili kutoka gerezani",
+    "none": "Hakuna gereza lililomwalika msajili huyu bado.",
+    "status_answered": "Imejibiwa, inalisubiri gereza",
+    "status_trusted": "Linaaminika",
+    "status_declined": "Limekataliwa",
+    "read_code": "Liambie gereza msimbo huu: {code}",
+    "answered_notice": "Umejibu {prison}. Walitumie faili hiyo na uwasomee msimbo ulioonyeshwa.",
+    "send_title": "Tuma gerezani",
+    "send_desc": "Hutuma amri hii iliyotolewa, pamoja na maneno yake yaliyosainiwa, kwa gereza lililomthibitisha msajili huyu. Gereza huiandika na kutuma risiti.",
+    "choose_prison": "Chagua gereza",
+    "send": "Tuma",
+    "none_trusted": "Hakuna gereza lililomthibitisha msajili huyu bado.",
+    "sent_notice": "Amri imehifadhiwa. Ipeleke kwa {prison}.",
+    "delivered": "{prison}: imeandikwa",
+    "returned": "{prison}: imerudishwa ({reason})",
+    "awaiting": "{prison}: imetumwa, risiti bado"
   }
 }

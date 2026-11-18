@@ -1,3 +1,4 @@
+import { SendOrder } from '@/features/exchange/send-order'
 import { DocumentActions } from '@/features/documents/document-actions'
 import { Createpanel } from '@/components/create-panel'
 import { Tag } from '@/components/status-tag'
@@ -109,6 +110,7 @@ function RouteComponent() {
           )}
         </div>
       </header>
+      {!draft && (order.kind === "remand" || order.kind === "release") && <SendOrder orderId={order.id} />}
 
       {draft ? (
         <div className="flex flex-col gap-6">

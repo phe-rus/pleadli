@@ -49,5 +49,27 @@
     "confirmed": "{office} is confirmed. Send it the confirmation file.",
     "registered_notice": "Registered as {number}. Send the receipt back.",
     "returned_notice": "Returned. Send the receipt back."
+  },
+  "prison": {
+    "title": "Prisons",
+    "desc": "A prison invites this registry with a file. Open it, save your answer, and read the prison the code shown here so it can confirm you. Then open its confirmation. Remand and release orders can then be sent to it.",
+    "contact": "Who to reach at this registry",
+    "open_invite": "Open an invitation",
+    "open_file": "Open a file from the prison",
+    "none": "No prison has invited this registry yet.",
+    "status_answered": "Answered, waiting for the prison",
+    "status_trusted": "Trusted",
+    "status_declined": "Declined",
+    "read_code": "Read the prison this code: {code}",
+    "answered_notice": "Answered {prison}. Send the file back and read them the code shown.",
+    "send_title": "Send to a prison",
+    "send_desc": "Sends this issued order, with its signed wording, to a prison that has confirmed this registry. The prison records it and sends a receipt.",
+    "choose_prison": "Choose a prison",
+    "send": "Send",
+    "none_trusted": "No prison has confirmed this registry yet.",
+    "sent_notice": "Order saved. Send it to {prison}.",
+    "delivered": "{prison}: recorded",
+    "returned": "{prison}: returned ({reason})",
+    "awaiting": "{prison}: sent, no receipt yet"
   }
 }

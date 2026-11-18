@@ -109,3 +109,43 @@ pub async fn reject_filing(State(s): State<AppState>, Path(id): Path<String>, Js
     let bytes = exchange::reject_filing(&s.pool, &id, &i.reason, &i.decided_by).await?;
     Ok(Json(WithFile { value: Rejected {}, file: B64.encode(bytes), name: "court-receipt.pxpkg".into() }))
 }
+
+// ---- Court -> prison: facilities that invited this registry, and the orders sent to them.
+use crate::domain::custody_exchange::{self, Delivery, Imported as PrisonImported, PrisonLink};
+
+pub async fn list_prison_links(State(s): State<AppState>) -> ApiResult<Vec<PrisonLink>> {
+    Ok(Json(custody_exchange::list_links(&s.pool).await?))
+}
+
+#[derive(Deserialize)]
+pub struct AnswerInput {
+    file: String,
+    contact: Option<String>,
+}
+
+pub async fn answer_prison_invite(State(s): State<AppState>, Json(i): Json<AnswerInput>) -> ApiResult<WithFile<PrisonLink>> {
+    let (link, bytes) = custody_exchange::accept_invite(&s.pool, &decode(&i.file)?, i.contact.as_deref()).await?;
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "answer-to-prison.pxpkg".into() }))
+}
+
+pub async fn import_prison_package(State(s): State<AppState>, Json(i): Json<FileInput>) -> ApiResult<PrisonImported> {
+    Ok(Json(custody_exchange::import_package(&s.pool, &decode(&i.file)?).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SendOrderInput {
+    link_id: String,
+}
+
+#[derive(Serialize)]
+pub struct Sent {}
+
+pub async fn send_order(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
+    let (bytes, name) = custody_exchange::export_order(&s.pool, &id, &i.link_id).await?;
+    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name }))
+}
+
+pub async fn order_deliveries(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<Delivery>> {
+    Ok(Json(custody_exchange::list_deliveries(&s.pool, &id).await?))
+}

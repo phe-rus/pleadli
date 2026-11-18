@@ -20,3 +20,11 @@ export const rejectFiling = (id: string, reason: string, decidedBy: string) => a
 export const pickPackage = () => invoke<string | null>('pick_package')
 /** Saves a package where the person chooses in the window's own save dialog. */
 export const savePackage = (sealed: WithFile) => invoke<boolean>('save_package', { name: sealed.name, contentBase64: sealed.file })
+
+export type PrisonLink = { id: string; prisonName: string; prisonJurisdiction: string | null; fingerprint: string; status: string; reason: string | null; respondedAt: number; trustedAt: number | null }
+export type Delivery = { orderId: string; prisonName: string; preparedAt: number; outcome: string | null; reason: string | null }
+export const listPrisonLinks = () => api('GET', '/api/exchange/prisons') as Promise<PrisonLink[]>
+export const answerPrisonInvite = (file: string, contact: string) => api('POST', '/api/exchange/prisons/answer', { body: { file, contact: contact.trim() || null } }) as Promise<PrisonLink & WithFile>
+export const importPrisonPackage = (file: string) => api('POST', '/api/exchange/prisons/import', { body: { file } }) as Promise<{ kind: string; message: string }>
+export const sendOrder = (id: string, linkId: string) => api('POST', `/api/orders/${encodeURIComponent(id)}/send`, { body: { linkId } }) as Promise<WithFile>
+export const listDeliveries = (id: string) => api('GET', `/api/orders/${encodeURIComponent(id)}/deliveries`) as Promise<Delivery[]>

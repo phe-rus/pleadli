@@ -1,5 +1,6 @@
 import { acceptFiling, createIdentity, createInvite, getIdentity, importPackage, listIncoming, listLinks, pickPackage, rejectFiling, savePackage, trustLink, type Incoming, type Link, type RegistryIdentity } from '@/features/exchange/data'
 import * as m from "@/paraglide/messages"
+import { PrisonLinks } from "@/features/exchange/prison-links"
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
@@ -175,6 +176,7 @@ function RouteComponent() {
                 })}
               </CardContent>
             </Card>
+            <PrisonLinks />
           </>
         )}
       </div>
