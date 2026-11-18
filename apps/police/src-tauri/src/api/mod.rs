@@ -86,18 +86,29 @@ struct SearchParams {
 
 async fn search_people_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<SearchParams>,
 ) -> Result<Json<Vec<Person>>, ApiError> {
-    people::search_people(&state.pool, &params.query)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    let found = people::search_people(&state.pool, &params.query).await.map_err(internal_error)?;
+    let mut kept = Vec::with_capacity(found.len());
+    for person in found {
+        if cases::person_visible(&state.pool, &person.id, &hidden).await.map_err(internal_error)? {
+            kept.push(person);
+        }
+    }
+    Ok(Json(kept))
 }
 
 async fn get_person_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<Person>>, ApiError> {
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    if !cases::person_visible(&state.pool, &id, &hidden).await.map_err(internal_error)? {
+        return Ok(Json(None));
+    }
     people::get_person(&state.pool, &id)
         .await
         .map(Json)
@@ -215,8 +226,17 @@ where
 
 async fn export_person_document_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path((id, format)): Path<(String, String)>,
 ) -> Result<Response, ApiError> {
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    // The person document lists their cases, so it is refused whenever any case they appear in is restricted from this officer.
+    if !hidden.is_empty() {
+        let in_hidden: Vec<String> = sqlx::query_scalar("SELECT case_id FROM case_people WHERE person_id = ?").bind(&id).fetch_all(&state.pool).await.map_err(internal_error)?;
+        if in_hidden.iter().any(|c| hidden.contains(c)) {
+            return Err(restricted_refusal());
+        }
+    }
     let parsed = documents::DocumentFormat::parse(&format)
         .ok_or((StatusCode::BAD_REQUEST, "Invalid document format.".to_string()))?;
     export_record_document(&format, "person", |path| async move {
@@ -405,8 +425,11 @@ async fn get_person_profile_handler(
     Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<PersonProfile>>, ApiError> {
-    let profile = people::get_person_profile(&state.pool, &id).await.map_err(internal_error)?;
     let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    if !cases::person_visible(&state.pool, &id, &hidden).await.map_err(internal_error)? {
+        return Ok(Json(None));
+    }
+    let profile = people::get_person_profile(&state.pool, &id).await.map_err(internal_error)?;
     // A person's page never shows a restricted case this officer may not open, nor its papers.
     let profile = profile.map(|mut p| {
         let out = |case_id: Option<&str>| case_id.is_some_and(|c| hidden.iter().any(|h| h == c));
@@ -1245,8 +1268,13 @@ async fn list_vault_directory_handler(
 
 async fn read_vault_file_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<VaultDirectoryQuery>,
 ) -> Result<Json<String>, ApiError> {
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    if !cases::may_read_vault_path(&state.pool, &params.relative_path, &hidden).await.map_err(internal_error)? {
+        return Err(restricted_refusal());
+    }
     attachments::read_vault_file(&state.vault_root, &params.relative_path)
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))

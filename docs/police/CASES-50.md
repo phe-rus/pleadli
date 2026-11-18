@@ -178,7 +178,9 @@ The murder bond already granted in CRB 18 before the fix is still in the test da
 
 Restricted cases also have a named access list: tick other officers in the case form to let them open it (administrators and the officer who restricted it always can). Verified as a second officer: with access he opens the case, exports it and finds it in search; with access removed, the case page, its access list, its export, whole-station exports (PDF, Word, Excel, Markdown) and its files all refuse or leave it out.
 
-Limits that remain: a person who appears in a restricted case still shows by name in search and the people list (their page hides the case); the DPP hand-over and the raw vault-file route have not been checked against restriction; whole-station exports are refused to a non-administrator whenever any restricted case they cannot open exists, rather than being filtered.
+A person who appears only in restricted cases an officer may not open is hidden from that officer too: search, the people list, their page and their document export (verified as a second officer: 36 people became 35, the person's page returned nothing, the export was refused). A person who is in at least one open case stays visible. Files are checked by the record they are attached to, including the raw vault-file route. There is no separate DPP hand-over endpoint; the hand-over goes through the case and charge sheet exports, which are covered.
+
+Limits that remain: whole-station exports are refused to a non-administrator whenever a restricted case they cannot open exists, rather than being filtered; a hidden person cannot be picked in forms by officers who may not open their case, so they could re-enter the same person under a second record.
 
 Bug found and fixed on the way: editing a case before its people had loaded saved an empty people list and erased everyone on the case. The form now waits for the people before it can save.
 

@@ -467,6 +467,10 @@ pub async fn entity_case_id(pool: &SqlitePool, entity_type: &str, entity_id: &st
         "exhibit" => sqlx::query_scalar("SELECT case_id FROM exhibits WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
         "charge_sheet" => sqlx::query_scalar("SELECT case_id FROM charge_sheets WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
         "referral" => sqlx::query_scalar("SELECT case_id FROM referrals WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
+        "person" => {
+            // A person is tied to a case only by the roles they hold in it; see may_see_entity.
+            return Ok(None);
+        }
         "medical_exam" => sqlx::query_scalar("SELECT case_id FROM medical_exams WHERE id = ?").bind(entity_id).fetch_optional(pool).await?,
         _ => None,
     };
@@ -478,8 +482,38 @@ pub async fn may_see_entity(pool: &SqlitePool, entity_type: &str, entity_id: &st
     if hidden.is_empty() {
         return Ok(true);
     }
+    if entity_type == "person" {
+        return person_visible(pool, entity_id, hidden).await;
+    }
     Ok(match entity_case_id(pool, entity_type, entity_id).await? {
         Some(case_id) => !hidden.iter().any(|h| *h == case_id),
         None => true,
     })
+}
+
+/** A person is hidden from an officer only when every case they appear in is one that officer may
+ * not open. A person in no case, or in at least one open case, stays visible. */
+pub async fn person_visible(pool: &SqlitePool, person_id: &str, hidden: &[String]) -> Result<bool, sqlx::Error> {
+    if hidden.is_empty() {
+        return Ok(true);
+    }
+    let case_ids: Vec<String> = sqlx::query_scalar("SELECT case_id FROM case_people WHERE person_id = ?").bind(person_id).fetch_all(pool).await?;
+    Ok(case_ids.is_empty() || case_ids.iter().any(|c| !hidden.iter().any(|h| h == c)))
+}
+
+/** Whether this officer may read a vault file by its stored path: a file attached to a restricted case's records is not theirs to read. */
+pub async fn may_read_vault_path(pool: &SqlitePool, relative_path: &str, hidden: &[String]) -> Result<bool, sqlx::Error> {
+    if hidden.is_empty() {
+        return Ok(true);
+    }
+    let path = relative_path.trim_start_matches('/');
+    let owner: Option<(String, String)> = sqlx::query_as("SELECT entity_type, entity_id FROM attachments WHERE stored_path = ? OR stored_path = ?")
+        .bind(path)
+        .bind(relative_path)
+        .fetch_optional(pool)
+        .await?;
+    match owner {
+        Some((t, id)) => may_see_entity(pool, &t, &id, hidden).await,
+        None => Ok(true),
+    }
 }
