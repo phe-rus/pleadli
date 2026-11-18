@@ -1,5 +1,6 @@
 import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
+import { JuvenileNotice } from '@/features/people/juvenile-notice'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
 import { incidentsOptions, type Incident } from '@/features/incidents'
@@ -98,6 +99,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
             <Field>
               <FieldLabel>{m["custody.person"]()}</FieldLabel>
               <PersonPicker value={f.state.value || null} onValueChange={(id) => f.handleChange(id ?? '')} />
+              {f.state.value && <JuvenileNotice personId={f.state.value} />}
             </Field>
           )}
         </form.AppField>

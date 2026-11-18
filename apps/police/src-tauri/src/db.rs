@@ -83,6 +83,8 @@ pub async fn startup(data_dir: &Path, vault_root: PathBuf) -> Result<Db, Startup
 
     std::fs::create_dir_all(&vault_root).map_err(|e| StartupError::Fatal(format!("could not create the Police Vault: {e}")))?;
 
+    crate::domain::rules::ensure_built_in(&pool).await.map_err(|e| StartupError::Fatal(format!("could not load the legal rules: {e}")))?;
+
     // Older rows stored where a file is as an absolute path; the vault's own
     // files are now recorded relative to the vault root.
     crate::domain::attachments::normalise_stored_paths(&pool, &vault_root)

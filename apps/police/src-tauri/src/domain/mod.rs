@@ -22,6 +22,7 @@ pub mod orchestra;
 pub mod people;
 pub mod referrals;
 pub mod registers;
+pub mod rules;
 pub mod reports;
 pub mod search;
 #[cfg(debug_assertions)]

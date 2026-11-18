@@ -64,15 +64,12 @@ pub(crate) async fn write_bond_markdown(pool: &SqlitePool, vault_root: &Path, re
     }
 }
 
-/** Offences only the High Court can grant bail for. Police may not release a person charged with
- * one on a police bond, however the form is filled. This list is the app's working reading of the
- * law and must be confirmed by a legal officer before release. Attempts are not on it. */
-const NOT_POLICE_BAILABLE: &[&str] = &["murder", "treason", "rape", "aggravated robbery", "aggravated defilement", "terrorism"];
-
 /** Why this bond may not be granted, or None when it may. Looks at what the person is charged with
- * on the case the bond names. */
+ * on the case the bond names, against the offences the rules pack says police cannot bail. */
 pub async fn refusal(pool: &SqlitePool, input: &CreateBondInput) -> Result<Option<String>, sqlx::Error> {
     let Some(case_id) = &input.case_id else { return Ok(None) };
+    let pack = super::rules::active(pool, super::rules::DEFAULT_COUNTRY).await?;
+    let Some(rule) = pack.rule("bond.not_police_bailable") else { return Ok(None) };
     let offences: Vec<String> =
         sqlx::query_scalar("SELECT offence FROM charge_sheets WHERE case_id = ? AND (accused_person_id = ? OR accused_person_id IS NULL)")
             .bind(case_id)
@@ -81,13 +78,16 @@ pub async fn refusal(pool: &SqlitePool, input: &CreateBondInput) -> Result<Optio
             .await?;
     for offence in offences {
         let lower = offence.to_lowercase();
-        if lower.contains("attempt") {
+        if rule.exceptions.iter().any(|e| lower.contains(&e.to_lowercase())) {
             continue;
         }
-        if NOT_POLICE_BAILABLE.iter().any(|named| lower.contains(named)) {
-            return Ok(Some(format!(
-                "Police cannot grant bond for {offence}. Only the High Court can. Refer the file to the DPP and keep the person in custody."
-            )));
+        if rule.terms.iter().any(|t| lower.contains(&t.to_lowercase())) {
+            let mut message = format!("Police cannot grant bond for {offence}. {}", rule.text.as_deref().unwrap_or("Refer the file to the DPP."));
+            match &rule.citation {
+                Some(citation) => message.push_str(&format!(" ({citation})")),
+                None => message.push_str(" (Rule awaiting legal review.)"),
+            }
+            return Ok(Some(message));
         }
     }
     Ok(None)

@@ -38,14 +38,15 @@ import { ConnectionSettings } from '@/features/command-link'
 import { ListenerCard } from '@/features/command'
 import { DevModeSwitch, SignInSettings, useInstallation, useMe } from '@/features/session'
 import { restartTour } from '@/features/overview'
+import { RulesPane } from '@/features/rules'
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { format } from '@/lib/date'
 import { useEffect, useState } from 'react'
 
-type Section = 'station' | 'sign-in' | 'command' | 'remote' | 'records' | 'licence' | 'backups' | 'appearance' | 'notifications' | 'updates' | 'about'
-const SECTIONS: Section[] = ['station', 'sign-in', 'command', 'remote', 'records', 'licence', 'backups', 'appearance', 'notifications', 'updates', 'about']
+type Section = 'station' | 'sign-in' | 'command' | 'remote' | 'records' | 'licence' | 'backups' | 'appearance' | 'notifications' | 'updates' | 'rules' | 'about'
+const SECTIONS: Section[] = ['station', 'sign-in', 'command', 'remote', 'records', 'licence', 'backups', 'appearance', 'notifications', 'updates', 'rules', 'about']
 
 export const Route = createFileRoute('/_public/settings/')({
   validateSearch: (search: Record<string, unknown>): { section?: Section } => (SECTIONS.includes(search.section as Section) ? { section: search.section as Section } : {}),
@@ -411,7 +412,7 @@ function RouteComponent() {
     { id: 'station', label: command ? m["settings.group.command"]() : m["settings.group.station"](), sections: command ? ['station', 'sign-in', 'command'] : ['station', 'sign-in', 'command', 'remote', 'records'] },
     { id: 'pleadli', label: m["orchestra.settings.group"](), sections: ['licence', 'backups'] },
     { id: 'computer', label: m["settings.group.computer"](), sections: ['appearance', 'notifications', 'updates'] },
-    { id: 'about', label: m["settings.group.about"](), sections: ['about'] },
+    { id: 'about', label: m["settings.group.about"](), sections: ['rules', 'about'] },
   ]
   const visible = groups.flatMap((g) => g.sections)
   const current: Section = section && visible.includes(section) ? section : 'station'
@@ -427,6 +428,7 @@ function RouteComponent() {
     appearance: { label: m["settings.appearance"](), about: m["settings.about.appearance"](), icon: PaintBoardIcon },
     notifications: { label: m["settings.nav.notifications"](), about: m["settings.about.notifications"](), icon: Notification03Icon },
     updates: { label: m["update.title"](), about: m["update.about"](), icon: Download04Icon },
+    rules: { label: m["rules.title"](), about: m["rules.about"](), icon: LicenseIcon },
     about: { label: m["settings.tab_about"](), about: m["settings.about.about"](), icon: InformationCircleIcon },
   }
 
@@ -441,6 +443,7 @@ function RouteComponent() {
     appearance: () => <AppearancePane />,
     notifications: () => <NotificationsPane />,
     updates: () => <UpdatesPane />,
+    rules: () => <RulesPane />,
     about: () => <AppInfo />,
   }
 

@@ -734,7 +734,8 @@
     "dob_estimated": "Tarehe ni makadirio",
     "age_years": "Miaka {age}",
     "juvenile": "Mtoto (chini ya miaka 18)",
-    "age_unknown": "Umri haujaandikwa"
+    "age_unknown": "Umri haujaandikwa",
+    "juvenile_notice": "Mtu huyu ana miaka {age}, ni mtoto."
   },
   "referrals": {
     "status": {
@@ -2190,5 +2191,26 @@
     "restart_label": "Nionyeshe kuzunguka",
     "restart_desc": "Ziara fupi ya Leo, Watu, Kesi na Rumande.",
     "restart": "Anza ziara"
+  },
+  "rules": {
+    "title": "Sheria zinazotumika",
+    "about": "Sheria ambazo programu hutumia, kila moja inatoka wapi, na kama mtu ameziangalia.",
+    "about_pack": "Sheria hizi huamua mambo kama makosa ambayo polisi hawawezi kutoa dhamana. Kilichoandikwa kama sheria ya kazi ni uelewa wa timu na hakijakaguliwa na afisa wa sheria.",
+    "version": "toleo {version}",
+    "updated": "Imesasishwa {date}",
+    "awaiting": "{count} zinasubiri ukaguzi wa kisheria",
+    "all_checked": "Zote zimekaguliwa",
+    "load_label": "Pakia toleo jipya",
+    "load_hint": "Chagua faili ya sheria kutoka kwa afisa wako wa sheria au Pleadli. Lazima iwe mpya kuliko inayotumika.",
+    "load_button": "Chagua faili",
+    "loaded": "Sheria zimesasishwa",
+    "loaded_detail": "{name}, toleo {version}",
+    "load_failed": "Sheria hazikubadilishwa",
+    "status_draft": "Sheria ya kazi",
+    "status_sourced": "Ina chanzo",
+    "status_reviewed": "Imekaguliwa",
+    "no_citation": "Bado hakuna rejeleo",
+    "reviewed_by": "Imekaguliwa na {name} tarehe {date}",
+    "awaiting_one": "Mwongozo huu ni sheria ya kazi na unasubiri ukaguzi wa kisheria."
   }
 }

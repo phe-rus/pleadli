@@ -1019,6 +1019,25 @@ async fn list_custody_records_handler(
         .map_err(internal_error)
 }
 
+async fn get_rules_handler(State(state): State<AppState>) -> Result<Json<crate::domain::rules::Pack>, ApiError> {
+    crate::domain::rules::active(&state.pool, crate::domain::rules::DEFAULT_COUNTRY).await.map(Json).map_err(internal_error)
+}
+
+/// Load a newer rules pack. Only an administrator may change the rules the app applies.
+async fn import_rules_handler(
+    State(state): State<AppState>,
+    Extension(actor): Extension<crate::domain::sessions::Actor>,
+    body: String,
+) -> Result<Json<crate::domain::rules::Pack>, ApiError> {
+    if actor.role != "admin" {
+        return Err((StatusCode::FORBIDDEN, "Only an administrator can load a rules pack.".to_string()));
+    }
+    crate::domain::rules::import(&state.pool, &body, &actor.name)
+        .await
+        .map(Json)
+        .map_err(|reason| (StatusCode::UNPROCESSABLE_ENTITY, reason))
+}
+
 async fn create_bond_handler(
     State(state): State<AppState>,
     Json(input): Json<CreateBondInput>,
@@ -1453,6 +1472,8 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/prints/library", get(paper_library))
         .route("/custody", post(create_custody_record_handler).get(list_custody_records_handler))
         .route("/custody/{id}", put(update_custody_record_handler))
+        .route("/rules", get(get_rules_handler))
+        .route("/rules/import", post(import_rules_handler))
         .route("/bonds", post(create_bond_handler).get(list_bonds_handler))
         .route("/bonds/{id}", put(update_bond_handler))
         .route("/station-profile", get(get_station_profile_handler).put(save_station_profile_handler))

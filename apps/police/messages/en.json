@@ -734,7 +734,8 @@
     "dob_estimated": "Date is an estimate",
     "age_years": "{age} years",
     "juvenile": "Juvenile",
-    "age_unknown": "Age not recorded"
+    "age_unknown": "Age not recorded",
+    "juvenile_notice": "This person is {age}, a juvenile."
   },
   "referrals": {
     "status": {
@@ -2190,5 +2191,26 @@
     "restart_label": "Show me around",
     "restart_desc": "The short tour of Today, People, Cases and Custody.",
     "restart": "Start the tour"
+  },
+  "rules": {
+    "title": "Legal rules",
+    "about": "The rules the app applies, where each comes from, and whether anyone has checked it.",
+    "about_pack": "These rules decide things like which offences police cannot bail. Anything marked as a working rule is the team's own reading and has not been checked by a legal officer.",
+    "version": "version {version}",
+    "updated": "Updated {date}",
+    "awaiting": "{count} awaiting legal review",
+    "all_checked": "All checked",
+    "load_label": "Load an updated pack",
+    "load_hint": "Choose a rules file from your legal officer or Pleadli. It must be newer than the one in use.",
+    "load_button": "Choose a file",
+    "loaded": "Rules updated",
+    "loaded_detail": "{name}, version {version}",
+    "load_failed": "The rules were not changed",
+    "status_draft": "Working rule",
+    "status_sourced": "Sourced",
+    "status_reviewed": "Reviewed",
+    "no_citation": "No citation yet",
+    "reviewed_by": "Reviewed by {name} on {date}",
+    "awaiting_one": "This guidance is a working rule and is awaiting legal review."
   }
 }

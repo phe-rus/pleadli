@@ -161,5 +161,7 @@ Still only suspected (not tried on screen): juvenile and child-victim handling b
 | In the cells and out on bond at once | Granting a bond now marks the person's open custody record "released on bond" and links it | Bond for CRB 7: cells 10 to 9, profile shows only "Out on police bond" |
 | Suspects missing from the case's People | Booking into custody adds the person to the case as suspect; a charge sheet makes them the accused | CRB 12: Odongo added as suspect, then accused |
 
+Update: the offence list now lives in the rules pack (see `RULES.md`), shown in Settings > Legal rules as a working rule awaiting legal review.
+
 Limit: the bond rule looks at charge sheets only. A case with no charge sheet yet is not checked.
 The murder bond already granted in CRB 18 before the fix is still in the test data.

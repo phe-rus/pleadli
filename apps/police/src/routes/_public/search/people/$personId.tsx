@@ -5,7 +5,7 @@ import { bondStatusLabel } from '@/features/bonds/schema'
 import { caseRoles, caseStatusLabel } from '@/features/cases/schema'
 import { custodyCompliance, custodyStatusLabel } from '@/features/custody/schema'
 import { exhibitStatusLabel } from '@/features/evidence/schema'
-import { IdentityPhotos, personFullName, personProfileOptions, PersonForm, useExportPersonDocument, usePersonProfile, type PersonProfile } from '@/features/people'
+import { IdentityPhotos, useJuvenile, personFullName, personProfileOptions, PersonForm, useExportPersonDocument, usePersonProfile, type PersonProfile } from '@/features/people'
 import { stationDiaryCategoryLabel } from '@/features/station-diary/schema'
 import { format, formatDistanceToNowStrict } from '@/lib/date'
 import {
@@ -118,7 +118,9 @@ function RouteComponent() {
   const openSuspect = profile.cases.filter((c) => c.status === 'open' && profile.caseRoles.some((r) => r.caseId === c.id && (r.role === 'suspect' || r.role === 'accused')))
   const events = timeline(profile)
 
+  const { age, juvenile } = useJuvenile(person.dateOfBirth)
   const chips: { label: string; tone: 'red' | 'amber' | 'plain' }[] = [
+    ...(juvenile ? [{ label: m["people.juvenile"](), tone: 'red' as const }] : []),
     ...(inCells && limit ? [{ label: limit.isOverdue ? m["person.chip.past_limit"]() : m["person.chip.in_cells"]({ left: formatDistanceToNowStrict(limit.deadline) }), tone: (limit.isOverdue || limit.hoursRemaining <= 6 ? 'red' : 'amber') as 'red' | 'amber' }] : []),
     ...(onBond.length > 0 ? [{ label: m["person.chip.on_bond"](), tone: 'amber' as const }] : []),
     ...(openSuspect.length > 0 ? [{ label: openSuspect.length === 1 ? m["person.chip.suspect_one"]() : m["person.chip.suspect_n"]({ count: openSuspect.length }), tone: 'plain' as const }] : []),
@@ -245,6 +247,7 @@ function RouteComponent() {
 
           <Group title={m["people_page.particulars"]()}>
             <GroupRow label={m["identity.national_id"]()} value={person.nationalId ?? m["people_page.not_recorded"]()} />
+            <GroupRow label={m["people.date_of_birth"]()} value={age == null ? m["people.age_unknown"]() : `${person.dateOfBirth} · ${m["people.age_years"]({ age })}${person.dateOfBirthEstimated ? ` · ${m["people.dob_estimated"]()}` : ''}`} />
             <GroupRow label={m["identity.phone"]()} value={person.phone ?? m["people_page.not_recorded"]()} />
             <GroupRow label={m["identity.address"]()} value={person.address ?? m["people_page.not_recorded"]()} />
             <GroupRow label={m["people_page.first_recorded"]()} value={format(person.createdAt, 'PPP')} />

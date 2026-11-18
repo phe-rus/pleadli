@@ -1,0 +1,43 @@
+{
+  "country": "UG",
+  "name": "Uganda",
+  "version": 1,
+  "updatedOn": "2026-11-18",
+  "rules": [
+    {
+      "id": "bond.not_police_bailable",
+      "title": "Offences police cannot release on a police bond",
+      "kind": "offence_list",
+      "terms": ["murder", "treason", "rape", "aggravated robbery", "aggravated defilement", "terrorism"],
+      "exceptions": ["attempt"],
+      "text": "Only the High Court can grant bail for this offence. Refer the file to the DPP and keep the person in custody.",
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Working list written by the Pleadli team from general knowledge. It has no citation yet and has not been reviewed by a legal officer. Treat a refusal as a prompt to check, and have this list confirmed."
+    },
+    {
+      "id": "juvenile.age",
+      "title": "Age below which a person is a child",
+      "kind": "number",
+      "value": 18,
+      "citation": "Constitution of Uganda 1995, Art. 257(1)(c)",
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Citation recalled by the Pleadli team, not yet checked against the text."
+    },
+    {
+      "id": "juvenile.custody_guidance",
+      "title": "What to do when a juvenile is brought in",
+      "kind": "guidance",
+      "text": "Keep the child apart from adults. Tell a parent or guardian. Inform the Probation and Social Welfare Officer. Confirm with a legal officer which time limit and court apply.",
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "General guidance, not a statement of the exact legal steps. Needs review and a citation."
+    }
+  ]
+}
