@@ -1,3 +1,4 @@
+import { NotifyCounsel } from '@/features/exchange/notify-counsel'
 import { DocumentActions } from '@/features/documents/document-actions'
 import { PanelButton } from '@/components/add-panel'
 import { Row, RowList } from '@/components/operational-row'
@@ -148,6 +149,7 @@ function RouteComponent() {
           )}
         </div>
       </header>
+      {sitting.status === "scheduled" && <NotifyCounsel kind="sitting" id={sitting.id} />}
 
       {reading && <RecordPaper detail={detail} />}
       <div className={reading ? 'hidden' : 'contents'} inert={reading}>

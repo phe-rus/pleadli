@@ -149,3 +149,33 @@ pub async fn send_order(State(s): State<AppState>, Path(id): Path<String>, Json(
 pub async fn order_deliveries(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<Delivery>> {
     Ok(Json(custody_exchange::list_deliveries(&s.pool, &id).await?))
 }
+
+// ---- Court -> law firm: firms that invited this registry, and the notices sent to them.
+use crate::domain::firm_exchange::{self, Delivery as FirmDelivery, FirmLink, Imported as FirmImported};
+
+pub async fn list_firm_links(State(s): State<AppState>) -> ApiResult<Vec<FirmLink>> {
+    Ok(Json(firm_exchange::list_links(&s.pool).await?))
+}
+
+pub async fn answer_firm_invite(State(s): State<AppState>, Json(i): Json<AnswerInput>) -> ApiResult<WithFile<FirmLink>> {
+    let (link, bytes) = firm_exchange::accept_invite(&s.pool, &decode(&i.file)?, i.contact.as_deref()).await?;
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "answer-to-firm.pxpkg".into() }))
+}
+
+pub async fn import_firm_package(State(s): State<AppState>, Json(i): Json<FileInput>) -> ApiResult<FirmImported> {
+    Ok(Json(firm_exchange::import_package(&s.pool, &decode(&i.file)?).await?))
+}
+
+pub async fn notify_order(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
+    let (bytes, name) = firm_exchange::export_order_copy(&s.pool, &id, &i.link_id).await?;
+    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name }))
+}
+
+pub async fn notify_sitting(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
+    let (bytes, name) = firm_exchange::export_hearing(&s.pool, &id, &i.link_id).await?;
+    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name }))
+}
+
+pub async fn notice_deliveries(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<FirmDelivery>> {
+    Ok(Json(firm_exchange::list_deliveries(&s.pool, &id).await?))
+}

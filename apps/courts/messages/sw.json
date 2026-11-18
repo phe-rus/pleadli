@@ -71,5 +71,27 @@
     "delivered": "{prison}: imeandikwa",
     "returned": "{prison}: imerudishwa ({reason})",
     "awaiting": "{prison}: imetumwa, risiti bado"
+  },
+  "firm": {
+    "title": "Ofisi za mawakili",
+    "desc": "Ofisi ya mawakili humwalika msajili huyu kwa faili. Ifungue, hifadhi jibu lako, kisha iambie ofisi msimbo ulioonyeshwa hapa ili ikuthibitishe. Kisha fungua uthibitisho wake. Baada ya hapo tarehe za kusikilizwa na nakala za amri zinaweza kutumwa kwake.",
+    "contact": "Mtu wa kuwasiliana naye kwa msajili huyu",
+    "open_invite": "Fungua mwaliko",
+    "open_file": "Fungua faili kutoka ofisi ya mawakili",
+    "none": "Hakuna ofisi ya mawakili iliyomwalika msajili huyu bado.",
+    "status_answered": "Imejibiwa, inaisubiri ofisi",
+    "status_trusted": "Inaaminika",
+    "status_declined": "Imekataliwa",
+    "read_code": "Iambie ofisi msimbo huu: {code}",
+    "answered_notice": "Umejibu {firm}. Itumie faili hiyo na uwasomee msimbo ulioonyeshwa.",
+    "send_title": "Mjulishe wakili",
+    "send_desc": "Hutuma hiki kwa ofisi ya mawakili iliyomthibitisha msajili huyu, kama faili iliyofungwa. Ofisi hukiweka kwenye shauri lake na kutuma risiti.",
+    "choose_firm": "Chagua ofisi",
+    "send": "Tuma",
+    "none_trusted": "Hakuna ofisi ya mawakili iliyomthibitisha msajili huyu bado.",
+    "sent_notice": "Kimehifadhiwa. Kipeleke kwa {firm}.",
+    "delivered": "{firm}: kimewekwa",
+    "returned": "{firm}: kimerudishwa ({reason})",
+    "awaiting": "{firm}: kimetumwa, risiti bado"
   }
 }

@@ -71,5 +71,27 @@
     "delivered": "{prison}: recorded",
     "returned": "{prison}: returned ({reason})",
     "awaiting": "{prison}: sent, no receipt yet"
+  },
+  "firm": {
+    "title": "Law firms",
+    "desc": "A firm invites this registry with a file. Open it, save your answer, and read the firm the code shown here so it can confirm you. Then open its confirmation. Hearing dates and order copies can then be sent to it.",
+    "contact": "Who to reach at this registry",
+    "open_invite": "Open an invitation",
+    "open_file": "Open a file from the firm",
+    "none": "No firm has invited this registry yet.",
+    "status_answered": "Answered, waiting for the firm",
+    "status_trusted": "Trusted",
+    "status_declined": "Declined",
+    "read_code": "Read the firm this code: {code}",
+    "answered_notice": "Answered {firm}. Send the file back and read them the code shown.",
+    "send_title": "Notify counsel",
+    "send_desc": "Sends this to a law firm that has confirmed this registry, as a sealed file. The firm files it against its matter and sends a receipt.",
+    "choose_firm": "Choose a firm",
+    "send": "Send",
+    "none_trusted": "No firm has confirmed this registry yet.",
+    "sent_notice": "Saved. Send it to {firm}.",
+    "delivered": "{firm}: filed",
+    "returned": "{firm}: returned ({reason})",
+    "awaiting": "{firm}: sent, no receipt yet"
   }
 }

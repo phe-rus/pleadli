@@ -1,3 +1,4 @@
+import { NotifyCounsel } from '@/features/exchange/notify-counsel'
 import { SendOrder } from '@/features/exchange/send-order'
 import { DocumentActions } from '@/features/documents/document-actions'
 import { Createpanel } from '@/components/create-panel'
@@ -110,7 +111,9 @@ function RouteComponent() {
           )}
         </div>
       </header>
+      $&
       {!draft && (order.kind === "remand" || order.kind === "release") && <SendOrder orderId={order.id} />}
+      {!draft && <NotifyCounsel kind="order" id={order.id} />}
 
       {draft ? (
         <div className="flex flex-col gap-6">

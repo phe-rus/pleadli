@@ -28,3 +28,11 @@ export const answerPrisonInvite = (file: string, contact: string) => api('POST',
 export const importPrisonPackage = (file: string) => api('POST', '/api/exchange/prisons/import', { body: { file } }) as Promise<{ kind: string; message: string }>
 export const sendOrder = (id: string, linkId: string) => api('POST', `/api/orders/${encodeURIComponent(id)}/send`, { body: { linkId } }) as Promise<WithFile>
 export const listDeliveries = (id: string) => api('GET', `/api/orders/${encodeURIComponent(id)}/deliveries`) as Promise<Delivery[]>
+
+export type FirmLink = { id: string; firmName: string; firmJurisdiction: string | null; fingerprint: string; status: string; reason: string | null; respondedAt: number; trustedAt: number | null }
+export type FirmDelivery = { noticeKey: string; firmName: string; preparedAt: number; outcome: string | null; reason: string | null }
+export const listFirmLinks = () => api('GET', '/api/exchange/firms') as Promise<FirmLink[]>
+export const answerFirmInvite = (file: string, contact: string) => api('POST', '/api/exchange/firms/answer', { body: { file, contact: contact.trim() || null } }) as Promise<FirmLink & WithFile>
+export const importFirmPackage = (file: string) => api('POST', '/api/exchange/firms/import', { body: { file } }) as Promise<{ kind: string; message: string }>
+export const notify = (kind: 'order' | 'sitting', id: string, linkId: string) => api('POST', `/api/${kind === 'order' ? 'orders' : 'sittings'}/${encodeURIComponent(id)}/notify`, { body: { linkId } }) as Promise<WithFile>
+export const listNoticeDeliveries = (id: string) => api('GET', `/api/notices/${encodeURIComponent(id)}/deliveries`) as Promise<FirmDelivery[]>
