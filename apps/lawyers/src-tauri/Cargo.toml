@@ -9,7 +9,8 @@ default-run = "lawyers"
 [lib]
 # The `_lib` suffix keeps the library name from clashing with the bin name on Windows.
 name = "lawyers_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# Desktop only: no mobile static/dynamic library, so no 1.7 GB .a file and two fewer link steps per build. Put "staticlib", "cdylib" back to build for mobile.
+crate-type = ["rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
