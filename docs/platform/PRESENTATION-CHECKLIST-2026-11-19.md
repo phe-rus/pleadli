@@ -24,7 +24,7 @@ Also not built: civilian reporting to police, appointments, the office directory
 ## Owner's list (only you can do these)
 
 1. **Before anything goes live:** create the R2 bucket `pleadli-post` (`wrangler r2 bucket create pleadli-post`). Not checked: whether R2 needs a payment method on the free plan.
-2. **The live database's migration list** does not match the renamed migration folders (local `db:local` fails with "table account already exists"). Do not run `db:remote` until the `d1_migrations` table has been compared with `www/.migrations`. Deploy without migrating is safe for the existing site; the relay tables need the new migration.
+2. **Production database:** no users, so wipe and rebuild it from the current migrations (steps in the last section). Not done: needs your Cloudflare login.
 3. **Rate limit:** add one Cloudflare rule on `/api/public/*` before announcing the public lookups.
 4. **Native readers** for the French and Swahili text (written by me, not reviewed by a speaker of either).
 5. **Decide the public name.** The site still says "Pleadli Orchestra" and "Legal Orchestra" for the connecting layer; the client area is now "Pleadli Account". Choose one story.
@@ -38,26 +38,21 @@ Also not built: civilian reporting to police, appointments, the office directory
 - *Does it work without internet?* Yes, every app. Internet is for licences, updates, backups to your own storage, and the connecting services.
 - *Can the public report crimes through it?* No. Not built, and it needs legal review first.
 
-## The live database check, step by step (item 2 above)
+## Production database: there are no users, so wipe it and rebuild (owner decision, 2026-11-18)
 
-I could not run this: wrangler's login had expired and could not reach Cloudflare. Run `bunx wrangler login` first, then from `www/`:
+Item 2 above is no longer a blocker. With no real users, the live database is rebuilt from the current migrations instead of reconciled.
 
-```
-bunx wrangler d1 execute pleadli --remote --command "select name from d1_migrations order by id"
-```
+**Proven locally on 2026-11-18:** deleting the local database and running `bun run db:local` applies all six migrations cleanly (60 statements, including the relay tables); `seed-demo.sh` loads; verify, track, the relay calls and the public pages answer. So a fresh database works with today's code.
 
-Compare with the folders in `www/.migrations`:
+For production (needs `bunx wrangler login` first; I could not do it, the login had expired):
 
-```
-20260922070618_deep_mongu
-20261007222138_orchestra
-20261007231441_app_api
-20261008020536_common_nova
-20261008020537_fancy_wrecking_crew
-20261118031226_bumpy_snowbird      <- the relay tables, new, not on the live database yet
-```
+1. Optional safety copy: `bunx wrangler d1 export pleadli --remote --output pleadli-before-reset.sql`
+2. Create a fresh database, since a D1 database cannot be emptied or renamed in place: `bunx wrangler d1 create <name>`. Naming is free now. The owner's scheme is `pleadli-<purpose>`; this one holds sign-in, licences, papers and the relay, so I would call it `pleadli-data` rather than `pleadli-auth`. Your call.
+3. Put the new `database_id` (and `database_name`) in `www/wrangler.jsonc`, and the new name in the `db:local` and `db:remote` scripts in `www/package.json` (they say `pleadli` now).
+4. `cd www && bun run db:remote` applies all six migrations to the empty database.
+5. Create the bucket: `bunx wrangler r2 bucket create pleadli-post`.
+6. Set the Worker secrets again if they are not already on the Worker (`ORCHESTRA_SIGNING_KEY`, `BETTER_AUTH_SECRET`); they live on the Worker, not in the database.
+7. `bun run deploy`.
+8. Delete the old database only after the site works: `bunx wrangler d1 delete pleadli`.
 
-- If the live list holds the same first five under older names (for example `0000_deep_mongu.sql`), the database is fine and only the tracker names differ. Do **not** run `bun run db:remote`: it would try to re-apply the first five and fail ("table account already exists"). Apply only the sixth file by hand: `bunx wrangler d1 execute pleadli --remote --file .migrations/20261118031226_bumpy_snowbird/migration.sql`.
-- If the live list is missing some of the first five, stop and ask: that is a different problem.
-- Back up first: `bunx wrangler d1 export pleadli --remote --output pleadli-before-relay.sql`.
-- The relay tables are not needed until the Postbox is switched on, so this can wait until after the presentation.
+Everything that lived in the old production database (any institution registrations, licences, issued-paper fingerprints) is gone after this. With no users that is the intention; if a licence key or a paper fingerprint was issued for a real office, export first (step 1).

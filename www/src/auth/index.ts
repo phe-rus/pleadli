@@ -1,18 +1,18 @@
-import { betterAuth } from 'better-auth'
-import { admin, bearer } from 'better-auth/plugins'
-import { drizzleAdapter } from '@better-auth/drizzle-adapter/relations-v2'
-import { env } from 'cloudflare:workers'
-import { db } from '../db'
-import * as authSchema from '../db/auth-schema'
-import { password } from './password'
-import { templates } from '@pleadli/templates'
-import { institutions } from '@pleadli/institution'
+import { env } from "cloudflare:workers";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
+import { institutions } from "@pleadli/institution";
+import { templates } from "@pleadli/templates";
+import { betterAuth } from "better-auth";
+import { admin, bearer } from "better-auth/plugins";
+import { db } from "../db";
+import * as authSchema from "../db/auth-schema";
+import { password } from "./password";
 
 export const auth = betterAuth({
-  baseURL: env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+  baseURL: env.BETTER_AUTH_URL ?? "http://localhost:3000",
   secret: env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
-    provider: 'sqlite',
+    provider: "sqlite",
     schema: authSchema,
     transaction: false,
   }),
@@ -23,8 +23,8 @@ export const auth = betterAuth({
   plugins: [
     bearer(),
     // Public signup never grants platform administration based on an email.
-    admin({ defaultRole: 'user' }),
+    admin({ defaultRole: "user" }),
     templates(),
     institutions(),
   ],
-})
+});
