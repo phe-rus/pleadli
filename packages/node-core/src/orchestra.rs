@@ -57,9 +57,9 @@ CREATE TABLE orchestra_backups (
 
 CREATE INDEX orchestra_backups_at ON orchestra_backups (at);";
 
-pub const DEFAULT_URL: &str = "https://pleadli.com";
+pub const DEFAULT_URL: &str = crate::site::PRODUCTION;
 /// Points a development copy at a local pleadli.com (`http://localhost:3000`).
-pub const URL_ENV: &str = "PLEADLI_ORCHESTRA_URL";
+pub const URL_ENV: &str = crate::site::URL_ENV;
 /// Pleadli's offline root key, built in once it exists (build.rs).
 const ROOT_PUBLIC_KEY: Option<&str> = option_env!("PLEADLI_ORCHESTRA_ROOT");
 
@@ -386,7 +386,7 @@ pub struct Orchestra {
 
 impl Orchestra {
     pub fn new(app: App, pool: SqlitePool, data_dir: PathBuf, documents: Arc<dyn Documents>) -> Arc<Self> {
-        let base = std::env::var(URL_ENV).ok().filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_URL.into()).trim_end_matches('/').to_string();
+        let base = crate::site::base();
         let device = device_hash(&data_dir);
         let http = reqwest::Client::builder().connect_timeout(Duration::from_secs(15)).timeout(Duration::from_secs(45)).build().unwrap_or_default();
         Arc::new(Orchestra { app, pool, data_dir, documents, base, device, http, backing_up: tokio::sync::Mutex::new(()), running: AtomicBool::new(false), country: std::sync::RwLock::new(None) })

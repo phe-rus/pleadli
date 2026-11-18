@@ -85,9 +85,15 @@ pub fn normalise(typed: &str) -> String {
     typed.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_uppercase()
 }
 
-/// Where anyone checks a paper: a phone camera opens this from the QR.
+/// Where anyone checks a paper: a phone camera opens this from the QR. The
+/// server is the one this build is for (`site::base`): pleadli.com in a
+/// release build, the local server while developing.
 pub fn verify_url(code: &str) -> String {
-    format!("https://pleadli.com/verify?code={}", display(code))
+    verify_url_at(&crate::site::base(), code)
+}
+
+pub fn verify_url_at(base: &str, code: &str) -> String {
+    format!("{}/verify?code={}", base.trim_end_matches('/'), display(code))
 }
 
 /// The QR printed on a paper: its verify link, as SVG.
@@ -209,7 +215,8 @@ mod tests {
         assert_ne!(a.code, c.code);
         assert_eq!(a.code.len(), 12);
         assert!(a.qr.is_some());
-        assert_eq!(verify_url("ABCDEFGHJKLM"), "https://pleadli.com/verify?code=ABCD-EFGH-JKLM");
+        assert_eq!(verify_url_at("https://pleadli.com", "ABCDEFGHJKLM"), "https://pleadli.com/verify?code=ABCD-EFGH-JKLM");
+        assert_eq!(verify_url_at("http://localhost:3000/", "ABCDEFGHJKLM"), "http://localhost:3000/verify?code=ABCD-EFGH-JKLM");
         // The old code still answers with the old wording.
         assert_eq!(verify(&pool, &a.code).await.unwrap().unwrap().body, "I saw him.");
         assert_eq!(last_print(&pool, "statement", "s1").await.unwrap().unwrap().code, c.code);

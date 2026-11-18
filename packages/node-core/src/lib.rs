@@ -19,6 +19,7 @@ pub mod office;
 #[cfg(feature = "orchestra")]
 pub mod orchestra;
 pub mod paper;
+pub mod site;
 #[cfg(feature = "postbox")]
 pub mod postbox;
 #[cfg(feature = "backup")]
