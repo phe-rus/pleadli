@@ -48,6 +48,7 @@ pub fn import_fields(entity_type: &str) -> Option<Vec<ImportField>> {
             field("otherNames", "Other names", false),
             field("phone", "Phone", false),
             field("nationalId", "National ID", false),
+            field("dateOfBirth", "Date of birth (YYYY-MM-DD)", false),
             field("address", "Address", false),
         ],
         "case" => vec![

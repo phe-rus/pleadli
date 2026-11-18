@@ -243,6 +243,9 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
           Continue as development officer
         </button>
       )}
+      {import.meta.env.DEV && !chosen && message && (
+        <p role="alert" className="mx-auto mt-2 max-w-72 text-center text-xs text-destructive">{message}</p>
+      )}
     </ScreenFrame>
   )
 }

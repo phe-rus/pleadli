@@ -1,5 +1,6 @@
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
+import { IncidentForm } from '@/features/incidents'
 import { EmptyNote } from '@/components/planned'
 import { PaperWindow, RecordPaper } from '@/features/paper/record-paper'
 import { diaryCitation } from '@/features/registers'
@@ -67,6 +68,17 @@ function EntryPaper({ entry }: { entry: StationDiaryEntry }) {
         {person && <PaperField label={m["col.related_person"]()}>{person}</PaperField>}
       </section>
       <RichTextPreview value={entry.content} className="[&_p]:mb-3" />
+      <div className="mt-6 print:hidden">
+        <PanelButton label={m["sd_page.open_incident"]()} title={m["sd_page.open_incident"]()} description={m["sd_page.open_incident_desc"]()}>
+          {({ close, setDirty }) => (
+            <IncidentForm
+              start={{ stationDiaryEntryId: entry.id, summary: richTextToPlainText(entry.content).split('\n')[0]?.slice(0, 120) ?? '', description: entry.content, personId: entry.personId, occurredAt: entry.createdAt }}
+              onSuccess={close}
+              onDirtyChange={setDirty}
+            />
+          )}
+        </PanelButton>
+      </div>
       <section className="mt-12 flex justify-end">
         <SignatureLine caption={m["sd_page.officer_signs"]()} />
       </section>

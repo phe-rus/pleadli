@@ -330,7 +330,8 @@
     "restricted_title": "Kesi hii imezuiliwa",
     "back_to_cases": "Rudi kwenye kesi",
     "access_label": "Maafisa wanaoweza pia kuifungua",
-    "access_hint": "Wasimamizi na wewe mnaweza kuifungua daima. Weka alama kwa afisa mwingine anayehitaji."
+    "access_hint": "Wasimamizi na wewe mnaweza kuifungua daima. Weka alama kwa afisa mwingine anayehitaji.",
+    "save_new": "Hifadhi kesi hii"
   },
   "command": {
     "fallback_name": "Kamandi",
@@ -1436,7 +1437,9 @@
     "particulars": "Maelezo",
     "count_one": "Ingizo 1",
     "count": "Maingizo {count}",
-    "print_day": "Chapisha ukurasa"
+    "print_day": "Chapisha ukurasa",
+    "open_incident": "Fanya tukio kutoka hapa",
+    "open_incident_desc": "Inaanzisha tukio kutoka ingizo hili: maelezo yanakopiwa, ingizo linaunganishwa."
   },
   "search_page": {
     "people_desc": "Kila mtu anayejulikana na kituo hiki",

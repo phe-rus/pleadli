@@ -11,7 +11,11 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { createIncidentSchema, type Incident } from './schema'
 import { useCreateIncident, useUpdateIncident } from './queries'
 
+/** What a new incident starts from, so a diary entry's facts are not typed again. */
+export type IncidentStart = { stationDiaryEntryId: string; summary: string; description: string; personId: string | null; occurredAt: number }
+
 export type IncidentFormProps = {
+  start?: IncidentStart
   incident?: Incident
   onSuccess?: (incident: Incident) => void
   onDirtyChange?: (dirty: boolean) => void
@@ -23,18 +27,18 @@ function toDatetimeLocal(ms: number) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function IncidentForm({ incident, onSuccess, onDirtyChange }: IncidentFormProps) {
+export function IncidentForm({ incident, start, onSuccess, onDirtyChange }: IncidentFormProps) {
   const createIncident = useCreateIncident()
   const updateIncident = useUpdateIncident()
 
   const form = useAppForm({
     defaultValues: {
-      summary: incident?.summary ?? '',
-      description: incident?.description ?? '',
+      summary: incident?.summary ?? start?.summary ?? '',
+      description: incident?.description ?? start?.description ?? '',
       location: incident?.location ?? '',
-      occurredAt: incident ? toDatetimeLocal(incident.occurredAt) : toDatetimeLocal(Date.now()),
-      personId: incident?.personId ?? (null as string | null),
-      stationDiaryEntryId: incident?.stationDiaryEntryId ?? (null as string | null),
+      occurredAt: incident ? toDatetimeLocal(incident.occurredAt) : toDatetimeLocal(start?.occurredAt ?? Date.now()),
+      personId: incident?.personId ?? start?.personId ?? (null as string | null),
+      stationDiaryEntryId: incident?.stationDiaryEntryId ?? start?.stationDiaryEntryId ?? (null as string | null),
     },
     validators: {
       onSubmit: ({ value }) => {

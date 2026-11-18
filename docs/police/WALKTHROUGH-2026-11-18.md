@@ -71,3 +71,9 @@ Sign-in on return: badge, Enter, password, Enter (3 steps). Test officer: badge 
 - F2: an empty station's Today shows a "Where to start" card (diary, incident, case). Typechecked only: the test station has records, so it was not seen rendered.
 - Date of birth now appears in a person's exported document. Compiles; the export itself was not opened. Imports and the DPP hand-over still do not carry it.
 - Still open: F3 (diary entry to incident/case), F4, F9, F10, and the remaining legal review.
+- F3 done: a diary entry has "Make an incident from this" (account copied, entry linked). Seen in the real window.
+- F8 now seen rendered: a brand new case shows the "Next steps" card.
+- F10 done: the new-case panel's save button reads "Save this case", so "Open a case" appears once. Seen.
+- F4 done (debug builds only): the development sign-in now shows its error under the button. Compiles; not triggered.
+- Import: "Date of birth (YYYY-MM-DD)" is now a mappable person column. Compiles; not run with a file.
+- Not done: F9 not checked; DPP hand-over has no date of birth (no separate hand-over exists); referral destinations and case statuses are still fixed lists, not in the rules pack.

@@ -330,7 +330,8 @@
     "restricted_title": "This case is restricted",
     "back_to_cases": "Back to cases",
     "access_label": "Officers who may also open it",
-    "access_hint": "Administrators and you can always open it. Tick any other officer who needs to."
+    "access_hint": "Administrators and you can always open it. Tick any other officer who needs to.",
+    "save_new": "Save this case"
   },
   "command": {
     "fallback_name": "Command",
@@ -1436,7 +1437,9 @@
     "particulars": "Particulars",
     "count_one": "1 entry",
     "count": "{count} entries",
-    "print_day": "Print the page"
+    "print_day": "Print the page",
+    "open_incident": "Make an incident from this",
+    "open_incident_desc": "Starts an incident from this entry: the account is copied across, with the entry linked."
   },
   "search_page": {
     "people_desc": "Everyone known to this station",
