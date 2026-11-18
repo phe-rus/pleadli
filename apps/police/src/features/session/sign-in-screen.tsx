@@ -5,7 +5,7 @@ import { PasswordField, SignInArrow, signInFieldClass, signInInputClass } from '
 import { cn } from '@pleadli/ui/lib/utils'
 import { useState, type FormEvent } from 'react'
 import { ApiError } from '@/lib/api'
-import { chooseFirstPassword, getMe, signIn } from './data'
+import { chooseFirstPassword, devSignIn, getMe, signIn } from './data'
 import { ScreenFrame } from './screen-frame'
 import type { Installation } from './schema'
 
@@ -218,6 +218,30 @@ export function SignInScreen({ installation, onSignedIn }: { installation: Insta
             {m["sign_in.other_officer"]()}
           </button>
         </div>
+      )}
+      {/* Development builds only: import.meta.env.DEV is false in a release bundle, and the route is compiled out too. */}
+      {import.meta.env.DEV && !chosen && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true)
+            setError(null)
+            try {
+              await devSignIn()
+              const me = await getMe().catch(() => null)
+              if (me?.badgeNumber) remember(desk, { badge: me.badgeNumber, name: me.name ?? null, rank: me.rank ?? null })
+              onSignedIn()
+            } catch (e) {
+              setError(e instanceof ApiError ? e : new Error(String(e)))
+            } finally {
+              setBusy(false)
+            }
+          }}
+          className="mx-auto mt-4 w-fit cursor-pointer rounded-full bg-muted px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+        >
+          Continue as development officer
+        </button>
       )}
     </ScreenFrame>
   )

@@ -3,8 +3,10 @@ import { AuthModeChoice } from '@/features/auth-policy'
 import { localeNames } from '@/features/i18n'
 import { jurisdictionPack } from '@/features/jurisdiction'
 import { m } from '@/paraglide/messages'
-import { Field, FieldDescription, FieldLabel } from '@pleadli/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@pleadli/ui/field'
+import { PinField } from '@pleadli/ui/pin-field'
 import { cn } from '@pleadli/ui/lib/utils'
+import { useState } from 'react'
 import { useNumberingPreview } from './queries'
 import type { Draft, FieldErrors } from './schema'
 
@@ -127,6 +129,13 @@ export function Preview({ label, value }: { label: string; value: string }) {
 }
 
 export function AdministratorStep({ draft, errors, update, headOffice = false }: StepProps & { headOffice?: boolean }) {
+  // A facility chooses a six-digit passcode the way a phone asks for one, with a
+  // password one tap away. Head Office keeps its password field and the 000000 default.
+  const [asPassword, setAsPassword] = useState(headOffice || (draft.adminPassword !== '' && !/^\d{1,6}$/.test(draft.adminPassword)))
+  const switchTo = (password: boolean) => {
+    update({ adminPassword: '', adminPasswordAgain: '' })
+    setAsPassword(password)
+  }
   return (
     <div className="flex flex-col gap-4">
       <TextField
@@ -139,16 +148,43 @@ export function AdministratorStep({ draft, errors, update, headOffice = false }:
         placeholder={`${draft.badgePrefix.trim()}0142`}
       />
       <TextField label={m.setup_admin_name()} value={draft.adminName} onChange={(adminName) => update({ adminName })} error={errors.adminName} autoComplete="name" />
-      <TextField
-        label={m.setup_admin_password()}
-        type="password"
-        value={draft.adminPassword}
-        onChange={(adminPassword) => update({ adminPassword })}
-        error={errors.adminPassword}
-        autoComplete="new-password"
-        description={headOffice ? m.setup_admin_password_hq_hint() : m.setup_admin_password_facility_hint()}
-      />
-      {draft.adminPassword !== '' && <TextField label={m.setup_admin_password_again()} type="password" value={draft.adminPasswordAgain} onChange={(adminPasswordAgain) => update({ adminPasswordAgain })} error={errors.adminPasswordAgain} autoComplete="new-password" />}
+      {asPassword ? (
+        <>
+          <TextField
+            label={m.setup_admin_password()}
+            type="password"
+            value={draft.adminPassword}
+            onChange={(adminPassword) => update({ adminPassword })}
+            error={errors.adminPassword}
+            autoComplete="new-password"
+            description={headOffice ? m.setup_admin_password_hq_hint() : m.setup_admin_password_facility_hint()}
+          />
+          {draft.adminPassword !== '' && <TextField label={m.setup_admin_password_again()} type="password" value={draft.adminPasswordAgain} onChange={(adminPasswordAgain) => update({ adminPasswordAgain })} error={errors.adminPasswordAgain} autoComplete="new-password" />}
+          {!headOffice && (
+            <button type="button" onClick={() => switchTo(false)} className="cursor-pointer self-start text-[0.8125rem] text-primary hover:underline">
+              {m.sign_in_use_passcode()}
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-card p-4">
+          <div className="flex flex-col items-center gap-2">
+            <span className="font-medium">{m.setup_passcode_optional()}</span>
+            <PinField label={m.sign_in_passcode()} value={draft.adminPassword} onChange={(adminPassword) => update({ adminPassword, adminPasswordAgain: '' })} autoComplete="new-password" />
+          </div>
+          {draft.adminPassword.length === 6 && (
+            <div className="flex flex-col items-center gap-2">
+              <span className="font-medium">{m.setup_passcode_again()}</span>
+              <PinField label={m.setup_passcode_again()} value={draft.adminPasswordAgain} onChange={(adminPasswordAgain) => update({ adminPasswordAgain })} autoComplete="new-password" />
+            </div>
+          )}
+          {(errors.adminPassword || errors.adminPasswordAgain) && <FieldError className="text-center">{errors.adminPassword ?? m.setup_err_passcode_match()}</FieldError>}
+          <p className="text-center text-[0.8125rem] text-muted-foreground">{m.setup_admin_password_facility_hint()}</p>
+          <button type="button" onClick={() => switchTo(true)} className="cursor-pointer text-[0.8125rem] text-primary hover:underline">
+            {m.sign_in_use_password()}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

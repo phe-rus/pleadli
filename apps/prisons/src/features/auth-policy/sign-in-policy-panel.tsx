@@ -1,7 +1,8 @@
-import { SelectField } from '@/components/form-fields'
+import { SelectField, TextField } from '@/components/form-fields'
 import { SettingsCard } from '@/components/settings-card'
 import { ApiError } from '@/lib/api'
 import { Button } from '@pleadli/ui/button'
+import { PinField } from '@pleadli/ui/pin-field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useState } from 'react'
 import { AuthModeChoice } from './auth-mode-choice'
@@ -23,15 +24,25 @@ function PolicyForm({ policy }: { policy: AuthPolicy }) {
   const [mode, setMode] = useState(policy.mode)
   const [idle, setIdle] = useState(String(policy.idleTimeoutMinutes))
   const [lifetime, setLifetime] = useState(String(policy.absoluteLifetimeHours))
+  const [adminSecret, setAdminSecret] = useState('')
+  const [usePassword, setUsePassword] = useState(false)
   const changed = mode !== policy.mode || Number(idle) !== policy.idleTimeoutMinutes || Number(lifetime) !== policy.absoluteLifetimeHours
+  // Turning protection on from an open facility: the administrator at the keyboard
+  // chooses their own secret first, or the save would leave them locked out.
+  const turningOnProtection = policy.mode === 'badge_only' && mode !== 'badge_only'
 
   return (
     <SettingsCard
       title={m.auth_policy_how_officers_sign_in()}
       onSubmit={async (event) => {
         event.preventDefault()
+        if (turningOnProtection && !adminSecret) {
+          t.error(m.policy_set_passcode_required())
+          return
+        }
         try {
-          await save.mutateAsync({ mode, idleTimeoutMinutes: Number(idle), absoluteLifetimeHours: Number(lifetime) })
+          await save.mutateAsync({ mode, idleTimeoutMinutes: Number(idle), absoluteLifetimeHours: Number(lifetime), ...(turningOnProtection ? { adminSecret } : {}) })
+          setAdminSecret('')
           t.success(m.auth_policy_sign_in_settings_saved())
         } catch (error) {
           t.error(m.auth_policy_could_not_save_the_sign_in(), { description: error instanceof ApiError ? error.message : m.auth_policy_please_try_again() })
@@ -45,6 +56,28 @@ function PolicyForm({ policy }: { policy: AuthPolicy }) {
       }
     >
       <AuthModeChoice value={mode} onChange={setMode} />
+      {turningOnProtection && (
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-border p-4">
+          {mode === 'pin' && !usePassword ? (
+            <>
+              <PinField label={m.policy_set_passcode_label()} value={adminSecret} onChange={setAdminSecret} autoComplete="new-password" />
+              <button type="button" onClick={() => { setAdminSecret(''); setUsePassword(true) }} className="cursor-pointer text-[0.8125rem] text-primary hover:underline">
+                {m.sign_in_use_password()}
+              </button>
+            </>
+          ) : (
+            <>
+              <TextField label={m.policy_set_passcode_label()} type="password" value={adminSecret} onChange={setAdminSecret} autoComplete="new-password" className="w-full" />
+              {mode === 'pin' && (
+                <button type="button" onClick={() => { setAdminSecret(''); setUsePassword(false) }} className="cursor-pointer text-[0.8125rem] text-primary hover:underline">
+                  {m.sign_in_use_passcode()}
+                </button>
+              )}
+            </>
+          )}
+          <p className="text-center text-[0.8125rem] text-muted-foreground">{m.policy_set_passcode_hint()}</p>
+        </div>
+      )}
       <SelectField label={m.auth_policy_sign_out_after_inactivity()} value={idle} onChange={setIdle} options={idleOptions} placeholder={m.auth_policy_choose()} />
       <SelectField label={m.auth_policy_longest_a_sign_in_lasts()} value={lifetime} onChange={setLifetime} options={lifetimeOptions} placeholder={m.auth_policy_choose()} />
     </SettingsCard>

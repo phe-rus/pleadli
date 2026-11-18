@@ -1,7 +1,7 @@
 import { ArrowRight02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '../lib/utils'
-import { useEffect, useRef, type ComponentProps } from 'react'
+import { useEffect, useRef, useState, type ComponentProps } from 'react'
 
 /** Shakes an element side to side, as a Mac's login field does on a wrong
  * password. Uses the Web Animations API, so no stylesheet is needed. */
@@ -57,17 +57,17 @@ export function PinField({
 }) {
   const row = useRef<HTMLDivElement>(null)
   useShake(row, error)
+  const [focused, setFocused] = useState(false)
   const digits = value.split('')
 
   return (
     <div ref={row} className={cn('relative inline-flex', className)}>
-      <div aria-hidden className={cn('flex items-center', masked ? 'gap-3.5' : 'gap-2')}>
+      {/* One box per place, so how many digits there are, how many are in, and where the next goes are never a guess. */}
+      <div aria-hidden className="flex items-center gap-2">
         {Array.from({ length }, (_, i) => {
           const filled = i < digits.length
-          const current = i === digits.length
-          return masked ? (
-            <span key={i} className={cn('size-3.5 rounded-full border-[1.5px] transition-colors duration-100', filled ? 'border-foreground bg-foreground' : 'border-foreground/35 bg-transparent')} />
-          ) : (
+          const current = focused && i === Math.min(digits.length, length - 1)
+          return (
             <span
               key={i}
               className={cn(
@@ -77,7 +77,7 @@ export function PinField({
                 length === 6 && i === 2 && 'me-2',
               )}
             >
-              {digits[i] ?? ''}
+              {masked ? filled && <span className="size-3 rounded-full bg-foreground" /> : (digits[i] ?? '')}
             </span>
           )
         })}
@@ -93,6 +93,8 @@ export function PinField({
         autoComplete={autoComplete ?? (masked ? 'current-password' : 'one-time-code')}
         // Masked: a password field to the browser, so it is never shown or remembered as text.
         type={masked ? 'password' : 'text'}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         onChange={(e) => {
           const next = e.target.value.replace(/\D/g, '').slice(0, length)
           onChange(next)

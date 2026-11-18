@@ -179,7 +179,7 @@ async fn setup_facility(
             auth_policy::save(
                 c,
                 &actor,
-                AuthPolicyInput { mode: auth_mode, idle_timeout_minutes: current.idle_timeout_minutes, absolute_lifetime_hours: current.absolute_lifetime_hours },
+                AuthPolicyInput { mode: auth_mode, idle_timeout_minutes: current.idle_timeout_minutes, absolute_lifetime_hours: current.absolute_lifetime_hours, admin_secret: None },
             )
             .await?;
             officers::create_first_admin(c, &admin.badge_number, &admin.name, &admin.password).await?;

@@ -42,6 +42,10 @@ fn bearer(headers: &HeaderMap) -> Option<String> {
 /// Routes that answer without a session: what the window needs to decide
 /// between setup and sign-in, and sign-in itself.
 fn is_public(method: &Method, path: &str) -> bool {
+    #[cfg(debug_assertions)]
+    if method == Method::POST && path == "/api/auth/dev-sign-in" {
+        return true;
+    }
     matches!(
         (method.as_str(), path),
         ("GET", "/api/system/state") | ("POST", "/api/system/onboarding/station") | ("POST", "/api/system/onboarding/command") | ("POST", "/api/auth/sign-in") | ("POST", "/api/auth/first-password")
@@ -182,4 +186,18 @@ pub async fn save_policy(
 
 pub async fn list_events(State(state): State<AppState>) -> Result<Json<Vec<AuthEvent>>, ApiError> {
     auth::list_events(&state.pool).await.map(Json).map_err(|e| domain_error(e.into()))
+}
+
+/// Dev builds only: starts a session for the first active administrator, so a
+/// test install needs no badge or password typed. It changes no account and
+/// no secret, only opens a session. Not compiled into a release build.
+#[cfg(debug_assertions)]
+pub async fn dev_sign_in(State(state): State<AppState>) -> Result<Json<SignedIn>, ApiError> {
+    let officers = crate::domain::officers::list_officers(&state.pool).await.map_err(|e| domain_error(e.into()))?;
+    let admin = officers
+        .into_iter()
+        .find(|o| o.active && o.role == "admin")
+        .ok_or((StatusCode::NOT_FOUND, "There is no administrator to sign in as yet.".to_string()))?;
+    let token = sessions::create(&state.pool, &admin.id).await.map_err(|e| domain_error(e.into()))?;
+    Ok(Json(SignedIn { token, officer: admin }))
 }

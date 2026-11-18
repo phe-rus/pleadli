@@ -741,6 +741,25 @@ pub async fn set_first_password(pool: &SqlitePool, badge_number: &str, new_passw
     Ok(officer)
 }
 
+/// An open (badge only) administrator chooses their own secret while turning
+/// protection on. `policy` is the mode being switched to, so a 4 to 8 digit
+/// passcode is accepted when that mode is `pin`. Runs inside the caller's
+/// write transaction; ends the account's other sessions like any secret change.
+pub async fn set_own_secret(conn: &mut SqliteConnection, actor: &Actor, id: &str, secret: &str, policy: &AuthPolicy) -> Result<(), OfficerError> {
+    let hash = hash_secret(secret, policy)?;
+    let updated = sqlx::query("UPDATE officers SET password_hash = ?, passwordless = 0, failed_attempts = 0, locked_until = NULL WHERE id = ? AND active = 1 AND is_admin = 1")
+        .bind(&hash)
+        .bind(id)
+        .execute(&mut *conn)
+        .await?
+        .rows_affected();
+    if updated == 0 {
+        return Err(OfficerError::NotFound);
+    }
+    audit::record(conn, actor, AuditEntry::new("auth.admin_password_set", "officer", Some(id))).await?;
+    Ok(())
+}
+
 /// Debug builds only: after the dev role switch flips an installation, the
 /// existing accounts belong to the other kind of installation, so make sure a
 /// known administrator account of the right kind exists to sign in with.
@@ -914,7 +933,7 @@ mod tests {
         let saved = auth_policy::save(
             &mut tx,
             actor,
-            auth_policy::AuthPolicyInput { mode: mode.into(), idle_timeout_minutes: 240, absolute_lifetime_hours: 12 },
+            auth_policy::AuthPolicyInput { mode: mode.into(), idle_timeout_minutes: 240, absolute_lifetime_hours: 12, admin_secret: None },
         )
         .await;
         if saved.is_ok() {
@@ -1031,6 +1050,36 @@ mod tests {
         assert!(check_credentials(&pool, "G-1", "", None).await.is_err(), "the account must be given a secret now");
         let flagged: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM officers WHERE passwordless = 1").fetch_one(&pool).await.unwrap();
         assert_eq!(flagged, 0);
+    }
+
+    #[tokio::test]
+    async fn an_open_administrator_chooses_a_passcode_while_turning_protection_on() {
+        let pool = pool().await;
+        let admin = bootstrap(&pool).await;
+        let actor = actor_of(&admin);
+        set_mode(&pool, &actor, "badge_only").await.unwrap();
+        sqlx::query("UPDATE officers SET passwordless = 1 WHERE badge_number = 'OIC-1'").execute(&pool).await.unwrap();
+
+        let save = |mode: &str, secret: Option<&str>| {
+            let (pool, actor) = (pool.clone(), actor.clone());
+            let input = auth_policy::AuthPolicyInput { mode: mode.into(), idle_timeout_minutes: 240, absolute_lifetime_hours: 12, admin_secret: secret.map(String::from) };
+            async move {
+                let mut tx = pool.begin().await.unwrap();
+                let saved = auth_policy::save(&mut tx, &actor, input).await;
+                if saved.is_ok() {
+                    tx.commit().await.unwrap();
+                }
+                saved
+            }
+        };
+
+        assert!(save("pin", None).await.is_err(), "no secret chosen: the administrator would be locked out");
+        assert!(save("pin", Some("12")).await.is_err(), "too short is refused, and nothing changes");
+        assert!(check_credentials(&pool, "OIC-1", "", None).await.is_ok(), "still open after the refused saves");
+
+        save("pin", Some("4821")).await.expect("a 4 digit passcode is fine in pin mode");
+        assert!(check_credentials(&pool, "OIC-1", "4821", None).await.is_ok());
+        assert!(check_credentials(&pool, "OIC-1", "", None).await.is_err(), "badge alone no longer signs in");
     }
 
     #[tokio::test]

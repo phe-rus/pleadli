@@ -69,14 +69,14 @@ export const conventionsSchema = z.object({
 /** Head Office keeps no prisoner numbers, so only the two prefixes apply. */
 export const headOfficeConventionsSchema = conventionsSchema.pick({ badgePrefix: true, documentPrefix: true })
 
-export const adminSchema = (badgePrefix: string, passwordRequired = false) =>
+export const adminSchema = (badgePrefix: string, facility = false) =>
   z
     .object({
       adminBadge: z.string().trim().min(1, { error: () => m.setup_err_admin_badge() }),
       adminName: z.string().trim().min(1, { error: () => m.setup_err_admin_name() }),
-      // Required for a facility: an administrator always has a password. Head
-      // Office may leave it empty and start on the default passcode 000000.
-      adminPassword: z.string().refine((v) => (v === '' ? !passwordRequired : v.length >= 8), { error: () => m.setup_err_password_length() }),
+      // Optional everywhere. A facility starts open (no secret) unless it chooses a
+      // six-digit passcode or a password; Head Office starts on the default passcode 000000.
+      adminPassword: z.string().refine((v) => (v === '' || v.length >= 8 || (facility && /^\d{6}$/.test(v))), { error: () => m.setup_err_password_length() }),
       adminPasswordAgain: z.string(),
     })
     .refine((v) => !badgePrefix || v.adminBadge.trim().toUpperCase().startsWith(badgePrefix.trim().toUpperCase()), {

@@ -95,3 +95,9 @@ export async function saveAuthPolicy(input: { mode: 'badge_only' | 'password'; i
 export async function listAuthEvents() {
   return z.array(authEventSchema).parse(await api('/auth/events'))
 }
+
+/** Development builds only (the route is compiled out of release builds): signs in as the
+ * first active administrator, so a test install needs no badge or password typed. */
+export async function devSignIn() {
+  keepBrowserToken(await api('/auth/dev-sign-in', { method: 'POST' }))
+}

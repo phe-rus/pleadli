@@ -2,13 +2,15 @@
 //! how long a session lasts. Facility-owned; only an administrator changes it
 //! and every change is audited.
 //!
-//! * `badge_only` an account may be marked as signing in with its badge
-//!   alone. The default for a new facility, but never an administrator, who
-//!   always needs a password (so the first account has one). Refused on Head Office, refused while this machine serves LAN
-//!   workstations, and never honoured for a workstation sign-in. Anyone may
-//!   still be given a password, and then it is asked for.
+//! * `badge_only` open: an account may sign in with its badge alone, a
+//!   facility's default, administrators included. Refused on Head Office,
+//!   refused while this machine serves LAN workstations, and never honoured
+//!   for a workstation sign-in. Anyone may still be given a secret, and then
+//!   it is asked for.
 //! * `password`   every account needs a password
-//! * `pin`        anyone, administrators included, may use a 4 to 8 digit passcode instead
+//! * `pin`        anyone may use a short passcode instead (the screens offer six
+//!   digits; 4 to 8 are accepted). An administrator still needs a real password
+//!   to sign in from a LAN workstation.
 //!
 //! Head Office always uses a secret; its first account starts on the default
 //! passcode, `officers::HEAD_OFFICE_DEFAULT_PASSCODE`.
@@ -38,6 +40,10 @@ pub struct AuthPolicyInput {
     pub mode: String,
     pub idle_timeout_minutes: i64,
     pub absolute_lifetime_hours: i64,
+    /// Turning protection on while the signed-in administrator is still open
+    /// (badge only): the secret they choose now, checked under the NEW mode.
+    #[serde(default)]
+    pub admin_secret: Option<String>,
 }
 
 const SELECT: &str = "SELECT mode, idle_timeout_minutes, absolute_lifetime_hours, updated_at FROM auth_policy WHERE id = 'default'";
@@ -93,6 +99,12 @@ pub async fn save(conn: &mut SqliteConnection, actor: &Actor, input: AuthPolicyI
 
     let before = get_conn(conn).await?;
     if before.mode == "badge_only" && input.mode != "badge_only" {
+        // The administrator turning protection on chooses their own secret now,
+        // judged by the rules of the mode being switched to.
+        if let (Some(secret), Some(officer_id)) = (input.admin_secret.as_deref().filter(|s| !s.is_empty()), actor.officer_id.as_deref()) {
+            let target = AuthPolicy { mode: input.mode.clone(), ..before.clone() };
+            super::officers::set_own_secret(conn, actor, officer_id, secret, &target).await.map_err(|e| DomainError::rejected(e.to_string()))?;
+        }
         // Leaving badge-only would leave an administrator with no way in.
         let stranded: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM officers WHERE passwordless = 1 AND is_admin = 1 AND active = 1").fetch_one(&mut *conn).await?;
         if stranded > 0 {

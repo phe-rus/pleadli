@@ -1,7 +1,7 @@
 import { NodeWaiting } from '@/components/node-waiting'
 import { PreAuthLayout, ScreenHeader, screenTransition } from '@/components/pre-auth-layout'
 import { useBootstrapFirstAccount, useSessionToken, useSystemState } from './queries'
-import { getDeskOfficers, setDevRole, setFirstPassword, signIn } from './data'
+import { getDeskOfficers, NO_AUTO_SIGN_IN, setDevRole, setFirstPassword, signIn } from './data'
 import { useQuery } from '@tanstack/react-query'
 import { officerRoleLabel } from '@/features/officers/schema'
 import { onSessionChange, ApiError } from '@/lib/api'
@@ -14,7 +14,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { m } from '@/paraglide/messages'
 
 /**
@@ -209,7 +209,7 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
   // Head Office signs in with a six-digit passcode, shown as six places that
   // fill as it is typed, the way an iPhone asks; an account that has chosen
   // a longer password switches to the password field.
-  const [passcode, setPasscode] = useState(headOffice)
+  const [passcode, setPasscode] = useState(headOffice || authMode === 'pin')
 
   // Development builds only: the backend makes sure the seeded account exists with
   // its known secret, then it signs in, so there is nothing to remember or type.
@@ -231,6 +231,7 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
     try {
       const result = choosing ? await setFirstPassword(badgeNumber.trim(), pass) : await signIn(badgeNumber.trim(), pass)
       rememberOfficer({ badge: badgeNumber.trim(), name: result.officer.name, role: officerRoleLabel(result.officer.role) })
+      try { sessionStorage.removeItem(NO_AUTO_SIGN_IN) } catch { /* storage unavailable: nothing to clear */ }
       setPassword('')
     } catch (e) {
       if (e instanceof ApiError && e.code === 'ADMIN_PASSWORD_REQUIRED') {
@@ -250,6 +251,20 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
       setBusy(false)
     }
   }
+
+  // An open facility with a single officer who signs in on the badge alone has
+  // nothing to choose: sign in once, unless they just signed out on purpose.
+  const autoTried = useRef(false)
+  useEffect(() => {
+    if (autoTried.current || headOffice || authMode !== 'badge_only' || !isFetched || desk.length !== 1 || !desk[0].passwordless) return
+    let signedOutOnPurpose = false
+    try { signedOutOnPurpose = sessionStorage.getItem(NO_AUTO_SIGN_IN) === '1' } catch { /* storage unavailable: carry on */ }
+    if (signedOutOnPurpose) return
+    autoTried.current = true
+    setChosen({ badge: desk[0].badgeNumber, name: desk[0].name, role: officerRoleLabel(desk[0].role), passwordless: true })
+    void go(desk[0].badgeNumber, '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headOffice, authMode, isFetched, desk])
 
   const choose = (r: Recent) => {
     setChosen(r)
@@ -308,7 +323,7 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
                 {error.message}
               </p>
             )}
-            {askPassword && headOffice && (
+            {askPassword && (headOffice || authMode === 'pin') && (
               <button
                 type="button"
                 onClick={() => {

@@ -1507,7 +1507,9 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
     // Dev builds only: lets one installation be tried as both a Station and a
     // Command. Not compiled into a release build.
     #[cfg(debug_assertions)]
-    let routes = routes.route("/system/dev-mode", post(session::dev_mode).with_state(dev_state));
+    let routes = routes
+        .route("/system/dev-mode", post(session::dev_mode).with_state(dev_state.clone()))
+        .route("/auth/dev-sign-in", post(session::dev_sign_in).with_state(dev_state));
 
     Router::new().nest("/api", routes)
 }

@@ -12,7 +12,7 @@ export const authPolicySchema = z.object({
 })
 
 export type AuthPolicy = z.infer<typeof authPolicySchema>
-export type AuthPolicyInput = Pick<AuthPolicy, 'mode' | 'idleTimeoutMinutes' | 'absoluteLifetimeHours'>
+export type AuthPolicyInput = Pick<AuthPolicy, 'mode' | 'idleTimeoutMinutes' | 'absoluteLifetimeHours'> & { /** Only when leaving badge-only: the signed-in administrator's own new secret. */ adminSecret?: string }
 
 export const authModeCopy: Record<AuthMode, { title: string; description: string }> = {
   password: {

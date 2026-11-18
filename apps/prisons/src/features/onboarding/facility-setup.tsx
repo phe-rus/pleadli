@@ -69,7 +69,10 @@ export function FacilitySetup({ onBack, onCreated, onDone }: { onBack: () => voi
     }
     if (index === 2) {
       const found = errorsOf(adminSchema(draft.badgePrefix, true).safeParse(draft))
-      return Object.keys(found).length ? setErrors(found) : goTo(3)
+      if (Object.keys(found).length) return setErrors(found)
+      // What the first administrator chose is what the facility signs in with, until they pick otherwise on the next step.
+      update({ authMode: draft.adminPassword === '' ? 'badge_only' : /^\d{6}$/.test(draft.adminPassword) ? 'pin' : 'password' })
+      return goTo(3)
     }
     if (index === 3) {
       try {

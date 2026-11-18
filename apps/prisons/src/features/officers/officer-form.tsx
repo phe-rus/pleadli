@@ -6,6 +6,7 @@ import { Button } from '@pleadli/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
 import { DrawerFooter } from '@pleadli/ui/drawer'
 import { Field, FieldDescription, FieldLabel } from '@pleadli/ui/field'
+import { PinField } from '@pleadli/ui/pin-field'
 import { Switch } from '@pleadli/ui/switch'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useState } from 'react'
@@ -28,6 +29,7 @@ export function OfficerForm({ officer, onSuccess }: OfficerFormProps) {
   const updateOfficer = useUpdateOfficer()
   const deleteOfficer = useDeleteOfficer()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [usePassword, setUsePassword] = useState(false)
   const canDelete = Boolean(officer) && (config?.isHeadOffice ?? false)
 
   const form = useAppForm({
@@ -150,7 +152,15 @@ export function OfficerForm({ officer, onSuccess }: OfficerFormProps) {
             )}
             {!(passwordless && !isAdmin) && (
               <form.AppField name="password">
-                {(f) => (
+                {(f) => config?.authMode === 'pin' && !usePassword ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <PinField label={officer ? m.officers_new_password_or_pin() : m.officers_password_or_pin()} value={f.state.value} onChange={f.handleChange} autoComplete="new-password" />
+                    <button type="button" onClick={() => { f.handleChange(''); setUsePassword(true) }} className="cursor-pointer text-[0.8125rem] text-primary hover:underline">
+                      {m.sign_in_use_password()}
+                    </button>
+                    {officer && <p className="text-[0.8125rem] text-muted-foreground">{m.officers_leave_blank_to_keep_the_current()}</p>}
+                  </div>
+                ) : (
                   <f.input
                     type="password"
                     autoComplete="new-password"
