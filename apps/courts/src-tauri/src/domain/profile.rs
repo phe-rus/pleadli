@@ -24,6 +24,28 @@ pub struct SaveProfileInput {
     pub court_level: String,
 }
 
+/// Orders, rulings and records are signed and headed from this profile. It follows
+/// whoever is signed in and the court named at setup, so the signature and the
+/// audit trail always name the same person.
+pub async fn sync_from_session(pool: &SqlitePool) -> Result<(), sqlx::Error> {
+    let who: Option<(String, Option<String>)> = sqlx::query_as("SELECT s.name, s.rank FROM active_session a JOIN staff s ON s.id = a.staff_id").fetch_optional(pool).await?;
+    let court: Option<String> = sqlx::query_scalar("SELECT office_name FROM installation WHERE id = 'this'").fetch_optional(pool).await?;
+    let (Some((name, title)), Some(court)) = (who, court) else { return Ok(()) };
+    let level = if court.to_lowercase().contains("high court") { "high" } else { "magistrate" };
+    sqlx::query(
+        "INSERT INTO bench_profile (id, name, title, court_name, court_level) VALUES ('default', ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET name = excluded.name, title = excluded.title, court_name = excluded.court_name,
+            court_level = excluded.court_level, updated_at = cast(unixepoch('subsecond') * 1000 as integer)",
+    )
+    .bind(name)
+    .bind(title)
+    .bind(court)
+    .bind(level)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 pub async fn get(pool: &SqlitePool) -> Result<Option<BenchProfile>, sqlx::Error> {
     sqlx::query_as("SELECT name, title, court_name, court_level, updated_at FROM bench_profile WHERE id = 'default'").fetch_optional(pool).await
 }

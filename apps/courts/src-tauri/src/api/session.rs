@@ -64,6 +64,7 @@ async fn setup_complete(State(s): State<AppState>, Json(input): Json<SetupInput>
     if let Some(admin) = staff::first_administrator(&s.pool).await? {
         sec.adopt(&s.pool, admin).await?;
     }
+    crate::domain::profile::sync_from_session(&s.pool).await?;
     Ok(Json(sec.status()))
 }
 
@@ -102,7 +103,9 @@ async fn session_people(State(s): State<AppState>) -> ApiResult<Vec<SignInPerson
 }
 
 async fn sign_in(State(s): State<AppState>, Json(input): Json<SignInInput>) -> ApiResult<SignInOutcome> {
-    Ok(Json(security(&s)?.sign_in(&s.pool, input).await?))
+    let outcome = security(&s)?.sign_in(&s.pool, input).await?;
+    crate::domain::profile::sync_from_session(&s.pool).await?;
+    Ok(Json(outcome))
 }
 
 async fn sign_out(State(s): State<AppState>) -> ApiResult<LockStatus> {

@@ -1046,3 +1046,13 @@ async fn before_setup_only_setup_works_and_none_protection_needs_no_sign_in() {
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(call(&app, Method::GET, "/api/cases", None).await.0, StatusCode::OK);
 }
+
+#[tokio::test]
+async fn the_profile_that_signs_orders_follows_the_person_who_set_up() {
+    let (app, _pool) = secured_app().await;
+    call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none"))).await;
+    let (status, profile) = call(&app, Method::GET, "/api/profile", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(profile["name"], "Registrar Test");
+    assert_eq!(profile["courtName"], "Kampala Chief Magistrates Court");
+}

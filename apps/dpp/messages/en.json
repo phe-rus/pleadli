@@ -734,7 +734,7 @@
     "role": {
       "accused": "Accused",
       "arresting_officer": "Arresting officer",
-      "complainant": "Complainant",
+      "complainant": "Complainant / victim",
       "investigating_officer": "Investigating officer",
       "witness": "Witness"
     },
@@ -1500,7 +1500,7 @@
     "role": {
       "accused": "Statement of the accused",
       "arresting_officer": "Arresting officer",
-      "complainant": "Complainant",
+      "complainant": "Complainant / victim",
       "investigating_officer": "Investigating officer",
       "witness": "Witness"
     }

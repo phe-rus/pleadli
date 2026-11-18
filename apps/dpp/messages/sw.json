@@ -734,7 +734,7 @@
     "role": {
       "accused": "Mshtakiwa",
       "arresting_officer": "Afisa aliyekamata",
-      "complainant": "Mlalamikaji",
+      "complainant": "Mlalamikaji / mwathirika",
       "investigating_officer": "Afisa mpelelezi",
       "witness": "Shahidi"
     },
@@ -1500,7 +1500,7 @@
     "role": {
       "accused": "Maelezo ya mshtakiwa",
       "arresting_officer": "Afisa aliyekamata",
-      "complainant": "Mlalamikaji",
+      "complainant": "Mlalamikaji / mwathirika",
       "investigating_officer": "Afisa mpelelezi",
       "witness": "Shahidi"
     }

@@ -734,7 +734,7 @@
     "role": {
       "accused": "Accusé",
       "arresting_officer": "Agent ayant procédé à l'arrestation",
-      "complainant": "Plaignant",
+      "complainant": "Plaignant / victime",
       "investigating_officer": "Enquêteur",
       "witness": "Témoin"
     },
@@ -1500,7 +1500,7 @@
     "role": {
       "accused": "Déclaration de l'accusé",
       "arresting_officer": "Agent ayant procédé à l'arrestation",
-      "complainant": "Plaignant",
+      "complainant": "Plaignant / victime",
       "investigating_officer": "Enquêteur",
       "witness": "Témoin"
     }
