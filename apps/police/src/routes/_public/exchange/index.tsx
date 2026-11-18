@@ -5,6 +5,7 @@ import { format } from '@/lib/date'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Input } from '@pleadli/ui/input'
+import { SettingsCard } from '@/components/settings-card'
 import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -13,16 +14,6 @@ export const Route = createFileRoute('/_public/exchange/')({ component: RouteCom
 type Referral = { id: string; caseReference: string; destinationName: string | null; referredAt: number }
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
-
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-3 border-b border-border/60 py-6 first:pt-0">
-      <h2 className="text-base font-semibold">{title}</h2>
-      {hint && <p className="max-w-2xl text-sm text-muted-foreground">{hint}</p>}
-      {children}
-    </section>
-  )
-}
 
 function RouteComponent() {
   const [identity, setIdentity] = useState<StationIdentity | null | undefined>(undefined)
@@ -60,107 +51,147 @@ function RouteComponent() {
   const trusted = connections.some((c) => c.status === 'trusted')
 
   return (
-    <div className="flex max-w-3xl flex-col">
-      <h1 className="mb-1 text-2xl font-semibold">{m['exchange.title']()}</h1>
-      <p className="mb-6 text-sm text-muted-foreground">{m['exchange.intro']()}</p>
-      {notice && <p role="status" className={notice.error ? 'mb-4 text-sm text-destructive' : 'mb-4 text-sm'}>{notice.text}</p>}
+    <article className="page">
+      <header className="page-header">
+        <div>
+          <h1>{m['exchange.title']()}</h1>
+          <p className="text-muted-foreground">{m['exchange.intro']()}</p>
+        </div>
+      </header>
 
-      {identity === null && (
-        <Section title={m['exchange.identity_title']()} hint={m['exchange.identity_hint']()}>
-          <div className="flex flex-wrap gap-2">
-            <Input aria-label={m['exchange.station_name']()} placeholder={m['exchange.station_name']()} value={name} onChange={(e) => setName(e.target.value)} className="w-64" />
-            <Input aria-label={m['exchange.area']()} placeholder={m['exchange.area']()} value={area} onChange={(e) => setArea(e.target.value)} className="w-48" />
-            <Button disabled={!name.trim()} onClick={() => run(async () => void (await createIdentity(name, area)))}>{m['exchange.identity_create']()}</Button>
-          </div>
-        </Section>
-      )}
+      <div className="flex w-full max-w-3xl flex-col gap-6">
+        {notice && <p role="status" className={notice.error ? 'text-destructive' : undefined}>{notice.text}</p>}
 
-      {identity && (
-        <>
-          <Section title={m['exchange.identity_title']()}>
-            <p className="text-sm">{identity.stationName}</p>
-            <p className="text-sm text-muted-foreground">{m['exchange.fingerprint']()} <span className="font-mono">{identity.fingerprint}</span></p>
-          </Section>
-
-          <Section title={m['exchange.offices_title']()} hint={m['exchange.offices_hint']()}>
-            <div className="flex flex-wrap items-center gap-2">
-              <Input aria-label={m['exchange.in_charge']()} placeholder={m['exchange.in_charge']()} value={inCharge} onChange={(e) => setInCharge(e.target.value)} className="w-56" />
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  run(async () => {
-                    const file = await pickPackage()
-                    if (!file) return
-                    const answered = await acceptInvite(file, inCharge)
-                    await savePackage(answered)
-                    return m['exchange.answer_saved']({ office: answered.connection.officeName, code: answered.connection.fingerprint })
-                  })
-                }
-              >
-                {m['exchange.answer_invite']()}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  run(async () => {
-                    const file = await pickPackage()
-                    if (!file) return
-                    return (await importPackage(file)).message
-                  })
-                }
-              >
-                {m['exchange.import']()}
-              </Button>
+        {identity === null && (
+          <SettingsCard
+            title={m['exchange.identity_title']()}
+            description={m['exchange.identity_hint']()}
+            action={<Button disabled={!name.trim()} onClick={() => run(async () => void (await createIdentity(name, area)))}>{m['exchange.identity_create']()}</Button>}
+          >
+            <div className="flex flex-wrap gap-2">
+              <Input aria-label={m['exchange.station_name']()} placeholder={m['exchange.station_name']()} value={name} onChange={(e) => setName(e.target.value)} className="w-full sm:w-72" />
+              <Input aria-label={m['exchange.area']()} placeholder={m['exchange.area']()} value={area} onChange={(e) => setArea(e.target.value)} className="w-full sm:w-56" />
             </div>
-            {connections.length === 0 ? <p className="text-sm text-muted-foreground">{m['exchange.no_offices']()}</p> : (
-              <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                {connections.map((c) => (
-                  <li key={c.id} className="flex flex-wrap items-center gap-3 text-sm">
-                    <span className="font-medium">{c.officeName}</span>
-                    <Badge variant={c.status === 'trusted' ? 'default' : 'secondary'}>{m[`exchange.status_${c.status}` as 'exchange.status_trusted']?.() ?? c.status}</Badge>
-                    <span className="font-mono text-xs text-muted-foreground">{c.fingerprint}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
+          </SettingsCard>
+        )}
 
-          <Section title={m['exchange.send_title']()} hint={trusted ? m['exchange.send_hint']() : m['exchange.send_blocked']()}>
-            {referrals.length === 0 ? <p className="text-sm text-muted-foreground">{m['exchange.no_referrals']()}</p> : (
-              <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                {referrals.map((r) => (
-                  <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                    <span>{r.caseReference} <span className="text-muted-foreground">· {format(r.referredAt, 'PP')}</span></span>
-                    <span className="flex gap-2">
-                      <Button size="sm" variant="secondary" disabled={!trusted} onClick={() => run(async () => { const sealed = await exportReferral(r.id, 'file'); if (await savePackage(sealed)) return m['exchange.sent_file']({ name: sealed.name }) })}>
-                        {m['exchange.save_file']()}
-                      </Button>
+        {identity && (
+          <>
+            <SettingsCard title={m['exchange.identity_title']()}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span>{identity.stationName}</span>
+                <span className="text-muted-foreground">{m['exchange.fingerprint']()} <span className="font-mono">{identity.fingerprint}</span></span>
+              </div>
+            </SettingsCard>
+
+            <SettingsCard
+              title={m['exchange.offices_title']()}
+              description={m['exchange.offices_hint']()}
+              action={
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      run(async () => {
+                        const file = await pickPackage()
+                        if (!file) return
+                        return (await importPackage(file)).message
+                      })
+                    }
+                  >
+                    {m['exchange.import']()}
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      run(async () => {
+                        const file = await pickPackage()
+                        if (!file) return
+                        const answered = await acceptInvite(file, inCharge)
+                        await savePackage(answered)
+                        return m['exchange.answer_saved']({ office: answered.connection.officeName, code: answered.connection.fingerprint })
+                      })
+                    }
+                  >
+                    {m['exchange.answer_invite']()}
+                  </Button>
+                </>
+              }
+            >
+              <div>
+                <Input aria-label={m['exchange.in_charge']()} placeholder={m['exchange.in_charge']()} value={inCharge} onChange={(e) => setInCharge(e.target.value)} className="w-full sm:w-72" />
+              </div>
+              {connections.length === 0 ? (
+                <p className="text-muted-foreground">{m['exchange.no_offices']()}</p>
+              ) : (
+                connections.map((c) => (
+                  <div key={c.id} className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">
+                      {c.officeName}
+                      <Badge variant={c.status === 'trusted' ? 'default' : 'secondary'}>{statusLabel(c.status)}</Badge>
                     </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
+                    <span className="font-mono text-muted-foreground">{c.fingerprint}</span>
+                  </div>
+                ))
+              )}
+            </SettingsCard>
 
-          <Section title={m['exchange.incoming_title']()}>
-            {incoming.length === 0 ? <p className="text-sm text-muted-foreground">{m['exchange.no_incoming']()}</p> : (
-              <ul className="m-0 flex list-none flex-col gap-3 p-0">
-                {incoming.map((i) => {
+            <SettingsCard title={m['exchange.send_title']()} description={trusted ? m['exchange.send_hint']() : m['exchange.send_blocked']()}>
+              {referrals.length === 0 ? (
+                <p className="text-muted-foreground">{m['exchange.no_referrals']()}</p>
+              ) : (
+                referrals.map((r) => (
+                  <div key={r.id} className="flex flex-wrap items-center justify-between gap-3">
+                    <span>
+                      {r.caseReference} <span className="text-muted-foreground">· {format(r.referredAt, 'PP')}</span>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={!trusted}
+                      onClick={() =>
+                        run(async () => {
+                          const sealed = await exportReferral(r.id, 'file')
+                          if (await savePackage(sealed)) return m['exchange.sent_file']({ name: sealed.name })
+                        })
+                      }
+                    >
+                      {m['exchange.save_file']()}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </SettingsCard>
+
+            <SettingsCard title={m['exchange.incoming_title']()}>
+              {incoming.length === 0 ? (
+                <p className="text-muted-foreground">{m['exchange.no_incoming']()}</p>
+              ) : (
+                incoming.map((i) => {
                   const body = safe(i.payload)
                   return (
-                    <li key={i.id} className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium">{i.kind === 'receipt' ? m['exchange.receipt']() : m['exchange.decision']()} · {i.officeName} · {format(i.receivedAt, 'PP')}</span>
+                    <div key={i.id} className="flex flex-col gap-0.5">
+                      <span>{i.kind === 'receipt' ? m['exchange.receipt']() : m['exchange.decision']()} · {i.officeName} · {format(i.receivedAt, 'PP')}</span>
                       <span className="text-muted-foreground">{[body.policeReference, body.outcome ?? body.decisionType, body.dppReference, body.reason].filter(Boolean).join(' · ')}</span>
-                    </li>
+                    </div>
                   )
-                })}
-              </ul>
-            )}
-          </Section>
-        </>
-      )}
-    </div>
+                })
+              )}
+            </SettingsCard>
+          </>
+        )}
+      </div>
+    </article>
   )
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, () => string> = {
+    answered: m['exchange.status_answered'],
+    trusted: m['exchange.status_trusted'],
+    declined: m['exchange.status_declined'],
+    revoked: m['exchange.status_revoked'],
+  }
+  return labels[status]?.() ?? status
 }
 
 function safe(payload: string): Record<string, string | undefined> {
