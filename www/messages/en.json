@@ -673,7 +673,7 @@
       "lead": "Which offices may send to yours, and which you may send to. Pleadli carries sealed files between approved offices and never reads them.",
       "note": "The Postbox is being built. Your apps do not send through it yet: for now, files move by export and import.",
       "revoke": "End connection",
-      "revoke_hint": "Mail still waiting between you is deleted.",
+      "revoke_hint": "Mail still waiting between your two offices is deleted.",
       "revoked": "Ended",
       "sent_title": "Waiting for their answer",
       "waiting": "Mail waiting to be collected"

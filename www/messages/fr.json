@@ -673,7 +673,7 @@
       "lead": "Quels bureaux peuvent écrire au vôtre, et auxquels vous pouvez écrire. Pleadli transporte des fichiers scellés entre bureaux approuvés et ne les lit jamais.",
       "note": "La boîte postale est en construction. Vos applications ne l'utilisent pas encore : pour l'instant, les fichiers passent par export et import.",
       "revoke": "Mettre fin à la connexion",
-      "revoke_hint": "Le courrier encore en attente entre vous est supprimé.",
+      "revoke_hint": "Le courrier encore en attente entre vos deux bureaux est supprimé.",
       "revoked": "Terminée",
       "sent_title": "En attente de leur réponse",
       "waiting": "Courrier en attente de retrait"
