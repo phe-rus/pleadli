@@ -201,3 +201,51 @@ pub struct FilingReceiptPayload {
     pub decided_at: i64,
     pub decided_by: Option<String>,
 }
+
+pub const KIND_CUSTODY_ORDER: &str = "custody_order";
+pub const KIND_CUSTODY_RECEIPT: &str = "custody_receipt";
+
+/// A remand or release order a court has issued about a person in custody,
+/// sent to the facility that holds or is to hold them. Every field is the
+/// court's claim: the facility reads it, finds its own record of the person,
+/// and records the order itself. The wording that was signed travels with it
+/// so the facility keeps what the court issued, not a summary.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CustodyOrderPayload {
+    /// The court's own id for the order, used to answer it.
+    pub order_key: String,
+    /// `remand` or `release`.
+    pub kind: String,
+    pub court_name: String,
+    pub court_number: String,
+    pub case_title: String,
+    /// The court's reference for the order, if it gave one.
+    pub reference: Option<String>,
+    pub accused: String,
+    /// The place of custody the court named.
+    pub prison: String,
+    pub remand_until: Option<i64>,
+    pub reason: Option<String>,
+    pub issued_at: i64,
+    pub issued_by: Option<String>,
+    /// The order as it was issued, paragraph by paragraph.
+    pub paragraphs: Vec<String>,
+    /// SHA-256 of the wording the court recorded at issue.
+    pub content_sha256: Option<String>,
+}
+
+/// The facility's answer: whether it recorded the order against a person in
+/// its custody, or could not.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CustodyReceiptPayload {
+    pub order_package_id: String,
+    pub order_key: String,
+    /// `recorded` or `returned`.
+    pub outcome: String,
+    pub reason: Option<String>,
+    pub received_at: i64,
+    pub decided_at: i64,
+    pub decided_by: Option<String>,
+}

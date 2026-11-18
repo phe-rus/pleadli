@@ -2,6 +2,7 @@ pub mod attachments;
 pub mod audit;
 pub mod cases;
 pub mod error;
+pub mod custody_exchange;
 pub mod exchange;
 pub mod exhibits;
 pub mod keys;

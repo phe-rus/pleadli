@@ -51,7 +51,7 @@ async fn load_identity(pool: &SqlitePool) -> Result<Option<Identity>, DomainErro
     Identity::restore(public, signing, encryption).map(Some).ok_or_else(|| DomainError::Invalid(DAMAGED.into()))
 }
 
-async fn require_identity(pool: &SqlitePool) -> Result<Identity, DomainError> {
+pub(crate) async fn require_identity(pool: &SqlitePool) -> Result<Identity, DomainError> {
     match load_identity(pool).await? {
         Some(i) => Ok(i),
         None => bad("Set up this registry's identity first."),
