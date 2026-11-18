@@ -442,6 +442,8 @@ mod tests {
                 other_names: None,
                 phone: None,
                 national_id: None,
+                date_of_birth: None,
+                date_of_birth_estimated: false,
                 address: None,
             },
         )
