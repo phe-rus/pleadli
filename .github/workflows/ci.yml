@@ -85,13 +85,12 @@ jobs:
       # Files tsc needs that are gitignored, so a clean checkout lacks them.
       - name: Generate route trees and types
         run: |
-          bun toolings/ci/routes.ts apps/*/
+          bun toolings/ci/routes.ts apps/*/ www
           cd www
           # Placeholder values only. wrangler types reads the variable NAMES from
           # .env to type `Env`. No secret is involved.
           cp .env.ci .env
           bun run i18n
-          bun run generate-routes
           bun run cf-typegen
       - name: Typecheck affected workspaces
         env:

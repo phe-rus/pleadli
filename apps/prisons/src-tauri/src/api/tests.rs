@@ -139,6 +139,8 @@ const OPEN_BY_DESIGN: &[&str] = &[
     "/api/auth/desk",
     "/api/auth/devices/enrol",
     "/api/auth/login",
+    // Works once, on this machine only, for an administrator who still signs in with a badge alone; audited.
+    "/api/auth/set-first-password",
     "/api/system/dev/activation-code",
     "/api/system/dev/role",
     "/api/system/health",
