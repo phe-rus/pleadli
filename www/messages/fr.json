@@ -47,7 +47,7 @@
     "sign_in_body": "Les utilisateurs institutionnels se connectent à Pleadli pour gérer leur organisation, sa structure et son personnel.",
     "sign_in_title": "Se connecter à Pleadli",
     "what_p1": "Pleadli est une famille de cinq applications, une pour chaque maillon de la justice : Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers et Pleadli Prisons. Chacune est faite pour le travail de ses utilisateurs, fonctionne sur les ordinateurs du bureau et se suffit à elle-même.",
-    "what_p2": "Pleadli Orchestra, sur pleadli.com, est ce qui les fait jouer ensemble : il donne à chaque institution son adresse et son certificat, transporte des pièces scellées entre les bureaux qui ont accepté de travailler ensemble, permet à chacun de vérifier qu'une pièce est authentique, et tient licences et mises à jour en ordre. Il ne détient jamais les dossiers d'une institution.",
+    "what_p2": "Pleadli Orchestra, sur pleadli.com, est ce qui les fait jouer ensemble : il donne à chaque institution son adresse, permet à chacun de vérifier qu'une pièce est authentique, et tient licences et mises à jour en ordre. Il est en construction pour transporter aussi des pièces scellées entre les bureaux qui ont accepté de travailler ensemble. Il ne détient jamais les dossiers d'une institution.",
     "what_title": "Ce qu'est Pleadli",
     "where_p1": "Pleadli commence en Ouganda, construit autour de ses lois, formulaires et bureaux tels qu'ils fonctionnent, et s'étend en Afrique de l'Est : Kenya, Tanzanie, Rwanda, Burundi, RD Congo et Soudan du Sud, chacun avec ses lois, délais et documents, en anglais, kiswahili et français.",
     "where_title": "Où nous commençons",
@@ -211,7 +211,7 @@
       "real_title": "Ce qui est réel aujourd'hui : le modèle organisationnel",
       "size_body": "C'est ce même modèle qui permet à une application Pleadli de servir un utilisateur seul, une équipe ou une grande organisation : un avocat seul et un cabinet utilisent tous deux Pleadli Lawyers avec le même modèle, structuré différemment. La forme de la hiérarchie revient à chaque organisation ; Pleadli ne suppose pas que toute institution ressemble à une force de police.",
       "size_title": "Un modèle, toutes tailles",
-      "status_note": "Les applications et leurs dossiers existent aujourd'hui, et Pleadli DPP reçoit déjà des dossiers scellés. L'envoi depuis Pleadli Police et le relais Orchestra sont encore en conception et ne sont pas construits. Les adresses, les certificats, la vérification des pièces et le suivi des affaires sont en construction ; voir la feuille de route.",
+      "status_note": "Les applications et leurs dossiers existent aujourd'hui, et Pleadli DPP reçoit déjà des dossiers scellés. L'envoi depuis Pleadli Police n'est pas construit, et aucune application n'envoie encore par le relais Orchestra : une première version du relais est écrite et testée, mais elle n'est pas activée. Les adresses, les certificats, la vérification des pièces et le suivi des affaires sont en construction ; voir la feuille de route.",
       "title": "Comment fonctionne Pleadli"
     },
     "index": {
@@ -252,8 +252,8 @@
         "strangers": "Pas de courrier non sollicité. Un bureau ne reçoit que d'un bureau qu'il a approuvé, et c'est un administrateur nommé qui prend cette décision."
       },
       "rules_title": "Les règles qu'elle respectera",
-      "status_body": "Cette page décrit ce que fera la boîte postale et les règles qu'elle respectera. Elle ne fonctionne pas encore. Aujourd'hui, les fichiers passent d'un bureau à l'autre par export et import (clé USB ou courriel), et Pleadli DPP peut déjà recevoir des fichiers scellés.",
-      "status_title": "En conception, pas encore construite",
+      "status_body": "Cette page décrit ce que fera la boîte postale et les règles qu'elle respectera. Elle ne fonctionne pas encore pour les bureaux : une première version est écrite et testée par Pleadli, mais elle n'est pas activée et aucune application n'envoie par elle. Aujourd'hui, les fichiers passent d'un bureau à l'autre par export et import (clé USB ou courriel), et Pleadli DPP peut déjà recevoir des fichiers scellés.",
+      "status_title": "Pas encore activée",
       "steps": {
         "collect": {
           "body": "L'application du bureau destinataire vérifie le courrier toutes les dix à quinze minutes, le relève, le vérifie et l'ouvre. Une personne décide de l'accepter ou non.",

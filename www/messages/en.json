@@ -47,7 +47,7 @@
     "sign_in_body": "Institutional users sign in to Pleadli to manage their organization, structure, and staff.",
     "sign_in_title": "Sign in to Pleadli",
     "what_p1": "Pleadli is a family of five applications, one for each part of justice: Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers and Pleadli Prisons. Each is made for the work of the people who use it, runs on the office's own computers, and is useful on its own.",
-    "what_p2": "Pleadli Orchestra, at pleadli.com, is what lets them play together: it gives each institution its address and certificate, carries sealed papers between offices that have agreed to work together, lets anyone check that a paper is genuine, and keeps licences and updates in order. It never holds an institution's records.",
+    "what_p2": "Pleadli Orchestra, at pleadli.com, is what lets them play together: it gives each institution its address, lets anyone check that a paper is genuine, and keeps licences and updates in order. It is being built to also carry sealed papers between offices that have agreed to work together. It never holds an institution's records.",
     "what_title": "What Pleadli is",
     "where_p1": "Pleadli starts in Uganda, built around its laws, forms and offices as they actually work, and grows across East Africa: Kenya, Tanzania, Rwanda, Burundi, DR Congo and South Sudan, each with its own laws, deadlines and papers, in English, Kiswahili and French.",
     "where_title": "Where we start",
@@ -211,7 +211,7 @@
       "real_title": "What's real today: the organizational model",
       "size_body": "The same organizational model is what lets a Pleadli application serve an individual user, a team, or a larger organization, an individual lawyer and a law firm both use Pleadli Lawyers through the same model, structured differently. The hierarchy shape is up to each organization, Pleadli doesn't assume every institution looks like a police force.",
       "size_title": "One model, any size",
-      "status_note": "The apps and their records exist today, and Pleadli DPP can already receive sealed files. Sending them from Pleadli Police and the Orchestra relay are still in design and not built. Addresses, certificates, paper checking and case tracking are being built now; see the Roadmap.",
+      "status_note": "The apps and their records exist today, and Pleadli DPP can already receive sealed files. Sending them from Pleadli Police is not built, and no app sends through the Orchestra relay yet: a first version of the relay is written and tested, but it is not switched on. Addresses, certificates, paper checking and case tracking are being built now; see the Roadmap.",
       "title": "How Pleadli works"
     },
     "index": {
@@ -252,8 +252,8 @@
         "strangers": "No unsolicited mail. An office can only receive from an office it has approved, and a named administrator makes that decision."
       },
       "rules_title": "The rules it will keep",
-      "status_body": "This page describes what the Postbox will do and the rules it will keep. It does not work yet. Today, files move between offices by export and import (a USB stick or e-mail), and Pleadli DPP can already receive sealed files.",
-      "status_title": "In design, not built",
+      "status_body": "This page describes what the Postbox will do and the rules it will keep. It does not work for offices yet: a first version is written and tested by Pleadli, but it is not switched on and no app sends through it. Today, files move between offices by export and import (a USB stick or e-mail), and Pleadli DPP can already receive sealed files.",
+      "status_title": "Not switched on yet",
       "steps": {
         "collect": {
           "body": "The receiving office's app checks for mail every ten to fifteen minutes, collects it, verifies it and opens it. A person decides whether to accept it.",

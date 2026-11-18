@@ -47,7 +47,7 @@
     "sign_in_body": "Watumiaji wa taasisi huingia kwenye Pleadli kusimamia shirika lao, muundo wake na wafanyakazi.",
     "sign_in_title": "Ingia kwenye Pleadli",
     "what_p1": "Pleadli ni familia ya programu tano, moja kwa kila sehemu ya haki: Pleadli Police, Pleadli DPP, Pleadli Courts, Pleadli Lawyers na Pleadli Prisons. Kila moja imetengenezwa kwa kazi ya watu wanaoitumia, inafanya kazi kwenye kompyuta za ofisi yenyewe, na ina manufaa peke yake.",
-    "what_p2": "Pleadli Orchestra, kwenye pleadli.com, ndiyo inayoziwezesha kufanya kazi pamoja: inaipa kila taasisi anwani na cheti chake, inabeba nyaraka zilizofungwa kati ya ofisi zilizokubali kufanya kazi pamoja, inamruhusu yeyote kuhakiki kwamba nyaraka ni halali, na inapanga leseni na masasisho. Haishikilii kamwe kumbukumbu za taasisi.",
+    "what_p2": "Pleadli Orchestra, kwenye pleadli.com, ndiyo inayoziwezesha kufanya kazi pamoja: inaipa kila taasisi anwani yake, inamruhusu yeyote kuhakiki kwamba nyaraka ni halali, na inapanga leseni na masasisho. Inajengwa pia ili ibebe nyaraka zilizofungwa kati ya ofisi zilizokubali kufanya kazi pamoja. Haishikilii kamwe kumbukumbu za taasisi.",
     "what_title": "Pleadli ni nini",
     "where_p1": "Pleadli inaanzia Uganda, ikijengwa kuzunguka sheria, fomu na ofisi zake jinsi zinavyofanya kazi kweli, na inakua katika Afrika Mashariki: Kenya, Tanzania, Rwanda, Burundi, DR Congo na Sudan Kusini, kila moja na sheria, muda na nyaraka zake, kwa Kiingereza, Kiswahili na Kifaransa.",
     "where_title": "Tunapoanzia",
@@ -211,7 +211,7 @@
       "real_title": "Kilicho halisi leo: mfumo wa mashirika",
       "size_body": "Mfumo huo huo wa mashirika ndio unaoruhusu programu ya Pleadli kumhudumia mtumiaji mmoja, timu, au shirika kubwa; wakili mmoja na kampuni ya mawakili wote hutumia Pleadli Lawyers kupitia mfumo huo huo, uliopangwa tofauti. Umbo la ngazi ni la kila shirika kuamua; Pleadli haidhanii kila taasisi inafanana na jeshi la polisi.",
       "size_title": "Mfumo mmoja, ukubwa wowote",
-      "status_note": "Programu na kumbukumbu zake zipo leo, na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa. Kuyatuma kutoka Pleadli Police na relay ya Orchestra bado viko kwenye usanifu na havijajengwa. Anwani, vyeti, uhakiki wa nyaraka na ufuatiliaji wa mashauri vinajengwa sasa; tazama Ramani ya kazi.",
+      "status_note": "Programu na kumbukumbu zake zipo leo, na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa. Kuyatuma kutoka Pleadli Police hakujajengwa, na hakuna programu inayotuma kupitia relay ya Orchestra bado: toleo la kwanza la relay limeandikwa na kujaribiwa, lakini halijawashwa. Anwani, vyeti, uhakiki wa nyaraka na ufuatiliaji wa mashauri vinajengwa sasa; tazama Ramani ya kazi.",
       "title": "Jinsi Pleadli inavyofanya kazi"
     },
     "index": {
@@ -252,8 +252,8 @@
         "strangers": "Hakuna barua zisizoombwa. Ofisi inaweza kupokea tu kutoka ofisi iliyoikubali, na msimamizi aliyetajwa ndiye anayefanya uamuzi huo."
       },
       "rules_title": "Kanuni litakazofuata",
-      "status_body": "Ukurasa huu unaeleza sanduku la posta litakachofanya na kanuni litakazofuata. Bado halifanyi kazi. Leo, majalada husafirishwa kati ya ofisi kwa kutoa na kuingiza (kijiti cha USB au barua pepe), na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa.",
-      "status_title": "Linaundwa kwenye karatasi, halijajengwa",
+      "status_body": "Ukurasa huu unaeleza sanduku la posta litakachofanya na kanuni litakazofuata. Bado halifanyi kazi kwa ofisi: toleo la kwanza limeandikwa na kujaribiwa na Pleadli, lakini halijawashwa na hakuna programu inayotuma kupitia hilo. Leo, majalada husafirishwa kati ya ofisi kwa kutoa na kuingiza (kijiti cha USB au barua pepe), na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa.",
+      "status_title": "Halijawashwa bado",
       "steps": {
         "collect": {
           "body": "Programu ya ofisi inayopokea hukagua barua kila baada ya dakika kumi hadi kumi na tano, inazichukua, inazihakiki na kuzifungua. Mtu ndiye anayeamua kukubali au la.",
