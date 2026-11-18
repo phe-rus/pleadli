@@ -160,6 +160,8 @@ pub fn run() {
             commands::backup::stage_restore,
             commands::backup::restart_app,
             commands::interchange::import_interchange_file,
+            commands::interchange::pick_court_package,
+            commands::interchange::save_court_package,
             commands::interchange::save_interchange_file,
             commands::interchange::interchange_file_name,
         ])

@@ -1290,6 +1290,10 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/interchange/connections/{id}/decline", post(decline_connection))
         .route("/interchange/connections/{id}/revoke", post(revoke_connection))
         .route("/interchange/import", post(import_package))
+        .route("/court/links", get(court_api::list_links))
+        .route("/court/answer", post(court_api::accept_invite))
+        .route("/court/import", post(court_api::import_package))
+        .route("/court/files/{id}/file", post(court_api::file_to_court))
         .route("/interchange/incoming", get(list_incoming))
         .route("/interchange/incoming/{id}", get(get_incoming))
         .route("/interchange/incoming/{id}/accept", post(accept_incoming))
@@ -1461,3 +1465,58 @@ pub mod orchestra;
 
 #[cfg(test)]
 mod tests;
+
+mod court_api {
+    use super::*;
+    use crate::domain::court_exchange::{self, CourtLink, Imported};
+    use base64::{engine::general_purpose::STANDARD as B64, Engine};
+    use serde::{Deserialize, Serialize};
+
+    fn decode(file: &str) -> Result<Vec<u8>, ApiError> {
+        B64.decode(file).map_err(|_| ApiError(StatusCode::UNPROCESSABLE_ENTITY, "INVALID", "That is not a package file.".to_string()))
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Sealed<T: Serialize> {
+        #[serde(flatten)]
+        value: T,
+        file: String,
+        name: String,
+    }
+    #[derive(Serialize)]
+    pub struct Nothing {}
+
+    pub async fn list_links(State(s): State<AppState>) -> ApiResult<Vec<CourtLink>> {
+        Ok(Json(court_exchange::list_links(&s.pool).await?))
+    }
+
+    #[derive(Deserialize)]
+    pub struct AnswerInput {
+        file: String,
+        contact: Option<String>,
+    }
+    pub async fn accept_invite(State(s): State<AppState>, Json(i): Json<AnswerInput>) -> ApiResult<Sealed<CourtLink>> {
+        let (link, bytes) = court_exchange::accept_invite(&s.pool, &decode(&i.file)?, i.contact.as_deref()).await?;
+        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "answer-to-court.pxpkg".into() }))
+    }
+
+    #[derive(Deserialize)]
+    pub struct FileInput {
+        file: String,
+    }
+    pub async fn import_package(State(s): State<AppState>, Json(i): Json<FileInput>) -> ApiResult<Imported> {
+        Ok(Json(court_exchange::import_package(&s.pool, &decode(&i.file)?).await?))
+    }
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct FilingInput {
+        court_level: String,
+        filed_by: Option<String>,
+    }
+    pub async fn file_to_court(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FilingInput>) -> ApiResult<Sealed<Nothing>> {
+        let (bytes, name) = court_exchange::export_filing(&s.pool, &id, &i.court_level, i.filed_by.as_deref(), "file").await?;
+        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name }))
+    }
+}
