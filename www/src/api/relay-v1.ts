@@ -220,6 +220,8 @@ async function myConnections(caller: Caller) {
   return json({ items })
 }
 
+/** The host that carries this office's mail: the one this Worker is served from (pleadli.com live, localhost:3000 in development). */
+const relayHost = () => new URL(env.BETTER_AUTH_URL || 'https://pleadli.com').host
 const KEY32 = /^[A-Za-z0-9_-]{43}$/
 const YEAR = 365 * DAY
 
@@ -250,11 +252,11 @@ async function putIdentity(request: Request, caller: Caller) {
     institution: owner.name,
     ed25519: ed,
     x25519: x,
-    relay: 'pleadli.com',
+    relay: relayHost(),
     issuedAt: now,
     expiresAt: now + YEAR,
   })
-  const values = { organizationId: caller.organizationId, ed25519Pub: ed, x25519Pub: x, certificate, relay: 'pleadli.com', name: owner.name, updatedAt: new Date(now) }
+  const values = { organizationId: caller.organizationId, ed25519Pub: ed, x25519Pub: x, certificate, relay: relayHost(), name: owner.name, updatedAt: new Date(now) }
   if (existing) await db.update(relayOffice).set(values).where(eq(relayOffice.address, caller.address))
   else await db.insert(relayOffice).values({ address: caller.address, ...values })
   return json({ ok: true, certificate }, existing ? 200 : 201)

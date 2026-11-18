@@ -16,6 +16,7 @@
 		"db:remote": "wrangler d1 migrations apply pleadli-database --remote",
 		"local": "bun run db:gen && bun run db:local",
 		"remote": "bun run local && bun run db:remote",
+		"seed": "bash scripts/seed-dev.sh && bash scripts/seed-demo.sh",
 		"i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie preferredLanguage baseLocale",
 		"i18n:check": "bun scripts/check-messages.ts"
 	},

@@ -23,6 +23,8 @@ export type SidebarNavItem = {
   label: string
   icon: HugeiconsProps['icon']
   exact?: boolean
+  /** A count shown at the right (things waiting for the person). Hidden at 0. */
+  badge?: number
   children?: readonly SidebarNavItem[]
   /** Optional group heading. Items sharing a `section` are rendered under
    * one heading; the first item in a changed section shows the label.
@@ -240,11 +242,12 @@ export const Dashboard: FC<DashboardProps> = ({
                               'transition-colors duration-150 ease-out py-1.5 px-2',
                               'rounded-lg hover:bg-foreground/[0.05]',
                             )}
-                            activeProps={{ className: 'bg-primary/15 font-medium text-foreground! hover:bg-primary/15 [&_svg]:text-primary' }}
+                            activeProps={{ className: 'bg-primary/15 font-medium text-foreground! hover:bg-primary/15 [&_svg]:text-primary before:absolute before:inset-y-1.5 before:start-0 before:w-[3px] before:rounded-full before:bg-primary' }}
                             activeOptions={{ exact: item.exact }}
                           >
                             {item.icon && <HugeiconsIcon icon={item.icon} className="size-[1.05rem] shrink-0 text-muted-foreground" />}
-                            {item.label}
+                            <span className="truncate">{item.label}</span>
+                            {item.badge ? <span className="ms-auto min-w-5 rounded-full bg-primary px-1.5 text-center text-[0.6875rem] leading-5 font-semibold text-primary-foreground tabular-nums">{item.badge}</span> : null}
                           </Link>
                         )}
                       </Fragment>

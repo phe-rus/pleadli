@@ -1,4 +1,4 @@
-const SITE = 'https://pleadli.com'
+import { IS_DEV, SITE } from './site'
 
 const pageKeywords: Record<string, string[]> = {
   '/': ['legal case management', 'justice software', 'offline legal software', 'Uganda'],
@@ -30,7 +30,7 @@ export function seo({ title, description, path }: { title: string; description: 
   const url = `${SITE}${path === '/' ? '' : path}`
   return {
     meta: [
-      { title },
+      { title: IS_DEV ? `[dev] ${title}` : title },
       { name: 'description', content: description },
       { name: 'keywords', content: ['Pleadli', ...(pageKeywords[path] ?? [title])].join(', ') },
       { property: 'og:title', content: title },

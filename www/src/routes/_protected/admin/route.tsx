@@ -1,5 +1,5 @@
 import { CloudShell } from '@/components/cloud-shell'
-import { adminNav } from '@/data/admin'
+import { adminGroups } from '@/data/admin'
 import { stopImpersonating } from '@/functions/admin.func'
 import { JusticeScale01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@pleadli/ui/button'
@@ -25,10 +25,12 @@ function RouteComponent() {
   return (
     <CloudShell
       brand={{ to: '/admin', label: 'Pleadli Admin', icon: JusticeScale01Icon }}
-      nav={adminNav}
+      groups={adminGroups}
       signedInAs={session.user.email}
+      links={[{ to: '/account', label: 'Pleadli Account' }, { to: '/', label: 'pleadli.com' }]}
       signOutLabel="Sign out"
-      signingOutLabel="Signing out…"
+      openMenuLabel="Open menu"
+      closeMenuLabel="Close menu"
       banner={impersonatedBy && (
         <div className={cn(
           'sticky top-0 z-40 flex items-center justify-between',

@@ -476,7 +476,9 @@
   },
   "nav": {
     "about": "About",
+    "admin": "Admin",
     "contact": "Talk to us",
+    "dashboard": "Dashboard",
     "docs": "Your guide",
     "downloads": "Downloads",
     "get_started": "Your Pleadli",
@@ -487,7 +489,8 @@
     "pricing": "Licensing",
     "products": "Explore Pleadli",
     "roadmap": "Roadmap",
-    "sign_in": "Sign in"
+    "sign_in": "Sign in",
+    "signed_in_as": "Signed in as {name}"
   },
   "orch": {
     "add_another": "Register another",
@@ -590,6 +593,7 @@
       "trial_ended": "Trial ended"
     },
     "failed": "That did not work",
+    "go_admin": "Pleadli Admin",
     "help": {
       "answer": "Pleadli's answer",
       "any": "Not about one app",
@@ -635,7 +639,11 @@
       "offices": "Offices",
       "overview": "Overview",
       "postbox": "Postbox",
-      "team": "Team"
+      "team": "Team",
+      "group_apps": "Apps and computers",
+      "group_people": "Working with others",
+      "menu": "Open menu",
+      "close": "Close menu"
     },
     "office": {
       "chambers": "Chambers",
@@ -653,12 +661,41 @@
       "lead": "Every station, office, court or facility under this institution, each with its own address once the institution is approved."
     },
     "ov": {
+      "att": {
+        "backup_failed": "The last backup failed. Open Backups to see why.",
+        "backup_old": "The last successful backup was on {date}.",
+        "connections": "Offices asking to connect: {n}",
+        "invites": "Invitations not yet accepted: {n}",
+        "licence_expiring": "A licence ends on {date}",
+        "no_licence": "Your computers have no licence yet. A licence adds connections, backups to your own storage, and updates.",
+        "no_storage": "Backups are not set up. Choose where your computers back up to.",
+        "quiet": "Computers not heard from in a week: {n}"
+      },
+      "attention_none": "Nothing needs your attention.",
+      "attention_title": "Needs your attention",
       "computers": "Computers",
       "details": "Details",
+      "how_apps": "Your apps run on your own computers, and your records stay there. This account does not hold them.",
+      "how_here": "This account is where you manage the licence, see which computers are connected, choose where backups go, decide who may manage, and approve connections with other offices.",
+      "how_title": "How this account relates to your apps",
       "last_backup": "Last backup",
       "licences": "Licences",
       "none": "None yet",
-      "offices": "Offices"
+      "offices": "Offices",
+      "plan_ask": "Ask for a licence",
+      "plan_computers": "Computers connected: {n}",
+      "plan_free": "Free",
+      "plan_licensed": "Licensed until {date}",
+      "plan_none": "No computer has connected yet. Install an app, and it appears here the first time it reaches Pleadli.",
+      "plan_note": "Each computer may use each app free for 30 days with every feature. After that the app and your records keep working and are never locked; connections to other offices, backups to your own storage and updates need a licence.",
+      "plan_title": "Your apps and plan",
+      "setup": {
+        "backup": "Choose where backups go",
+        "install": "Install an app on a computer",
+        "licence": "Get a licence",
+        "team": "Invite a colleague to help manage"
+      },
+      "setup_title": "Getting started"
     },
     "postbox": {
       "approve": "Approve",
@@ -709,6 +746,7 @@
       "suspended": "This institution is suspended on Pleadli. Its apps and records keep working. Write to Pleadli to restore it.",
       "suspended_title": "Suspended"
     },
+    "switch_institution": "Switch institution",
     "team": {
       "admin": "Administrator",
       "email": "Email address",

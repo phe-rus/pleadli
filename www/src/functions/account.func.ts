@@ -1,11 +1,13 @@
 import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
 import { backupKey, backupReport, computer, licence, licenceRequest, orchestraMember, storageSeal, storageTarget, supportReport } from '@/db/orchestra-schema'
+import { relayLink } from '@/db/relay-schema'
 import { APPLICATIONS, slugPart } from '@/lib/orchestra'
+import { addressesOf } from '@/lib/relay-links.server'
 import { SessionMiddleware } from '@/middlewares/session'
 import { INSTITUTION_TYPES } from '@pleadli/templates'
 import { createServerFn } from '@tanstack/react-start'
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, count, desc, eq, inArray } from 'drizzle-orm'
 import * as z from 'zod'
 import { memberOf, myMemberships, requireUser } from './members'
 
@@ -93,8 +95,16 @@ export const getInstitution = createServerFn({ method: 'GET' })
         .innerJoin(storageTarget, eq(storageTarget.id, storageSeal.storageId))
         .where(eq(storageTarget.organizationId, data.organizationId)),
     ])
+    const memberships = await myMemberships(user)
+    const others = memberships.length > 1 ? await db.select({ id: organization.id, name: organization.name }).from(organization).where(inArray(organization.id, memberships.map((x) => x.organizationId))) : []
+    const sessionUser = context.session!.user as { name: string; role?: string | null }
+    const mine = await addressesOf(data.organizationId)
+    const [asking] = mine.length ? await db.select({ n: count() }).from(relayLink).where(and(inArray(relayLink.toAddress, mine), eq(relayLink.status, 'requested'))) : [{ n: 0 }]
     return {
       role: me.role,
+      pendingConnections: asking?.n ?? 0,
+      viewer: { name: sessionUser.name, email: user.email, staff: sessionUser.role === 'admin' },
+      institutions: others,
       institution: org,
       offices,
       licences,

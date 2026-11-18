@@ -476,7 +476,9 @@
   },
   "nav": {
     "about": "À propos",
+    "admin": "Admin",
     "contact": "Parlons-en",
+    "dashboard": "Tableau de bord",
     "docs": "Votre guide",
     "downloads": "Téléchargements",
     "get_started": "Votre Pleadli",
@@ -487,7 +489,8 @@
     "pricing": "Licences",
     "products": "Découvrir Pleadli",
     "roadmap": "Feuille de route",
-    "sign_in": "Se connecter"
+    "sign_in": "Se connecter",
+    "signed_in_as": "Connecté en tant que {name}"
   },
   "orch": {
     "add_another": "En inscrire une autre",
@@ -590,6 +593,7 @@
       "trial_ended": "Essai terminé"
     },
     "failed": "Cela n'a pas fonctionné",
+    "go_admin": "Pleadli Admin",
     "help": {
       "answer": "Réponse de Pleadli",
       "any": "Pas une application en particulier",
@@ -635,7 +639,11 @@
       "offices": "Bureaux",
       "overview": "Aperçu",
       "postbox": "Boîte postale",
-      "team": "Équipe"
+      "team": "Équipe",
+      "group_apps": "Applications et ordinateurs",
+      "group_people": "Travail avec les autres",
+      "menu": "Ouvrir le menu",
+      "close": "Fermer le menu"
     },
     "office": {
       "chambers": "Cabinet",
@@ -653,12 +661,41 @@
       "lead": "Chaque poste, bureau, tribunal ou établissement de cette institution, chacun avec sa propre adresse une fois l'institution approuvée."
     },
     "ov": {
+      "att": {
+        "backup_failed": "La dernière sauvegarde a échoué. Ouvrez Sauvegardes pour voir pourquoi.",
+        "backup_old": "La dernière sauvegarde réussie date du {date}.",
+        "connections": "Bureaux qui demandent à se connecter : {n}",
+        "invites": "Invitations pas encore acceptées : {n}",
+        "licence_expiring": "Une licence se termine le {date}",
+        "no_licence": "Vos ordinateurs n'ont pas encore de licence. Une licence ajoute les connexions, les sauvegardes sur votre propre stockage et les mises à jour.",
+        "no_storage": "Les sauvegardes ne sont pas configurées. Choisissez où vos ordinateurs sauvegardent.",
+        "quiet": "Ordinateurs sans nouvelles depuis une semaine : {n}"
+      },
+      "attention_none": "Rien à traiter.",
+      "attention_title": "À traiter",
       "computers": "Ordinateurs",
       "details": "Détails",
+      "how_apps": "Vos applications tournent sur vos propres ordinateurs, et vos dossiers y restent. Ce compte ne les détient pas.",
+      "how_here": "Ce compte sert à gérer la licence, voir quels ordinateurs sont connectés, choisir où vont les sauvegardes, décider qui peut gérer et approuver les connexions avec d'autres bureaux.",
+      "how_title": "Le lien entre ce compte et vos applications",
       "last_backup": "Dernière sauvegarde",
       "licences": "Licences",
       "none": "Aucune",
-      "offices": "Bureaux"
+      "offices": "Bureaux",
+      "plan_ask": "Demander une licence",
+      "plan_computers": "Ordinateurs connectés : {n}",
+      "plan_free": "Gratuit",
+      "plan_licensed": "Sous licence jusqu'au {date}",
+      "plan_none": "Aucun ordinateur ne s'est encore connecté. Installez une application : elle apparaît ici dès qu'elle contacte Pleadli.",
+      "plan_note": "Chaque ordinateur peut utiliser chaque application gratuitement pendant 30 jours, avec toutes les fonctions. Ensuite l'application et vos dossiers continuent de fonctionner et ne sont jamais verrouillés ; les connexions avec d'autres bureaux, les sauvegardes sur votre propre stockage et les mises à jour demandent une licence.",
+      "plan_title": "Vos applications et votre formule",
+      "setup": {
+        "backup": "Choisir où vont les sauvegardes",
+        "install": "Installer une application sur un ordinateur",
+        "licence": "Obtenir une licence",
+        "team": "Inviter un collègue à aider à gérer"
+      },
+      "setup_title": "Pour commencer"
     },
     "postbox": {
       "approve": "Approuver",
@@ -709,6 +746,7 @@
       "suspended": "Cette institution est suspendue sur l'Orchestre. Ses applications et ses dossiers continuent de fonctionner. Écrivez à Pleadli pour la rétablir.",
       "suspended_title": "Suspendue"
     },
+    "switch_institution": "Changer d'institution",
     "team": {
       "admin": "Administrateur",
       "email": "Adresse e-mail",

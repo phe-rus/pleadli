@@ -7,13 +7,13 @@ import workspaceCss from '@pleadli/ui/workspace.css?url'
 import siteCss from '@/styles/site.css?url'
 import { GooeyToaster } from "@pleadli/ui/goey-toaster"
 import { cn } from '@pleadli/ui/lib/utils'
+import { IS_DEV, SITE } from '@/lib/site'
 import { TooltipProvider } from '@pleadli/ui/tooltip'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 
 const ogLocale: Record<string, string> = { en: 'en_UG', sw: 'sw_UG', fr: 'fr_FR'}
-const SITE = 'https://pleadli.com'
 
 /** What search engines read about Pleadli: the organization and its five
  * applications, in plain structured data. */
@@ -42,7 +42,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { name: "theme-color", content: "#fffcf1" },
       { name: 'application-name', content: 'Pleadli' },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: defaultTitle },
+      { title: IS_DEV ? `[dev] ${defaultTitle}` : defaultTitle },
       { name: 'description', content: defaultDescription },
       { name: 'robots', content: 'index, follow' },
       // Open Graph

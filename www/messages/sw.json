@@ -476,7 +476,9 @@
   },
   "nav": {
     "about": "Kuhusu",
+    "admin": "Admin",
     "contact": "Zungumza nasi",
+    "dashboard": "Dashibodi",
     "docs": "Mwongozo wako",
     "downloads": "Vipakuliwa",
     "get_started": "Pleadli yako",
@@ -487,7 +489,8 @@
     "pricing": "Leseni",
     "products": "Gundua Pleadli",
     "roadmap": "Ramani ya kazi",
-    "sign_in": "Ingia"
+    "sign_in": "Ingia",
+    "signed_in_as": "Umeingia kama {name}"
   },
   "orch": {
     "add_another": "Sajili nyingine",
@@ -590,6 +593,7 @@
       "trial_ended": "Majaribio yameisha"
     },
     "failed": "Haikufanikiwa",
+    "go_admin": "Pleadli Admin",
     "help": {
       "answer": "Jibu la Pleadli",
       "any": "Si kuhusu programu moja",
@@ -635,7 +639,11 @@
       "offices": "Ofisi",
       "overview": "Muhtasari",
       "postbox": "Sanduku la posta",
-      "team": "Timu"
+      "team": "Timu",
+      "group_apps": "Programu na kompyuta",
+      "group_people": "Kufanya kazi na wengine",
+      "menu": "Fungua menyu",
+      "close": "Funga menyu"
     },
     "office": {
       "chambers": "Chemba",
@@ -653,12 +661,41 @@
       "lead": "Kila kituo, ofisi, mahakama au kituo chini ya taasisi hii, kila kimoja na anwani yake taasisi ikishaidhinishwa."
     },
     "ov": {
+      "att": {
+        "backup_failed": "Nakala rudufu ya mwisho ilishindwa. Fungua Nakala rudufu kuona sababu.",
+        "backup_old": "Nakala rudufu ya mwisho iliyofanikiwa ilikuwa tarehe {date}.",
+        "connections": "Ofisi zinazoomba kuunganishwa: {n}",
+        "invites": "Mialiko ambayo bado haijakubaliwa: {n}",
+        "licence_expiring": "Leseni inaisha tarehe {date}",
+        "no_licence": "Kompyuta zako bado hazina leseni. Leseni inaongeza miunganisho, nakala rudufu kwenye hifadhi yako mwenyewe, na masasisho.",
+        "no_storage": "Nakala rudufu hazijawekwa. Chagua mahali kompyuta zako zinapohifadhi.",
+        "quiet": "Kompyuta zisizosikika kwa wiki moja: {n}"
+      },
+      "attention_none": "Hakuna kinachohitaji umakini wako.",
+      "attention_title": "Yanayohitaji umakini wako",
       "computers": "Kompyuta",
       "details": "Maelezo",
+      "how_apps": "Programu zako zinaendeshwa kwenye kompyuta zako mwenyewe, na kumbukumbu zako zinabaki huko. Akaunti hii haizishikilii.",
+      "how_here": "Akaunti hii ni mahali pa kusimamia leseni, kuona kompyuta zilizounganishwa, kuchagua mahali nakala rudufu zinapokwenda, kuamua nani anaweza kusimamia, na kuidhinisha miunganisho na ofisi nyingine.",
+      "how_title": "Akaunti hii inahusianaje na programu zako",
       "last_backup": "Hifadhi ya mwisho",
       "licences": "Leseni",
       "none": "Bado hakuna",
-      "offices": "Ofisi"
+      "offices": "Ofisi",
+      "plan_ask": "Omba leseni",
+      "plan_computers": "Kompyuta zilizounganishwa: {n}",
+      "plan_free": "Bila malipo",
+      "plan_licensed": "Leseni hadi {date}",
+      "plan_none": "Hakuna kompyuta iliyounganishwa bado. Sakinisha programu, na itaonekana hapa mara ya kwanza inapowasiliana na Pleadli.",
+      "plan_note": "Kila kompyuta inaweza kutumia kila programu bila malipo kwa siku 30 kwa vipengele vyote. Baada ya hapo programu na kumbukumbu zako zinaendelea kufanya kazi na hazifungwi kamwe; miunganisho na ofisi nyingine, nakala rudufu kwenye hifadhi yako mwenyewe na masasisho yanahitaji leseni.",
+      "plan_title": "Programu zako na mpango",
+      "setup": {
+        "backup": "Chagua mahali nakala rudufu zinapokwenda",
+        "install": "Sakinisha programu kwenye kompyuta",
+        "licence": "Pata leseni",
+        "team": "Mwalike mwenzako akusaidie kusimamia"
+      },
+      "setup_title": "Kuanza"
     },
     "postbox": {
       "approve": "Idhinisha",
@@ -709,6 +746,7 @@
       "suspended": "Taasisi hii imesimamishwa kwenye Pleadli. Programu na kumbukumbu zake zinaendelea kufanya kazi. Iandikie Pleadli kuirudisha.",
       "suspended_title": "Imesimamishwa"
     },
+    "switch_institution": "Badilisha taasisi",
     "team": {
       "admin": "Msimamizi",
       "email": "Anwani ya barua pepe",

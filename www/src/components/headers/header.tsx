@@ -34,7 +34,7 @@ const linkStyle = cn(
   'transition-colors hover:text-foreground',
 )
 
-export default function Header() {
+export default function Header({ signedIn = false, staff = false }: { signedIn?: boolean; staff?: boolean }) {
   const [menu, setMenu] = useState<MenuId | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -93,7 +93,14 @@ export default function Header() {
 
         <div className="flex items-center gap-1.5">
           <LanguageSwitch />
-          <Link to="/login" className={cn(linkStyle, 'hidden h-9 sm:inline-flex')}>{m['nav.sign_in']()}</Link>
+          {signedIn ? (
+            <>
+              {staff && <Link to="/admin" className={cn(linkStyle, 'hidden h-9 sm:inline-flex')}>{m['nav.admin']()}</Link>}
+              <Link to="/account" className={cn(linkStyle, 'hidden h-9 sm:inline-flex')}>{m['nav.dashboard']()}</Link>
+            </>
+          ) : (
+            <Link to="/login" className={cn(linkStyle, 'hidden h-9 sm:inline-flex')}>{m['nav.sign_in']()}</Link>
+          )}
           <Link to="/downloads" className={cn(buttonVariants({ size: 'sm' }), 'rounded-md text-sm')}>
             <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
             {m['nav.downloads']()}
@@ -127,7 +134,14 @@ export default function Header() {
                   {item.label}
                 </Link>
               ))}
-              <Link to="/login" onClick={() => setMobileOpen(false)} className="rounded-md px-2 py-1.5 text-sm hover:bg-muted">{m['nav.sign_in']()}</Link>
+              {signedIn ? (
+                <>
+                  <Link to="/account" onClick={() => setMobileOpen(false)} className="rounded-md px-2 py-1.5 text-sm font-medium hover:bg-muted">{m['nav.dashboard']()}</Link>
+                  {staff && <Link to="/admin" onClick={() => setMobileOpen(false)} className="rounded-md px-2 py-1.5 text-sm hover:bg-muted">{m['nav.admin']()}</Link>}
+                </>
+              ) : (
+                <Link to="/login" onClick={() => setMobileOpen(false)} className="rounded-md px-2 py-1.5 text-sm hover:bg-muted">{m['nav.sign_in']()}</Link>
+              )}
             </PopoverContent>
           </Popover>
         </div>

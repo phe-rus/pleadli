@@ -1,5 +1,4 @@
 import marketingCss from '@/styles/marketing.css?url'
-import { AuthBanner } from '@/components/banners/auth-banner'
 import Footer from '@/components/footers/footer'
 import Header from '@/components/headers/header'
 import { meOptions } from '@/functions/session.func'
@@ -16,8 +15,7 @@ function RouteComponent() {
 
   return (
     <div className="marketing-site relative flex min-h-dvh flex-col">
-      {session && <AuthBanner user={session.user} />}
-      <Header />
+      <Header signedIn={!!session} staff={session?.user.role === 'admin'} />
       <div className="flex flex-1 flex-col">
         <Outlet />
       </div>
