@@ -62,6 +62,7 @@ image = { version = "0.25.10", default-features = false, features = ["jpeg", "pn
 csv = "1.4.0"
 calamine = { version = "0.36.1", features = ["dates"] }
 pleadli-node-core = { path = "../../../packages/node-core", features = ["orchestra"] }
+pleadli-interchange = { path = "../../../packages/interchange" }
 
 [dev-dependencies]
 # A fixed key for tests that run domain code without a startup.

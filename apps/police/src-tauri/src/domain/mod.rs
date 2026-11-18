@@ -11,6 +11,7 @@ pub mod custody;
 pub mod documents;
 pub mod duty;
 pub mod error;
+pub mod exchange;
 pub mod exhibits;
 pub mod import;
 pub mod installation;
