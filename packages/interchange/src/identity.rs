@@ -11,6 +11,7 @@ use sha2::{Digest, Sha256};
 pub enum IdentityKind {
     PoliceStation,
     DppOffice,
+    CourtRegistry,
 }
 
 /// What can be shared: enough to verify a signature and to seal a package for

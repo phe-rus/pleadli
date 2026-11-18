@@ -139,3 +139,65 @@ pub struct DecisionNoticePayload {
     pub documents: Vec<NoticeDocument>,
     pub court_case_number: Option<String>,
 }
+
+pub const KIND_FILING: &str = "case_filing";
+pub const KIND_FILING_RECEIPT: &str = "filing_receipt";
+
+/// One person the prosecution files against or names in a filing.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct FilingParty {
+    pub key: String,
+    /// `accused`, `complainant` or `witness`.
+    pub role: String,
+    pub name: String,
+    /// Where the accused is held, as the prosecution knows it: `remanded`,
+    /// `on_bail` or `not_in_custody`. A claim: the court records its own.
+    pub custody: Option<String>,
+    pub custody_place: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct FilingCharge {
+    pub accused_key: Option<String>,
+    pub offence: String,
+    pub statutory_section: Option<String>,
+    pub particulars: Option<String>,
+}
+
+/// A prosecution file the DPP office lodges with a court registry.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct FilingPayload {
+    /// The office's own file key, to quote on every later message about it.
+    pub dpp_file_key: String,
+    pub dpp_reference: Option<String>,
+    /// The police reference the file started as, so the chain can be followed.
+    pub police_reference: Option<String>,
+    pub title: String,
+    /// `magistrate` or `high`.
+    pub court_level: String,
+    pub summary: String,
+    pub parties: Vec<FilingParty>,
+    pub charges: Vec<FilingCharge>,
+    pub filed_at: i64,
+    pub filed_by: Option<String>,
+    pub notes: Option<String>,
+}
+
+/// The registry's answer to a filing.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct FilingReceiptPayload {
+    pub filing_package_id: String,
+    pub dpp_file_key: String,
+    /// `accepted` or `rejected`.
+    pub outcome: String,
+    /// The number the court gave the case when it accepted it.
+    pub court_number: Option<String>,
+    pub reason: Option<String>,
+    pub received_at: i64,
+    pub decided_at: i64,
+    pub decided_by: Option<String>,
+}

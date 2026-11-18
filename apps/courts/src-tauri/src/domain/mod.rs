@@ -2,6 +2,7 @@ pub mod attachments;
 pub mod audit;
 pub mod cases;
 pub mod error;
+pub mod exchange;
 pub mod exhibits;
 pub mod keys;
 pub mod library;
