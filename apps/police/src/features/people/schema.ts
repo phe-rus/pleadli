@@ -24,6 +24,8 @@ export const personSchema = z.object({
   address: z.string().nullable(),
   createdAt: z.number(),
   headshotAttachmentId: z.string().nullable(),
+  dateOfBirth: z.string().nullable(),
+  dateOfBirthEstimated: z.boolean(),
 })
 
 export type Person = z.infer<typeof personSchema>
@@ -35,6 +37,8 @@ export const createPersonSchema = z.object({
   phone: z.string(),
   nationalId: z.string(),
   address: z.string(),
+  dateOfBirth: z.string(),
+  dateOfBirthEstimated: z.boolean(),
 })
 
 export type CreatePersonInput = z.infer<typeof createPersonSchema>

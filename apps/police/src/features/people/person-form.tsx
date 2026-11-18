@@ -2,7 +2,9 @@ import * as m from '@/paraglide/messages'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
-import { FieldGroup } from '@pleadli/ui/field'
+import { Field, FieldGroup, FieldLabel } from '@pleadli/ui/field'
+import { Input } from '@pleadli/ui/input'
+import { Switch } from '@pleadli/ui/switch'
 import { t } from '@pleadli/ui/goey-toaster'
 import { createPersonSchema } from './schema'
 import { useCreatePerson, useUpdatePerson } from './queries'
@@ -26,6 +28,8 @@ export function PersonForm({ person, onSuccess }: PersonFormProps) {
       phone: person?.phone ?? '',
       nationalId: person?.nationalId ?? '',
       address: person?.address ?? '',
+      dateOfBirth: person?.dateOfBirth ?? '',
+      dateOfBirthEstimated: person?.dateOfBirthEstimated ?? false,
     },
     validators: {
       onChange: createPersonSchema,
@@ -82,6 +86,24 @@ export function PersonForm({ person, onSuccess }: PersonFormProps) {
               {(f) => <f.input placeholder={m["people.nin"]()} label={m["people.nin"]()} />}
             </form.AppField>
           </div>
+
+          <form.AppField name="dateOfBirth">
+            {(f) => (
+              <Field>
+                <FieldLabel>{m["people.date_of_birth"]()}</FieldLabel>
+                <Input type="date" max={new Date().toISOString().slice(0, 10)} value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
+              </Field>
+            )}
+          </form.AppField>
+
+          <form.AppField name="dateOfBirthEstimated">
+            {(f) => (
+              <Field>
+                <FieldLabel>{m["people.dob_estimated"]()}</FieldLabel>
+                <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
+              </Field>
+            )}
+          </form.AppField>
 
           <div className="col-span-2">
             <form.AppField name="address">

@@ -488,6 +488,8 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
                 phone: get_owned(row, "phone"),
                 national_id: get_owned(row, "nationalId"),
                 address: get_owned(row, "address"),
+                date_of_birth: get_owned(row, "dateOfBirth"),
+                date_of_birth_estimated: false,
             };
             people::create_person(pool, vault_root, input).await.map(|_| ()).map_err(|e| e.to_string())
         }

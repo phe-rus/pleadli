@@ -1,5 +1,8 @@
 import { casesOptions } from '@/features/cases/queries'
 import { caseFolderOf } from '@/features/cases/folders'
+import { bondsOptions } from '@/features/bonds/queries'
+import { dutyAssignmentsOptions } from '@/features/duty/queries'
+import { backupAlertsOptions } from '@/features/officers/queries'
 import { custodyRecordsOptions } from '@/features/custody/queries'
 import { custodyCompliance } from '@/features/custody/schema'
 import { referralsOptions } from '@/features/referrals/queries'
@@ -21,6 +24,14 @@ export type StationCounts = {
   /** Cases by folder: what the station is investigating, and what waits on the DPP. */
   investigating: number
   withDpp: number
+  /** People out on an active police bond. */
+  onBond: number
+  /** Officers whose shift covers this moment. */
+  onDuty: number
+  /** Backup calls still open. */
+  backupLive: number
+  /** In the cells and already past the limit. */
+  custodyOverdue: number
 }
 
 /** The figures the sidebar and status bar carry, read from the records the
@@ -33,7 +44,11 @@ export function useStationCounts(): StationCounts | undefined {
   const { data: custody } = useQuery({ ...custodyRecordsOptions(''), enabled })
   const { data: cases } = useQuery({ ...casesOptions(''), enabled })
   const { data: referrals } = useQuery({ ...referralsOptions(''), enabled })
+  const { data: bonds } = useQuery({ ...bondsOptions(''), enabled })
+  const { data: duty } = useQuery({ ...dutyAssignmentsOptions(''), enabled })
+  const { data: backup } = useQuery({ ...backupAlertsOptions(), enabled })
   if (!custody || !cases || !referrals) return undefined
+  const now = Date.now()
 
   const inCustody = custody.filter((record) => record.status === 'in_custody')
   return {
@@ -44,5 +59,9 @@ export function useStationCounts(): StationCounts | undefined {
     referralsPending: referrals.filter((r) => r.status === 'pending').length,
     investigating: cases.filter((c) => caseFolderOf(c, referrals) === 'investigating').length,
     withDpp: cases.filter((c) => caseFolderOf(c, referrals) === 'dpp').length,
+    onBond: (bonds ?? []).filter((b) => b.status === 'active').length,
+    onDuty: (duty ?? []).filter((d) => d.shiftStart <= now && now <= d.shiftEnd).length,
+    backupLive: (backup ?? []).filter((a) => a.endedAt == null).length,
+    custodyOverdue: inCustody.filter((record) => custodyCompliance(record).isOverdue).length,
   }
 }

@@ -30,6 +30,9 @@ pub struct Person {
     pub address: Option<String>,
     pub created_at: i64,
     pub headshot_attachment_id: Option<String>,
+    /** ISO date, YYYY-MM-DD. */
+    pub date_of_birth: Option<String>,
+    pub date_of_birth_estimated: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -41,6 +44,14 @@ pub struct CreatePersonInput {
     pub phone: Option<String>,
     pub national_id: Option<String>,
     pub address: Option<String>,
+    pub date_of_birth: Option<String>,
+    #[serde(default)]
+    pub date_of_birth_estimated: bool,
+}
+
+/// A blank date means none was given.
+fn clean_dob(value: &Option<String>) -> Option<String> {
+    value.as_deref().map(str::trim).filter(|v| !v.is_empty()).map(str::to_string)
 }
 
 /// Best-effort — a Vault write failure must never fail the record save
@@ -58,8 +69,8 @@ pub async fn create_person(pool: &SqlitePool, vault_root: &Path, input: CreatePe
     let id = Uuid::new_v4().to_string();
 
     sqlx::query(
-        "INSERT INTO people (id, first_name, last_name, other_names, phone, national_id, address)
-         VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO people (id, first_name, last_name, other_names, phone, national_id, address, date_of_birth, date_of_birth_estimated)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(&input.first_name)
@@ -68,6 +79,8 @@ pub async fn create_person(pool: &SqlitePool, vault_root: &Path, input: CreatePe
     .bind(&input.phone)
     .bind(&input.national_id)
     .bind(&input.address)
+    .bind(clean_dob(&input.date_of_birth))
+    .bind(input.date_of_birth_estimated)
     .execute(pool)
     .await?;
 
@@ -84,7 +97,8 @@ pub async fn update_person(
 ) -> Result<Person, sqlx::Error> {
     sqlx::query(
         "UPDATE people
-         SET first_name = ?, last_name = ?, other_names = ?, phone = ?, national_id = ?, address = ?
+         SET first_name = ?, last_name = ?, other_names = ?, phone = ?, national_id = ?, address = ?,
+             date_of_birth = ?, date_of_birth_estimated = ?
          WHERE id = ?",
     )
     .bind(&input.first_name)
@@ -93,6 +107,8 @@ pub async fn update_person(
     .bind(&input.phone)
     .bind(&input.national_id)
     .bind(&input.address)
+    .bind(clean_dob(&input.date_of_birth))
+    .bind(input.date_of_birth_estimated)
     .bind(id)
     .execute(pool)
     .await?;
@@ -334,6 +350,8 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
                 phone: phone.map(str::to_string),
                 national_id: national_id.map(str::to_string),
                 address: address.map(str::to_string),
+                date_of_birth: None,
+                date_of_birth_estimated: false,
             },
         )
         .await?;

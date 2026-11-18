@@ -729,7 +729,12 @@
     "address": "Address",
     "remove_photo": "Remove {angle} photo",
     "photo_failed": "Could not add photo",
-    "photos": "Identification photos"
+    "photos": "Identification photos",
+    "date_of_birth": "Date of birth",
+    "dob_estimated": "Date is an estimate",
+    "age_years": "{age} years",
+    "juvenile": "Juvenile",
+    "age_unknown": "Age not recorded"
   },
   "referrals": {
     "status": {
@@ -1052,7 +1057,16 @@
     "places": "Places",
     "close_with": "Close ({key})",
     "previous_tab_with": "Previous tab ({key})",
-    "next_tab_with": "Next tab ({key})"
+    "next_tab_with": "Next tab ({key})",
+    "past_limit": "{count} past the limit",
+    "backup_live": "{count} calling for backup",
+    "within_limits": "All within limits",
+    "on_bond": "{count} on bond",
+    "investigating": "{count} under investigation",
+    "with_dpp": "{count} with the DPP",
+    "referrals_waiting": "{count} awaiting a reply",
+    "on_duty": "{count} on duty",
+    "kept_here": "Kept on this computer"
   },
   "quick": {
     "diary_title": "Station diary entry",

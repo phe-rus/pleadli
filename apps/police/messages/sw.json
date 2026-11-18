@@ -729,7 +729,12 @@
     "address": "Anwani",
     "remove_photo": "Ondoa picha ya {angle}",
     "photo_failed": "Imeshindwa kuongeza picha",
-    "photos": "Picha za utambulisho"
+    "photos": "Picha za utambulisho",
+    "date_of_birth": "Tarehe ya kuzaliwa",
+    "dob_estimated": "Tarehe ni makadirio",
+    "age_years": "Miaka {age}",
+    "juvenile": "Mtoto (chini ya miaka 18)",
+    "age_unknown": "Umri haujaandikwa"
   },
   "referrals": {
     "status": {
@@ -1052,7 +1057,16 @@
     "places": "Maeneo",
     "close_with": "Funga ({key})",
     "previous_tab_with": "Kichupo kilichotangulia ({key})",
-    "next_tab_with": "Kichupo kinachofuata ({key})"
+    "next_tab_with": "Kichupo kinachofuata ({key})",
+    "past_limit": "{count} wamepita kikomo",
+    "backup_live": "{count} wanaomba msaada",
+    "within_limits": "Wote ndani ya kikomo",
+    "on_bond": "{count} wako kwa dhamana",
+    "investigating": "{count} kesi zinachunguzwa",
+    "with_dpp": "{count} kwa DPP",
+    "referrals_waiting": "{count} zinasubiri jibu",
+    "on_duty": "{count} kazini",
+    "kept_here": "Imehifadhiwa kwenye kompyuta hii"
   },
   "quick": {
     "diary_title": "Ingizo la kitabu cha matukio",
