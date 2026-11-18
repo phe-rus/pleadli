@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core'
 
 export type RegistryIdentity = { officeId: string; officeName: string; jurisdiction: string | null; fingerprint: string }
 export type Link = { id: string; intendedOffice: string; status: string; dppName: string | null; fingerprint: string | null; inviteExpiresAt: number; respondedAt: number | null; trustedAt: number | null }
-export type Incoming = { id: string; dppName: string | null; status: string; sentAt: number; receivedAt: number; decidedAt: number | null; rejectReason: string | null; caseId: string | null; payload: string }
+export type Incoming = { id: string; kind: string; dppName: string | null; status: string; sentAt: number; receivedAt: number; decidedAt: number | null; rejectReason: string | null; caseId: string | null; payload: string }
 type WithFile = { file: string; name: string }
 
 export const getIdentity = () => api('GET', '/api/exchange/identity') as Promise<RegistryIdentity | null>
@@ -36,3 +36,4 @@ export const answerFirmInvite = (file: string, contact: string) => api('POST', '
 export const importFirmPackage = (file: string) => api('POST', '/api/exchange/firms/import', { body: { file } }) as Promise<{ kind: string; message: string }>
 export const notify = (kind: 'order' | 'sitting', id: string, linkId: string) => api('POST', `/api/${kind === 'order' ? 'orders' : 'sittings'}/${encodeURIComponent(id)}/notify`, { body: { linkId } }) as Promise<WithFile>
 export const listNoticeDeliveries = (id: string) => api('GET', `/api/notices/${encodeURIComponent(id)}/deliveries`) as Promise<FirmDelivery[]>
+export const recordWithdrawal = (id: string, decidedBy: string) => api('POST', `/api/exchange/incoming/${encodeURIComponent(id)}/withdrawal`, { body: { decidedBy } }) as Promise<{ caseId: string } & WithFile>

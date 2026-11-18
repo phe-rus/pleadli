@@ -2518,6 +2518,14 @@
     "paper_desc": "For a registry that is not on Pleadli yet. Choose the file, name the registry, and print the filing sheet to hand over with the file. The registry writes its case number on it; type that number onto the file.",
     "paper_registry": "Name of the court registry",
     "paper_button": "Make the filing sheet",
-    "paper_made": "The filing sheet is with the file papers, ready to print."
+    "paper_made": "The filing sheet is with the file papers, ready to print.",
+    "withdraw_title": "Withdraw a filed case",
+    "withdraw_desc": "Tell the registry a case it numbered is withdrawn or discontinued. It records the end of the case and sends a receipt.",
+    "withdraw_kind": "Kind of withdrawal",
+    "withdraw_nolle": "Nolle prosequi",
+    "withdraw_discontinue": "Discontinuance",
+    "withdraw_reason": "Reason (optional)",
+    "withdraw_button": "Withdraw and save the file",
+    "withdraw_notice": "Saved. Give the withdrawal file to the registry."
   }
 }

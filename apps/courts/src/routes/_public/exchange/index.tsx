@@ -1,4 +1,4 @@
-import { acceptFiling, createIdentity, createInvite, getIdentity, importPackage, listIncoming, listLinks, pickPackage, rejectFiling, savePackage, trustLink, type Incoming, type Link, type RegistryIdentity } from '@/features/exchange/data'
+import { acceptFiling, recordWithdrawal, createIdentity, createInvite, getIdentity, importPackage, listIncoming, listLinks, pickPackage, rejectFiling, savePackage, trustLink, type Incoming, type Link, type RegistryIdentity } from '@/features/exchange/data'
 import * as m from "@/paraglide/messages"
 import { PrisonLinks } from "@/features/exchange/prison-links"
 import { FirmLinks } from "@/features/exchange/firm-links"
@@ -150,6 +150,20 @@ function RouteComponent() {
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 {incoming.length === 0 ? <p className="text-muted-foreground">{m["exchange.none_filings"]()}</p> : incoming.map((i) => {
+                  if (i.kind === 'case_withdrawal') {
+                    const w = JSON.parse(i.payload) as { courtNumber: string; decision: string; reason: string | null }
+                    return (
+                      <div key={i.id} className="flex flex-col gap-2 border-t border-border/60 pt-3 first:border-t-0 first:pt-0">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="font-medium">{m['exchange.withdrawal_title']({ number: w.courtNumber })} <span className="text-muted-foreground">· {i.dppName} · {format(i.receivedAt, 'd MMM yyyy')}</span></span>
+                          <Badge variant={i.status === 'accepted' ? 'default' : 'secondary'}>{i.status === 'received' ? m['exchange.waiting']() : m['exchange.withdrawal_recorded']()}</Badge>
+                        </div>
+                        <p className="text-muted-foreground">{[w.decision === 'nolle_prosequi' ? m['exchange.nolle']() : m['exchange.discontinued'](), w.reason].filter(Boolean).join(' · ')}</p>
+                        {i.status === 'accepted' && i.caseId && <RouterLink to="/cases/$caseId" params={{ caseId: i.caseId }} className="w-fit text-primary hover:underline">{m['exchange.open_case']()}</RouterLink>}
+                        {i.status === 'received' && <div><Button size="sm" disabled={!by.trim()} onClick={() => run(async () => { const r = await recordWithdrawal(i.id, by); if (await savePackage(r)) return m['exchange.withdrawal_notice']() })}>{m['exchange.record_withdrawal']()}</Button></div>}
+                      </div>
+                    )
+                  }
                   const f = parse(i.payload)
                   return (
                     <div key={i.id} className="flex flex-col gap-2 border-t border-border/60 pt-3 first:border-t-0 first:pt-0">

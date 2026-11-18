@@ -468,6 +468,7 @@ pub fn router(state: AppState) -> Router {
         .route("/exchange/import", post(exchange::import_package))
         .route("/exchange/incoming", get(exchange::list_incoming))
         .route("/exchange/incoming/{id}/accept", post(exchange::accept_filing))
+        .route("/exchange/incoming/{id}/withdrawal", post(exchange::record_withdrawal))
         .route("/exchange/incoming/{id}/reject", post(exchange::reject_filing))
         .route("/exchange/prisons", get(exchange::list_prison_links))
         .route("/exchange/prisons/answer", post(exchange::answer_prison_invite))

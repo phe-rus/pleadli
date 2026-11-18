@@ -1,4 +1,4 @@
-import { makeFilingSheet, ownFingerprint, answerInvite, fileToCourt, importCourtPackage, listCourtLinks, pickCourtPackage, saveCourtPackage, type CourtLink } from '@/features/court-exchange/data'
+import { withdrawFromCourt, makeFilingSheet, ownFingerprint, answerInvite, fileToCourt, importCourtPackage, listCourtLinks, pickCourtPackage, saveCourtPackage, type CourtLink } from '@/features/court-exchange/data'
 import { listFiles } from '@/features/prosecution-files/data'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
@@ -25,6 +25,9 @@ function RouteComponent() {
   const [level, setLevel] = useState<'magistrate' | 'high'>('magistrate')
   const [by, setBy] = useState('')
   const [paperCourt, setPaperCourt] = useState('')
+  const [wdFile, setWdFile] = useState('')
+  const [wdKind, setWdKind] = useState('nolle_prosequi')
+  const [wdReason, setWdReason] = useState('')
   const navigate = useNavigate()
 
   const [own, setOwn] = useState<string | null>(null)
@@ -166,6 +169,38 @@ function RouteComponent() {
             >{m["court_exchange.paper_button"]()}</Button>
           </CardContent>
         </Card>
+
+        {trusted && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{m["court_exchange.withdraw_title"]()}</CardTitle>
+              <CardDescription>{m["court_exchange.withdraw_desc"]()}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center gap-2">
+              <select aria-label={m["court_exchange.prosecution_file"]()} value={wdFile} onChange={(e) => setWdFile(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 sm:w-80">
+                <option value="">{m["court_exchange.choose_file"]()}</option>
+                {files.filter((f) => f.courtCaseNumber).map((f) => (
+                  <option key={f.id} value={f.id}>{f.title} · {f.courtCaseNumber}</option>
+                ))}
+              </select>
+              <select aria-label={m["court_exchange.withdraw_kind"]()} value={wdKind} onChange={(e) => setWdKind(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2">
+                <option value="nolle_prosequi">{m["court_exchange.withdraw_nolle"]()}</option>
+                <option value="discontinue">{m["court_exchange.withdraw_discontinue"]()}</option>
+              </select>
+              <Input aria-label={m["court_exchange.withdraw_reason"]()} placeholder={m["court_exchange.withdraw_reason"]()} value={wdReason} onChange={(e) => setWdReason(e.target.value)} className="w-72" />
+              <Button
+                variant="outline"
+                disabled={!wdFile}
+                onClick={() =>
+                  run(async () => {
+                    const sealed = await withdrawFromCourt(wdFile, wdKind, wdReason)
+                    if (await saveCourtPackage(sealed)) return m["court_exchange.withdraw_notice"]()
+                  })
+                }
+              >{m["court_exchange.withdraw_button"]()}</Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </article>
   )

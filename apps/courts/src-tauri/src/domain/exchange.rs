@@ -6,7 +6,7 @@
 
 use pleadli_interchange::envelope::{self, Body};
 use pleadli_interchange::identity::{hex, unhex32, Identity, IdentityKind, PublicIdentity};
-use pleadli_interchange::messages::{FilingPayload, FilingReceiptPayload, KIND_FILING, KIND_FILING_RECEIPT};
+use pleadli_interchange::messages::{FilingPayload, FilingReceiptPayload, WithdrawalPayload, KIND_FILING, KIND_FILING_RECEIPT, KIND_WITHDRAWAL};
 use pleadli_interchange::pairing::{self, KIND_RESPONSE};
 use serde::Serialize;
 use sqlx::{FromRow, SqlitePool};
@@ -210,7 +210,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
             .await?;
         return Ok(Imported { kind: KIND_RESPONSE.into(), message: format!("{} has answered. Confirm its fingerprint with the office before trusting it.", d.name) });
     }
-    if header.kind != KIND_FILING {
+    if header.kind != KIND_FILING && header.kind != KIND_WITHDRAWAL {
         return bad(format!("This registry does not receive packages of kind '{}'.", header.kind));
     }
     let row: Option<(String, String)> = sqlx::query_as("SELECT id, status FROM dpp_links WHERE dpp_id = ? ORDER BY (status = 'trusted') DESC, created_at DESC LIMIT 1").bind(&header.from.id).fetch_optional(pool).await?;
@@ -228,6 +228,25 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         envelope::PackageError::BadSignature => DomainError::Invalid("The signature does not match the office this registry trusts. Nothing was kept.".into()),
         other => DomainError::Invalid(other.to_string()),
     })?;
+    if header.kind == KIND_WITHDRAWAL {
+        let w: WithdrawalPayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::Invalid("The withdrawal inside the package could not be read.".into()))?;
+        if w.court_number.trim().is_empty() || w.dpp_file_key.trim().is_empty() || !matches!(w.decision.as_str(), "nolle_prosequi" | "discontinue") {
+            return bad("The withdrawal is incomplete: it needs the court's case number, the office's file key and the kind of withdrawal.");
+        }
+        sqlx::query("INSERT INTO exchange_incoming (id, link_id, kind, seq, sent_at, received_at, package_sha256, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            .bind(&opened.header.id)
+            .bind(&link_id)
+            .bind(KIND_WITHDRAWAL)
+            .bind(opened.header.seq as i64)
+            .bind(opened.header.created_at)
+            .bind(now())
+            .bind(envelope::sha256_hex(bytes))
+            .bind(serde_json::to_string(&opened.body.json).unwrap_or_default())
+            .execute(pool)
+            .await?;
+        sqlx::query("UPDATE dpp_links SET last_seq_in = MAX(last_seq_in, ?) WHERE id = ?").bind(opened.header.seq as i64).bind(&link_id).execute(pool).await?;
+        return Ok(Imported { kind: KIND_WITHDRAWAL.into(), message: format!("{} has withdrawn case {}. It waits for you to record.", dpp.name, w.court_number) });
+    }
     let filing: FilingPayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::Invalid("The filing inside the package could not be read.".into()))?;
     if filing.dpp_file_key.trim().is_empty() || filing.title.trim().is_empty() || !matches!(filing.court_level.as_str(), "magistrate" | "high") || filing.parties.iter().all(|p| p.role != "accused") {
         return bad("The filing is incomplete: it needs the office's file key, a title, a court level and at least one accused.");
@@ -253,6 +272,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
 #[serde(rename_all = "camelCase")]
 pub struct Incoming {
     pub id: String,
+    pub kind: String,
     pub dpp_name: Option<String>,
     pub status: String,
     pub sent_at: i64,
@@ -264,7 +284,7 @@ pub struct Incoming {
 }
 
 pub async fn list_incoming(pool: &SqlitePool) -> Result<Vec<Incoming>, DomainError> {
-    Ok(sqlx::query_as("SELECT i.id, l.dpp_name, i.status, i.sent_at, i.received_at, i.decided_at, i.reject_reason, i.case_id, i.payload FROM exchange_incoming i JOIN dpp_links l ON l.id = i.link_id ORDER BY i.received_at DESC").fetch_all(pool).await?)
+    Ok(sqlx::query_as("SELECT i.id, i.kind, l.dpp_name, i.status, i.sent_at, i.received_at, i.decided_at, i.reject_reason, i.case_id, i.payload FROM exchange_incoming i JOIN dpp_links l ON l.id = i.link_id ORDER BY i.received_at DESC").fetch_all(pool).await?)
 }
 
 /// The receipt, sealed to the office and recorded as sent.
@@ -316,6 +336,37 @@ pub async fn accept_filing(pool: &SqlitePool, package_id: &str, court_number: &s
     sqlx::query("UPDATE exchange_incoming SET status = 'accepted', decided_at = ?, decided_by = ?, case_id = ? WHERE id = ?").bind(now()).bind(decided_by).bind(&case.id).bind(package_id).execute(pool).await?;
     let receipt = FilingReceiptPayload { filing_package_id: package_id.to_string(), dpp_file_key: filing.dpp_file_key, outcome: "accepted".into(), court_number: Some(court_number.trim().to_string()), reason: None, received_at, decided_at: now(), decided_by: Some(decided_by.to_string()) };
     Ok((case.id, seal_receipt(pool, &link_id, package_id, &receipt).await?))
+}
+
+/// A person records that the prosecution has withdrawn a case this registry
+/// numbered. The case is concluded with the withdrawal as its outcome, unless a
+/// sitting is still scheduled: the court deals with its own diary first.
+pub async fn record_withdrawal(pool: &SqlitePool, package_id: &str, decided_by: &str) -> Result<(String, Vec<u8>), DomainError> {
+    let row: Option<(String, String, String, String, i64)> = sqlx::query_as("SELECT link_id, payload, status, kind, received_at FROM exchange_incoming WHERE id = ?").bind(package_id).fetch_optional(pool).await?;
+    let Some((link_id, payload, status, kind, received_at)) = row else { return Err(DomainError::NotFound("No such withdrawal.".into())) };
+    if kind != KIND_WITHDRAWAL {
+        return bad("That is not a withdrawal.");
+    }
+    if status != "received" {
+        return bad("That withdrawal has already been dealt with.");
+    }
+    let w: WithdrawalPayload = serde_json::from_str(&payload).map_err(|_| DomainError::Invalid("The stored withdrawal could not be read.".into()))?;
+    let case_id: Option<String> = sqlx::query_scalar(
+        "SELECT i.case_id FROM exchange_incoming i JOIN cases c ON c.id = i.case_id
+         WHERE i.kind = ? AND i.status = 'accepted' AND i.link_id = ? AND json_extract(i.payload, '$.dppFileKey') = ? AND c.court_number = ?",
+    )
+    .bind(KIND_FILING)
+    .bind(&link_id)
+    .bind(&w.dpp_file_key)
+    .bind(w.court_number.trim())
+    .fetch_optional(pool)
+    .await?;
+    let Some(case_id) = case_id else { return bad("This registry has no case with that number registered from that office's file, so there is nothing to withdraw.") };
+    let outcome = format!("{}{}", if w.decision == "nolle_prosequi" { "Withdrawn by the prosecution (nolle prosequi)" } else { "Discontinued by the prosecution" }, w.reason.as_deref().map(|r| format!(": {r}")).unwrap_or_default());
+    cases::conclude(pool, &case_id, &outcome).await?;
+    sqlx::query("UPDATE exchange_incoming SET status = 'accepted', decided_at = ?, decided_by = ?, case_id = ? WHERE id = ?").bind(now()).bind(decided_by).bind(&case_id).bind(package_id).execute(pool).await?;
+    let receipt = FilingReceiptPayload { filing_package_id: package_id.to_string(), dpp_file_key: w.dpp_file_key, outcome: "withdrawal_recorded".into(), court_number: Some(w.court_number), reason: None, received_at, decided_at: now(), decided_by: Some(decided_by.to_string()) };
+    Ok((case_id, seal_receipt(pool, &link_id, package_id, &receipt).await?))
 }
 
 pub async fn reject_filing(pool: &SqlitePool, package_id: &str, reason: &str, decided_by: &str) -> Result<Vec<u8>, DomainError> {
@@ -403,6 +454,26 @@ mod tests {
         let receipt: FilingReceiptPayload = serde_json::from_value(opened.body.json).unwrap();
         assert_eq!((receipt.outcome.as_str(), receipt.court_number.as_deref()), ("accepted", Some("CO 12/2026")));
         assert_eq!(receipt.dpp_file_key, "FILE-9");
+
+        // The prosecution withdraws the case. The court records it and the case concludes.
+        let wd = WithdrawalPayload { dpp_file_key: "FILE-9".into(), court_number: "CO 12/2026".into(), decision: "nolle_prosequi".into(), reason: Some("Complainant withdrew".into()), decided_at: 5, decided_by: Some("State Attorney".into()) };
+        let seal_wd = |seq: u64, p: &WithdrawalPayload| envelope::seal(&dpp, &invite.office, KIND_WITHDRAWAL, seq, None, &Body::new(serde_json::to_value(p).unwrap())).unwrap().0;
+        let wrong = seal_wd(3, &WithdrawalPayload { court_number: "CO 99/2026".into(), ..wd.clone() });
+        assert_eq!(import_package(&pool, &wrong).await.unwrap().kind, KIND_WITHDRAWAL);
+        let wrong_id = list_incoming(&pool).await.unwrap().into_iter().find(|i| i.kind == KIND_WITHDRAWAL).unwrap().id;
+        assert!(record_withdrawal(&pool, &wrong_id, "Registrar").await.is_err(), "a number this registry never gave is refused");
+        let good = seal_wd(4, &wd);
+        import_package(&pool, &good).await.unwrap();
+        assert!(import_package(&pool, &good).await.is_err(), "replay refused");
+        let good_id = list_incoming(&pool).await.unwrap().into_iter().find(|i| i.kind == KIND_WITHDRAWAL && i.id != wrong_id).unwrap().id;
+        let (closed, wd_receipt) = record_withdrawal(&pool, &good_id, "Registrar").await.unwrap();
+        assert_eq!(closed, case_id);
+        let case = cases::get(&pool, &case_id).await.unwrap().unwrap();
+        assert_eq!(case.status, "concluded");
+        assert!(case.outcome.unwrap().contains("nolle prosequi"));
+        let opened = envelope::open(&dpp, envelope::peek(&wd_receipt).unwrap(), &invite.office).unwrap();
+        let r: FilingReceiptPayload = serde_json::from_value(opened.body.json).unwrap();
+        assert_eq!((r.outcome.as_str(), r.filing_package_id.as_str()), ("withdrawal_recorded", good_id.as_str()));
         pool.close().await;
     }
 }

@@ -48,7 +48,13 @@
     "invite_saved": "Invitation saved for {office}. Send it to them.",
     "confirmed": "{office} is confirmed. Send it the confirmation file.",
     "registered_notice": "Registered as {number}. Send the receipt back.",
-    "returned_notice": "Returned. Send the receipt back."
+    "returned_notice": "Returned. Send the receipt back.",
+    "withdrawal_title": "Withdrawal of case {number}",
+    "withdrawal_recorded": "Recorded",
+    "nolle": "Withdrawn by the prosecution (nolle prosequi)",
+    "discontinued": "Discontinued by the prosecution",
+    "record_withdrawal": "Record the withdrawal",
+    "withdrawal_notice": "Recorded and the case concluded. Send the receipt back."
   },
   "prison": {
     "title": "Prisons",

@@ -202,6 +202,25 @@ pub struct FilingReceiptPayload {
     pub decided_by: Option<String>,
 }
 
+pub const KIND_WITHDRAWAL: &str = "case_withdrawal";
+
+/// The prosecution tells the court a case it filed is withdrawn (nolle
+/// prosequi) or discontinued. A claim: the court records the end of the case
+/// itself, after its own sittings are dealt with. The registry answers with a
+/// `FilingReceiptPayload` whose outcome is `withdrawal_recorded` or `rejected`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WithdrawalPayload {
+    pub dpp_file_key: String,
+    /// The number the court gave the case when it was filed.
+    pub court_number: String,
+    /// `nolle_prosequi` or `discontinue`.
+    pub decision: String,
+    pub reason: Option<String>,
+    pub decided_at: i64,
+    pub decided_by: Option<String>,
+}
+
 pub const KIND_CUSTODY_ORDER: &str = "custody_order";
 pub const KIND_CUSTODY_RECEIPT: &str = "custody_receipt";
 

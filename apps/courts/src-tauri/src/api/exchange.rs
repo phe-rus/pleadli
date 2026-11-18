@@ -97,6 +97,17 @@ pub async fn accept_filing(State(s): State<AppState>, Path(id): Path<String>, Js
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct RecordWithdrawalInput {
+    decided_by: String,
+}
+
+pub async fn record_withdrawal(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<RecordWithdrawalInput>) -> ApiResult<WithFile<Accepted>> {
+    let (case_id, bytes) = exchange::record_withdrawal(&s.pool, &id, &i.decided_by).await?;
+    Ok(Json(WithFile { value: Accepted { case_id }, file: B64.encode(bytes), name: "withdrawal-receipt.pxpkg".into() }))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RejectInput {
     reason: String,
     decided_by: String,

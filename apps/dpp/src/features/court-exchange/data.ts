@@ -18,3 +18,7 @@ export const ownFingerprint = async () => ((await api('GET', '/api/interchange/i
 /** The paper route: a printable filing sheet for a registry that is not on Pleadli. */
 export const makeFilingSheet = (id: string, courtLevel: string, courtName: string, filedBy: string) =>
   api('POST', `/api/court/files/${encodeURIComponent(id)}/sheet`, { body: { courtLevel, courtName: courtName.trim(), filedBy: filedBy.trim() || null } }) as Promise<{ id: string }>
+
+/** Tells the court a filed case is withdrawn (nolle prosequi) or discontinued. */
+export const withdrawFromCourt = (id: string, decision: string, reason: string) =>
+  api('POST', `/api/court/files/${encodeURIComponent(id)}/withdraw`, { body: { decision, reason: reason.trim() || null } }) as Promise<Sealed>

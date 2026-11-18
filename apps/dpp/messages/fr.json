@@ -2518,6 +2518,14 @@
     "paper_desc": "Pour un greffe qui n'est pas encore sur Pleadli. Choisissez le dossier, nommez le greffe et imprimez la fiche de dépôt à remettre avec le dossier. Le greffe y inscrit son numéro ; saisissez-le sur le dossier.",
     "paper_registry": "Nom du greffe",
     "paper_button": "Créer la fiche de dépôt",
-    "paper_made": "La fiche de dépôt est parmi les pièces du dossier, prête à imprimer."
+    "paper_made": "La fiche de dépôt est parmi les pièces du dossier, prête à imprimer.",
+    "withdraw_title": "Retirer une affaire déposée",
+    "withdraw_desc": "Informez le greffe qu'une affaire qu'il a numérotée est retirée ou abandonnée. Il enregistre la fin de l'affaire et renvoie un reçu.",
+    "withdraw_kind": "Type de retrait",
+    "withdraw_nolle": "Nolle prosequi",
+    "withdraw_discontinue": "Abandon des poursuites",
+    "withdraw_reason": "Motif (facultatif)",
+    "withdraw_button": "Retirer et enregistrer le fichier",
+    "withdraw_notice": "Enregistré. Remettez le fichier de retrait au greffe."
   }
 }

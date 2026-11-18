@@ -48,7 +48,13 @@
     "invite_saved": "Mwaliko umehifadhiwa kwa {office}. Wapelekee.",
     "confirmed": "{office} imethibitishwa. Itumie faili ya uthibitisho.",
     "registered_notice": "Limesajiliwa kama {number}. Tuma risiti.",
-    "returned_notice": "Limerudishwa. Tuma risiti."
+    "returned_notice": "Limerudishwa. Tuma risiti.",
+    "withdrawal_title": "Kuondolewa kwa kesi {number}",
+    "withdrawal_recorded": "Imerekodiwa",
+    "nolle": "Imeondolewa na upande wa mashtaka (nolle prosequi)",
+    "discontinued": "Imesitishwa na upande wa mashtaka",
+    "record_withdrawal": "Rekodi kuondolewa",
+    "withdrawal_notice": "Imerekodiwa na kesi imehitimishwa. Tuma risiti."
   },
   "prison": {
     "title": "Magereza",

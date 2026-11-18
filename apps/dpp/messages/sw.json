@@ -2518,6 +2518,14 @@
     "paper_desc": "Kwa usajili ambao bado haupo kwenye Pleadli. Chagua jalada, andika jina la usajili, kisha chapisha karatasi ya uwasilishaji ili kukabidhi pamoja na jalada. Usajili huandika nambari yake ya shauri juu yake; iandike kwenye jalada.",
     "paper_registry": "Jina la usajili wa mahakama",
     "paper_button": "Tengeneza karatasi ya uwasilishaji",
-    "paper_made": "Karatasi ya uwasilishaji iko pamoja na karatasi za jalada, tayari kuchapishwa."
+    "paper_made": "Karatasi ya uwasilishaji iko pamoja na karatasi za jalada, tayari kuchapishwa.",
+    "withdraw_title": "Ondoa kesi iliyowasilishwa",
+    "withdraw_desc": "Mjulishe msajili kuwa kesi aliyoipa nambari imeondolewa au imesitishwa. Atarekodi mwisho wa kesi na kutuma risiti.",
+    "withdraw_kind": "Aina ya kuondoa",
+    "withdraw_nolle": "Nolle prosequi",
+    "withdraw_discontinue": "Kusitisha",
+    "withdraw_reason": "Sababu (si lazima)",
+    "withdraw_button": "Ondoa na hifadhi faili",
+    "withdraw_notice": "Imehifadhiwa. Mpe msajili faili ya kuondoa."
   }
 }
