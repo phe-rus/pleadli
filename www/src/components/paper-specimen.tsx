@@ -116,7 +116,7 @@ export function PaperSpecimen({ kind, specimen, className }: { kind: SpecimenKin
     return () => observer.disconnect()
   }, [])
   return (
-    <div ref={box} className={cn('relative w-full overflow-hidden rounded-md border border-neutral-300 bg-white shadow-xl shadow-black/10', className)} style={{ aspectRatio: `${PAPER_W} / ${PAPER_H}` }}>
+    <div ref={box} className={cn('relative w-full overflow-hidden rounded-[3px] border border-neutral-300 bg-white shadow-[0_1px_2px_#0000000d,0_12px_30px_-18px_#00000047]', className)} style={{ aspectRatio: `${PAPER_W} / ${PAPER_H}` }}>
       <figure
         className="absolute left-0 top-0 m-0 flex origin-top-left flex-col gap-3 bg-white p-7 text-neutral-900"
         style={{ width: PAPER_W, height: PAPER_H, transform: `scale(${scale})`, fontFamily: 'Georgia, "Times New Roman", serif' }}

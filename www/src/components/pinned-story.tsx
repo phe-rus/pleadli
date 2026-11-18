@@ -5,6 +5,7 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from 'motion/react'
 import { useRef, useState } from 'react'
 import { LinkArrow } from '@/components/link-arrow'
+import { LazyMount } from '@/components/lazy-mount'
 import { ProductWindow } from '@/components/replica/product-window'
 import { Reveal } from '@/components/reveal'
 import { getProducts } from '@/data/products'
@@ -159,7 +160,9 @@ export function PinnedStory() {
                   {m['home.learn_more']()} <LinkArrow />
                 </Link>
               </Reveal>
-              <ProductWindow slug={product.slug} name={product.name} />
+              <LazyMount aspect="1280 / 860">
+                <ProductWindow slug={product.slug} name={product.name} />
+              </LazyMount>
             </div>
           )
         })}

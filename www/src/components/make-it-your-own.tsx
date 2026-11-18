@@ -1,6 +1,7 @@
 import { File01Icon, FileAttachmentIcon, Image01Icon, MusicNote01Icon, ScanIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
+import { WindowControls } from '@pleadli/ui/window-controls'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { LinkArrow } from '@/components/link-arrow'
@@ -10,15 +11,21 @@ import * as m from '@/paraglide/messages'
 
 const wrap = 'container w-full md:max-w-6xl'
 
-/** A small window with the three dots and a title, the same frame as the app windows above it. */
+const noop = () => {}
+const controlLabels = { group: 'Window', close: 'Close', minimize: 'Minimize', maximize: 'Maximize' }
+
+/** A small window drawn like our apps: grey bar with our own window buttons and the open tab as a pill,
+ * a small corner, a soft shadow. For show only; nothing in it can be pressed. */
 function MiniWindow({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <div className={cn('overflow-hidden rounded-xl bg-background shadow-[0_30px_60px_-30px_#0007,0_6px_16px_-8px_#0004] ring-1 ring-black/15', className)}>
-      <div className="flex items-center gap-1.5 border-b border-border/70 bg-muted/70 px-3 py-2">
-        <span className="size-2.5 rounded-full bg-red-400" />
-        <span className="size-2.5 rounded-full bg-amber-400" />
-        <span className="size-2.5 rounded-full bg-green-500" />
-        <span className="ml-2 truncate text-xs text-muted-foreground">{title}</span>
+    <div className={cn('overflow-hidden rounded-[5px] bg-background shadow-[0_1px_2px_#0000000d,0_12px_30px_-18px_#00000047] ring-1 ring-black/10', className)}>
+      <div className="flex h-9 items-center gap-2 bg-sidebar px-2.5">
+        <div inert aria-hidden="true" className="pointer-events-none">
+          <WindowControls focused labels={controlLabels} onClose={noop} onMinimize={noop} onToggleMaximize={noop} />
+        </div>
+        <span className="ml-1 flex h-6 min-w-0 items-center rounded-md bg-background px-2.5 text-[0.6875rem] shadow-xs ring-1 ring-black/[0.06]">
+          <span className="truncate">{title}</span>
+        </span>
       </div>
       <div className="p-3 text-xs">{children}</div>
     </div>

@@ -3,8 +3,10 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { LazyMount } from '@/components/lazy-mount'
 import { PaperSpecimen, type SpecimenKind } from '@/components/paper-specimen'
 import { ProductWindow } from '@/components/replica/product-window'
+import type { Region } from '@/components/replica/scaled-window'
 import { Reveal } from '@/components/reveal'
 import { getProducts } from '@/data/products'
 import * as m from '@/paraglide/messages'
@@ -12,34 +14,36 @@ import * as m from '@/paraglide/messages'
 const wrap = 'container w-full md:max-w-6xl'
 const control = cn('grid size-10 place-items-center rounded-full bg-muted text-foreground/80', 'transition-colors hover:bg-border hover:text-foreground')
 
-type Item = { key: string; width: string } & ({ app: string } | { paper: SpecimenKind })
+type Item = { key: string; width: string } & ({ app: string; region: Region } | { paper: SpecimenKind })
 
-/** Windows of different sizes, as the app shows them, with a printed paper between. */
+/** Each item is cut to its own shape from the window it comes from: the wide bench, the tall station list,
+ * a low strip of the prosecutor's desk. Between them, two papers as they print. */
 const items: Item[] = [
-  { key: 'courts', app: 'courts', width: 'min(82vw, 40rem)' },
-  { key: 'summons', paper: 'summons', width: 'min(60vw, 16rem)' },
-  { key: 'dpp', app: 'dpp', width: 'min(82vw, 32rem)' },
-  { key: 'police', app: 'police', width: 'min(82vw, 40rem)' },
-  { key: 'charge', paper: 'charge_sheet', width: 'min(60vw, 16rem)' },
-  { key: 'lawyers', app: 'lawyers', width: 'min(82vw, 36rem)' },
-  { key: 'prisons', app: 'prisons', width: 'min(82vw, 32rem)' },
+  { key: 'courts', app: 'courts', region: { x: 0, y: 0, w: 1280, h: 740 }, width: 'min(84vw, 42rem)' },
+  { key: 'summons', paper: 'summons', width: 'min(58vw, 15rem)' },
+  { key: 'dpp', app: 'dpp', region: { x: 256, y: 0, w: 1024, h: 520 }, width: 'min(84vw, 34rem)' },
+  { key: 'police', app: 'police', region: { x: 0, y: 0, w: 900, h: 860 }, width: 'min(78vw, 25rem)' },
+  { key: 'lawyers', app: 'lawyers', region: { x: 0, y: 0, w: 1280, h: 600 }, width: 'min(84vw, 38rem)' },
+  { key: 'charge', paper: 'charge_sheet', width: 'min(58vw, 15rem)' },
+  { key: 'prisons', app: 'prisons', region: { x: 256, y: 0, w: 900, h: 620 }, width: 'min(84vw, 30rem)' },
 ]
 
-/** One strip across the page: the five apps and their papers, side by side, running off the right edge.
- * It moves by itself until the visitor pauses it, and stays still for anyone who asks for less motion. */
+/** One strip across the page: the five apps and their papers, running off the right edge.
+ * It moves by itself until the visitor pauses it, stays still for anyone who asks for less motion, and
+ * builds only the windows that are near the screen. */
 export function SurfaceCarousel() {
   const products = getProducts()
   const reduce = useReducedMotion()
-  const root = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLUListElement>(null)
-  const [near, setNear] = useState(false)
   const [playing, setPlaying] = useState(true)
   const [hovered, setHovered] = useState(false)
+  const [visible, setVisible] = useState(false)
+  const root = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const el = root.current
-    if (!el || typeof IntersectionObserver === 'undefined') return setNear(true)
-    const observer = new IntersectionObserver(([entry]) => setNear(entry.isIntersecting), { rootMargin: '200px' })
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting))
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
@@ -48,14 +52,14 @@ export function SurfaceCarousel() {
     const el = track.current
     if (!el) return
     const first = el.children[0] as HTMLElement | undefined
-    const step = (first?.offsetWidth ?? 400) + 24
+    const step = (first?.offsetWidth ?? 400) + 32
     const end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4
     if (direction === 1 && end) el.scrollTo({ left: 0, behavior: 'smooth' })
     else if (direction === -1 && el.scrollLeft <= 4) el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' })
     else el.scrollBy({ left: direction * step, behavior: 'smooth' })
   }, [])
 
-  const running = playing && !reduce && near && !hovered
+  const running = playing && !reduce && visible && !hovered
   useEffect(() => {
     if (!running) return
     const timer = window.setInterval(() => move(1), 4500)
@@ -73,7 +77,7 @@ export function SurfaceCarousel() {
         <div className="flex flex-col gap-6" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
           <ul
             ref={track}
-            className="m-0 flex list-none snap-x snap-mandatory items-end gap-6 overflow-x-auto p-0 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="m-0 flex list-none snap-x snap-mandatory items-end gap-8 overflow-x-auto p-0 pb-6 [scrollbar-width:none] md:gap-10 [&::-webkit-scrollbar]:hidden"
             style={{ width: 'calc(100% + (100vw - 100%) / 2)' }}
           >
             {items.map((item) => {
@@ -81,8 +85,20 @@ export function SurfaceCarousel() {
               return (
                 <li key={item.key} className="shrink-0 snap-start" style={{ width: item.width }}>
                   <figure className="m-0 flex flex-col gap-3">
-                    {'app' in item ? near ? <ProductWindow slug={item.app} name={product?.name} /> : <div className="aspect-[1280/860] w-full rounded-xl bg-muted" /> : <PaperSpecimen kind={item.paper} specimen="Specimen" />}
-                    <figcaption className="text-base font-medium">{product ? product.name : m['surface.c_paper']()}</figcaption>
+                    {'app' in item ? (
+                      <LazyMount aspect={`${item.region.w} / ${item.region.h}`} margin="320px">
+                        <ProductWindow slug={item.app} region={item.region} />
+                      </LazyMount>
+                    ) : (
+                      <PaperSpecimen kind={item.paper} specimen="Specimen" />
+                    )}
+                    <figcaption className="flex flex-col items-start gap-0.5 text-left">
+                      <span className="flex items-center gap-2 text-base font-medium">
+                        {product && <HugeiconsIcon icon={product.icon} className="size-4! text-primary-ink" />}
+                        {product ? product.name : m['surface.c_paper']()}
+                      </span>
+                      {product && <span className="text-sm text-muted-foreground">{product.homePoints[0]}</span>}
+                    </figcaption>
                   </figure>
                 </li>
               )

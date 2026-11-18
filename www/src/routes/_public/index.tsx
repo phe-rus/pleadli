@@ -9,7 +9,6 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import * as m from '@/paraglide/messages'
 import { cn } from '@pleadli/ui/lib/utils'
 import { LinkArrow } from '@/components/link-arrow'
-import { CaseJourney } from '@/components/case-journey'
 import { TwoWays } from '@/components/two-ways'
 import { SurfaceCarousel } from '@/components/surface-carousel'
 import { MakeItYourOwn } from '@/components/make-it-your-own'
@@ -39,8 +38,6 @@ function RouteComponent() {
         <PinnedStory />
       </div>
 
-      <CaseJourney />
-
       <TwoWays />
 
       <section className="border-t border-border/60" aria-label={m["launch.everyday"]()}>
@@ -63,14 +60,7 @@ function RouteComponent() {
         </div>
       </section>
 
-      <section className="border-t border-border/60 bg-muted/60" aria-labelledby="features-title">
-        <div className={cn(wrap, "flex flex-col gap-8 py-16 md:py-24")}>
-          <Reveal>
-            <h2 id="features-title" className="text-3xl! font-bold tracking-tight md:text-4xl!">{m["preview.details"]()}</h2>
-          </Reveal>
-          <FeatureShowcase />
-        </div>
-      </section>
+      <FeatureShowcase title={m["preview.details"]()} />
 
       <SurfaceCarousel />
 

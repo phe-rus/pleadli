@@ -2,6 +2,7 @@ import { ArrowLeft01Icon, ArrowRight01Icon, Folder01Icon, Logout03Icon, Search01
 import { HugeiconsIcon } from '@hugeicons/react'
 import { SidebarToggle } from '@pleadli/shell/view'
 import { cn } from '@pleadli/ui/lib/utils'
+import { WindowControls } from '@pleadli/ui/window-controls'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
@@ -12,14 +13,14 @@ export interface ShellScreen { row: string; tab: { icon: Icon; label: string }; 
 
 const STEP_MS = 3600
 
+const noop = () => {}
+const controlLabels = { group: 'Window', close: 'Close', minimize: 'Minimize', maximize: 'Maximize' }
+
+/** The same window buttons the apps use, drawn for show: nothing in them can be pressed or focused. */
 function Lights() {
   return (
-    <div className="flex shrink-0 items-center">
-      {['bg-[#ff5f57]', 'bg-[#febc2e]', 'bg-[#28c840]'].map((c) => (
-        <span key={c} className="flex size-8 items-center justify-center rounded-full">
-          <span className={cn('size-4.5 rounded-full ring-1 ring-black/15 ring-inset', c)} />
-        </span>
-      ))}
+    <div inert aria-hidden="true" className="pointer-events-none">
+      <WindowControls focused labels={controlLabels} onClose={noop} onMinimize={noop} onToggleMaximize={noop} />
     </div>
   )
 }
