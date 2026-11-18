@@ -56,6 +56,7 @@ export const courtsNav: readonly NavItem[] = [
 
   { label: 'Library', icon: BookOpen01Icon, to: '/library', section: 'reference' },
 
+  { label: 'DPP filings', icon: Mail01Icon, to: '/exchange', section: 'office' },
   { label: 'Postbox', icon: Mail01Icon, to: '/postbox', section: 'office' },
   { label: 'Returns', icon: ChartBarLineIcon, to: '/reports', section: 'office' },
   { label: 'Settings', icon: Settings01Icon, to: '/settings', section: 'office' },

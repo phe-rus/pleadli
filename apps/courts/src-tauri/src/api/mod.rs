@@ -459,6 +459,13 @@ pub fn router(state: AppState) -> Router {
         .route("/system/status", get(system_status))
         .route("/profile", get(get_profile).put(save_profile))
         .route("/overview", get(get_overview))
+        .route("/exchange/identity", get(exchange::get_identity).post(exchange::create_identity))
+        .route("/exchange/links", get(exchange::list_links).post(exchange::create_invite))
+        .route("/exchange/links/{id}/trust", post(exchange::trust_link))
+        .route("/exchange/import", post(exchange::import_package))
+        .route("/exchange/incoming", get(exchange::list_incoming))
+        .route("/exchange/incoming/{id}/accept", post(exchange::accept_filing))
+        .route("/exchange/incoming/{id}/reject", post(exchange::reject_filing))
         .route("/cases", post(create_case).get(list_cases))
         .route("/cases/{id}", get(get_case).put(update_case))
         .route("/cases/{id}/conclude", post(conclude_case))
@@ -543,6 +550,7 @@ pub async fn serve_dev(router: Router) {
     }
 }
 
+pub mod exchange;
 pub mod orchestra;
 
 #[cfg(test)]

@@ -60,3 +60,33 @@ mod tests {
         assert!(decode_document("md", &STANDARD.encode([255])).is_err());
     }
 }
+
+/// A package file for the exchange: saved only where the person chooses.
+#[tauri::command]
+pub async fn save_package(app: AppHandle, name: String, content_base64: String) -> Result<bool, String> {
+    if content_base64.len() > 70 * 1024 * 1024 { return Err("This package is too large.".into()); }
+    let bytes = STANDARD.decode(content_base64).map_err(|_| "Invalid package data.".to_string())?;
+    let safe: String = name.chars().take(100).map(|c| if c.is_alphanumeric() || matches!(c, '-' | '_' | '.') { c } else { '-' }).collect();
+    let safe = if safe.to_lowercase().ends_with(".pxpkg") { safe } else { format!("{safe}.pxpkg") };
+    let chosen = tauri::async_runtime::spawn_blocking(move || {
+        app.dialog().file().add_filter("Pleadli package", &["pxpkg"]).set_file_name(safe).blocking_save_file()
+    }).await.map_err(|_| "The save dialog could not open.".to_string())?;
+    let Some(file) = chosen else { return Ok(false) };
+    let path = file.into_path().map_err(|_| "Choose a file on this computer.".to_string())?;
+    std::fs::write(path, bytes).map_err(|_| "The package could not be saved at that destination.".to_string())?;
+    Ok(true)
+}
+
+/// A package file the person chose in the open window, as base64. None if cancelled.
+#[tauri::command]
+pub async fn pick_package(app: AppHandle) -> Result<Option<String>, String> {
+    let chosen = tauri::async_runtime::spawn_blocking(move || {
+        app.dialog().file().add_filter("Pleadli package", &["pxpkg"]).blocking_pick_file()
+    }).await.map_err(|_| "The open dialog could not open.".to_string())?;
+    let Some(file) = chosen else { return Ok(None) };
+    let path = file.into_path().map_err(|_| "Choose a file on this computer.".to_string())?;
+    if !path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pxpkg")) { return Err("Only Pleadli package files are opened here.".into()); }
+    let bytes = std::fs::read(path).map_err(|_| "The file could not be read.".to_string())?;
+    if bytes.len() > 50 * 1024 * 1024 { return Err("That file is too large.".into()); }
+    Ok(Some(STANDARD.encode(bytes)))
+}
