@@ -231,7 +231,7 @@ pub async fn import_package(conn: &mut SqliteConnection, bytes: &[u8]) -> Result
         other => DomainError::rejected(other.to_string()),
     })?;
     let order: CustodyOrderPayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::rejected("The order inside the package could not be read."))?;
-    if !matches!(order.kind.as_str(), "remand" | "release") || order.accused.trim().is_empty() || order.paragraphs.is_empty() || order.order_key.trim().is_empty() {
+    if !matches!(order.kind.as_str(), "remand" | "release" | "committal") || order.accused.trim().is_empty() || order.paragraphs.is_empty() || order.order_key.trim().is_empty() {
         return bad("The order is incomplete: it needs a kind, the accused's name, its wording and the court's key.");
     }
     sqlx::query("INSERT INTO custody_orders_in (id, link_id, seq, sent_at, received_at, package_sha256, payload) VALUES (?, ?, ?, ?, ?, ?, ?)")
@@ -298,8 +298,18 @@ pub async fn record_order(conn: &mut SqliteConnection, actor: &Actor, package_id
     if exists == 0 {
         return bad("Choose the prisoner this order is about.");
     }
-    let kind = if order.kind == "release" { "release_order" } else { "remand_order" };
-    let note = format!("Received sealed from {court_name}; signature verified. Court case {}, accused named as {}. The court's wording: {}", order.court_number, order.accused, order.paragraphs.join(" "));
+    let kind = match order.kind.as_str() {
+        "release" => "release_order",
+        "committal" => "committal_warrant",
+        _ => "remand_order",
+    };
+    let term = if order.kind == "committal" {
+        let t = if order.is_life { "life".to_string() } else { format!("{} years, {} months, {} days", order.term_years.unwrap_or(0), order.term_months.unwrap_or(0), order.term_days.unwrap_or(0)) };
+        format!(" Sentence stated by the court: {t}. Apply it from the sentence screen.")
+    } else {
+        String::new()
+    };
+    let note = format!("Received sealed from {court_name}; signature verified. Court case {}, accused named as {}.{term} The court's wording: {}", order.court_number, order.accused, order.paragraphs.join(" "));
     let instrument = instruments::record_instrument(
         conn,
         actor,

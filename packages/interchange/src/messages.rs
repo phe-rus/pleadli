@@ -234,7 +234,7 @@ pub const KIND_CUSTODY_RECEIPT: &str = "custody_receipt";
 pub struct CustodyOrderPayload {
     /// The court's own id for the order, used to answer it.
     pub order_key: String,
-    /// `remand` or `release`.
+    /// `remand`, `release` or `committal` (a warrant on sentence).
     pub kind: String,
     pub court_name: String,
     pub court_number: String,
@@ -247,6 +247,18 @@ pub struct CustodyOrderPayload {
     pub remand_until: Option<i64>,
     pub reason: Option<String>,
     pub issued_at: i64,
+    /// For a `committal` order: the sentence the court passed. The facility
+    /// records the warrant; its officer applies the sentence.
+    #[serde(default)]
+    pub term_years: Option<i64>,
+    #[serde(default)]
+    pub term_months: Option<i64>,
+    #[serde(default)]
+    pub term_days: Option<i64>,
+    #[serde(default)]
+    pub is_life: bool,
+    #[serde(default)]
+    pub offence: Option<String>,
     pub issued_by: Option<String>,
     /// The order as it was issued, paragraph by paragraph.
     pub paragraphs: Vec<String>,

@@ -18,7 +18,7 @@ use super::audit::{self, Entry};
 use super::error::{check_date, clean, invalid, DomainError};
 use pleadli_node_core::db::begin_write;
 
-pub const KINDS: [&str; 4] = ["adjournment", "remand", "release", "general"];
+pub const KINDS: [&str; 5] = ["adjournment", "remand", "release", "committal", "general"];
 
 /// The facts an order is made from. Which are required depends on the kind.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -31,6 +31,10 @@ pub struct OrderFields {
     pub next_purpose: Option<String>,
     pub reason: Option<String>,
     pub body: Option<String>,
+    pub term_years: Option<i64>,
+    pub term_months: Option<i64>,
+    pub term_days: Option<i64>,
+    pub is_life: Option<bool>,
 }
 
 /// The order as it prints.
@@ -185,6 +189,7 @@ fn default_title(kind: &str) -> &'static str {
         "adjournment" => "Order of adjournment",
         "remand" => "Remand order",
         "release" => "Release order",
+        "committal" => "Warrant of committal on sentence",
         _ => "Order",
     }
 }
@@ -346,6 +351,23 @@ fn paragraphs(kind: &str, title: &str, fields: &OrderFields, offence: Option<&st
             out.push(format!("{accused} is remanded in custody at {prison} until {}.", long_date(until)));
             out.push(format!("{accused} shall be produced before this court on that date."));
             Ok(("REMAND ORDER".to_string(), out))
+        }
+        "committal" => {
+            let accused = need(&fields.accused, "The name of the person sentenced")?;
+            let prison = need(&fields.prison, "The prison the person is committed to")?;
+            let life = fields.is_life.unwrap_or(false);
+            let (y, mo, d) = (fields.term_years.unwrap_or(0), fields.term_months.unwrap_or(0), fields.term_days.unwrap_or(0));
+            if !life && y <= 0 && mo <= 0 && d <= 0 {
+                return invalid("The term of the sentence is needed before this warrant can be issued.");
+            }
+            let term = if life { "imprisonment for life".to_string() } else { [(y, "year"), (mo, "month"), (d, "day")].iter().filter(|(n, _)| *n > 0).map(|(n, u)| format!("{n} {u}{}", if *n == 1 { "" } else { "s" })).collect::<Vec<_>>().join(", ") };
+            let mut out = Vec::new();
+            if let Some(offence) = offence {
+                out.push(format!("{accused} has been convicted of {offence}."));
+            }
+            out.push(format!("{accused} is sentenced to {term}."));
+            out.push(format!("The officer in charge of {prison} shall receive {accused} and hold them in custody to serve the sentence, and this is the warrant for doing so."));
+            Ok(("WARRANT OF COMMITTAL ON SENTENCE".to_string(), out))
         }
         "release" => {
             let accused = need(&fields.accused, "The name of the accused")?;

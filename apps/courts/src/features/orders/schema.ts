@@ -4,6 +4,7 @@ export const orderKinds = [
   { id: 'adjournment', label: 'Order of adjournment', about: 'Records the next date and why the matter was adjourned.' },
   { id: 'remand', label: 'Remand order', about: 'Commits an accused person to custody until a date.' },
   { id: 'release', label: 'Release order', about: 'Directs that an accused person be released from custody.' },
+  { id: 'committal', label: 'Warrant of committal on sentence', about: 'Commits a convicted person to a prison to serve the sentence the court passed.' },
   { id: 'general', label: 'General order', about: 'Any other order or direction, in the court’s own words.' },
 ] as const
 export const orderKindLabel = (id: string) => orderKinds.find((k) => k.id === id)?.label ?? id
@@ -16,6 +17,10 @@ export const orderFieldsSchema = z.object({
   nextPurpose: z.string().nullish(),
   reason: z.string().nullish(),
   body: z.string().nullish(),
+  termYears: z.number().nullish(),
+  termMonths: z.number().nullish(),
+  termDays: z.number().nullish(),
+  isLife: z.boolean().nullish(),
 })
 export type OrderFields = z.infer<typeof orderFieldsSchema>
 

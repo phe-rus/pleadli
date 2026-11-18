@@ -41,6 +41,9 @@ export function OrderForm({ caseId, sittingId = null, kind: initialKind, existin
       nextPurpose: fields?.nextPurpose ?? 'hearing',
       reason: fields?.reason ?? '',
       body: fields?.body ?? '',
+      termYears: fields?.termYears ? String(fields.termYears) : '',
+      termMonths: fields?.termMonths ? String(fields.termMonths) : '',
+      termDays: fields?.termDays ? String(fields.termDays) : '',
     },
     onSubmit: async ({ value }) => {
       const orderFields = {
@@ -51,6 +54,9 @@ export function OrderForm({ caseId, sittingId = null, kind: initialKind, existin
         nextPurpose: value.nextDate ? value.nextPurpose : null,
         reason: value.reason.trim() || null,
         body: value.body.trim() || null,
+        termYears: Number(value.termYears) || null,
+        termMonths: Number(value.termMonths) || null,
+        termDays: Number(value.termDays) || null,
       }
       const title = value.kind === 'general' ? value.title.trim() || null : null
       try {
@@ -83,8 +89,8 @@ export function OrderForm({ caseId, sittingId = null, kind: initialKind, existin
 
             {kind === 'general' && <form.AppField name="title">{(f) => <f.input label="Title of the order" placeholder="Directions" />}</form.AppField>}
 
-            {(kind === 'remand' || kind === 'release') && <form.AppField name="accused">{(f) => <f.input label="Accused person" list="case-accused" />}</form.AppField>}
-            {(kind === 'remand' || kind === 'release') && accused.length > 0 && (
+            {(kind === 'remand' || kind === 'release' || kind === 'committal') && <form.AppField name="accused">{(f) => <f.input label="Accused person" list="case-accused" />}</form.AppField>}
+            {(kind === 'remand' || kind === 'release' || kind === 'committal') && accused.length > 0 && (
               <datalist id="case-accused">
                 {accused.map((name) => (
                   <option key={name} value={name} />
@@ -96,6 +102,15 @@ export function OrderForm({ caseId, sittingId = null, kind: initialKind, existin
               <>
                 <form.AppField name="prison">{(f) => <f.input label="Held at" placeholder="The prison or remand home" />}</form.AppField>
                 <form.AppField name="remandUntil">{(f) => <DateField label="Remanded until" value={f.state.value} onChange={f.handleChange} />}</form.AppField>
+              </>
+            )}
+
+            {kind === 'committal' && (
+              <>
+                <form.AppField name="prison">{(f) => <f.input label="Committed to" placeholder="The prison" />}</form.AppField>
+                <form.AppField name="termYears">{(f) => <f.input label="Years" type="number" min="0" />}</form.AppField>
+                <form.AppField name="termMonths">{(f) => <f.input label="Months" type="number" min="0" />}</form.AppField>
+                <form.AppField name="termDays">{(f) => <f.input label="Days" type="number" min="0" />}</form.AppField>
               </>
             )}
 

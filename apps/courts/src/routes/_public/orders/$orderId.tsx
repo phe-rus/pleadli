@@ -112,7 +112,7 @@ function RouteComponent() {
         </div>
       </header>
       $&
-      {!draft && (order.kind === "remand" || order.kind === "release") && <SendOrder orderId={order.id} />}
+      {!draft && (order.kind === "remand" || order.kind === "release" || order.kind === "committal") && <SendOrder orderId={order.id} />}
       {!draft && <NotifyCounsel kind="order" id={order.id} />}
 
       {draft ? (

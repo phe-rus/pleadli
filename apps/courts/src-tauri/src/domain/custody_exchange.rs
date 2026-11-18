@@ -167,8 +167,8 @@ pub async fn list_deliveries(pool: &SqlitePool, order_id: &str) -> Result<Vec<De
 pub async fn export_order(pool: &SqlitePool, order_id: &str, link_id: &str) -> Result<(Vec<u8>, String), DomainError> {
     let me = require_identity(pool).await?;
     let order = orders::get(pool, order_id).await?.ok_or_else(|| DomainError::NotFound("No such order.".into()))?;
-    if !matches!(order.kind.as_str(), "remand" | "release") {
-        return bad("Only remand and release orders go to a prison.");
+    if !matches!(order.kind.as_str(), "remand" | "release" | "committal") {
+        return bad("Only remand, release and committal orders go to a prison.");
     }
     if order.status != "issued" {
         return bad("Only an issued order can be sent. Issue it first.");
@@ -188,6 +188,11 @@ pub async fn export_order(pool: &SqlitePool, order_id: &str, link_id: &str) -> R
         accused: order.fields.accused.clone().unwrap_or_default(),
         prison: order.fields.prison.clone().unwrap_or_default(),
         remand_until: order.fields.remand_until,
+        term_years: order.fields.term_years,
+        term_months: order.fields.term_months,
+        term_days: order.fields.term_days,
+        is_life: order.fields.is_life.unwrap_or(false),
+        offence: None,
         reason: order.fields.reason.clone(),
         issued_at: order.issued_at.unwrap_or_default(),
         issued_by: order.issued_by.clone(),
@@ -252,6 +257,15 @@ mod tests {
         assert!(import_package(&pool, &seal(2, &CustodyReceiptPayload { order_package_id: "never-sent".into(), ..receipt.clone() })).await.is_err(), "a receipt for an order never sent is refused");
         let deliveries = list_deliveries(&pool, &order.id).await.unwrap();
         assert_eq!((deliveries.len(), deliveries[0].outcome.as_deref()), (1, Some("recorded")));
+        // A sentence goes as a warrant of committal carrying the term.
+        let cf = OrderFields { accused: Some("Test Accused".into()), prison: Some("Luzira".into()), term_years: Some(2), term_months: Some(6), ..Default::default() };
+        let warrant = orders::create(&pool, CreateOrderInput { case_id: case.id.clone(), sitting_id: None, kind: "committal".into(), title: None, fields: cf }).await.unwrap();
+        orders::issue(&pool, &warrant.id).await.unwrap();
+        let (wb, _) = export_order(&pool, &warrant.id, &link.id).await.unwrap();
+        let wo = envelope::open(&prison, envelope::peek(&wb).unwrap(), &response.station).unwrap();
+        let w: CustodyOrderPayload = serde_json::from_value(wo.body.json).unwrap();
+        assert_eq!((w.kind.as_str(), w.term_years, w.term_months, w.is_life), ("committal", Some(2), Some(6), false));
+        assert!(w.paragraphs.iter().any(|p| p.contains("2 years, 6 months")), "{:?}", w.paragraphs);
         pool.close().await;
     }
 }
