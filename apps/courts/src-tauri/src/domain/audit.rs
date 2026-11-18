@@ -8,7 +8,7 @@ use sqlx::{SqliteConnection, SqlitePool};
 pub use chain::{AuditEntry, Entry, Verification};
 
 async fn actor(conn: &mut SqliteConnection) -> Result<Option<String>, sqlx::Error> {
-    sqlx::query_scalar("SELECT name FROM bench_profile WHERE id = 'default'").fetch_optional(&mut *conn).await
+    sqlx::query_scalar("SELECT COALESCE((SELECT s.name FROM active_session a JOIN staff s ON s.id = a.staff_id), (SELECT name FROM bench_profile WHERE id = 'default'))").fetch_one(&mut *conn).await
 }
 
 /// Appends an entry on the connection given, so it commits or rolls back with
@@ -16,6 +16,12 @@ async fn actor(conn: &mut SqliteConnection) -> Result<Option<String>, sqlx::Erro
 pub async fn record(conn: &mut SqliteConnection, entry: Entry<'_>) -> Result<(), sqlx::Error> {
     let who = actor(conn).await?;
     chain::record(conn, who.as_deref(), entry).await
+}
+
+/// For an event with no transaction of its own.
+pub async fn log(pool: &SqlitePool, entry: Entry<'_>) -> Result<(), sqlx::Error> {
+    let mut conn = pool.acquire().await?;
+    record(&mut conn, entry).await
 }
 
 pub async fn recent(pool: &SqlitePool, case_id: Option<&str>, limit: i64) -> Result<Vec<AuditEntry>, sqlx::Error> {

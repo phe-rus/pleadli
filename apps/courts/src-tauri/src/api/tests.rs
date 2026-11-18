@@ -18,7 +18,7 @@ const DAY: i64 = 24 * HOUR;
 async fn app() -> Router {
     let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-    router(AppState { pool, vault_root: std::env::temp_dir().join(format!("courts-vault-{}", uuid::Uuid::new_v4())), orchestra: None })
+    router(AppState { pool, vault_root: std::env::temp_dir().join(format!("courts-vault-{}", uuid::Uuid::new_v4())), orchestra: None, security: None })
 }
 
 async fn call(app: &Router, method: Method, path: &str, body: Option<Value>) -> (StatusCode, Value) {
@@ -666,7 +666,7 @@ async fn app_with_parts() -> (Router, sqlx::SqlitePool, std::path::PathBuf) {
     let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
     let vault_root = std::env::temp_dir().join(format!("courts-vault-{}", uuid::Uuid::new_v4()));
-    (router(AppState { pool: pool.clone(), vault_root: vault_root.clone(), orchestra: None }), pool, vault_root)
+    (router(AppState { pool: pool.clone(), vault_root: vault_root.clone(), orchestra: None, security: None }), pool, vault_root)
 }
 
 fn b64(bytes: &[u8]) -> String {
@@ -967,7 +967,7 @@ async fn attachments_survive_a_complete_encrypted_backup_and_restore() {
     let root = source.join("vault");
     let pool = SqlitePoolOptions::new().max_connections(1).connect_with(pleadli_node_core::db::connect_options(&source.join("courts.db"))).await.unwrap();
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-    let app = router(AppState { pool: pool.clone(), vault_root: root.clone(), orchestra: None });
+    let app = router(AppState { pool: pool.clone(), vault_root: root.clone(), orchestra: None, security: None });
     let case = new_case(&app, "CRB BACKUP/2026").await;
     let original = b"Synthetic supporting statement for backup acceptance.";
     let (status, added) = post(&app, &format!("/api/cases/{case}/attachments"), json!({"name":"backup-statement.txt", "contentBase64":b64(original)})).await;
@@ -998,4 +998,71 @@ async fn attachments_survive_a_complete_encrypted_backup_and_restore() {
     std::fs::remove_dir_all(destination).unwrap();
     pool.close().await;
     std::fs::remove_dir_all(source).unwrap();
+}
+
+// ---- Setup and sign-in are the institution's choice ------------------------
+
+async fn secured_app() -> (Router, sqlx::SqlitePool) {
+    let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    let security = std::sync::Arc::new(crate::domain::security::Security::new());
+    security.load(&pool).await.unwrap();
+    let app = router(AppState { pool: pool.clone(), vault_root: std::env::temp_dir(), orchestra: None, security: Some(security) });
+    (app, pool)
+}
+
+fn setup_body(protection: &str) -> Value {
+    json!({
+        "licenceVersion": "2026-09", "jurisdiction": "ug", "language": "en", "model": "office",
+        "officeName": "Kampala Chief Magistrates Court", "region": "Kampala", "protection": protection, "accent": "gold",
+        "administrator": { "name": "Registrar Test", "role": "administrator", "secret": "482916" }, "people": []
+    })
+}
+
+#[tokio::test]
+async fn an_installation_that_was_never_set_up_keeps_working_untouched() {
+    let (app, _pool) = secured_app().await;
+    // As every Courts installation was before setup existed: no sign-in asked for.
+    let (status, _) = call(&app, Method::GET, "/api/cases", None).await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, body) = call(&app, Method::GET, "/api/setup/status", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["installed"], false);
+}
+
+#[tokio::test]
+async fn with_a_pin_chosen_at_setup_nothing_opens_until_a_person_signs_in() {
+    let (app, _pool) = secured_app().await;
+    let (status, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("basic"))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    // Whoever set it up is signed in.
+    assert_eq!(call(&app, Method::GET, "/api/cases", None).await.0, StatusCode::OK);
+    call(&app, Method::POST, "/api/session/sign-out", None).await;
+    assert_eq!(call(&app, Method::GET, "/api/cases", None).await.0, StatusCode::LOCKED);
+
+    let (_, people) = call(&app, Method::GET, "/api/session/people", None).await;
+    let id = people[0]["id"].as_str().unwrap().to_string();
+    let (status, _) = call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": id, "secret": "000000" }))).await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "a wrong PIN is refused");
+    let (status, body) = call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": id, "secret": "482916" }))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(call(&app, Method::GET, "/api/cases", None).await.0, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn setup_keeps_existing_cases_and_the_audit_names_the_signed_in_person() {
+    let (app, pool) = secured_app().await;
+    call(&app, Method::PUT, "/api/profile", Some(json!({ "name": "Hon. Old Officer", "courtLevel": "magistrate" }))).await;
+    let (_, case) = call(&app, Method::POST, "/api/cases", Some(json!({ "courtNumber": "CO 7/2026", "title": "Uganda v Test", "courtLevel": "magistrate" }))).await;
+    // The officer already on this installation is offered as the first administrator.
+    let (_, status) = call(&app, Method::GET, "/api/setup/status", None).await;
+    assert_eq!(status["existing"]["name"], "Hon. Old Officer");
+
+    let (code, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none"))).await;
+    assert_eq!(code, StatusCode::OK, "{body}");
+    let (_, cases) = call(&app, Method::GET, "/api/cases", None).await;
+    assert!(cases.as_array().unwrap().iter().any(|c| c["id"] == case["id"]), "the case is still there");
+    let actor: Option<String> = sqlx::query_scalar("SELECT actor FROM audit_log WHERE action = 'setup_completed'").fetch_optional(&pool).await.unwrap();
+    assert_eq!(actor.as_deref(), Some("Registrar Test"));
+    pool.close().await;
 }

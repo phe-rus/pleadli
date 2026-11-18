@@ -42,6 +42,8 @@ pub struct AppState {
     pub vault_root: PathBuf,
     /// Pleadli Orchestra (the licence, papers to /verify, daily backups); none in tests.
     pub orchestra: Option<std::sync::Arc<pleadli_node_core::orchestra::Orchestra>>,
+    /// Who may use the application. None only where there is no one to sign in (tests).
+    pub security: Option<std::sync::Arc<crate::domain::security::Security>>,
 }
 
 pub struct ApiError(pub StatusCode, pub &'static str, pub String);
@@ -57,6 +59,7 @@ impl From<DomainError> for ApiError {
         match err {
             DomainError::Invalid(m) => ApiError(StatusCode::UNPROCESSABLE_ENTITY, "INVALID", m),
             DomainError::NotFound(m) => ApiError(StatusCode::NOT_FOUND, "NOT_FOUND", m),
+            DomainError::Forbidden(m) => ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", m),
             DomainError::Db(e) => {
                 log::error!("database error: {e}");
                 ApiError(StatusCode::INTERNAL_SERVER_ERROR, "DATABASE", "The record could not be read or saved.".to_string())
@@ -521,10 +524,13 @@ pub fn router(state: AppState) -> Router {
         .route("/orders/{id}/preview", get(preview_order))
         .route("/audit", get(recent_audit))
         .route("/audit/verify", get(verify_audit))
+        .merge(session::routes())
         .merge(match state.orchestra.clone() {
             Some(o) => Router::new().nest("/orchestra", orchestra::routes(o)),
             None => Router::new(),
         });
+
+    let api = api.layer(axum::middleware::from_fn_with_state(state.clone(), session::gate)).merge(session::open_routes());
 
     Router::new().nest("/api", api).fallback(not_found).layer(DefaultBodyLimit::max(16 * 1024 * 1024)).with_state(state)
 }
@@ -563,6 +569,7 @@ pub async fn serve_dev(router: Router) {
 
 pub mod exchange;
 pub mod orchestra;
+pub mod session;
 
 #[cfg(test)]
 mod tests;

@@ -19,6 +19,7 @@ pub struct Db {
     pub pool: SqlitePool,
     /// Where sealed files are: `<data dir>/vault`.
     pub vault_root: PathBuf,
+    pub security: std::sync::Arc<crate::domain::security::Security>,
 }
 
 const DB_FILE: &str = "courts.db";
@@ -69,7 +70,10 @@ pub async fn startup(data_dir: &Path) -> Result<Db, StartupError> {
     #[cfg(debug_assertions)]
     crate::domain::seed::seed_if_empty(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
 
-    Ok(Db { pool, vault_root })
+    let security = std::sync::Arc::new(crate::domain::security::Security::new());
+    security.load(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
+
+    Ok(Db { pool, vault_root, security })
 }
 
 #[cfg(test)]
