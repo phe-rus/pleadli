@@ -37,14 +37,7 @@ fn not_installed(s: &AppState) -> Result<(), ApiError> {
 }
 
 async fn setup_status(State(s): State<AppState>) -> ApiResult<SetupStatus> {
-    let mut status = installation::setup_status(&s.pool).await?;
-    // The judicial officer already on an older installation is offered as the first administrator.
-    if !status.installed && status.existing.is_none() {
-        status.existing = sqlx::query_as::<_, (String, Option<String>)>("SELECT name, title FROM bench_profile WHERE id = 'default'")
-            .fetch_optional(&s.pool)
-            .await?
-            .map(|(name, rank)| crate::domain::installation::ExistingPerson { name, rank, flag: false });
-    }
+    let status = installation::setup_status(&s.pool).await?;
     Ok(Json(status))
 }
 
@@ -187,20 +180,20 @@ pub fn open_routes() -> Router<AppState> {
 }
 
 /// Who may reach what. Branding and the status are always readable. Before
-/// setup everything works (sign-in is opt-in); after it, with nobody signed in, only the sign-in
+/// only setup works; after it, with nobody signed in, only the sign-in
 /// list and signing in. Everything else counts as use, which postpones the
 /// idle sign-out. An application built without security (tests) is not gated.
 pub async fn gate(State(s): State<AppState>, request: axum::extract::Request, next: axum::middleware::Next) -> Response {
     let Some(sec) = s.security.as_ref() else { return next.run(request).await };
     let path = request.uri().path();
-    if path == "/installation/brand" {
+    if path == "/installation/brand" || path == "/system/status" {
         return next.run(request).await;
     }
-    // Sign-in is the institution's choice. Until setup has been done (an
-    // installation from before it existed, or one that chose no protection)
-    // the application works as it always has.
     if !sec.is_installed() {
-        return next.run(request).await;
+        if path.starts_with("/setup/") {
+            return next.run(request).await;
+        }
+        return ApiError(StatusCode::PRECONDITION_REQUIRED, "SETUP_REQUIRED", "The application is not set up yet.".to_string()).into_response();
     }
     if path.starts_with("/setup/") || path == "/session/people" || path == "/session/sign-in" {
         return next.run(request).await;

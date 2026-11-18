@@ -93,5 +93,22 @@
     "delivered": "{firm}: kimewekwa",
     "returned": "{firm}: kimerudishwa ({reason})",
     "awaiting": "{firm}: kimetumwa, risiti bado"
+  },
+  "window": {
+    "close": "Funga",
+    "maximize": "Kuza",
+    "minimize": "Punguza",
+    "controls": "Dirisha"
+  },
+  "staff": {
+    "role": {
+      "administrator": "Msimamizi",
+      "judicial_officer": "Afisa wa mahakama",
+      "registrar": "Msajili"
+    },
+    "flag": {
+      "is_head": "Mkuu wa mahakama hii",
+      "is_head_hint": "Hakimu anayeongoza au mkuu wa usajili."
+    }
   }
 }

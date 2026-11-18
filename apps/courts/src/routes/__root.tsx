@@ -1,6 +1,7 @@
 import { useSoftwareUpdateChecks } from '@/features/settings/software-update'
 import { Notfound } from '@/components/notfound'
 import { SplashScreen } from '@/components/splash-screen'
+import { AppGate } from '@/features/app-gate'
 import { LanguageSelect, LocaleBoundary } from '@/features/i18n'
 import { WindowResizeHandles } from '@/components/window-resize-handles'
 import { forwardErrorsToLog } from '@/lib/forward-errors-to-log'
@@ -54,7 +55,9 @@ function RootComponent() {
             <TooltipProvider>
               <LocaleBoundary>
                 <SplashScreen>
-                  <Outlet />
+                  <AppGate>
+                    <Outlet />
+                  </AppGate>
                 </SplashScreen>
               </LocaleBoundary>
             </TooltipProvider>

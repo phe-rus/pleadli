@@ -1020,17 +1020,6 @@ fn setup_body(protection: &str) -> Value {
 }
 
 #[tokio::test]
-async fn an_installation_that_was_never_set_up_keeps_working_untouched() {
-    let (app, _pool) = secured_app().await;
-    // As every Courts installation was before setup existed: no sign-in asked for.
-    let (status, _) = call(&app, Method::GET, "/api/cases", None).await;
-    assert_eq!(status, StatusCode::OK);
-    let (status, body) = call(&app, Method::GET, "/api/setup/status", None).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["installed"], false);
-}
-
-#[tokio::test]
 async fn with_a_pin_chosen_at_setup_nothing_opens_until_a_person_signs_in() {
     let (app, _pool) = secured_app().await;
     let (status, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("basic"))).await;
@@ -1050,19 +1039,10 @@ async fn with_a_pin_chosen_at_setup_nothing_opens_until_a_person_signs_in() {
 }
 
 #[tokio::test]
-async fn setup_keeps_existing_cases_and_the_audit_names_the_signed_in_person() {
-    let (app, pool) = secured_app().await;
-    call(&app, Method::PUT, "/api/profile", Some(json!({ "name": "Hon. Old Officer", "courtLevel": "magistrate" }))).await;
-    let (_, case) = call(&app, Method::POST, "/api/cases", Some(json!({ "courtNumber": "CO 7/2026", "title": "Uganda v Test", "courtLevel": "magistrate" }))).await;
-    // The officer already on this installation is offered as the first administrator.
-    let (_, status) = call(&app, Method::GET, "/api/setup/status", None).await;
-    assert_eq!(status["existing"]["name"], "Hon. Old Officer");
-
-    let (code, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none"))).await;
-    assert_eq!(code, StatusCode::OK, "{body}");
-    let (_, cases) = call(&app, Method::GET, "/api/cases", None).await;
-    assert!(cases.as_array().unwrap().iter().any(|c| c["id"] == case["id"]), "the case is still there");
-    let actor: Option<String> = sqlx::query_scalar("SELECT actor FROM audit_log WHERE action = 'setup_completed'").fetch_optional(&pool).await.unwrap();
-    assert_eq!(actor.as_deref(), Some("Registrar Test"));
-    pool.close().await;
+async fn before_setup_only_setup_works_and_none_protection_needs_no_sign_in() {
+    let (app, _pool) = secured_app().await;
+    assert_eq!(call(&app, Method::GET, "/api/cases", None).await.0, StatusCode::PRECONDITION_REQUIRED);
+    let (status, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none"))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(call(&app, Method::GET, "/api/cases", None).await.0, StatusCode::OK);
 }

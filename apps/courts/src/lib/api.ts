@@ -68,11 +68,20 @@ async function transport(method: string, path: string, body: unknown): Promise<W
   return { status: response.status, body: parsed }
 }
 
+const lockListeners = new Set<() => void>()
+
+/** Called when the app answers that it is locked or not set up, so the gate shows at once. */
+export function onLocked(listener: () => void) {
+  lockListeners.add(listener)
+  return () => void lockListeners.delete(listener)
+}
+
 export async function api(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, options: ApiOptions = {}): Promise<unknown> {
   const { status, body } = await transport(method, withQuery(path, options.query), options.body)
   if (status >= 200 && status < 300) return body
 
   const payload = (body && typeof body === 'object' ? body : {}) as { code?: string; message?: string }
+  if (status === 423 || status === 428) lockListeners.forEach((listener) => listener())
   throw new ApiError(status, payload.code ?? `HTTP_${status}`, payload.message ?? 'The request failed.')
 }
 

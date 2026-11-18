@@ -93,5 +93,22 @@
     "delivered": "{firm}: filed",
     "returned": "{firm}: returned ({reason})",
     "awaiting": "{firm}: sent, no receipt yet"
+  },
+  "window": {
+    "close": "Close",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
+    "controls": "Window"
+  },
+  "staff": {
+    "role": {
+      "administrator": "Administrator",
+      "judicial_officer": "Judicial officer",
+      "registrar": "Registrar"
+    },
+    "flag": {
+      "is_head": "Head of this court",
+      "is_head_hint": "The presiding officer or the head of the registry."
+    }
   }
 }
