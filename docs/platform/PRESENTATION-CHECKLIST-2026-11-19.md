@@ -38,21 +38,19 @@ Also not built: civilian reporting to police, appointments, the office directory
 - *Does it work without internet?* Yes, every app. Internet is for licences, updates, backups to your own storage, and the connecting services.
 - *Can the public report crimes through it?* No. Not built, and it needs legal review first.
 
-## Production database: there are no users, so wipe it and rebuild (owner decision, 2026-11-18)
+## Production database: new one created by the owner (2026-11-18)
 
-Item 2 above is no longer a blocker. With no real users, the live database is rebuilt from the current migrations instead of reconciled.
+There are no users, so the old production database is replaced, not reconciled. The owner created a new D1 database, **`pleadli-database`** (id `09f65704-...`), and put it in `www/wrangler.jsonc`. The binding is still `DB`; the `db:local`, `db:remote` and `seed-demo.sh` commands now use the binding name `DB` instead of the database name, so a future rename needs no script change.
 
-**Proven locally on 2026-11-18:** deleting the local database and running `bun run db:local` applies all six migrations cleanly (60 statements, including the relay tables); `seed-demo.sh` loads; verify, track, the relay calls and the public pages answer. So a fresh database works with today's code.
+**Proven locally with the new config:** a fresh local database applies all six migrations (relay tables included), `seed-demo.sh` loads, and verify, track, the relay connection call and the public pages answer.
 
-For production (needs `bunx wrangler login` first; I could not do it, the login had expired):
+**Still to do on production** (needs `bunx wrangler login`, which had expired for me):
 
-1. Optional safety copy: `bunx wrangler d1 export pleadli --remote --output pleadli-before-reset.sql`
-2. Create a fresh database, since a D1 database cannot be emptied or renamed in place: `bunx wrangler d1 create <name>`. Naming is free now. The owner's scheme is `pleadli-<purpose>`; this one holds sign-in, licences, papers and the relay, so I would call it `pleadli-data` rather than `pleadli-auth`. Your call.
-3. Put the new `database_id` (and `database_name`) in `www/wrangler.jsonc`, and the new name in the `db:local` and `db:remote` scripts in `www/package.json` (they say `pleadli` now).
-4. `cd www && bun run db:remote` applies all six migrations to the empty database.
-5. Create the bucket: `bunx wrangler r2 bucket create pleadli-post`.
-6. Set the Worker secrets again if they are not already on the Worker (`ORCHESTRA_SIGNING_KEY`, `BETTER_AUTH_SECRET`); they live on the Worker, not in the database.
-7. `bun run deploy`.
-8. Delete the old database only after the site works: `bunx wrangler d1 delete pleadli`.
+1. From `www/`: `bun run db:remote` applies all six migrations to the empty `pleadli-database`. Check the result lists six green ticks.
+2. Create the bucket: `bunx wrangler r2 bucket create pleadli-post`.
+3. Check the Worker secrets are set (`ORCHESTRA_SIGNING_KEY`, `BETTER_AUTH_SECRET`); they live on the Worker, not in the database.
+4. `bun run deploy`.
+5. Look at the live site: `/`, `/verify`, `/login`, then create the first real account.
+6. Delete the old database only when the site works: `bunx wrangler d1 delete pleadli`. Anything it held (registrations, licence keys, paper fingerprints) is gone then; export it first if any real office was issued something (`bunx wrangler d1 export pleadli --remote --output pleadli-before-reset.sql`).
 
-Everything that lived in the old production database (any institution registrations, licences, issued-paper fingerprints) is gone after this. With no users that is the intention; if a licence key or a paper fingerprint was issued for a real office, export first (step 1).
+Do not run the demo seed against production: it is local only.
