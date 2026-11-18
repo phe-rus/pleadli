@@ -2472,6 +2472,18 @@
     "intro": "Les dossiers, renvois et décisions échangés avec la police et les tribunaux arrivent ici.",
     "outbox": "Envoi",
     "status": "Pas encore activée. Elle fonctionnera dès que votre bureau sera relié à Pleadli.",
-    "title": "Boîte postale"
+    "title": "Boîte postale",
+    "sent": "Envoyés",
+    "empty_sent": "Rien n'a encore été envoyé.",
+    "search": "Rechercher",
+    "select": "Choisissez un message pour le lire.",
+    "from": "De",
+    "to": "À",
+    "referral_subject": "Transmission {reference}",
+    "referral_body": "Un dossier a été transmis par {station}. Lisez-le puis acceptez-le ou renvoyez-le.",
+    "waiting_to_read": "À lire",
+    "dealt_with": "Traité",
+    "open_incoming": "Ouvrir dans Reçus",
+    "resubmission": "Nouvelle transmission"
   }
 }

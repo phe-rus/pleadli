@@ -1609,7 +1609,7 @@
     "show_qr": "Onyesha QR ya kuunganisha",
     "tunnel": "Ufikiaji kutoka popote",
     "tunnel_active": "Inatumika kwenye {host}",
-    "tunnel_desc": "Washa Ufikiaji wa mbali hapo juu na Pleadli itaandaa anwani ya faragha ya kituo hiki. Hakuna cha kubandika. Inahitaji intaneti na leseni inayotumika.",
+    "tunnel_desc": "Washa Ufikiaji wa mbali hapo juu na Pleadli itakipa kituo hiki anwani yake ya intaneti. Hakuna cha kubandika. Maafisa bado huingia kwa nenosiri, na huacha kufanya kazi leseni ikiisha. Inahitaji intaneti.",
     "own_cloudflare": "Tumia akaunti yangu ya Cloudflare badala yake",
     "remote_tunnel_failed": "Kwenye mtandao huu tu. Anwani ya intaneti haikuweza kuandaliwa: {reason}",
     "remote_logged": "Vitendo {count} vya mbali vimerekodiwa.",

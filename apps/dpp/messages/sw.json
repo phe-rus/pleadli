@@ -2472,6 +2472,18 @@
     "intro": "Majalada, rufaa na maamuzi kwenda na kutoka polisi na mahakamani yanafika hapa.",
     "outbox": "Za kutuma",
     "status": "Bado haijawashwa. Itafanya kazi ofisi yako ikiunganishwa na Pleadli.",
-    "title": "Sanduku la posta"
+    "title": "Sanduku la posta",
+    "sent": "Zilizotumwa",
+    "empty_sent": "Hakuna kilichotumwa bado.",
+    "search": "Tafuta",
+    "select": "Chagua ujumbe ili kuusoma.",
+    "from": "Kutoka",
+    "to": "Kwa",
+    "referral_subject": "Rufaa {reference}",
+    "referral_body": "Jalada la kesi limetumwa na {station}. Lisome kisha ulikubali au ulirudishe.",
+    "waiting_to_read": "Inasubiri usome",
+    "dealt_with": "Imeshughulikiwa",
+    "open_incoming": "Fungua kwenye Zinazoingia",
+    "resubmission": "Imewasilishwa tena"
   }
 }

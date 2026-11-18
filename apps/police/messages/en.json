@@ -1609,7 +1609,7 @@
     "show_qr": "Show pairing QR",
     "tunnel": "Reach it from anywhere",
     "tunnel_active": "Active at {host}",
-    "tunnel_desc": "Turn on Remote access above and Pleadli sets up a private address for this station. Nothing to paste. It needs the internet and an active licence.",
+    "tunnel_desc": "Turn on Remote access above and Pleadli gives this station its own internet address. Nothing to paste. Officers still sign in, and it stops working if the licence ends. It needs the internet.",
     "own_cloudflare": "Use my own Cloudflare account instead",
     "remote_tunnel_failed": "On this network only. The internet address could not be set up: {reason}",
     "remote_logged": "{count} remote actions logged.",

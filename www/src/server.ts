@@ -1,5 +1,6 @@
 import handler from "@tanstack/react-start/server-entry";
 import { sweepRelay } from "./api/relay-v1";
+import { sweepTunnels } from "@/api/tunnel-v1";
 import { paraglideMiddleware } from "./paraglide/server.js";
 
 /** The Worker's entry (wrangler.jsonc `main`): every request is rendered in
@@ -18,6 +19,11 @@ export default {
     ctx.waitUntil(
       sweepRelay().then((result) =>
         console.log("relay sweep", JSON.stringify(result)),
+      ),
+    );
+    ctx.waitUntil(
+      sweepTunnels().then((result) =>
+        console.log("tunnel sweep", JSON.stringify(result)),
       ),
     );
   },

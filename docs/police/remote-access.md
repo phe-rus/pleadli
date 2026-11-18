@@ -29,7 +29,7 @@ officer who made it (Settings → Network → Recent remote activity).
 
 ## Default: Pleadli provides the tunnel (2026-11-18)
 
-A station does nothing but turn Remote access on. Its computer asks pleadli.com (`POST /api/orchestra/v1/tunnel`, signed in with the computer token, active licence required). Pleadli creates or reuses the tunnel `st-<office address>`, points `st-<office address>.pleadli.com` at it, and returns the address and a run token; the app starts `cloudflared` with it. The station page still carries search and alerts only.
+A station does nothing but turn Remote access on. Its computer asks pleadli.com (`POST /api/orchestra/v1/tunnel`, signed in with the computer token, active licence required). Pleadli creates or reuses the tunnel `st-<12 hex of a hash of the computer id>` (no office name in it), points the same name under pleadli.com at it, and returns the address and a run token; the app starts `cloudflared` with it. The station page still carries search and alerts only.
 
 Owner, once, on pleadli.com (not done yet, so the call answers 503 until then):
 
@@ -95,3 +95,7 @@ this. Re-enabling later reuses the same tunnel rather than creating a new one.
   boundary are the responsible defaults chosen while this is unresolved, not
   a claim that it's been resolved. Get real legal review before deploying
   this to an actual police station.
+
+## Who can reach it, and how that is revoked (2026-11-18)
+
+The address is not secret and is not meant to be. What decides access is: the officer's sign-in on the station page, the confirmed office connection, and the licence. The tunnel is asked for with an active licence each time Remote access is switched on or the app starts, and the daily sweep on pleadli.com (`sweepTunnels`) deletes the tunnel and DNS record of any computer whose licence or office is no longer active, so revoking a licence ends remote access within a day. Still to do by the owner: a Cloudflare rate-limit rule on `st-*.pleadli.com` sign-in paths, alongside the one for `/api/public/*`. Not yet run against the live Cloudflare API.

@@ -1,4 +1,8 @@
-import { identify } from '@/lib/computer-auth.server'
+import { db } from '@/db'
+import { organization } from '@/db/auth-schema'
+import { computer, licence } from '@/db/orchestra-schema'
+import { identify, sha256Of } from '@/lib/computer-auth.server'
+import { and, eq, gt, isNotNull } from 'drizzle-orm'
 import { env } from 'cloudflare:workers'
 
 /**
@@ -17,10 +21,12 @@ const fail = (status: number, code: string, message: string) => json({ error: co
 
 type Secrets = { CF_TUNNEL_API_TOKEN?: string; CF_ACCOUNT_ID?: string; CF_ZONE_ID?: string }
 
-/** st-<office address>: letters, digits and hyphens, at most 50 characters. */
-export function stationName(address: string) {
-  const slug = address.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 46).replace(/-+$/g, '')
-  return `st-${slug || 'office'}`
+/** st-<12 hex of a hash of the computer's id>. The address says nothing about
+ * the office and cannot be guessed from its name; what protects the page behind
+ * it is the officer's sign-in and the office's licence, checked every time the
+ * tunnel is asked for and by the daily sweep. */
+export async function stationName(computerId: string) {
+  return `st-${(await sha256Of(new TextEncoder().encode(`tunnel:${computerId}`))).slice(0, 12)}`
 }
 
 async function cloudflare<T>(secrets: Required<Secrets>, path: string, init?: RequestInit): Promise<T> {
@@ -46,7 +52,7 @@ export async function handleTunnelV1(request: Request): Promise<Response> {
   const port = Number(asked.port)
   if (!Number.isInteger(port) || port < 1024 || port > 65535) return fail(400, 'port', 'Give the local port the station page listens on.')
 
-  const name = stationName(caller.address)
+  const name = await stationName(caller.computerId)
   const hostname = `${name}.${DOMAIN}`
   const account = `/accounts/${ready.CF_ACCOUNT_ID}`
   try {
@@ -71,4 +77,43 @@ export async function handleTunnelV1(request: Request): Promise<Response> {
     console.error('tunnel', e instanceof Error ? e.message : e)
     return fail(502, 'cloudflare', 'Pleadli could not set up the tunnel just now. Try again in a few minutes.')
   }
+}
+
+/**
+ * The daily sweep: a tunnel exists only for a computer whose licence is active
+ * and whose office is active. Any other `st-` tunnel (licence ended, computer
+ * revoked or removed) is deleted with its DNS record, so remote access stops
+ * rather than lingering. Best effort: a failure is logged and tried again
+ * tomorrow.
+ */
+export async function sweepTunnels() {
+  const secrets = env as unknown as Secrets
+  if (!secrets.CF_TUNNEL_API_TOKEN || !secrets.CF_ACCOUNT_ID || !secrets.CF_ZONE_ID) return { skipped: true }
+  const ready = secrets as Required<Secrets>
+  const licensed = await db
+    .select({ id: computer.id })
+    .from(computer)
+    .innerJoin(licence, eq(licence.id, computer.licenceId))
+    .innerJoin(organization, eq(organization.id, computer.organizationId))
+    .where(and(isNotNull(computer.licenceId), eq(licence.status, 'active'), gt(licence.expiresAt, new Date()), eq(organization.status, 'active')))
+  const keep = new Set<string>()
+  for (const row of licensed) keep.add(await stationName(row.id))
+
+  const account = `/accounts/${ready.CF_ACCOUNT_ID}`
+  let removed = 0
+  try {
+    const tunnels = await cloudflare<{ id: string; name: string }[]>(ready, `${account}/cfd_tunnel?is_deleted=false&per_page=1000`)
+    for (const tunnel of tunnels.filter((t) => t.name.startsWith('st-') && !keep.has(t.name))) {
+      const hostname = `${tunnel.name}.${DOMAIN}`
+      const records = await cloudflare<{ id: string }[]>(ready, `/zones/${ready.CF_ZONE_ID}/dns_records?type=CNAME&name=${encodeURIComponent(hostname)}`)
+      for (const record of records) await cloudflare(ready, `/zones/${ready.CF_ZONE_ID}/dns_records/${record.id}`, { method: 'DELETE' })
+      await cloudflare(ready, `${account}/cfd_tunnel/${tunnel.id}/connections`, { method: 'DELETE' }).catch(() => {})
+      await cloudflare(ready, `${account}/cfd_tunnel/${tunnel.id}`, { method: 'DELETE' })
+      removed++
+    }
+  } catch (e) {
+    console.error('tunnel sweep', e instanceof Error ? e.message : e)
+    return { removed, failed: true }
+  }
+  return { removed }
 }

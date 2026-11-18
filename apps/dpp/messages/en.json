@@ -2472,6 +2472,18 @@
     "intro": "Case files, referrals and decisions to and from police and courts arrive here.",
     "outbox": "Outbox",
     "status": "Not switched on yet. It will work once your office is connected to Pleadli.",
-    "title": "Postbox"
+    "title": "Postbox",
+    "sent": "Sent",
+    "empty_sent": "Nothing has been sent yet.",
+    "search": "Search",
+    "select": "Select a message to read it.",
+    "from": "From",
+    "to": "To",
+    "referral_subject": "Referral {reference}",
+    "referral_body": "A case file was sent by {station}. Read it and accept or return it.",
+    "waiting_to_read": "Waiting for you to read it",
+    "dealt_with": "Dealt with",
+    "open_incoming": "Open in Incoming",
+    "resubmission": "Resubmission"
   }
 }
