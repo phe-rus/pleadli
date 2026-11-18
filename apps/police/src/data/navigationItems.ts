@@ -96,6 +96,7 @@ export const policeNav: readonly NavItem[] = [
   { get label() { return m["nav.impounded_assets"]() }, icon: ArchiveIcon, to: '/stores/impounded', section: 'station' },
   { get label() { return m["nav.statistics"]() }, icon: BarChartIcon, to: '/reports', section: 'station' },
   { get label() { return m["nav.postbox"]() }, icon: Mail01Icon, to: '/postbox', section: 'station' },
+  { get label() { return m["nav.exchange"]() }, icon: Mail01Icon, to: '/exchange', section: 'station' },
 
   { get label() { return m["nav.search"]() }, icon: Search01Icon, to: '/search', exact: true },
   { get label() { return m["nav.station_profile"]() }, icon: Building06Icon, to: '/station/profile' },

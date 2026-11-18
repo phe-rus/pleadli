@@ -189,7 +189,8 @@
     "charge_sheets": "Charge sheets",
     "statistics": "Statistics",
     "postbox": "Postbox",
-    "medical": "Medical records"
+    "medical": "Medical records",
+    "exchange": "DPP exchange"
   },
   "nav_sections": {
     "front_desk": "Front desk",
@@ -2281,5 +2282,36 @@
     "empty": "No medical examination has been recorded yet.",
     "summary": "{total} records, {waiting} waiting for the examination",
     "kind_label": "Kind"
+  },
+  "exchange": {
+    "title": "DPP exchange",
+    "intro": "Send a case to the DPP office as a sealed file, and read what it sends back. Everything here works with no internet: carry the file by hand or hand it to the postbox.",
+    "identity_title": "This station",
+    "identity_hint": "Give the station its identity once, as the DPP office knows it. It cannot be changed afterwards, because the office confirms its fingerprint.",
+    "station_name": "Station name",
+    "area": "Area",
+    "identity_create": "Create identity",
+    "fingerprint": "Fingerprint:",
+    "offices_title": "DPP offices",
+    "offices_hint": "The office sends an invitation file. Answer it, send the answer file back, and the office confirms this station. Then read the fingerprints aloud to each other to be sure.",
+    "in_charge": "Officer in charge",
+    "answer_invite": "Answer an invitation",
+    "import": "Open a file from the office",
+    "no_offices": "No office has invited this station yet.",
+    "answer_saved": "Answer saved for {office}. Send it back and give them this code to confirm: {code}",
+    "status_answered": "Waiting for the office",
+    "status_trusted": "Trusted",
+    "status_declined": "Declined",
+    "status_revoked": "Ended",
+    "send_title": "Send a referral",
+    "send_hint": "Save the sealed file and carry it to the office, or send it by postbox.",
+    "send_blocked": "No office has confirmed this station yet, so nothing can be sent.",
+    "no_referrals": "No referrals yet. Refer a case to the DPP first.",
+    "save_file": "Save as file",
+    "sent_file": "Saved {name}.",
+    "incoming_title": "From the office",
+    "no_incoming": "Nothing has come back yet.",
+    "receipt": "Receipt",
+    "decision": "Decision"
   }
 }

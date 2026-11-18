@@ -226,6 +226,7 @@ pub fn run() {
             commands::documents::export_case_document,
             commands::documents::export_charge_sheet_document,
             commands::documents::save_paper_file,
+            commands::documents::read_paper_file,
             commands::documents::office_apps,
             commands::documents::open_paper_file,
             commands::import::import_fields,

@@ -5,6 +5,7 @@
 //! Every route lives under `/api`. The commands beside `api_request` exist only
 //! because they need the operating system (a file dialog, a path, an event).
 
+pub mod exchange;
 pub mod hq;
 pub mod orchestra;
 pub mod session;
@@ -1566,6 +1567,12 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/auth/me", get(session::me))
         .route("/auth/policy", get(session::get_policy).put(session::save_policy))
         .route("/auth/events", get(session::list_events))
+        .route("/exchange/identity", get(exchange::get_identity).post(exchange::create_identity))
+        .route("/exchange/connections", get(exchange::list_connections))
+        .route("/exchange/accept-invite", post(exchange::accept_invite))
+        .route("/exchange/import", post(exchange::import_package))
+        .route("/exchange/incoming", get(exchange::list_incoming))
+        .route("/exchange/referrals/{id}/export", post(exchange::export_referral))
         .route("/hq/stations", get(hq::list_stations).post(hq::register_station))
         .route("/hq/stations/{id}/activation-code", post(hq::issue_code))
         .route("/hq/stations/{id}/revoke", post(hq::revoke))

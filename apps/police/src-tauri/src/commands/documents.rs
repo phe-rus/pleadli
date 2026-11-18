@@ -84,11 +84,26 @@ pub async fn export_charge_sheet_document(_who: super::api::SignedIn,
 pub async fn save_paper_file(_who: super::api::SignedIn, path: String, data: String) -> Result<(), String> {
     use base64::Engine;
     let lower = path.to_lowercase();
-    if ![".doc", ".docx", ".pdf", ".xlsx", ".csv", ".txt"].iter().any(|ext| lower.ends_with(ext)) {
+    if ![".doc", ".docx", ".pdf", ".xlsx", ".csv", ".txt", ".pxpkg"].iter().any(|ext| lower.ends_with(ext)) {
         return Err("This kind of file is not saved from here.".into());
     }
     let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
     std::fs::write(&path, bytes).map_err(|e| e.to_string())
+}
+
+/// A package file the officer chose in the open window, read for the exchange.
+/// Only `.pxpkg` files, at most 50 MB.
+#[tauri::command]
+pub async fn read_paper_file(_who: super::api::SignedIn, path: String) -> Result<String, String> {
+    use base64::Engine;
+    if !path.to_lowercase().ends_with(".pxpkg") {
+        return Err("Only Pleadli package files are opened from here.".into());
+    }
+    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+    if bytes.len() > 50 * 1024 * 1024 {
+        return Err("That file is too large.".into());
+    }
+    Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
 }
 
 /// Which office programs this computer has (Word, Excel, LibreOffice).

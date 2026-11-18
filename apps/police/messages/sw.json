@@ -189,7 +189,8 @@
     "charge_sheets": "Hati za mashtaka",
     "statistics": "Takwimu",
     "postbox": "Sanduku la posta",
-    "medical": "Rekodi za kitabibu"
+    "medical": "Rekodi za kitabibu",
+    "exchange": "Mawasiliano na DPP"
   },
   "nav_sections": {
     "front_desk": "Mapokezi",
@@ -2281,5 +2282,36 @@
     "empty": "Bado hakuna uchunguzi wa kitabibu ulioandikwa.",
     "summary": "Rekodi {total}, {waiting} zinasubiri uchunguzi",
     "kind_label": "Aina"
+  },
+  "exchange": {
+    "title": "Mawasiliano na DPP",
+    "intro": "Tuma kesi kwa ofisi ya DPP kama faili iliyofungwa, na usome inachotuma. Yote hufanya kazi bila intaneti: beba faili kwa mkono au iweke kwenye sanduku la posta.",
+    "identity_title": "Kituo hiki",
+    "identity_hint": "Wape kituo utambulisho mara moja, kama ofisi ya DPP inavyokijua. Hauwezi kubadilishwa baadaye, kwa sababu ofisi huthibitisha alama yake.",
+    "station_name": "Jina la kituo",
+    "area": "Eneo",
+    "identity_create": "Unda utambulisho",
+    "fingerprint": "Alama:",
+    "offices_title": "Ofisi za DPP",
+    "offices_hint": "Ofisi hutuma faili ya mwaliko. Ijibu, rudisha faili ya jibu, na ofisi itathibitisha kituo hiki. Kisha someaneni alama kwa sauti ili kuhakikisha.",
+    "in_charge": "Mkuu wa kituo",
+    "answer_invite": "Jibu mwaliko",
+    "import": "Fungua faili kutoka ofisini",
+    "no_offices": "Hakuna ofisi iliyoalika kituo hiki bado.",
+    "answer_saved": "Jibu limehifadhiwa kwa {office}. Lirudishe na uwape msimbo huu wathibitishe: {code}",
+    "status_answered": "Inasubiri ofisi",
+    "status_trusted": "Inaaminika",
+    "status_declined": "Imekataliwa",
+    "status_revoked": "Imeisha",
+    "send_title": "Tuma rufaa",
+    "send_hint": "Hifadhi faili iliyofungwa na uibebe hadi ofisini, au itume kwa sanduku la posta.",
+    "send_blocked": "Hakuna ofisi iliyothibitisha kituo hiki bado, kwa hivyo hakuna kinachoweza kutumwa.",
+    "no_referrals": "Hakuna rufaa bado. Peleka kesi kwa DPP kwanza.",
+    "save_file": "Hifadhi kama faili",
+    "sent_file": "Imehifadhiwa {name}.",
+    "incoming_title": "Kutoka ofisini",
+    "no_incoming": "Hakuna kilichorudi bado.",
+    "receipt": "Risiti",
+    "decision": "Uamuzi"
   }
 }
