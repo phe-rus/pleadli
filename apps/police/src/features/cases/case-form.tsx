@@ -20,7 +20,11 @@ import { useOfficers } from '@/features/officers'
 import { useCaseAccess, useCasePeople, useCreateCase, useUpdateCase } from './queries'
 import { caseRoleLabel, caseRoles, caseStatuses, casePersonName, type Case, type CasePerson } from './schema'
 
+/** What a new case starts from, so facts already recorded on an incident are not typed again. */
+export type CaseStart = { incidentId: string; summary: string; person?: { personId: string; personName: string } }
+
 export type CaseFormProps = {
+  start?: CaseStart
   case?: Case
   onSuccess?: (created: Case) => void
   onDirtyChange?: (dirty: boolean) => void
@@ -28,7 +32,7 @@ export type CaseFormProps = {
 
 type PersonRoleRow = { personId: string; personName: string; role: string }
 
-export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseFormProps) {
+export function CaseForm({ case: existingCase, start, onSuccess, onDirtyChange }: CaseFormProps) {
   const createCase = useCreateCase()
   const updateCase = useUpdateCase()
   const { data: incidents } = useSuspenseQuery(incidentsOptions(''))
@@ -44,7 +48,7 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
 
   const rowsOf = (list: CasePerson[] | undefined): PersonRoleRow[] =>
     (list ?? []).map((p: CasePerson) => ({ personId: p.personId, personName: casePersonName(p), role: p.role }))
-  const [people, setPeople] = useState<PersonRoleRow[]>(() => rowsOf(existingPeople))
+  const [people, setPeople] = useState<PersonRoleRow[]>(() => (start?.person ? [{ ...start.person, role: 'complainant' }] : rowsOf(existingPeople)))
   // Saving a case replaces its people with this list, so an edit must never start from an empty
   // list that is only empty because the real one has not arrived yet. The list is filled in when it
   // arrives, and the form cannot be saved before that.
@@ -70,9 +74,9 @@ export function CaseForm({ case: existingCase, onSuccess, onDirtyChange }: CaseF
   const form = useAppForm({
     defaultValues: {
       reference: existingCase?.reference ?? '',
-      summary: existingCase?.summary ?? '',
+      summary: existingCase?.summary ?? start?.summary ?? '',
       status: existingCase?.status ?? 'open',
-      incidentId: existingCase?.incidentId ?? (null as string | null),
+      incidentId: existingCase?.incidentId ?? start?.incidentId ?? (null as string | null),
       restricted: existingCase?.restricted ?? false,
     },
     validators: {

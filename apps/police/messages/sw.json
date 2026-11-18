@@ -1243,7 +1243,9 @@
     "recording_officer": "Afisa anayeandika taarifa",
     "count_one": "Tukio 1",
     "count": "Matukio {count}",
-    "new": "Ripoti tukio"
+    "new": "Ripoti tukio",
+    "open_case": "Fungua kesi kutoka hapa",
+    "open_case_desc": "Inaanzisha kesi yenye tukio hili, muhtasari umejazwa na aliyeripoti kama mlalamikaji."
   },
   "intake_page": {
     "title": "Upokeaji wa Kesi",
@@ -1278,7 +1280,14 @@
     "evidence": "Ushahidi",
     "charge_sheets": "Hati za mashtaka",
     "list_lead": "Chagua kesi ili kufungua mwonekano wake wa kazi: watu, maelezo, mahabusu, dhamana na faili, vyote mahali pamoja.",
-    "people_count": "watu {count}"
+    "people_count": "watu {count}",
+    "next_title": "Hatua zinazofuata",
+    "next_hint": "Bado hakuna kilichoandikwa kwenye kesi hii. Anza na mojawapo, kisha chagua kesi hii kwenye fomu.",
+    "next_statement": "Chukua maelezo",
+    "next_exhibit": "Andika kielelezo",
+    "next_arrest": "Weka mtu rumande",
+    "next_medical": "Andika uchunguzi wa kitabibu",
+    "next_refer": "Peleka kesi"
   },
   "legal_page": {
     "back": "Rudi kwenye Hati za Mashtaka na Fomu",

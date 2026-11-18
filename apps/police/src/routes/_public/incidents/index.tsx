@@ -2,6 +2,7 @@ import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { RecordList } from '@/features/paper/record-list'
 import { RecordPaper } from '@/features/paper/record-paper'
+import { CaseForm } from '@/features/cases'
 import { IncidentForm, incidentPersonName, incidentsOptions, useIncidents, type Incident } from '@/features/incidents'
 import { format } from '@/lib/date'
 import { SirenIcon } from '@hugeicons/core-free-icons'
@@ -46,6 +47,17 @@ function IncidentPaper({ incident }: { incident: Incident }) {
         <PaperField label={m["incidents_page.recorded"]()}>{format(incident.createdAt, 'PPp')}</PaperField>
       </section>
       <RichTextPreview value={incident.description} className="[&_p]:mb-3" />
+      <div className="mt-6 print:hidden">
+        <PanelButton label={m["incidents_page.open_case"]()} title={m["incidents_page.open_case"]()} description={m["incidents_page.open_case_desc"]()}>
+          {({ close, setDirty }) => (
+            <CaseForm
+              start={{ incidentId: incident.id, summary: incident.summary, ...(incident.personId && person ? { person: { personId: incident.personId, personName: person } } : {}) }}
+              onSuccess={close}
+              onDirtyChange={setDirty}
+            />
+          )}
+        </PanelButton>
+      </div>
       <section className="mt-12 flex justify-end">
         <SignatureLine caption={m["incidents_page.recording_officer"]()} />
       </section>

@@ -190,6 +190,19 @@ function RouteComponent() {
         content={{
           overview: (
             <div className="grid grid-cols-1 gap-8 p-4 md:grid-cols-2">
+              {custodyRecords.length + bonds.length + referrals.length + people.length === 0 && (
+                <aside className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-4 md:col-span-2">
+                  <h2 className="text-sm font-medium">{m["investigation.next_title"]()}</h2>
+                  <p className="text-xs text-muted-foreground">{m["investigation.next_hint"]()}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Link to="/statements" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_statement"]()}</Link>
+                    <Link to="/evidence" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_exhibit"]()}</Link>
+                    <Link to="/search/custody" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_arrest"]()}</Link>
+                    <Link to="/medical" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_medical"]()}</Link>
+                    <Link to="/referrals" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_refer"]()}</Link>
+                  </div>
+                </aside>
+              )}
         <Section title={m["common.custody"]()} count={custodyRecords.length}>
           {custodyRecords.map((record) => {
             const compliance = record.status === 'in_custody' ? custodyCompliance(record) : null

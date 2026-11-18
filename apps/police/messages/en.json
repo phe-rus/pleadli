@@ -1243,7 +1243,9 @@
     "recording_officer": "Officer recording the report",
     "count_one": "1 incident",
     "count": "{count} incidents",
-    "new": "Report an incident"
+    "new": "Report an incident",
+    "open_case": "Open a case from this",
+    "open_case_desc": "Starts a case with this incident linked, its summary filled in and the person who reported it as complainant."
   },
   "intake_page": {
     "title": "Case Intake",
@@ -1278,7 +1280,14 @@
     "evidence": "Evidence",
     "charge_sheets": "Charge sheets",
     "list_lead": "Pick a case to open its working view: people, statements, custody, bonds, and files, brought together in one place.",
-    "people_count": "{count} people"
+    "people_count": "{count} people",
+    "next_title": "Next steps",
+    "next_hint": "Nothing has been recorded on this case yet. Start with one of these, then pick this case in the form.",
+    "next_statement": "Take a statement",
+    "next_exhibit": "Record an exhibit",
+    "next_arrest": "Book someone in",
+    "next_medical": "Record a medical exam",
+    "next_refer": "Refer the case"
   },
   "legal_page": {
     "back": "Back to Charge Sheets & Forms",
