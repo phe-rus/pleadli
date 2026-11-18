@@ -279,20 +279,24 @@ function ShellFrame({ children }: PropsWithChildren) {
   return (
     <div className="h-full min-h-0 w-full overflow-hidden print:h-auto print:overflow-visible">
       {search.enabled && <Menu open={searchOpen} onOpenChange={setSearchOpen} />}
-      <div className="flex h-full w-full flex-col overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
-        <div className="flex min-h-0 flex-1 print:block">
-          <LeftPillar />
-          <div className="flex min-w-0 flex-1 flex-col print:block">
-            <CenterHeader />
-            {LicenceBar && <LicenceBar />}
-            {AboveContent && <AboveContent />}
-            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background print:block print:overflow-visible">
-              <div ref={scroller} className="no-scrollbar min-h-0 flex-1 overflow-y-auto print:overflow-visible">{children}</div>
-            </main>
+      {/* The sidebar runs the full height of the window, top to bottom. The status bar (what is
+          happening right now) lives under the work area only, never under the sidebar. */}
+      <div className="flex h-full w-full overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
+        <LeftPillar />
+        <div className="flex min-w-0 flex-1 flex-col print:block">
+          <div className="flex min-h-0 flex-1 print:block">
+            <div className="flex min-w-0 flex-1 flex-col print:block">
+              <CenterHeader />
+              {LicenceBar && <LicenceBar />}
+              {AboveContent && <AboveContent />}
+              <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background print:block print:overflow-visible">
+                <div ref={scroller} className="no-scrollbar min-h-0 flex-1 overflow-y-auto print:overflow-visible">{children}</div>
+              </main>
+            </div>
+            <RightPanel />
           </div>
-          <RightPanel />
+          <StatusBarView>{StatusBar && <StatusBar />}</StatusBarView>
         </div>
-        <StatusBarView>{StatusBar && <StatusBar />}</StatusBarView>
       </div>
     </div>
   )
