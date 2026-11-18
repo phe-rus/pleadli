@@ -6,7 +6,7 @@
 
 use pleadli_interchange::envelope::{self, Body};
 use pleadli_interchange::identity::{hex, unhex32, Identity, IdentityKind, PublicIdentity};
-use pleadli_interchange::messages::{CourtNoticePayload, CourtNoticeReceiptPayload, KIND_COURT_NOTICE, KIND_COURT_NOTICE_RECEIPT};
+use pleadli_interchange::messages::{CourtNoticePayload, CourtNoticeReceiptPayload, FirmFilingPayload, FirmFilingReceiptPayload, KIND_COURT_NOTICE, KIND_COURT_NOTICE_RECEIPT, KIND_FIRM_FILING, KIND_FIRM_FILING_RECEIPT};
 use pleadli_interchange::pairing::{self, KIND_RESPONSE};
 use serde::Serialize;
 use sqlx::{FromRow, SqlitePool};
@@ -211,6 +211,9 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
             .await?;
         return Ok(Imported { kind: KIND_RESPONSE.into(), message: format!("{} has answered. Confirm its fingerprint with the office before trusting it.", d.name) });
     }
+    if header.kind == KIND_FIRM_FILING_RECEIPT {
+        return import_filing_receipt(pool, bytes, peeked, &me).await;
+    }
     if header.kind != KIND_COURT_NOTICE {
         return bad(format!("This firm does not receive packages of kind '{}'.", header.kind));
     }
@@ -248,6 +251,88 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     sqlx::query("UPDATE court_links SET last_seq_in = MAX(last_seq_in, ?) WHERE id = ?").bind(opened.header.seq as i64).bind(&link_id).execute(&mut *tx).await?;
     tx.commit().await?;
     Ok(Imported { kind: KIND_COURT_NOTICE.into(), message: format!("A notice from {} is waiting for you to read.", court.name) })
+}
+
+/// A document counsel files in a matter, sealed to the court registry that is
+/// trusted. The matter must carry the court's own case number.
+pub async fn file_to_court(pool: &SqlitePool, matter_id: &str, kind: &str, title: &str, paragraphs: &[String], filed_by: Option<&str>) -> Result<(Vec<u8>, String), DomainError> {
+    if !matches!(kind, "application" | "notice_of_appeal" | "bail_application" | "defence" | "submissions" | "other") {
+        return bad("Choose the kind of document being filed.");
+    }
+    let paragraphs: Vec<String> = paragraphs.iter().map(|p| p.trim().to_string()).filter(|p| !p.is_empty()).collect();
+    if title.trim().is_empty() || paragraphs.is_empty() {
+        return bad("A filing needs a title and its text.");
+    }
+    let me = require_identity(pool).await?;
+    let row: Option<(Option<String>, String, Option<String>)> = sqlx::query_as("SELECT court_number, title, our_ref FROM matters WHERE id = ?").bind(matter_id).fetch_optional(pool).await?;
+    let Some((court_number, matter_title, our_ref)) = row else { return Err(DomainError::NotFound("Matter not found.".into())) };
+    let Some(court_number) = court_number.filter(|n| !n.trim().is_empty()) else { return bad("This matter has no court case number yet. Put the number the court gave on the matter first.") };
+    let link_id: Option<String> = sqlx::query_scalar("SELECT id FROM court_links WHERE status = 'trusted' ORDER BY trusted_at DESC LIMIT 1").fetch_optional(pool).await?;
+    let Some(link_id) = link_id else { return bad("No court registry has confirmed this firm yet. Connect to a registry first.") };
+    let (court, _) = court_public(pool, &link_id).await?;
+    let firm: String = sqlx::query_scalar("SELECT office_name FROM firm_identity").fetch_one(pool).await?;
+    let key = uuid::Uuid::new_v4().to_string();
+    let payload = FirmFilingPayload { filing_key: key.clone(), kind: kind.to_string(), title: title.trim().to_string(), court_number: court_number.trim().to_string(), firm_name: firm, firm_reference: our_ref, filed_by: filed_by.map(str::to_string), filed_at: now(), paragraphs };
+    let json = serde_json::to_value(&payload).map_err(|_| DomainError::Invalid("Could not build the filing.".into()))?;
+    let mut tx = pool.begin().await?;
+    let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM court_links WHERE id = ?").bind(&link_id).fetch_one(&mut *tx).await?;
+    sqlx::query("UPDATE court_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(&link_id).execute(&mut *tx).await?;
+    let (bytes, header) = envelope::seal(&me, &court, KIND_FIRM_FILING, seq as u64, None, &Body::new(json.clone())).map_err(|e| DomainError::Invalid(e.to_string()))?;
+    sqlx::query("INSERT INTO filings_out (id, link_id, matter_id, kind, title, seq, payload, prepared_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(&header.id)
+        .bind(&link_id)
+        .bind(matter_id)
+        .bind(kind)
+        .bind(title.trim())
+        .bind(seq)
+        .bind(serde_json::to_string(&json).unwrap_or_default())
+        .bind(now())
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await?;
+    let _ = matter_title;
+    Ok((bytes, format!("filing-{}-{}.pxpkg", kind.replace('_', "-"), seq)))
+}
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct FilingOut {
+    pub id: String,
+    pub matter_id: String,
+    pub kind: String,
+    pub title: String,
+    pub prepared_at: i64,
+    pub outcome: Option<String>,
+    pub reason: Option<String>,
+    pub answered_at: Option<i64>,
+}
+
+pub async fn list_filings(pool: &SqlitePool, matter_id: &str) -> Result<Vec<FilingOut>, DomainError> {
+    Ok(sqlx::query_as("SELECT id, matter_id, kind, title, prepared_at, outcome, reason, answered_at FROM filings_out WHERE matter_id = ? ORDER BY prepared_at DESC").bind(matter_id).fetch_all(pool).await?)
+}
+
+/// The court's answer to a filing. Only an answer to a filing this firm sent counts.
+async fn import_filing_receipt(pool: &SqlitePool, bytes: &[u8], peeked: envelope::Peeked, me: &Identity) -> Result<Imported, DomainError> {
+    let header = peeked.header.clone();
+    let row: Option<(String, String)> = sqlx::query_as("SELECT id, status FROM court_links WHERE court_id = ? ORDER BY (status = 'trusted') DESC, created_at DESC LIMIT 1").bind(&header.from.id).fetch_optional(pool).await?;
+    let Some((link_id, status)) = row else { return bad("This package is from an office this firm has not connected to. Nothing was kept.") };
+    if status != "trusted" {
+        return bad("That office is not confirmed as trusted. Nothing was kept.");
+    }
+    let (court, _) = court_public(pool, &link_id).await?;
+    let opened = envelope::open(me, peeked, &court).map_err(|e| match e {
+        envelope::PackageError::NotForThisRecipient => DomainError::Invalid("This package is addressed to a different firm.".into()),
+        envelope::PackageError::BadSignature => DomainError::Invalid("The signature does not match the office this firm trusts. Nothing was kept.".into()),
+        other => DomainError::Invalid(other.to_string()),
+    })?;
+    let r: FirmFilingReceiptPayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::Invalid("The receipt inside the package could not be read.".into()))?;
+    let done = sqlx::query("UPDATE filings_out SET outcome = ?, reason = ?, answered_at = ? WHERE id = ? AND link_id = ? AND outcome IS NULL").bind(&r.outcome).bind(&r.reason).bind(now()).bind(&r.filing_package_id).bind(&link_id).execute(pool).await?;
+    if done.rows_affected() == 0 {
+        return bad("That receipt answers a filing this firm did not send to this court, or was already answered.");
+    }
+    let _ = bytes;
+    let message = if r.outcome == "accepted" { format!("{} accepted the filing.", court.name) } else { format!("{} returned the filing: {}", court.name, r.reason.as_deref().unwrap_or("no reason given")) };
+    Ok(Imported { kind: KIND_FIRM_FILING_RECEIPT.into(), message })
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
@@ -400,6 +485,24 @@ mod tests {
         let opened = envelope::open(&court, envelope::peek(&receipt_bytes).unwrap(), &invite.office).unwrap();
         let receipt: CourtNoticeReceiptPayload = serde_json::from_value(opened.body.json).unwrap();
         assert_eq!((receipt.outcome.as_str(), receipt.notice_key.as_str()), ("filed", "s1"));
+
+        // The firm files a document in the case; the court answers.
+        assert!(file_to_court(&pool, "m1", "poem", "T", &["x".into()], None).await.is_err(), "the kind is checked");
+        assert!(file_to_court(&pool, "m1", "application", "Application for bail", &[], None).await.is_err(), "a filing needs text");
+        sqlx::query("INSERT INTO matters (id, client_id, title) VALUES ('m3', 'c1', 'No number')").execute(&pool).await.unwrap();
+        assert!(file_to_court(&pool, "m3", "application", "T", &["x".into()], None).await.is_err(), "a matter with no court number cannot file");
+        let (fb, name) = file_to_court(&pool, "m1", "bail_application", "Application for bail", &["The applicant prays for bail.".into()], Some("Advocate Test")).await.unwrap();
+        assert!(name.starts_with("filing-bail-application"));
+        let fo = envelope::open(&court, envelope::peek(&fb).unwrap(), &invite.office).unwrap();
+        let sent: FirmFilingPayload = serde_json::from_value(fo.body.json).unwrap();
+        assert_eq!((sent.court_number.as_str(), sent.kind.as_str(), sent.firm_name.as_str()), ("CO 5/2026", "bail_application", "Notice Test Advocates"));
+        let answer = FirmFilingReceiptPayload { filing_package_id: fo.header.id.clone(), filing_key: sent.filing_key.clone(), outcome: "accepted".into(), received_at: 1, decided_at: 2, ..Default::default() };
+        let sealr = |seq: u64, r: &FirmFilingReceiptPayload| envelope::seal(&court, &invite.office, KIND_FIRM_FILING_RECEIPT, seq, Some(&fo.header.id), &Body::new(serde_json::to_value(r).unwrap())).unwrap().0;
+        assert!(import_package(&pool, &sealr(9, &FirmFilingReceiptPayload { filing_package_id: "never-sent".into(), ..answer.clone() })).await.is_err(), "a receipt for a filing never sent is refused");
+        assert_eq!(import_package(&pool, &sealr(10, &answer)).await.unwrap().kind, KIND_FIRM_FILING_RECEIPT);
+        assert!(import_package(&pool, &sealr(11, &answer)).await.is_err(), "answered once");
+        let listed = list_filings(&pool, "m1").await.unwrap();
+        assert_eq!((listed.len(), listed[0].outcome.as_deref()), (1, Some("accepted")));
         pool.close().await;
     }
 }

@@ -1268,6 +1268,7 @@ pub fn core(state: AppState) -> Router {
         .route("/notices/incoming", get(notices_api::list_incoming))
         .route("/notices/incoming/{id}/file", post(notices_api::file_notice))
         .route("/notices/incoming/{id}/return", post(notices_api::return_notice))
+        .route("/matters/{id}/court-filings", get(notices_api::matter_filings).post(notices_api::send_filing))
         .route("/matters", post(create_matter).get(list_matters))
         .route("/matters/{id}", get(get_matter).put(update_matter))
         .route("/matters/{id}/close", post(close_matter))
@@ -1481,6 +1482,22 @@ mod notices_api {
     #[serde(rename_all = "camelCase")]
     pub struct Filed {
         made_id: String,
+    }
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct SendFilingInput {
+        kind: String,
+        title: String,
+        text: String,
+        filed_by: Option<String>,
+    }
+    pub async fn send_filing(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SendFilingInput>) -> ApiResult<Sealed<Nothing>> {
+        let paragraphs: Vec<String> = i.text.split("\n").map(str::to_string).collect();
+        let (bytes, name) = court_notices::file_to_court(&s.pool, &id, &i.kind, &i.title, &paragraphs, i.filed_by.as_deref()).await?;
+        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name }))
+    }
+    pub async fn matter_filings(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<court_notices::FilingOut>> {
+        Ok(Json(court_notices::list_filings(&s.pool, &id).await?))
     }
     pub async fn file_notice(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FileNoticeInput>) -> ApiResult<Sealed<Filed>> {
         let (made_id, bytes) = court_notices::file_notice(&s.pool, &id, &i.matter_id, &i.decided_by).await?;

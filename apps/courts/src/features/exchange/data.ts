@@ -39,3 +39,7 @@ export const listNoticeDeliveries = (id: string) => api('GET', `/api/notices/${e
 export const recordWithdrawal = (id: string, decidedBy: string) => api('POST', `/api/exchange/incoming/${encodeURIComponent(id)}/withdrawal`, { body: { decidedBy } }) as Promise<{ caseId: string } & WithFile>
 export type PrisonReport = { id: string; caseId: string | null; prisonName: string; courtNumber: string; accused: string; event: string; occurredAt: number; note: string | null; reportedBy: string | null; receivedAt: number }
 export const listPrisonReports = () => api('GET', '/api/prison-reports') as Promise<PrisonReport[]>
+export type FirmFiling = { id: string; firmName: string | null; caseId: string | null; status: string; receivedAt: number; decidedAt: number | null; rejectReason: string | null; payload: string }
+export const listFirmFilings = () => api('GET', '/api/firm-filings') as Promise<FirmFiling[]>
+export const acceptFirmFiling = (id: string, decidedBy: string) => api('POST', `/api/firm-filings/${encodeURIComponent(id)}/accept`, { body: { decidedBy } }) as Promise<{ caseId: string } & WithFile>
+export const returnFirmFiling = (id: string, reason: string, decidedBy: string) => api('POST', `/api/firm-filings/${encodeURIComponent(id)}/return`, { body: { decidedBy, reason } }) as Promise<WithFile>

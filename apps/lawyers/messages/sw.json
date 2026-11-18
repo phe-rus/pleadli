@@ -2369,5 +2369,22 @@
     "confirmed": "{court} imethibitishwa. Itumie faili ya uthibitisho.",
     "filed_notice": "Imewekwa. Itumie mahakama risiti.",
     "returned_notice": "Imerudishwa. Itumie mahakama risiti."
-  }
+  },
+  "court_send_title": "Wasilisha mahakamani",
+  "court_send_desc": "Andaa hati ya kesi hii na umpe msajili wa mahakama faili. Atakagua nambari ya kesi na kujibu kwa risiti.",
+  "court_send_kind": "Aina ya hati",
+  "court_send_doc_title": "Kichwa cha hati",
+  "court_send_by": "Imewasilishwa na (wakili)",
+  "court_send_text": "Maandishi ya hati",
+  "court_send_button": "Hifadhi hati kwa mahakama",
+  "court_send_saved": "Imehifadhiwa. Mpe msajili wa mahakama faili.",
+  "court_send_waiting": "inasubiri mahakama",
+  "court_send_accepted": "imekubaliwa na mahakama",
+  "court_send_returned": "imerudishwa na mahakama: {reason}",
+  "court_send_kind_application": "Maombi",
+  "court_send_kind_bail_application": "Maombi ya dhamana",
+  "court_send_kind_notice_of_appeal": "Notisi ya rufaa",
+  "court_send_kind_defence": "Utetezi",
+  "court_send_kind_submissions": "Hoja",
+  "court_send_kind_other": "Nyingine"
 }

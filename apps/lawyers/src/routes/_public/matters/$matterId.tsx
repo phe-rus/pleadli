@@ -7,6 +7,7 @@ import { Tag } from '@/components/status-tag'
 import { describeAction, useAudit } from '@/features/audit'
 import { DeadlinesSection } from '@/features/clocks'
 import { FilingsSection } from '@/features/filings'
+import { SendToCourt } from '@/features/court-notices/send-to-court'
 import { PapersSection } from '@/features/papers'
 import { MoneySection } from '@/features/money'
 import { custodyLabel } from '@/features/clients'
@@ -355,6 +356,7 @@ function RouteComponent() {
           <MatterPapers matterId={matterId} matterType={m.matterType} stage={m.stage} documents={detail.documents} open={open} matterTitle={m.courtNumber ? `${m.courtNumber}, ${m.title}` : m.title} clientName={detail.client.name} />
           <PapersSection matterId={matterId} open={open} />
           {court && <FilingsSection matterId={matterId} matterTitle={m.courtNumber ? `${m.courtNumber}, ${m.title}` : m.title} court={m.courtName} open={open} filings={detail.filings} documents={detail.documents} />}
+          {court && <SendToCourt matterId={matterId} />}
         </div>
           ),
           history: (

@@ -125,5 +125,13 @@
       "is_head": "Mkuu wa mahakama hii",
       "is_head_hint": "Hakimu anayeongoza au mkuu wa usajili."
     }
+  },
+  "firm_filings": {
+    "title": "Hati kutoka kwa mawakili",
+    "desc": "Hati ambazo mawakili wamewasilisha katika kesi. Kukubali hukagua nambari ya kesi kwenye rejista hii na kuipa kampuni risiti.",
+    "accepted": "Imekubaliwa",
+    "accept": "Kubali kwenye kesi",
+    "accepted_notice": "Imekubaliwa. Tuma risiti kwa kampuni.",
+    "returned_notice": "Imerudishwa. Tuma risiti kwa kampuni."
   }
 }

@@ -198,3 +198,33 @@ pub async fn notify_sitting(State(s): State<AppState>, Path(id): Path<String>, J
 pub async fn notice_deliveries(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<FirmDelivery>> {
     Ok(Json(firm_exchange::list_deliveries(&s.pool, &id).await?))
 }
+
+// ---- Counsel's filings in a case.
+
+pub async fn firm_filings(State(s): State<AppState>) -> ApiResult<Vec<firm_exchange::FirmFiling>> {
+    Ok(Json(firm_exchange::list_filings(&s.pool, None).await?))
+}
+
+pub async fn case_firm_filings(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<firm_exchange::FirmFiling>> {
+    Ok(Json(firm_exchange::list_filings(&s.pool, Some(&id)).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FilingDecision {
+    decided_by: String,
+    reason: Option<String>,
+}
+
+pub async fn accept_firm_filing(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FilingDecision>) -> ApiResult<WithFile<Accepted>> {
+    let (case_id, bytes) = firm_exchange::accept_firm_filing(&s.pool, &id, &i.decided_by).await?;
+    Ok(Json(WithFile { value: Accepted { case_id }, file: B64.encode(bytes), name: "filing-receipt.pxpkg".into() }))
+}
+
+#[derive(Serialize)]
+pub struct Nothing {}
+
+pub async fn return_firm_filing(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FilingDecision>) -> ApiResult<WithFile<Nothing>> {
+    let bytes = firm_exchange::return_firm_filing(&s.pool, &id, i.reason.as_deref().unwrap_or(""), &i.decided_by).await?;
+    Ok(Json(WithFile { value: Nothing {}, file: B64.encode(bytes), name: "filing-receipt.pxpkg".into() }))
+}

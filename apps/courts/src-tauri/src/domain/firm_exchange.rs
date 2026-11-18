@@ -6,7 +6,7 @@
 
 use pleadli_interchange::envelope::{self, Body};
 use pleadli_interchange::identity::{IdentityKind, PublicIdentity};
-use pleadli_interchange::messages::{CourtNoticePayload, CourtNoticeReceiptPayload, KIND_COURT_NOTICE, KIND_COURT_NOTICE_RECEIPT};
+use pleadli_interchange::messages::{CourtNoticePayload, CourtNoticeReceiptPayload, FirmFilingPayload, FirmFilingReceiptPayload, KIND_COURT_NOTICE, KIND_COURT_NOTICE_RECEIPT, KIND_FIRM_FILING, KIND_FIRM_FILING_RECEIPT};
 use pleadli_interchange::pairing::{self, KIND_CONFIRMATION};
 use serde::Serialize;
 use sqlx::{FromRow, SqlitePool};
@@ -107,6 +107,9 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         let message = if trusted { format!("{} has confirmed this registry. Notices can now be sent to it.", firm.name) } else { format!("{} declined this registry's answer.", firm.name) };
         return Ok(Imported { kind: KIND_CONFIRMATION.into(), message });
     }
+    if header.kind == KIND_FIRM_FILING {
+        return import_filing(pool, bytes, peeked, &me, &firm, &link_id, &status).await;
+    }
     if header.kind != KIND_COURT_NOTICE_RECEIPT {
         return bad(format!("This registry does not receive packages of kind '{}' from a firm.", header.kind));
     }
@@ -146,6 +149,101 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     tx.commit().await?;
     let message = if receipt.outcome == "filed" { format!("{} filed the notice.", firm.name) } else { format!("{} returned the order: {}", firm.name, receipt.reason.as_deref().unwrap_or("no reason given")) };
     Ok(Imported { kind: KIND_COURT_NOTICE_RECEIPT.into(), message })
+}
+
+/// Counsel files a document. Kept as received until a person decides.
+async fn import_filing(pool: &SqlitePool, bytes: &[u8], peeked: envelope::Peeked, me: &pleadli_interchange::identity::Identity, firm: &PublicIdentity, link_id: &str, status: &str) -> Result<Imported, DomainError> {
+    if status != "trusted" {
+        return bad("That firm is not confirmed as trusted. Nothing was kept.");
+    }
+    let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM firm_filings WHERE id = ?").bind(&peeked.header.id).fetch_one(pool).await?;
+    if seen > 0 {
+        return bad("This package has already been received.");
+    }
+    let opened = envelope::open(me, peeked, firm).map_err(|e| match e {
+        envelope::PackageError::NotForThisRecipient => DomainError::Invalid("This package is addressed to a different registry.".into()),
+        envelope::PackageError::BadSignature => DomainError::Invalid("The signature does not match the firm this registry trusts. Nothing was kept.".into()),
+        other => DomainError::Invalid(other.to_string()),
+    })?;
+    let f: FirmFilingPayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::Invalid("The filing inside the package could not be read.".into()))?;
+    if f.filing_key.trim().is_empty() || f.court_number.trim().is_empty() || f.title.trim().is_empty() || f.paragraphs.is_empty() {
+        return bad("The filing is incomplete: it needs a title, the case number and its text.");
+    }
+    let mut tx = pool.begin().await?;
+    sqlx::query("INSERT INTO firm_filings (id, link_id, seq, sent_at, received_at, package_sha256, payload) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .bind(&opened.header.id)
+        .bind(link_id)
+        .bind(opened.header.seq as i64)
+        .bind(opened.header.created_at)
+        .bind(now())
+        .bind(envelope::sha256_hex(bytes))
+        .bind(serde_json::to_string(&opened.body.json).unwrap_or_default())
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query("UPDATE firm_links SET last_seq_in = MAX(last_seq_in, ?) WHERE id = ?").bind(opened.header.seq as i64).bind(link_id).execute(&mut *tx).await?;
+    tx.commit().await?;
+    Ok(Imported { kind: KIND_FIRM_FILING.into(), message: format!("{} has filed \"{}\" in {}. It waits for you to decide.", firm.name, f.title, f.court_number) })
+}
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct FirmFiling {
+    pub id: String,
+    pub firm_name: Option<String>,
+    pub case_id: Option<String>,
+    pub status: String,
+    pub received_at: i64,
+    pub decided_at: Option<i64>,
+    pub reject_reason: Option<String>,
+    pub payload: String,
+}
+
+/// Filings from counsel, newest first; for one case when given.
+pub async fn list_filings(pool: &SqlitePool, case_id: Option<&str>) -> Result<Vec<FirmFiling>, DomainError> {
+    Ok(sqlx::query_as("SELECT f.id, l.firm_name, f.case_id, f.status, f.received_at, f.decided_at, f.reject_reason, f.payload FROM firm_filings f JOIN firm_links l ON l.id = f.link_id WHERE (? IS NULL OR f.case_id = ?) ORDER BY f.received_at DESC").bind(case_id).bind(case_id).fetch_all(pool).await?)
+}
+
+async fn seal_filing_receipt(pool: &SqlitePool, link_id: &str, package_id: &str, receipt: &FirmFilingReceiptPayload) -> Result<Vec<u8>, DomainError> {
+    let me = require_identity(pool).await?;
+    let firm = trusted_firm(pool, link_id).await?;
+    let json = serde_json::to_value(receipt).map_err(|_| DomainError::Invalid("Could not build the receipt.".into()))?;
+    let mut tx = pool.begin().await?;
+    let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM firm_links WHERE id = ?").bind(link_id).fetch_one(&mut *tx).await?;
+    sqlx::query("UPDATE firm_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(link_id).execute(&mut *tx).await?;
+    let (bytes, _) = envelope::seal(&me, &firm, KIND_FIRM_FILING_RECEIPT, seq as u64, Some(package_id), &Body::new(json)).map_err(|e| DomainError::Invalid(e.to_string()))?;
+    tx.commit().await?;
+    Ok(bytes)
+}
+
+async fn pending_filing(pool: &SqlitePool, package_id: &str) -> Result<(String, FirmFilingPayload, i64), DomainError> {
+    let row: Option<(String, String, String, i64)> = sqlx::query_as("SELECT link_id, payload, status, received_at FROM firm_filings WHERE id = ?").bind(package_id).fetch_optional(pool).await?;
+    let Some((link_id, payload, status, received_at)) = row else { return Err(DomainError::NotFound("No such filing.".into())) };
+    if status != "received" {
+        return bad("That filing has already been dealt with.");
+    }
+    Ok((link_id, serde_json::from_str(&payload).map_err(|_| DomainError::Invalid("The stored filing could not be read.".into()))?, received_at))
+}
+
+/// A person accepts the filing onto the case it names. The number must be one
+/// in this registry's own register: the firm's word for it is only a claim.
+pub async fn accept_firm_filing(pool: &SqlitePool, package_id: &str, decided_by: &str) -> Result<(String, Vec<u8>), DomainError> {
+    let (link_id, f, received_at) = pending_filing(pool, package_id).await?;
+    let case_id: Option<String> = sqlx::query_scalar("SELECT id FROM cases WHERE court_number = ?").bind(f.court_number.trim()).fetch_optional(pool).await?;
+    let Some(case_id) = case_id else { return bad("This registry has no case with that number. Return the filing so the firm can correct it.") };
+    sqlx::query("UPDATE firm_filings SET status = 'accepted', decided_at = ?, decided_by = ?, case_id = ? WHERE id = ?").bind(now()).bind(decided_by).bind(&case_id).bind(package_id).execute(pool).await?;
+    let receipt = FirmFilingReceiptPayload { filing_package_id: package_id.to_string(), filing_key: f.filing_key, outcome: "accepted".into(), reason: None, received_at, decided_at: now(), decided_by: Some(decided_by.to_string()) };
+    Ok((case_id, seal_filing_receipt(pool, &link_id, package_id, &receipt).await?))
+}
+
+pub async fn return_firm_filing(pool: &SqlitePool, package_id: &str, reason: &str, decided_by: &str) -> Result<Vec<u8>, DomainError> {
+    let reason = reason.trim();
+    if reason.is_empty() {
+        return bad("Say why the filing is returned, so the firm can put it right.");
+    }
+    let (link_id, f, received_at) = pending_filing(pool, package_id).await?;
+    sqlx::query("UPDATE firm_filings SET status = 'rejected', decided_at = ?, decided_by = ?, reject_reason = ? WHERE id = ?").bind(now()).bind(decided_by).bind(reason).bind(package_id).execute(pool).await?;
+    let receipt = FirmFilingReceiptPayload { filing_package_id: package_id.to_string(), filing_key: f.filing_key, outcome: "rejected".into(), reason: Some(reason.to_string()), received_at, decided_at: now(), decided_by: Some(decided_by.to_string()) };
+    seal_filing_receipt(pool, &link_id, package_id, &receipt).await
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
@@ -220,6 +318,43 @@ mod tests {
 
     /// A hearing notice and an order copy reach a firm and receipts return, with
     /// the firm played by the shared contract. Local data only.
+    #[tokio::test]
+    async fn counsel_files_a_document_and_the_registry_accepts_or_returns_it() {
+        let dir = std::env::temp_dir().join(format!("pleadli-courts-firmfile-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = crate::db::startup(&dir).await.ok().unwrap().pool;
+        super::super::exchange::create_identity(&pool, "Filing Test High Court", Some("Kampala")).await.unwrap();
+        let firm = Identity::generate(IdentityKind::LawFirm, "Filing Test Advocates", Some("Kampala"));
+        let (invite_file, invite) = pairing::make_invite(&firm, "Filing Test High Court", i64::MAX).unwrap();
+        let (link, answer) = accept_invite(&pool, &invite_file, None).await.unwrap();
+        let response = pairing::read_response(&answer).unwrap();
+        let confirmation = pairing::make_confirmation(&firm, &response.station, &invite.invite_id, "trusted", None).unwrap();
+        import_package(&pool, &confirmation).await.unwrap();
+        let _ = link;
+        cases::create(&pool, CaseInput { court_number: "HCT-CR 5/2026".into(), title: "Uganda v Filing".into(), court_level: "high".into(), offence: None, registered_on: Some(now()), notes: None }).await.unwrap();
+
+        let f = FirmFilingPayload { filing_key: "k1".into(), kind: "bail_application".into(), title: "Application for bail".into(), court_number: "HCT-CR 5/2026".into(), firm_name: "Filing Test Advocates".into(), paragraphs: vec!["The applicant prays for bail.".into()], filed_at: 1, ..Default::default() };
+        let seal = |seq: u64, p: &FirmFilingPayload| envelope::seal(&firm, &response.station, KIND_FIRM_FILING, seq, None, &Body::new(serde_json::to_value(p).unwrap())).unwrap().0;
+        let one = seal(1, &f);
+        assert_eq!(import_package(&pool, &one).await.unwrap().kind, KIND_FIRM_FILING);
+        assert!(import_package(&pool, &one).await.is_err(), "replay refused");
+        assert!(import_package(&pool, &seal(2, &FirmFilingPayload { paragraphs: vec![], ..f.clone() })).await.is_err(), "an empty filing is refused");
+        let wrong = seal(3, &FirmFilingPayload { filing_key: "k2".into(), court_number: "NOPE 1/2026".into(), ..f.clone() });
+        import_package(&pool, &wrong).await.unwrap();
+        let all = list_filings(&pool, None).await.unwrap();
+        let (good, bad_id) = (all.iter().find(|x| x.payload.contains("HCT-CR")).unwrap().id.clone(), all.iter().find(|x| x.payload.contains("NOPE")).unwrap().id.clone());
+        assert!(accept_firm_filing(&pool, &bad_id, "Registrar").await.is_err(), "a number this registry never gave cannot be accepted");
+        let rb = return_firm_filing(&pool, &bad_id, "No such case number", "Registrar").await.unwrap();
+        let r: FirmFilingReceiptPayload = serde_json::from_value(envelope::open(&firm, envelope::peek(&rb).unwrap(), &response.station).unwrap().body.json).unwrap();
+        assert_eq!((r.outcome.as_str(), r.filing_key.as_str()), ("rejected", "k2"));
+        let (case_id, ab) = accept_firm_filing(&pool, &good, "Registrar").await.unwrap();
+        let a: FirmFilingReceiptPayload = serde_json::from_value(envelope::open(&firm, envelope::peek(&ab).unwrap(), &response.station).unwrap().body.json).unwrap();
+        assert_eq!((a.outcome.as_str(), a.filing_key.as_str()), ("accepted", "k1"));
+        assert_eq!(list_filings(&pool, Some(&case_id)).await.unwrap().len(), 1);
+        assert!(accept_firm_filing(&pool, &good, "Registrar").await.is_err(), "decided once");
+        pool.close().await;
+    }
+
     #[tokio::test]
     async fn notices_reach_the_firm_and_receipts_return() {
         let dir = std::env::temp_dir().join(format!("pleadli-courts-firm-{}", uuid::Uuid::new_v4()));

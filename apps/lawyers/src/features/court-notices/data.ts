@@ -21,3 +21,7 @@ export const listOpenMatters = () => api('GET', '/api/matters', { query: { view:
 
 export const pickPackage = () => invoke<string | null>('pick_court_package')
 export const savePackage = (sealed: WithFile) => invoke<boolean>('save_court_package', { name: sealed.name, contentBase64: sealed.file })
+
+export type CourtFiling = { id: string; matterId: string; kind: string; title: string; preparedAt: number; outcome: string | null; reason: string | null; answeredAt: number | null }
+export const listCourtFilings = (matterId: string) => api('GET', `/api/matters/${encodeURIComponent(matterId)}/court-filings`) as Promise<CourtFiling[]>
+export const sendCourtFiling = (matterId: string, kind: string, title: string, text: string, filedBy: string) => api('POST', `/api/matters/${encodeURIComponent(matterId)}/court-filings`, { body: { kind, title, text, filedBy: filedBy.trim() || null } }) as Promise<WithFile>

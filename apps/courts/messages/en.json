@@ -125,5 +125,13 @@
       "is_head": "Head of this court",
       "is_head_hint": "The presiding officer or the head of the registry."
     }
+  },
+  "firm_filings": {
+    "title": "Filings from advocates",
+    "desc": "Documents counsel has filed in cases. Accepting checks the case number against this register and gives the firm a receipt.",
+    "accepted": "Accepted",
+    "accept": "Accept onto the case",
+    "accepted_notice": "Accepted. Send the receipt back to the firm.",
+    "returned_notice": "Returned. Send the receipt back to the firm."
   }
 }

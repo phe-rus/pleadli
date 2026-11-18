@@ -342,3 +342,39 @@ pub struct CourtNoticeReceiptPayload {
     pub decided_at: i64,
     pub decided_by: Option<String>,
 }
+
+pub const KIND_FIRM_FILING: &str = "firm_filing";
+pub const KIND_FIRM_FILING_RECEIPT: &str = "firm_filing_receipt";
+
+/// Counsel files a document in a case: an application, a notice of appeal, a
+/// defence, a memorandum. The court's claim of the case number is what the firm
+/// types; the court checks it against its own register before accepting.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct FirmFilingPayload {
+    /// The firm's own id for the filing, used to answer it.
+    pub filing_key: String,
+    /// `application`, `notice_of_appeal`, `bail_application`, `defence`, `submissions` or `other`.
+    pub kind: String,
+    pub title: String,
+    pub court_number: String,
+    pub firm_name: String,
+    pub firm_reference: Option<String>,
+    pub filed_by: Option<String>,
+    pub filed_at: i64,
+    /// The document, paragraph by paragraph.
+    pub paragraphs: Vec<String>,
+}
+
+/// The registry's answer to a firm filing: `accepted` or `rejected`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct FirmFilingReceiptPayload {
+    pub filing_package_id: String,
+    pub filing_key: String,
+    pub outcome: String,
+    pub reason: Option<String>,
+    pub received_at: i64,
+    pub decided_at: i64,
+    pub decided_by: Option<String>,
+}

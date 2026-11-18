@@ -2369,5 +2369,22 @@
     "confirmed": "{court} is confirmed. Send it the confirmation file.",
     "filed_notice": "Filed. Send the receipt back to the court.",
     "returned_notice": "Returned. Send the receipt back to the court."
-  }
+  },
+  "court_send_title": "File with the court",
+  "court_send_desc": "Prepare a document for this case and give the file to the court registry. It checks the case number and answers with a receipt.",
+  "court_send_kind": "Kind of document",
+  "court_send_doc_title": "Title of the document",
+  "court_send_by": "Filed by (advocate)",
+  "court_send_text": "The text of the document",
+  "court_send_button": "Save the filing for the court",
+  "court_send_saved": "Saved. Give the file to the court registry.",
+  "court_send_waiting": "waiting for the court",
+  "court_send_accepted": "accepted by the court",
+  "court_send_returned": "returned by the court: {reason}",
+  "court_send_kind_application": "Application",
+  "court_send_kind_bail_application": "Bail application",
+  "court_send_kind_notice_of_appeal": "Notice of appeal",
+  "court_send_kind_defence": "Defence",
+  "court_send_kind_submissions": "Submissions",
+  "court_send_kind_other": "Other"
 }

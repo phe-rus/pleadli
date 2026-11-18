@@ -2,6 +2,7 @@ import { acceptFiling, recordWithdrawal, createIdentity, createInvite, getIdenti
 import * as m from "@/paraglide/messages"
 import { PrisonLinks } from "@/features/exchange/prison-links"
 import { FirmLinks } from "@/features/exchange/firm-links"
+import { FirmFilings } from "@/features/exchange/firm-filings"
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
@@ -193,6 +194,7 @@ function RouteComponent() {
             </Card>
             <PrisonLinks />
             <FirmLinks />
+            <FirmFilings />
           </>
         )}
       </div>
