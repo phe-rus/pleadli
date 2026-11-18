@@ -300,7 +300,7 @@ pub async fn record_order(conn: &mut SqliteConnection, actor: &Actor, package_id
     }
     let kind = match order.kind.as_str() {
         "release" => "release_order",
-        "committal" => "committal_warrant",
+        "committal" => "warrant_of_conviction",
         _ => "remand_order",
     };
     let term = if order.kind == "committal" {
