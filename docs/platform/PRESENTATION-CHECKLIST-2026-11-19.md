@@ -54,3 +54,13 @@ There are no users, so the old production database is replaced, not reconciled. 
 6. Delete the old database only when the site works: `bunx wrangler d1 delete pleadli`. Anything it held (registrations, licence keys, paper fingerprints) is gone then; export it first if any real office was issued something (`bunx wrangler d1 export pleadli --remote --output pleadli-before-reset.sql`).
 
 Do not run the demo seed against production: it is local only.
+
+### Production state, done 2026-11-18 (by Claude, with the owner's wrangler login)
+
+- The new `pleadli-database` was empty (only Cloudflare's internal table). `bun run db:remote` applied all six migrations: 27 tables, the three relay tables among them.
+- R2 bucket `pleadli-post` created. (The account already has `pherus`, `pleadli-documents` and `pleadly-bucket`; those are not used by the relay.)
+- Worker secrets present by name: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ORCHESTRA_SIGNING_KEY` and others. Values were not read.
+- Deployed: Worker `pleadli`, version `50075f44-7344-409b-8df8-4fafc7c74526`, bindings `DB` = `pleadli-database` and `POSTBOX` = `pleadli-post`, custom domain `pleadli.com`, cron `17 3 * * *` (the relay sweeper).
+- Checked live: `/`, `/verify`, `/login`, `/docs/*` answer 200; an unknown code gives 404 `not_found` on verify and track; the relay refuses an unauthenticated call with 401. `/docs/postbox` was a 404 for a few seconds right after deploy, then 200.
+- **Not done:** the first real account, the rate-limit rule on `/api/public/*`, and deleting the old `pleadli` database (only after you are happy with the site; export it first if any real office was issued anything).
+- The relay on the live site is switched on at the server, but no app uses it, no office has registered keys, and no connection exists. It is idle, and the site still says so.

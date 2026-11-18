@@ -5,7 +5,7 @@
 # the demo owner account exists, then this. Never touches pleadli.com.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-bunx wrangler d1 execute DB --local --file scripts/seed-demo.sql
+bunx wrangler d1 execute pleadli-database --local --file scripts/seed-demo.sql
 echo "Demo data loaded. Sign in as albertine.hq@example.test (Account) or pleadli@pleadli.com (Admin)."
 
 # To sign in to Pleadli Account locally (local only, a throwaway test account):

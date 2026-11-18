@@ -12,8 +12,8 @@
 		"auth:gen": "bunx auth generate --config ./src/auth/index.ts --output ./src/db/auth-schema.ts --yes",
 		"db:gen": "drizzle-kit generate",
 		"db:studio": "drizzle-kit studio",
-		"db:local": "wrangler d1 migrations apply DB --local",
-		"db:remote": "wrangler d1 migrations apply DB --remote",
+		"db:local": "wrangler d1 migrations apply pleadli-database --local",
+		"db:remote": "wrangler d1 migrations apply pleadli-database --remote",
 		"local": "bun run db:gen && bun run db:local",
 		"remote": "bun run local && bun run db:remote",
 		"i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie preferredLanguage baseLocale",
@@ -46,7 +46,7 @@
 		"zod": "^4.5.4"
 	},
 	"devDependencies": {
-		"@cloudflare/vite-plugin": "^1.69.1",
+		"@cloudflare/vite-plugin": "^1.70.0",
 		"@inlang/paraglide-js": "^2.25.0",
 		"@tanstack/devtools-vite": "^0.8.6",
 		"@tanstack/react-devtools": "^0.10.14",
@@ -60,6 +60,6 @@
 		"oxc-transform-react": ">=0.152.0 <0.157.0",
 		"typescript": "^6.0.2",
 		"vite": "^8.3.8",
-		"wrangler": "^4.163.0"
+		"wrangler": "^4.164.0"
 	}
 }
