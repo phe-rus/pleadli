@@ -37,3 +37,5 @@ export const importFirmPackage = (file: string) => api('POST', '/api/exchange/fi
 export const notify = (kind: 'order' | 'sitting', id: string, linkId: string) => api('POST', `/api/${kind === 'order' ? 'orders' : 'sittings'}/${encodeURIComponent(id)}/notify`, { body: { linkId } }) as Promise<WithFile>
 export const listNoticeDeliveries = (id: string) => api('GET', `/api/notices/${encodeURIComponent(id)}/deliveries`) as Promise<FirmDelivery[]>
 export const recordWithdrawal = (id: string, decidedBy: string) => api('POST', `/api/exchange/incoming/${encodeURIComponent(id)}/withdrawal`, { body: { decidedBy } }) as Promise<{ caseId: string } & WithFile>
+export type PrisonReport = { id: string; caseId: string | null; prisonName: string; courtNumber: string; accused: string; event: string; occurredAt: number; note: string | null; reportedBy: string | null; receivedAt: number }
+export const listPrisonReports = () => api('GET', '/api/prison-reports') as Promise<PrisonReport[]>

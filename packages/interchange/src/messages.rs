@@ -223,6 +223,25 @@ pub struct WithdrawalPayload {
 
 pub const KIND_CUSTODY_ORDER: &str = "custody_order";
 pub const KIND_CUSTODY_RECEIPT: &str = "custody_receipt";
+pub const KIND_CUSTODY_REPORT: &str = "custody_report";
+
+/// A facility tells the court what has happened to a person the court sent
+/// there: released, transferred, taken to hospital, died, escaped, or not
+/// produced. A claim by the facility; the court reads it, it does not change
+/// the case by itself.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CustodyReportPayload {
+    /// The court's own id of the order this concerns.
+    pub order_key: String,
+    pub court_number: String,
+    pub accused: String,
+    /// `released`, `transferred`, `hospitalised`, `died`, `escaped`, `not_produced` or `other`.
+    pub event: String,
+    pub occurred_at: i64,
+    pub note: Option<String>,
+    pub reported_by: Option<String>,
+}
 
 /// A remand or release order a court has issued about a person in custody,
 /// sent to the facility that holds or is to hold them. Every field is the

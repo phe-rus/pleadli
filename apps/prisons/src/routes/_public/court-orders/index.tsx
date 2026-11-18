@@ -1,4 +1,4 @@
-import { createIdentity, createInvite, getIdentity, importPackage, listLinks, listOrders, listPrisoners, pickPackage, recordOrder, returnOrder, savePackage, trustLink, type CourtLink, type FacilityIdentity, type IncomingOrder, type OrderClaim, type PrisonerOption } from '@/features/court-orders/data'
+import { createIdentity, createInvite, getIdentity, importPackage, listLinks, listOrders, listPrisoners, pickPackage, recordOrder, reportToCourt, returnOrder, savePackage, trustLink, type CourtLink, type FacilityIdentity, type IncomingOrder, type OrderClaim, type PrisonerOption } from '@/features/court-orders/data'
 import { m } from '@/paraglide/messages'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
@@ -34,6 +34,8 @@ function RouteComponent() {
   const [codes, setCodes] = useState<Record<string, string>>({})
   const [chosen, setChosen] = useState<Record<string, string>>({})
   const [reasons, setReasons] = useState<Record<string, string>>({})
+  const [events, setEvents] = useState<Record<string, string>>({})
+  const [notes, setNotes] = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     const id = await getIdentity()
@@ -228,6 +230,16 @@ function RouteComponent() {
                             >
                               {m.court_orders_return_button()}
                             </Button>
+                          </div>
+                        )}
+                        {o.status === 'recorded' && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <select aria-label={m.court_orders_report_event()} value={events[o.id] ?? ''} onChange={(e) => setEvents({ ...events, [o.id]: e.target.value })} className="h-9 rounded-md border border-input bg-background px-2">
+                              <option value="">{m.court_orders_report_event()}</option>
+                              {(['released', 'transferred', 'hospitalised', 'died', 'escaped', 'not_produced', 'other'] as const).map((ev) => <option key={ev} value={ev}>{m[`court_orders_event_${ev}` as const]()}</option>)}
+                            </select>
+                            <Input aria-label={m.court_orders_report_note()} placeholder={m.court_orders_report_note()} value={notes[o.id] ?? ''} onChange={(e) => setNotes({ ...notes, [o.id]: e.target.value })} className="w-56" />
+                            <Button size="sm" variant="secondary" disabled={!events[o.id]} onClick={() => run(async () => { const r = await reportToCourt(o.id, events[o.id] ?? '', notes[o.id] ?? ''); if (await savePackage(r)) return m.court_orders_report_notice() })}>{m.court_orders_report_button()}</Button>
                           </div>
                         )}
                       </div>

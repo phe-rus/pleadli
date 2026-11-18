@@ -157,6 +157,14 @@ pub async fn send_order(State(s): State<AppState>, Path(id): Path<String>, Json(
     Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name }))
 }
 
+pub async fn prison_reports(State(s): State<AppState>) -> ApiResult<Vec<custody_exchange::PrisonReport>> {
+    Ok(Json(custody_exchange::list_reports(&s.pool, None).await?))
+}
+
+pub async fn case_prison_reports(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<custody_exchange::PrisonReport>> {
+    Ok(Json(custody_exchange::list_reports(&s.pool, Some(&id)).await?))
+}
+
 pub async fn order_deliveries(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<Delivery>> {
     Ok(Json(custody_exchange::list_deliveries(&s.pool, &id).await?))
 }

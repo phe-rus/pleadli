@@ -475,6 +475,8 @@ pub fn router(state: AppState) -> Router {
         .route("/exchange/prisons/import", post(exchange::import_prison_package))
         .route("/orders/{id}/send", post(exchange::send_order))
         .route("/orders/{id}/deliveries", get(exchange::order_deliveries))
+        .route("/prison-reports", get(exchange::prison_reports))
+        .route("/cases/{id}/prison-reports", get(exchange::case_prison_reports))
         .route("/exchange/firms", get(exchange::list_firm_links))
         .route("/exchange/firms/answer", post(exchange::answer_firm_invite))
         .route("/exchange/firms/import", post(exchange::import_firm_package))

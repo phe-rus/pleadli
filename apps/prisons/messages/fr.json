@@ -408,5 +408,16 @@
   "court_orders_invite_saved": "Invitation enregistrée pour {court}. Envoyez-la-lui.",
   "court_orders_confirmed": "{court} est confirmé. Envoyez-lui le fichier de confirmation.",
   "court_orders_recorded_notice": "Enregistrée. Renvoyez le reçu au tribunal.",
-  "court_orders_returned_notice": "Renvoyée. Renvoyez le reçu au tribunal."
+  "court_orders_returned_notice": "Renvoyée. Renvoyez le reçu au tribunal.",
+  "court_orders_report_event": "Ce qui s'est passé",
+  "court_orders_report_note": "Note (facultatif)",
+  "court_orders_report_button": "Informer le tribunal",
+  "court_orders_report_notice": "Enregistré. Remettez le fichier du rapport au tribunal.",
+  "court_orders_event_released": "Libéré",
+  "court_orders_event_transferred": "Transféré",
+  "court_orders_event_hospitalised": "Conduit à l'hôpital",
+  "court_orders_event_died": "Décédé en détention",
+  "court_orders_event_escaped": "Évadé",
+  "court_orders_event_not_produced": "N’a pas pu être présenté",
+  "court_orders_event_other": "Autre"
 }

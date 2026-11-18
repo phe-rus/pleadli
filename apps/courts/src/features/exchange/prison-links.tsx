@@ -1,4 +1,4 @@
-import { answerPrisonInvite, importPrisonPackage, listPrisonLinks, pickPackage, savePackage, type PrisonLink } from '@/features/exchange/data'
+import { answerPrisonInvite, importPrisonPackage, listPrisonLinks, listPrisonReports, pickPackage, savePackage, type PrisonLink, type PrisonReport } from '@/features/exchange/data'
 import * as m from '@/paraglide/messages'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
@@ -13,9 +13,13 @@ const status = (s: string) => (s === 'trusted' ? m['prison.status_trusted']() : 
  * confirmation. Orders are sent from the order itself. */
 export function PrisonLinks() {
   const [links, setLinks] = useState<PrisonLink[]>([])
+  const [reports, setReports] = useState<PrisonReport[]>([])
   const [contact, setContact] = useState('')
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null)
-  const load = useCallback(async () => setLinks(await listPrisonLinks()), [])
+  const load = useCallback(async () => {
+    setLinks(await listPrisonLinks())
+    setReports(await listPrisonReports())
+  }, [])
   useEffect(() => {
     load().catch((e) => setNotice({ text: message(e), error: true }))
   }, [load])
@@ -72,6 +76,16 @@ export function PrisonLinks() {
             {l.reason && <span className="text-muted-foreground">{l.reason}</span>}
           </div>
         ))}
+        {reports.length > 0 && (
+          <div className="flex flex-col gap-2 border-t border-border/60 pt-3">
+            <p className="font-medium">{m["prison.reports_title"]()}</p>
+            {reports.map((r) => (
+              <p key={r.id} className="text-muted-foreground">
+                {m["prison.report_line"]({ prison: r.prisonName, accused: r.accused, number: r.courtNumber, event: m[`prison.event_${r.event}` as "prison.event_other"]() })}{r.note ? ` · ${r.note}` : ""}
+              </p>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

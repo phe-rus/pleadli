@@ -3323,5 +3323,16 @@
   "court_orders_invite_saved": "Mwaliko umehifadhiwa kwa {court}. Wapelekee.",
   "court_orders_confirmed": "{court} imethibitishwa. Itumie faili ya uthibitisho.",
   "court_orders_recorded_notice": "Imeandikwa. Itumie mahakama risiti.",
-  "court_orders_returned_notice": "Imerudishwa. Itumie mahakama risiti."
+  "court_orders_returned_notice": "Imerudishwa. Itumie mahakama risiti.",
+  "court_orders_report_event": "Nini kilitokea",
+  "court_orders_report_note": "Maelezo (si lazima)",
+  "court_orders_report_button": "Ripoti kwa mahakama",
+  "court_orders_report_notice": "Imehifadhiwa. Mpe mahakama faili ya ripoti.",
+  "court_orders_event_released": "Ameachiliwa",
+  "court_orders_event_transferred": "Amehamishwa",
+  "court_orders_event_hospitalised": "Amepelekwa hospitalini",
+  "court_orders_event_died": "Amefia mahabusu",
+  "court_orders_event_escaped": "Ametoroka",
+  "court_orders_event_not_produced": "Hakuweza kufikishwa",
+  "court_orders_event_other": "Nyingine"
 }

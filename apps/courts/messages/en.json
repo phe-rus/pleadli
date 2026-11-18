@@ -76,7 +76,16 @@
     "sent_notice": "Order saved. Send it to {prison}.",
     "delivered": "{prison}: recorded",
     "returned": "{prison}: returned ({reason})",
-    "awaiting": "{prison}: sent, no receipt yet"
+    "awaiting": "{prison}: sent, no receipt yet",
+    "reports_title": "Reports from prisons",
+    "report_line": "{prison} reports on {accused} ({number}): {event}",
+    "event_released": "released",
+    "event_transferred": "transferred",
+    "event_hospitalised": "taken to hospital",
+    "event_died": "died in custody",
+    "event_escaped": "escaped",
+    "event_not_produced": "could not be produced",
+    "event_other": "other"
   },
   "firm": {
     "title": "Law firms",

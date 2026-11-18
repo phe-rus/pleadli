@@ -3323,5 +3323,16 @@
   "court_orders_invite_saved": "Invitation saved for {court}. Send it to them.",
   "court_orders_confirmed": "{court} is confirmed. Send it the confirmation file.",
   "court_orders_recorded_notice": "Recorded. Send the receipt back to the court.",
-  "court_orders_returned_notice": "Returned. Send the receipt back to the court."
+  "court_orders_returned_notice": "Returned. Send the receipt back to the court.",
+  "court_orders_report_event": "What happened",
+  "court_orders_report_note": "Note (optional)",
+  "court_orders_report_button": "Report to the court",
+  "court_orders_report_notice": "Saved. Give the report file to the court.",
+  "court_orders_event_released": "Released",
+  "court_orders_event_transferred": "Transferred",
+  "court_orders_event_hospitalised": "Taken to hospital",
+  "court_orders_event_died": "Died in custody",
+  "court_orders_event_escaped": "Escaped",
+  "court_orders_event_not_produced": "Could not be produced",
+  "court_orders_event_other": "Other"
 }

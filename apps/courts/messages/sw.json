@@ -76,7 +76,16 @@
     "sent_notice": "Amri imehifadhiwa. Ipeleke kwa {prison}.",
     "delivered": "{prison}: imeandikwa",
     "returned": "{prison}: imerudishwa ({reason})",
-    "awaiting": "{prison}: imetumwa, risiti bado"
+    "awaiting": "{prison}: imetumwa, risiti bado",
+    "reports_title": "Ripoti kutoka magereza",
+    "report_line": "{prison} inaripoti kuhusu {accused} ({number}): {event}",
+    "event_released": "ameachiliwa",
+    "event_transferred": "amehamishwa",
+    "event_hospitalised": "amepelekwa hospitalini",
+    "event_died": "amefia mahabusu",
+    "event_escaped": "ametoroka",
+    "event_not_produced": "hakuweza kufikishwa",
+    "event_other": "nyingine"
   },
   "firm": {
     "title": "Ofisi za mawakili",

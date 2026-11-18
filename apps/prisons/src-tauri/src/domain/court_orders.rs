@@ -8,7 +8,7 @@
 
 use pleadli_interchange::envelope::{self, Body};
 use pleadli_interchange::identity::{hex, unhex32, Identity, IdentityKind, PublicIdentity};
-use pleadli_interchange::messages::{CustodyOrderPayload, CustodyReceiptPayload, KIND_CUSTODY_ORDER, KIND_CUSTODY_RECEIPT};
+use pleadli_interchange::messages::{CustodyOrderPayload, CustodyReceiptPayload, CustodyReportPayload, KIND_CUSTODY_ORDER, KIND_CUSTODY_RECEIPT, KIND_CUSTODY_REPORT};
 use pleadli_interchange::pairing::{self, KIND_RESPONSE};
 use serde::Serialize;
 use sqlx::{FromRow, SqliteConnection};
@@ -334,6 +334,30 @@ pub async fn return_order(conn: &mut SqliteConnection, actor: &Actor, package_id
     seal_receipt(conn, &link_id, package_id, &receipt).await
 }
 
+/// The facility tells the court what has happened to the person an order was
+/// about. Sent only for an order the facility recorded.
+pub async fn report_to_court(conn: &mut SqliteConnection, actor: &Actor, package_id: &str, event: &str, occurred_at: i64, note: Option<&str>) -> Result<Vec<u8>, DomainError> {
+    if !["released", "transferred", "hospitalised", "died", "escaped", "not_produced", "other"].contains(&event) {
+        return bad("Choose what happened.");
+    }
+    let row: Option<(String, String, String)> = sqlx::query_as("SELECT link_id, payload, status FROM custody_orders_in WHERE id = ?").bind(package_id).fetch_optional(&mut *conn).await?;
+    let Some((link_id, payload, status)) = row else { return Err(DomainError::NotFound("No such order.")) };
+    if status != "recorded" {
+        return bad("Record the order before reporting on it.");
+    }
+    let order: CustodyOrderPayload = serde_json::from_str(&payload).map_err(|_| DomainError::rejected("The stored order could not be read."))?;
+    let report = CustodyReportPayload { order_key: order.order_key, court_number: order.court_number, accused: order.accused, event: event.to_string(), occurred_at, note: note.map(str::trim).filter(|n| !n.is_empty()).map(str::to_string), reported_by: Some(actor.name.clone()) };
+    let me = require_identity(conn).await?;
+    let court = court_public(conn, &link_id).await?;
+    let json = serde_json::to_value(&report).map_err(|_| DomainError::rejected("Could not build the report."))?;
+    let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM court_links WHERE id = ?").bind(&link_id).fetch_one(&mut *conn).await?;
+    sqlx::query("UPDATE court_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(&link_id).execute(&mut *conn).await?;
+    let (bytes, header) = envelope::seal(&me, &court, KIND_CUSTODY_REPORT, seq as u64, Some(package_id), &Body::new(json.clone())).map_err(|e| DomainError::rejected(e.to_string()))?;
+    sqlx::query("INSERT INTO court_reports_out (id, link_id, order_package_id, seq, event, payload, prepared_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(&header.id).bind(&link_id).bind(package_id).bind(seq).bind(event).bind(serde_json::to_string(&json).unwrap_or_default()).bind(now_ms()).execute(&mut *conn).await?;
+    audit::record(conn, actor, AuditEntry::new("court.report_sent", "custody_order_in", Some(package_id))).await?;
+    Ok(bytes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -387,6 +411,13 @@ mod tests {
         let opened = envelope::open(&court, envelope::peek(&receipt_bytes).unwrap(), &invite.office).unwrap();
         let receipt: CustodyReceiptPayload = serde_json::from_value(opened.body.json).unwrap();
         assert_eq!((receipt.outcome.as_str(), receipt.order_key.as_str()), ("recorded", "o1"));
+
+        // The facility reports on the person; only a recorded order can be reported on.
+        assert!(report_to_court(&mut c, &actor, &package_id, "vanished", 5, None).await.is_err(), "the event is checked");
+        let rb = report_to_court(&mut c, &actor, &package_id, "released", 5, Some("Bail paid")).await.unwrap();
+        let ro = envelope::open(&court, envelope::peek(&rb).unwrap(), &invite.office).unwrap();
+        let rep: CustodyReportPayload = serde_json::from_value(ro.body.json).unwrap();
+        assert_eq!((rep.event.as_str(), rep.order_key.as_str(), rep.court_number.as_str()), ("released", "o1", "CO 5/2026"));
         drop(c);
         pool.close().await;
     }

@@ -6,7 +6,8 @@
 
 use pleadli_interchange::envelope::{self, Body};
 use pleadli_interchange::identity::{IdentityKind, PublicIdentity};
-use pleadli_interchange::messages::{CustodyOrderPayload, CustodyReceiptPayload, KIND_CUSTODY_ORDER, KIND_CUSTODY_RECEIPT};
+use pleadli_interchange::identity::Identity;
+use pleadli_interchange::messages::{CustodyOrderPayload, CustodyReceiptPayload, CustodyReportPayload, KIND_CUSTODY_ORDER, KIND_CUSTODY_RECEIPT, KIND_CUSTODY_REPORT};
 use pleadli_interchange::pairing::{self, KIND_CONFIRMATION};
 use serde::Serialize;
 use sqlx::{FromRow, SqlitePool};
@@ -106,6 +107,9 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         let message = if trusted { format!("{} has confirmed this registry. Orders can now be sent to it.", prison.name) } else { format!("{} declined this registry's answer.", prison.name) };
         return Ok(Imported { kind: KIND_CONFIRMATION.into(), message });
     }
+    if header.kind == KIND_CUSTODY_REPORT {
+        return import_report(pool, bytes, peeked, &me, &prison, &link_id, &status).await;
+    }
     if header.kind != KIND_CUSTODY_RECEIPT {
         return bad(format!("This registry does not receive packages of kind '{}' from a facility.", header.kind));
     }
@@ -145,6 +149,67 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     tx.commit().await?;
     let message = if receipt.outcome == "recorded" { format!("{} recorded the order.", prison.name) } else { format!("{} returned the order: {}", prison.name, receipt.reason.as_deref().unwrap_or("no reason given")) };
     Ok(Imported { kind: KIND_CUSTODY_RECEIPT.into(), message })
+}
+
+/// A facility reports what happened to a person this registry committed.
+async fn import_report(pool: &SqlitePool, bytes: &[u8], peeked: envelope::Peeked, me: &Identity, prison: &PublicIdentity, link_id: &str, status: &str) -> Result<Imported, DomainError> {
+    if status != "trusted" {
+        return bad("That facility is not confirmed as trusted. Nothing was kept.");
+    }
+    let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM prison_reports WHERE id = ?").bind(&peeked.header.id).fetch_one(pool).await?;
+    if seen > 0 {
+        return bad("This package has already been received.");
+    }
+    let opened = envelope::open(me, peeked, prison).map_err(|e| match e {
+        envelope::PackageError::NotForThisRecipient => DomainError::Invalid("This package is addressed to a different registry.".into()),
+        envelope::PackageError::BadSignature => DomainError::Invalid("The signature does not match the facility this registry trusts. Nothing was kept.".into()),
+        other => DomainError::Invalid(other.to_string()),
+    })?;
+    let r: CustodyReportPayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::Invalid("The report inside the package could not be read.".into()))?;
+    // Only a report about an order this registry sent to this facility counts.
+    let case_id: Option<String> = sqlx::query_scalar("SELECT o.case_id FROM prison_outgoing p JOIN orders o ON o.id = p.order_id WHERE p.link_id = ? AND p.order_id = ? LIMIT 1").bind(link_id).bind(&r.order_key).fetch_optional(pool).await?;
+    let Some(case_id) = case_id else { return bad("That report is about an order this registry did not send to this facility.") };
+    let mut tx = pool.begin().await?;
+    sqlx::query("INSERT INTO prison_reports (id, link_id, order_id, case_id, court_number, accused, event, occurred_at, note, reported_by, seq, sent_at, received_at, package_sha256) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(&opened.header.id)
+        .bind(link_id)
+        .bind(&r.order_key)
+        .bind(&case_id)
+        .bind(&r.court_number)
+        .bind(&r.accused)
+        .bind(&r.event)
+        .bind(r.occurred_at)
+        .bind(&r.note)
+        .bind(&r.reported_by)
+        .bind(opened.header.seq as i64)
+        .bind(opened.header.created_at)
+        .bind(now())
+        .bind(envelope::sha256_hex(bytes))
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query("UPDATE prison_links SET last_seq_in = MAX(last_seq_in, ?) WHERE id = ?").bind(opened.header.seq as i64).bind(link_id).execute(&mut *tx).await?;
+    tx.commit().await?;
+    Ok(Imported { kind: KIND_CUSTODY_REPORT.into(), message: format!("{} reports on {}: {}.", prison.name, r.accused, r.event.replace('_', " ")) })
+}
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct PrisonReport {
+    pub id: String,
+    pub case_id: Option<String>,
+    pub prison_name: String,
+    pub court_number: String,
+    pub accused: String,
+    pub event: String,
+    pub occurred_at: i64,
+    pub note: Option<String>,
+    pub reported_by: Option<String>,
+    pub received_at: i64,
+}
+
+/// Reports from facilities, newest first; for one case when given.
+pub async fn list_reports(pool: &SqlitePool, case_id: Option<&str>) -> Result<Vec<PrisonReport>, DomainError> {
+    Ok(sqlx::query_as("SELECT r.id, r.case_id, l.prison_name, r.court_number, r.accused, r.event, r.occurred_at, r.note, r.reported_by, r.received_at FROM prison_reports r JOIN prison_links l ON l.id = r.link_id WHERE (? IS NULL OR r.case_id = ?) ORDER BY r.received_at DESC").bind(case_id).bind(case_id).fetch_all(pool).await?)
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
@@ -266,6 +331,15 @@ mod tests {
         let w: CustodyOrderPayload = serde_json::from_value(wo.body.json).unwrap();
         assert_eq!((w.kind.as_str(), w.term_years, w.term_months, w.is_life), ("committal", Some(2), Some(6), false));
         assert!(w.paragraphs.iter().any(|p| p.contains("2 years, 6 months")), "{:?}", w.paragraphs);
+        // The facility reports what happened to the person; the registry keeps it as a claim.
+        let report = CustodyReportPayload { order_key: order.id.clone(), court_number: "CO 99/2026".into(), accused: "Test Accused".into(), event: "hospitalised".into(), occurred_at: 9, note: Some("Taken to Mulago".into()), reported_by: Some("Officer in charge".into()) };
+        let rb = envelope::seal(&prison, &response.station, KIND_CUSTODY_REPORT, 5, Some(&opened.header.id), &Body::new(serde_json::to_value(&report).unwrap())).unwrap().0;
+        assert_eq!(import_package(&pool, &rb).await.unwrap().kind, KIND_CUSTODY_REPORT);
+        assert!(import_package(&pool, &rb).await.is_err(), "replay refused");
+        let bogus = envelope::seal(&prison, &response.station, KIND_CUSTODY_REPORT, 6, None, &Body::new(serde_json::to_value(&CustodyReportPayload { order_key: "never-sent".into(), ..report.clone() }).unwrap())).unwrap().0;
+        assert!(import_package(&pool, &bogus).await.is_err(), "a report about an order never sent is refused");
+        let reports = list_reports(&pool, Some(&case.id)).await.unwrap();
+        assert_eq!((reports.len(), reports[0].event.as_str()), (1, "hospitalised"));
         pool.close().await;
     }
 }

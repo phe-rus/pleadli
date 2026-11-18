@@ -21,3 +21,4 @@ export const listPrisoners = (query: string) => api('GET', '/api/prisons/prisone
 
 export const pickPackage = async () => (await openExchangeFile('pxpkg'))?.contentBase64 ?? null
 export const savePackage = async (sealed: WithFile) => (await saveExchangeFile({ fileName: sealed.name, contentBase64: sealed.file })) !== null
+export const reportToCourt = (id: string, event: string, note: string) => api('POST', `/api/prisons/court/orders/${encodeURIComponent(id)}/report`, { body: { event, occurredAt: Date.now(), note: note.trim() || null } }) as Promise<WithFile>

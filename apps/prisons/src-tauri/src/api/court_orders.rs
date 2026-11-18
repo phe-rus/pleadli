@@ -29,6 +29,7 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/prisons/court/orders", Need::Perm(COURT_MANAGE), list_orders)
         .post("/api/prisons/court/orders/{id}/record", Need::Perm(CUSTODY_EDIT), record_order)
         .post("/api/prisons/court/orders/{id}/return", Need::Perm(COURT_MANAGE), return_order)
+        .post("/api/prisons/court/orders/{id}/report", Need::Perm(CUSTODY_EDIT), report_order)
 }
 
 #[derive(Serialize)]
@@ -117,6 +118,19 @@ struct Recorded {
 async fn record_order(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(b): Json<RecordBody>) -> Api<WithFile<Recorded>> {
     let (instrument_id, bytes) = write(&node, |c| Box::pin(async move { Ok(court_orders::record_order(c, &actor, &id, &b.prisoner_id).await?) })).await?;
     Ok(Json(WithFile { value: Recorded { instrument_id }, file: B64.encode(bytes), name: "custody-receipt.pxpkg".into() }))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ReportBody {
+    event: String,
+    occurred_at: i64,
+    note: Option<String>,
+}
+
+async fn report_order(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(b): Json<ReportBody>) -> Api<WithFile<Returned>> {
+    let bytes = write(&node, |c| Box::pin(async move { Ok(court_orders::report_to_court(c, &actor, &id, &b.event, b.occurred_at, b.note.as_deref()).await?) })).await?;
+    Ok(Json(WithFile { value: Returned {}, file: B64.encode(bytes), name: "custody-report.pxpkg".into() }))
 }
 
 #[derive(Deserialize)]
