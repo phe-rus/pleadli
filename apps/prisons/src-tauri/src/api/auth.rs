@@ -21,6 +21,8 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/auth/bootstrap-status", Need::Device, bootstrap_status)
         .post("/api/auth/bootstrap", Need::Onboarding, bootstrap)
         .post("/api/auth/login", Need::Device, login)
+        .get("/api/auth/people", Need::Device, sign_in_people)
+        .post("/api/auth/shared-sign-in", Need::Device, shared_sign_in)
         .post("/api/auth/set-first-password", Need::Device, set_first_password)
         .get("/api/auth/desk", Need::Device, desk)
         .post("/api/auth/logout", Need::Session, logout)
@@ -122,7 +124,27 @@ async fn login(
     if !node.limiter.check(&key, LOGIN_LIMIT_PER_MINUTE, Duration::from_secs(60)) {
         return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "TOO_MANY_ATTEMPTS", "Too many sign-in attempts. Wait a minute and try again."));
     }
+    if crate::domain::auth_policy::get(&node.pool).await?.mode == "full" {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "USE_SHARED_SIGN_IN", "This facility asks for an authenticator code. Pick your name on the sign-in screen."));
+    }
     Ok(Json(sessions::sign_in(&node.pool, &body.badge_number, &body.password, device.0.as_deref()).await?))
+}
+
+async fn sign_in_people(State(node): State<NodeRef>) -> Result<Json<Vec<crate::domain::shared_sign_in::SignInPerson>>, ApiError> {
+    Ok(Json(crate::domain::shared_sign_in::sign_in_people(&node.pool).await?))
+}
+
+async fn shared_sign_in(
+    State(node): State<NodeRef>,
+    ingress: Option<Extension<Ingress>>,
+    Extension(device): Extension<CallerDevice>,
+    Json(body): Json<crate::domain::shared_sign_in::SharedSignInInput>,
+) -> Result<Json<crate::domain::shared_sign_in::SharedOutcome>, ApiError> {
+    let key = format!("login:{:?}", ingress.map(|Extension(i)| i));
+    if !node.limiter.check(&key, LOGIN_LIMIT_PER_MINUTE, Duration::from_secs(60)) {
+        return Err(ApiError::new(StatusCode::TOO_MANY_REQUESTS, "TOO_MANY_ATTEMPTS", "Too many sign-in attempts. Wait a minute and try again."));
+    }
+    Ok(Json(crate::domain::shared_sign_in::shared_sign_in(&node.pool, body, device.0.as_deref()).await?))
 }
 
 async fn logout(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, headers: HeaderMap) -> Result<StatusCode, ApiError> {

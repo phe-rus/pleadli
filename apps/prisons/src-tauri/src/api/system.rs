@@ -39,6 +39,7 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .post("/api/system/onboarding/role", Need::Onboarding, choose_role)
         .post("/api/system/onboarding/facility", Need::Onboarding, setup_facility)
         .post("/api/system/onboarding/head-office", Need::Onboarding, setup_head_office)
+        .post("/api/system/second-factor", Need::Onboarding, second_factor)
         .post("/api/system/onboarding/numbering-preview", Need::Onboarding, numbering_preview)
         .get("/api/system/auth-policy", Need::Session, get_auth_policy)
         .put("/api/system/auth-policy", Need::Perm(perm::NODE_MANAGE), save_auth_policy)
@@ -144,6 +145,9 @@ struct FacilitySetupBody {
     numbering: NumberingInput,
     auth_mode: String,
     admin: SetupAdmin,
+    /// Other people to give an account at the same time (optional).
+    #[serde(default)]
+    people: Vec<SetupPerson>,
 }
 
 #[derive(Deserialize)]
@@ -152,6 +156,27 @@ struct SetupAdmin {
     badge_number: String,
     name: String,
     password: String,
+    /// Full protection: the key shown on screen and a code from the phone proving it was linked.
+    #[serde(default)]
+    second_factor: Option<SecondFactor>,
+}
+
+#[derive(Deserialize)]
+struct SecondFactor {
+    secret: String,
+    code: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetupPerson {
+    badge_number: String,
+    name: String,
+    password: String,
+    #[serde(default)]
+    role: Option<String>,
+    #[serde(default)]
+    rank: Option<String>,
 }
 
 async fn setup_facility(
@@ -163,7 +188,13 @@ async fn setup_facility(
     if session::get_hq_config(&node.pool).await?.is_head_office {
         return Err(ApiError::conflict("NOT_A_FACILITY", "This installation is set up as Head Office."));
     }
-    let FacilitySetupBody { profile, numbering, auth_mode, admin } = body;
+    let FacilitySetupBody { profile, numbering, auth_mode, admin, people } = body;
+    if auth_mode == "full" {
+        let f = admin.second_factor.as_ref().ok_or_else(|| ApiError::bad_request("Link the authenticator app before finishing."))?;
+        if !crate::domain::totp::verify(&f.secret, &f.code) {
+            return Err(ApiError::bad_request("The code from the phone is not right."));
+        }
+    }
     let (badge, password) = (admin.badge_number.clone(), admin.password.clone());
     write(&node, |c| {
         Box::pin(async move {
@@ -182,7 +213,29 @@ async fn setup_facility(
                 AuthPolicyInput { mode: auth_mode, idle_timeout_minutes: current.idle_timeout_minutes, absolute_lifetime_hours: current.absolute_lifetime_hours, admin_secret: None },
             )
             .await?;
-            officers::create_first_admin(c, &admin.badge_number, &admin.name, &admin.password).await?;
+            let first = officers::create_first_admin(c, &admin.badge_number, &admin.name, &admin.password).await?;
+            if let Some(f) = &admin.second_factor {
+                sqlx::query("UPDATE officers SET totp_secret = ? WHERE id = ?").bind(&f.secret).bind(&first.id).execute(&mut *c).await?;
+            }
+            for p in &people {
+                if p.name.trim().is_empty() {
+                    continue;
+                }
+                officers::create_officer(
+                    c,
+                    &actor,
+                    officers::CreateOfficerInput {
+                        badge_number: p.badge_number.clone(),
+                        name: p.name.trim().to_string(),
+                        password: p.password.clone(),
+                        role: p.role.clone().filter(|r| crate::domain::authz::FACILITY_ROLES.contains(&r.as_str())).unwrap_or_else(|| "officer".to_string()),
+                        is_admin: false,
+                        passwordless: false,
+                        profile: officers::ProfileInput { rank: p.rank.clone(), ..Default::default() },
+                    },
+                )
+                .await?;
+            }
             Ok(())
         })
     })
@@ -359,6 +412,16 @@ async fn discover_first_launch(State(node): State<NodeRef>) -> Result<Json<Vec<d
 
 async fn discover_later() -> Json<Vec<discovery::Found>> {
     discover().await
+}
+
+#[derive(Deserialize)]
+struct SecondFactorBody {
+    account: String,
+}
+
+/// A new authenticator key for the first administrator to link during setup.
+async fn second_factor(Json(body): Json<SecondFactorBody>) -> Result<Json<crate::domain::totp::Enrolment>, ApiError> {
+    Ok(Json(crate::domain::shared_sign_in::new_enrolment(body.account.trim())?))
 }
 
 async fn require_bootstrap(node: &NodeRef) -> Result<(), ApiError> {

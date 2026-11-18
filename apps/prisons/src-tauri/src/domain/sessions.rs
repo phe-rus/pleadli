@@ -50,7 +50,12 @@ pub async fn sign_in(
     device_id: Option<&str>,
 ) -> Result<SessionInfo, OfficerError> {
     let officer = officers::check_credentials(pool, badge_number, password, device_id).await?;
+    open_session(pool, officer, device_id).await
+}
 
+/// Opens a session for an officer whose credentials (and any second factor)
+/// have already been checked.
+pub async fn open_session(pool: &SqlitePool, officer: Officer, device_id: Option<&str>) -> Result<SessionInfo, OfficerError> {
     let token = new_token();
     let now = now_ms();
     let expires_at = now + super::auth_policy::get(pool).await?.absolute_lifetime_hours * 60 * 60 * 1000;

@@ -47,6 +47,8 @@ pub mod sentences;
 pub mod session;
 pub mod sessions;
 pub mod time;
+pub mod totp;
+pub mod shared_sign_in;
 pub mod today;
 pub mod tls;
 pub mod transfers;

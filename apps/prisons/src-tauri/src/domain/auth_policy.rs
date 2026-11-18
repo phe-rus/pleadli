@@ -23,7 +23,7 @@ use super::authz::Actor;
 use super::error::DomainError;
 use super::time::now_ms;
 
-pub const MODES: &[&str] = &["password", "pin", "badge_only"];
+pub const MODES: &[&str] = &["password", "pin", "badge_only", "full"];
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]

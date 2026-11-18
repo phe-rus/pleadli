@@ -138,7 +138,9 @@ const OPEN_BY_DESIGN: &[&str] = &[
     "/api/auth/bootstrap-status",
     "/api/auth/desk",
     "/api/auth/devices/enrol",
+    "/api/auth/people",
     "/api/auth/login",
+    "/api/auth/shared-sign-in",
     // Works once, on this machine only, for an administrator who still signs in with a badge alone; audited.
     "/api/auth/set-first-password",
     "/api/system/dev/activation-code",
@@ -152,6 +154,7 @@ const OPEN_BY_DESIGN: &[&str] = &[
     "/api/system/onboarding/connection/refresh",
     "/api/system/onboarding/facility",
     "/api/system/onboarding/head-office",
+    "/api/system/second-factor",
     "/api/system/onboarding/hq-discover",
     "/api/system/onboarding/hq-identity",
     "/api/system/onboarding/numbering-preview",
@@ -865,4 +868,52 @@ async fn unsupported_stored_jurisdiction_cannot_compute_uganda_custody_dates() {
         assert!(crate::domain::legal::overview(&h.node.pool).await.is_err());
         assert!(crate::domain::obligations::derive(&h.node.pool, 0).await.is_err());
     }
+}
+
+#[tokio::test]
+async fn full_protection_asks_the_authenticator_code_and_the_old_login_is_closed() {
+    let h = harness().await;
+    // Setup refuses a wrong code, so a key that was never linked cannot be used.
+    let (_, factor) = send(&h.router, Call::new(Method::POST, "/api/system/second-factor").body(json!({ "account": "Officer In Charge" }))).await;
+    let key = factor["secret"].as_str().unwrap().to_string();
+    let mut body = setup_body("UP-0200", "{SEQ:4}/{YEAR}");
+    body["authMode"] = json!("full");
+    body["admin"]["secondFactor"] = json!({ "secret": key, "code": "000000" });
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body(body.clone())).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "a wrong code must not finish setup");
+
+    body["admin"]["secondFactor"] = json!({ "secret": key, "code": crate::domain::totp::current_code(&key) });
+    body["people"] = json!([{ "badgeNumber": "UP-0201", "name": "Warder Atim", "password": "another-horse", "role": "officer" }]);
+    let (status, result) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body(body)).await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+
+    // The older badge-and-password route no longer opens a session.
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/auth/login").body(json!({ "badgeNumber": "UP-0200", "password": "correct-horse" }))).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+
+    let (_, people) = send(&h.router, Call::new(Method::GET, "/api/auth/people")).await;
+    let people = people.as_array().unwrap();
+    assert_eq!(people.len(), 2);
+    let admin_id = people.iter().find(|p| p["name"] == "Officer In Charge").unwrap()["id"].as_str().unwrap().to_string();
+    let atim = people.iter().find(|p| p["name"] == "Warder Atim").unwrap();
+    assert_eq!(atim["needsEnrolment"], true);
+    let atim_id = atim["id"].as_str().unwrap().to_string();
+
+    // Right password, no code: asked for the code. Wrong password: refused.
+    let (_, ask) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").body(json!({ "staffId": admin_id, "secret": "correct-horse" }))).await;
+    assert_eq!(ask["status"], "code");
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").body(json!({ "staffId": admin_id, "secret": "wrong-horse-x" }))).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").body(json!({ "staffId": admin_id, "secret": "correct-horse", "code": "000000" }))).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (status, ok) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").body(json!({ "staffId": admin_id, "secret": "correct-horse", "code": crate::domain::totp::current_code(&key) }))).await;
+    assert_eq!(status, StatusCode::OK, "{ok}");
+    assert!(ok["session"]["token"].as_str().is_some());
+
+    // A person with no key yet is shown one on first sign-in, then links it with a code.
+    let (_, enrol) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").body(json!({ "staffId": atim_id, "secret": "another-horse" }))).await;
+    assert_eq!(enrol["status"], "enrol");
+    let new_key = enrol["enrolment"]["secret"].as_str().unwrap().to_string();
+    let (status, ok) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").body(json!({ "staffId": atim_id, "secret": "another-horse", "enrolSecret": new_key, "code": crate::domain::totp::current_code(&new_key) }))).await;
+    assert_eq!(status, StatusCode::OK, "{ok}");
 }
