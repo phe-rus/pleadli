@@ -3,7 +3,8 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { useEffect, useState, type RefObject } from 'react'
 import { usePaperApp, type OfficeApps } from './context'
-import { printSheet, safeFileName, wordFile } from './output'
+import { printSheet, safeFileName } from './output'
+import { DOCX_MIME, docxFile, pdfFile } from './files'
 
 /**
  * Print, Save as Word and Open in Word for a sheet drawn elsewhere (a sealed
@@ -27,7 +28,7 @@ export function SheetActions({ target, title, extra }: { target: RefObject<HTMLE
           variant="outline"
           onClick={() => {
             const el = sheet()
-            if (el) void app.openFile!(`${safeFileName(title)}.doc`, wordFile(el, title))
+            if (el) void app.openFile!(`${safeFileName(title)}.docx`, docxFile(el, title))
           }}
         >
           <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
@@ -39,11 +40,22 @@ export function SheetActions({ target, title, extra }: { target: RefObject<HTMLE
         variant="outline"
         onClick={() => {
           const el = sheet()
-          if (el) void app.saveFile(`${safeFileName(title)}.doc`, wordFile(el, title), 'application/msword', 'doc')
+          if (el) void app.saveFile(`${safeFileName(title)}.docx`, docxFile(el, title), DOCX_MIME, 'docx')
         }}
       >
         <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
         {labels.word}
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          const el = sheet()
+          if (el) void app.saveFile(`${safeFileName(title)}.pdf`, pdfFile(el, title), 'application/pdf', 'pdf')
+        }}
+      >
+        <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
+        {labels.pdf}
       </Button>
       <Button
         size="sm"

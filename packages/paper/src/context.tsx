@@ -23,6 +23,7 @@ export type PaperLabels = {
   writeHint: string
   print: string
   word: string
+  pdf: string
   printHint: string
   verifyLine: string
   changedSincePrinted: string
@@ -54,6 +55,7 @@ export const englishLabels: PaperLabels = {
   writeHint: 'Write on the paper with a pen, a finger or the mouse. It is kept with this office\'s copy and printed with it.',
   print: 'Print or save as PDF',
   word: 'Save as Word',
+  pdf: 'Save as PDF',
   printHint: 'Choose "Save as PDF" in the print window to keep a PDF.',
   verifyLine: 'Check this paper with its code',
   changedSincePrinted: 'Changed since it was last printed',

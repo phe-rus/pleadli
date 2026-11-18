@@ -4,7 +4,8 @@ import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { usePaperApp, type OfficeApps, type PaperStamp } from './context'
-import { nextPaint, printSheet, safeFileName, sheetWording, wordFile } from './output'
+import { nextPaint, printSheet, safeFileName, sheetWording } from './output'
+import { DOCX_MIME, docxFile, pdfFile } from './files'
 import { PaperSheet } from './sheet'
 import { InkLayer } from './ink'
 import { Segmented } from '@pleadli/ui/segmented'
@@ -133,12 +134,17 @@ export function PaperView({
 
   async function openInOffice() {
     const el = await prepare()
-    if (el && app.openFile) await app.openFile(`${safeFileName(title)}.doc`, wordFile(el, title))
+    if (el && app.openFile) await app.openFile(`${safeFileName(title)}.docx`, docxFile(el, title))
   }
 
   async function word() {
     const el = await prepare()
-    if (el) await app.saveFile(`${safeFileName(title)}.doc`, wordFile(el, title), 'application/msword', 'doc')
+    if (el) await app.saveFile(`${safeFileName(title)}.docx`, docxFile(el, title), DOCX_MIME, 'docx')
+  }
+
+  async function pdf() {
+    const el = await prepare()
+    if (el) await app.saveFile(`${safeFileName(title)}.pdf`, pdfFile(el, title), 'application/pdf', 'pdf')
   }
 
   return (
@@ -167,6 +173,10 @@ export function PaperView({
           <Button size="sm" variant="ghost" disabled={busy} onClick={word}>
             <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
             {labels.word}
+          </Button>
+          <Button size="sm" variant="ghost" disabled={busy} onClick={pdf}>
+            <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
+            {labels.pdf}
           </Button>
           <Button size="sm" disabled={busy} onClick={print} title={office?.os === 'windows' ? labels.printHintWindows : labels.printHint}>
             <HugeiconsIcon icon={PrinterIcon} data-icon="inline-start" />

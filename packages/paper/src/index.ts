@@ -1,5 +1,6 @@
 export * from './context'
 export * from './output'
+export * from './files'
 export * from './sheet'
 export * from './view'
 export * from './signature-pad'
