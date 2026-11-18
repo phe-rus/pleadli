@@ -52,6 +52,8 @@ tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "ma
 argon2 = "0.5"
 rand_core = { version = "0.6", features = ["getrandom"] }
 qrcode = "0.14"
+hmac = "0.12"
+sha1 = "0.10"
 local-ip-address = "0.6"
 tauri-plugin-shell = "2"
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }

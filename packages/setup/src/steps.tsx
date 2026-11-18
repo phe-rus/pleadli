@@ -236,12 +236,12 @@ export function ModelStep({
 
 // ---------------------------------------------------------------- protection
 
-export function ProtectionStep({ t, protection, onProtection }: T & { protection: Protection; onProtection: (p: Protection) => void }) {
+export function ProtectionStep({ t, protection, onProtection, allowed }: T & { protection: Protection; onProtection: (p: Protection) => void; allowed?: readonly Protection[] }) {
   const options = [
     { id: 'none' as const, icon: SquareUnlock02Icon, title: t.none_title, body: t.none_body },
     { id: 'basic' as const, icon: LockKeyIcon, title: t.basic_title, body: t.basic_body, recommended: true },
     { id: 'full' as const, icon: ShieldUserIcon, title: t.full_title, body: t.full_body },
-  ]
+  ].filter((o) => !allowed || allowed.includes(o.id))
   return (
     <div className="flex flex-col gap-6">
       <StepHeader title={t.protection_title} lead={t.protection_lead} />
@@ -544,7 +544,10 @@ export function PeopleStep({
   ranks,
   requestSecondFactor,
   allowOthers = true,
+  identifierLabel,
 }: T & {
+  /** When given, each person is asked for this number (a badge number). */
+  identifierLabel?: string
   state: SetupState
   update: (patch: Partial<SetupState>) => void
   roles: readonly SetupRole[]
@@ -580,6 +583,7 @@ export function PeopleStep({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TextField label={t.name} value={a.name} onChange={(e) => setAdmin({ name: e.target.value })} autoComplete="name" autoFocus />
           <TextField label={t.rank} value={a.rank} onChange={(e) => setAdmin({ rank: e.target.value })} list={rankList} />
+          {identifierLabel && <TextField label={identifierLabel} value={a.identifier ?? ''} onChange={(e) => setAdmin({ identifier: e.target.value })} />}
         </div>
         {personFlag && (
           <label className="flex cursor-pointer items-start gap-3">
@@ -626,6 +630,7 @@ export function PeopleStep({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <TextField label={t.name} value={p.name} onChange={(e) => setPerson(i, { name: e.target.value })} error={!p.name.trim() ? t.name_required : undefined} />
                   <TextField label={t.rank} value={p.rank} onChange={(e) => setPerson(i, { rank: e.target.value })} list={rankList} />
+                  {identifierLabel && <TextField label={identifierLabel} value={p.identifier ?? ''} onChange={(e) => setPerson(i, { identifier: e.target.value })} />}
                 </div>
                 {otherRoles.length > 0 && <RoleSelect roles={roles} value={p.role} onValue={(role) => setPerson(i, { role })} label={t.role} />}
                 <SecretFields t={t} protection={state.protection} value={p.secret ?? ''} onValue={(secret) => setPerson(i, { secret })} />

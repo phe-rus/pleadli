@@ -65,6 +65,10 @@ export type SetupFlowProps = {
   allowOthers?: (state: SetupState) => boolean
   /** Lines the app adds to the closing summary. */
   summary?: (ctx: ExtraStepContext) => readonly [string, ReactNode][]
+  /** The protection levels this app offers (default: all three). */
+  protections?: readonly Protection[]
+  /** Asks each person for a number the office knows them by, such as a badge number. */
+  identifierLabel?: string
   /** Under the welcome: another way in than a new setup (Lawyers: join the firm's office computer). */
   welcomeAction?: ReactNode
 }
@@ -126,7 +130,7 @@ export function SetupFlow(props: SetupFlowProps) {
     model: 'office',
     officeName: props.initialOfficeName ?? '',
     region: '',
-    protection: 'basic',
+    protection: props.protections && !props.protections.includes('basic') ? props.protections[0] : 'basic',
     accent: props.defaultAccent,
     logo: null,
     admin: {
@@ -205,6 +209,7 @@ export function SetupFlow(props: SetupFlowProps) {
         rank: state.admin.rank.trim(),
         role: state.admin.role,
         flag: state.admin.flag,
+        identifier: state.admin.identifier?.trim() || undefined,
         secret: secret(state.admin),
         secondFactor: state.protection === 'full' && state.enrolment ? { secret: state.enrolment.secret, code: state.factorCode } : null,
       },
@@ -269,7 +274,7 @@ export function SetupFlow(props: SetupFlowProps) {
           />
         )
       case 'protection':
-        return <ProtectionStep t={t} protection={state.protection} onProtection={(protection) => update({ protection, enrolment: null, factorCode: '' })} />
+        return <ProtectionStep t={t} allowed={props.protections} protection={state.protection} onProtection={(protection) => update({ protection, enrolment: null, factorCode: '' })} />
       case 'look':
         return (
           <LookStep
@@ -296,6 +301,7 @@ export function SetupFlow(props: SetupFlowProps) {
             ranks={pack?.ranks ?? []}
             requestSecondFactor={props.requestSecondFactor}
             allowOthers={othersAllowed}
+            identifierLabel={props.identifierLabel}
           />
         )
       case 'done':

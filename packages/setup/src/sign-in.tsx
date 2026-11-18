@@ -63,6 +63,8 @@ export function SignInScreen({
   const [busy, setBusy] = useState(false)
   // Bumped on every failed attempt, so the field shakes even on the same error twice.
   const [failures, setFailures] = useState(0)
+  const [find, setFind] = useState('')
+  const shown = find.trim() ? people.filter((p) => `${p.name} ${p.rank ?? ''}`.toLowerCase().includes(find.trim().toLowerCase())) : people
 
   const reset = () => {
     setChosen(null)
@@ -130,8 +132,9 @@ export function SignInScreen({
             // Who is signing in: faces side by side, the name under each, as a Mac's login window.
             <section className="flex w-full flex-col items-center gap-6">
               <h1 className="text-[1.375rem]">{t.signin_who}</h1>
+              {people.length > 8 && <input type="search" autoFocus value={find} onChange={(e) => setFind(e.target.value)} placeholder={t.signin_who} aria-label={t.signin_who} className="w-full max-w-xs rounded-lg bg-foreground/5 px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring" />}
               <ul className="not-typeset flex list-none flex-wrap justify-center gap-x-6 gap-y-5 p-0">
-                {people.map((p) => (
+                {shown.map((p) => (
                   <li key={p.id}>
                     <button
                       type="button"

@@ -104,11 +104,14 @@ pub async fn sign_in(pool: &SqlitePool, input: SignInInput) -> Result<(String, O
 
     let mode = installation::effective_auth_mode(pool).await?;
     let is_admin = officer.role == "admin";
-    if is_admin && mode != "password" && input.password.as_deref().unwrap_or_default().is_empty() {
+    if is_admin && mode != "password" && mode != "pin" && input.password.as_deref().unwrap_or_default().is_empty() {
         let first = !officers::has_password(pool, &officer.id).await?;
         return Err(DomainError::NeedsPassword(if first { "choose_password" } else { "password" }));
     }
-    if mode == "password" || is_admin {
+    if mode == "full" {
+        return Err(DomainError::rejected("This installation asks for an authenticator code. Use the sign-in screen."));
+    }
+    if mode == "password" || mode == "pin" || is_admin {
         let supplied = input.password.as_deref().unwrap_or_default();
         if !officers::password_matches(pool, &officer.id, supplied).await? {
             note_wrong(badge);
@@ -182,6 +185,9 @@ pub async fn get_policy(pool: &SqlitePool) -> Result<AuthPolicy, sqlx::Error> {
 pub struct PolicyInput {
     pub mode: String,
     pub idle_timeout_minutes: i64,
+    /// Moving to or from PINs changes what a secret is: the administrator gives their own new one.
+    #[serde(default)]
+    pub admin_secret: Option<String>,
 }
 
 /// Saves the policy. Turning passwords on is refused unless the administrator
@@ -191,13 +197,30 @@ pub async fn save_policy(pool: &SqlitePool, actor: &Actor, input: PolicyInput) -
     if installation::mode(pool).await?.as_deref() == Some("command") {
         return Err(DomainError::rejected("A command always signs in with a badge and a password."));
     }
-    if !["badge_only", "password"].contains(&input.mode.as_str()) {
-        return Err(DomainError::rejected("Choose badge only or password."));
+    if !["badge_only", "password", "pin", "full"].contains(&input.mode.as_str()) {
+        return Err(DomainError::rejected("Choose badge only, PIN, password, or password with an authenticator."));
     }
     if !(5..=720).contains(&input.idle_timeout_minutes) {
         return Err(DomainError::rejected("Signing out after inactivity must be between 5 minutes and 12 hours."));
     }
-    if input.mode == "password" && !officers::has_password(pool, &actor.officer_id).await? {
+    let before_mode = get_policy(pool).await?.mode;
+    let kind_changes = (input.mode == "pin") != (before_mode == "pin");
+    if kind_changes {
+        let new_secret = input.admin_secret.as_deref().map(str::trim).unwrap_or_default();
+        if new_secret.is_empty() {
+            return Err(DomainError::rejected("Moving to or from PINs changes everyone's secret. Give your own new one."));
+        }
+        if input.mode == "pin" && !(new_secret.len() == 6 && new_secret.chars().all(|c| c.is_ascii_digit())) {
+            return Err(DomainError::rejected("A PIN is exactly 6 digits."));
+        }
+        if input.mode != "pin" && new_secret.chars().count() < 8 {
+            return Err(DomainError::rejected("A password of at least 8 characters is needed."));
+        }
+        // Other officers' old secrets are the wrong kind now; the administrator sets theirs again.
+        sqlx::query("UPDATE officers SET password_hash = NULL WHERE id <> ?").bind(&actor.officer_id).execute(pool).await?;
+        officers::set_password(pool, &actor.officer_id, new_secret).await.map_err(|e| DomainError::rejected(&e.to_string()))?;
+    }
+    if (input.mode == "password" || input.mode == "full") && !officers::has_password(pool, &actor.officer_id).await? {
         return Err(DomainError::rejected("Set your own password first, on the Officers page, or you would be locked out."));
     }
 
@@ -234,4 +257,102 @@ pub struct AuthEvent {
 
 pub async fn list_events(pool: &SqlitePool) -> Result<Vec<AuthEvent>, sqlx::Error> {
     sqlx::query_as("SELECT id, badge, name, action, detail, occurred_at FROM auth_events ORDER BY occurred_at DESC LIMIT 300").fetch_all(pool).await
+}
+
+// ---- The shared sign-in: pick yourself, give your PIN or password, then the
+// authenticator code when the protection is full.
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SharedSignInInput {
+    pub staff_id: String,
+    pub secret: String,
+    pub code: Option<String>,
+    pub enrol_secret: Option<String>,
+}
+
+pub enum SharedOutcome {
+    SignedIn(String, Officer),
+    Code,
+    Enrol(super::totp::Enrolment),
+}
+
+const ISSUER: &str = "Pleadli Police";
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SignInPerson {
+    pub id: String,
+    pub name: String,
+    pub rank: Option<String>,
+    pub secret_kind: &'static str,
+    pub needs_enrolment: bool,
+}
+
+/// The officers who can sign in with a secret, for the sign-in screen. Only
+/// names and ranks: nothing that helps guess the secret.
+pub async fn sign_in_people(pool: &SqlitePool) -> Result<Vec<SignInPerson>, DomainError> {
+    let mode = installation::effective_auth_mode(pool).await?;
+    let rows: Vec<(String, String, Option<String>, Option<String>, Option<String>)> =
+        sqlx::query_as("SELECT id, name, rank, badge_number, totp_secret FROM officers WHERE active = 1 AND password_hash IS NOT NULL ORDER BY name").fetch_all(pool).await?;
+    Ok(rows
+        .into_iter()
+        .map(|(id, name, rank, badge, totp)| SignInPerson {
+            id,
+            name,
+            rank: match (rank, badge) {
+                (Some(r), Some(b)) => Some(format!("{r} · {b}")),
+                (r, b) => r.or(b),
+            },
+            secret_kind: if mode == "pin" { "pin" } else { "password" },
+            needs_enrolment: mode == "full" && totp.is_none(),
+        })
+        .collect())
+}
+
+async fn refuse(pool: &SqlitePool, officer: Option<&Officer>, key: &str, reason: &str) -> DomainError {
+    note_wrong(key);
+    let _ = record_event(pool, officer, officer.and_then(|o| o.badge_number.as_deref()), "sign_in_refused", Some(reason)).await;
+    DomainError::Unauthorized(REFUSED.to_string())
+}
+
+pub async fn shared_sign_in(pool: &SqlitePool, input: SharedSignInInput) -> Result<SharedOutcome, DomainError> {
+    if installation::mode(pool).await?.is_none() {
+        return Err(DomainError::rejected("This installation has not been set up yet."));
+    }
+    let mode = installation::effective_auth_mode(pool).await?;
+    if mode == "badge_only" {
+        return Err(DomainError::rejected("Nobody signs in with a PIN or password on this installation."));
+    }
+    if let Some(wait) = slowed(&input.staff_id) {
+        return Err(DomainError::Slow(format!("Too many wrong attempts. Try again in {} seconds.", wait / 1000 + 1)));
+    }
+    let officer = officers::get_officer(pool, &input.staff_id).await?.filter(|o| o.active);
+    let Some(officer) = officer else { return Err(refuse(pool, None, &input.staff_id, "Unknown or disabled officer").await) };
+    if !officers::password_matches(pool, &officer.id, &input.secret).await? {
+        return Err(refuse(pool, Some(&officer), &input.staff_id, "PIN or password wrong").await);
+    }
+    if mode == "full" {
+        let key: Option<String> = sqlx::query_scalar("SELECT totp_secret FROM officers WHERE id = ?").bind(&officer.id).fetch_one(pool).await?;
+        match (&key, &input.enrol_secret, &input.code) {
+            (None, None, _) => return Ok(SharedOutcome::Enrol(super::totp::enrol(ISSUER, &officer.name).map_err(DomainError::Invalid)?)),
+            (None, Some(new_key), Some(code)) => {
+                if !super::totp::verify(new_key, code) {
+                    return Err(refuse(pool, Some(&officer), &input.staff_id, "Authenticator code wrong").await);
+                }
+                sqlx::query("UPDATE officers SET totp_secret = ? WHERE id = ?").bind(new_key).bind(&officer.id).execute(pool).await?;
+                record_event(pool, Some(&officer), officer.badge_number.as_deref(), "second_factor_linked", None).await?;
+            }
+            (None, Some(_), None) | (Some(_), _, None) => return Ok(SharedOutcome::Code),
+            (Some(key), _, Some(code)) => {
+                if !super::totp::verify(key, code) {
+                    return Err(refuse(pool, Some(&officer), &input.staff_id, "Authenticator code wrong").await);
+                }
+            }
+        }
+    }
+    clear_wrong(&input.staff_id);
+    let token = sessions::create(pool, &officer.id).await?;
+    record_event(pool, Some(&officer), officer.badge_number.as_deref(), "sign_in", Some(match mode.as_str() { "pin" => "PIN", "full" => "Password and authenticator code", _ => "Password" })).await?;
+    Ok(SharedOutcome::SignedIn(token, officer))
 }

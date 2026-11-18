@@ -1,6 +1,7 @@
 pub mod activity;
 pub mod attachments;
 pub mod auth;
+pub mod totp;
 pub mod bonds;
 pub mod cases;
 pub mod charge_sheets;

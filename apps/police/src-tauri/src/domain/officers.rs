@@ -127,6 +127,15 @@ pub(crate) fn verify_password(password: &str, hash: &str) -> bool {
     argon2().verify_password(password.as_bytes(), &parsed).is_ok()
 }
 
+/// Under PIN protection every secret is exactly six digits.
+async fn check_secret(pool: &SqlitePool, secret: &str) -> Result<(), OfficerError> {
+    let mode: Option<String> = sqlx::query_scalar("SELECT mode FROM auth_policy WHERE id = 'default'").fetch_optional(pool).await?;
+    if mode.as_deref() == Some("pin") && !(secret.len() == 6 && secret.chars().all(|c| c.is_ascii_digit())) {
+        return Err(OfficerError::Invalid("This station uses a PIN of exactly 6 digits.".to_string()));
+    }
+    Ok(())
+}
+
 /// An administrator can change everything, so is never badge-only.
 const ADMIN_NEEDS_PASSWORD: &str = "An administrator needs a password of their own.";
 
@@ -139,6 +148,9 @@ pub async fn create_officer(pool: &SqlitePool, input: CreateOfficerInput) -> Res
     }
     if input.role == "admin" && password.is_none() {
         return Err(OfficerError::Invalid(ADMIN_NEEDS_PASSWORD.to_string()));
+    }
+    if let Some(p) = &password {
+        check_secret(pool, p).await?;
     }
     let password_hash = password.as_deref().map(hash_password).transpose()?;
 
@@ -171,6 +183,7 @@ pub async fn update_officer(pool: &SqlitePool, id: &str, input: UpdateOfficerInp
         if badge.is_none() {
             return Err(OfficerError::Invalid("An officer needs a badge number to sign in.".to_string()));
         }
+        check_secret(pool, password).await?;
         let password_hash = hash_password(password)?;
         sqlx::query("UPDATE officers SET password_hash = ? WHERE id = ?").bind(&password_hash).bind(id).execute(pool).await?;
     }

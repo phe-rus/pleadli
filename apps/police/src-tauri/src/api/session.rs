@@ -48,7 +48,7 @@ fn is_public(method: &Method, path: &str) -> bool {
     }
     matches!(
         (method.as_str(), path),
-        ("GET", "/api/system/state") | ("POST", "/api/system/onboarding/station") | ("POST", "/api/system/onboarding/command") | ("POST", "/api/auth/sign-in") | ("POST", "/api/auth/first-password")
+        ("GET", "/api/system/state") | ("POST", "/api/system/onboarding/station") | ("POST", "/api/system/onboarding/command") | ("POST", "/api/auth/sign-in") | ("POST", "/api/auth/first-password") | ("POST", "/api/system/onboarding/shared") | ("POST", "/api/system/second-factor") | ("GET", "/api/auth/people") | ("POST", "/api/auth/shared-sign-in")
     )
 }
 
@@ -156,6 +156,44 @@ pub async fn dev_mode(State(state): State<AppState>, Extension(actor): Extension
 pub async fn sign_in(State(state): State<AppState>, Json(input): Json<SignInInput>) -> Result<Json<SignedIn>, ApiError> {
     let (token, officer) = auth::sign_in(&state.pool, input).await.map_err(domain_error)?;
     Ok(Json(SignedIn { token, officer }))
+}
+
+pub async fn onboard_shared(State(state): State<AppState>, Json(input): Json<installation::SharedSetup>) -> Result<Json<SignedIn>, ApiError> {
+    let (token, officer) = installation::setup_shared(&state.pool, input).await.map_err(domain_error)?;
+    Ok(Json(SignedIn { token, officer }))
+}
+
+pub async fn sign_in_people(State(state): State<AppState>) -> Result<Json<Vec<auth::SignInPerson>>, ApiError> {
+    auth::sign_in_people(&state.pool).await.map(Json).map_err(domain_error)
+}
+
+#[derive(Serialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum SharedSignInResult {
+    SignedIn { token: String, officer: Officer },
+    Code,
+    Enrol { enrolment: crate::domain::totp::Enrolment },
+}
+
+pub async fn shared_sign_in(State(state): State<AppState>, Json(input): Json<auth::SharedSignInInput>) -> Result<Json<SharedSignInResult>, ApiError> {
+    Ok(Json(match auth::shared_sign_in(&state.pool, input).await.map_err(domain_error)? {
+        auth::SharedOutcome::SignedIn(token, officer) => SharedSignInResult::SignedIn { token, officer },
+        auth::SharedOutcome::Code => SharedSignInResult::Code,
+        auth::SharedOutcome::Enrol(enrolment) => SharedSignInResult::Enrol { enrolment },
+    }))
+}
+
+#[derive(serde::Deserialize)]
+pub struct FactorName {
+    pub name: String,
+}
+
+/// A key to link an authenticator app, asked for during setup before anyone exists.
+pub async fn second_factor(State(state): State<AppState>, Json(input): Json<FactorName>) -> Result<Json<crate::domain::totp::Enrolment>, ApiError> {
+    if installation::mode(&state.pool).await.map_err(|e| domain_error(e.into()))?.is_some() {
+        return Err(domain_error(crate::domain::error::DomainError::rejected("This installation is already set up.")));
+    }
+    crate::domain::totp::enrol("Pleadli Police", input.name.trim()).map(Json).map_err(|e| domain_error(crate::domain::error::DomainError::rejected(&e)))
 }
 
 pub async fn first_password(State(state): State<AppState>, Json(input): Json<auth::FirstPasswordInput>) -> Result<Json<SignedIn>, ApiError> {

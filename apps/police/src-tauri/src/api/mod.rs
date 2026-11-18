@@ -1563,6 +1563,10 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/system/onboarding/command", post(session::onboard_command))
         .route("/auth/sign-in", post(session::sign_in))
         .route("/auth/first-password", post(session::first_password))
+        .route("/system/onboarding/shared", post(session::onboard_shared))
+        .route("/system/second-factor", post(session::second_factor))
+        .route("/auth/people", get(session::sign_in_people))
+        .route("/auth/shared-sign-in", post(session::shared_sign_in))
         .route("/auth/sign-out", post(session::sign_out))
         .route("/auth/me", get(session::me))
         .route("/auth/policy", get(session::get_policy).put(session::save_policy))
@@ -1923,6 +1927,60 @@ mod tests {
         let vault_root = dir.join("vault");
         let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
         (router(db.pool.clone(), vault_root, None), db, dir)
+    }
+
+    /// The shared setup and sign-in: a PIN station, and a station with a password
+    /// and an authenticator code that must be linked at the first sign-in.
+    #[tokio::test]
+    async fn the_shared_setup_and_sign_in_work_with_a_pin_and_with_an_authenticator() {
+        use crate::domain::totp;
+        let (app, db, dir) = fresh_app().await;
+        let bad_pin = json!({ "officeName": "Pin Station", "region": null, "model": "office", "protection": "basic",
+            "administrator": { "name": "Ada Admin", "rank": "Inspector", "role": "admin", "identifier": "A1", "secret": "12345", "secondFactor": null }, "people": [] });
+        assert_eq!(call_as(&app, None, Method::POST, "/api/system/onboarding/shared", Some(bad_pin)).await.0, StatusCode::UNPROCESSABLE_ENTITY, "a PIN is 6 digits");
+        let setup = json!({ "officeName": "Pin Station", "region": null, "model": "office", "protection": "basic",
+            "administrator": { "name": "Ada Admin", "rank": "Inspector", "role": "admin", "identifier": "A1", "secret": "123456", "secondFactor": null },
+            "people": [{ "name": "Bob Officer", "rank": "Constable", "role": "officer", "identifier": "B2", "secret": "654321", "secondFactor": null }] });
+        assert_eq!(call_as(&app, None, Method::POST, "/api/system/onboarding/shared", Some(setup.clone())).await.0, StatusCode::OK);
+        assert_eq!(call_as(&app, None, Method::POST, "/api/system/onboarding/shared", Some(setup)).await.0, StatusCode::UNPROCESSABLE_ENTITY, "setup happens once");
+        let (status, people) = call_as(&app, None, Method::GET, "/api/auth/people", None).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(people.as_array().unwrap().len(), 2);
+        assert_eq!(people[0]["secretKind"], "pin");
+        let bob = people.as_array().unwrap().iter().find(|p| p["name"] == "Bob Officer").unwrap()["id"].as_str().unwrap().to_string();
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/shared-sign-in", Some(json!({ "staffId": bob, "secret": "000000" }))).await.0, StatusCode::UNAUTHORIZED);
+        let (status, ok) = call_as(&app, None, Method::POST, "/api/auth/shared-sign-in", Some(json!({ "staffId": bob, "secret": "654321" }))).await;
+        assert_eq!((status, ok["status"].as_str()), (StatusCode::OK, Some("signed_in")));
+        assert_eq!(call_as(&app, None, Method::GET, "/api/custody", None).await.0, StatusCode::UNAUTHORIZED, "still needs the session");
+        db.pool.close().await;
+        let _ = std::fs::remove_dir_all(dir);
+
+        let (app, db, dir) = fresh_app().await;
+        let key = totp::enrol("Test", "Ada Admin").unwrap();
+        let wrong_code = json!({ "officeName": "Full Station", "region": null, "model": "office", "protection": "full",
+            "administrator": { "name": "Ada Admin", "rank": null, "role": "admin", "identifier": "A1", "secret": "long-enough-1", "secondFactor": { "secret": key.secret, "code": "000000" } }, "people": [] });
+        assert_eq!(call_as(&app, None, Method::POST, "/api/system/onboarding/shared", Some(wrong_code)).await.0, StatusCode::UNPROCESSABLE_ENTITY, "the phone code must match");
+        let setup = json!({ "officeName": "Full Station", "region": null, "model": "office", "protection": "full",
+            "administrator": { "name": "Ada Admin", "rank": null, "role": "admin", "identifier": "A1", "secret": "long-enough-1", "secondFactor": { "secret": key.secret, "code": totp::current_code(&key.secret) } },
+            "people": [{ "name": "Cy Clerk", "rank": null, "role": "officer", "identifier": "C3", "secret": "another-long-1", "secondFactor": null }] });
+        assert_eq!(call_as(&app, None, Method::POST, "/api/system/onboarding/shared", Some(setup)).await.0, StatusCode::OK);
+        let (_, people) = call_as(&app, None, Method::GET, "/api/auth/people", None).await;
+        let cy = people.as_array().unwrap().iter().find(|p| p["name"] == "Cy Clerk").unwrap();
+        assert_eq!((cy["secretKind"].as_str(), cy["needsEnrolment"].as_bool()), (Some("password"), Some(true)));
+        let cy_id = cy["id"].as_str().unwrap().to_string();
+        let (_, first) = call_as(&app, None, Method::POST, "/api/auth/shared-sign-in", Some(json!({ "staffId": cy_id, "secret": "another-long-1" }))).await;
+        assert_eq!(first["status"], "enrol", "the first sign-in links the phone");
+        let new_key = first["enrolment"]["secret"].as_str().unwrap().to_string();
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/shared-sign-in", Some(json!({ "staffId": cy_id, "secret": "another-long-1", "enrolSecret": new_key, "code": "000000" }))).await.0, StatusCode::UNAUTHORIZED);
+        let (_, linked) = call_as(&app, None, Method::POST, "/api/auth/shared-sign-in", Some(json!({ "staffId": cy_id, "secret": "another-long-1", "enrolSecret": new_key, "code": totp::current_code(&new_key) }))).await;
+        assert_eq!(linked["status"], "signed_in");
+        let (_, later) = call_as(&app, None, Method::POST, "/api/auth/shared-sign-in", Some(json!({ "staffId": cy_id, "secret": "another-long-1" }))).await;
+        assert_eq!(later["status"], "code", "after that a code is asked every time");
+        let (status, again) = call_as(&app, None, Method::POST, "/api/auth/shared-sign-in", Some(json!({ "staffId": cy_id, "secret": "another-long-1", "code": totp::current_code(&new_key) }))).await;
+        assert_eq!((status, again["status"].as_str()), (StatusCode::OK, Some("signed_in")));
+        assert_eq!(call_as(&app, None, Method::POST, "/api/auth/sign-in", Some(json!({ "badgeNumber": "C3", "password": "another-long-1" }))).await.0, StatusCode::UNPROCESSABLE_ENTITY, "the old sign-in cannot skip the code");
+        db.pool.close().await;
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     /// A station: nothing answers before setup or without a session, setup signs

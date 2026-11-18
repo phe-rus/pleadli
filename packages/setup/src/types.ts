@@ -28,6 +28,8 @@ export type PersonDraft = {
   role: string
   /** The app's one yes/no about a person (in DPP: "is the Director"). */
   flag: boolean
+  /** A number the office knows the person by (a badge). Only asked when the app gives it a label. */
+  identifier?: string
   /** PIN or password, per the protection level. Null when nobody signs in. */
   secret: string | null
 }
