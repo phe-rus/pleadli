@@ -2513,6 +2513,11 @@
     "filed_by": "Filed by",
     "file_button": "File",
     "filed_notice": "Filing saved. Send it to the registry.",
-    "check_code": "Check the registry's own code matches what it reads out to you:"
+    "check_code": "Check the registry's own code matches what it reads out to you:",
+    "paper_title": "Paper filing",
+    "paper_desc": "For a registry that is not on Pleadli yet. Choose the file, name the registry, and print the filing sheet to hand over with the file. The registry writes its case number on it; type that number onto the file.",
+    "paper_registry": "Name of the court registry",
+    "paper_button": "Make the filing sheet",
+    "paper_made": "The filing sheet is with the file papers, ready to print."
   }
 }

@@ -1294,6 +1294,7 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/court/answer", post(court_api::accept_invite))
         .route("/court/import", post(court_api::import_package))
         .route("/court/files/{id}/file", post(court_api::file_to_court))
+        .route("/court/files/{id}/sheet", post(court_api::filing_sheet))
         .route("/interchange/incoming", get(list_incoming))
         .route("/interchange/incoming/{id}", get(get_incoming))
         .route("/interchange/incoming/{id}/accept", post(accept_incoming))
@@ -1514,6 +1515,16 @@ mod court_api {
     pub struct FilingInput {
         court_level: String,
         filed_by: Option<String>,
+    }
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct SheetInput {
+        court_level: String,
+        court_name: String,
+        filed_by: Option<String>,
+    }
+    pub async fn filing_sheet(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SheetInput>) -> ApiResult<crate::domain::documents::Document> {
+        Ok(Json(court_exchange::filing_sheet(&s.pool, &id, &i.court_level, &i.court_name, i.filed_by.as_deref()).await?))
     }
     pub async fn file_to_court(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FilingInput>) -> ApiResult<Sealed<Nothing>> {
         let (bytes, name) = court_exchange::export_filing(&s.pool, &id, &i.court_level, i.filed_by.as_deref(), "file").await?;

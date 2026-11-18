@@ -209,6 +209,62 @@ pub async fn export_filing(pool: &SqlitePool, file_id: &str, court_level: &str, 
     Ok((bytes, format!("filing-{}-{}.pxpkg", safe.trim_matches('-').to_lowercase(), seq)))
 }
 
+/// The paper route: an office whose court registry is not on Pleadli hands over
+/// the printed file with this sheet on top. It is built from the file's own
+/// parties and charges, names the registry, lists what is attached, and leaves
+/// a line for the registry to write the court's own number on, which the office
+/// then types onto the file. A draft document: the prosecutor reads it, issues
+/// it (which seals and stamps it like any other paper) and prints it.
+pub async fn filing_sheet(pool: &SqlitePool, file_id: &str, court_level: &str, court_name: &str, filed_by: Option<&str>) -> Result<super::documents::Document, DomainError> {
+    use super::document_content::{field, Block, DocumentContent, ListItem, OFFICE};
+    if court_name.trim().is_empty() {
+        return bad("Name the court registry this sheet is for.");
+    }
+    let p = filing_payload(pool, file_id, court_level, filed_by).await?;
+    let level = if court_level == "high" { "High Court" } else { "Magistrates court" };
+    let mut blocks = vec![
+        Block::Paragraph { text: format!("To the Registrar, {}.", court_name.trim()) },
+        Block::Fields {
+            rows: vec![
+                field("Case", p.title.clone()),
+                field("Court level", level.to_string()),
+                field("Police reference", p.police_reference.clone().unwrap_or_else(|| "·".to_string())),
+                field("ODPP reference", p.dpp_reference.clone().unwrap_or_else(|| "·".to_string())),
+            ],
+        },
+    ];
+    let accused: Vec<String> = p.parties.iter().filter(|x| x.role == "accused").map(|x| match (&x.custody, &x.custody_place) {
+        (Some(c), Some(place)) => format!("{} ({}, {})", x.name, c.replace('_', " "), place),
+        (Some(c), None) => format!("{} ({})", x.name, c.replace('_', " ")),
+        _ => x.name.clone(),
+    }).collect();
+    blocks.push(Block::Heading { text: "Accused".to_string() });
+    blocks.push(Block::List { ordered: true, items: accused.into_iter().map(|t| ListItem { title: None, text: t }).collect() });
+    blocks.push(Block::Heading { text: "Charges".to_string() });
+    if p.charges.is_empty() {
+        blocks.push(Block::Note { text: "No charges are recorded on this file.".to_string() });
+    } else {
+        blocks.push(Block::List {
+            ordered: true,
+            items: p.charges.iter().map(|c| ListItem { title: Some(c.offence.clone()), text: c.statutory_section.clone().unwrap_or_default() }).collect(),
+        });
+    }
+    blocks.push(Block::Paragraph { text: format!("Summary: {}", p.summary) });
+    blocks.push(Block::Heading { text: "Enclosed".to_string() });
+    blocks.push(Block::Paragraph { text: "The charge sheet or indictment, the witness statements and the exhibits listed in the index of papers, as printed from this file.".to_string() });
+    blocks.push(Block::Signature { label: "Filed by".to_string(), name: p.filed_by.clone().unwrap_or_default(), caption: Some("For the Director of Public Prosecutions".to_string()) });
+    blocks.push(Block::Heading { text: "For the registry".to_string() });
+    blocks.push(Block::Fields {
+        rows: vec![field("Court case number", "................................".to_string()), field("Date received", "................................".to_string())],
+    });
+    let content = DocumentContent { office: OFFICE.to_string(), title: "Filing sheet".to_string(), blocks, ..Default::default() };
+    super::documents::create_draft(
+        pool,
+        super::documents::DraftInput { prosecution_file_id: file_id.to_string(), decision_id: None, kind: "filing_sheet".to_string(), title: "Filing sheet".to_string(), content },
+    )
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,6 +310,24 @@ mod tests {
         assert!(import_package(&pool, &receipt_bytes).await.is_err(), "replay refused");
         let unknown = FilingReceiptPayload { filing_package_id: "not-sent".into(), ..receipt.clone() };
         assert!(import_package(&pool, &seal(2, &unknown)).await.is_err(), "a receipt for a filing never sent is refused");
+        pool.close().await;
+    }
+
+    /// The paper route needs no registry link: the sheet is built from the file alone.
+    #[tokio::test]
+    async fn a_filing_sheet_is_built_from_the_file_for_a_registry_that_is_not_on_pleadli() {
+        let dir = std::env::temp_dir().join(format!("pleadli-dpp-sheet-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = crate::db::startup(&dir, None).await.ok().unwrap().pool;
+        sqlx::query("INSERT INTO prosecution_files (id, title, police_reference, current_status, received_at) VALUES ('f1', 'Uganda v Kasozi', 'WANDEGEYA CRB 90/2026', 'under_review', 1)").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO people (id, first_name, last_name) VALUES ('p1', 'Peter', 'Kasozi')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO prosecution_file_people (id, prosecution_file_id, person_id, role) VALUES ('a', 'f1', 'p1', 'accused')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO charges (id, prosecution_file_id, accused_person_id, offence, statutory_section) VALUES ('c1', 'f1', 'p1', 'Robbery', 'Penal Code Act, section 285')").execute(&pool).await.unwrap();
+        assert!(filing_sheet(&pool, "f1", "magistrate", "  ", None).await.is_err(), "the registry must be named");
+        let doc = filing_sheet(&pool, "f1", "magistrate", "Nakawa Chief Magistrates Court", Some("State Attorney")).await.unwrap();
+        assert_eq!(doc.kind, "filing_sheet");
+        let text = serde_json::to_string(&doc.content).unwrap();
+        assert!(text.contains("Nakawa Chief Magistrates Court") && text.contains("Robbery") && text.contains("Kasozi") && text.contains("Court case number"));
         pool.close().await;
     }
 }

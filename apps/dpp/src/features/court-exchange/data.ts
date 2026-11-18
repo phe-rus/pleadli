@@ -14,3 +14,7 @@ export const saveCourtPackage = (sealed: Sealed) => invoke<boolean>('save_court_
 
 /** This office's own fingerprint: the code the registry types to confirm it. */
 export const ownFingerprint = async () => ((await api('GET', '/api/interchange/identity')) as { fingerprint: string } | null)?.fingerprint ?? null
+
+/** The paper route: a printable filing sheet for a registry that is not on Pleadli. */
+export const makeFilingSheet = (id: string, courtLevel: string, courtName: string, filedBy: string) =>
+  api('POST', `/api/court/files/${encodeURIComponent(id)}/sheet`, { body: { courtLevel, courtName: courtName.trim(), filedBy: filedBy.trim() || null } }) as Promise<{ id: string }>

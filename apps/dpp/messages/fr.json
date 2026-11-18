@@ -2513,6 +2513,11 @@
     "filed_by": "Déposé par",
     "file_button": "Déposer",
     "filed_notice": "Dépôt enregistré. Envoyez-le au greffe.",
-    "check_code": "Vérifiez que le code propre du greffe correspond à celui qu'il vous lit :"
+    "check_code": "Vérifiez que le code propre du greffe correspond à celui qu'il vous lit :",
+    "paper_title": "Dépôt sur papier",
+    "paper_desc": "Pour un greffe qui n'est pas encore sur Pleadli. Choisissez le dossier, nommez le greffe et imprimez la fiche de dépôt à remettre avec le dossier. Le greffe y inscrit son numéro ; saisissez-le sur le dossier.",
+    "paper_registry": "Nom du greffe",
+    "paper_button": "Créer la fiche de dépôt",
+    "paper_made": "La fiche de dépôt est parmi les pièces du dossier, prête à imprimer."
   }
 }

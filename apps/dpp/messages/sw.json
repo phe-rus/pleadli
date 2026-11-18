@@ -2513,6 +2513,11 @@
     "filed_by": "Imewasilishwa na",
     "file_button": "Wasilisha",
     "filed_notice": "Wasilisho limehifadhiwa. Litume kwa msajili.",
-    "check_code": "Hakikisha msimbo wa msajili mwenyewe unalingana na anaokusomea:"
+    "check_code": "Hakikisha msimbo wa msajili mwenyewe unalingana na anaokusomea:",
+    "paper_title": "Uwasilishaji kwa karatasi",
+    "paper_desc": "Kwa usajili ambao bado haupo kwenye Pleadli. Chagua jalada, andika jina la usajili, kisha chapisha karatasi ya uwasilishaji ili kukabidhi pamoja na jalada. Usajili huandika nambari yake ya shauri juu yake; iandike kwenye jalada.",
+    "paper_registry": "Jina la usajili wa mahakama",
+    "paper_button": "Tengeneza karatasi ya uwasilishaji",
+    "paper_made": "Karatasi ya uwasilishaji iko pamoja na karatasi za jalada, tayari kuchapishwa."
   }
 }

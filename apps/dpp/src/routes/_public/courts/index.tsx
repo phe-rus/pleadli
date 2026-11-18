@@ -1,11 +1,11 @@
-import { ownFingerprint, answerInvite, fileToCourt, importCourtPackage, listCourtLinks, pickCourtPackage, saveCourtPackage, type CourtLink } from '@/features/court-exchange/data'
+import { makeFilingSheet, ownFingerprint, answerInvite, fileToCourt, importCourtPackage, listCourtLinks, pickCourtPackage, saveCourtPackage, type CourtLink } from '@/features/court-exchange/data'
 import { listFiles } from '@/features/prosecution-files/data'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@pleadli/ui/card'
 import { Input } from '@pleadli/ui/input'
 import * as m from "@/paraglide/messages"
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/_public/courts/')({ component: RouteComponent })
@@ -24,6 +24,8 @@ function RouteComponent() {
   const [fileId, setFileId] = useState('')
   const [level, setLevel] = useState<'magistrate' | 'high'>('magistrate')
   const [by, setBy] = useState('')
+  const [paperCourt, setPaperCourt] = useState('')
+  const navigate = useNavigate()
 
   const [own, setOwn] = useState<string | null>(null)
   const load = useCallback(async () => {
@@ -132,6 +134,37 @@ function RouteComponent() {
               >{m["court_exchange.file_button"]()}</Button>
             </CardContent>
           )}
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{m["court_exchange.paper_title"]()}</CardTitle>
+            <CardDescription>{m["court_exchange.paper_desc"]()}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-2">
+            <select aria-label={m["court_exchange.prosecution_file"]()} value={fileId} onChange={(e) => setFileId(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 sm:w-80">
+              <option value="">{m["court_exchange.choose_file"]()}</option>
+              {files.map((f) => (
+                <option key={f.id} value={f.id}>{f.title}{f.courtCaseNumber ? ` · ${f.courtCaseNumber}` : ''}</option>
+              ))}
+            </select>
+            <select aria-label={m["court_exchange.court_level"]()} value={level} onChange={(e) => setLevel(e.target.value as 'magistrate' | 'high')} className="h-9 rounded-md border border-input bg-background px-2">
+              <option value="magistrate">{m["court_exchange.level_magistrate"]()}</option>
+              <option value="high">{m["court_exchange.level_high"]()}</option>
+            </select>
+            <Input aria-label={m["court_exchange.paper_registry"]()} placeholder={m["court_exchange.paper_registry"]()} value={paperCourt} onChange={(e) => setPaperCourt(e.target.value)} className="w-72" />
+            <Button
+              variant="outline"
+              disabled={!fileId || !paperCourt.trim()}
+              onClick={() =>
+                run(async () => {
+                  await makeFilingSheet(fileId, level, paperCourt, by)
+                  void navigate({ to: "/files/$fileId", params: { fileId } })
+                  return m["court_exchange.paper_made"]()
+                })
+              }
+            >{m["court_exchange.paper_button"]()}</Button>
+          </CardContent>
         </Card>
       </div>
     </article>
