@@ -646,7 +646,9 @@
       "nothing_prepared": "Hakuna kilichoandaliwa. Risiti huandaliwa unapokubali au kukataa rufaa; taarifa ya uamuzi huandaliwa kutoka kichupo cha Maamuzi cha jalada.",
       "subtitle": "Rufaa kutoka vituo ambavyo ofisi hii inaviamini. Zinasubiri hapa, zikiwa zimetengwa na kumbukumbu, hadi uzisome na kuzikubali.",
       "to_send": "Za kurudisha",
-      "to_send_hint": "Risiti, taarifa za maamuzi na uthibitisho wa muunganisho. Kila moja imesainiwa na ofisi hii na kufungwa ili kituo pekee kiweze kuisoma. Hifadhi faili na uitume kwa njia yoyote."
+      "to_send_hint": "Risiti, taarifa za maamuzi na uthibitisho wa muunganisho. Kila moja imesainiwa na ofisi hii na kufungwa ili kituo pekee kiweze kuisoma. Hifadhi faili na uitume kwa njia yoyote.",
+      "paper_arrived": "Faili ya karatasi imefika",
+      "paper_arrived_desc": "Kituo kimeleta faili kwa karatasi. Ifungue hapa kwa nambari ya polisi na kituo; ongeza karatasi baadaye."
     },
     "kind": {
       "decision_notice": "Taarifa ya uamuzi",

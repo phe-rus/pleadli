@@ -646,7 +646,9 @@
       "nothing_prepared": "Rien n'a été préparé. Un accusé de réception est préparé lorsque vous acceptez ou rejetez une transmission ; un avis de décision se prépare depuis l'onglet Décisions du dossier.",
       "subtitle": "Les transmissions des postes que ce bureau approuve. Elles attendent ici, à l'écart des dossiers, jusqu'à ce que vous les lisiez et les acceptiez.",
       "to_send": "À renvoyer",
-      "to_send_hint": "Accusés de réception, avis de décision et confirmations de connexion. Seul le poste peut les ouvrir. Enregistrez le fichier et remettez-le par tout moyen."
+      "to_send_hint": "Accusés de réception, avis de décision et confirmations de connexion. Seul le poste peut les ouvrir. Enregistrez le fichier et remettez-le par tout moyen.",
+      "paper_arrived": "Un dossier papier est arrivé",
+      "paper_arrived_desc": "Le poste a apporté le dossier sur papier. Ouvrez-le ici avec sa référence de police et son poste ; ajoutez les pièces ensuite."
     },
     "kind": {
       "decision_notice": "Avis de décision",

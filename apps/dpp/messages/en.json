@@ -646,7 +646,9 @@
       "nothing_prepared": "Nothing has been prepared. A receipt is prepared when you accept or reject a referral; a decision notice is prepared from the file's Decisions tab.",
       "subtitle": "Referrals from the stations this office trusts. They wait here, held apart from the records, until you read and accept them.",
       "to_send": "To send back",
-      "to_send_hint": "Receipts, decision notices and connection confirmations. Each is signed by this office and sealed so only the station can read it. Save the file and send it by any means."
+      "to_send_hint": "Receipts, decision notices and connection confirmations. Each is signed by this office and sealed so only the station can read it. Save the file and send it by any means.",
+      "paper_arrived": "A paper file arrived",
+      "paper_arrived_desc": "The station brought the file on paper. Open it here with its police reference and station; scan or add the papers to it afterwards."
     },
     "kind": {
       "decision_notice": "Decision notice",

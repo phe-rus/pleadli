@@ -10,6 +10,8 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { saveFile } from './data'
+import { PanelButton } from '@/components/add-panel'
+import { ProsecutionFileForm } from '@/features/prosecution-files'
 import { ImportButton } from './import-button'
 import { useIncoming, useOutgoing } from './queries'
 import { outgoingKindLabels, type Outgoing } from './schema'
@@ -57,6 +59,17 @@ export function IncomingView() {
         </div>
         <div className="page-actions">
           <ImportButton onImported={(o) => o.packageId && void navigate({ to: '/incoming/$packageId', params: { packageId: o.packageId } })} />
+          <PanelButton label={m["interchange.in.paper_arrived"]()} title={m["interchange.in.paper_arrived"]()} description={m["interchange.in.paper_arrived_desc"]()} variant="secondary">
+            {({ close, setDirty }) => (
+              <ProsecutionFileForm
+                onDirtyChange={setDirty}
+                onSuccess={(file) => {
+                  close()
+                  void navigate({ to: '/files/$fileId', params: { fileId: file.id } })
+                }}
+              />
+            )}
+          </PanelButton>
         </div>
       </header>
 
