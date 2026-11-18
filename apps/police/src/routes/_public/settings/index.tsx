@@ -170,7 +170,9 @@ function NetworkTab() {
       description: status.enabled
         ? status.hostname
           ? m["settings.remote_live"]({ host: status.hostname })
-          : m["settings.remote_local"]()
+          : setEnabled.data?.tunnelError
+            ? m["settings.remote_tunnel_failed"]({ reason: setEnabled.data.tunnelError })
+            : m["settings.remote_local"]()
         : m["settings.remote_off"](),
       control: (
         <Switch

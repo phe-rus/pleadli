@@ -17,21 +17,23 @@ pub struct RemoteAccessStatus {
     /// running — the internet-reachable address. `None` if remote
     /// access is local-network-only (no Cloudflare configured yet).
     pub hostname: Option<String>,
+    /// Why the tunnel did not start, shown right after switching on.
+    pub tunnel_error: Option<String>,
 }
 
-async fn current_status(pool: &sqlx::SqlitePool) -> Result<RemoteAccessStatus, String> {
+async fn current_status(pool: &sqlx::SqlitePool, tunnel_error: Option<String>) -> Result<RemoteAccessStatus, String> {
     let settings = officers::get_remote_access_settings(pool).await.map_err(|e| e.to_string())?;
     let hostname = if settings.enabled {
         cloudflare_tunnel::get_tunnel_state(pool).await.map_err(|e| e.to_string())?.map(|t| t.hostname)
     } else {
         None
     };
-    Ok(RemoteAccessStatus { enabled: settings.enabled, hostname })
+    Ok(RemoteAccessStatus { enabled: settings.enabled, hostname, tunnel_error })
 }
 
 #[tauri::command]
 pub async fn get_remote_access_status(_who: super::api::SignedIn, state: State<'_, Db>) -> Result<RemoteAccessStatus, String> {
-    current_status(&state.pool).await
+    current_status(&state.pool, None).await
 }
 
 /// The one Settings toggle: turns the local restricted server on/off
@@ -48,6 +50,7 @@ pub async fn set_remote_access_enabled(_who: super::api::AdminSignedIn,
     enabled: bool,
 ) -> Result<RemoteAccessStatus, String> {
     let mut remote_guard = remote.0.lock().await;
+    let mut tunnel_error = None;
 
     if enabled {
         if remote_guard.is_none() {
@@ -63,6 +66,7 @@ pub async fn set_remote_access_enabled(_who: super::api::AdminSignedIn,
         }
         if let Err(e) = cloudflare::start_sidecar_if_configured(&app, &db.pool, &orchestra, &sidecar).await {
             log::warn!("remote access is on locally, but the Cloudflare tunnel failed to start: {e}");
+            tunnel_error = Some(e);
         }
     } else {
         if let Some(handle) = remote_guard.take() {
@@ -72,7 +76,7 @@ pub async fn set_remote_access_enabled(_who: super::api::AdminSignedIn,
     }
 
     officers::set_remote_access_enabled(&db.pool, enabled).await.map_err(|e| e.to_string())?;
-    current_status(&db.pool).await
+    current_status(&db.pool, tunnel_error).await
 }
 
 #[derive(Debug, Clone, Serialize)]

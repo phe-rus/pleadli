@@ -4,6 +4,7 @@ import * as z from 'zod'
 export const remoteAccessStatusSchema = z.object({
   enabled: z.boolean(),
   hostname: z.string().nullable(),
+  tunnelError: z.string().nullable().optional(),
 })
 
 export type RemoteAccessStatus = z.infer<typeof remoteAccessStatusSchema>
