@@ -1,6 +1,9 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createCustodyRecord, listCustodyRecords, updateCustodyRecord } from './data'
 import type { CreateCustodyRecordInput } from './schema'
+import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
+
+const custodyList = { listKey: ['custody', 'list'], invalidate: [['custody', 'list'], ['cases'], ['people', 'profile']], sortBy: 'arrestedAt' } satisfies ListConfig
 
 export const custodyRecordsOptions = (query: string) =>
   queryOptions({
@@ -16,9 +19,7 @@ export function useCreateCustodyRecord() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateCustodyRecordInput) => createCustodyRecord(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['custody', 'list'] })
-    },
+    ...optimisticCreate(queryClient, custodyList),
   })
 }
 
@@ -26,8 +27,6 @@ export function useUpdateCustodyRecord() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreateCustodyRecordInput }) => updateCustodyRecord(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['custody', 'list'] })
-    },
+    ...optimisticUpdate(queryClient, custodyList),
   })
 }

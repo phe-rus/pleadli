@@ -1,6 +1,9 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createVehicle, listVehicles, updateVehicle } from './data'
 import type { CreateVehicleInput } from './schema'
+import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
+
+const vehiclesList = { listKey: ['vehicles', 'list'], invalidate: [['vehicles', 'list']], sortBy: 'createdAt' } satisfies ListConfig
 
 export const vehiclesOptions = (query: string) =>
   queryOptions({
@@ -16,9 +19,7 @@ export function useCreateVehicle() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateVehicleInput) => createVehicle(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles', 'list'] })
-    },
+    ...optimisticCreate(queryClient, vehiclesList),
   })
 }
 
@@ -26,8 +27,6 @@ export function useUpdateVehicle() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreateVehicleInput }) => updateVehicle(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles', 'list'] })
-    },
+    ...optimisticUpdate(queryClient, vehiclesList),
   })
 }

@@ -14,6 +14,7 @@ import { parseSearchRoute } from '@/lib/parse-search-route'
 import { CheckmarkCircle02Icon, Share08Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Group, GroupRow, RowIcon } from '@pleadli/ui/grouped'
+import { FirstRunTour } from './first-run-tour'
 import { Stat } from '@pleadli/ui/stat'
 import { Link, useNavigate } from '@tanstack/react-router'
 
@@ -77,6 +78,8 @@ export function OverviewPage() {
           </PanelButton>
         </div>
       </header>
+
+      <FirstRunTour />
 
       {(limits.length > 0 || liveBackup.length > 0) && (
         <section aria-labelledby="now" className="flex flex-col gap-2 rounded-xl bg-destructive/[0.06] p-4 ring-1 ring-destructive/20">

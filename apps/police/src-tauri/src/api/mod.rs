@@ -1023,6 +1023,9 @@ async fn create_bond_handler(
     State(state): State<AppState>,
     Json(input): Json<CreateBondInput>,
 ) -> Result<Json<Bond>, ApiError> {
+    if let Some(reason) = bonds::refusal(&state.pool, &input).await.map_err(internal_error)? {
+        return Err((StatusCode::UNPROCESSABLE_ENTITY, reason));
+    }
     bonds::create_bond(&state.pool, &state.vault_root, input).await.map(Json).map_err(internal_error)
 }
 
@@ -1031,6 +1034,9 @@ async fn update_bond_handler(
     Path(id): Path<String>,
     Json(input): Json<CreateBondInput>,
 ) -> Result<Json<Bond>, ApiError> {
+    if let Some(reason) = bonds::refusal(&state.pool, &input).await.map_err(internal_error)? {
+        return Err((StatusCode::UNPROCESSABLE_ENTITY, reason));
+    }
     bonds::update_bond(&state.pool, &state.vault_root, &id, input)
         .await
         .map(Json)

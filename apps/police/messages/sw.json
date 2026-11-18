@@ -2155,5 +2155,26 @@
     "outbox": "Za kutuma",
     "status": "Bado haijawashwa. Itafanya kazi ofisi yako ikiunganishwa na Pleadli.",
     "title": "Sanduku la posta"
+  },
+  "tour": {
+    "title": "Ziara fupi",
+    "step_of": "Hatua {n} kati ya {total}",
+    "next": "Endelea",
+    "done": "Maliza",
+    "skip": "Ruka ziara",
+    "go": "Nipeleke huko",
+    "s1_title": "Hii ni Leo",
+    "s1_body": "Huanza tupu na hujaa unapofanya kazi: nani anakaribia kikomo cha saa 48, rufaa zinazosubiri jibu, na yaliyotokea sasa hivi.",
+    "s2_title": "Anza kwa kuongeza watu",
+    "s2_body": "Andika mlalamikaji, washukiwa na mashahidi mara moja. Hutumika tena katika kila maelezo, kesi na hati ya mashtaka.",
+    "s3_title": "Fungua kesi",
+    "s3_body": "Kesi hupata nambari yake ya Kitabu cha Kumbukumbu za Uhalifu na hubeba watu, maelezo, vielelezo na hati za mashtaka.",
+    "s4_title": "Weka mtu rumande",
+    "s4_body": "Kumweka mtu seli huanzisha saa 48. Huonekana kwenye Leo kikomo kinapokaribia.",
+    "s5_title": "Tafuta chochote",
+    "s5_body": "Bonyeza Ctrl K kutafuta watu, kesi na rekodi kutoka ukurasa wowote. Unaweza kuanza ziara upya kutoka Mipangilio.",
+    "restart_label": "Nionyeshe kuzunguka",
+    "restart_desc": "Ziara fupi ya Leo, Watu, Kesi na Rumande.",
+    "restart": "Anza ziara"
   }
 }

@@ -1,4 +1,6 @@
 import * as m from '@/paraglide/messages'
+import { ApiError } from '@/lib/api'
+import { useMe } from '@/features/session'
 import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
@@ -35,6 +37,7 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
   const { data: cases } = useSuspenseQuery(casesOptions(''))
   const { data: custodyRecords } = useSuspenseQuery(custodyRecordsOptions(''))
 
+  const { data: me } = useMe()
   const form = useAppForm({
     defaultValues: {
       personId: bond?.personId ?? '',
@@ -45,7 +48,8 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
       suretyName: bond?.suretyName ?? '',
       suretyContact: bond?.suretyContact ?? '',
       reportingSchedule: bond?.reportingSchedule ?? '',
-      officerId: bond?.officerId ?? (null as string | null),
+      // A new record is taken, drawn up or granted by whoever is signed in; an edit keeps who was recorded.
+      officerId: bond ? bond.officerId : (me?.officerId ?? (null as string | null)),
       officerName: bond?.officerName ?? '',
       officerRank: bond?.officerRank ?? '',
       status: bond?.status ?? 'active',
@@ -67,8 +71,10 @@ export function BondForm({ bond, onSuccess, onDirtyChange }: BondFormProps) {
         t.success(bond ? m["bonds.updated"]() : m["bonds.granted"]())
         if (!bond) formApi.reset()
         onSuccess?.(result)
-      } catch {
-        t.error(bond ? m["bonds.update_failed"]() : m["bonds.grant_failed"](), { description: m["common.try_again"]() })
+      } catch (error) {
+        // A refusal by a rule (for example an offence police cannot bail) says why; anything else is a retry.
+        const reason = error instanceof ApiError && error.status === 422 ? error.message : m["common.try_again"]()
+        t.error(bond ? m["bonds.update_failed"]() : m["bonds.grant_failed"](), { description: reason })
       }
     },
   })

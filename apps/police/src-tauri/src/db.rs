@@ -102,6 +102,10 @@ pub async fn startup(data_dir: &Path, vault_root: PathBuf) -> Result<Db, Startup
 
 #[cfg(debug_assertions)]
 async fn seed_debug_data(pool: &SqlitePool, vault_root: &Path) -> Result<(), sqlx::Error> {
+    // `PLEADLI_NO_SEED=1` shows the true empty first day a real station gets.
+    if std::env::var_os("PLEADLI_NO_SEED").is_some_and(|v| !v.is_empty()) {
+        return Ok(());
+    }
     people::seed_if_empty(pool, vault_root).await?;
     station_diary::seed_if_empty(pool, vault_root).await?;
     incidents::seed_if_empty(pool, vault_root).await?;

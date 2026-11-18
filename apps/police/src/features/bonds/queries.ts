@@ -1,6 +1,9 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createBond, listBonds, updateBond } from './data'
 import type { CreateBondInput } from './schema'
+import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
+
+const bondsList = { listKey: ['bonds', 'list'], invalidate: [['bonds', 'list'], ['custody'], ['people', 'profile'], ['cases']], sortBy: 'grantedAt' } satisfies ListConfig
 
 export const bondsOptions = (query: string) =>
   queryOptions({
@@ -16,9 +19,7 @@ export function useCreateBond() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateBondInput) => createBond(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bonds', 'list'] })
-    },
+    ...optimisticCreate(queryClient, bondsList),
   })
 }
 
@@ -26,8 +27,6 @@ export function useUpdateBond() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreateBondInput }) => updateBond(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bonds', 'list'] })
-    },
+    ...optimisticUpdate(queryClient, bondsList),
   })
 }

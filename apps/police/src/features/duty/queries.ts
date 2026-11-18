@@ -1,6 +1,9 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createDutyAssignment, listDutyAssignments, updateDutyAssignment } from './data'
 import type { CreateDutyAssignmentInput } from './schema'
+import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
+
+const dutyList = { listKey: ['duty', 'list'], invalidate: [['duty', 'list']], sortBy: 'shiftStart' } satisfies ListConfig
 
 export const dutyAssignmentsOptions = (query: string) =>
   queryOptions({
@@ -16,9 +19,7 @@ export function useCreateDutyAssignment() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateDutyAssignmentInput) => createDutyAssignment(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['duty', 'list'] })
-    },
+    ...optimisticCreate(queryClient, dutyList),
   })
 }
 
@@ -27,8 +28,6 @@ export function useUpdateDutyAssignment() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreateDutyAssignmentInput }) =>
       updateDutyAssignment(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['duty', 'list'] })
-    },
+    ...optimisticUpdate(queryClient, dutyList),
   })
 }

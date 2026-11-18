@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { useMe } from '@/features/session'
 import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
@@ -32,12 +33,14 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
   const updateStatement = useUpdateStatement()
   const { data: cases } = useSuspenseQuery(casesOptions(''))
 
+  const { data: me } = useMe()
   const form = useAppForm({
     defaultValues: {
       content: statement?.content ?? '',
       personId: statement?.personId ?? '',
       caseId: statement?.caseId ?? (null as string | null),
-      officerId: statement?.officerId ?? (null as string | null),
+      // A new record is taken, drawn up or granted by whoever is signed in; an edit keeps who was recorded.
+      officerId: statement ? statement.officerId : (me?.officerId ?? (null as string | null)),
       officerName: statement?.officerName ?? '',
       givenAt: statement ? toDatetimeLocal(statement.givenAt) : toDatetimeLocal(Date.now()),
     },

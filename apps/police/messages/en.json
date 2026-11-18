@@ -2155,5 +2155,26 @@
     "outbox": "Outbox",
     "status": "Not switched on yet. It will work once your office is connected to Pleadli.",
     "title": "Postbox"
+  },
+  "tour": {
+    "title": "A quick tour",
+    "step_of": "Step {n} of {total}",
+    "next": "Next",
+    "done": "Finish",
+    "skip": "Skip the tour",
+    "go": "Take me there",
+    "s1_title": "This is Today",
+    "s1_body": "It starts empty and fills as you work: who is near the 48-hour limit, referrals waiting for a reply, and what just happened.",
+    "s2_title": "Add people first",
+    "s2_body": "Record the complainant, suspects and witnesses once. They are reused in every statement, case and charge sheet.",
+    "s3_title": "Open a case",
+    "s3_body": "A case gets its Crime Record Book number and holds the people, statements, exhibits and charge sheets.",
+    "s4_title": "Book someone in",
+    "s4_body": "Booking a person into the cells starts the 48-hour clock. It shows on Today as the limit gets close.",
+    "s5_title": "Find anything",
+    "s5_body": "Press Ctrl K to search people, cases and records from any page. You can restart this tour from Settings.",
+    "restart_label": "Show me around",
+    "restart_desc": "The short tour of Today, People, Cases and Custody.",
+    "restart": "Start the tour"
   }
 }

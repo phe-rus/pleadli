@@ -341,3 +341,34 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
 
     Ok(())
 }
+
+/** Someone the paperwork names (booked into the cells, charged) is also a person on the case, so
+ * the case page never under-reports who is involved. A person already on the case keeps their
+ * role, except that a suspect who is then charged becomes the accused. */
+pub async fn ensure_case_person(pool: &SqlitePool, case_id: &str, person_id: &str, role: &str) -> Result<(), sqlx::Error> {
+    let existing: Option<String> = sqlx::query_scalar("SELECT role FROM case_people WHERE case_id = ? AND person_id = ? LIMIT 1")
+        .bind(case_id)
+        .bind(person_id)
+        .fetch_optional(pool)
+        .await?;
+    match existing {
+        None => {
+            sqlx::query("INSERT INTO case_people (id, case_id, person_id, role) VALUES (?, ?, ?, ?)")
+                .bind(Uuid::new_v4().to_string())
+                .bind(case_id)
+                .bind(person_id)
+                .bind(role)
+                .execute(pool)
+                .await?;
+        }
+        Some(current) if current == "suspect" && role == "accused" => {
+            sqlx::query("UPDATE case_people SET role = 'accused' WHERE case_id = ? AND person_id = ?")
+                .bind(case_id)
+                .bind(person_id)
+                .execute(pool)
+                .await?;
+        }
+        Some(_) => {}
+    }
+    Ok(())
+}

@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { useMe } from '@/features/session'
 import { OfficerPicker } from '@/features/officers'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
@@ -34,6 +35,7 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
   const { data: cases } = useSuspenseQuery(casesOptions(''))
   const { data: stationProfile } = useSuspenseQuery(stationProfileOptions())
 
+  const { data: me } = useMe()
   const form = useAppForm({
     defaultValues: {
       caseId: chargeSheet?.caseId ?? '',
@@ -42,7 +44,8 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
       statutorySection: chargeSheet?.statutorySection ?? '',
       particulars: chargeSheet?.particulars ?? '',
       chargedAt: chargeSheet ? toDatetimeLocal(chargeSheet.chargedAt) : toDatetimeLocal(Date.now()),
-      officerId: chargeSheet?.officerId ?? (null as string | null),
+      // A new record is taken, drawn up or granted by whoever is signed in; an edit keeps who was recorded.
+      officerId: chargeSheet ? chargeSheet.officerId : (me?.officerId ?? (null as string | null)),
       officerName: chargeSheet?.officerName ?? '',
       // Prefilled from the canonical Station Profile so the officer isn't
       // retyping it on every charge sheet — still a plain editable field,

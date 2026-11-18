@@ -2,6 +2,9 @@ import { queryOptions, useMutation, useQuery, useQueryClient, useSuspenseQuery }
 import { createCase, exportCaseDocument, getCaseWorkspace, listCasePeople, listCases, updateCase } from './data'
 import type { DocumentFormat } from './data'
 import type { CreateCaseInput } from './schema'
+import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
+
+const casesList = { listKey: ['cases', 'list'], invalidate: [['cases']], sortBy: 'createdAt' } satisfies ListConfig
 
 export const casesOptions = (query: string) =>
   queryOptions({
@@ -38,9 +41,7 @@ export function useCreateCase() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateCaseInput) => createCase(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cases'] })
-    },
+    ...optimisticCreate(queryClient, casesList),
   })
 }
 
@@ -48,9 +49,7 @@ export function useUpdateCase() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreateCaseInput }) => updateCase(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cases'] })
-    },
+    ...optimisticUpdate(queryClient, casesList),
   })
 }
 

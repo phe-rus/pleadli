@@ -84,6 +84,9 @@ pub async fn create_record(
     .execute(pool)
     .await?;
 
+    if let Some(case_id) = &input.case_id {
+        super::cases::ensure_case_person(pool, case_id, &input.person_id, "suspect").await?;
+    }
     let record = get_record(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_custody_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -115,6 +118,9 @@ pub async fn update_record(
     .execute(pool)
     .await?;
 
+    if let Some(case_id) = &input.case_id {
+        super::cases::ensure_case_person(pool, case_id, &input.person_id, "suspect").await?;
+    }
     let record = get_record(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_custody_markdown(pool, vault_root, &record).await;
     Ok(record)

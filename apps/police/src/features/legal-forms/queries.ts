@@ -2,6 +2,9 @@ import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@ta
 import { createChargeSheet, exportChargeSheetDocument, listChargeSheets, updateChargeSheet } from './data'
 import type { DocumentFormat } from './data'
 import type { CreateChargeSheetInput } from './schema'
+import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
+
+const legal_formsList = { listKey: ['chargeSheets', 'list'], invalidate: [['chargeSheets'], ['cases'], ['people', 'profile']], sortBy: 'chargedAt' } satisfies ListConfig
 
 export const chargeSheetsOptions = (query: string) =>
   queryOptions({
@@ -17,9 +20,7 @@ export function useCreateChargeSheet() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateChargeSheetInput) => createChargeSheet(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chargeSheets'] })
-    },
+    ...optimisticCreate(queryClient, legal_formsList),
   })
 }
 
@@ -27,9 +28,7 @@ export function useUpdateChargeSheet() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreateChargeSheetInput }) => updateChargeSheet(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chargeSheets'] })
-    },
+    ...optimisticUpdate(queryClient, legal_formsList),
   })
 }
 

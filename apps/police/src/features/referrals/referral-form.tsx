@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { useMe } from '@/features/session'
 import { OfficerPicker } from '@/features/officers'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
@@ -31,6 +32,7 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
   const updateReferral = useUpdateReferral()
   const { data: cases } = useSuspenseQuery(casesOptions(''))
 
+  const { data: me } = useMe()
   const form = useAppForm({
     defaultValues: {
       caseId: referral?.caseId ?? '',
@@ -38,7 +40,8 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
       destinationName: referral?.destinationName ?? '',
       referredAt: referral ? toDatetimeLocal(referral.referredAt) : toDatetimeLocal(Date.now()),
       status: referral?.status ?? 'pending',
-      officerId: referral?.officerId ?? (null as string | null),
+      // A new record is taken, drawn up or granted by whoever is signed in; an edit keeps who was recorded.
+      officerId: referral ? referral.officerId : (me?.officerId ?? (null as string | null)),
       officerName: referral?.officerName ?? '',
       notes: referral?.notes ?? '',
     },

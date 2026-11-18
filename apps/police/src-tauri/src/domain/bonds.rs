@@ -64,6 +64,35 @@ pub(crate) async fn write_bond_markdown(pool: &SqlitePool, vault_root: &Path, re
     }
 }
 
+/** Offences only the High Court can grant bail for. Police may not release a person charged with
+ * one on a police bond, however the form is filled. This list is the app's working reading of the
+ * law and must be confirmed by a legal officer before release. Attempts are not on it. */
+const NOT_POLICE_BAILABLE: &[&str] = &["murder", "treason", "rape", "aggravated robbery", "aggravated defilement", "terrorism"];
+
+/** Why this bond may not be granted, or None when it may. Looks at what the person is charged with
+ * on the case the bond names. */
+pub async fn refusal(pool: &SqlitePool, input: &CreateBondInput) -> Result<Option<String>, sqlx::Error> {
+    let Some(case_id) = &input.case_id else { return Ok(None) };
+    let offences: Vec<String> =
+        sqlx::query_scalar("SELECT offence FROM charge_sheets WHERE case_id = ? AND (accused_person_id = ? OR accused_person_id IS NULL)")
+            .bind(case_id)
+            .bind(&input.person_id)
+            .fetch_all(pool)
+            .await?;
+    for offence in offences {
+        let lower = offence.to_lowercase();
+        if lower.contains("attempt") {
+            continue;
+        }
+        if NOT_POLICE_BAILABLE.iter().any(|named| lower.contains(named)) {
+            return Ok(Some(format!(
+                "Police cannot grant bond for {offence}. Only the High Court can. Refer the file to the DPP and keep the person in custody."
+            )));
+        }
+    }
+    Ok(None)
+}
+
 pub async fn create_bond(pool: &SqlitePool, vault_root: &Path, input: CreateBondInput) -> Result<Bond, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
 
@@ -90,6 +119,24 @@ pub async fn create_bond(pool: &SqlitePool, vault_root: &Path, input: CreateBond
     .bind(&input.notes)
     .execute(pool)
     .await?;
+
+    // Granting a bond ends the person's time in the cells: the open custody record is the one the
+    // bond names, or else their latest one still in custody. They are not in both places.
+    let custody_id = match &input.custody_id {
+        Some(custody_id) => Some(custody_id.clone()),
+        None => sqlx::query_scalar("SELECT id FROM custody_records WHERE person_id = ? AND status = 'in_custody' ORDER BY arrested_at DESC LIMIT 1")
+            .bind(&input.person_id)
+            .fetch_optional(pool)
+            .await?,
+    };
+    if let Some(custody_id) = custody_id {
+        sqlx::query("UPDATE custody_records SET status = 'released_on_bond', released_at = ? WHERE id = ? AND status = 'in_custody'")
+            .bind(input.granted_at)
+            .bind(&custody_id)
+            .execute(pool)
+            .await?;
+        sqlx::query("UPDATE bonds SET custody_id = ? WHERE id = ?").bind(&custody_id).bind(&id).execute(pool).await?;
+    }
 
     super::officers::link_record(pool, "bonds", &id, &input.officer_id, true).await?;
     let record = get_bond(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;

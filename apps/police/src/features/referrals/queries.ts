@@ -1,6 +1,9 @@
 import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createReferral, listReferrals, updateReferral } from './data'
 import type { CreateReferralInput } from './schema'
+import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
+
+const referralsList = { listKey: ['referrals', 'list'], invalidate: [['referrals']], sortBy: 'referredAt' } satisfies ListConfig
 
 export const referralsOptions = (query: string) =>
   queryOptions({
@@ -16,9 +19,7 @@ export function useCreateReferral() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateReferralInput) => createReferral(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['referrals'] })
-    },
+    ...optimisticCreate(queryClient, referralsList),
   })
 }
 
@@ -26,8 +27,6 @@ export function useUpdateReferral() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreateReferralInput }) => updateReferral(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['referrals'] })
-    },
+    ...optimisticUpdate(queryClient, referralsList),
   })
 }

@@ -75,6 +75,9 @@ pub async fn create_charge_sheet(pool: &SqlitePool, vault_root: &Path, input: Cr
     .await?;
 
     super::officers::link_record(pool, "charge_sheets", &id, &input.officer_id, false).await?;
+    if let Some(person_id) = &input.accused_person_id {
+        super::cases::ensure_case_person(pool, &input.case_id, person_id, "accused").await?;
+    }
     let record = get_charge_sheet(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_charge_sheet_markdown(pool, vault_root, &record).await;
     Ok(record)
@@ -105,6 +108,9 @@ pub async fn update_charge_sheet(
     .await?;
 
     super::officers::link_record(pool, "charge_sheets", id, &input.officer_id, false).await?;
+    if let Some(person_id) = &input.accused_person_id {
+        super::cases::ensure_case_person(pool, &input.case_id, person_id, "accused").await?;
+    }
     let record = get_charge_sheet(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_charge_sheet_markdown(pool, vault_root, &record).await;
     Ok(record)

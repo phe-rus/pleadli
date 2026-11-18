@@ -36,10 +36,11 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Switch } from '@pleadli/ui/switch'
 import { ConnectionSettings } from '@/features/command-link'
 import { ListenerCard } from '@/features/command'
-import { DevModeSwitch, SignInSettings, useInstallation } from '@/features/session'
+import { DevModeSwitch, SignInSettings, useInstallation, useMe } from '@/features/session'
+import { restartTour } from '@/features/overview'
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { format } from '@/lib/date'
 import { useEffect, useState } from 'react'
 
@@ -233,11 +234,26 @@ function DataTab() {
 
 function AppInfo() {
   const info = useAppInfo()
+  const { data: me } = useMe()
+  const navigate = useNavigate()
   return (
     <SettingsCard hint={m["settings.about_body"]()}>
       <SettingsRow label={m["workspace.product"]()} hint={m["settings.about_lead"]()}>
         <span className="text-muted-foreground tabular-nums">{info ? `${info.version} · ${info.platform} ${info.arch}` : '·'}</span>
       </SettingsRow>
+      {me && (
+        <SettingsRow label={m["tour.restart_label"]()} hint={m["tour.restart_desc"]()}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              restartTour(me.officerId)
+              void navigate({ to: '/' })
+            }}
+          >
+            {m["tour.restart"]()}
+          </Button>
+        </SettingsRow>
+      )}
     </SettingsCard>
   )
 }

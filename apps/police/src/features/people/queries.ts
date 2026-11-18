@@ -2,6 +2,9 @@ import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@ta
 import { createPerson, exportPersonDocument, getPersonProfile, searchPeople, updatePerson } from './data'
 import type { DocumentFormat } from './data'
 import type { CreatePersonInput } from './schema'
+import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
+
+const peopleList = { listKey: ['people', 'search'], invalidate: [['people']], sortBy: 'createdAt' } satisfies ListConfig
 
 export const peopleSearchOptions = (query: string) =>
   queryOptions({
@@ -27,9 +30,7 @@ export function useCreatePerson() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreatePersonInput) => createPerson(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['people', 'search'] })
-    },
+    ...optimisticCreate(queryClient, peopleList),
   })
 }
 
@@ -37,10 +38,7 @@ export function useUpdatePerson() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreatePersonInput }) => updatePerson(id, input),
-    onSuccess: (_data, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['people', 'search'] })
-      queryClient.invalidateQueries({ queryKey: ['people', 'profile', id] })
-    },
+    ...optimisticUpdate(queryClient, peopleList),
   })
 }
 
