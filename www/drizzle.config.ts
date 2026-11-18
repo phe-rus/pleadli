@@ -5,6 +5,6 @@ import { defineConfig } from 'drizzle-kit'
 // touches a database, so no credentials or local file lookups are needed.
 export default defineConfig({
   dialect: 'sqlite',
-  schema: ['./src/db/auth-schema.ts', './src/db/orchestra-schema.ts'],
+  schema: ['./src/db/auth-schema.ts', './src/db/orchestra-schema.ts', './src/db/relay-schema.ts'],
   out: './.migrations',
 })

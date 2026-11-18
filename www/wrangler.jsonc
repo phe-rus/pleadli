@@ -20,6 +20,15 @@
             "pattern": "pleadli.com"
         }
     ],
+	"r2_buckets": [
+		{
+			"binding": "RELAY",
+			"bucket_name": "pleadli-relay"
+		}
+	],
+	"triggers": {
+		"crons": ["17 3 * * *"]
+	},
 	"d1_databases": [
 		{
 			"binding": "DB",
