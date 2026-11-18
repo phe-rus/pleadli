@@ -480,3 +480,53 @@ mod tests {
         pool.close().await;
     }
 }
+
+/// Needs a running dev Worker with the demo data and an approved connection
+/// between the two demo offices. Run by hand:
+/// `PLEADLI_POSTBOX_URL=http://localhost:3000 PLEADLI_POSTBOX_FROM_TOKEN=demo-token-hoima PLEADLI_POSTBOX_TO_TOKEN=demo-token-dpp PLEADLI_POSTBOX_TO=ug.dpp.demo-hoima.office cargo test --features postbox --lib -- --ignored a_package_travels`
+#[cfg(test)]
+mod live {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore]
+    async fn a_package_travels_from_one_office_to_another() {
+        let var = |k: &str| std::env::var(k).unwrap_or_else(|_| panic!("set {k}"));
+        let (url, from, to_token, to) = (var("PLEADLI_POSTBOX_URL"), var("PLEADLI_POSTBOX_FROM_TOKEN"), var("PLEADLI_POSTBOX_TO_TOKEN"), var("PLEADLI_POSTBOX_TO"));
+        let mk = || async {
+            let pool = sqlx::sqlite::SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
+            sqlx::raw_sql(TABLE_SQL).execute(&pool).await.unwrap();
+            pool
+        };
+        let (pa, pb) = (mk().await, mk().await);
+        let (sender, receiver) = (Postbox::new(pa.clone(), &url), Postbox::new(pb.clone(), &url));
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let bytes = format!("sealed bytes {id}").into_bytes();
+        sender.queue(&id, &to, "referral", &bytes).await.unwrap();
+        assert_eq!(sender.flush(&from).await.unwrap(), 1, "posted");
+        assert_eq!(sender.sent().await.unwrap()[0].status, "posted");
+
+        assert!(receiver.collect(&to_token).await.unwrap() >= 1, "collected");
+        let got = receiver.unread().await.unwrap();
+        let mine = got.iter().find(|a| a.id == id).expect("arrived");
+        assert_eq!(mine.bytes, bytes);
+        assert_eq!(mine.kind, "referral");
+        receiver.handled(&id).await.unwrap();
+
+        // The relay forgot its copy only after we stored ours: collecting again finds nothing new.
+        assert_eq!(receiver.collect(&to_token).await.unwrap(), 0);
+        assert_eq!(sender.refresh(&from).await.unwrap(), 1);
+        assert_eq!(sender.sent().await.unwrap()[0].status, "acked");
+
+        // Not connected: held, not lost.
+        let other = uuid::Uuid::new_v4().to_string();
+        sender.queue(&other, "ug.dpp.nobody.office", "referral", b"x").await.unwrap();
+        let _ = sender.flush(&from).await;
+        let s = sender.sent().await.unwrap();
+        let held = s.iter().find(|x| x.id == other).unwrap();
+        assert!(held.status == "blocked" || held.status == "failed", "status {}", held.status);
+        pa.close().await;
+        pb.close().await;
+    }
+}
