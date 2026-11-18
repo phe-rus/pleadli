@@ -16,6 +16,7 @@ pub mod document_export;
 pub mod documents;
 pub mod directions;
 pub mod error;
+pub mod court_exchange;
 pub mod evidence;
 pub mod file_items;
 pub mod installation;

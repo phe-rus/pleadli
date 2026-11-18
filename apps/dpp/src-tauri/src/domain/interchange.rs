@@ -67,7 +67,7 @@ async fn load_identity(pool: &SqlitePool) -> Result<Option<Identity>, DomainErro
     Identity::restore(public, signing, encryption).map(Some).ok_or_else(|| DomainError::Invalid("This office's identity is damaged.".to_string()))
 }
 
-async fn require_identity(pool: &SqlitePool) -> Result<Identity, DomainError> {
+pub(crate) async fn require_identity(pool: &SqlitePool) -> Result<Identity, DomainError> {
     load_identity(pool).await?.ok_or_else(|| DomainError::Invalid("Set up this office's identity first.".to_string()))
 }
 
