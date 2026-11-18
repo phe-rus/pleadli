@@ -1061,5 +1061,27 @@
     "post_4": "Inafanya kazi kupitia kompyuta za ofisi yako mwenyewe, si kupitia sisi tu",
     "status": "Toleo la kwanza limejengwa. Bado halijaanza kutumika.",
     "offline": "Kila kitu upande wa kushoto kinafanya kazi bila intaneti kabisa."
+  },
+  "surface": {
+    "title": "Endeleza kazi katika kila ofisi.",
+    "lead": "Kila ofisi ina programu yake, iliyojengwa kwa kazi yake. Zinashiriki muundo mmoja tulivu, seti moja ya karatasi na njia moja ya kuzikagua.",
+    "c_paper": "Karatasi iliyochapishwa",
+    "play": "Anza ziara ya madirisha",
+    "pause": "Simamisha ziara ya madirisha",
+    "previous": "Dirisha lililopita",
+    "next": "Dirisha linalofuata"
+  },
+  "own": {
+    "title": "Ifanye iendane na ofisi yako",
+    "link": "Jifunze zaidi kuhusu karatasi",
+    "paper_title": "Karatasi yoyote",
+    "paper_body": "Hati za mashtaka, dhamana, wito, amri, barua na hati za kukamata, kila moja katika muundo ambao ofisi yako tayari inatumia, kila moja ikiwa na msimbo ambao yeyote anaweza kuukagua.",
+    "paper_link": "Jifunze zaidi kuhusu karatasi",
+    "file_title": "Faili yoyote",
+    "file_body": "Ambatisha picha, skani, maelezo, rekodi, faili za Word na PDF kwenye shauri linalohusika. Zinabaki na shauri, kwenye kompyuta yako mwenyewe.",
+    "file_link": "Jifunze zaidi kuhusu faili",
+    "lang_title": "Lugha yoyote",
+    "lang_body": "Tumia Pleadli kwa Kiingereza, Kiswahili au Kifaransa. Kila programu inazungumza kama ofisi yake inavyoandika, si nakala neno kwa neno ya nyingine.",
+    "lang_link": "Jifunze zaidi kuhusu programu"
   }
 }

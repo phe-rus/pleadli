@@ -1061,5 +1061,27 @@
     "post_4": "Works through your own office computers, not only through us",
     "status": "First version built. Not yet in use.",
     "offline": "Everything on the left works with no internet at all."
+  },
+  "surface": {
+    "title": "Continue working across every office.",
+    "lead": "Each office has its own app, built for its own work. They share one calm design, one set of papers and one way to check them.",
+    "c_paper": "A printed paper",
+    "play": "Play the tour of windows",
+    "pause": "Pause the tour of windows",
+    "previous": "Previous window",
+    "next": "Next window"
+  },
+  "own": {
+    "title": "Make it fit your office",
+    "link": "Learn more about papers",
+    "paper_title": "Any paper",
+    "paper_body": "Charge sheets, bonds, summons, orders, letters and warrants, each in the form your office already uses, each with a code anyone can check.",
+    "paper_link": "Learn more about papers",
+    "file_title": "Any file",
+    "file_body": "Attach photos, scans, statements, recordings, Word and PDF files to the case they belong to. They stay with the case, on your own computer.",
+    "file_link": "Learn more about files",
+    "lang_title": "Any language",
+    "lang_body": "Use Pleadli in English, Kiswahili or French. Each app speaks the way its own office writes, not a word-for-word copy of the others.",
+    "lang_link": "Learn more about the apps"
   }
 }

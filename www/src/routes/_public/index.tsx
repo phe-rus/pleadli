@@ -1,9 +1,6 @@
 import { seo } from '@/lib/seo'
 import { Button } from '@pleadli/ui/button'
-import { getProducts } from '@/data/products'
-import { productPresentation } from '@/data/product-presentation'
 import { FeatureShowcase } from "@/components/feature-showcase"
-import { ProductWindow } from "@/components/replica/product-window"
 import { PinnedStory } from "@/components/pinned-story"
 import { Reveal } from '@/components/reveal'
 import { Download01Icon, FileValidationIcon, LanguageSkillIcon, WifiDisconnected01Icon } from "@hugeicons/core-free-icons"
@@ -14,6 +11,8 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { LinkArrow } from '@/components/link-arrow'
 import { CaseJourney } from '@/components/case-journey'
 import { TwoWays } from '@/components/two-ways'
+import { SurfaceCarousel } from '@/components/surface-carousel'
+import { MakeItYourOwn } from '@/components/make-it-your-own'
 
 export const Route = createFileRoute('/_public/')({
   head: () => seo({ title: m['seo.home_title'](), description: m['site.description'](), path: '/' }),
@@ -28,16 +27,11 @@ const horizon = () => [
 ]
 
 function RouteComponent() {
-  const products = getProducts()
   const assurances = [
     { icon: WifiDisconnected01Icon, title: m["launch.offline_title"](), text: m["launch.offline"]() },
     { icon: FileValidationIcon, title: m["launch.documents_title"](), text: m["launch.documents"]() },
     { icon: LanguageSkillIcon, title: m["launch.languages_title"](), text: m["launch.languages"]() },
   ]
-  const bySlug = (slug: string) => products.find((product) => product.slug === slug) ?? products[0]
-  const courts = bySlug("courts")
-  const prisons = bySlug("prisons")
-  const police = bySlug("police")
 
   return (
     <article>
@@ -78,35 +72,9 @@ function RouteComponent() {
         </div>
       </section>
 
-      <section aria-label={m["launch.see"]()}>
-        <div className={cn(wrap, "flex flex-col gap-16 py-16 md:gap-24 md:py-28")}>
-          <Reveal className="flex flex-col gap-8">
-            <div className="flex max-w-2xl flex-col items-start gap-4">
-              <h2 className="text-3xl! font-bold leading-tight! tracking-tight md:text-4xl!">{productPresentation(courts.slug).title}</h2>
-              <p className="text-lg! leading-relaxed text-muted-foreground">{productPresentation(courts.slug).lead}</p>
-              <Link to="/products/$slug" params={{ slug: courts.slug }} className="text-base font-medium text-primary-ink hover:underline">
-                {m["home.learn_more"]()} <LinkArrow />
-              </Link>
-            </div>
-            <ProductWindow slug={courts.slug} name={courts.name} />
-          </Reveal>
+      <SurfaceCarousel />
 
-          <div className="grid gap-12 md:grid-cols-2 md:gap-10">
-            {[prisons, police].map((product, index) => (
-              <Reveal key={product.slug} delay={index * 0.08} className="flex flex-col gap-6">
-                <ProductWindow slug={product.slug} name={product.name} />
-                <div className="flex flex-col items-start gap-3">
-                  <h3 className="text-2xl! font-bold leading-tight! tracking-tight">{productPresentation(product.slug).title}</h3>
-                  <p className="text-base! leading-relaxed text-muted-foreground">{productPresentation(product.slug).lead}</p>
-                  <Link to="/products/$slug" params={{ slug: product.slug }} className="text-base font-medium text-primary-ink hover:underline">
-                    {m["home.learn_more"]()} <LinkArrow />
-                  </Link>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      <MakeItYourOwn />
 
       <section className="border-t border-border/60 bg-muted/60" aria-labelledby="open-title">
         <div className={cn(wrap, "grid gap-12 py-16 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-16 md:py-28")}>

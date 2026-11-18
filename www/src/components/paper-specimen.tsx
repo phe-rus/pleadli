@@ -1,4 +1,5 @@
 import { cn } from '@pleadli/ui/lib/utils'
+import { useEffect, useRef, useState } from 'react'
 
 export type SpecimenKind = 'police_bond' | 'charge_sheet' | 'summons' | 'letter' | 'release_warrant'
 
@@ -96,52 +97,66 @@ function Mark({ code }: { code: string }) {
   )
 }
 
-/** A paper as it prints, drawn in HTML so it stays sharp on every screen. Always marked as a specimen. */
+const PAPER_W = 400
+const PAPER_H = 488
+
+/** A paper as it prints, drawn in HTML at one fixed size and scaled to fit its box, so it reads the same
+ * at every size and never wraps differently. Always marked as a specimen. */
 export function PaperSpecimen({ kind, specimen, className }: { kind: SpecimenKind; specimen: string; className?: string }) {
   const sheet = sheets[kind]
+  const box = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const fit = () => setScale(el.clientWidth / PAPER_W)
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
   return (
-    <figure
-      className={cn(
-        'relative m-0 flex aspect-[1/1.22] w-full flex-col gap-3 overflow-hidden rounded-md border border-neutral-300 bg-white p-5 text-neutral-900 shadow-xl shadow-black/10 sm:p-7',
-        className,
-      )}
-      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-    >
-      <header className="flex flex-col items-center gap-0.5 text-center text-[0.62rem] font-semibold uppercase leading-tight tracking-wide sm:text-[0.7rem]">
-        {sheet.head.map((line) => (
-          <span key={line}>{line}</span>
-        ))}
-      </header>
-      <div className="flex items-baseline justify-between gap-3 border-y border-neutral-300 py-2">
-        <span className="text-sm font-bold uppercase sm:text-base">{sheet.title}</span>
-        <span className="shrink-0 text-[0.65rem] text-neutral-600 sm:text-xs">{sheet.ref}</span>
-      </div>
-      <dl className="m-0 flex flex-col gap-1.5 text-[0.7rem] sm:text-xs">
-        {sheet.lines.map((line) => (
-          <div key={line.label} className="flex items-baseline gap-2">
-            <dt className="m-0 w-24 shrink-0 text-neutral-500 sm:w-28">{line.label}</dt>
-            <dd className="m-0 font-medium">{line.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="m-0 text-[0.7rem] leading-relaxed text-neutral-700 sm:text-xs">{sheet.body}</p>
-      <footer className="mt-auto flex items-end justify-between gap-3">
-        <div className="flex flex-col gap-1 text-[0.62rem] text-neutral-600 sm:text-[0.7rem]">
-          <span className="block h-px w-32 bg-neutral-500" />
-          <span>{sheet.sign}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[0.58rem] leading-tight text-neutral-600 sm:text-[0.65rem]">{sheet.code}</span>
-          <Mark code={sheet.code} />
-        </div>
-      </footer>
-      <span
-        className="pointer-events-none absolute right-3 top-3 rotate-6 rounded border border-red-700/60 px-1.5 py-0.5 font-sans text-[0.58rem] font-semibold uppercase tracking-widest text-red-700/70"
-        aria-hidden="true"
+    <div ref={box} className={cn('relative w-full overflow-hidden rounded-md border border-neutral-300 bg-white shadow-xl shadow-black/10', className)} style={{ aspectRatio: `${PAPER_W} / ${PAPER_H}` }}>
+      <figure
+        className="absolute left-0 top-0 m-0 flex origin-top-left flex-col gap-3 bg-white p-7 text-neutral-900"
+        style={{ width: PAPER_W, height: PAPER_H, transform: `scale(${scale})`, fontFamily: 'Georgia, "Times New Roman", serif' }}
       >
-        {specimen}
-      </span>
-      <figcaption className="sr-only">{specimen}: {sheet.title}</figcaption>
-    </figure>
+        <header className="flex flex-col items-center gap-0.5 text-center text-[0.7rem] font-semibold uppercase leading-tight tracking-wide">
+          {sheet.head.map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </header>
+        <div className="flex items-baseline justify-between gap-3 border-y border-neutral-300 py-2">
+          <span className="text-base font-bold uppercase">{sheet.title}</span>
+          <span className="shrink-0 text-xs text-neutral-600">{sheet.ref}</span>
+        </div>
+        <dl className="m-0 flex flex-col gap-1.5 text-xs">
+          {sheet.lines.map((line) => (
+            <div key={line.label} className="flex items-baseline gap-2">
+              <dt className="m-0 w-28 shrink-0 text-neutral-500">{line.label}</dt>
+              <dd className="m-0 font-medium">{line.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="m-0 text-xs leading-relaxed text-neutral-700">{sheet.body}</p>
+        <footer className="mt-auto flex items-end justify-between gap-3">
+          <div className="flex flex-col gap-1 text-[0.7rem] text-neutral-600">
+            <span className="block h-px w-32 bg-neutral-500" />
+            <span>{sheet.sign}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[0.65rem] leading-tight text-neutral-600">{sheet.code}</span>
+            <Mark code={sheet.code} />
+          </div>
+        </footer>
+        <span
+          className="pointer-events-none absolute right-3 top-3 rotate-6 rounded border border-red-700/60 px-1.5 py-0.5 font-sans text-[0.58rem] font-semibold uppercase tracking-widest text-red-700/70"
+          aria-hidden="true"
+        >
+          {specimen}
+        </span>
+        <figcaption className="sr-only">{specimen}: {sheet.title}</figcaption>
+      </figure>
+    </div>
   )
 }

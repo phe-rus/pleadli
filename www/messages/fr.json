@@ -1061,5 +1061,27 @@
     "post_4": "Passe par les ordinateurs de votre propre service, pas seulement par nous",
     "status": "Première version construite. Pas encore utilisée.",
     "offline": "Tout ce qui est à gauche fonctionne sans aucun accès à internet."
+  },
+  "surface": {
+    "title": "Poursuivez le travail dans chaque service.",
+    "lead": "Chaque service a sa propre application, conçue pour son propre travail. Elles partagent un même design calme, un même jeu de pièces et une même façon de les vérifier.",
+    "c_paper": "Une pièce imprimée",
+    "play": "Lancer le défilement des fenêtres",
+    "pause": "Mettre en pause le défilement des fenêtres",
+    "previous": "Fenêtre précédente",
+    "next": "Fenêtre suivante"
+  },
+  "own": {
+    "title": "Adaptez-la à votre service",
+    "link": "En savoir plus sur les pièces",
+    "paper_title": "Toute pièce",
+    "paper_body": "Actes d’accusation, cautionnements, citations, ordonnances, lettres et mandats, chacun dans la forme que votre service utilise déjà, chacun avec un code que n’importe qui peut vérifier.",
+    "paper_link": "En savoir plus sur les pièces",
+    "file_title": "Tout fichier",
+    "file_body": "Joignez photos, numérisations, dépositions, enregistrements, fichiers Word et PDF à l’affaire concernée. Ils restent avec l’affaire, sur votre propre ordinateur.",
+    "file_link": "En savoir plus sur les fichiers",
+    "lang_title": "Toute langue",
+    "lang_body": "Utilisez Pleadli en anglais, en kiswahili ou en français. Chaque application parle comme son service écrit, pas en copie mot à mot des autres.",
+    "lang_link": "En savoir plus sur les applications"
   }
 }
