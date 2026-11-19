@@ -26,6 +26,10 @@ const MIN_PASSWORD_LEN: usize = 8;
 /// What a new Head Office's first account signs in with until it is changed.
 pub const HEAD_OFFICE_DEFAULT_PASSCODE: &str = "000000";
 
+fn head_office_default(password: &str, head_office: bool) -> bool {
+    head_office && password == HEAD_OFFICE_DEFAULT_PASSCODE
+}
+
 fn now_ms() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
@@ -664,7 +668,10 @@ pub async fn check_credentials(
     // A short passcode is for this computer only. An administrator signing in
     // from a LAN workstation must use a real password.
     let short_over_lan = device_id.is_some() && row.as_ref().is_some_and(|r| r.is_admin) && password.chars().count() < MIN_PASSWORD_LEN;
-    let password_ok = (secret_ok || badge_only) && !short_over_lan;
+    // A short secret is a PIN. Once the facility is not on PINs it is no longer accepted,
+    // so moving to passwords retires every old PIN.
+    let retired_pin = !badge_only && !policy.allows_pin() && password.chars().count() < MIN_PASSWORD_LEN && !head_office_default(password, head_office);
+    let password_ok = (secret_ok || badge_only) && !short_over_lan && !retired_pin;
 
     // A legacy badge-only administrator is not told "invalid credentials": it is
     // asked to choose a password (see `set_first_password`), not counted as a failure.

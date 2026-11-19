@@ -98,6 +98,15 @@ pub async fn save(conn: &mut SqliteConnection, actor: &Actor, input: AuthPolicyI
     }
 
     let before = get_conn(conn).await?;
+    // Leaving PINs for passwords: a short PIN stops being accepted, so the
+    // administrator chooses a real password now or would be locked out.
+    if before.mode == "pin" && matches!(input.mode.as_str(), "password" | "full") {
+        let (Some(secret), Some(officer_id)) = (input.admin_secret.as_deref().filter(|s| !s.is_empty()), actor.officer_id.as_deref()) else {
+            return Err(DomainError::rejected("Choose your own new password first. PINs stop working when a facility moves to passwords."));
+        };
+        let target = AuthPolicy { mode: input.mode.clone(), ..before.clone() };
+        super::officers::set_own_secret(conn, actor, officer_id, secret, &target).await.map_err(|e| DomainError::rejected(e.to_string()))?;
+    }
     if before.mode == "badge_only" && input.mode != "badge_only" {
         // The administrator turning protection on chooses their own secret now,
         // judged by the rules of the mode being switched to.

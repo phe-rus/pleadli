@@ -34,14 +34,14 @@ fn wrong_attempts() -> &'static Mutex<HashMap<String, (u32, i64)>> {
     WRONG.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn slowed(badge: &str) -> Option<i64> {
+pub(crate) fn slowed(badge: &str) -> Option<i64> {
     let map = wrong_attempts().lock().ok()?;
     let (count, at) = *map.get(&badge.to_lowercase())?;
     let wait = at + SLOW_MS - now_ms();
     (count >= MAX_WRONG && wait > 0).then_some(wait)
 }
 
-fn note_wrong(badge: &str) {
+pub(crate) fn note_wrong(badge: &str) {
     if let Ok(mut map) = wrong_attempts().lock() {
         let entry = map.entry(badge.to_lowercase()).or_insert((0, 0));
         entry.0 += 1;
@@ -49,7 +49,7 @@ fn note_wrong(badge: &str) {
     }
 }
 
-fn clear_wrong(badge: &str) {
+pub(crate) fn clear_wrong(badge: &str) {
     if let Ok(mut map) = wrong_attempts().lock() {
         map.remove(&badge.to_lowercase());
     }

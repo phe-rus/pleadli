@@ -91,10 +91,19 @@ async fn login_handler(
     State(state): State<RemoteState>,
     Json(body): Json<LoginBody>,
 ) -> Result<Json<LoginResponse>, ApiError> {
-    let token = officers::login(&state.pool, &body.badge_number, &body.password, body.code.as_deref())
+    // Five wrong tries on a badge slow it down, the same as at the station.
+    let key = format!("remote:{}", body.badge_number.trim());
+    if let Some(wait) = crate::domain::auth::slowed(&key) {
+        return Err((StatusCode::TOO_MANY_REQUESTS, format!("Too many wrong attempts. Try again in {} seconds.", wait / 1000 + 1)));
+    }
+    let Some(token) = officers::login(&state.pool, &body.badge_number, &body.password, body.code.as_deref())
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::UNAUTHORIZED, "invalid badge number, password or code".to_string()))?;
+    else {
+        crate::domain::auth::note_wrong(&key);
+        return Err((StatusCode::UNAUTHORIZED, "invalid badge number, password or code".to_string()));
+    };
+    crate::domain::auth::clear_wrong(&key);
     Ok(Json(LoginResponse { token }))
 }
 
@@ -483,6 +492,13 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(wrong.status(), StatusCode::UNAUTHORIZED, "wrong password must be rejected");
+
+        // Repeated wrong tries on one badge are slowed down.
+        let mut last = StatusCode::UNAUTHORIZED;
+        for _ in 0..8 {
+            last = client.post(format!("{base}/login")).json(&json!({ "badgeNumber": "GUESSED-1", "password": "nope" })).send().await.unwrap().status();
+        }
+        assert_eq!(last, StatusCode::TOO_MANY_REQUESTS, "guessing must be slowed");
 
         let login = client
             .post(format!("{base}/login"))

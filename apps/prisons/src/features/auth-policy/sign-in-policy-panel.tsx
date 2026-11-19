@@ -29,7 +29,7 @@ function PolicyForm({ policy }: { policy: AuthPolicy }) {
   const changed = mode !== policy.mode || Number(idle) !== policy.idleTimeoutMinutes || Number(lifetime) !== policy.absoluteLifetimeHours
   // Turning protection on from an open facility: the administrator at the keyboard
   // chooses their own secret first, or the save would leave them locked out.
-  const turningOnProtection = policy.mode === 'badge_only' && mode !== 'badge_only'
+  const turningOnProtection = (policy.mode === 'badge_only' && mode !== 'badge_only') || (policy.mode === 'pin' && (mode === 'password' || mode === 'full'))
 
   return (
     <SettingsCard

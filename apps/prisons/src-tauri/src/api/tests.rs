@@ -917,3 +917,67 @@ async fn full_protection_asks_the_authenticator_code_and_the_old_login_is_closed
     let (status, ok) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").body(json!({ "staffId": atim_id, "secret": "another-horse", "enrolSecret": new_key, "code": crate::domain::totp::current_code(&new_key) }))).await;
     assert_eq!(status, StatusCode::OK, "{ok}");
 }
+
+#[tokio::test]
+async fn moving_from_pins_to_passwords_needs_a_real_password_and_retires_old_pins() {
+    let h = harness().await;
+    let (status, setup) = send(&h.router, Call::new(Method::POST, "/api/system/onboarding/facility").body({
+        let mut b = setup_body("UP-0300", "{SEQ:4}/{YEAR}");
+        b["admin"]["password"] = json!("246810");
+        b
+    })).await;
+    assert_eq!(status, StatusCode::OK, "{setup}");
+    let token = setup["token"].as_str().unwrap().to_string();
+    let policy = |mode: &str, secret: Option<&str>| {
+        let mut b = json!({ "mode": mode, "idleTimeoutMinutes": 240, "absoluteLifetimeHours": 12 });
+        if let Some(s) = secret { b["adminSecret"] = json!(s); }
+        b
+    };
+    // No new password for the administrator: refused, so nobody is locked out.
+    let (status, _) = send(&h.router, Call::new(Method::PUT, "/api/system/auth-policy").token(&token).body(policy("password", None))).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    let (status, body) = send(&h.router, Call::new(Method::PUT, "/api/system/auth-policy").token(&token).body(policy("password", Some("a-real-password-1")))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    // The old PIN no longer signs in; the new password does.
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/auth/login").body(json!({ "badgeNumber": "UP-0300", "password": "246810" }))).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (status, _) = send(&h.router, Call::new(Method::POST, "/api/auth/login").body(json!({ "badgeNumber": "UP-0300", "password": "a-real-password-1" }))).await;
+    assert_eq!(status, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn a_workstation_signs_in_with_the_authenticator_code_and_the_session_stays_bound_to_it() {
+    let h = harness().await;
+    let admin = bootstrap(&h).await;
+    let key = crate::domain::totp::enrol("Test", "OIC").unwrap().secret;
+    sqlx::query("UPDATE officers SET totp_secret = ? WHERE badge_number = 'OIC-1'").bind(&key).execute(&h.node.pool).await.unwrap();
+    sqlx::query("UPDATE auth_policy SET mode = 'full'").execute(&h.node.pool).await.unwrap();
+
+    let (_, code) = send(&h.router, Call::new(Method::POST, "/api/auth/devices/enrolment-codes").token(&admin).body(json!({ "label": "Registry PC" }))).await;
+    let (_, enrolled) = send(&h.router, Call::new(Method::POST, "/api/auth/devices/enrol").ingress(Ingress::Lan).body(json!({ "code": code["code"] }))).await;
+    let device = enrolled["deviceToken"].as_str().unwrap().to_string();
+
+    // Not an enrolled workstation: no list of people, no sign-in.
+    let (status, _) = send(&h.router, Call::new(Method::GET, "/api/auth/people").ingress(Ingress::Lan)).await;
+    assert_ne!(status, StatusCode::OK);
+
+    let (status, people) = send(&h.router, Call::new(Method::GET, "/api/auth/people").ingress(Ingress::Lan).device(&device)).await;
+    assert_eq!(status, StatusCode::OK);
+    let id = people[0]["id"].as_str().unwrap().to_string();
+
+    let call = |extra: Value| {
+        let mut b = json!({ "staffId": id, "secret": "correct-horse" });
+        b.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
+        b
+    };
+    let (_, ask) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").ingress(Ingress::Lan).device(&device).body(call(json!({})))).await;
+    assert_eq!(ask["status"], "code");
+    let (status, ok) = send(&h.router, Call::new(Method::POST, "/api/auth/shared-sign-in").ingress(Ingress::Lan).device(&device).body(call(json!({ "code": crate::domain::totp::current_code(&key) })))).await;
+    assert_eq!(status, StatusCode::OK, "{ok}");
+    let token = ok["session"]["token"].as_str().unwrap().to_string();
+
+    let (status, _) = send(&h.router, Call::new(Method::GET, "/api/prisons/prisoners").ingress(Ingress::Lan).device(&device).token(&token)).await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _) = send(&h.router, Call::new(Method::GET, "/api/prisons/prisoners").ingress(Ingress::Lan).token(&token)).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "the session is bound to the workstation");
+}
