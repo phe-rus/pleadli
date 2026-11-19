@@ -1,6 +1,10 @@
+-- no-transaction
 -- A sentence goes to a prison as a warrant of committal: a fifth kind of order.
--- SQLite cannot change a CHECK in place, so the table is rebuilt.
-PRAGMA defer_foreign_keys = ON;
+-- SQLite cannot change a CHECK in place, so the table is rebuilt. Other tables
+-- (deliveries) point at orders, so foreign keys are off while it is rebuilt:
+-- dropping a parent table that has rows pointing at it fails otherwise.
+PRAGMA foreign_keys = OFF;
+BEGIN;
 
 CREATE TABLE orders_new (
     id TEXT PRIMARY KEY,
@@ -28,3 +32,6 @@ BEGIN SELECT RAISE(ABORT, 'An issued order cannot be changed.'); END;
 
 CREATE TRIGGER orders_issued_no_delete BEFORE DELETE ON orders WHEN OLD.status = 'issued'
 BEGIN SELECT RAISE(ABORT, 'An issued order cannot be deleted.'); END;
+
+COMMIT;
+PRAGMA foreign_keys = ON;

@@ -116,6 +116,32 @@ mod tests {
         assert!(!dir.join("node.key").exists(), "no key was invented for a database that already exists");
     }
 
+    /// A registry that already has an order sent to a prison must still start
+    /// after the order table is rebuilt for committal orders (found running the
+    /// app on real earlier data: a fresh database has no rows pointing at orders).
+    #[tokio::test]
+    async fn an_older_database_with_a_sent_order_migrates_and_keeps_it() {
+        use std::borrow::Cow;
+        let dir = temp_dir();
+        let pool = SqlitePoolOptions::new().max_connections(1).connect_with(connect_options(&dir.join("old.db"))).await.unwrap();
+        let mut migrator = sqlx::migrate!("./migrations");
+        let all = migrator.migrations.to_vec();
+        migrator.migrations = Cow::Owned(all.iter().filter(|m| m.version < 18).cloned().collect());
+        migrator.run(&pool).await.unwrap();
+        sqlx::query("INSERT INTO cases (id, court_number, title) VALUES ('c1', 'CRB 1/2026', 'State v. X')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO orders (id, case_id, kind, title) VALUES ('o1', 'c1', 'remand', 'Remand')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO prison_links (id, prison_id, prison_name, prison_verifying_key, prison_encryption_key, fingerprint, status, responded_at) VALUES ('l1', 'p1', 'Prison', 'k', 'k', 'f', 'trusted', 1)").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO prison_outgoing (id, link_id, order_id, seq, payload, prepared_at) VALUES ('d1', 'l1', 'o1', 1, '{}', 1)").execute(&pool).await.unwrap();
+
+        sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+        let sent: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM prison_outgoing WHERE order_id = 'o1'").fetch_one(&pool).await.unwrap();
+        assert_eq!(sent, 1, "the sent order is still there");
+        let broken: Vec<(String,)> = sqlx::query_as("SELECT \"table\" FROM pragma_foreign_key_check").fetch_all(&pool).await.unwrap();
+        assert!(broken.is_empty(), "{broken:?}");
+        sqlx::query("INSERT INTO orders (id, case_id, kind, title) VALUES ('o2', 'c1', 'committal', 'Committal')").execute(&pool).await.unwrap();
+        pool.close().await;
+    }
+
     #[tokio::test]
     async fn a_plain_database_is_encrypted_in_place_and_keeps_its_rows() {
         let dir = temp_dir();

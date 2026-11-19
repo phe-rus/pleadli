@@ -152,6 +152,22 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     } else {
         format!("{} returned the filing: {}", court.name, receipt.reason.as_deref().unwrap_or("no reason given"))
     };
+    // The court's answer joins the file's own record of what was filed, so the file shows it without opening the exchange page.
+    if receipt.outcome == "accepted" || receipt.outcome == "withdrawal_recorded" {
+        let what = if receipt.outcome == "accepted" { "Filing accepted by the court" } else { "Withdrawal recorded by the court" };
+        sqlx::query("INSERT INTO filings (id, prosecution_file_id, what, court, filed_at, receipt, note, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            .bind(uuid::Uuid::new_v4().to_string())
+            .bind(&receipt.dpp_file_key)
+            .bind(what)
+            .bind(&court.name)
+            .bind(receipt.decided_at)
+            .bind(receipt.court_number.as_deref())
+            .bind("From the court's receipt.")
+            .bind(Some("court receipt"))
+            .bind(now())
+            .execute(&mut *tx)
+            .await?;
+    }
     tx.commit().await?;
     Ok(Imported { kind: KIND_FILING_RECEIPT.into(), message })
 }
@@ -358,6 +374,9 @@ mod tests {
         let wd_receipt = FilingReceiptPayload { filing_package_id: wd_open.header.id.clone(), dpp_file_key: "f1".into(), outcome: "withdrawal_recorded".into(), court_number: Some("CO 12/2026".into()), received_at: 6, decided_at: 7, ..Default::default() };
         let msg = import_package(&pool, &seal(3, &wd_receipt)).await.unwrap().message;
         assert!(msg.contains("recorded the withdrawal"), "{msg}");
+        let kept: Vec<(String, Option<String>)> = sqlx::query_as("SELECT what, receipt FROM filings WHERE prosecution_file_id = 'f1' ORDER BY created_at, what").fetch_all(&pool).await.unwrap();
+        assert!(kept.iter().any(|(w, r)| w.starts_with("Filing accepted") && r.as_deref() == Some("CO 12/2026")), "{kept:?}");
+        assert!(kept.iter().any(|(w, _)| w.starts_with("Withdrawal recorded")), "{kept:?}");
         pool.close().await;
     }
 
