@@ -3,6 +3,7 @@ import { SettingsCard } from '@/components/settings-card'
 import { Tag } from '@/components/status-tag'
 import { IntegrityCard } from '@/features/audit'
 import { LogoCard } from '@/features/brand'
+import { PeoplePane, ProtectionPane } from './people-panes'
 import { ProfileCard } from '@/features/profile'
 import { BackupsPane, LicencePane } from '@/features/orchestra'
 import { m } from '@/features/orchestra/text'
@@ -28,7 +29,7 @@ export function isSettingsSection(value: unknown): value is SettingsSectionId {
 
 const about: Record<SettingsSectionId, string> = {
   bench: "Who sits here. The audit trail records the judicial officer's name against what the bench does, and it heads what is signed.",
-  security: 'The record of activity, kept apart from anything that could edit it without notice.',
+  security: 'Who can open the court records, who works here, and the record of activity kept apart from anything that could edit it.',
   'pleadli-licence': m.orchestra_settings_licence_about(),
   'daily-backups': m.orchestra_settings_backups_about(),
   'software-update': 'Check for a signed Courts release and choose when to install it.',
@@ -66,7 +67,13 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
       <LogoCard />
     </>
   ),
-  security: () => <IntegrityCard />,
+  security: () => (
+    <>
+      <ProtectionPane />
+      <PeoplePane />
+      <IntegrityCard />
+    </>
+  ),
   'pleadli-licence': () => <LicencePane />,
   'daily-backups': () => <BackupsPane />,
   'software-update': () => <SoftwareUpdatePane />,

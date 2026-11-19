@@ -1,7 +1,7 @@
 import { api } from '@/lib/api'
 import type { SetupPayload, SignInAttempt } from '@pleadli/setup'
 import * as z from 'zod'
-import { brandSchema, enrolmentSchema, installationSchema, setupStatusSchema, signInPersonSchema, signInResultSchema, staffSchema, type StaffRole } from './schema'
+import { brandSchema, enrolmentSchema, installationSchema, setupStatusSchema, signInPersonSchema, signInResultSchema, staffRoles, staffSchema, type StaffRole } from './schema'
 
 export const getBrand = async () => brandSchema.parse(await api('GET', '/api/installation/brand'))
 export const getSetupStatus = async () => setupStatusSchema.parse(await api('GET', '/api/setup/status'))
@@ -26,4 +26,13 @@ export const setStaffSecret = (id: string, secret: string) => api('PUT', `/api/s
 export const resetSecondFactor = (id: string) => api('DELETE', `/api/staff/${id}/second-factor`)
 
 export const getSecurityStatus = async () =>
-  z.object({ state: z.enum(['ready', 'recovery']), installed: z.boolean(), locked: z.boolean(), retryAfterSeconds: z.number(), reason: z.string().nullable() }).parse(await api('GET', '/api/security/status'))
+  z.object({
+      state: z.enum(['ready', 'recovery']),
+      installed: z.boolean(),
+      level: z.enum(['none', 'basic', 'full']).nullable(),
+      locked: z.boolean(),
+      actor: z.object({ id: z.string(), name: z.string(), role: z.enum(staffRoles) }).nullable(),
+      idleMinutes: z.number(),
+      retryAfterSeconds: z.number(),
+      reason: z.string().nullable(),
+    }).parse(await api('GET', '/api/security/status'))

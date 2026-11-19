@@ -92,6 +92,7 @@ async fn set_protection(State(s): State<AppState>, Json(input): Json<ProtectionI
     let admin = require_admin(&s)?;
     let level = Protection::parse(&input.protection).ok_or_else(|| DomainError::Invalid("That protection level is not known.".to_string()))?;
     installation::set_protection(&s.pool, &admin.id, level, input.secret.as_deref()).await?;
+    let _ = audit::log(&s.pool, audit::Entry::new("protection_changed").subject("installation", level.as_str())).await;
     let sec = security(&s)?;
     sec.load(&s.pool).await?;
     sec.adopt(&s.pool, admin).await?;
