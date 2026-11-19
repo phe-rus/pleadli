@@ -1,11 +1,11 @@
 {
-  "measuredAt": "2026-11-17",
+  "measuredAt": "2026-11-19",
   "workspaces": {
     "courts": 948525,
     "dpp": 1128740,
     "lawyers": 1272704,
-    "police": 852233,
-    "prisons": 906386,
+    "police": 866952,
+    "prisons": 942643,
     "www": 819060
   }
 }
