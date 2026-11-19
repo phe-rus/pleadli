@@ -419,5 +419,7 @@
   "court_orders_event_died": "Décédé en détention",
   "court_orders_event_escaped": "Évadé",
   "court_orders_event_not_produced": "N’a pas pu être présenté",
-  "court_orders_event_other": "Autre"
+  "court_orders_event_other": "Autre",
+  "auth_policy_full_title": "Mot de passe et code authentificateur",
+  "auth_policy_full_description": "Chaque agent se connecte avec un mot de passe et un code à six chiffres d’une application d’authentification sur son téléphone. Chaque connexion est enregistrée."
 }

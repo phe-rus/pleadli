@@ -14,7 +14,11 @@ export async function previewNumbering(input: { pattern: string; reset: string; 
 
 /** Saves the whole setup in one step on the node and signs the first
  * administrator in. Nothing is kept if any part is refused. */
-export async function setupFacility(draft: Draft, jurisdiction: { id: string; country: string }) {
+export async function setupFacility(
+  draft: Draft,
+  jurisdiction: { id: string; country: string },
+  shared?: { authMode: string; adminRank?: string | null; secondFactor: { secret: string; code: string } | null; people: { badgeNumber: string; name: string; password: string; role: string; rank: string | null }[] },
+) {
   const result = signInResultSchema.parse(
     await api('POST', '/api/system/onboarding/facility', {
       body: {
@@ -31,8 +35,9 @@ export async function setupFacility(draft: Draft, jurisdiction: { id: string; co
           documentPrefix: (draft.documentPrefix.trim() || draft.facilityCode.trim()) || null,
         },
         numbering: { pattern: draft.numberingPattern.trim(), reset: draft.numberingReset },
-        authMode: draft.authMode,
-        admin: { badgeNumber: draft.adminBadge.trim(), name: draft.adminName.trim(), password: draft.adminPassword },
+        authMode: shared?.authMode ?? draft.authMode,
+        admin: { badgeNumber: draft.adminBadge.trim(), name: draft.adminName.trim(), password: draft.adminPassword, secondFactor: shared?.secondFactor ?? null, rank: shared?.adminRank ?? null },
+        people: shared?.people ?? [],
       },
     }),
   )

@@ -3334,5 +3334,7 @@
   "court_orders_event_died": "Died in custody",
   "court_orders_event_escaped": "Escaped",
   "court_orders_event_not_produced": "Could not be produced",
-  "court_orders_event_other": "Other"
+  "court_orders_event_other": "Other",
+  "auth_policy_full_title": "Password and authenticator code",
+  "auth_policy_full_description": "Every officer signs in with a password and a six-digit code from an authenticator app on their phone. Each sign-in is recorded."
 }

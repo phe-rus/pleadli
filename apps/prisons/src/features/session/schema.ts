@@ -13,7 +13,7 @@ export const systemStateSchema = z.object({
   paired: z.boolean(),
   connection: z.enum(['none', 'pending', 'connected', 'rejected', 'revoked']),
   /** How officers sign in here. Says nothing about any one account. */
-  authMode: z.enum(['password', 'pin', 'badge_only']),
+  authMode: z.enum(['password', 'pin', 'badge_only', 'full']),
   apiLevel: z.number(),
 })
 

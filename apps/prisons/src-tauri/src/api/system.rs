@@ -159,6 +159,8 @@ struct SetupAdmin {
     /// Full protection: the key shown on screen and a code from the phone proving it was linked.
     #[serde(default)]
     second_factor: Option<SecondFactor>,
+    #[serde(default)]
+    rank: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -214,6 +216,9 @@ async fn setup_facility(
             )
             .await?;
             let first = officers::create_first_admin(c, &admin.badge_number, &admin.name, &admin.password).await?;
+            if let Some(rank) = admin.rank.as_deref().map(str::trim).filter(|r| !r.is_empty()) {
+                sqlx::query("UPDATE officers SET rank = ? WHERE id = ?").bind(rank).bind(&first.id).execute(&mut *c).await?;
+            }
             if let Some(f) = &admin.second_factor {
                 sqlx::query("UPDATE officers SET totp_secret = ? WHERE id = ?").bind(&f.secret).bind(&first.id).execute(&mut *c).await?;
             }

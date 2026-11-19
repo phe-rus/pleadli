@@ -1,7 +1,7 @@
 import * as z from 'zod'
 import { m } from '@/paraglide/messages'
 
-export const authModes = ['password', 'pin', 'badge_only'] as const
+export const authModes = ['password', 'pin', 'badge_only', 'full'] as const
 export type AuthMode = (typeof authModes)[number]
 
 export const authPolicySchema = z.object({
@@ -26,6 +26,10 @@ export const authModeCopy: Record<AuthMode, { title: string; description: string
   badge_only: {
     get title() { return m.auth_policy_badge_only_for_chosen_accounts() },
     get description() { return m.auth_policy_for_a_controlled_room_where_you() },
+  },
+  full: {
+    get title() { return m.auth_policy_full_title() },
+    get description() { return m.auth_policy_full_description() },
   },
 }
 

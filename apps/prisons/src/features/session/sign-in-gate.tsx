@@ -16,6 +16,8 @@ import { useRouter } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { m } from '@/paraglide/messages'
+import { useBrandLogo } from '@/features/brand'
+import { SharedSignIn } from './shared-flow'
 
 /**
  * Every installation, facility or Head Office, needs a signed-in officer
@@ -45,7 +47,7 @@ export function SignInGate({ children }: { children: ReactNode }) {
   if (isLoading) return null
   if (!state) return <NodeWaiting />
   if (state.bootstrap) return <BootstrapScreen headOffice={state.isHeadOffice} />
-  if (!token) return <SignInScreen headOffice={state.isHeadOffice} authMode={state.authMode} />
+  if (!token) return state.authMode === 'pin' || state.authMode === 'full' ? <SharedSignInGate officeName={null} /> : <SignInScreen headOffice={state.isHeadOffice} authMode={state.authMode} />
   return <>{children}</>
 }
 
@@ -418,5 +420,23 @@ function SignInScreen({ headOffice, authMode }: { headOffice: boolean; authMode:
         )}
       </motion.div>
     </PreAuthLayout>
+  )
+}
+
+/** Sign-in for a facility on PINs or a password with an authenticator: the
+ * same screen the other Pleadli apps use. */
+function SharedSignInGate({ officeName }: { officeName: string | null }) {
+  const { src } = useBrandLogo()
+  const queryClient = useQueryClient()
+  const router = useRouter()
+  return (
+    <SharedSignIn
+      officeName={officeName}
+      logo={src}
+      onSignedIn={() => {
+        void queryClient.clear()
+        void router.invalidate()
+      }}
+    />
   )
 }

@@ -3334,5 +3334,7 @@
   "court_orders_event_died": "Amefia mahabusu",
   "court_orders_event_escaped": "Ametoroka",
   "court_orders_event_not_produced": "Hakuweza kufikishwa",
-  "court_orders_event_other": "Nyingine"
+  "court_orders_event_other": "Nyingine",
+  "auth_policy_full_title": "Nenosiri na msimbo wa kithibitishaji",
+  "auth_policy_full_description": "Kila afisa huingia kwa nenosiri na msimbo wa tarakimu sita kutoka kwa programu ya kithibitishaji kwenye simu yake. Kila kuingia kunarekodiwa."
 }

@@ -59,3 +59,18 @@ export async function setFirstPassword(badgeNumber: string, newPassword: string)
   setSessionToken(result.token)
   return result
 }
+
+type Enrolment = { secret: string; uri: string; svg: string }
+type SharedOutcome = { status: 'signed_in'; session: { token: string } } | { status: 'code' } | { status: 'enrol'; enrolment: Enrolment }
+
+/** The officers shown on the shared sign-in screen. */
+export const listSignInPeople = async () => (await api('GET', '/api/auth/people')) as { id: string; name: string; rank: string; secretKind: 'pin' | 'password'; needsEnrolment: boolean }[]
+
+/** A new authenticator key to link while setting up. */
+export const requestSecondFactor = async (account: string) => (await api('POST', '/api/system/second-factor', { body: { account } })) as Enrolment
+
+export async function sharedSignIn(attempt: { staffId: string; secret: string; code?: string; enrolSecret?: string }) {
+  const result = (await api('POST', '/api/auth/shared-sign-in', { body: attempt })) as SharedOutcome
+  if (result.status === 'signed_in') setSessionToken(result.session.token)
+  return result.status === 'signed_in' ? ({ status: 'signed_in' } as const) : result
+}

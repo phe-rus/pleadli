@@ -1,50 +1,71 @@
 import { NodeWaiting } from '@/components/node-waiting'
 import { PreAuthLayout } from '@/components/pre-auth-layout'
+import { loadAccent, SharedSetup } from '@/features/session/shared-flow'
 import { useHqConfig } from '@/features/session'
-import { AnimatePresence } from 'framer-motion'
-import { useState, type ReactNode } from 'react'
-import { FacilitySetup } from './facility-setup'
-import { HeadOfficeSetup } from './head-office-setup'
-import { RoleChoiceScreen } from './role-choice'
+import { m } from '@/paraglide/messages'
+import { Button } from '@pleadli/ui/button'
+import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
+import { useEffect, useState, type ReactNode } from 'react'
+import { HeadOfficeStep } from './head-office-step'
 import { WorkstationScreen } from './workstation-screen'
 
-type Screen = 'role' | 'facility' | 'head-office' | 'workstation'
+type Screen = 'setup' | 'workstation' | 'connect'
 
 /** First launch. Sits in front of the sign-in gate: while the installation has
  * no role, this gate owns the screen entirely. Once a role exists it renders
- * straight through and the sign-in gate takes over. */
+ * straight through and the sign-in gate takes over.
+ *
+ * Setup is the same flow every Pleadli app uses. It saves everything in one
+ * step on the node and signs the first administrator in, but the screens stay
+ * up until the person finishes, even though a role now exists. A facility then
+ * gets the optional Head Office step; Head Office is done. */
 export function OnboardingGate({ children }: { children: ReactNode }) {
   const { data: hqConfig, isLoading } = useHqConfig()
-  const [screen, setScreen] = useState<Screen>('role')
-  const [created, setCreated] = useState(false)
+  const [screen, setScreen] = useState<Screen>('setup')
+  const [running, setRunning] = useState(false)
+  const queryClient = useQueryClient()
+  const router = useRouter()
+  useEffect(loadAccent, [])
 
   if (isLoading) return null
-  // Facility setup creates the role and the first account in one step, then
-  // carries on to an optional Head Office step. It stays up until the officer
-  // finishes, even though the role now exists. It is only ever shown for an
-  // installation that still has no account, or one this very setup just
-  // created: a setup screen left open while the node was restarting must not
-  // outlive that, or it would offer to set up an installation that is set up.
-  if (screen === 'facility' && (created || hqConfig?.bootstrap !== false)) {
-    return <FacilitySetup onBack={() => setScreen('role')} onCreated={() => setCreated(true)} onDone={() => { setCreated(false); setScreen('role') }} />
-  }
   // No answer from the node is not "no role yet": never offer first-run
   // setup on an installation whose state is simply unknown.
   if (!hqConfig) return <NodeWaiting />
-  // Head Office is created and signed in by one call, so once it has a role
-  // there is nothing left for this gate to hold.
-  if (hqConfig.role != null) return <>{children}</>
-  if (screen === 'head-office') return <HeadOfficeSetup onBack={() => setScreen('role')} />
-
+  const settled = async () => {
+    // The router tried its first route before anyone was signed in, so its
+    // loaders run again now that there is a session.
+    setRunning(false)
+    await queryClient.invalidateQueries()
+    await router.invalidate()
+  }
+  if (screen === 'connect') {
+    return (
+      <PreAuthLayout>
+        <HeadOfficeStep onDone={() => { setScreen('setup'); void settled() }} />
+      </PreAuthLayout>
+    )
+  }
+  if (hqConfig.role != null && !running) return <>{children}</>
+  if (screen === 'workstation') {
+    return (
+      <PreAuthLayout>
+        <WorkstationScreen onBack={() => setScreen('setup')} />
+      </PreAuthLayout>
+    )
+  }
   return (
-    <PreAuthLayout>
-      <AnimatePresence mode="wait" initial={false}>
-        {screen === 'workstation' ? (
-          <WorkstationScreen key="workstation" onBack={() => setScreen('role')} />
-        ) : (
-          <RoleChoiceScreen key="role" onChooseFacility={() => setScreen('facility')} onChooseHeadOffice={() => setScreen('head-office')} onChooseWorkstation={() => setScreen('workstation')} />
-        )}
-      </AnimatePresence>
-    </PreAuthLayout>
+    <SharedSetup
+      welcomeAction={
+        <Button variant="outline" onClick={() => setScreen('workstation')}>
+          {m.onboarding_role_workstation()}
+        </Button>
+      }
+      onDone={(headOffice) => {
+        if (headOffice) void settled()
+        else setScreen('connect')
+      }}
+      onStarted={() => setRunning(true)}
+    />
   )
 }
