@@ -304,7 +304,10 @@ struct OfficerWithHash {
 /// on success, issues a fresh bearer token — a random, server-looked-up
 /// string, not a JWT, since nothing outside this app ever needs to
 /// inspect the token's contents, and a DB row is trivially revocable.
-pub async fn login(pool: &SqlitePool, badge_number: &str, password: &str) -> Result<Option<String>, OfficerError> {
+/// A remote sign-in. On full protection the authenticator code is required too,
+/// and an officer who has not linked a phone yet cannot sign in remotely: linking
+/// happens at the station.
+pub async fn login(pool: &SqlitePool, badge_number: &str, password: &str, code: Option<&str>) -> Result<Option<String>, OfficerError> {
     let row = sqlx::query_as::<_, OfficerWithHash>(
         "SELECT id, password_hash, active FROM officers WHERE badge_number = ?",
     )
@@ -317,6 +320,13 @@ pub async fn login(pool: &SqlitePool, badge_number: &str, password: &str) -> Res
     let Some(hash) = &row.password_hash else { return Ok(None) };
     if !row.active || !verify_password(password, hash) {
         return Ok(None);
+    }
+    if super::installation::effective_auth_mode(pool).await.map_err(|e| OfficerError::Hash(e.to_string()))? == "full" {
+        let key: Option<String> = sqlx::query_scalar("SELECT totp_secret FROM officers WHERE id = ?").bind(&row.id).fetch_one(pool).await?;
+        match (key, code) {
+            (Some(k), Some(c)) if super::totp::verify(&k, c) => {}
+            _ => return Ok(None),
+        }
     }
 
     let token = Uuid::new_v4().to_string();

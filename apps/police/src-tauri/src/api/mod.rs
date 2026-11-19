@@ -1845,8 +1845,19 @@ mod tests {
         assert!(cy.get("passwordHash").is_none() && cy.get("password_hash").is_none());
         assert_eq!(call(&app, Method::POST, "/api/officers", Some(with_login)).await.0, StatusCode::CONFLICT);
 
-        assert!(officers::login(&db.pool, "B-7", "long-enough-1").await.unwrap().is_some());
-        assert!(officers::login(&db.pool, "B-7", "wrong").await.unwrap().is_none());
+        assert!(officers::login(&db.pool, "B-7", "long-enough-1", None).await.unwrap().is_some());
+        assert!(officers::login(&db.pool, "B-7", "wrong", None).await.unwrap().is_none());
+
+        // On full protection the remote sign-in needs the authenticator code too.
+        sqlx::query("UPDATE auth_policy SET mode = 'full'").execute(&db.pool).await.unwrap();
+        assert!(officers::login(&db.pool, "B-7", "long-enough-1", None).await.unwrap().is_none(), "no key linked, no code");
+        let key = crate::domain::totp::enrol("Test", "Cy").unwrap().secret;
+        sqlx::query("UPDATE officers SET totp_secret = ? WHERE badge_number = 'B-7'").bind(&key).execute(&db.pool).await.unwrap();
+        assert!(officers::login(&db.pool, "B-7", "long-enough-1", None).await.unwrap().is_none(), "password alone is refused");
+        assert!(officers::login(&db.pool, "B-7", "long-enough-1", Some("000000")).await.unwrap().is_none(), "wrong code is refused");
+        let good = crate::domain::totp::current_code(&key);
+        assert!(officers::login(&db.pool, "B-7", "long-enough-1", Some(&good)).await.unwrap().is_some());
+        sqlx::query("UPDATE auth_policy SET mode = 'badge_only'").execute(&db.pool).await.unwrap();
 
         let shift = json!({ "officerId": ada["id"], "officerName": "typed name is ignored", "officerRank": null, "unit": null, "shiftStart": 1000, "shiftEnd": 2000, "notes": null });
         let (status, duty) = call(&app, Method::POST, "/api/duty", Some(shift)).await;

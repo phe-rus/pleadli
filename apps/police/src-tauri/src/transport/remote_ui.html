@@ -118,6 +118,8 @@
     <div>
       <label for="password">Password</label>
       <input id="password" type="password" autocomplete="current-password" />
+      <label for="code">Authenticator code (if your station asks for it)</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" />
     </div>
     <button id="login-button">Log in</button>
   </section>
@@ -183,7 +185,7 @@
       var res = await fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ badgeNumber: badge, password: password }),
+        body: JSON.stringify({ badgeNumber: badge, password: password, code: document.getElementById('code').value.trim() || null }),
       });
       if (!res.ok) throw new Error('Invalid badge number or password.');
       var body = await res.json();

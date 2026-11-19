@@ -78,6 +78,8 @@ async fn require_officer(state: &RemoteState, headers: &HeaderMap) -> Result<off
 struct LoginBody {
     badge_number: String,
     password: String,
+    #[serde(default)]
+    code: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -89,10 +91,10 @@ async fn login_handler(
     State(state): State<RemoteState>,
     Json(body): Json<LoginBody>,
 ) -> Result<Json<LoginResponse>, ApiError> {
-    let token = officers::login(&state.pool, &body.badge_number, &body.password)
+    let token = officers::login(&state.pool, &body.badge_number, &body.password, body.code.as_deref())
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::UNAUTHORIZED, "invalid badge number or password".to_string()))?;
+        .ok_or((StatusCode::UNAUTHORIZED, "invalid badge number, password or code".to_string()))?;
     Ok(Json(LoginResponse { token }))
 }
 
