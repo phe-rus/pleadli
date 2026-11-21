@@ -1281,9 +1281,11 @@ struct VaultDirectoryQuery {
 
 async fn list_vault_directory_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Query(params): Query<VaultDirectoryQuery>,
 ) -> Result<Json<Vec<VaultEntry>>, ApiError> {
-    attachments::list_vault_directory(&state.pool, &state.vault_root, &params.relative_path)
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    attachments::list_vault_directory(&state.pool, &params.relative_path, &hidden)
         .await
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
@@ -1298,7 +1300,8 @@ async fn read_vault_file_handler(
     if !cases::may_read_vault_path(&state.pool, &params.relative_path, &hidden).await.map_err(internal_error)? {
         return Err(restricted_refusal());
     }
-    attachments::read_vault_file(&state.vault_root, &params.relative_path)
+    attachments::read_vault_file(&state.pool, &state.vault_root, &params.relative_path)
+        .await
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
@@ -1396,9 +1399,7 @@ async fn get_attachment_file_handler(
         return Err(restricted_refusal());
     }
 
-    let bytes = tokio::fs::read(attachments::absolute_path(&state.vault_root, &attachment.stored_path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bytes = pleadli_node_core::vault::read(&state.vault_root, &attachment.stored_path, &attachment.id).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Response::builder()
         .header(header::CONTENT_TYPE, attachment.mime_type)

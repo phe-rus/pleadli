@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use pleadli_node_core::orchestra::{App, Orchestra};
-use pleadli_node_core::snapshot::FolderDocuments;
+use pleadli_node_core::snapshot::SealedVault;
 use sqlx::SqlitePool;
 
 /// Papers that leave the station, and the kind /verify names them by. Station
@@ -24,5 +24,5 @@ pub fn start(pool: SqlitePool, data_dir: PathBuf, vault_root: PathBuf) -> Arc<Or
         required_tables: REQUIRED_TABLES,
         latest_migration: crate::db::latest_migration(),
     };
-    Orchestra::new(app, pool, data_dir, Arc::new(FolderDocuments(vault_root)))
+    Orchestra::new(app, pool, data_dir, Arc::new(SealedVault(vault_root)))
 }

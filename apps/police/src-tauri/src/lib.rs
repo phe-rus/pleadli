@@ -96,6 +96,11 @@ pub fn run() {
             };
 
             // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
+            // Files opened in another program last session were plain copies.
+            if let Some(data) = db.vault_root.parent() {
+                commands::attachments::clear_opened(data);
+            }
+
             let orchestra = domain::orchestra::start(db.pool.clone(), data_dir.clone(), db.vault_root.clone());
             tauri::async_runtime::spawn(orchestra.clone().run());
             app.manage(orchestra.clone());
@@ -235,8 +240,18 @@ pub fn run() {
             commands::import::resolve_cases,
             commands::import::bulk_import,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // Plain copies placed for viewing a file in another program do not outlive the app.
+            if let tauri::RunEvent::Exit = event {
+                if let Some(db) = app.try_state::<db::Db>() {
+                    if let Some(data) = db.vault_root.parent() {
+                        commands::attachments::clear_opened(data);
+                    }
+                }
+            }
+        });
 }
 
 /// A second installation on this machine, to run a station and a command (or

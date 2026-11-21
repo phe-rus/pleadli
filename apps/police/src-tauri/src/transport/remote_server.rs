@@ -344,9 +344,7 @@ async fn photo_handler(
         .map_err(internal_error)?
         .ok_or((StatusCode::NOT_FOUND, "attachment not found".to_string()))?;
 
-    let bytes = tokio::fs::read(attachments::absolute_path(&state.vault_root, &attachment.stored_path).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bytes = pleadli_node_core::vault::read(&state.vault_root, &attachment.stored_path, &attachment.id).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Response::builder()
         .header(header::CONTENT_TYPE, attachment.mime_type)

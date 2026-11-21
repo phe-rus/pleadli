@@ -1,5 +1,17 @@
+//! Attachments: the files kept with a record.
+//!
+//! Every file is sealed (ChaCha20-Poly1305, under the station's vault key) in one flat file named
+//! by its id, under the vault root inside the app's own data folder. The database records the file's
+//! name, type, size and a hash, and nothing about where a person would look for it: the folders the
+//! Files page shows (a case's documents, statements, custody papers...) are worked out from the
+//! record each file belongs to, so renaming a case or moving a statement to another case changes
+//! where the file is shown without touching the file. Nothing here is readable by another program;
+//! a file is opened by writing a plain copy to a private folder for the moment it is viewed.
+
+use pleadli_node_core::vault;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
@@ -21,10 +33,15 @@ pub struct Attachment {
     pub photo_angle: Option<String>,
 }
 
+
 #[derive(Debug)]
 pub enum AttachmentError {
     Io(std::io::Error),
     Db(sqlx::Error),
+    /// The sealed file is missing, damaged, or not this attachment's.
+    Vault(String),
+    /// The file's record is one the signed-in officer may not open.
+    NotFound,
 }
 
 impl fmt::Display for AttachmentError {
@@ -32,6 +49,8 @@ impl fmt::Display for AttachmentError {
         match self {
             AttachmentError::Io(e) => write!(f, "{e}"),
             AttachmentError::Db(e) => write!(f, "{e}"),
+            AttachmentError::Vault(e) => write!(f, "{e}"),
+            AttachmentError::NotFound => write!(f, "That file no longer exists."),
         }
     }
 }
@@ -45,6 +64,12 @@ impl From<std::io::Error> for AttachmentError {
 impl From<sqlx::Error> for AttachmentError {
     fn from(e: sqlx::Error) -> Self {
         AttachmentError::Db(e)
+    }
+}
+
+impl From<vault::VaultError> for AttachmentError {
+    fn from(e: vault::VaultError) -> Self {
+        AttachmentError::Vault(e.to_string())
     }
 }
 
@@ -69,172 +94,18 @@ fn sanitize_folder_name(input: &str) -> String {
     }
 }
 
-/// Where a file is, written relative to the vault root with `/` separators.
-/// This is what the database stores, so the vault can be moved (a new
-/// Documents folder, a restored backup, another machine) without every row
-/// pointing at the old place.
-fn to_relative(vault_root: &Path, path: &Path) -> String {
-    path.strip_prefix(vault_root).unwrap_or(path).to_string_lossy().replace('\\', "/")
-}
+/// Present only in the throwaway folder a Markdown export is built in. A record's Markdown companion
+/// and the folder tree of an export are written only where this marker is, never into the vault.
+pub const EXPORT_MARKER: &str = ".export-staging";
 
-/// The real path of a stored file. A stored path is relative to the vault
-/// root; a row written before paths were relative is an absolute path and is
-/// used as it stands until `normalise_stored_paths` has rewritten it.
-pub fn absolute_path(vault_root: &Path, stored_path: &str) -> Result<PathBuf, AttachmentError> {
-    let path = Path::new(stored_path);
-    if path.is_absolute() {
-        return Ok(path.to_path_buf());
-    }
-    resolve_within_vault(vault_root, stored_path)
-}
-
-/// Rewrites every attachment stored as an absolute path inside this vault to
-/// the relative form. Safe to run on every start: rows already relative, and
-/// rows for files outside the vault, are left alone.
-pub async fn normalise_stored_paths(pool: &SqlitePool, vault_root: &Path) -> Result<u64, sqlx::Error> {
-    let rows: Vec<(String, String)> = sqlx::query_as("SELECT id, stored_path FROM attachments").fetch_all(pool).await?;
-    let mut changed = 0;
-    for (id, stored) in rows {
-        let path = Path::new(&stored);
-        if !path.is_absolute() {
-            continue;
-        }
-        if let Ok(relative) = path.strip_prefix(vault_root) {
-            let relative = relative.to_string_lossy().replace('\\', "/");
-            sqlx::query("UPDATE attachments SET stored_path = ? WHERE id = ?").bind(relative).bind(&id).execute(pool).await?;
-            changed += 1;
-        }
-    }
-    Ok(changed)
-}
-
-/// Removes folders left empty by a move, walking up, but never the vault root
-/// and never a top-level folder of it.
-fn remove_empty_parents(vault_root: &Path, mut dir: &Path) {
-    while dir != vault_root && dir.parent().is_some_and(|parent| parent != vault_root) {
-        if std::fs::remove_dir(dir).is_err() {
-            break;
-        }
-        match dir.parent() {
-            Some(parent) => dir = parent,
-            None => break,
-        }
-    }
-}
-
-fn move_file(from: &Path, to: &Path) -> std::io::Result<()> {
-    if std::fs::rename(from, to).is_ok() {
-        return Ok(());
-    }
-    std::fs::copy(from, to)?;
-    std::fs::remove_file(from)
-}
-
-/// Brings a record's attachments into the folder its relationships say they
-/// belong in. A file added while its case had one reference stays where it is
-/// when the reference changes, or when the record moves to another case; this
-/// is what moves it, so a case's files never end up split across two folders.
-async fn settle(pool: &SqlitePool, vault_root: &Path, dir: &Path, entity_type: &str, entity_id: &str) -> Result<(), AttachmentError> {
-    let rows: Vec<(String, String)> = sqlx::query_as("SELECT id, stored_path FROM attachments WHERE entity_type = ? AND entity_id = ?")
-        .bind(entity_type)
-        .bind(entity_id)
-        .fetch_all(pool)
-        .await?;
-
-    for (id, stored) in rows {
-        let Ok(current) = absolute_path(vault_root, &stored) else { continue };
-        let Some(name) = current.file_name() else { continue };
-        let target = dir.join(name);
-        let relative = to_relative(vault_root, &target);
-
-        if current != target {
-            if !current.exists() || target.exists() {
-                continue;
-            }
-            if let Err(e) = move_file(&current, &target) {
-                log::warn!("could not move attachment {id} into {}: {e}", dir.display());
-                continue;
-            }
-            if let Some(old_dir) = current.parent() {
-                remove_empty_parents(vault_root, old_dir);
-            }
-        }
-        if relative != stored {
-            sqlx::query("UPDATE attachments SET stored_path = ? WHERE id = ?").bind(&relative).bind(&id).execute(pool).await?;
-        }
-    }
-    Ok(())
-}
-
-/// A case's reference changed: its whole folder (documents, companions, and
-/// every folder of the records filed under it) is renamed in one step and the
-/// stored paths beneath it follow. When the new name is already taken (two
-/// cases sharing a reference) nothing is renamed here, and `settle` moves
-/// each record's files one by one instead.
-pub async fn rename_case_folder(pool: &SqlitePool, vault_root: &Path, old_reference: &str, new_reference: &str) -> Result<(), AttachmentError> {
-    let old_name = sanitize_folder_name(old_reference);
-    let new_name = sanitize_folder_name(new_reference);
-    if old_name == new_name {
-        return Ok(());
-    }
-    let old_dir = vault_root.join("cases").join(&old_name);
-    let new_dir = vault_root.join("cases").join(&new_name);
-    if !old_dir.exists() || new_dir.exists() {
-        return Ok(());
-    }
-    std::fs::create_dir_all(vault_root.join("cases"))?;
-    std::fs::rename(&old_dir, &new_dir)?;
-
-    let old_prefix = format!("cases/{old_name}/");
-    let new_prefix = format!("cases/{new_name}/");
-    sqlx::query("UPDATE attachments SET stored_path = ?1 || substr(stored_path, ?2) WHERE substr(stored_path, 1, ?2 - 1) = ?3")
-        .bind(&new_prefix)
-        .bind(old_prefix.chars().count() as i64 + 1)
-        .bind(&old_prefix)
-        .execute(pool)
-        .await?;
-    Ok(())
-}
-
-/// Settles the case's own files and those of every record filed under it.
-pub async fn settle_case(pool: &SqlitePool, vault_root: &Path, case_id: &str) -> Result<(), AttachmentError> {
-    resolve_vault_dir(pool, vault_root, "case", case_id).await?;
-    for (entity_type, table) in [
-        ("statement", "statements"),
-        ("custody_record", "custody_records"),
-        ("bond", "bonds"),
-        ("referral", "referrals"),
-        ("charge_sheet", "charge_sheets"),
-        ("exhibit", "exhibits"),
-    ] {
-        let ids: Vec<String> = sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT id FROM {table} WHERE case_id = ?")))
-            .bind(case_id)
-            .fetch_all(pool)
-            .await?;
-        for id in ids {
-            resolve_vault_dir(pool, vault_root, entity_type, &id).await?;
-        }
-    }
-    Ok(())
-}
-
-/// Where a given attachment physically belongs in the Police Vault, and
-/// (as a consequence of asking) where the record's existing files are moved
-/// to if they are somewhere else —
-/// derived from the record's own relationships, not chosen by whoever is
-/// attaching the file. Case-linked material (a statement, a bond, a
-/// custody record that names a case, or the case record itself) files
-/// under that case's own folder, since that's how an officer actually
-/// looks for "everything about this case." Everything else keeps its own
-/// top-level bucket — Person deliberately included, since PRODUCT.md is
-/// explicit that a case is not the organizing structure everything else
-/// hangs off, even when the person happens to be involved in one.
-pub async fn resolve_vault_dir(
-    pool: &SqlitePool,
-    vault_root: &Path,
-    entity_type: &str,
-    entity_id: &str,
-) -> Result<PathBuf, AttachmentError> {
+/// Where a record's files are shown, relative to the top of the Files page: derived from the
+/// record's own relationships, not chosen by whoever attached the file. Case-linked material (a
+/// statement, a bond, a custody record that names a case, or the case itself) is shown under that
+/// case's folder, since that is how an officer looks for "everything about this case". Everything
+/// else keeps its own top-level folder, Person included, since a case is not the structure
+/// everything else hangs off.
+async fn folder_of(pool: &SqlitePool, entity_type: &str, entity_id: &str) -> Result<PathBuf, AttachmentError> {
+    let vault_root = PathBuf::new();
     async fn case_folder(pool: &SqlitePool, vault_root: &Path, case_id: &str, subfolder: &str) -> Result<PathBuf, AttachmentError> {
         let reference: Option<String> = sqlx::query_scalar("SELECT reference FROM cases WHERE id = ?")
             .bind(case_id)
@@ -245,6 +116,7 @@ pub async fn resolve_vault_dir(
             None => vault_root.join(subfolder),
         })
     }
+    let vault_root = vault_root.as_path();
 
     let dir = match entity_type {
         "person" => vault_root.join("people").join(entity_id),
@@ -334,11 +206,37 @@ pub async fn resolve_vault_dir(
         }
         other => vault_root.join(other),
     };
-
-    std::fs::create_dir_all(&dir)?;
-    // Wherever the record's folder is now, its files are there too.
-    settle(pool, vault_root, &dir, entity_type, entity_id).await?;
     Ok(dir)
+}
+
+/// A folder inside an export's throwaway directory for one record's companion files. Refused anywhere
+/// else, so the sealed vault never gets a plain copy of a record written beside it.
+pub async fn resolve_vault_dir(pool: &SqlitePool, vault_root: &Path, entity_type: &str, entity_id: &str) -> Result<PathBuf, AttachmentError> {
+    if !vault_root.join(EXPORT_MARKER).exists() {
+        return Err(AttachmentError::Io(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "records are not written to the vault as plain files")));
+    }
+    let dir = vault_root.join(folder_of(pool, entity_type, entity_id).await?);
+    std::fs::create_dir_all(&dir)?;
+    Ok(dir)
+}
+
+/// `<id>` or `<id>.<extension>`: how the Files page names a file in its folder, so that two files
+/// with the same name never share a path and a path leads back to exactly one attachment.
+fn shown_file_name(id: &str, file_name: &str) -> String {
+    match Path::new(file_name).extension().and_then(|e| e.to_str()).filter(|e| !e.is_empty()) {
+        Some(extension) => format!("{id}.{extension}"),
+        None => id.to_string(),
+    }
+}
+
+/// The attachment a Files page path leads to: the last part of the path starts with its id.
+pub async fn attachment_at(pool: &SqlitePool, relative_path: &str) -> Result<Option<Attachment>, sqlx::Error> {
+    let name = relative_path.trim_matches('/').rsplit('/').next().unwrap_or("");
+    let id = name.split('.').next().unwrap_or("");
+    if id.is_empty() {
+        return Ok(None);
+    }
+    get_attachment(pool, id).await
 }
 
 fn guess_mime(extension: &str) -> &'static str {
@@ -360,9 +258,8 @@ fn guess_mime(extension: &str) -> &'static str {
     }
 }
 
-/// Copies bytes into the app's own attachments folder under a fresh UUID
-/// filename (so two attachments can never collide, even with the same
-/// original name) and records the metadata row.
+/// Seals the bytes into the vault under a fresh id (so two attachments can never collide, even with
+/// the same original name) and records the metadata row.
 pub async fn add_attachment_bytes(
     pool: &SqlitePool,
     vault_root: &Path,
@@ -371,37 +268,31 @@ pub async fn add_attachment_bytes(
     file_name: &str,
     bytes: &[u8],
 ) -> Result<Attachment, AttachmentError> {
-    let target_dir = resolve_vault_dir(pool, vault_root, entity_type, entity_id).await?;
-
-    let extension = Path::new(file_name)
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("");
+    let extension = Path::new(file_name).extension().and_then(|e| e.to_str()).unwrap_or("");
     let id = Uuid::new_v4().to_string();
-    let stored_file_name = if extension.is_empty() {
-        id.clone()
-    } else {
-        format!("{id}.{extension}")
-    };
-    let stored_path = target_dir.join(&stored_file_name);
-    std::fs::write(&stored_path, bytes)?;
+    let stored_path = vault::write(vault_root, &id, bytes)?;
 
     let mime_type = guess_mime(extension);
     let size_bytes = bytes.len() as i64;
-    let stored_path_str = to_relative(vault_root, &stored_path);
 
-    sqlx::query(
-        "INSERT INTO attachments (id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    let inserted = sqlx::query(
+        "INSERT INTO attachments (id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, content_sha256) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(entity_type)
     .bind(entity_id)
     .bind(file_name)
-    .bind(&stored_path_str)
+    .bind(&stored_path)
     .bind(mime_type)
     .bind(size_bytes)
+    .bind(vault::sha256_hex(bytes))
     .execute(pool)
-    .await?;
+    .await;
+    if let Err(e) = inserted {
+        // No row, so nothing would ever find or remove the sealed file.
+        let _ = vault::shred_file(&vault_root.join(&stored_path));
+        return Err(e.into());
+    }
 
     get_attachment(pool, &id)
         .await?
@@ -619,185 +510,113 @@ pub struct VaultEntry {
     pub item_count: Option<i64>,
 }
 
-/// The first `# heading` of a Markdown file, read from its first few lines.
-fn markdown_title(path: &Path) -> Option<String> {
-    use std::io::Read;
-    let mut head = vec![0u8; 2048];
-    let n = std::fs::File::open(path).ok()?.read(&mut head).ok()?;
-    String::from_utf8_lossy(&head[..n])
-        .lines()
-        .find_map(|line| line.strip_prefix("# ").map(|t| t.trim().to_string()))
-        .filter(|t| !t.is_empty())
+/// Every attachment, for a listing or an export (the search lists stop at 200).
+pub async fn all_attachments(pool: &SqlitePool) -> Result<Vec<Attachment>, sqlx::Error> {
+    sqlx::query_as::<_, Attachment>(
+        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle FROM attachments ORDER BY created_at",
+    )
+    .fetch_all(pool)
+    .await
 }
 
-/// A record file the app wrote is named `<type>-<id>.md`; this reads the two
-/// back, so the window can open the record the file belongs to.
-fn record_of_file(name: &str) -> Option<(String, String)> {
-    let stem = name.strip_suffix(".md")?;
-    if stem.len() < 38 {
-        return None;
-    }
-    let (kind, id) = stem.split_at(stem.len() - 36);
-    let kind = kind.strip_suffix('-')?;
-    uuid::Uuid::parse_str(id).ok()?;
-    Some((kind.to_string(), id.to_string()))
-}
-
-/// Rejects `.`, `..`, and empty segments outright rather than resolving
-/// and canonicalizing — a target that doesn't exist yet (a folder about
-/// to be created) can't be canonicalized anyway, and this is cheaper and
-/// just as safe: no segment can ever walk the path outside vault_root.
-fn resolve_within_vault(vault_root: &Path, relative_path: &str) -> Result<PathBuf, AttachmentError> {
-    let trimmed = relative_path.trim_matches('/');
-    let mut resolved = vault_root.to_path_buf();
-    if trimmed.is_empty() {
-        return Ok(resolved);
-    }
-    for segment in trimmed.split('/') {
-        if segment.is_empty() || segment == "." || segment == ".." {
-            return Err(AttachmentError::Io(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "invalid path segment",
-            )));
-        }
-        resolved.push(segment);
-    }
-    Ok(resolved)
-}
-
-/// The Files browser's real listing: the actual Vault folder on disk,
-/// not the `attachments` table — folders that exist only because a
-/// record was saved (and so far hold nothing) show up here just as
-/// they would in the OS's own file manager. Each file is enriched with
-/// its owning record when one matches, so the browser can link back to
-/// it; unmatched files (Markdown companions, anything dropped in by
-/// hand) still list, just without that link.
-pub async fn list_vault_directory(
-    pool: &SqlitePool,
-    vault_root: &Path,
-    relative_path: &str,
-) -> Result<Vec<VaultEntry>, AttachmentError> {
-    std::fs::create_dir_all(vault_root)?;
-    let target = resolve_within_vault(vault_root, relative_path)?;
-
-    if !target.exists() {
-        return Ok(Vec::new());
+/// The Files page's listing of one folder, built from the records: the sealed vault has no folders of
+/// its own. Files that belong to a restricted case the officer may not open are left out (`hidden`),
+/// and so are the folders that would hold only those.
+pub async fn list_vault_directory(pool: &SqlitePool, relative_path: &str, hidden: &[String]) -> Result<Vec<VaultEntry>, AttachmentError> {
+    let wanted: Vec<&str> = relative_path.trim_matches('/').split('/').filter(|s| !s.is_empty()).collect();
+    if wanted.iter().any(|s| *s == "." || *s == "..") {
+        return Err(AttachmentError::Io(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid path segment")));
     }
 
-    let mut entries = Vec::new();
-    for dir_entry in std::fs::read_dir(&target)? {
-        let dir_entry = dir_entry?;
-        let path = dir_entry.path();
-        let metadata = dir_entry.metadata()?;
-        let raw_name = dir_entry.file_name().to_string_lossy().to_string();
-        let relative = path
-            .strip_prefix(vault_root)
-            .unwrap_or(&path)
-            .to_string_lossy()
-            .replace('\\', "/");
-        let absolute = path.to_string_lossy().to_string();
-
-        if metadata.is_dir() {
-            entries.push(VaultEntry {
-                name: raw_name,
-                relative_path: relative,
-                is_dir: true,
-                size_bytes: None,
-                modified_at: None,
-                attachment_id: None,
-                entity_type: None,
-                entity_id: None,
-                mime_type: None,
-                title: None,
-                item_count: std::fs::read_dir(&path).ok().map(|d| d.count() as i64),
-            });
+    let mut folders: BTreeMap<String, usize> = BTreeMap::new();
+    let mut files = Vec::new();
+    let mut folder_cache: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
+    for attachment in all_attachments(pool).await? {
+        if !crate::domain::cases::may_see_entity(pool, &attachment.entity_type, &attachment.entity_id, hidden).await? {
             continue;
         }
-
-        let modified_at = metadata
-            .modified()
-            .ok()
-            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-            .map(|d| d.as_millis() as i64);
-        let size_bytes = Some(metadata.len() as i64);
-
-        let attachment = sqlx::query_as::<_, Attachment>(
-            "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
-             FROM attachments WHERE stored_path = ? OR stored_path = ?",
-        )
-        .bind(&relative)
-        .bind(&absolute)
-        .fetch_optional(pool)
-        .await?;
-
-        entries.push(match attachment {
-            Some(a) => VaultEntry {
-                name: a.file_name,
-                relative_path: relative,
-                is_dir: false,
-                size_bytes,
-                modified_at,
-                attachment_id: Some(a.id),
-                entity_type: Some(a.entity_type),
-                entity_id: Some(a.entity_id),
-                mime_type: Some(a.mime_type),
-                title: None,
-                item_count: None,
-            },
-            None => {
-                let record = record_of_file(&raw_name);
-                VaultEntry {
-                    title: if raw_name.ends_with(".md") { markdown_title(&path) } else { None },
-                    name: raw_name,
-                    relative_path: relative,
-                    is_dir: false,
-                    size_bytes,
-                    modified_at,
-                    attachment_id: None,
-                    entity_type: record.as_ref().map(|(kind, _)| kind.clone()),
-                    entity_id: record.map(|(_, id)| id),
-                    mime_type: None,
-                    item_count: None,
-                }
-            }
-        });
+        let key = (attachment.entity_type.clone(), attachment.entity_id.clone());
+        if !folder_cache.contains_key(&key) {
+            let folder = folder_of(pool, &key.0, &key.1).await?;
+            folder_cache.insert(key.clone(), folder.components().map(|c| c.as_os_str().to_string_lossy().to_string()).collect());
+        }
+        let folder = &folder_cache[&key];
+        if folder.len() < wanted.len() || folder[..wanted.len()] != wanted[..] {
+            continue;
+        }
+        if folder.len() == wanted.len() {
+            files.push(attachment);
+        } else {
+            *folders.entry(folder[wanted.len()].clone()).or_default() += 1;
+        }
     }
 
+    let prefix = if wanted.is_empty() { String::new() } else { format!("{}/", wanted.join("/")) };
+    let mut entries: Vec<VaultEntry> = folders
+        .into_iter()
+        .map(|(name, count)| VaultEntry {
+            relative_path: format!("{prefix}{name}"),
+            name,
+            is_dir: true,
+            size_bytes: None,
+            modified_at: None,
+            attachment_id: None,
+            entity_type: None,
+            entity_id: None,
+            mime_type: None,
+            title: None,
+            item_count: Some(count as i64),
+        })
+        .collect();
+    for attachment in files {
+        entries.push(VaultEntry {
+            relative_path: format!("{prefix}{}", shown_file_name(&attachment.id, &attachment.file_name)),
+            name: attachment.file_name,
+            is_dir: false,
+            size_bytes: Some(attachment.size_bytes),
+            modified_at: Some(attachment.created_at),
+            attachment_id: Some(attachment.id),
+            entity_type: Some(attachment.entity_type),
+            entity_id: Some(attachment.entity_id),
+            mime_type: Some(attachment.mime_type),
+            title: None,
+            item_count: None,
+        });
+    }
     entries.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then(a.name.to_lowercase().cmp(&b.name.to_lowercase())));
     Ok(entries)
 }
 
-/// A `data:` URL for an attachment's bytes: the one way to show a file
-/// inline in the React UI (an avatar image, say) that works the same in
-/// a real release build as it does in dev. The dev-only HTTP server that
-/// backs `attachmentFileUrl()` elsewhere doesn't exist once
-/// `debug_assertions` is off, so inline display can't rely on it.
-pub async fn get_attachment_data_url(pool: &SqlitePool, vault_root: &Path, id: &str) -> Result<Option<String>, AttachmentError> {
+/// An attachment and its plain bytes, opened from the sealed vault.
+pub async fn read_attachment(pool: &SqlitePool, vault_root: &Path, id: &str) -> Result<Option<(Attachment, Vec<u8>)>, AttachmentError> {
     let Some(attachment) = get_attachment(pool, id).await? else {
         return Ok(None);
     };
-    let bytes = std::fs::read(absolute_path(vault_root, &attachment.stored_path)?)?;
-    use base64::Engine;
-    let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
-    Ok(Some(format!("data:{};base64,{}", attachment.mime_type, encoded)))
+    let bytes = vault::read(vault_root, &attachment.stored_path, &attachment.id)?;
+    Ok(Some((attachment, bytes)))
 }
 
-/// Any file of the vault as a `data:` URL, named by its place in the vault,
-/// so the app can show it in its own viewer rather than another program.
-/// Files the app wrote itself (a person's record, a handover note) have no
-/// attachment row, which is why this goes by path.
-pub fn read_vault_file(vault_root: &Path, relative_path: &str) -> Result<String, AttachmentError> {
-    let path = absolute_path(vault_root, relative_path.trim_start_matches('/'))?;
-    let bytes = std::fs::read(&path)?;
-    let mime = guess_mime(path.extension().and_then(|e| e.to_str()).unwrap_or(""));
+/// A `data:` URL for an attachment's bytes: the one way to show a file
+/// inline in the React UI (an avatar image, say) that works the same in
+/// a real release build as it does in dev.
+pub async fn get_attachment_data_url(pool: &SqlitePool, vault_root: &Path, id: &str) -> Result<Option<String>, AttachmentError> {
     use base64::Engine;
-    Ok(format!("data:{};base64,{}", mime, base64::engine::general_purpose::STANDARD.encode(bytes)))
+    Ok(read_attachment(pool, vault_root, id)
+        .await?
+        .map(|(attachment, bytes)| format!("data:{};base64,{}", attachment.mime_type, base64::engine::general_purpose::STANDARD.encode(bytes))))
+}
+
+/// Any file of the Files page as a `data:` URL, named by its place there, so the app can show it in
+/// its own viewer rather than another program.
+pub async fn read_vault_file(pool: &SqlitePool, vault_root: &Path, relative_path: &str) -> Result<String, AttachmentError> {
+    let attachment = attachment_at(pool, relative_path).await?.ok_or(AttachmentError::NotFound)?;
+    get_attachment_data_url(pool, vault_root, &attachment.id).await?.ok_or(AttachmentError::NotFound)
 }
 
 pub async fn delete_attachment(pool: &SqlitePool, vault_root: &Path, id: &str) -> Result<(), AttachmentError> {
     if let Some(attachment) = get_attachment(pool, id).await? {
-        if let Ok(path) = absolute_path(vault_root, &attachment.stored_path) {
-            let _ = std::fs::remove_file(path);
+        if vault::is_relative(&attachment.stored_path) {
+            let _ = vault::shred_file(&vault_root.join(&attachment.stored_path));
         }
     }
     // people.headshot_attachment_id references this table with foreign
@@ -816,6 +635,69 @@ pub async fn delete_attachment(pool: &SqlitePool, vault_root: &Path, id: &str) -
     Ok(())
 }
 
+/// Writes every attachment, opened, into an export's throwaway folder at the place the Files page shows
+/// it, under its own name (the id is put in front only when two files in a folder share a name).
+pub async fn place_for_export(pool: &SqlitePool, vault_root: &Path, staging: &Path) -> Result<(), AttachmentError> {
+    let mut used: BTreeSet<PathBuf> = BTreeSet::new();
+    for attachment in all_attachments(pool).await? {
+        let Ok(plain) = vault::read(vault_root, &attachment.stored_path, &attachment.id) else {
+            log::warn!("export: attachment {} could not be opened from the vault and was left out", attachment.id);
+            continue;
+        };
+        let dir = staging.join(folder_of(pool, &attachment.entity_type, &attachment.entity_id).await?);
+        std::fs::create_dir_all(&dir)?;
+        let name = sanitize_folder_name(&attachment.file_name);
+        let mut target = dir.join(&name);
+        if used.contains(&target) {
+            target = dir.join(format!("{}-{name}", attachment.id));
+        }
+        std::fs::write(&target, plain)?;
+        used.insert(target);
+    }
+    Ok(())
+}
+
+/// A record's Markdown companion as older builds wrote it: `<kind>-<id>.md`.
+fn is_record_companion(name: &str) -> bool {
+    let Some(stem) = name.strip_suffix(".md") else { return false };
+    stem.len() >= 38 && stem.is_char_boundary(stem.len() - 36) && Uuid::parse_str(&stem[stem.len() - 36..]).is_ok() && stem[..stem.len() - 36].ends_with('-')
+}
+
+/// Removes the plain copies older builds wrote beside the files: a Markdown page for each record, the
+/// README and the index pages. They hold names, charges and statements, so once the files are sealed they
+/// would undo it. Only files the app itself generated are touched; anything else a person put in the
+/// old folder is left where it is. Returns how many were removed.
+pub fn retire_plain_copies(legacy: &Path) -> usize {
+    let mut removed = 0;
+    let Ok(files) = vault::walk(legacy) else { return 0 };
+    for file in files {
+        let Some(name) = file.file_name().and_then(|n| n.to_str()) else { continue };
+        let in_index = file.parent().and_then(|p| p.file_name()).is_some_and(|d| d == "index") && file.parent().and_then(|p| p.parent()) == Some(legacy);
+        let readme = name == "README.md" && file.parent() == Some(legacy);
+        if (is_record_companion(name) || in_index || readme) && vault::shred_file(&file).is_ok() {
+            removed += 1;
+        }
+    }
+    // Folders left empty, deepest first; never the top.
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    fn collect(dir: &Path, out: &mut Vec<PathBuf>) {
+        if let Ok(read) = std::fs::read_dir(dir) {
+            for entry in read.flatten() {
+                if entry.path().is_dir() {
+                    collect(&entry.path(), out);
+                    out.push(entry.path());
+                }
+            }
+        }
+    }
+    collect(legacy, &mut dirs);
+    for dir in dirs {
+        let _ = std::fs::remove_dir(dir);
+    }
+    removed
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -825,11 +707,10 @@ mod tests {
         CreateCaseInput { reference: reference.into(), summary: "Case".into(), status: "open".into(), incident_id: None, people: vec![], restricted: false, actor_id: None, access_officer_ids: None }
     }
 
-    /// Files are stored relative to the vault; renaming a case moves its whole
-    /// folder and every path with it; an old absolute row is rewritten; and a
-    /// reference cannot walk out of the vault.
+    /// A file is sealed in the vault and unreadable there; the Files page shows it under its case, and
+    /// renaming the case or moving a statement to another case moves what is shown, not the file.
     #[tokio::test]
-    async fn the_vault_follows_the_case_and_stays_inside_itself() {
+    async fn files_are_sealed_and_shown_under_their_records() {
         let dir = std::env::temp_dir().join(format!("pleadli-vault-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let vault_root = dir.join("vault");
@@ -837,9 +718,11 @@ mod tests {
         let pool = &db.pool;
 
         let case = cases::create_case(pool, &vault_root, case_input("OLD CRB 1/2026")).await.unwrap();
-        let on_case = add_attachment_bytes(pool, &vault_root, "case", &case.id, "notes.txt", b"case file").await.unwrap();
-        assert!(!Path::new(&on_case.stored_path).is_absolute(), "stored relative: {}", on_case.stored_path);
-        assert!(on_case.stored_path.starts_with("cases/OLD CRB 1-2026/documents/"));
+        let on_case = add_attachment_bytes(pool, &vault_root, "case", &case.id, "notes.txt", b"case file contents").await.unwrap();
+        assert_eq!(on_case.stored_path, format!("attachments/{}.enc", on_case.id));
+        let on_disk = std::fs::read(vault_root.join(&on_case.stored_path)).unwrap();
+        assert!(!on_disk.windows(18).any(|w| w == b"case file contents"), "the file on disk is sealed");
+        assert_eq!(read_attachment(pool, &vault_root, &on_case.id).await.unwrap().unwrap().1, b"case file contents");
 
         let statement_id = Uuid::new_v4().to_string();
         let person_id: String = sqlx::query_scalar("SELECT id FROM people LIMIT 1").fetch_one(pool).await.unwrap();
@@ -851,38 +734,115 @@ mod tests {
             .await
             .unwrap();
         let on_statement = add_attachment_bytes(pool, &vault_root, "statement", &statement_id, "scan.pdf", b"statement scan").await.unwrap();
-        assert!(on_statement.stored_path.starts_with("cases/OLD CRB 1-2026/statements/"));
 
-        // Rename the case: the folder moves once, the paths follow, nothing is left behind.
+        let top = list_vault_directory(pool, "", &[]).await.unwrap();
+        assert!(top.iter().any(|e| e.is_dir && e.name == "cases"));
+        let docs = list_vault_directory(pool, "cases/OLD CRB 1-2026/documents", &[]).await.unwrap();
+        assert_eq!(docs.len(), 1);
+        assert_eq!(docs[0].name, "notes.txt");
+        assert_eq!(docs[0].attachment_id.as_deref(), Some(on_case.id.as_str()));
+        assert_eq!(read_vault_file(pool, &vault_root, &docs[0].relative_path).await.unwrap(), get_attachment_data_url(pool, &vault_root, &on_case.id).await.unwrap().unwrap());
+
+        // Rename the case: what is shown follows, and no file moved.
         cases::update_case(pool, &vault_root, &case.id, case_input("NEW CRB 9/2026")).await.unwrap();
-        assert!(!vault_root.join("cases/OLD CRB 1-2026").exists());
-        for id in [&on_case.id, &on_statement.id] {
-            let moved = get_attachment(pool, id).await.unwrap().unwrap();
-            assert!(moved.stored_path.starts_with("cases/NEW CRB 9-2026/"), "{}", moved.stored_path);
-            assert!(absolute_path(&vault_root, &moved.stored_path).unwrap().exists());
-        }
-        assert_eq!(get_attachment_data_url(pool, &vault_root, &on_case.id).await.unwrap().is_some(), true);
+        assert!(list_vault_directory(pool, "cases/OLD CRB 1-2026", &[]).await.unwrap().is_empty());
+        assert_eq!(list_vault_directory(pool, "cases/NEW CRB 9-2026/statements", &[]).await.unwrap().len(), 1);
+        assert!(vault_root.join(&on_statement.stored_path).exists());
 
-        // A statement moved to another case brings its file with it.
+        // A statement moved to another case is shown there.
         let other = cases::create_case(pool, &vault_root, case_input("OTHER CRB 2/2026")).await.unwrap();
         sqlx::query("UPDATE statements SET case_id = ? WHERE id = ?").bind(&other.id).bind(&statement_id).execute(pool).await.unwrap();
-        resolve_vault_dir(pool, &vault_root, "statement", &statement_id).await.unwrap();
-        let moved = get_attachment(pool, &on_statement.id).await.unwrap().unwrap();
-        assert!(moved.stored_path.starts_with("cases/OTHER CRB 2-2026/statements/"), "{}", moved.stored_path);
-        assert!(absolute_path(&vault_root, &moved.stored_path).unwrap().exists());
+        assert_eq!(list_vault_directory(pool, "cases/OTHER CRB 2-2026/statements", &[]).await.unwrap().len(), 1);
 
-        // A row written before paths were relative is rewritten.
-        let current = get_attachment(pool, &on_case.id).await.unwrap().unwrap().stored_path;
-        let absolute = absolute_path(&vault_root, &current).unwrap();
-        sqlx::query("UPDATE attachments SET stored_path = ? WHERE id = ?").bind(absolute.to_string_lossy().to_string()).bind(&on_case.id).execute(pool).await.unwrap();
-        assert_eq!(normalise_stored_paths(pool, &vault_root).await.unwrap(), 1);
-        assert_eq!(get_attachment(pool, &on_case.id).await.unwrap().unwrap().stored_path, current);
+        // A restricted case's files are not listed for an officer who may not open it.
+        let hidden = vec![case.id.clone()];
+        assert!(list_vault_directory(pool, "cases/NEW CRB 9-2026/documents", &hidden).await.unwrap().is_empty());
 
-        // A reference cannot name a place outside the vault.
+        // A path cannot walk out, and records are never written beside the vault as plain files.
         assert_eq!(sanitize_folder_name(".."), "unnamed");
         assert_eq!(sanitize_folder_name("../../etc"), "..-..-etc");
         assert_eq!(sanitize_folder_name("A: B*?"), "A- B--");
-        assert!(resolve_within_vault(&vault_root, "cases/../../secret").is_err());
+        assert!(list_vault_directory(pool, "cases/../..", &[]).await.is_err());
+        assert!(resolve_vault_dir(pool, &vault_root, "case", &case.id).await.is_err());
+
+        // Deleting removes the sealed file as well as the row.
+        delete_attachment(pool, &vault_root, &on_case.id).await.unwrap();
+        assert!(!vault_root.join(&on_case.stored_path).exists());
+        assert!(get_attachment(pool, &on_case.id).await.unwrap().is_none());
+
+        db.pool.close().await;
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// An older build's plain Police Vault folder is sealed into the vault at start: the file opens from
+    /// the vault, the plain original and the plain record copies are gone, and a file a person put there
+    /// themselves is left alone.
+    #[tokio::test]
+    async fn an_old_plain_vault_is_sealed_at_start_and_the_plain_copies_are_removed() {
+        let dir = std::env::temp_dir().join(format!("pleadli-vault-adopt-test-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sealed_root = dir.join("vault");
+        let db = crate::db::startup(&dir, sealed_root.clone()).await.ok().unwrap();
+        let id = Uuid::new_v4().to_string();
+        let person = Uuid::new_v4().to_string();
+        sqlx::query("INSERT INTO attachments (id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes) VALUES (?, 'case', 'c', 'old.txt', ?, 'text/plain', 9)")
+            .bind(&id)
+            .bind(format!("cases/OLD CRB 1-2026/documents/{id}.txt"))
+            .execute(&db.pool)
+            .await
+            .unwrap();
+        db.pool.close().await;
+
+        let legacy = dir.join("Documents").join("Pleadli Police");
+        std::fs::create_dir_all(legacy.join("cases/OLD CRB 1-2026/documents")).unwrap();
+        std::fs::create_dir_all(legacy.join("index")).unwrap();
+        std::fs::write(legacy.join(format!("cases/OLD CRB 1-2026/documents/{id}.txt")), b"old plain").unwrap();
+        std::fs::write(legacy.join(format!("person-{person}.md")), b"# Amina").unwrap();
+        std::fs::write(legacy.join("README.md"), b"index").unwrap();
+        std::fs::write(legacy.join("index/people.md"), b"names").unwrap();
+        std::fs::write(legacy.join("mine.txt"), b"a person's own file").unwrap();
+
+        let db = crate::db::startup(&dir, legacy.clone()).await.ok().unwrap();
+        let (attachment, bytes) = read_attachment(&db.pool, &db.vault_root, &id).await.unwrap().unwrap();
+        assert_eq!(bytes, b"old plain");
+        assert_eq!(attachment.stored_path, format!("attachments/{id}.enc"));
+        assert!(!legacy.join(format!("cases/OLD CRB 1-2026/documents/{id}.txt")).exists(), "the plain original is gone");
+        assert!(!legacy.join(format!("person-{person}.md")).exists(), "the plain record copy is gone");
+        assert!(!legacy.join("README.md").exists() && !legacy.join("index").exists());
+        assert!(legacy.join("mine.txt").exists(), "a person's own file is not touched");
+
+        db.pool.close().await;
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// An export of the whole vault holds opened copies, in folders, in a throwaway folder only.
+    #[tokio::test]
+    async fn an_export_places_opened_copies_in_a_throwaway_folder() {
+        let dir = std::env::temp_dir().join(format!("pleadli-vault-export-test-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let vault_root = dir.join("vault");
+        let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
+        let pool = &db.pool;
+        let case = cases::create_case(pool, &vault_root, case_input("EXP CRB 5/2026")).await.unwrap();
+        add_attachment_bytes(pool, &vault_root, "case", &case.id, "same.txt", b"one").await.unwrap();
+        add_attachment_bytes(pool, &vault_root, "case", &case.id, "same.txt", b"two").await.unwrap();
+
+        let staging = dir.join("staging");
+        std::fs::create_dir_all(&staging).unwrap();
+        place_for_export(pool, &vault_root, &staging).await.unwrap();
+        let placed: Vec<_> = std::fs::read_dir(staging.join("cases/EXP CRB 5-2026/documents")).unwrap().flatten().collect();
+        assert_eq!(placed.len(), 2, "two files with one name both survive");
+
+        // The whole export: a zip with the folders, the opened files and the index, and nothing plain left behind.
+        let zip_path = dir.join("out.zip");
+        crate::domain::documents::export_all_markdown(pool, &vault_root, &zip_path).await.unwrap();
+        let mut archive = zip::ZipArchive::new(std::fs::File::open(&zip_path).unwrap()).unwrap();
+        let names: Vec<String> = (0..archive.len()).map(|i| archive.by_index(i).unwrap().name().to_string()).collect();
+        assert!(names.iter().any(|n| n == "README.md"), "{names:?}");
+        assert_eq!(names.iter().filter(|n| n.starts_with("cases/EXP CRB 5-2026/documents/") && n.ends_with("same.txt")).count(), 2, "{names:?}");
+        assert!(!names.iter().any(|n| n.contains(".export-staging")));
+        let leftovers = std::fs::read_dir(std::env::temp_dir()).unwrap().flatten().filter(|e| e.file_name().to_string_lossy().starts_with("pleadli-police-export-")).count();
+        assert_eq!(leftovers, 0, "the throwaway folder is removed");
 
         db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);

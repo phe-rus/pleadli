@@ -60,13 +60,17 @@ pub fn latest_migration() -> i64 {
     sqlx::migrate!("./migrations").iter().map(|m| m.version).max().unwrap_or(0)
 }
 
-pub async fn startup(data_dir: &Path, vault_root: PathBuf) -> Result<Db, StartupError> {
+/// `legacy_vault` is where older builds kept the Police Vault as a plain folder in Documents. Its files are
+/// sealed into the vault inside the data folder at start, and the originals are overwritten and removed.
+pub async fn startup(data_dir: &Path, legacy_vault: PathBuf) -> Result<Db, StartupError> {
+    let vault_root = data_dir.join("vault");
+    let incoming = data_dir.join(pleadli_node_core::vault::INCOMING_DIR);
     let db_path = data_dir.join(DB_FILE);
     std::fs::create_dir_all(data_dir).map_err(|e| StartupError::Fatal(format!("could not create the data folder: {e}")))?;
 
     // A backup staged for restore (Settings, Backups) goes in place first,
     // before anything opens the database; the current data is kept aside.
-    match pleadli_node_core::snapshot::apply_pending(data_dir, &db_path, &vault_root) {
+    match pleadli_node_core::snapshot::apply_pending_sealed(data_dir, &db_path, &vault_root, &incoming) {
         Ok(Some(applied)) => log::info!("backup restored: {} documents", applied.documents),
         Ok(None) => {}
         Err(e) => return Err(StartupError::Fatal(format!("could not put the restored backup in place: {e}"))),
@@ -85,11 +89,17 @@ pub async fn startup(data_dir: &Path, vault_root: PathBuf) -> Result<Db, Startup
 
     crate::domain::rules::ensure_built_in(&pool).await.map_err(|e| StartupError::Fatal(format!("could not load the legal rules: {e}")))?;
 
-    // Older rows stored where a file is as an absolute path; the vault's own
-    // files are now recorded relative to the vault root.
-    crate::domain::attachments::normalise_stored_paths(&pool, &vault_root)
-        .await
-        .map_err(|e| StartupError::Fatal(format!("could not normalise vault paths: {e}")))?;
+    // Documents become sealed files inside the data folder. Whatever older builds left as plain files in
+    // the Police Vault in Documents is sealed, read back to prove it, and only then overwritten and removed;
+    // a backup restored as plain files is sealed the same way.
+    let legacy = (legacy_vault != vault_root).then_some(legacy_vault);
+    core::adopt_documents(&pool, &vault_root, legacy.as_deref(), &incoming).await?;
+    if let Some(old) = legacy.as_deref() {
+        let removed = crate::domain::attachments::retire_plain_copies(old);
+        if removed > 0 {
+            log::info!("removed {removed} plain record copies from the old Police Vault folder");
+        }
+    }
 
     // Sample records for the everyday development copy only: a test
     // installation in its own folder (`dev_data_dir`) starts empty, as a real

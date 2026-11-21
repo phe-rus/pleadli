@@ -23,11 +23,6 @@ export async function openVaultEntry(entry: VaultEntry) {
   if (entry.attachmentId) window.open(`${DEV_SERVER_URL}/attachments/${encodeURIComponent(entry.attachmentId)}/file`, '_blank')
 }
 
-export async function revealVaultEntry(entry: VaultEntry) {
-  if (!isTauri()) return
-  await invoke('reveal_vault_path', { relativePath: entry.relativePath })
-}
-
 /** A file of the vault as a `data:` URL, for the app's own viewer. */
 export async function readVaultFile(relativePath: string): Promise<string> {
   if (isTauri()) return z.string().parse(await invoke('read_vault_file', { relativePath }))

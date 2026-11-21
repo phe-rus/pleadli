@@ -2,7 +2,7 @@ import * as m from '@/paraglide/messages'
 import { FileView, FileViewer, previewKind } from '@/components/file-viewer'
 import { EmptyNote } from '@/components/planned'
 import { getAttachmentRoute } from '@/features/attachments/data'
-import { formatFileSize, openVaultEntry, pathSegments, readVaultFile, revealVaultEntry, useVaultDirectory, type VaultEntry } from './index'
+import { formatFileSize, openVaultEntry, pathSegments, readVaultFile, useVaultDirectory, type VaultEntry } from './index'
 import { peopleSearchOptions } from '@/features/people'
 import { format } from '@/lib/date'
 import { t } from '@pleadli/ui/goey-toaster'
@@ -232,7 +232,6 @@ export function VaultBrowser({ path }: { path: string }) {
                           <DropdownMenuItem onClick={() => setViewing(entry)}>{m["files.view"]()}</DropdownMenuItem>
                           {entry.entityType && entry.entityId && <DropdownMenuItem onClick={() => void openRecord(entry)}>{m["files.open_record"]()}</DropdownMenuItem>}
                           {isTauri() && <DropdownMenuItem onClick={() => void openVaultEntry(entry)}>{m["viewer.open_outside"]()}</DropdownMenuItem>}
-                          {isTauri() && <DropdownMenuItem onClick={() => void revealVaultEntry(entry)}>{m["files.reveal"]()}</DropdownMenuItem>}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </span>

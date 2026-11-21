@@ -172,7 +172,6 @@ pub async fn create_case(pool: &SqlitePool, vault_root: &Path, input: CreateCase
 }
 
 pub async fn update_case(pool: &SqlitePool, vault_root: &Path, id: &str, input: CreateCaseInput) -> Result<Case, sqlx::Error> {
-    let old_reference: Option<String> = sqlx::query_scalar("SELECT reference FROM cases WHERE id = ?").bind(id).fetch_optional(pool).await?;
     let mut tx = pool.begin().await?;
 
     sqlx::query("UPDATE cases SET reference = ?, summary = ?, status = ?, incident_id = ?, restricted = ?,
@@ -194,17 +193,6 @@ pub async fn update_case(pool: &SqlitePool, vault_root: &Path, id: &str, input: 
 
     let record = get_case(pool, id).await?.ok_or(sqlx::Error::RowNotFound)?;
 
-    // A new reference is a new folder name. The case's folder and everything
-    // in it moves with it, so its files are never split across the old name
-    // and the new one.
-    if let Some(old_reference) = old_reference.filter(|old| *old != record.reference) {
-        if let Err(e) = attachments::rename_case_folder(pool, vault_root, &old_reference, &record.reference).await {
-            log::warn!("could not rename the vault folder for case {id}: {e}");
-        }
-        if let Err(e) = attachments::settle_case(pool, vault_root, id).await {
-            log::warn!("could not settle the files of case {id}: {e}");
-        }
-    }
     write_case_markdown(pool, vault_root, &record).await;
     Ok(record)
 }
@@ -501,22 +489,6 @@ pub async fn person_visible(pool: &SqlitePool, person_id: &str, hidden: &[String
     Ok(case_ids.is_empty() || case_ids.iter().any(|c| !hidden.contains(c)))
 }
 
-/** Whether this officer may read a vault file by its stored path: a file attached to a restricted case's records is not theirs to read. */
-pub async fn may_read_vault_path(pool: &SqlitePool, relative_path: &str, hidden: &[String]) -> Result<bool, sqlx::Error> {
-    if hidden.is_empty() {
-        return Ok(true);
-    }
-    let path = relative_path.trim_start_matches('/');
-    let owner: Option<(String, String)> = sqlx::query_as("SELECT entity_type, entity_id FROM attachments WHERE stored_path = ? OR stored_path = ?")
-        .bind(path)
-        .bind(relative_path)
-        .fetch_optional(pool)
-        .await?;
-    match owner {
-        Some((t, id)) => may_see_entity(pool, &t, &id, hidden).await,
-        None => Ok(true),
-    }
-}
 
 /** Whether a person with this national ID is already on record but hidden from this officer, so they
  * cannot find them in the picker. The officer is told, instead of silently creating a second record
@@ -533,6 +505,17 @@ pub async fn hidden_person_has_national_id(pool: &SqlitePool, national_id: &str,
         }
     }
     Ok(false)
+}
+
+/** Whether this officer may read a file named by its place on the Files page: a file attached to a restricted case's records is not theirs to read. */
+pub async fn may_read_vault_path(pool: &SqlitePool, relative_path: &str, hidden: &[String]) -> Result<bool, sqlx::Error> {
+    if hidden.is_empty() {
+        return Ok(true);
+    }
+    match super::attachments::attachment_at(pool, relative_path).await? {
+        Some(a) => may_see_entity(pool, &a.entity_type, &a.entity_id, hidden).await,
+        None => Ok(true),
+    }
 }
 
 #[cfg(test)]

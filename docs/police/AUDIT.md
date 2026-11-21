@@ -315,3 +315,15 @@ Finding S9 is closed. The vault stays a browsable folder in Documents, organised
 Known limit: the generated Markdown companion of a record moved between cases is rewritten in the new folder but the old copy stays until that folder is removed (a case rename moves companions with the folder, so this is only for a record filed under a different case).
 
 The vault is still plain files in Documents. Sealing it belongs to the security stage and would change the "browsable folder" intent, which is a decision to take then.
+
+### 2026-11-21: the vault is sealed (owner decision: seal like the other four apps)
+
+Files are sealed (ChaCha20-Poly1305, vault key from the keystore) as `attachments/<id>.enc` in `<data folder>/vault`, not plain files in Documents. The Files page folders are worked out from the records (a case's documents, statements, custody papers), so renaming a case or moving a statement changes what is shown, never the file. Opening a file in another program writes a plain copy to `<data folder>/opened/` for the moment it is viewed; that folder is overwritten and emptied at every start and exit.
+
+- Records are no longer mirrored as Markdown files. They are generated only into a throwaway folder when the Markdown export runs (marker `.export-staging`), together with opened copies of the files, then zipped; the folder is overwritten and removed.
+- At start, an older plain `Documents/Pleadli Police` folder is sealed in (each file is read back and compared before the original is overwritten and removed), and the generated record pages, README and index there are removed. Files a person put there themselves are left alone.
+- Backups use the sealed-vault form (`SealedVault`, `apply_pending_sealed`), like DPP and Prisons.
+- The desktop commands for files and exports now apply the same restricted-case rules as the HTTP routes. The Files listing leaves out files of restricted cases the officer may not open.
+- "Show in folder" is gone (there is no folder to show).
+
+Not yet seen in a real window: adopting a real Documents folder, a restored backup, opening a file in another program. Covered by tests: sealing, virtual folders, restricted listing, adoption and removal of plain copies, the export zip.

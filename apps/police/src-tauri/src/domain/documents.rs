@@ -474,9 +474,25 @@ fn zip_vault(vault_root: &Path, destination: &Path) -> Result<(), DocumentError>
 /// top, then zips the whole Vault to `destination`: the default "export
 /// all data" format.
 pub async fn export_all_markdown(pool: &SqlitePool, vault_root: &Path, destination: &Path) -> Result<(), DocumentError> {
-    regenerate_all_markdown(pool, vault_root).await?;
-    zip_vault(vault_root, destination)?;
-    Ok(())
+    // Built in a throwaway folder: the vault itself holds only sealed files, and nothing plain is ever
+    // written beside them. Every file in the folder is overwritten and removed when the zip is made.
+    let staging = std::env::temp_dir().join(format!("pleadli-police-export-{}", uuid::Uuid::new_v4()));
+    std::fs::create_dir_all(&staging)?;
+    std::fs::write(staging.join(attachments::EXPORT_MARKER), b"")?;
+    let built = async {
+        regenerate_all_markdown(pool, &staging).await?;
+        attachments::place_for_export(pool, vault_root, &staging).await.map_err(|e| DocumentError::Io(std::io::Error::other(e.to_string())))?;
+        let _ = std::fs::remove_file(staging.join(attachments::EXPORT_MARKER));
+        zip_vault(&staging, destination)
+    }
+    .await;
+    if let Ok(files) = pleadli_node_core::vault::walk(&staging) {
+        for file in files {
+            let _ = pleadli_node_core::vault::shred_file(&file);
+        }
+    }
+    let _ = std::fs::remove_dir_all(&staging);
+    built
 }
 
 /// One sheet's worth of rows, columns derived from whatever fields the
@@ -709,7 +725,7 @@ fn scaled_photo_box(width_px: u32, height_px: u32) -> (u32, u32) {
 /// than failing the whole export; the rest of the document still prints.
 async fn person_photo(pool: &SqlitePool, vault_root: &Path, headshot_attachment_id: Option<&str>) -> Option<DocImage> {
     let attachment = attachments::get_attachment(pool, headshot_attachment_id?).await.ok().flatten()?;
-    let bytes = std::fs::read(attachments::absolute_path(vault_root, &attachment.stored_path).ok()?).ok()?;
+    let bytes = pleadli_node_core::vault::read(vault_root, &attachment.stored_path, &attachment.id).ok()?;
     let decoded = image::load_from_memory(&bytes).ok()?;
     use image::GenericImageView;
     let (width_px, height_px) = decoded.dimensions();
