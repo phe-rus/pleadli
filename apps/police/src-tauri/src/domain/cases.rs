@@ -517,3 +517,41 @@ pub async fn may_read_vault_path(pool: &SqlitePool, relative_path: &str, hidden:
         None => Ok(true),
     }
 }
+
+/** Whether a person with this national ID is already on record but hidden from this officer, so they
+ * cannot find them in the picker. The officer is told, instead of silently creating a second record
+ * of the same person who the restricted case's team would then never see. */
+pub async fn hidden_person_has_national_id(pool: &SqlitePool, national_id: &str, hidden: &[String]) -> Result<bool, sqlx::Error> {
+    let wanted = national_id.trim();
+    if hidden.is_empty() || wanted.is_empty() {
+        return Ok(false);
+    }
+    let ids: Vec<String> = sqlx::query_scalar("SELECT id FROM people WHERE UPPER(TRIM(national_id)) = UPPER(?)").bind(wanted).fetch_all(pool).await?;
+    for id in ids {
+        if !person_visible(pool, &id, hidden).await? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+#[cfg(test)]
+mod access_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn a_person_in_a_restricted_case_is_not_silently_duplicated() {
+        let dir = std::env::temp_dir().join(format!("pleadli-hidden-person-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = crate::db::startup(&dir, dir.join("vault")).await.ok().unwrap().pool;
+        sqlx::query("INSERT INTO cases (id, reference, summary, status, restricted, restricted_by) VALUES ('h', 'CRB 9/2026', 'x', 'open', 1, 'other')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO people (id, first_name, last_name, national_id) VALUES ('p', 'Amina', 'Test', 'CM900AB')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO case_people (id, case_id, person_id, role) VALUES ('l', 'h', 'p', 'victim')").execute(&pool).await.unwrap();
+
+        let hidden = vec!["h".to_string()];
+        assert!(hidden_person_has_national_id(&pool, " cm900ab ", &hidden).await.unwrap());
+        assert!(!hidden_person_has_national_id(&pool, "CM111XX", &hidden).await.unwrap(), "another ID is not a match");
+        assert!(!hidden_person_has_national_id(&pool, "CM900AB", &[]).await.unwrap(), "someone who may open the case sees them in the picker");
+        pool.close().await;
+    }
+}

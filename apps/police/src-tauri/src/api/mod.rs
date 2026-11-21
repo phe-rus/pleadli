@@ -71,8 +71,15 @@ fn internal_error(err: sqlx::Error) -> ApiError {
 
 async fn create_person_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Json(input): Json<CreatePersonInput>,
 ) -> Result<Json<Person>, ApiError> {
+    if let Some(national_id) = input.national_id.as_deref() {
+        let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+        if cases::hidden_person_has_national_id(&state.pool, national_id, &hidden).await.map_err(internal_error)? {
+            return Err((StatusCode::CONFLICT, "A person with this national ID is already on record, in a restricted case you cannot open. Ask an administrator or the officer who restricted it to add them to your case.".to_string()));
+        }
+    }
     people::create_person(&state.pool, &state.vault_root, input)
         .await
         .map(Json)
