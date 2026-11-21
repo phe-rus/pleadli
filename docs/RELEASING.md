@@ -1,7 +1,7 @@
 # Releasing the desktop apps (Windows, with auto-update)
 
 DPP, Lawyers, Prisons and Police are built on GitHub Actions
-(`.github/workflows/release.yml`) and published to the **public** repository
+(the `release` job in `.github/workflows/ci.yml`) and published to the **public** repository
 `phe-rus/pleadli-releases`. This repository stays private. Installed copies
 check `https://github.com/phe-rus/pleadli-releases/releases/download/<app>-latest/latest.json`
 15 seconds after start and every 6 hours, and offer "Install and restart". An
@@ -34,12 +34,11 @@ update is installed only if it is signed with the key below.
 ## Each release
 
 1. Raise `version` in the app's `src-tauri/tauri.conf.json` above the published
-   updater feed. The tag, when used, must match `<app>-v<version>`. The workflow
+   updater feed. The workflow
    refuses equal versions, rollback, missing updater configuration and missing
    EXE or MSI targets.
 2. Commit and push.
-3. Actions > Release > Run workflow, choose the app (or `all`). Or push a tag:
-   `git tag lawyers-v0.1.1 && git push origin lawyers-v0.1.1`.
+3. Put `:release` in the commit message (all five apps build), or Actions > CI > Run workflow > release. Other tokens: `:test`, `:lint`, `:all`. A commit with no token runs nothing.
 4. The workflow builds into a draft. It downloads the candidate assets, checks
    versions, installer URLs and signature file agreement, and adds
    `SHA256SUMS.txt`. Only then does it publish and advance the fixed updater

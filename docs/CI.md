@@ -33,7 +33,7 @@ All in `toolings/ci/`:
 * `clippy-baseline.json` holds the clippy and compiler warnings that already exist, as a count per lint. A new lint, or a bigger count, fails the run. A smaller count passes and the log asks you to lower the number. Never raise one to make a run green.
 * `changes.sh` decides what runs. Its tests are in `changes.test.ts`. Run them with `bun test toolings/ci`.
 
-Rust is not pinned. CI uses current stable, the same as `release.yml`. A new Rust release can bring new clippy lints and turn the ratchet red. Fix them or add them to the baseline in a reviewed edit.
+Rust is not pinned. CI uses current stable, the same as `ci.yml`. A new Rust release can bring new clippy lints and turn the ratchet red. Fix them or add them to the baseline in a reviewed edit.
 
 ## Measuring a budget or a baseline
 
@@ -43,5 +43,5 @@ Clippy: for each app, `cargo clippy --manifest-path apps/<app>/src-tauri/Cargo.t
 
 ## Known limits
 
-* CI runs on Ubuntu only. A Windows only Rust problem shows up at release time, in `release.yml`.
+* CI runs on Ubuntu only. A Windows only Rust problem shows up at release time, in `ci.yml`.
 * Size counts gzipped JS and CSS only, not images, fonts or the installer.
