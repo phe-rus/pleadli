@@ -11,8 +11,10 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use pleadli_interchange::envelope;
-use pleadli_interchange::messages::KIND_REFERRAL;
-use pleadli_interchange::pairing::{self, KIND_INVITE, KIND_RESPONSE};
+use pleadli_interchange::identity::IdentityKind;
+use pleadli_interchange::messages::{KIND_FILING_RECEIPT, KIND_REFERRAL};
+use pleadli_interchange::pairing::{self, KIND_CONFIRMATION, KIND_INVITE, KIND_RESPONSE};
+use pleadli_node_core::hub::{self, Dispatched, Links, Reject};
 use pleadli_node_core::orchestra::{Orchestra, RelayAccess};
 use pleadli_node_core::postbox::{Arrived, Postbox, PostboxError};
 use serde::Serialize;
@@ -25,6 +27,9 @@ use super::interchange;
 
 /// Poll every ten minutes, and straight after something is posted or a person presses Check now.
 const EVERY: std::time::Duration = std::time::Duration::from_secs(600);
+
+/// The court registries this office exchanges filings with: where each answers on the relay.
+pub const COURTS: Links = Links { table: "court_links", peer_col: "court_id", peer: IdentityKind::CourtRegistry };
 
 pub struct Relay {
     pool: SqlitePool,
@@ -68,6 +73,8 @@ pub struct ReceivedView {
     pub reason: Option<String>,
     pub arrived_at: i64,
     pub handled_at: Option<i64>,
+    /// What a person may decide on, when an invitation waits for them.
+    pub invitation: Option<Value>,
 }
 
 #[derive(Debug, Serialize)]
@@ -76,6 +83,8 @@ pub struct Status {
     pub ready: bool,
     pub why_not: Option<String>,
     pub address: Option<String>,
+    /// The office and institution that address belongs to, as the relay knows them.
+    pub name: Option<String>,
     pub site: String,
     pub last: Round,
     pub sent: Vec<SentView>,
@@ -118,15 +127,19 @@ impl Relay {
         let access = self.orchestra.relay_access().await;
         let why_not = if access.is_none() { Some("This computer needs a Pleadli licence for an office before it can use the postbox.".to_string()) } else { None };
         let sent = self.postbox.sent().await.unwrap_or_default().into_iter().map(|s| SentView { stage: stage(&s.status).to_string(), id: s.id, to: s.to, kind: s.kind, error: s.error, attempts: s.attempts, queued_at: s.queued_at, posted_at: s.posted_at, acked_at: s.acked_at }).collect();
+        let waiting: std::collections::HashMap<String, Arrived> = self.postbox.unread().await.unwrap_or_default().into_iter().map(|a| (a.id.clone(), a)).collect();
         let received = self
             .postbox
             .received()
             .await
             .unwrap_or_default()
             .into_iter()
-            .map(|r| ReceivedView { id: r.id, from: r.from, kind: r.kind, size: r.size, status: r.status, reason: r.note, arrived_at: r.arrived_at, handled_at: r.handled_at })
+            .map(|r| {
+                let invitation = waiting.get(&r.id).filter(|a| a.kind == KIND_INVITE).and_then(describe_court_invite);
+                ReceivedView { id: r.id, from: r.from, kind: r.kind, size: r.size, status: r.status, reason: r.note, arrived_at: r.arrived_at, handled_at: r.handled_at, invitation }
+            })
             .collect();
-        Status { ready: access.is_some(), why_not, address: access.as_ref().map(|a| a.address.clone()), site: pleadli_node_core::site::base(), last: self.last.lock().unwrap().clone(), sent, received }
+        Status { ready: access.is_some(), why_not, address: access.as_ref().map(|a| a.address.clone()), name: access.as_ref().and_then(|a| a.name.clone()).filter(|n| !n.is_empty()), site: pleadli_node_core::site::base(), last: self.last.lock().unwrap().clone(), sent, received }
     }
 
     /// One round: send what is waiting, collect what has come, open it, send
@@ -193,6 +206,11 @@ impl Relay {
             Err(e) => return log::warn!("postbox: inbox unreadable: {e}"),
         };
         for item in waiting {
+            // An invitation from a court registry is a person's decision, made in the window; it waits.
+            // Any other invitation is turned away below, with a reason.
+            if item.kind == KIND_INVITE && describe_court_invite(&item).is_some() {
+                continue;
+            }
             match self.open(&item).await {
                 Ok(()) => {
                     let _ = self.postbox.handled(&item.id).await;
@@ -213,6 +231,10 @@ impl Relay {
     }
 
     async fn open(&self, item: &Arrived) -> Result<(), DomainError> {
+        // A package from a court registry has its own links, its own permission, and its own import.
+        if envelope::peek(&item.bytes).is_ok_and(|p| p.header.from.kind == IdentityKind::CourtRegistry) {
+            return self.open_court(item).await;
+        }
         match item.kind.as_str() {
             KIND_RESPONSE => {
                 // The answer must come from the address the invitation went to.
@@ -282,3 +304,147 @@ impl Relay {
     }
 }
 
+
+/// What a person is shown about an invitation from a court registry, or None if it is anything else.
+pub fn describe_court_invite(item: &Arrived) -> Option<Value> {
+    let invite = pairing::read_invite(&item.bytes).ok()?;
+    if invite.office.kind != IdentityKind::CourtRegistry {
+        return None;
+    }
+    pleadli_interchange::authorization::check(invite.office.kind, IdentityKind::DppOffice, KIND_INVITE).ok()?;
+    Some(serde_json::json!({
+        "fingerprint": invite.office.fingerprint(),
+        "name": invite.office.name,
+        "kind": pleadli_interchange::authorization::label(invite.office.kind),
+        "intendedFor": invite.intended_station,
+        "expiresAt": invite.expires_at,
+    }))
+}
+
+/// The court registries: what they may send this office, checked on this computer.
+impl Relay {
+    /// A package that came from a court registry: its sender kind may send that kind of package here
+    /// (`authorization`), it came from the address that registry answered from, and only then is it handed to
+    /// the same import the file route uses, which checks the signature, the trusted link, and the content.
+    async fn open_court(&self, item: &Arrived) -> Result<(), DomainError> {
+        open_court_package(&self.pool, item).await
+    }
+
+    /// The administrator answers a court registry's invitation that arrived: the answer is sealed by the exchange,
+    /// bound to the address the invitation came from, and posted.
+    pub async fn answer_court_invitation(&self, inbox_id: &str, contact: Option<&str>) -> Result<(), DomainError> {
+        let item = self.postbox.unread().await.map_err(|e| DomainError::Invalid(e.to_string()))?.into_iter().find(|a| a.id == inbox_id && a.kind == KIND_INVITE && describe_court_invite(a).is_some()).ok_or_else(|| DomainError::NotFound("No such invitation is waiting.".into()))?;
+        let (link, response) = super::court_exchange::accept_invite(&self.pool, &item.bytes, contact).await?;
+        hub::bind(&self.pool, COURTS, &link.id, &item.from).await?;
+        let package_id = envelope::peek(&response).map(|p| p.header.id.clone()).map_err(|e| DomainError::Invalid(e.to_string()))?;
+        self.postbox.queue(&package_id, &item.from, KIND_RESPONSE, &response).await.map_err(|e| DomainError::Invalid(e.to_string()))?;
+        self.postbox.handled(&item.id).await.map_err(|e| DomainError::Invalid(e.to_string()))?;
+        audit::log(&self.pool, Entry::new("postbox_court_invitation_answered").subject("court_link", &link.id)).await.ok();
+        Ok(())
+    }
+
+    pub async fn decline_court_invitation(&self, inbox_id: &str, reason: &str) -> Result<(), DomainError> {
+        let reason = if reason.trim().is_empty() { "Declined by this office." } else { reason.trim() };
+        self.postbox.refused(inbox_id, reason).await.map_err(|e| DomainError::Invalid(e.to_string()))
+    }
+
+    /// Hands a filing or a withdrawal the exchange has just sealed to the postbox, if the registry it is for answers on the
+    /// relay. The registry's answer to an invitation is not sent this way, only after it is trusted.
+    pub async fn dispatch_court(&self, bytes: &[u8]) -> serde_json::Value {
+        if self.orchestra.relay_access().await.is_none() {
+            return serde_json::json!({ "route": "fileOnly" });
+        }
+        match hub::dispatch_to(IdentityKind::DppOffice, &self.pool, &self.postbox, bytes, &[COURTS]).await {
+            Ok(Dispatched::Queued { package_id, to }) => serde_json::json!({ "route": "queued", "packageId": package_id, "to": to }),
+            Ok(Dispatched::FileOnly) => serde_json::json!({ "route": "fileOnly" }),
+            Err(e) => serde_json::json!({ "route": "refused", "reason": e }),
+        }
+    }
+}
+
+/// The work of `open_court`, apart from the licence, so it is tested without one.
+pub async fn open_court_package(pool: &SqlitePool, item: &Arrived) -> Result<(), DomainError> {
+    match hub::admit(IdentityKind::DppOffice, pool, &[COURTS], item).await {
+        Ok(_) => {}
+        Err(Reject::Refuse(m)) => return Err(DomainError::Forbidden(m)),
+        Err(Reject::Duplicate) => return Err(DomainError::Invalid("This package has already been received.".to_string())),
+        Err(Reject::Retry(m)) => return Err(DomainError::Db(sqlx::Error::Protocol(m))),
+    }
+    match item.kind.as_str() {
+        KIND_CONFIRMATION | KIND_FILING_RECEIPT => super::court_exchange::import_package(pool, &item.bytes).await.map(|_| ()),
+        other => Err(DomainError::Invalid(format!("This office does not receive packages of kind '{other}' from a court registry through the postbox."))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pleadli_interchange::envelope::Body;
+    use pleadli_interchange::identity::Identity;
+    use pleadli_interchange::messages::*;
+    use pleadli_node_core::postbox::Postbox;
+
+    fn arrived(kind: &str, from: &str, bytes: Vec<u8>) -> Arrived {
+        Arrived { id: uuid::Uuid::new_v4().to_string(), from: from.to_string(), kind: kind.to_string(), sha256: String::new(), bytes, arrived_at: 1 }
+    }
+
+    /// The court path of the DPP's postbox: the registry's confirmation and receipts are taken in only from the
+    /// address the registry invited from, a registry cannot send what its kind has no path for even with a valid
+    /// signature, and a filing is queued for the registry's address only once the registry is trusted.
+    #[tokio::test]
+    async fn the_court_path_checks_address_and_permission_and_queues_filings_only_for_a_trusted_registry() {
+        let dir = std::env::temp_dir().join(format!("pleadli-dpp-courtpostbox-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = crate::db::startup(&dir, None).await.ok().unwrap().pool;
+        interchange::create_identity(&pool, "Court Postbox Test DPP", Some("Kampala".to_string())).await.unwrap();
+        let me_identity = interchange::require_identity(&pool).await.unwrap();
+        let me = me_identity.public.clone();
+        let postbox = Postbox::new(pool.clone(), "http://127.0.0.1:1");
+
+        let court = Identity::generate(IdentityKind::CourtRegistry, "Court Postbox Test Registry", Some("Kampala"));
+        let (invite_file, invite) = pairing::make_invite(&court, "Court Postbox Test DPP", i64::MAX).unwrap();
+        let (link, answer) = super::super::court_exchange::accept_invite(&pool, &invite_file, None).await.unwrap();
+        hub::bind(&pool, COURTS, &link.id, "ug.court.real").await.unwrap();
+        let response = pairing::read_response(&answer).unwrap();
+
+        // Not trusted yet: nothing is queued, the file is the only carrier.
+        let filing_for_court = || envelope::seal(&me_identity, &court.public, KIND_FILING, 1, None, &Body::new(serde_json::to_value(FilingPayload::default()).unwrap())).unwrap().0;
+        assert_eq!(hub::dispatch_to(IdentityKind::DppOffice, &pool, &postbox, &filing_for_court(), &[COURTS]).await.unwrap(), Dispatched::FileOnly);
+
+        let confirmation = pairing::make_confirmation(&court, &response.station, &invite.invite_id, "trusted", None).unwrap();
+        let from_elsewhere = open_court_package(&pool, &arrived(KIND_CONFIRMATION, "ug.court.impostor", confirmation.clone())).await.unwrap_err();
+        assert!(matches!(from_elsewhere, DomainError::Forbidden(ref m) if m.contains("answered from ug.court.real")), "{from_elsewhere}");
+        let status = || sqlx::query_scalar::<_, String>("SELECT status FROM court_links WHERE id = ?").bind(link.id.clone()).fetch_one(&pool);
+        assert_eq!(status().await.unwrap(), "answered", "a confirmation from the wrong address changed nothing");
+        open_court_package(&pool, &arrived(KIND_CONFIRMATION, "ug.court.real", confirmation)).await.unwrap();
+        assert_eq!(status().await.unwrap(), "trusted");
+
+        // A trusted registry: the filing is queued for its relay address, and sending it again adds nothing.
+        let sent = filing_for_court();
+        match hub::dispatch_to(IdentityKind::DppOffice, &pool, &postbox, &sent, &[COURTS]).await.unwrap() {
+            Dispatched::Queued { to, .. } => assert_eq!(to, "ug.court.real"),
+            other => panic!("{other:?}"),
+        }
+        hub::dispatch_to(IdentityKind::DppOffice, &pool, &postbox, &sent, &[COURTS]).await.unwrap();
+        let queued: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM postbox_outbox WHERE kind = 'case_filing'").fetch_one(&pool).await.unwrap();
+        assert_eq!(queued, 1);
+
+        // This office never sends what it has no path to send to a registry: a referral is not for a court.
+        let referral = envelope::seal(&me_identity, &court.public, KIND_REFERRAL, 2, None, &Body::new(serde_json::json!({}))).unwrap().0;
+        let err = hub::dispatch_to(IdentityKind::DppOffice, &pool, &postbox, &referral, &[COURTS]).await.unwrap_err();
+        assert!(err.contains("DPP office is not allowed"), "{err}");
+
+        // The trusted registry, validly signed, sends what a registry has no path to send a DPP office.
+        let order = envelope::seal(&court, &me, KIND_CUSTODY_ORDER, 7, None, &Body::new(serde_json::json!({}))).unwrap().0;
+        let refused = open_court_package(&pool, &arrived(KIND_CUSTODY_ORDER, "ug.court.real", order.clone())).await.unwrap_err();
+        assert!(matches!(refused, DomainError::Forbidden(ref m) if m.contains("court registry is not allowed")), "{refused}");
+        // ... and by calling the import directly, as a modified client of the file route would.
+        assert!(super::super::court_exchange::import_package(&pool, &order).await.is_err());
+
+        // A receipt from the registry for a filing this office never sent is refused, not applied.
+        let stray = FilingReceiptPayload { filing_package_id: "never-sent".into(), dpp_file_key: "f".into(), outcome: "accepted".into(), court_number: Some("X".into()), ..Default::default() };
+        let receipt = envelope::seal(&court, &me, KIND_FILING_RECEIPT, 8, None, &Body::new(serde_json::to_value(stray).unwrap())).unwrap().0;
+        assert!(open_court_package(&pool, &arrived(KIND_FILING_RECEIPT, "ug.court.real", receipt)).await.is_err());
+        pool.close().await;
+    }
+}

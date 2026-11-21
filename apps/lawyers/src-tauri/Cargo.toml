@@ -39,7 +39,7 @@ tokio = { version = "1", features = ["net", "fs", "sync", "time", "io-util", "ma
 axum = "0.8"
 tower-http = { version = "0.6", features = ["cors"] }
 tower = { version = "0.5", features = ["util"] }
-pleadli-node-core = { path = "../../../packages/node-core", features = ["ai", "lan", "orchestra"] }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["ai", "lan", "hub"] }
 pleadli-interchange = { path = "../../../packages/interchange" }
 # The office computer serves joined computers over TLS (L6); the client side
 # is node-core's pinned client, on the same reqwest.

@@ -211,7 +211,7 @@
       "real_title": "Kilicho halisi leo: mfumo wa mashirika",
       "size_body": "Mfumo huo huo wa mashirika ndio unaoruhusu programu ya Pleadli kumhudumia mtumiaji mmoja, timu, au shirika kubwa; wakili mmoja na kampuni ya mawakili wote hutumia Pleadli Lawyers kupitia mfumo huo huo, uliopangwa tofauti. Umbo la ngazi ni la kila shirika kuamua; Pleadli haidhanii kila taasisi inafanana na jeshi la polisi.",
       "size_title": "Mfumo mmoja, ukubwa wowote",
-      "status_note": "Programu na kumbukumbu zake zipo leo, na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa. Kuyatuma kutoka Pleadli Police hakujajengwa, na hakuna programu inayotuma kupitia relay ya Orchestra bado: toleo la kwanza la relay limeandikwa na kujaribiwa, lakini halijawashwa. Anwani, vyeti, uhakiki wa nyaraka na ufuatiliaji wa mashauri vinajengwa sasa; tazama Ramani ya kazi.",
+      "status_note": "Programu na kumbukumbu zake zipo leo. Pleadli Police inaweza kutuma rufaa kwa Pleadli DPP kupitia kituo cha Orchestra; hili limejaribiwa kati ya usakinishaji miwili tofauti kwenye kompyuta moja, bado si kati ya mashine mbili. Courts, Lawyers na Prisons hazitumii kituo hicho bado. Anwani, vyeti, ukaguzi wa karatasi na ufuatiliaji wa kesi vinajengwa sasa; tazama Ramani ya Njia.",
       "title": "Jinsi Pleadli inavyofanya kazi"
     },
     "index": {
@@ -252,8 +252,8 @@
         "strangers": "Hakuna barua zisizoombwa. Ofisi inaweza kupokea tu kutoka ofisi iliyoikubali, na msimamizi aliyetajwa ndiye anayefanya uamuzi huo."
       },
       "rules_title": "Kanuni litakazofuata",
-      "status_body": "Ukurasa huu unaeleza sanduku la posta litakachofanya na kanuni litakazofuata. Bado halifanyi kazi kwa ofisi: toleo la kwanza limeandikwa na kujaribiwa na Pleadli, lakini halijawashwa na hakuna programu inayotuma kupitia hilo. Leo, majalada husafirishwa kati ya ofisi kwa kutoa na kuingiza (kijiti cha USB au barua pepe), na Pleadli DPP tayari inaweza kupokea majalada yaliyofungwa.",
-      "status_title": "Halijawashwa bado",
+      "status_body": "Ukurasa huu unaeleza sanduku la posta linachofanya na kanuni linazozifuata. Pleadli Police inaweza kutuma rufaa kwa Pleadli DPP kupitia hilo. Limejaribiwa kwa usakinishaji miwili tofauti kwenye kompyuta moja, bado si kati ya mashine mbili. Courts, Lawyers na Prisons hazilitumii bado: mafaili yao husafirishwa kwa kusafirisha na kuingiza (kifimbo cha USB au barua pepe).",
+      "status_title": "Linafanya kazi kati ya Police na DPP",
       "steps": {
         "collect": {
           "body": "Programu ya ofisi inayopokea hukagua barua kila baada ya dakika kumi hadi kumi na tano, inazichukua, inazihakiki na kuzifungua. Mtu ndiye anayeamua kukubali au la.",
@@ -707,7 +707,7 @@
       "empty": "Hakuna miunganisho bado. Ofisi huomba kutoka programu yake ya Pleadli; wewe unaamua hapa.",
       "ended_title": "Zilizokataliwa au kukomeshwa",
       "lead": "Ofisi zipi zinaweza kutuma kwa ofisi yako, na zipi unaweza kuzitumia. Pleadli hubeba mafaili yaliyofungwa kati ya ofisi zilizoidhinishwa na haiyasomi kamwe.",
-      "note": "Sanduku la posta linajengwa. Programu zako hazilitumii bado: kwa sasa mafaili husafirishwa kwa kutoa na kuingiza.",
+      "note": "Pleadli Police na Pleadli DPP hutuma na kupokea kupitia Sanduku la Posta. Programu nyingine hazilitumii bado: kwazo, mafaili husafirishwa kwa kusafirisha na kuingiza.",
       "revoke": "Komesha muunganisho",
       "revoke_hint": "Barua zinazosubiri kati ya ofisi zenu mbili zinafutwa.",
       "revoked": "Imekomeshwa",

@@ -1,7 +1,7 @@
 import * as m from '@/paraglide/messages'
 import { listIncoming, listOutgoing, type Incoming, type Outgoing } from '@/features/exchange/data'
 import { checkRelay, getRelay, type RelayStatus } from '@/features/relay/data'
-import { PostboxView, type PostboxLabels, type PostboxMessage } from '@pleadli/shell'
+import { PostboxView, ReceivingAddress, type PostboxLabels, type PostboxMessage } from '@pleadli/shell'
 import { Button, buttonVariants } from '@pleadli/ui/button'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
@@ -66,5 +66,5 @@ function RouteComponent() {
     [incoming, outgoing, relay],
   )
 
-  return <PostboxView labels={relay?.ready ? { ...labels, status: m['relay.connected']({ address: relay.address ?? '' }) } : labels} messages={messages} actions={<><Button size="sm" variant="secondary" onClick={() => checkRelay().then(setRelay).then(() => listIncoming().then(setIncoming)).then(() => listOutgoing().then(setOutgoing)).catch(() => {})}>{m['relay.check_now']()}</Button><Link to="/exchange" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m['exchange.title']()}</Link></>} />
+  return <PostboxView header={<ReceivingAddress labels={{ title: m['relay.address_title'](), hint: m['relay.address_hint'](), copy: m['relay.address_copy'](), copied: m['relay.address_copied'](), unknown: m['relay.address_unknown']() }} address={relay?.ready ? relay.address : null} name={relay?.name} />} labels={{ ...labels, status: relay === null ? m['relay.checking']() : relay.ready ? m['relay.connected']({ address: relay.address ?? '' }) : (relay.whyNot ?? labels.status) }} messages={messages} actions={<><Button size="sm" variant="secondary" onClick={() => checkRelay().then(setRelay).then(() => listIncoming().then(setIncoming)).then(() => listOutgoing().then(setOutgoing)).catch(() => {})}>{m['relay.check_now']()}</Button><Link to="/exchange" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m['exchange.title']()}</Link></>} />
 }

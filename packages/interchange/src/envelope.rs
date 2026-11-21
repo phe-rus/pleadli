@@ -426,6 +426,35 @@ mod tests {
         assert!(peek(b"not a package").is_err());
     }
 
+    /// A sender who holds the right key can still send a package that does not add up. The
+    /// receiver must refuse it on the content, not only on the signature.
+    #[test]
+    fn a_correctly_signed_package_that_does_not_add_up_is_refused() {
+        let (police, dpp) = pair();
+        let (bytes, header) = seal(&police, &dpp.public, "referral", 1, None, &body()).unwrap();
+        let peeked = peek(&bytes).unwrap();
+
+        // The header (validly re-signed) states a hash that is not the body's.
+        let mut lying = header.clone();
+        lying.body_sha256 = sha256_hex(b"something else");
+        let relabelled = assemble(&police, &lying, &peeked.body).unwrap();
+        assert_eq!(open(&dpp, peek(&relabelled).unwrap(), &police.public).unwrap_err(), PackageError::Tampered);
+
+        // The body is damaged and the header (validly signed) states the damaged body's hash: the seal still fails.
+        let mut damaged = peeked.body.clone();
+        let mid = damaged.len() / 2;
+        damaged[mid] ^= 1;
+        let mut consistent = header.clone();
+        consistent.body_sha256 = sha256_hex(&damaged);
+        let rebuilt = assemble(&police, &consistent, &damaged).unwrap();
+        assert_eq!(open(&dpp, peek(&rebuilt).unwrap(), &police.public).unwrap_err(), PackageError::Tampered);
+
+        // A file whose stated hash is not its bytes' hash, inside a properly sealed body.
+        let liar = Body { json: serde_json::json!({}), files: vec![BodyFile { id: "f1".into(), name: "a.pdf".into(), mime: "application/pdf".into(), sha256: sha256_hex(b"other bytes"), bytes: b"the real bytes".to_vec() }] };
+        let (sealed, _) = seal(&police, &dpp.public, "referral", 1, None, &liar).unwrap();
+        assert_eq!(open(&dpp, peek(&sealed).unwrap(), &police.public).unwrap_err(), PackageError::Tampered);
+    }
+
     #[test]
     fn a_public_message_is_signed_but_readable_and_ties_to_its_own_key() {
         let (_, dpp) = pair();

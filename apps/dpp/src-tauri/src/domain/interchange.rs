@@ -319,6 +319,11 @@ pub async fn import_package(pool: &SqlitePool, vault_root: &Path, bytes: &[u8]) 
     let header = peeked.header.clone();
     let office = require_identity(pool).await?;
 
+    // Whatever carrier brought it, this office decides for itself whether that kind of sender may send that kind of package.
+    if let Err(why) = pleadli_interchange::authorization::check(header.from.kind, IdentityKind::DppOffice, &header.kind) {
+        return Err(refuse(pool, "sender kind not allowed to send this kind of package", &header, DomainError::Forbidden(why)).await);
+    }
+
     if header.created_at > now() + CLOCK_SKEW_MS {
         return Err(refuse(pool, "dated in the future", &header, DomainError::Invalid("This package is dated in the future. Check the clock of the computer that sent it.".to_string())).await);
     }
@@ -326,6 +331,7 @@ pub async fn import_package(pool: &SqlitePool, vault_root: &Path, bytes: &[u8]) 
     match header.kind.as_str() {
         KIND_RESPONSE => import_response(pool, bytes, &header).await,
         KIND_REFERRAL => {
+            let _only_one = IMPORT_ONE_AT_A_TIME.lock().await;
             // Which station claims to have sent it, and is it one this office trusts?
             let station_id = &header.from.id;
             let connection: Option<(String, String)> =
@@ -356,40 +362,85 @@ pub async fn import_package(pool: &SqlitePool, vault_root: &Path, bytes: &[u8]) 
             let payload: ReferralPayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::Invalid("The referral inside the package could not be read.".to_string()))?;
             validate_referral(&payload)?;
 
+            // Everything that can be checked is checked before the first file is written, so a
+            // package that is going to be refused leaves nothing in the vault.
+            let plain_id = |s: &str| !s.is_empty() && s.len() <= 80 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+            if !plain_id(&opened.header.id) {
+                return Err(refuse(pool, "package id is not a plain identifier", &header, DomainError::Invalid("This package carries an invalid id. Nothing was kept.".to_string())).await);
+            }
+            let mut seen_files = std::collections::HashSet::new();
+            if opened.body.files.iter().any(|f| !plain_id(&f.id) || !seen_files.insert(f.id.clone())) {
+                return Err(refuse(pool, "a file in the package has an invalid or repeated id", &header, DomainError::Invalid("A file in the package has an invalid id. Nothing was kept.".to_string())).await);
+            }
+
             let sha = envelope::sha256_hex(bytes);
             let mut files = Vec::new();
             for file in &opened.body.files {
-                if file.id.is_empty() || !file.id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
-                    return invalid("A file in the package has an invalid id.");
+                if vault::write_at(vault_root, &format!("incoming/{}/{}.enc", opened.header.id, file.id), &format!("{}/{}", opened.header.id, file.id), &file.bytes).is_err() {
+                    discard_incoming_files(pool, vault_root, &opened.header.id).await;
+                    return Err(refuse(pool, "a file could not be stored", &header, DomainError::Invalid("A file in the package could not be stored. Nothing was kept.".to_string())).await);
                 }
-                vault::write_at(vault_root, &format!("incoming/{}/{}.enc", opened.header.id, file.id), &format!("{}/{}", opened.header.id, file.id), &file.bytes).map_err(|_| DomainError::Invalid("A file in the package could not be stored.".to_string()))?;
                 files.push(serde_json::json!({ "id": file.id, "name": file.name, "mime": file.mime, "sha256": file.sha256, "size": file.bytes.len() }));
             }
             // The write lock is taken only once the files are on disk, so it is never held while they are written.
-            let mut tx = pleadli_node_core::db::begin_write(pool).await?;
-            sqlx::query(
-                "INSERT INTO incoming_packages (id, connection_id, kind, seq, sent_at, received_at, sender_fingerprint, package_sha256, payload, files)
-                 VALUES (?, ?, 'referral', ?, ?, ?, ?, ?, ?, ?)",
-            )
-            .bind(&opened.header.id)
-            .bind(&connection_id)
-            .bind(opened.header.seq as i64)
-            .bind(opened.header.created_at)
-            .bind(now())
-            .bind(station.fingerprint())
-            .bind(&sha)
-            .bind(serde_json::to_string(&opened.body.json).unwrap_or_default())
-            .bind(serde_json::to_string(&files).unwrap_or_default())
-            .execute(&mut *tx)
-            .await?;
-            sqlx::query("UPDATE police_connections SET last_seq_in = MAX(last_seq_in, ?) WHERE id = ?").bind(opened.header.seq as i64).bind(&connection_id).execute(&mut *tx).await?;
-            audit::record(&mut tx, Entry::new("referral_received").subject("incoming_package", &opened.header.id).detail(format!("{} from {}", payload.police_reference, station.name))).await?;
-            tx.commit().await?;
+            let stored = store_referral(pool, &opened, &connection_id, &station, &sha, &files, &payload).await;
+            if let Err(e) = stored {
+                discard_incoming_files(pool, vault_root, &opened.header.id).await;
+                return Err(e);
+            }
             Ok(ImportOutcome { kind: KIND_REFERRAL.to_string(), connection_id, package_id: Some(opened.header.id), message: format!("A referral from {} is waiting for you to read.", station.name) })
         }
         KIND_CONFIRMATION | KIND_RECEIPT | KIND_DECISION_NOTICE => Err(refuse(pool, "a message this office sends, not receives", &header, DomainError::Invalid("That is a package this office sends. It is not one it can receive.".to_string())).await),
         other => Err(refuse(pool, "unknown kind", &header, DomainError::Invalid(format!("This office does not receive packages of kind '{other}'."))).await),
     }
+}
+
+/// One referral is taken in at a time. Taking it in is "check it is new, write its files, store its row, and
+/// remove the files again if that failed". Two copies of the same package arriving together (the relay
+/// and a file, or a retry) could otherwise interleave: one fails, finds no stored row yet, the other then
+/// commits, and the first deletes the files the second just kept. Under this lock the second copy always
+/// sees the first one's outcome. It is held only for the writes, never while waiting on the network.
+static IMPORT_ONE_AT_A_TIME: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// Removes the sealed files a refused or failed import wrote. A package id that a
+/// stored row already owns is never touched, so a second copy arriving at the same
+/// moment cannot delete the first copy's files.
+async fn discard_incoming_files(pool: &SqlitePool, vault_root: &Path, package_id: &str) {
+    let owned: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM incoming_packages WHERE id = ?").bind(package_id).fetch_one(pool).await.unwrap_or(1);
+    if owned == 0 {
+        let _ = std::fs::remove_dir_all(vault_root.join("incoming").join(package_id));
+    }
+}
+
+async fn store_referral(
+    pool: &SqlitePool,
+    opened: &envelope::Opened,
+    connection_id: &str,
+    station: &PublicIdentity,
+    sha: &str,
+    files: &[serde_json::Value],
+    payload: &ReferralPayload,
+) -> Result<(), DomainError> {
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    sqlx::query(
+        "INSERT INTO incoming_packages (id, connection_id, kind, seq, sent_at, received_at, sender_fingerprint, package_sha256, payload, files)
+         VALUES (?, ?, 'referral', ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(&opened.header.id)
+    .bind(connection_id)
+    .bind(opened.header.seq as i64)
+    .bind(opened.header.created_at)
+    .bind(now())
+    .bind(station.fingerprint())
+    .bind(sha)
+    .bind(serde_json::to_string(&opened.body.json).unwrap_or_default())
+    .bind(serde_json::to_string(files).unwrap_or_default())
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query("UPDATE police_connections SET last_seq_in = MAX(last_seq_in, ?) WHERE id = ?").bind(opened.header.seq as i64).bind(connection_id).execute(&mut *tx).await?;
+    audit::record(&mut tx, Entry::new("referral_received").subject("incoming_package", &opened.header.id).detail(format!("{} from {}", payload.police_reference, station.name))).await?;
+    tx.commit().await?;
+    Ok(())
 }
 
 async fn import_response(pool: &SqlitePool, bytes: &[u8], header: &envelope::Header) -> Result<ImportOutcome, DomainError> {
@@ -708,4 +759,206 @@ pub async fn acknowledge_opened(pool: &SqlitePool, package_id: &str) -> Result<(
     record_receipt(&mut tx, &connection_id, package_id, &referral, "received", None, None, received_at, None).await?;
     tx.commit().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pleadli_interchange::envelope::BodyFile;
+
+    struct World {
+        pool: SqlitePool,
+        vault: std::path::PathBuf,
+        office: PublicIdentity,
+        station: Identity,
+    }
+
+    fn files_under(dir: &Path) -> usize {
+        std::fs::read_dir(dir).map(|d| d.flatten().map(|e| if e.path().is_dir() { files_under(&e.path()) } else { 1 }).sum()).unwrap_or(0)
+    }
+
+    /// An office that trusts one station, which is played by the shared contract.
+    async fn world() -> World {
+        let dir = std::env::temp_dir().join(format!("pleadli-dpp-integrity-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let db = crate::db::startup(&dir, None).await.ok().unwrap();
+        create_identity(&db.pool, "Integrity Test DPP Office", Some("Gulu".to_string())).await.unwrap();
+        let (connection, invite_bytes) = create_invite(&db.pool, "Integrity Test Station", 7).await.unwrap();
+        let invite = pairing::read_invite(&invite_bytes).unwrap();
+        let station = Identity::generate(IdentityKind::PoliceStation, "Integrity Test Station", Some("Gulu"));
+        import_package(&db.pool, &db.vault_root, &pairing::make_response(&station, &invite, Some("OC")).unwrap()).await.unwrap();
+        trust_connection(&db.pool, &connection.id, &station.public.fingerprint()).await.unwrap();
+        World { pool: db.pool, vault: db.vault_root, office: invite.office, station }
+    }
+
+    fn referral(reference: &str) -> serde_json::Value {
+        serde_json::to_value(ReferralPayload { police_reference: reference.to_string(), summary: "A short summary.".to_string(), ..Default::default() }).unwrap()
+    }
+
+    async fn rows(w: &World) -> i64 {
+        sqlx::query_scalar("SELECT COUNT(*) FROM incoming_packages").fetch_one(&w.pool).await.unwrap()
+    }
+
+    async fn last_refusal(w: &World) -> String {
+        sqlx::query_scalar("SELECT detail FROM audit_log WHERE action = 'package_refused' ORDER BY rowid DESC LIMIT 1").fetch_one(&w.pool).await.unwrap()
+    }
+
+    fn file(id: &str, bytes: &[u8]) -> BodyFile {
+        BodyFile { id: id.into(), name: format!("{id}.pdf"), mime: "application/pdf".into(), sha256: envelope::sha256_hex(bytes), bytes: bytes.to_vec() }
+    }
+
+    #[tokio::test]
+    async fn a_valid_package_is_taken_in_once_and_a_second_copy_changes_nothing() {
+        let w = world().await;
+        let body = Body { json: referral("CRB 1/2026"), files: vec![file("a", b"first"), file("b", b"second")] };
+        let (bytes, _) = envelope::seal(&w.station, &w.office, KIND_REFERRAL, 1, None, &body).unwrap();
+        assert_eq!(import_package(&w.pool, &w.vault, &bytes).await.unwrap().kind, KIND_REFERRAL);
+        assert_eq!((rows(&w).await, files_under(&w.vault.join("incoming"))), (1, 2));
+        let again = import_package(&w.pool, &w.vault, &bytes).await.unwrap_err();
+        assert!(again.to_string().contains("already"), "{again}");
+        assert_eq!((rows(&w).await, files_under(&w.vault.join("incoming"))), (1, 2), "a replay adds no case and no file");
+        w.pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn a_package_addressed_to_another_office_is_refused_and_keeps_nothing() {
+        let w = world().await;
+        let other = Identity::generate(IdentityKind::DppOffice, "Nakawa DPP Office", None);
+        let body = Body { json: referral("CRB 2/2026"), files: vec![file("a", b"bytes")] };
+        let (bytes, _) = envelope::seal(&w.station, &other.public, KIND_REFERRAL, 1, None, &body).unwrap();
+        let err = import_package(&w.pool, &w.vault, &bytes).await.unwrap_err();
+        assert!(err.to_string().contains("different DPP office"), "{err}");
+        assert_eq!((rows(&w).await, files_under(&w.vault)), (0, 0));
+        assert!(last_refusal(&w).await.starts_with("addressed to another office"));
+        w.pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn a_file_that_is_not_the_file_it_claims_to_be_keeps_nothing() {
+        let w = world().await;
+        let mut liar = file("b", b"the real bytes");
+        liar.sha256 = envelope::sha256_hex(b"other bytes");
+        let body = Body { json: referral("CRB 3/2026"), files: vec![file("a", b"fine"), liar] };
+        let (bytes, _) = envelope::seal(&w.station, &w.office, KIND_REFERRAL, 1, None, &body).unwrap();
+        let err = import_package(&w.pool, &w.vault, &bytes).await.unwrap_err();
+        assert!(err.to_string().contains("altered"), "{err}");
+        assert_eq!((rows(&w).await, files_under(&w.vault.join("incoming"))), (0, 0));
+        assert!(last_refusal(&w).await.starts_with("damaged or altered"));
+        w.pool.close().await;
+    }
+
+    /// The first file is fine and the second has an id that must never become a path: the whole
+    /// package is refused before anything is written (it used to leave the first file behind).
+    #[tokio::test]
+    async fn a_bad_file_id_after_a_good_file_leaves_no_partial_import() {
+        for bad in ["../escape", "a/b", "", "has space"] {
+            let w = world().await;
+            let body = Body { json: referral("CRB 4/2026"), files: vec![file("good-1", b"fine"), file(bad, b"hostile")] };
+            let (bytes, _) = envelope::seal(&w.station, &w.office, KIND_REFERRAL, 1, None, &body).unwrap();
+            assert!(import_package(&w.pool, &w.vault, &bytes).await.is_err(), "id {bad:?}");
+            assert_eq!((rows(&w).await, files_under(&w.vault.join("incoming"))), (0, 0), "id {bad:?}");
+            w.pool.close().await;
+        }
+        let w = world().await;
+        let body = Body { json: referral("CRB 5/2026"), files: vec![file("same", b"one"), file("same", b"two")] };
+        let (bytes, _) = envelope::seal(&w.station, &w.office, KIND_REFERRAL, 1, None, &body).unwrap();
+        assert!(import_package(&w.pool, &w.vault, &bytes).await.is_err(), "a repeated file id");
+        assert_eq!((rows(&w).await, files_under(&w.vault.join("incoming"))), (0, 0));
+        w.pool.close().await;
+    }
+
+    /// If the database refuses the package after its files are on disk, the files go too.
+    #[tokio::test]
+    async fn a_database_failure_after_the_files_are_written_removes_them() {
+        let w = world().await;
+        sqlx::query("CREATE TRIGGER refuse_all BEFORE INSERT ON incoming_packages BEGIN SELECT RAISE(ABORT, 'simulated failure'); END").execute(&w.pool).await.unwrap();
+        let body = Body { json: referral("CRB 6/2026"), files: vec![file("a", b"x"), file("b", b"y")] };
+        let (bytes, _) = envelope::seal(&w.station, &w.office, KIND_REFERRAL, 1, None, &body).unwrap();
+        assert!(import_package(&w.pool, &w.vault, &bytes).await.is_err());
+        assert_eq!((rows(&w).await, files_under(&w.vault.join("incoming"))), (0, 0));
+        w.pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn a_refusal_keeps_the_reason_and_the_claimed_sender_but_no_case_content() {
+        let w = world().await;
+        let body = Body { json: referral("SECRET-REF-9/2026"), files: vec![file("a", b"CONFIDENTIAL STATEMENT TEXT")] };
+        let (bytes, _) = envelope::seal(&w.station, &w.office, KIND_REFERRAL, 1, None, &body).unwrap();
+        let mut damaged = bytes.clone();
+        let last = damaged.len() - 3;
+        damaged[last] ^= 1;
+        assert!(import_package(&w.pool, &w.vault, &damaged).await.is_err());
+        let log: Vec<String> = sqlx::query_scalar("SELECT detail FROM audit_log").fetch_all(&w.pool).await.unwrap();
+        let all = log.join("\n");
+        assert!(all.contains("damaged or altered"));
+        assert!(!all.contains("SECRET-REF") && !all.contains("CONFIDENTIAL"), "{all}");
+        w.pool.close().await;
+    }
+
+    /// The same package arriving through several carriers at once: exactly one case, its files intact,
+    /// every other copy told it was already received. Repeated, because the old failure was a timing one.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn many_copies_of_one_package_arriving_together_keep_exactly_one_and_its_files() {
+        for round in 0..12 {
+            let w = world().await;
+            let body = Body { json: referral(&format!("CRB 7/{round}")), files: vec![file("a", b"first"), file("b", b"second")] };
+            let (bytes, _) = envelope::seal(&w.station, &w.office, KIND_REFERRAL, 1, None, &body).unwrap();
+            let mut tasks = Vec::new();
+            for _ in 0..10 {
+                let (pool, vault, bytes) = (w.pool.clone(), w.vault.clone(), bytes.clone());
+                tasks.push(tokio::spawn(async move { import_package(&pool, &vault, &bytes).await.map(|_| ()).map_err(|e| e.to_string()) }));
+            }
+            let mut kept = 0;
+            for t in tasks {
+                match t.await.unwrap() {
+                    Ok(()) => kept += 1,
+                    Err(e) => assert!(e.contains("already been received"), "round {round}: {e}"),
+                }
+            }
+            assert_eq!(kept, 1, "round {round}");
+            assert_eq!((rows(&w).await, files_under(&w.vault.join("incoming"))), (1, 2), "round {round}: one row and both files");
+            w.pool.close().await;
+        }
+    }
+
+    /// A package that fails after its files are on disk, running beside genuine ones, cannot remove
+    /// their files, and a failed id does not stop the same package being taken in once the fault is gone.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn a_failing_import_cannot_remove_another_imports_files() {
+        for round in 0..8 {
+            let w = world().await;
+            let bad_body = Body { json: referral("CRB 8/BAD"), files: vec![file("x", b"doomed-1"), file("y", b"doomed-2")] };
+            let (bad, _) = envelope::seal(&w.station, &w.office, KIND_REFERRAL, 1, None, &bad_body).unwrap();
+            let bad_id = envelope::peek(&bad).unwrap().header.id.clone();
+            sqlx::query(sqlx::AssertSqlSafe(format!("CREATE TRIGGER refuse_one BEFORE INSERT ON incoming_packages WHEN NEW.id = '{bad_id}' BEGIN SELECT RAISE(ABORT, 'simulated failure'); END"))).execute(&w.pool).await.unwrap();
+            let mut good = Vec::new();
+            for i in 0..4 {
+                let body = Body { json: referral(&format!("CRB 9/{round}-{i}")), files: vec![file("a", format!("good-{i}-a").as_bytes()), file("b", format!("good-{i}-b").as_bytes())] };
+                good.push(envelope::seal(&w.station, &w.office, KIND_REFERRAL, 2 + i as u64, None, &body).unwrap().0);
+            }
+            let mut tasks = Vec::new();
+            for i in 0..8 {
+                for bytes in std::iter::once(&bad).chain(good.iter()) {
+                    let (pool, vault, bytes) = (w.pool.clone(), w.vault.clone(), bytes.clone());
+                    let _ = i;
+                    tasks.push(tokio::spawn(async move { import_package(&pool, &vault, &bytes).await.is_ok() }));
+                }
+            }
+            let mut ok = 0;
+            for t in tasks {
+                if t.await.unwrap() {
+                    ok += 1;
+                }
+            }
+            assert_eq!(ok, 4, "round {round}: each genuine package is kept once, the failing one never");
+            assert_eq!(rows(&w).await, 4, "round {round}");
+            assert_eq!(files_under(&w.vault.join("incoming")), 8, "round {round}: the genuine packages keep both files each, the failing one leaves none");
+            assert!(!w.vault.join("incoming").join(&bad_id).exists(), "round {round}");
+            // The fault goes away: the same package, sent again, is taken in whole.
+            sqlx::query("DROP TRIGGER refuse_one").execute(&w.pool).await.unwrap();
+            assert!(import_package(&w.pool, &w.vault, &bad).await.is_ok(), "round {round}");
+            assert_eq!((rows(&w).await, files_under(&w.vault.join("incoming"))), (5, 10), "round {round}");
+            w.pool.close().await;
+        }
+    }
 }

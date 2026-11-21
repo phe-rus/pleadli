@@ -98,6 +98,8 @@ pub struct Status {
     pub ready: bool,
     pub why_not: Option<String>,
     pub address: Option<String>,
+    /// The office and institution that address belongs to, as the relay knows them.
+    pub name: Option<String>,
     pub site: String,
     pub last: Round,
     pub sent: Vec<SentView>,
@@ -224,7 +226,7 @@ impl Relay {
                 ReceivedView { id: r.id, from: r.from, kind: r.kind, size: r.size, status: r.status, reason: r.note, arrived_at: r.arrived_at, handled_at: r.handled_at, invitation }
             })
             .collect();
-        Status { ready: access.is_some(), why_not, address: access.as_ref().map(|a| a.address.clone()), site: pleadli_node_core::site::base(), last: self.last.lock().unwrap().clone(), sent, received }
+        Status { ready: access.is_some(), why_not, address: access.as_ref().map(|a| a.address.clone()), name: access.as_ref().and_then(|a| a.name.clone()).filter(|n| !n.is_empty()), site: pleadli_node_core::site::base(), last: self.last.lock().unwrap().clone(), sent, received }
     }
 
     pub async fn sync(&self) -> Result<(), String> {

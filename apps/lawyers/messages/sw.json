@@ -2142,7 +2142,7 @@
       "checking": "Inakagua…",
       "checked": "pleadli.com imejibu",
       "institution": "Taasisi",
-      "address": "Anwani ya Orchestra",
+      "address": "Anwani ya taasisi",
       "seats": "Kompyuta kwenye leseni hii",
       "expires": "Leseni inaisha",
       "valid_until": "Inafanya kazi bila mtandao hadi {date}",
@@ -2150,7 +2150,8 @@
       "never": "Bado",
       "device": "Namba ya kompyuta",
       "device_hint": "Isome ikiwa msaada wa Pleadli utauliza ni kompyuta gani.",
-      "cannot_verify": "Nakala hii ya Pleadli Lawyers bado haiwezi kukagua leseni. Sakinisha toleo rasmi."
+      "cannot_verify": "Nakala hii ya Pleadli Lawyers bado haiwezi kukagua leseni. Sakinisha toleo rasmi.",
+      "postbox_address": "Anwani ya kupokelea (sanduku la posta)"
     },
     "activate": {
       "title": "Ufunguo wa leseni",
@@ -2317,13 +2318,38 @@
     }
   },
   "postbox": {
+    "address_copied": "Imenakiliwa",
+    "address_copy": "Nakili",
+    "address_hint": "Ofisi nyingine lazima zitume kwa anwani hii hasa.",
+    "address_title": "Anwani yako ya kupokelea",
+    "address_unknown": "Haijulikani bado. Unganisha na Pleadli ili kuiona.",
+    "check_now": "Angalia sasa",
+    "checking": "Inakagua muunganisho na Pleadli…",
+    "connected": "Imeunganishwa na Pleadli kama {address}.",
     "empty_inbox": "Hakuna kilichofika bado.",
     "empty_outbox": "Hakuna kinachosubiri kutumwa.",
+    "empty_sent": "Hakuna kilichotumwa bado.",
     "inbox": "Zilizopokelewa",
     "intro": "Nyaraka kwenda na kutoka mahakamani, kwa wateja na ofisi nyingine zinafika hapa.",
+    "kind_court_notice": "Taarifa kutoka mahakamani",
+    "kind_court_notice_receipt": "Jibu lako kwa taarifa",
+    "kind_firm_filing": "Hati yako uliyowasilisha kwenye kesi",
+    "kind_firm_filing_receipt": "Jibu la usajili kwa hati yako",
+    "kind_pairing_confirmation": "Uthibitisho wa muunganisho",
+    "kind_pairing_invite": "Mwaliko wa kuunganishwa",
+    "kind_pairing_response": "Jibu la mwaliko",
     "outbox": "Za kutuma",
+    "sent": "Zilizotumwa",
+    "stage_attention": "Inahitaji uangalizi",
+    "stage_delivered": "Imefikishwa",
+    "stage_expired": "Haikufikishwa",
+    "stage_queued": "Inasubiri kutumwa",
+    "stage_sent": "Imetumwa",
     "status": "Bado haijawashwa. Itafanya kazi ofisi yako ikiunganishwa na Pleadli.",
-    "title": "Sanduku la posta"
+    "taken": "Imepokelewa na kuchukuliwa.",
+    "title": "Sanduku la posta",
+    "try_again": "Jaribu tena",
+    "turned_away": "Imekataliwa: {kind}"
   },
   "court_notices": {
     "title": "Taarifa za mahakama",

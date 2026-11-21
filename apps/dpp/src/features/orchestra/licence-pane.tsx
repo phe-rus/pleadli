@@ -6,9 +6,10 @@ import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { orchestraErrorCode, type OrchestraStatus } from './data'
 import { useActivateLicence, useChooseOffice, useContactNow, useIsAdmin, useOrchestra, useSendPapers } from './queries'
+import { getRelay } from '@/features/relay/data'
 import { errorText, reasonText, stateText } from './words'
 
 function stateTone(s: OrchestraStatus) {
@@ -20,6 +21,10 @@ function stateTone(s: OrchestraStatus) {
  * here can lock a record: the hint says so wherever a trial or licence ends. */
 export function LicencePane() {
   const { data: status } = useOrchestra()
+  const [mailbox, setMailbox] = useState<{ ready: boolean; address: string | null } | null>(null)
+  useEffect(() => {
+    getRelay().then(setMailbox).catch(() => setMailbox(null))
+  }, [])
   const admin = useIsAdmin()
   const contact = useContactNow()
 
@@ -71,6 +76,9 @@ export function LicencePane() {
                 <span className="font-mono text-muted-foreground">{status.licence.address}</span>
               </SettingsRow>
             )}
+            <SettingsRow label={m["orchestra.licence.postbox_address"]()}>
+              <span className="font-mono text-muted-foreground">{mailbox?.ready ? mailbox.address : '·'}</span>
+            </SettingsRow>
             <SettingsRow label={m["orchestra.licence.seats"]()}>
               <span className="text-muted-foreground tabular-nums">{status.licence.seats}</span>
             </SettingsRow>

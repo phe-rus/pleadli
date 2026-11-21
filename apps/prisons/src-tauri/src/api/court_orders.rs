@@ -39,6 +39,9 @@ struct WithFile<T: Serialize> {
     value: T,
     file: String,
     name: String,
+    /// How the sealed package was sent on: queued for the postbox, or left for the file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    delivery: Option<serde_json::Value>,
 }
 
 fn decode(file: &str) -> Result<Vec<u8>, ApiError> {
@@ -71,11 +74,17 @@ async fn list_links(State(node): State<NodeRef>) -> Api<Vec<CourtLink>> {
 struct InviteBody {
     intended_court: String,
     valid_days: i64,
+    /// The registry's postbox address, to send the invitation through the postbox as well as giving the file.
+    address: Option<String>,
 }
 
 async fn create_invite(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Json(b): Json<InviteBody>) -> Api<WithFile<CourtLink>> {
-    let (link, bytes) = write(&node, |c| Box::pin(async move { Ok(court_orders::create_invite(c, &actor, &b.intended_court, b.valid_days).await?) })).await?;
-    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "prison-invitation.pxpkg".into() }))
+    let (intended, days, address) = (b.intended_court.clone(), b.valid_days, b.address.clone());
+    let (link, bytes) = write(&node, |c| Box::pin(async move { Ok(court_orders::create_invite(c, &actor, &intended, days).await?) })).await?;
+    if let Some(address) = address.as_deref().filter(|a| !a.trim().is_empty()) {
+        super::relay::send_invite(&node, &link.id, address, &bytes).await?;
+    }
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "prison-invitation.pxpkg".into(), delivery: None }))
 }
 
 #[derive(Deserialize)]
@@ -85,7 +94,8 @@ struct TrustBody {
 
 async fn trust_link(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(b): Json<TrustBody>) -> Api<WithFile<CourtLink>> {
     let (link, bytes) = write(&node, |c| Box::pin(async move { Ok(court_orders::trust_link(c, &actor, &id, &b.fingerprint).await?) })).await?;
-    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "prison-confirmation.pxpkg".into() }))
+    let delivery = super::relay::deliver(&node, &bytes).await;
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "prison-confirmation.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 #[derive(Deserialize)]
@@ -117,7 +127,8 @@ struct Recorded {
 
 async fn record_order(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(b): Json<RecordBody>) -> Api<WithFile<Recorded>> {
     let (instrument_id, bytes) = write(&node, |c| Box::pin(async move { Ok(court_orders::record_order(c, &actor, &id, &b.prisoner_id).await?) })).await?;
-    Ok(Json(WithFile { value: Recorded { instrument_id }, file: B64.encode(bytes), name: "custody-receipt.pxpkg".into() }))
+    let delivery = super::relay::deliver(&node, &bytes).await;
+    Ok(Json(WithFile { value: Recorded { instrument_id }, file: B64.encode(bytes), name: "custody-receipt.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 #[derive(Deserialize)]
@@ -130,7 +141,8 @@ struct ReportBody {
 
 async fn report_order(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(b): Json<ReportBody>) -> Api<WithFile<Returned>> {
     let bytes = write(&node, |c| Box::pin(async move { Ok(court_orders::report_to_court(c, &actor, &id, &b.event, b.occurred_at, b.note.as_deref()).await?) })).await?;
-    Ok(Json(WithFile { value: Returned {}, file: B64.encode(bytes), name: "custody-report.pxpkg".into() }))
+    let delivery = super::relay::deliver(&node, &bytes).await;
+    Ok(Json(WithFile { value: Returned {}, file: B64.encode(bytes), name: "custody-report.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 #[derive(Deserialize)]
@@ -143,5 +155,6 @@ struct Returned {}
 
 async fn return_order(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(b): Json<ReturnBody>) -> Api<WithFile<Returned>> {
     let bytes = write(&node, |c| Box::pin(async move { Ok(court_orders::return_order(c, &actor, &id, &b.reason).await?) })).await?;
-    Ok(Json(WithFile { value: Returned {}, file: B64.encode(bytes), name: "custody-receipt.pxpkg".into() }))
+    let delivery = super::relay::deliver(&node, &bytes).await;
+    Ok(Json(WithFile { value: Returned {}, file: B64.encode(bytes), name: "custody-receipt.pxpkg".into(), delivery: Some(delivery) }))
 }

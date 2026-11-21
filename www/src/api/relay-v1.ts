@@ -2,7 +2,8 @@ import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
 import { relayLink, relayMessage, relayOffice } from '@/db/relay-schema'
 import { sign, type Signed } from '@/lib/orchestra-signing'
-import { connected, whoOwns } from '@/lib/relay-links.server'
+import { connected, hasMailbox, whoOwns } from '@/lib/relay-links.server'
+import { relayPairAllowed, relayPermitted } from '@/lib/relay-paths'
 import { identify, sha256Of, type Caller } from '@/lib/computer-auth.server'
 import { env } from 'cloudflare:workers'
 import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm'
@@ -83,8 +84,20 @@ async function post(request: Request, caller: Caller) {
     return json({ ok: true, id, postedAt: again.postedAt.getTime(), duplicate: true })
   }
 
+  // A connection is needed between institutions, not between one institution's own offices.
   if (!(await ownsAddress(caller, to)) && !(await connected(caller.address, to))) {
     throw new RelayError(403, 'not_connected', 'No approved connection to that office. Ask to connect first (POST /connections).', { to })
+  }
+  // Belonging to the same institution does NOT excuse a message from authorization: the kinds of the two licensed
+  // institutions must have a defined path for this kind, whoever sends it. The kinds come from the licences of the two
+  // addresses, not from anything the sender claims. The receiving application checks again from inside the package.
+  const [sender, recipient] = await Promise.all([whoOwns(caller.address), whoOwns(to)])
+  if (!relayPermitted(sender?.institutionType, recipient?.institutionType, kind)) {
+    throw new RelayError(403, 'not_permitted', 'Pleadli defines no exchange of that kind between these two kinds of institution.', { kind })
+  }
+  // An address no computer collects at would hold the message until it expired and tell nobody.
+  if (!(await hasMailbox(to))) {
+    throw new RelayError(422, 'no_mailbox', 'No computer collects mail at that address. Ask the office for the receiving address shown on its Postbox.', { to })
   }
 
   const now = Date.now()
@@ -188,6 +201,14 @@ async function askToConnect(request: Request, caller: Caller) {
   const owner = await whoOwns(to)
   // The same answer for "no such office" and "not open to you": nothing to learn by guessing.
   if (!owner || to === caller.address) throw new RelayError(404, 'not_found', 'No such office.')
+  // Only kinds of institution that have a defined exchange may even be connected.
+  const me = await whoOwns(caller.address)
+  if (!relayPairAllowed(me?.institutionType, owner.institutionType)) {
+    throw new RelayError(403, 'not_permitted', 'Pleadli defines no exchange between your kind of institution and that office.')
+  }
+  if (!(await hasMailbox(to))) {
+    throw new RelayError(422, 'no_mailbox', 'No computer collects mail at that address. Ask the office for the receiving address shown on its Postbox.', { to })
+  }
   const [old] = await db
     .select()
     .from(relayLink)
@@ -275,7 +296,8 @@ async function getCertificate(address: string, caller: Caller) {
 
 /** Who the relay takes this computer to be: the office address its posts come from and its mail goes to. The app shows this instead of guessing. */
 async function whoami(caller: Caller) {
-  return json({ address: caller.address, licensed: caller.licensed, relay: relayHost() })
+  const owner = await whoOwns(caller.address)
+  return json({ address: caller.address, name: owner?.name ?? '', licensed: caller.licensed, relay: relayHost() })
 }
 
 /** /api/orchestra/v1/relay/<call> */

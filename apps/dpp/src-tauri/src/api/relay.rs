@@ -17,6 +17,30 @@ use crate::domain::relay::{Relay, Status};
 
 type Shared = Extension<Arc<Relay>>;
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AnswerInput {
+    contact: Option<String>,
+}
+
+async fn answer(State(s): State<AppState>, Extension(r): Shared, Path(id): Path<String>, Json(input): Json<AnswerInput>) -> Result<Json<Value>, ApiError> {
+    admin(&s)?;
+    r.answer_court_invitation(&id, input.contact.as_deref().map(str::trim).filter(|c| !c.is_empty())).await?;
+    let _ = r.sync().await;
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
+struct DeclineInput {
+    reason: Option<String>,
+}
+
+async fn decline(State(s): State<AppState>, Extension(r): Shared, Path(id): Path<String>, Json(input): Json<DeclineInput>) -> Result<Json<Status>, ApiError> {
+    admin(&s)?;
+    r.decline_court_invitation(&id, input.reason.as_deref().unwrap_or("")).await?;
+    Ok(Json(r.status().await))
+}
+
 fn admin(s: &AppState) -> Result<(), ApiError> {
     if s.security.actor().is_some_and(|a| a.is_administrator()) {
         Ok(())
@@ -81,5 +105,7 @@ pub fn routes(relay: Arc<Relay>) -> Router<AppState> {
         .route("/connections", get(connections))
         .route("/connections/{id}/invite", post(invite))
         .route("/inbox/{id}/reopen", post(reopen))
+        .route("/inbox/{id}/answer", post(answer))
+        .route("/inbox/{id}/decline", post(decline))
         .layer(Extension(relay))
 }

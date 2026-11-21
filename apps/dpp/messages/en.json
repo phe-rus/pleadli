@@ -2305,7 +2305,7 @@
       "checking": "Checking…",
       "checked": "pleadli.com answered",
       "institution": "Institution",
-      "address": "Orchestra address",
+      "address": "Institution address",
       "seats": "Computers on this licence",
       "expires": "Licence ends",
       "valid_until": "Works offline until {date}",
@@ -2313,7 +2313,8 @@
       "never": "Not yet",
       "device": "Computer number",
       "device_hint": "Read this out if Pleadli support asks which computer this is.",
-      "cannot_verify": "This copy of Pleadli DPP cannot check licences yet. Install the released version."
+      "cannot_verify": "This copy of Pleadli DPP cannot check licences yet. Install the released version.",
+      "postbox_address": "Receiving address (Postbox)"
     },
     "activate": {
       "title": "Licence key",
@@ -2474,7 +2475,7 @@
     "inbox": "Inbox",
     "intro": "Case files, referrals and decisions to and from police and courts arrive here.",
     "outbox": "Outbox",
-    "status": "Not switched on yet. It will work once your office is connected to Pleadli.",
+    "status": "This computer is not connected to the Pleadli postbox. Until it is, files move by export and import.",
     "title": "Postbox",
     "sent": "Sent",
     "empty_sent": "Nothing has been sent yet.",
@@ -2568,6 +2569,16 @@
     "stage_delivered": "Delivered",
     "stage_attention": "Needs attention",
     "stage_expired": "Not delivered",
-    "connected": "Connected to Pleadli as {address}."
+    "checking": "Checking the connection to Pleadli…",
+    "connected": "Connected to Pleadli as {address}.",
+    "invitation": "{name} ({kind}) asks to connect",
+    "invitation_body": "Read this code to them and confirm it matches theirs before you trust them: {fingerprint}",
+    "answer": "Answer the invitation",
+    "decline": "Decline",
+    "address_title": "Your receiving address",
+    "address_hint": "Other offices must send to exactly this address.",
+    "address_copy": "Copy",
+    "address_copied": "Copied",
+    "address_unknown": "Not known yet. Connect to Pleadli to see it."
   }
 }

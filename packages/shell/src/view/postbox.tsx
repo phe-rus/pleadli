@@ -48,7 +48,7 @@ const day = (at: number) => {
  * narrow window it is one pane at a time. Props only: no router, no Tauri, no
  * relay code. An app with nothing to show passes no messages.
  */
-export function PostboxView({ labels, messages = [], actions }: { labels: PostboxLabels; messages?: PostboxMessage[]; actions?: ReactNode }) {
+export function PostboxView({ labels, messages = [], actions, header }: { labels: PostboxLabels; messages?: PostboxMessage[]; actions?: ReactNode; header?: ReactNode }) {
   const [box, setBox] = useState<PostboxBox>('inbox')
   const [openId, setOpenId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -70,6 +70,7 @@ export function PostboxView({ labels, messages = [], actions }: { labels: Postbo
 
   return (
     <div data-postbox className="flex h-[calc(100dvh-7.5rem)] min-h-[28rem] w-full flex-col bg-background">
+      {header}
       <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4">
         <div role="tablist" aria-label={labels.title} className="flex gap-5">
           {boxes.map((b) => {

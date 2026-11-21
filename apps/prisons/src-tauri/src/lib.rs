@@ -25,6 +25,7 @@ pub fn run_headless(data_dir: std::path::PathBuf) -> Result<(), Box<dyn std::err
                 let orchestra = domain::orchestra::start(node.pool.clone(), node.data_dir.clone(), node.vault_root.clone());
                 tokio::spawn(orchestra.clone().run());
                 let _ = node.orchestra.set(orchestra);
+                domain::relay::start(&node);
                 tokio::spawn(api::network::supervise(node.clone()));
                 tokio::spawn(api::network::supervise_lan(node.clone()));
                 tokio::spawn(transport::discovery::supervise(node.clone()));
@@ -114,6 +115,7 @@ pub fn run() {
                     let orchestra = domain::orchestra::start(node.pool.clone(), node.data_dir.clone(), node.vault_root.clone());
                     tauri::async_runtime::spawn(orchestra.clone().run());
                     let _ = node.orchestra.set(orchestra);
+                domain::relay::start(&node);
 
                     // The desktop shell reaches the node in process: no socket.
                     tauri::async_runtime::block_on(domain::nodeconfig::load_remote(&node));

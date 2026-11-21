@@ -19,6 +19,7 @@
 //!
 //! Nothing here opens a socket or touches a database.
 
+pub mod authorization;
 pub mod envelope;
 pub mod identity;
 pub mod messages;

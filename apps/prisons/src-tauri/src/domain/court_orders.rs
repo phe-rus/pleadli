@@ -53,7 +53,7 @@ async fn load_identity(conn: &mut SqliteConnection) -> Result<Option<Identity>, 
     Identity::restore(public, signing, encryption).map(Some).ok_or_else(|| DomainError::rejected(DAMAGED))
 }
 
-async fn require_identity(conn: &mut SqliteConnection) -> Result<Identity, DomainError> {
+pub(crate) async fn require_identity(conn: &mut SqliteConnection) -> Result<Identity, DomainError> {
     match load_identity(conn).await? {
         Some(i) => Ok(i),
         None => bad("Set up this facility's identity first."),
@@ -175,6 +175,10 @@ pub async fn import_package(conn: &mut SqliteConnection, bytes: &[u8]) -> Result
     let me = require_identity(conn).await?;
     let peeked = envelope::peek(bytes).map_err(|e| DomainError::rejected(e.to_string()))?;
     let header = peeked.header.clone();
+    // Whatever carrier brought it, this institution decides for itself whether that kind of sender may send that kind of package.
+    if let Err(why) = pleadli_interchange::authorization::check(header.from.kind, pleadli_interchange::identity::IdentityKind::PrisonFacility, &header.kind) {
+        return bad(why);
+    }
     if header.created_at > now_ms() + 86_400_000 {
         return bad("This package is dated in the future. Check the clock of the computer that sent it.");
     }

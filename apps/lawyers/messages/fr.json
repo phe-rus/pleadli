@@ -2142,7 +2142,7 @@
       "checking": "Vérification…",
       "checked": "pleadli.com a répondu",
       "institution": "Institution",
-      "address": "Adresse Orchestra",
+      "address": "Adresse de l'institution",
       "seats": "Ordinateurs sur cette licence",
       "expires": "Fin de la licence",
       "valid_until": "Fonctionne hors ligne jusqu'au {date}",
@@ -2150,7 +2150,8 @@
       "never": "Pas encore",
       "device": "Numéro de l'ordinateur",
       "device_hint": "À lire si l'assistance Pleadli demande de quel ordinateur il s'agit.",
-      "cannot_verify": "Cette copie de Pleadli Lawyers ne peut pas encore vérifier les licences. Installez la version publiée."
+      "cannot_verify": "Cette copie de Pleadli Lawyers ne peut pas encore vérifier les licences. Installez la version publiée.",
+      "postbox_address": "Adresse de réception (boîte postale)"
     },
     "activate": {
       "title": "Clé de licence",
@@ -2317,13 +2318,38 @@
     }
   },
   "postbox": {
+    "address_copied": "Copié",
+    "address_copy": "Copier",
+    "address_hint": "Les autres bureaux doivent écrire exactement à cette adresse.",
+    "address_title": "Votre adresse de réception",
+    "address_unknown": "Pas encore connue. Connectez-vous à Pleadli pour la voir.",
+    "check_now": "Vérifier maintenant",
+    "checking": "Vérification de la connexion à Pleadli…",
+    "connected": "Connecté à Pleadli sous l’adresse {address}.",
     "empty_inbox": "Rien n'est encore arrivé.",
     "empty_outbox": "Rien n'attend d'être envoyé.",
+    "empty_sent": "Rien n'a encore été envoyé.",
     "inbox": "Réception",
     "intro": "Les pièces échangées avec les tribunaux, les clients et les autres cabinets arrivent ici.",
+    "kind_court_notice": "Avis du tribunal",
+    "kind_court_notice_receipt": "Votre réponse à un avis",
+    "kind_firm_filing": "Votre dépôt dans une affaire",
+    "kind_firm_filing_receipt": "Réponse du greffe à votre dépôt",
+    "kind_pairing_confirmation": "Confirmation d’une connexion",
+    "kind_pairing_invite": "Invitation à se connecter",
+    "kind_pairing_response": "Réponse à une invitation",
     "outbox": "Envoi",
+    "sent": "Envoyés",
+    "stage_attention": "À traiter",
+    "stage_delivered": "Remis",
+    "stage_expired": "Non remis",
+    "stage_queued": "En attente d'envoi",
+    "stage_sent": "Envoyé",
     "status": "Pas encore activée. Elle fonctionnera dès que votre bureau sera relié à Pleadli.",
-    "title": "Boîte postale"
+    "taken": "Reçu et pris en compte.",
+    "title": "Boîte postale",
+    "try_again": "Réessayer",
+    "turned_away": "Refusé : {kind}"
   },
   "court_notices": {
     "title": "Avis des tribunaux",

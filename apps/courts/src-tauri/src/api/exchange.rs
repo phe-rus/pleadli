@@ -21,6 +21,9 @@ pub struct WithFile<T: Serialize> {
     value: T,
     file: String,
     name: String,
+    /// How the sealed package was sent on: queued for the postbox, or left for the file. None for answers that only a file carries.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    delivery: Option<serde_json::Value>,
 }
 
 pub async fn get_identity(State(s): State<AppState>) -> ApiResult<Option<RegistryIdentity>> {
@@ -47,11 +50,16 @@ pub async fn list_links(State(s): State<AppState>) -> ApiResult<Vec<Link>> {
 pub struct InviteInput {
     intended_office: String,
     valid_days: i64,
+    /// The DPP office's postbox address, to send the invitation through the postbox as well as giving the file.
+    address: Option<String>,
 }
 
-pub async fn create_invite(State(s): State<AppState>, Json(i): Json<InviteInput>) -> ApiResult<WithFile<Link>> {
+pub async fn create_invite(State(s): State<AppState>, hub: super::relay::SharedHub, Json(i): Json<InviteInput>) -> ApiResult<WithFile<Link>> {
     let (link, bytes) = exchange::create_invite(&s.pool, &i.intended_office, i.valid_days).await?;
-    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "court-invitation.pxpkg".into() }))
+    if let Some(address) = i.address.as_deref().filter(|a| !a.trim().is_empty()) {
+        super::relay::send_invite(&s, &hub, &link.id, address, &bytes).await?;
+    }
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "court-invitation.pxpkg".into(), delivery: None }))
 }
 
 #[derive(Deserialize)]
@@ -59,9 +67,10 @@ pub struct TrustInput {
     fingerprint: String,
 }
 
-pub async fn trust_link(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<TrustInput>) -> ApiResult<WithFile<Link>> {
+pub async fn trust_link(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<TrustInput>) -> ApiResult<WithFile<Link>> {
     let (link, bytes) = exchange::trust_link(&s.pool, &id, &i.fingerprint).await?;
-    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "court-confirmation.pxpkg".into() }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "court-confirmation.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 #[derive(Deserialize)]
@@ -90,9 +99,10 @@ pub struct Accepted {
     case_id: String,
 }
 
-pub async fn accept_filing(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<AcceptInput>) -> ApiResult<WithFile<Accepted>> {
+pub async fn accept_filing(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<AcceptInput>) -> ApiResult<WithFile<Accepted>> {
     let (case_id, bytes) = exchange::accept_filing(&s.pool, &id, &i.court_number, &i.decided_by).await?;
-    Ok(Json(WithFile { value: Accepted { case_id }, file: B64.encode(bytes), name: "court-receipt.pxpkg".into() }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: Accepted { case_id }, file: B64.encode(bytes), name: "court-receipt.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 #[derive(Deserialize)]
@@ -101,9 +111,10 @@ pub struct RecordWithdrawalInput {
     decided_by: String,
 }
 
-pub async fn record_withdrawal(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<RecordWithdrawalInput>) -> ApiResult<WithFile<Accepted>> {
+pub async fn record_withdrawal(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<RecordWithdrawalInput>) -> ApiResult<WithFile<Accepted>> {
     let (case_id, bytes) = exchange::record_withdrawal(&s.pool, &id, &i.decided_by).await?;
-    Ok(Json(WithFile { value: Accepted { case_id }, file: B64.encode(bytes), name: "withdrawal-receipt.pxpkg".into() }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: Accepted { case_id }, file: B64.encode(bytes), name: "withdrawal-receipt.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 #[derive(Deserialize)]
@@ -116,9 +127,10 @@ pub struct RejectInput {
 #[derive(Serialize)]
 pub struct Rejected {}
 
-pub async fn reject_filing(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<RejectInput>) -> ApiResult<WithFile<Rejected>> {
+pub async fn reject_filing(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<RejectInput>) -> ApiResult<WithFile<Rejected>> {
     let bytes = exchange::reject_filing(&s.pool, &id, &i.reason, &i.decided_by).await?;
-    Ok(Json(WithFile { value: Rejected {}, file: B64.encode(bytes), name: "court-receipt.pxpkg".into() }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: Rejected {}, file: B64.encode(bytes), name: "court-receipt.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 // ---- Court -> prison: facilities that invited this registry, and the orders sent to them.
@@ -136,7 +148,7 @@ pub struct AnswerInput {
 
 pub async fn answer_prison_invite(State(s): State<AppState>, Json(i): Json<AnswerInput>) -> ApiResult<WithFile<PrisonLink>> {
     let (link, bytes) = custody_exchange::accept_invite(&s.pool, &decode(&i.file)?, i.contact.as_deref()).await?;
-    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "answer-to-prison.pxpkg".into() }))
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "answer-to-prison.pxpkg".into(), delivery: None }))
 }
 
 pub async fn import_prison_package(State(s): State<AppState>, Json(i): Json<FileInput>) -> ApiResult<PrisonImported> {
@@ -152,9 +164,10 @@ pub struct SendOrderInput {
 #[derive(Serialize)]
 pub struct Sent {}
 
-pub async fn send_order(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
+pub async fn send_order(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
     let (bytes, name) = custody_exchange::export_order(&s.pool, &id, &i.link_id).await?;
-    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name, delivery: Some(delivery) }))
 }
 
 pub async fn prison_reports(State(s): State<AppState>) -> ApiResult<Vec<custody_exchange::PrisonReport>> {
@@ -178,21 +191,23 @@ pub async fn list_firm_links(State(s): State<AppState>) -> ApiResult<Vec<FirmLin
 
 pub async fn answer_firm_invite(State(s): State<AppState>, Json(i): Json<AnswerInput>) -> ApiResult<WithFile<FirmLink>> {
     let (link, bytes) = firm_exchange::accept_invite(&s.pool, &decode(&i.file)?, i.contact.as_deref()).await?;
-    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "answer-to-firm.pxpkg".into() }))
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "answer-to-firm.pxpkg".into(), delivery: None }))
 }
 
 pub async fn import_firm_package(State(s): State<AppState>, Json(i): Json<FileInput>) -> ApiResult<FirmImported> {
     Ok(Json(firm_exchange::import_package(&s.pool, &decode(&i.file)?).await?))
 }
 
-pub async fn notify_order(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
+pub async fn notify_order(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
     let (bytes, name) = firm_exchange::export_order_copy(&s.pool, &id, &i.link_id).await?;
-    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name, delivery: Some(delivery) }))
 }
 
-pub async fn notify_sitting(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
+pub async fn notify_sitting(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<SendOrderInput>) -> ApiResult<WithFile<Sent>> {
     let (bytes, name) = firm_exchange::export_hearing(&s.pool, &id, &i.link_id).await?;
-    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: Sent {}, file: B64.encode(bytes), name, delivery: Some(delivery) }))
 }
 
 pub async fn notice_deliveries(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<FirmDelivery>> {
@@ -216,15 +231,17 @@ pub struct FilingDecision {
     reason: Option<String>,
 }
 
-pub async fn accept_firm_filing(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FilingDecision>) -> ApiResult<WithFile<Accepted>> {
+pub async fn accept_firm_filing(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<FilingDecision>) -> ApiResult<WithFile<Accepted>> {
     let (case_id, bytes) = firm_exchange::accept_firm_filing(&s.pool, &id, &i.decided_by).await?;
-    Ok(Json(WithFile { value: Accepted { case_id }, file: B64.encode(bytes), name: "filing-receipt.pxpkg".into() }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: Accepted { case_id }, file: B64.encode(bytes), name: "filing-receipt.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 #[derive(Serialize)]
 pub struct Nothing {}
 
-pub async fn return_firm_filing(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FilingDecision>) -> ApiResult<WithFile<Nothing>> {
+pub async fn return_firm_filing(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<FilingDecision>) -> ApiResult<WithFile<Nothing>> {
     let bytes = firm_exchange::return_firm_filing(&s.pool, &id, i.reason.as_deref().unwrap_or(""), &i.decided_by).await?;
-    Ok(Json(WithFile { value: Nothing {}, file: B64.encode(bytes), name: "filing-receipt.pxpkg".into() }))
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: Nothing {}, file: B64.encode(bytes), name: "filing-receipt.pxpkg".into(), delivery: Some(delivery) }))
 }

@@ -18,7 +18,7 @@ export type RelaySent = {
 }
 export type RelayInvitation = { officeName: string; fingerprint: string; intendedStation: string; expiresAt: number }
 export type RelayReceived = { id: string; from: string; kind: string; size: number; status: 'new' | 'imported' | 'refused'; reason: string | null; arrivedAt: number; handledAt: number | null; invitation: RelayInvitation | null }
-export type RelayStatus = { ready: boolean; whyNot: string | null; address: string | null; site: string; last: { at: number | null; error: string | null }; sent: RelaySent[]; received: RelayReceived[] }
+export type RelayStatus = { ready: boolean; whyNot: string | null; address: string | null; name?: string | null; site: string; last: { at: number | null; error: string | null }; sent: RelaySent[]; received: RelayReceived[] }
 
 const post = (path: string, body: unknown = {}) => api(path, { method: 'POST', body: JSON.stringify(body) })
 

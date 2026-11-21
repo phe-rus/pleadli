@@ -1373,7 +1373,7 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         // The postbox rides on the licence the same Orchestra holds.
         let relay = crate::domain::relay::Relay::new(state.pool.clone(), state.vault_root.clone(), o.clone());
         tauri::async_runtime::spawn(relay.clone().run());
-        api = api.nest("/relay", relay::routes(relay));
+        api = api.nest("/relay", relay::routes(relay.clone())).layer(axum::Extension(relay));
         api = api.nest("/orchestra", orchestra::routes(o));
     }
 
@@ -1491,6 +1491,9 @@ mod court_api {
         value: T,
         file: String,
         name: String,
+        /// How the sealed package was sent on: queued for the postbox, or left for the file.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        delivery: Option<serde_json::Value>,
     }
     #[derive(Serialize)]
     pub struct Nothing {}
@@ -1506,7 +1509,7 @@ mod court_api {
     }
     pub async fn accept_invite(State(s): State<AppState>, Json(i): Json<AnswerInput>) -> ApiResult<Sealed<CourtLink>> {
         let (link, bytes) = court_exchange::accept_invite(&s.pool, &decode(&i.file)?, i.contact.as_deref()).await?;
-        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "answer-to-court.pxpkg".into() }))
+        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "answer-to-court.pxpkg".into(), delivery: None }))
     }
 
     #[derive(Deserialize)]
@@ -1536,17 +1539,25 @@ mod court_api {
         decision: String,
         reason: Option<String>,
     }
-    pub async fn withdraw(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<WithdrawalInput>) -> ApiResult<Sealed<Nothing>> {
+    pub async fn withdraw(State(s): State<AppState>, relay: Option<axum::Extension<Arc<crate::domain::relay::Relay>>>, Path(id): Path<String>, Json(i): Json<WithdrawalInput>) -> ApiResult<Sealed<Nothing>> {
         let by = s.security.actor().map(|a| a.name);
         let (bytes, name) = court_exchange::export_withdrawal(&s.pool, &id, &i.decision, i.reason.as_deref(), by.as_deref(), "file").await?;
-        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name }))
+        let delivery = match &relay {
+            Some(axum::Extension(r)) => Some(r.dispatch_court(&bytes).await),
+            None => None,
+        };
+        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name, delivery }))
     }
     pub async fn filing_sheet(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SheetInput>) -> ApiResult<crate::domain::documents::Document> {
         Ok(Json(court_exchange::filing_sheet(&s.pool, &id, &i.court_level, &i.court_name, i.filed_by.as_deref()).await?))
     }
-    pub async fn file_to_court(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FilingInput>) -> ApiResult<Sealed<Nothing>> {
+    pub async fn file_to_court(State(s): State<AppState>, relay: Option<axum::Extension<Arc<crate::domain::relay::Relay>>>, Path(id): Path<String>, Json(i): Json<FilingInput>) -> ApiResult<Sealed<Nothing>> {
         let (bytes, name) = court_exchange::export_filing(&s.pool, &id, &i.court_level, i.filed_by.as_deref(), "file").await?;
-        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name }))
+        let delivery = match &relay {
+            Some(axum::Extension(r)) => Some(r.dispatch_court(&bytes).await),
+            None => None,
+        };
+        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name, delivery }))
     }
 }
 

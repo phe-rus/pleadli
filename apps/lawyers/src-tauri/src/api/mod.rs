@@ -51,6 +51,7 @@ use crate::domain::usages::{self, UsagesInput};
 
 mod network;
 pub mod orchestra;
+pub mod relay;
 
 pub use network::Lan;
 
@@ -1355,7 +1356,13 @@ pub fn core(state: AppState) -> Router {
             Some(o) => Router::new().nest("/orchestra", orchestra::routes(o)),
             None => Router::new(),
         })
+        .merge(if state.orchestra.is_some() { Router::new().nest("/relay", relay::routes()) } else { Router::new() })
         .layer(middleware::from_fn_with_state(state.clone(), gate));
+    // One postbox driver, shared by every build of these routes: the licence is the same Orchestra's.
+    let api = match relay::hub_for(&state) {
+        Some(h) => api.layer(axum::Extension(h)),
+        None => api,
+    };
 
     Router::new()
         .nest("/api", open.merge(api).layer(middleware::from_fn_with_state(state.clone(), network::context)))
@@ -1427,6 +1434,9 @@ mod notices_api {
         value: T,
         file: String,
         name: String,
+        /// How the sealed package was sent on: queued for the postbox, or left for the file.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        delivery: Option<serde_json::Value>,
     }
     #[derive(Serialize)]
     pub struct Nothing {}
@@ -1450,18 +1460,26 @@ mod notices_api {
     pub struct InviteInput {
         intended_court: String,
         valid_days: i64,
+        /// The registry's postbox address, to send the invitation through the postbox as well as giving the file.
+        address: Option<String>,
     }
-    pub async fn create_invite(State(s): State<AppState>, Json(i): Json<InviteInput>) -> ApiResult<Sealed<CourtLink>> {
+    pub async fn create_invite(State(s): State<AppState>, hub: super::relay::SharedHub, Json(i): Json<InviteInput>) -> ApiResult<Sealed<CourtLink>> {
         let (link, bytes) = court_notices::create_invite(&s.pool, &i.intended_court, i.valid_days).await?;
-        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "firm-invitation.pxpkg".into() }))
+        if let Some(address) = i.address.as_deref().filter(|a| !a.trim().is_empty()) {
+            // Reaching another office through the postbox is an administrator's decision; the file route is unchanged.
+            require_admin(&s)?;
+            super::relay::send_invite(&s, &hub, &link.id, address, &bytes).await?;
+        }
+        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "firm-invitation.pxpkg".into(), delivery: None }))
     }
     #[derive(Deserialize)]
     pub struct TrustInput {
         fingerprint: String,
     }
-    pub async fn trust_link(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<TrustInput>) -> ApiResult<Sealed<CourtLink>> {
+    pub async fn trust_link(State(s): State<AppState>, hub: super::relay::SharedHub, Path(id): Path<String>, Json(i): Json<TrustInput>) -> ApiResult<Sealed<CourtLink>> {
         let (link, bytes) = court_notices::trust_link(&s.pool, &id, &i.fingerprint).await?;
-        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "firm-confirmation.pxpkg".into() }))
+        let delivery = super::relay::deliver(&hub, &bytes).await;
+        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "firm-confirmation.pxpkg".into(), delivery: Some(delivery) }))
     }
     #[derive(Deserialize)]
     pub struct FileInput {
@@ -1492,17 +1510,19 @@ mod notices_api {
         text: String,
         filed_by: Option<String>,
     }
-    pub async fn send_filing(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<SendFilingInput>) -> ApiResult<Sealed<Nothing>> {
+    pub async fn send_filing(State(s): State<AppState>, hub: super::relay::SharedHub, Path(id): Path<String>, Json(i): Json<SendFilingInput>) -> ApiResult<Sealed<Nothing>> {
         let paragraphs: Vec<String> = i.text.split("\n").map(str::to_string).collect();
         let (bytes, name) = court_notices::file_to_court(&s.pool, &id, &i.kind, &i.title, &paragraphs, i.filed_by.as_deref()).await?;
-        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name }))
+        let delivery = super::relay::deliver(&hub, &bytes).await;
+        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name, delivery: Some(delivery) }))
     }
     pub async fn matter_filings(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<court_notices::FilingOut>> {
         Ok(Json(court_notices::list_filings(&s.pool, &id).await?))
     }
-    pub async fn file_notice(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<FileNoticeInput>) -> ApiResult<Sealed<Filed>> {
+    pub async fn file_notice(State(s): State<AppState>, hub: super::relay::SharedHub, Path(id): Path<String>, Json(i): Json<FileNoticeInput>) -> ApiResult<Sealed<Filed>> {
         let (made_id, bytes) = court_notices::file_notice(&s.pool, &id, &i.matter_id, &i.decided_by).await?;
-        Ok(Json(Sealed { value: Filed { made_id }, file: B64.encode(bytes), name: "firm-receipt.pxpkg".into() }))
+        let delivery = super::relay::deliver(&hub, &bytes).await;
+        Ok(Json(Sealed { value: Filed { made_id }, file: B64.encode(bytes), name: "firm-receipt.pxpkg".into(), delivery: Some(delivery) }))
     }
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
@@ -1510,9 +1530,10 @@ mod notices_api {
         reason: String,
         decided_by: String,
     }
-    pub async fn return_notice(State(s): State<AppState>, Path(id): Path<String>, Json(i): Json<ReturnInput>) -> ApiResult<Sealed<Nothing>> {
+    pub async fn return_notice(State(s): State<AppState>, hub: super::relay::SharedHub, Path(id): Path<String>, Json(i): Json<ReturnInput>) -> ApiResult<Sealed<Nothing>> {
         let bytes = court_notices::return_notice(&s.pool, &id, &i.reason, &i.decided_by).await?;
-        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name: "firm-receipt.pxpkg".into() }))
+        let delivery = super::relay::deliver(&hub, &bytes).await;
+        Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name: "firm-receipt.pxpkg".into(), delivery: Some(delivery) }))
     }
 }
 

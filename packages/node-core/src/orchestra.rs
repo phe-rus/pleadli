@@ -375,7 +375,10 @@ fn check_licence(signed: &Signed, device: &str, dev_key: Option<&str>) -> Option
 pub struct RelayAccess {
     pub base: String,
     pub token: String,
+    /// Where this computer's mail is delivered. Other offices must send to exactly this.
     pub address: String,
+    /// Which office and institution that address belongs to, as the relay knows them (empty until the relay has answered).
+    pub name: Option<String>,
 }
 
 impl std::fmt::Debug for RelayAccess {
@@ -444,7 +447,7 @@ impl Orchestra {
             return Ok(());
         }
         if kept.is_some() {
-            for key in ["token", "seal_secret", "licence", "state", "reason", "backup_config", "offices", "office", "server_trial_started_at", "last_contact_at", "last_error", "backup_last_attempt_at", "dev_online_key"] {
+            for key in ["token", "seal_secret", "licence", "state", "reason", "backup_config", "offices", "office", "relay_address", "relay_address_name", "relay_address_at", "server_trial_started_at", "last_contact_at", "last_error", "backup_last_attempt_at", "dev_online_key"] {
                 self.unset(key).await?;
             }
             log::info!("orchestra: database came from another computer; its licence and keys were set aside");
@@ -683,8 +686,36 @@ impl Orchestra {
     pub async fn relay_access(&self) -> Option<RelayAccess> {
         let licence = self.licence().await?;
         let token = self.get("token").await.ok().flatten()?;
-        let address = self.get("office").await.ok().flatten().or(licence.address)?;
-        Some(RelayAccess { base: self.base.clone(), token, address })
+        // The address mail really arrives at is the one the relay itself holds for this computer: its office's,
+        // or its institution's when it has no office. The institution address on the licence is NOT always it.
+        // Ask the relay (kept for ten minutes, and remembered for when it cannot be reached), and fall back to the
+        // licence's only while no answer has ever come.
+        let (address, name) = match self.mailbox(&token).await {
+            Some(found) => (found.0, Some(found.1)),
+            None => (self.get("office").await.ok().flatten().or(licence.address)?, None),
+        };
+        Some(RelayAccess { base: self.base.clone(), token, address, name })
+    }
+
+    /// (address, description) the relay delivers this computer's mail to, from the relay's `whoami`.
+    async fn mailbox(&self, token: &str) -> Option<(String, String)> {
+        let fresh = self.get_i64("relay_address_at").await.is_some_and(|at| now() - at < 10 * 60 * 1000);
+        let kept = self.get("relay_address").await.ok().flatten().zip(self.get("relay_address_name").await.ok().flatten());
+        if fresh && kept.is_some() {
+            return kept;
+        }
+        match self.call(reqwest::Method::GET, "relay/whoami", None, Some(token)).await {
+            Ok(v) => {
+                let address = v.get("address").and_then(Value::as_str)?.to_string();
+                let name = v.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
+                let _ = self.set("relay_address", &address).await;
+                let _ = self.set("relay_address_name", &name).await;
+                let _ = self.set("relay_address_at", &now().to_string()).await;
+                Some((address, name))
+            }
+            // Offline or refused: the last answer is still the best one there is.
+            Err(_) => kept,
+        }
     }
 
     // ---- papers to /verify ----

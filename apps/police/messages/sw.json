@@ -2072,7 +2072,7 @@
       "checking": "Inakagua…",
       "checked": "pleadli.com imejibu",
       "institution": "Taasisi",
-      "address": "Anwani ya Orchestra",
+      "address": "Anwani ya taasisi",
       "seats": "Kompyuta kwenye leseni hii",
       "expires": "Leseni inaisha",
       "valid_until": "Inafanya kazi bila mtandao hadi {date}",
@@ -2080,7 +2080,8 @@
       "never": "Bado",
       "device": "Namba ya kompyuta",
       "device_hint": "Isome ikiwa msaada wa Pleadli utauliza ni kompyuta gani.",
-      "cannot_verify": "Nakala hii ya Pleadli Police bado haiwezi kukagua leseni. Sakinisha toleo rasmi."
+      "cannot_verify": "Nakala hii ya Pleadli Police bado haiwezi kukagua leseni. Sakinisha toleo rasmi.",
+      "postbox_address": "Anwani ya kupokelea (sanduku la posta)"
     },
     "activate": {
       "title": "Ufunguo wa leseni",
@@ -2240,7 +2241,7 @@
     "inbox": "Zilizopokelewa",
     "intro": "Rufaa na stakabadhi kwenda na kutoka kwa DPP na mahakamani zinafika hapa.",
     "outbox": "Za kutuma",
-    "status": "Bado haijawashwa. Itafanya kazi ofisi yako ikiunganishwa na Pleadli.",
+    "status": "Kompyuta hii haijaunganishwa na sanduku la posta la Pleadli. Hadi hapo, mafaili husafirishwa kwa kusafirisha na kuingiza.",
     "title": "Sanduku la posta",
     "sent": "Zilizotumwa",
     "empty_sent": "Hakuna kilichotumwa bado.",
@@ -2471,6 +2472,12 @@
     "decline": "Kataa",
     "retry": "Jaribu tena",
     "turned_away": "Kimekataliwa: {kind} kutoka {from}",
-    "connected": "Imeunganishwa na Pleadli kama {address}."
+    "checking": "Inakagua muunganisho na Pleadli…",
+    "connected": "Imeunganishwa na Pleadli kama {address}.",
+    "address_title": "Anwani yako ya kupokelea",
+    "address_hint": "Ofisi nyingine lazima zitume kwa anwani hii hasa.",
+    "address_copy": "Nakili",
+    "address_copied": "Imenakiliwa",
+    "address_unknown": "Haijulikani bado. Unganisha na Pleadli ili kuiona."
   }
 }

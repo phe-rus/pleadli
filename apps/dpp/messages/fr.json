@@ -2305,7 +2305,7 @@
       "checking": "Vérification…",
       "checked": "pleadli.com a répondu",
       "institution": "Institution",
-      "address": "Adresse Orchestra",
+      "address": "Adresse de l'institution",
       "seats": "Ordinateurs sur cette licence",
       "expires": "Fin de la licence",
       "valid_until": "Fonctionne hors ligne jusqu'au {date}",
@@ -2313,7 +2313,8 @@
       "never": "Pas encore",
       "device": "Numéro de l'ordinateur",
       "device_hint": "À lire si l'assistance Pleadli demande de quel ordinateur il s'agit.",
-      "cannot_verify": "Cette copie de Pleadli DPP ne peut pas encore vérifier les licences. Installez la version publiée."
+      "cannot_verify": "Cette copie de Pleadli DPP ne peut pas encore vérifier les licences. Installez la version publiée.",
+      "postbox_address": "Adresse de réception (boîte postale)"
     },
     "activate": {
       "title": "Clé de licence",
@@ -2474,7 +2475,7 @@
     "inbox": "Réception",
     "intro": "Les dossiers, renvois et décisions échangés avec la police et les tribunaux arrivent ici.",
     "outbox": "Envoi",
-    "status": "Pas encore activée. Elle fonctionnera dès que votre bureau sera relié à Pleadli.",
+    "status": "Cet ordinateur n'est pas relié à la boîte aux lettres Pleadli. D'ici là, les fichiers circulent par export et import.",
     "title": "Boîte postale",
     "sent": "Envoyés",
     "empty_sent": "Rien n'a encore été envoyé.",
@@ -2568,6 +2569,16 @@
     "stage_delivered": "Remis",
     "stage_attention": "À traiter",
     "stage_expired": "Non remis",
-    "connected": "Connecté à Pleadli sous l’adresse {address}."
+    "checking": "Vérification de la connexion à Pleadli…",
+    "connected": "Connecté à Pleadli sous l’adresse {address}.",
+    "invitation": "{name} ({kind}) demande à se connecter",
+    "invitation_body": "Lisez-leur ce code et vérifiez qu’il correspond au leur avant de leur faire confiance : {fingerprint}",
+    "answer": "Répondre à l'invitation",
+    "decline": "Refuser",
+    "address_title": "Votre adresse de réception",
+    "address_hint": "Les autres bureaux doivent écrire exactement à cette adresse.",
+    "address_copy": "Copier",
+    "address_copied": "Copié",
+    "address_unknown": "Pas encore connue. Connectez-vous à Pleadli pour la voir."
   }
 }

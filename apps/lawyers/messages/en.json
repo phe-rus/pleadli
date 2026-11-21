@@ -2142,7 +2142,7 @@
       "checking": "Checking…",
       "checked": "pleadli.com answered",
       "institution": "Institution",
-      "address": "Orchestra address",
+      "address": "Institution address",
       "seats": "Computers on this licence",
       "expires": "Licence ends",
       "valid_until": "Works offline until {date}",
@@ -2150,7 +2150,8 @@
       "never": "Not yet",
       "device": "Computer number",
       "device_hint": "Read this out if Pleadli support asks which computer this is.",
-      "cannot_verify": "This copy of Pleadli Lawyers cannot check licences yet. Install the released version."
+      "cannot_verify": "This copy of Pleadli Lawyers cannot check licences yet. Install the released version.",
+      "postbox_address": "Receiving address (Postbox)"
     },
     "activate": {
       "title": "Licence key",
@@ -2317,13 +2318,38 @@
     }
   },
   "postbox": {
+    "address_copied": "Copied",
+    "address_copy": "Copy",
+    "address_hint": "Other offices must send to exactly this address.",
+    "address_title": "Your receiving address",
+    "address_unknown": "Not known yet. Connect to Pleadli to see it.",
+    "check_now": "Check now",
+    "checking": "Checking the connection to Pleadli…",
+    "connected": "Connected to Pleadli as {address}.",
     "empty_inbox": "Nothing has arrived yet.",
     "empty_outbox": "Nothing is waiting to be sent.",
+    "empty_sent": "Nothing has been sent yet.",
     "inbox": "Inbox",
     "intro": "Papers to and from courts, clients and other firms arrive here.",
+    "kind_court_notice": "Notice from the court",
+    "kind_court_notice_receipt": "Your answer to a notice",
+    "kind_firm_filing": "Your filing in a case",
+    "kind_firm_filing_receipt": "The registry's answer to your filing",
+    "kind_pairing_confirmation": "Confirmation of a connection",
+    "kind_pairing_invite": "Invitation to connect",
+    "kind_pairing_response": "Answer to an invitation",
     "outbox": "Outbox",
+    "sent": "Sent",
+    "stage_attention": "Needs attention",
+    "stage_delivered": "Delivered",
+    "stage_expired": "Not delivered",
+    "stage_queued": "Waiting to send",
+    "stage_sent": "Sent",
     "status": "Not switched on yet. It will work once your office is connected to Pleadli.",
-    "title": "Postbox"
+    "taken": "Received and taken in.",
+    "title": "Postbox",
+    "try_again": "Try again",
+    "turned_away": "Turned away: {kind}"
   },
   "court_notices": {
     "title": "Court notices",

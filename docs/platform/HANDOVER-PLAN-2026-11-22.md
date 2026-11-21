@@ -238,3 +238,134 @@ Built: `node-core::postbox` (inbox status, refusal kept with reason, reopen, ret
 Verified: pairing through the relay (invite, answer, typed fingerprint, confirmation); referral with a statement and an exhibit file sent while DPP was closed (Sent only), DPP restarted and collected it, Opened came back as a signed receipt, a person accepted it and Accepted showed at Police with the DPP reference; attachment hashes equal at both ends; relay stopped mid-send (queued, error visible, survived a Police restart) and recovered with Check now; invalid address 404; unconnected sender 403; other office GET or ack 404; no or bad token 401; same id again = duplicate; id of another sender 409; wrong sha 400; replayed, corrupted and junk packages refused at DPP without a second case; no tokens or keys in the app log. Rust suites: node-core postbox 6, DPP 50, Police 32; tsc for www, Police and DPP clean.
 
 Not done or not proven: two machines; the Account approval was done in the local database, not the Account page; Police's own window screen was not captured (it rejected an injected session); the DPP duplicate-handling change was compiled and type checked but the debug binary was not rerun after it; "Delivered" is shown by the relay once the recipient stored the package, and a quick Check now can jump from Sent to Opened; Prisons, Courts and Lawyers do not use the postbox; no directory or office-side approval screen in the apps; 25 MB per message.
+
+
+## Relay security acceptance, 2026-11-22 (Police to DPP; still two isolated installations on ONE computer)
+
+**Correction to the section above.** Its "replayed, corrupted and junk packages refused" line overstated the corrupt case. The corrupt test flipped a byte of a package whose id DPP already held, so DPP's replay check (`incoming_packages WHERE id`, which runs before `envelope::open`) answered "already received" and the signature and hash checks were never reached. It proved replay detection only. Replay detection was not weakened. The new tests below use packages generated at test time with fresh ids.
+
+**How the tests were built.** `packages/interchange/examples/forge.rs` (test tool, never ships) damages a genuine package: `body`, `signature`, `truncate`, `append`, `meta-sha`, `meta-to`, `resign`, `resign-body` (a consistent header re-signed by a stranger's key). The runner is `~/.pleadli-relay/s11.ts`. Each package is a new Police referral sealed through the real export (`POST /exchange/referrals/{id}/export`, route `file`), so it carries a new id and two real files. Each negative case checks the refusal wording (not "already received"), that incoming rows and vault files did not change, and then that the genuine package with the same id is still accepted, which shows the id was not burnt and the damage caused the refusal.
+
+**Live results against the rebuilt DPP binary (22 of 22, run twice, the second time on the final binary):**
+
+| # | Case | Result |
+|---|---|---|
+| 1 | valid unseen package | accepted, +1 row, +2 vault files |
+| 2 | identical replay | refused "already been received", nothing added; through the relay it is marked imported, no failure, no new row (the duplicate handling, now run in a binary) |
+| 3 | body bit flipped, body truncated, bytes appended | refused "altered, or is damaged", reached the hash and AEAD check, nothing kept |
+| 4 | signature bit flipped | refused "signature does not match the station this office trusts" |
+| 5 | header hash field or addressee changed; consistent header (with or without a damaged body) re-signed by a stranger | refused as a bad signature |
+| 6 | station DPP never paired with (real identity, validly signed, sealed to DPP) | 403 "not connected", nothing kept |
+| 7 | DPP-addressed package fed to Police | refused, but for "unknown sender", NOT for the recipient check. Do not count this as proof of the recipient check; that is the DPP unit test below |
+| R | tampered body posted through the relay | relay accepts it (opaque, hash of the damaged bytes matches), DPP collects it and shows it as "Turned away: referral" with the safe reason; a body that does not match the stated `x-pleadli-sha256` is refused 400 at the relay |
+| 10 | diagnostics | 24 refusals audited (reason plus the sender name and fingerprint the header claims); no case text, reference, national id or key material anywhere |
+
+**Cases that need the sender's private key, covered in Rust (cannot be made from outside):** `envelope.rs` `a_correctly_signed_package_that_does_not_add_up_is_refused` (validly signed header that misstates the body hash; validly signed damaged body with a matching hash; a file whose stated hash is not its bytes' hash). DPP `domain/interchange.rs` tests (6, new): replay adds no row and no file; a package addressed to another office is refused ("different DPP office") and keeps nothing; a file with the wrong hash keeps nothing; a good file followed by a bad, empty, path-like or repeated file id keeps nothing; a database failure after the files were written removes them; a refusal keeps the reason and claimed sender but no case content. Suites: interchange 7, DPP 56 (was 50), all pass.
+
+**Defects found and fixed in `import_package` (DPP):** (a) file ids were checked inside the write loop, so a package with a good first file and a bad second id left the first sealed file in the vault with no row (partial import); (b) a failed database insert after the vault writes also left the files. Now all ids are checked before anything is written, a failed write or insert removes the package's files (never when a row already owns that id, so a simultaneous second copy cannot delete the first copy's files), and the package id itself must be a plain identifier because it becomes a vault path component. The new partial-import test is written against the new behaviour; I did not run it against the old code, so "it used to fail" is from reading the old loop, not from a red run.
+
+**Real interface.**
+- *Account approval:* signed in to the local Account page as the seed owner account, a request from the Masindi demo office to the DPP office (made with the relay API, as an app does) appeared under "Asking to connect with you", was approved with the Approve button, moved to Connected, and the relay then accepted a post from Masindi (it returned 403 before). `decided_by` is the owner's email. Screenshot `shots/account-postbox-approved.jpg`.
+- *Not done:* ending the old Police to DPP link through the page. The click on "End connection" was refused by the permission classifier as destructive, so the old link is still the one approved earlier by SQL (`relaytest-admin`). Revoke and "re-approve after revoke" were not exercised. Ask the owner before doing it.
+- *DPP native window* (debug binary built from current source, driven with tauri-driver): Postbox shows "Connected to Pleadli as ug.dpp.demo-hoima.office.", Check now, and the damaged package as "Turned away" with its reason; Police stations shows the two open invitations and the office fingerprint. Shots `shots/dpp-window-postbox.png`, `shots/dpp-window-stations.png`.
+- *Police:* the native window asks for the administrator's password, set in an earlier session and not known now, so I did not sign in there (I did not guess or reset it). Police's Exchange and Postbox screens were captured in the Chrome dev view on :3001 after the dev sign-in (`shots/police-exchange-2.jpg`, `shots/police-postbox-connected.jpg`): "Connected to Pleadli as ug.police.demo-albertine.hoima-central", both offices Trusted. This is the dev view, not the window. Still not captured: Police's own window.
+- *Stale text fixed:* Account Postbox note and the www "How Pleadli works" and Postbox status copy (en, fr, sw) no longer say nothing sends through the relay; they say Police and DPP do, tested on one computer, not two machines, and that Courts, Lawyers and Prisons do not. Police and DPP Postbox status now reads "Checking the connection to Pleadli…" while loading, the relay's own reason when not ready, and "Connected to Pleadli as ..." when ready; the old "Not switched on yet" wording is gone from both apps. It remains, correctly, in Courts, Lawyers and Prisons, which are not on the relay. tsc clean for www, Police and DPP.
+
+**Logs and build freshness.** Police and DPP app logs, the dev-server and driver logs and the www dev log were searched for bearer tokens, the session token, test mailbox tokens, `x-pleadli` headers, passwords, passphrases, key words, 64-hex strings and case content: none (the only "secret" hits are wrangler's "Using secrets defined in .env.local", no values). The relay stores only metadata plus sealed bytes. Binary freshness: `scripts/native-binary.sh` was run for Police (current), DPP (was stale, rebuilt) and Prisons (current: built 2026-11-21 23:45, no `.rs`, `.sql` or `Cargo.toml` under `apps/prisons/src-tauri` or `packages` is newer, so the earlier stale-binary finding is resolved). The script does not look at the frontend message files, which Vite serves rather than compiles in.
+
+**Still outstanding / limits (unchanged unless stated):**
+- **The two-machine test is NOT done.** Everything above ran as two isolated data folders on one physical computer, with the relay and Account on localhost.
+- Police's own native window was not captured. Revoke / re-approve through the Account page was not run.
+- A validly signed but dishonest sender (valid key, wrong file hash) is proven in Rust only, not through a window.
+- Residual: the refusal audit line stores the sender name and fingerprint the (unauthenticated) header claims, up to the 16 KB header limit; it is not case content, but it is attacker-chosen text. Truncate it if audit lines are ever shown unescaped.
+- Test leftovers in the isolated stores: about 20 incoming referrals CRB 001/2026 in DPP and the matching Police referrals, two "Rogue test" invitations at DPP, an approved Masindi link and one junk message at the local relay. Nothing touches real data folders (the Police app log goes to the default log folder, which holds no secrets).
+- The relay is not extended to Courts, Lawyers or Prisons; that waits on this gate and on the two-machine run.
+- Nothing committed, pushed, released, deployed or sent to CI.
+
+## Courts, Lawyers and Prisons on the shared Postbox (2026-11-22, later)
+
+**Status in one line:** written and unit-tested in Rust and TypeScript for all supported paths; NOT yet run in native windows, NOT run between two machines. Treat everything below as "built and unit-tested", not "accepted".
+
+**One postbox, not three.** `packages/node-core/src/hub.rs` (feature `hub`) is the single driver Courts, Lawyers, Prisons and DPP-to-Courts use. It reuses `postbox.rs` (outbox, inbox, retry, backoff, ack) and the interchange envelope (seal, sign, pair). Police to DPP keeps its own tested code path unchanged. An app supplies only an `Adapter` (open a package, import it, report what happened).
+
+**Supported paths (the whole table; `packages/interchange/src/authorization.rs`, mirrored in `www/src/lib/relay-paths.ts`):**
+
+| From | To | Kinds |
+|---|---|---|
+| Police | DPP | referral |
+| DPP | Police | receipt, decision notice |
+| DPP | Courts | case filing, case withdrawal |
+| Courts | DPP | filing receipt |
+| Courts | Lawyers | court notice, firm filing receipt |
+| Lawyers | Courts | court notice receipt, firm filing |
+| Courts | Prisons | custody order |
+| Prisons | Courts | custody receipt, custody report |
+
+Receiving a kind does not grant the right to send another. Each direction lists only what that side's domain model already issues (Courts to DPP: receipts only; Prisons to Courts: receipts and reports; Lawyers to Courts: filings and notice receipts).
+
+**Police and Prisons: unsupported workflow, not a broken integration.** There is no message type, no permission and no route between them, in the library, the relay or any app. This is deliberate: the procedures, authorized senders and recipients, and required documents for any Police-to-Prisons transfer have not been established with the institutions, and none is invented here. Adding a Police and Prisons path needs legal and institutional validation first, then one line in each table with the authority for it, and the tests then require both tables to agree.
+
+**Where authorization is enforced (defence in depth; no single layer is trusted):**
+1. *Sender side:* `hub::dispatch_to` refuses to queue a kind the sender's institution may not send to that recipient's institution.
+2. *Relay (www `post()`, `askToConnect`):* from the two addresses' licensed institution types it refuses a cross-institution post whose `x-pleadli-kind` has no path (403 `not_permitted`), and refuses connection requests between kinds with no path. The relay never opens a package, knows no legal workflow beyond this table and cannot see inside the signature. `www/tests/relay-paths.test.ts` fails if the TypeScript table and the Rust table differ and checks Police/Prisons are closed both ways.
+3. *Receiving application:* `import_package` in Courts, DPP, Lawyers, Prisons and Police independently checks the sender's institution kind (taken from the authenticated, signature-verified package, not from the relay) against the table, then the trusted link, signature, recipient and content. Both carriers (the relay and the file route) and direct calls to the app's own API go through that one function, so a client that bypasses the relay or the sender's check is still refused. Tests: a trusted, validly signed sender sending a forbidden kind is refused through the adapter and through a direct import (Courts, DPP, Lawyers, Prisons; the Prisons test uses a police station sender).
+4. *Link and key:* per-peer trusted link with pinned keys; the relay `from` address must equal the address that peer answered from.
+
+**Concurrency and cleanup (DPP):** referral import takes a process-wide lock so check-new, write-files, store-row and failure cleanup cannot interleave; two regression tests were shown to fail without it (a rejected package cannot remove another import's files).
+
+**Test counts, Rust unit tests only:** interchange 12, node-core hub 4, Police 32, Courts 62, DPP 59, Lawyers 69, Prisons 157, all passing; www 11 (3 new) and `tsc` clean in www and all five apps.
+
+**UI:** a shared `RelayPostbox` in `@pleadli/shell` shows queued/sent/delivered/needs-attention, turned-away packages with the reason and Try again, and connection invitations (answer/decline) where an app receives them (Courts, DPP). Courts, Lawyers and Prisons now use it (Lawyers and Prisons translated en/fr/sw; Courts in English, as the rest of Courts is). Not yet seen in a window.
+
+**Blocked or not done:**
+- Native Tauri-window runs of the new paths (Courts, Lawyers, Prisons, DPP to Courts): not done.
+- Police native Exchange window: the administrator password is unknown; it was not guessed or reset.
+- Connection revocation: not run; the owner must approve ending a link first.
+- Police backup and recovery in a window: not done.
+- Two-machine run: not done. Nothing here was sent to production, committed, pushed or run in CI.
+
+## Critical defect found and fixed: the Postbox showed the wrong address (2026-11-22, later)
+
+**What happened.** In the native DPP window the Postbox said "Connected to Pleadli as ug.dpp.demo-hoima". Mail for that computer is really collected at `ug.dpp.demo-hoima.office`. Courts used the displayed address, the relay accepted the invitation into a mailbox no computer collects, and nothing told either side.
+
+**Trace (authoritative source).** The relay identifies a computer by its token. `www/src/lib/computer-auth.server.ts` gives it the address of its **office** (unit) when the server-side computer record has one, otherwise its institution's. The app, however, built its displayed address from the signed licence (`licence.address`, the institution) or a locally chosen `office` setting, which is only used for papers. The relay already had a `whoami` call that nobody used.
+
+**Three addresses, kept apart.** Institution address (on the licence), office address (a unit of the institution), and the delivery address (what the relay holds for this computer, either of the first two). Only the delivery address may be shown as "send to this" or used to send.
+
+**Fix.**
+- *Apps (node-core `Orchestra::relay_access`):* the address is asked of the relay (`whoami`, kept ten minutes, remembered for when offline). The licence address is used only until the relay has ever answered. Nothing is built by appending a suffix or guessing from the institution id. `RelayAccess` and every app's relay status now also carry the office and institution name as separate descriptive text.
+- *Postbox screen (shared `ReceivingAddress` in `@pleadli/shell`, all five apps, en/fr/sw):* "Your receiving address" shown first and large with a Copy button; the office and institution named separately underneath; "Other offices must send to exactly this address." Settings, Pleadli licence now shows "Institution address" and "Receiving address (Postbox)" as separate rows in every app.
+- *Relay (www):* a post to, or a connection request for, an address no licensed computer collects at is refused at once with `422 no_mailbox` and an actionable message, instead of being stored until it expires. The check runs after the connection check, so a stranger cannot use it to discover mailboxes.
+- *Same-institution exception removed from authorization:* previously a message to one of the sender's own institution's addresses skipped the message-type check entirely. Now only the "approved connection" requirement is skipped for an institution's own offices. The kind still needs a defined path between the two institution types, so one DPP office cannot post a referral to another, and a connection request between two offices of one institution is refused.
+
+**Tests.** `www/tests/relay-mailbox.test.ts` runs the real relay handler against real tables with addresses that intentionally differ (institution `ug.dpp.hoima`, offices `.office` and `.annex`, an empty office `.nobody`, a court with no office): whoami returns the office address; posting to the institution address or the empty office is refused with `no_mailbox` and stores nothing; a message to `.office` arrives at `.office` only, `.annex` sees none of it and cannot fetch it; the reply arrives at the court from the office address; a same-institution referral and an unpermitted kind between linked institutions are refused. www 13 tests pass, `tsc` clean in www and all five apps. There is no unit test for the app-side `whoami` caching (it needs a live relay); it is covered by the real windows below.
+
+**Verified in real windows (isolated data, one machine):** DPP window now shows "Your receiving address ug.dpp.demo-hoima.office", office and institution named under it, Connected line agrees. From the real Courts app, inviting the old displayed address returns "No computer collects mail at that address. Ask the office for the receiving address shown on its Postbox." at once and sends nothing.
+
+**Not yet checked:** Police, Lawyers and Prisons windows with the new screen (they share the same component and code, all typecheck); Settings rows seen in a window; whether the Account page lets an administrator assign a computer to an office (how a computer ends up at a unit is decided server-side by the computer record, not by the app).
+
+## Native acceptance, new paths (2026-11-22, later)
+
+Real Tauri windows driven with tauri-driver, each app on its own isolated data folder and Downloads folder (set on the driver command), debug binaries rebuilt from current source with `scripts/native-binary.sh`, local www on :3000 with local test licences for fictional institutions (Courts, Prisons, Lawyers, DPP, Police). One physical machine; **not** a two-machine run. The real data folders under `~/.local/share/com.pleadli.*` were not touched (checked by modification time).
+
+**How the test setup differs from production.** Account approval of each connection was done by editing the local D1 database, not by an administrator on the Account page (the Postbox page approval was tested earlier, Police and DPP). The Prisons window was entered with the officer's session token set in the window's session storage after signing in through the API, because the window asks for a PIN and the officer was created with a password. Setup, licence activation and some actions were driven through each app's own API from the same process, then the result was checked in the window.
+
+| Path | Result |
+|---|---|
+| Courts to DPP (invitation), DPP answers by clicking in its window, Courts trusts with the fingerprint; wrong fingerprint refused | passed |
+| DPP to Courts filing (relay), Courts registers it, receipt to DPP, court case number lands on the DPP file; second accept refused | passed |
+| Lawyers to Courts invitation, Courts answers by clicking, Lawyers trusts | passed |
+| Courts to Lawyers hearing notice; wrong-matter filing refused by the app; filed against the right matter; receipt reaches Courts, which records outcome "filed"; second filing refused | passed |
+| Prisons to Courts invitation, answered by clicking in the Courts window, Prisons trusts | passed |
+| Courts to Prisons remand order; Prisons collects it; Prisons returns it with a reason; receipt reaches Courts; second answer refused | passed |
+| Prisons recording the order against an admitted prisoner (the full custody path) | **not run** (needs a prisoner admitted through reception) |
+| Prisons custody report back to the court | **not run** |
+| Courts to Lawyers order copy, Lawyers firm filing and its receipt | **not run** |
+| Police window, Police native Exchange, revocation, Police backup and recovery | **not run** (Police admin password unknown, not guessed; revoking a link needs the owner's go-ahead) |
+| Two machines | **not run** |
+
+**Findings fixed during the run:** the Postbox address defect above; "waiting for a person" shown for packages already dealt with (now "Received and taken in."). **Residual:** when an invitation is refused at once for a dead address the link record stays in the app as "invited" (nothing was sent); the user sees the reason.
+
+**Tests after the address fix:** www 13 and `tsc` clean; node-core hub 4; Courts 62; DPP 59; `tsc` clean in all five apps. **Not rerun after the address change:** Police (32), Lawyers (69) and Prisons (157) Rust suites, although their binaries compiled and the Lawyers and Prisons windows ran.
+
+**Screens seen in windows:** Courts Postbox (empty, with a filing, with a firm invitation), DPP Postbox (invitation, new receiving address), Lawyers Postbox (receiving address, notice), Prisons Postbox (receiving address, order). Settings rows for the new "Receiving address (Postbox)" and "Institution address" were not looked at in a window.

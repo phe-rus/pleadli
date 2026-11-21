@@ -18,6 +18,7 @@ pub mod security;
 pub mod staff;
 pub mod totp;
 pub mod recordings;
+pub mod relay;
 pub mod reports;
 pub mod rulings;
 #[cfg(debug_assertions)]

@@ -211,7 +211,7 @@
       "real_title": "Ce qui est réel aujourd'hui : le modèle organisationnel",
       "size_body": "C'est ce même modèle qui permet à une application Pleadli de servir un utilisateur seul, une équipe ou une grande organisation : un avocat seul et un cabinet utilisent tous deux Pleadli Lawyers avec le même modèle, structuré différemment. La forme de la hiérarchie revient à chaque organisation ; Pleadli ne suppose pas que toute institution ressemble à une force de police.",
       "size_title": "Un modèle, toutes tailles",
-      "status_note": "Les applications et leurs dossiers existent aujourd'hui, et Pleadli DPP reçoit déjà des dossiers scellés. L'envoi depuis Pleadli Police n'est pas construit, et aucune application n'envoie encore par le relais Orchestra : une première version du relais est écrite et testée, mais elle n'est pas activée. Les adresses, les certificats, la vérification des pièces et le suivi des affaires sont en construction ; voir la feuille de route.",
+      "status_note": "Les applications et leurs dossiers existent aujourd'hui. Pleadli Police peut envoyer un renvoi à Pleadli DPP par le relais Orchestra ; cela a été essayé entre deux installations séparées sur un seul ordinateur, pas encore entre deux machines. Courts, Lawyers et Prisons n'utilisent pas encore le relais. Adresses, certificats, vérification des papiers et suivi des dossiers sont en construction ; voir la feuille de route.",
       "title": "Comment fonctionne Pleadli"
     },
     "index": {
@@ -252,8 +252,8 @@
         "strangers": "Pas de courrier non sollicité. Un bureau ne reçoit que d'un bureau qu'il a approuvé, et c'est un administrateur nommé qui prend cette décision."
       },
       "rules_title": "Les règles qu'elle respectera",
-      "status_body": "Cette page décrit ce que fera la boîte postale et les règles qu'elle respectera. Elle ne fonctionne pas encore pour les bureaux : une première version est écrite et testée par Pleadli, mais elle n'est pas activée et aucune application n'envoie par elle. Aujourd'hui, les fichiers passent d'un bureau à l'autre par export et import (clé USB ou courriel), et Pleadli DPP peut déjà recevoir des fichiers scellés.",
-      "status_title": "Pas encore activée",
+      "status_body": "Cette page décrit ce que fait la boîte postale et les règles qu'elle respecte. Pleadli Police peut y envoyer des renvois à Pleadli DPP. Cela a été testé avec deux installations séparées sur un seul ordinateur, et pas encore entre deux machines. Courts, Lawyers et Prisons ne l'utilisent pas encore : leurs fichiers passent par export et import (clé USB ou e-mail).",
+      "status_title": "Fonctionne entre Police et DPP",
       "steps": {
         "collect": {
           "body": "L'application du bureau destinataire vérifie le courrier toutes les dix à quinze minutes, le relève, le vérifie et l'ouvre. Une personne décide de l'accepter ou non.",
@@ -707,7 +707,7 @@
       "empty": "Aucune connexion pour l'instant. Un bureau la demande depuis son application Pleadli ; vous décidez ici.",
       "ended_title": "Refusés ou terminés",
       "lead": "Quels bureaux peuvent écrire au vôtre, et auxquels vous pouvez écrire. Pleadli transporte des fichiers scellés entre bureaux approuvés et ne les lit jamais.",
-      "note": "La boîte postale est en construction. Vos applications ne l'utilisent pas encore : pour l'instant, les fichiers passent par export et import.",
+      "note": "Pleadli Police et Pleadli DPP envoient et collectent par la boîte postale. Les autres applications ne l'utilisent pas encore : pour elles, les fichiers passent par export et import.",
       "revoke": "Mettre fin à la connexion",
       "revoke_hint": "Le courrier encore en attente entre vos deux bureaux est supprimé.",
       "revoked": "Terminée",

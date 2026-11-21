@@ -173,6 +173,10 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     let me = require_identity(pool).await?;
     let peeked = envelope::peek(bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
     let header = peeked.header.clone();
+    // Whatever carrier brought it, this institution decides for itself whether that kind of sender may send that kind of package.
+    if let Err(why) = pleadli_interchange::authorization::check(header.from.kind, pleadli_interchange::identity::IdentityKind::CourtRegistry, &header.kind) {
+        return bad(why);
+    }
     if header.created_at > now() + 86_400_000 {
         return bad("This package is dated in the future. Check the clock of the computer that sent it.");
     }

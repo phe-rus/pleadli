@@ -211,7 +211,7 @@
       "real_title": "What's real today: the organizational model",
       "size_body": "The same organizational model is what lets a Pleadli application serve an individual user, a team, or a larger organization, an individual lawyer and a law firm both use Pleadli Lawyers through the same model, structured differently. The hierarchy shape is up to each organization, Pleadli doesn't assume every institution looks like a police force.",
       "size_title": "One model, any size",
-      "status_note": "The apps and their records exist today, and Pleadli DPP can already receive sealed files. Sending them from Pleadli Police is not built, and no app sends through the Orchestra relay yet: a first version of the relay is written and tested, but it is not switched on. Addresses, certificates, paper checking and case tracking are being built now; see the Roadmap.",
+      "status_note": "The apps and their records exist today. Pleadli Police can send a referral to Pleadli DPP through the Orchestra relay; this has been run between two separate installations on one computer, not yet between two machines. Courts, Lawyers and Prisons do not use the relay yet. Addresses, certificates, paper checking and case tracking are being built now; see the Roadmap.",
       "title": "How Pleadli works"
     },
     "index": {
@@ -252,8 +252,8 @@
         "strangers": "No unsolicited mail. An office can only receive from an office it has approved, and a named administrator makes that decision."
       },
       "rules_title": "The rules it will keep",
-      "status_body": "This page describes what the Postbox will do and the rules it will keep. It does not work for offices yet: a first version is written and tested by Pleadli, but it is not switched on and no app sends through it. Today, files move between offices by export and import (a USB stick or e-mail), and Pleadli DPP can already receive sealed files.",
-      "status_title": "Not switched on yet",
+      "status_body": "This page describes what the Postbox does and the rules it keeps. Pleadli Police can send referrals to Pleadli DPP through it. That has been tested with two separate installations on one computer, and has not yet been run between two machines. Courts, Lawyers and Prisons do not use it yet: their files move by export and import (a USB stick or e-mail).",
+      "status_title": "Working between Police and DPP",
       "steps": {
         "collect": {
           "body": "The receiving office's app checks for mail every ten to fifteen minutes, collects it, verifies it and opens it. A person decides whether to accept it.",
@@ -707,7 +707,7 @@
       "empty": "No connections yet. An office asks from its Pleadli app; you decide here.",
       "ended_title": "Declined or ended",
       "lead": "Which offices may send to yours, and which you may send to. Pleadli carries sealed files between approved offices and never reads them.",
-      "note": "The Postbox is being built. Your apps do not send through it yet: for now, files move by export and import.",
+      "note": "Pleadli Police and Pleadli DPP send and collect through the Postbox. The other apps do not use it yet: for them, files move by export and import.",
       "revoke": "End connection",
       "revoke_hint": "Mail still waiting between your two offices is deleted.",
       "revoked": "Ended",

@@ -64,6 +64,8 @@ pub struct Node {
     /// Pleadli Orchestra (the licence, papers to /verify, daily backups), set at
     /// start; never set in tests.
     pub orchestra: std::sync::OnceLock<Arc<pleadli_node_core::orchestra::Orchestra>>,
+    /// The postbox driver (docs/platform/RELAY-DESIGN.md), started once the licence is known; never set in tests.
+    pub relay: std::sync::OnceLock<Arc<pleadli_node_core::hub::Hub>>,
 }
 
 pub type NodeRef = Arc<Node>;
@@ -81,6 +83,7 @@ impl Node {
             discovery_listening: AtomicBool::new(false),
             connector: Default::default(),
             orchestra: std::sync::OnceLock::new(),
+            relay: std::sync::OnceLock::new(),
         })
     }
 }

@@ -537,6 +537,16 @@ pub fn router(state: AppState) -> Router {
             None => Router::new(),
         });
 
+    // The postbox rides on the licence the same Orchestra holds: one driver, shared with every other application.
+    let api = match state.orchestra.clone() {
+        Some(o) => {
+            let hub = pleadli_node_core::hub::Hub::new(pleadli_interchange::identity::IdentityKind::CourtRegistry, state.pool.clone(), o, crate::domain::relay::CourtsAdapter::new(state.pool.clone()));
+            tauri::async_runtime::spawn(hub.clone().run());
+            api.nest("/relay", relay::routes()).layer(axum::Extension(hub))
+        }
+        None => api,
+    };
+
     let api = api.layer(axum::middleware::from_fn_with_state(state.clone(), session::gate)).merge(session::open_routes());
 
     Router::new().nest("/api", api).fallback(not_found).layer(DefaultBodyLimit::max(16 * 1024 * 1024)).with_state(state)
@@ -576,6 +586,7 @@ pub async fn serve_dev(router: Router) {
 
 pub mod exchange;
 pub mod orchestra;
+pub mod relay;
 pub mod session;
 
 #[cfg(test)]

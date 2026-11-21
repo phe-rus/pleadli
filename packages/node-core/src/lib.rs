@@ -23,6 +23,8 @@ pub mod orchestra;
 pub mod paper;
 pub mod site;
 pub mod timezone;
+#[cfg(feature = "hub")]
+pub mod hub;
 #[cfg(feature = "postbox")]
 pub mod postbox;
 #[cfg(feature = "speech")]

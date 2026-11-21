@@ -4476,6 +4476,7 @@ dependencies = [
  "libsqlite3-sys",
  "log",
  "machine-uid",
+ "pleadli-interchange",
  "qrcode",
  "rand_core 0.6.4",
  "reqwest",

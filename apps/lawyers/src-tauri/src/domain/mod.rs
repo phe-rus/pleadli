@@ -28,6 +28,7 @@ pub mod parties;
 pub mod plea;
 pub mod profile;
 pub mod registers;
+pub mod relay;
 pub mod request;
 pub mod security;
 #[cfg(debug_assertions)]

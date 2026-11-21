@@ -1,7 +1,7 @@
 import * as m from '@/paraglide/messages'
 import { listIncoming, listOutgoing, outgoingKindLabels, type Outgoing } from '@/features/interchange'
-import { PostboxView, type PostboxLabels, type PostboxMessage } from '@pleadli/shell'
-import { checkRelay, getRelay, type RelayStatus } from '@/features/relay/data'
+import { PostboxView, ReceivingAddress, type PostboxLabels, type PostboxMessage } from '@pleadli/shell'
+import { answerCourtInvitation, checkRelay, declineCourtInvitation, getRelay, type RelayStatus } from '@/features/relay/data'
 import { Button, buttonVariants } from '@pleadli/ui/button'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
@@ -38,6 +38,8 @@ function RouteComponent() {
 
   const sent = (id?: string | null) => (id ? relay?.sent.find((x) => x.id === id) : undefined)
   const refused = (relay?.received ?? []).filter((r) => r.status === 'refused')
+  const invitations = (relay?.received ?? []).filter((r) => r.status === 'new' && r.invitation)
+  const reload = () => getRelay().then(setRelay).catch(() => {})
   const messages = useMemo<PostboxMessage[]>(
     () => [
       ...incoming.map((i) => ({
@@ -74,14 +76,37 @@ function RouteComponent() {
   const all = useMemo<PostboxMessage[]>(
     () => [
       ...messages,
+      ...invitations.map((r) => ({
+        id: r.id,
+        box: 'inbox' as const,
+        unread: true,
+        party: r.from,
+        at: r.arrivedAt,
+        subject: m['relay.invitation']({ name: r.invitation!.name, kind: r.invitation!.kind }),
+        preview: r.invitation!.fingerprint,
+        body: (
+          <div className="flex flex-col gap-3">
+            <p>{m['relay.invitation_body']({ fingerprint: r.invitation!.fingerprint })}</p>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => answerCourtInvitation(r.id).then(reload).catch(() => {})}>
+                {m['relay.answer']()}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => declineCourtInvitation(r.id).then(setRelay).catch(() => {})}>
+                {m['relay.decline']()}
+              </Button>
+            </div>
+          </div>
+        ),
+      })),
       ...refused.map((r) => ({ id: r.id, box: 'inbox' as const, unread: true, party: r.from, at: r.arrivedAt, subject: m['relay.turned_away']({ kind: r.kind }), preview: r.reason ?? '', body: <p className="whitespace-pre-wrap text-destructive">{r.reason}</p>, state: m['relay.stage_attention']() })),
     ],
-    [messages, refused],
+    [messages, refused, invitations],
   )
 
   return (
     <PostboxView
-      labels={relay?.ready ? { ...labels, status: m['relay.connected']({ address: relay.address ?? '' }) } : labels}
+      header={<ReceivingAddress labels={{ title: m['relay.address_title'](), hint: m['relay.address_hint'](), copy: m['relay.address_copy'](), copied: m['relay.address_copied'](), unknown: m['relay.address_unknown']() }} address={relay?.ready ? relay.address : null} name={relay?.name} />}
+      labels={{ ...labels, status: relay === null ? m['relay.checking']() : relay.ready ? m['relay.connected']({ address: relay.address ?? '' }) : (relay.whyNot ?? labels.status) }}
       messages={all}
       actions={
         <Button size="sm" variant="secondary" onClick={() => checkRelay().then(setRelay).then(() => listIncoming().then(setIncoming)).then(() => listOutgoing().then(setOutgoing)).catch(() => {})}>
