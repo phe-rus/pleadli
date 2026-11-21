@@ -10,7 +10,12 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 pub const DEFAULT_COUNTRY: &str = "UG";
-const BUILT_IN: &str = include_str!("../../rules/uganda.json");
+/// The packs that ship inside the app, by country code. Offices correct them in Settings.
+const BUILT_IN_PACKS: &[(&str, &str)] = &[
+    ("UG", include_str!("../../rules/uganda.json")),
+    ("KE", include_str!("../../rules/kenya.json")),
+    ("CD", include_str!("../../rules/drc.json")),
+];
 const STATUSES: &[&str] = &["draft", "sourced", "reviewed"];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,51 +80,83 @@ pub fn problem(pack: &Pack) -> Option<String> {
     None
 }
 
-fn built_in() -> Pack {
-    serde_json::from_str(BUILT_IN).expect("the pack inside the app is valid JSON")
+/// The pack that ships inside the app for a country, if there is one.
+fn built_in_for(country: &str) -> Option<Pack> {
+    BUILT_IN_PACKS
+        .iter()
+        .find(|(code, _)| *code == country)
+        .map(|(_, body)| serde_json::from_str(body).expect("the pack inside the app is valid JSON"))
 }
 
-/// Make sure the pack that ships with the app is in the table, and that the pack in force has every
-/// rule the app now ships. An office's own edits always win: a rule it already has is never replaced,
-/// but a rule added by a newer release (which the app's code may rely on) is appended as the next version.
-pub async fn ensure_built_in(pool: &SqlitePool) -> Result<(), sqlx::Error> {
-    let pack = built_in();
-    sqlx::query(
-        "INSERT OR IGNORE INTO rule_packs (id, country, version, body, source, imported_at) VALUES (?, ?, ?, ?, 'built in', ?)",
-    )
-    .bind(Uuid::new_v4().to_string())
-    .bind(&pack.country)
-    .bind(pack.version)
-    .bind(BUILT_IN)
-    .bind(now())
-    .execute(pool)
-    .await?;
+/// The pack for Uganda, the one every installation started with.
+#[cfg(test)]
+fn built_in() -> Pack {
+    built_in_for(DEFAULT_COUNTRY).expect("Uganda ships")
+}
 
-    let mut current = active(pool, &pack.country).await?;
-    let missing: Vec<Rule> = pack.rules.iter().filter(|r| current.rule(&r.id).is_none()).cloned().collect();
-    if !missing.is_empty() {
-        current.rules.extend(missing);
-        current.version += 1;
-        let body = serde_json::to_string(&current).unwrap_or_default();
-        sqlx::query("INSERT INTO rule_packs (id, country, version, body, source, imported_at) VALUES (?, ?, ?, ?, 'new rules from an update', ?)")
-            .bind(Uuid::new_v4().to_string())
-            .bind(&current.country)
-            .bind(current.version)
-            .bind(body)
-            .bind(now())
-            .execute(pool)
-            .await?;
+/// Whether the app ships rules for this country code.
+pub fn is_known_country(code: &str) -> bool {
+    BUILT_IN_PACKS.iter().any(|(c, _)| *c == code)
+}
+
+/// The country this station works under, set in its profile; Uganda until it is set.
+pub async fn station_country(pool: &SqlitePool) -> Result<String, sqlx::Error> {
+    let found: Option<Option<String>> = sqlx::query_scalar("SELECT country FROM station_profile WHERE id = 'default'").fetch_optional(pool).await?;
+    Ok(found.flatten().filter(|c| is_known_country(c)).unwrap_or_else(|| DEFAULT_COUNTRY.to_string()))
+}
+
+/// Make sure the packs that ship with the app are in the table, and that the pack in force for each
+/// country has every rule the app now ships. An office's own edits always win: a rule it already has is
+/// never replaced, but a rule added by a newer release (which the app's code may rely on) is appended as
+/// the next version.
+pub async fn ensure_built_in(pool: &SqlitePool) -> Result<(), sqlx::Error> {
+    for (_, body) in BUILT_IN_PACKS {
+        let pack: Pack = serde_json::from_str(body).expect("the pack inside the app is valid JSON");
+        sqlx::query(
+            "INSERT OR IGNORE INTO rule_packs (id, country, version, body, source, imported_at) VALUES (?, ?, ?, ?, 'built in', ?)",
+        )
+        .bind(Uuid::new_v4().to_string())
+        .bind(&pack.country)
+        .bind(pack.version)
+        .bind(body)
+        .bind(now())
+        .execute(pool)
+        .await?;
+
+        let mut current = active(pool, &pack.country).await?;
+        let missing: Vec<Rule> = pack.rules.iter().filter(|r| current.rule(&r.id).is_none()).cloned().collect();
+        if !missing.is_empty() {
+            current.rules.extend(missing);
+            current.version += 1;
+            let body = serde_json::to_string(&current).unwrap_or_default();
+            sqlx::query("INSERT INTO rule_packs (id, country, version, body, source, imported_at) VALUES (?, ?, ?, ?, 'new rules from an update', ?)")
+                .bind(Uuid::new_v4().to_string())
+                .bind(&current.country)
+                .bind(current.version)
+                .bind(body)
+                .bind(now())
+                .execute(pool)
+                .await?;
+        }
     }
     Ok(())
 }
 
-/// The rules in force: the highest version loaded for the country.
+/// The rules in force for a country: the highest version loaded.
 pub async fn active(pool: &SqlitePool, country: &str) -> Result<Pack, sqlx::Error> {
     let body: Option<String> = sqlx::query_scalar("SELECT body FROM rule_packs WHERE country = ? ORDER BY version DESC LIMIT 1")
         .bind(country)
         .fetch_optional(pool)
         .await?;
-    Ok(body.and_then(|b| serde_json::from_str(&b).ok()).unwrap_or_else(built_in))
+    Ok(body
+        .and_then(|b| serde_json::from_str(&b).ok())
+        .or_else(|| built_in_for(country))
+        .unwrap_or_else(|| built_in_for(DEFAULT_COUNTRY).expect("Uganda ships")))
+}
+
+/// The rules in force at this station: the pack of the country its profile names.
+pub async fn active_for_station(pool: &SqlitePool) -> Result<Pack, sqlx::Error> {
+    active(pool, &station_country(pool).await?).await
 }
 
 /// Load a newer pack. It must be valid and have a higher version than the one in force.
@@ -128,9 +165,10 @@ pub async fn import(pool: &SqlitePool, json: &str, imported_by: &str) -> Result<
     if let Some(reason) = problem(&pack) {
         return Err(reason);
     }
-    let current = active(pool, &pack.country).await.map_err(|e| e.to_string())?;
-    if pack.version <= current.version {
-        return Err(format!("The pack in force is version {}. Load a pack with a higher version number.", current.version));
+    let current: Option<i64> = sqlx::query_scalar("SELECT MAX(version) FROM rule_packs WHERE country = ?").bind(&pack.country).fetch_one(pool).await.map_err(|e| e.to_string())?;
+    let current = current.unwrap_or(0);
+    if pack.version <= current {
+        return Err(format!("The pack in force is version {current}. Load a pack with a higher version number."));
     }
     sqlx::query("INSERT INTO rule_packs (id, country, version, body, source, imported_at, imported_by) VALUES (?, ?, ?, ?, 'imported', ?, ?)")
         .bind(Uuid::new_v4().to_string())
@@ -169,7 +207,7 @@ fn blank_to_none(text: Option<String>) -> Option<String> {
 /// earlier versions stay in the table), so who changed what, and when, is never lost. Marking a rule
 /// reviewed fills in the reviewer from whoever is signed in, and today's date, unless given.
 pub async fn update_rule(pool: &SqlitePool, rule_id: &str, edit: RuleEdit, edited_by: &str, today: &str) -> Result<Pack, String> {
-    let mut pack = active(pool, DEFAULT_COUNTRY).await.map_err(|e| e.to_string())?;
+    let mut pack = active_for_station(pool).await.map_err(|e| e.to_string())?;
     let rule = pack.rules.iter_mut().find(|r| r.id == rule_id).ok_or_else(|| "There is no such rule.".to_string())?;
 
     if rule.kind == "number" {
@@ -182,9 +220,6 @@ pub async fn update_rule(pool: &SqlitePool, rule_id: &str, edit: RuleEdit, edite
         let clean = |list: Option<Vec<String>>| list.unwrap_or_default().into_iter().map(|t| t.trim().to_lowercase()).filter(|t| !t.is_empty()).collect::<Vec<_>>();
         rule.terms = clean(edit.terms);
         rule.exceptions = clean(edit.exceptions);
-        if rule.terms.is_empty() {
-            return Err("An offence list needs at least one offence.".into());
-        }
     }
     if rule.kind != "number" {
         rule.text = blank_to_none(edit.text);
@@ -262,6 +297,31 @@ mod tests {
         assert_eq!(active(&pool, DEFAULT_COUNTRY).await.unwrap().version, version, "running it again changes nothing");
         pool.close().await;
     }
+
+    #[tokio::test]
+    async fn a_station_works_under_the_rules_of_its_own_country() {
+        let pool = test_pool().await;
+        ensure_built_in(&pool).await.unwrap();
+        assert_eq!(station_country(&pool).await.unwrap(), "UG", "Uganda until the profile says otherwise");
+        assert_eq!(active_for_station(&pool).await.unwrap().rule("custody.limit_hours").unwrap().value, Some(48));
+
+        sqlx::query("INSERT INTO station_profile (id, name, country) VALUES ('default', 'Kilimani', 'KE') ON CONFLICT(id) DO UPDATE SET country = 'KE'").execute(&pool).await.unwrap();
+        let kenya = active_for_station(&pool).await.unwrap();
+        assert_eq!(kenya.country, "KE");
+        assert_eq!(kenya.rule("custody.limit_hours").unwrap().value, Some(24));
+        assert!(kenya.rule("custody.transfer_window_days").is_none(), "no transfer window is claimed for Kenya");
+        assert!(kenya.rules.iter().all(|r| r.status == "draft"), "nothing is shown as checked");
+
+        // An edit changes that country's pack, not Uganda's.
+        update_rule(&pool, "custody.limit_hours", edit(Some(36), "draft"), "Legal Officer", "2026-12-01").await.unwrap();
+        assert_eq!(active_for_station(&pool).await.unwrap().rule("custody.limit_hours").unwrap().value, Some(36));
+        assert_eq!(active(&pool, "UG").await.unwrap().rule("custody.limit_hours").unwrap().value, Some(48));
+
+        // An unknown country code falls back to Uganda and cannot be saved as the station's country.
+        sqlx::query("UPDATE station_profile SET country = 'ZZ'").execute(&pool).await.unwrap();
+        assert_eq!(station_country(&pool).await.unwrap(), "UG");
+        pool.close().await;
+    }
     #[tokio::test]
     async fn an_office_can_change_a_rule_and_the_old_version_is_kept() {
         let pool = test_pool().await;
@@ -285,14 +345,15 @@ mod tests {
         no_citation.citation = None;
         assert!(update_rule(&pool, "custody.limit_hours", no_citation, "x", "2026-12-01").await.is_err());
 
-        // An offence list keeps its offences, lower-cased and trimmed, and cannot be emptied.
+        // An offence list keeps its offences, lower-cased and trimmed.
         let mut list = edit(None, "draft");
         list.terms = Some(vec!["  Murder ".into(), "".into(), "Treason".into()]);
         let pack = update_rule(&pool, "bond.not_police_bailable", list, "x", "2026-12-01").await.unwrap();
         assert_eq!(pack.rule("bond.not_police_bailable").unwrap().terms, vec!["murder", "treason"]);
         let mut empty = edit(None, "draft");
         empty.terms = Some(vec![]);
-        assert!(update_rule(&pool, "bond.not_police_bailable", empty, "x", "2026-12-01").await.is_err());
+        let cleared = update_rule(&pool, "bond.not_police_bailable", empty, "x", "2026-12-01").await.unwrap();
+        assert!(cleared.rule("bond.not_police_bailable").unwrap().terms.is_empty(), "an office may clear a list until its legal officer fills it");
         pool.close().await;
     }
 

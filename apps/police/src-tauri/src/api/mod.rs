@@ -1119,7 +1119,7 @@ async fn list_custody_records_handler(
 }
 
 async fn get_rules_handler(State(state): State<AppState>) -> Result<Json<crate::domain::rules::Pack>, ApiError> {
-    crate::domain::rules::active(&state.pool, crate::domain::rules::DEFAULT_COUNTRY).await.map(Json).map_err(internal_error)
+    crate::domain::rules::active_for_station(&state.pool).await.map(Json).map_err(internal_error)
 }
 
 /// Load a newer rules pack. Only an administrator may change the rules the app applies.

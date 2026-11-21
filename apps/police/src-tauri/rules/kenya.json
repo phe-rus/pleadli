@@ -1,0 +1,54 @@
+{
+  "country": "KE",
+  "name": "Kenya",
+  "version": 1,
+  "updatedOn": "2026-11-21",
+  "rules": [
+    {
+      "id": "custody.limit_hours",
+      "title": "Hours a person may be held before being brought to court",
+      "kind": "number",
+      "value": 24,
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Working rule written by the Pleadli team from general knowledge: the Constitution of Kenya, 2010, Article 49(1)(f), gives 24 hours, and where that period ends outside ordinary court hours or on a day that is not an ordinary court day it ends at the end of the next court day. The app counts plain hours only. Not checked against the text and not reviewed by a legal officer: your legal officer sets the number and the citation here."
+    },
+    {
+      "id": "bond.not_police_bailable",
+      "title": "Offences police cannot release on a police bond",
+      "kind": "offence_list",
+      "terms": [],
+      "exceptions": [],
+      "text": "Police cannot release a person charged with this offence on a police bond. Refer the file to the Office of the Director of Public Prosecutions and keep the person in custody.",
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "No offences are listed yet. Your legal officer lists here the offences police cannot release on bond; until then the app does not refuse any."
+    },
+    {
+      "id": "juvenile.age",
+      "title": "Age below which a person is a child",
+      "kind": "number",
+      "value": 18,
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Working rule from general knowledge (the Constitution of Kenya, 2010, Article 260 defines a child as an individual who has not attained eighteen years). Not checked against the text."
+    },
+    {
+      "id": "juvenile.custody_guidance",
+      "title": "What to do when a juvenile is brought in",
+      "kind": "guidance",
+      "text": "Keep the child apart from adults. Tell a parent or guardian. Confirm with a legal officer which steps, time limit and court apply to a child.",
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "General guidance, not a statement of the exact legal steps. Needs review and a citation."
+    }
+  ]
+}

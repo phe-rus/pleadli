@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { custodyLimits } from './schema'
 import { Button } from '@pleadli/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
 import { useNavigate } from '@tanstack/react-router'
@@ -62,7 +63,7 @@ export function CustodyAttentionDialog() {
         {dialogRecord && compliance && (
           <>
             <DialogHeader>
-              <DialogTitle>{m["custody.limit_title"]()}</DialogTitle>
+              <DialogTitle>{m["custody.limit_title"](custodyLimits())}</DialogTitle>
               <DialogDescription>
                 {compliance.isOverdue
                   ? m["custody.past_limit"]({ name: custodyPersonName(dialogRecord) })

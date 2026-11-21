@@ -18,6 +18,9 @@ export function useSaveStationProfile() {
     mutationFn: (input: SaveStationProfileInput) => saveStationProfile(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stationProfile'] })
+      // The country decides which legal rules apply, so everything counted against them is counted again.
+      queryClient.invalidateQueries({ queryKey: ['rules'] })
+      queryClient.invalidateQueries({ queryKey: ['custody'] })
     },
   })
 }

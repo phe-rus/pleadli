@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { custodyLimits } from '@/features/custody/schema'
 import { useMe } from '@/features/session'
 import { parseSearchRoute } from '@/lib/parse-search-route'
 import { Button } from '@pleadli/ui/button'
@@ -7,10 +8,10 @@ import { useState } from 'react'
 
 /** The five places a new officer meets first, in the order a case is worked. */
 const steps = [
-  { title: () => m["tour.s1_title"](), body: () => m["tour.s1_body"](), to: null },
+  { title: () => m["tour.s1_title"](), body: () => m["tour.s1_body"](custodyLimits()), to: null },
   { title: () => m["tour.s2_title"](), body: () => m["tour.s2_body"](), to: '/search/people' },
   { title: () => m["tour.s3_title"](), body: () => m["tour.s3_body"](), to: '/investigations' },
-  { title: () => m["tour.s4_title"](), body: () => m["tour.s4_body"](), to: '/search/custody' },
+  { title: () => m["tour.s4_title"](), body: () => m["tour.s4_body"](custodyLimits()), to: '/search/custody' },
   { title: () => m["tour.s5_title"](), body: () => m["tour.s5_body"](), to: null },
 ]
 

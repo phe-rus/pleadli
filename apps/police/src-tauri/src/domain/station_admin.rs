@@ -17,6 +17,7 @@ pub struct StationProfile {
     pub contact: Option<String>,
     pub oc_station_name: Option<String>,
     pub oc_station_rank: Option<String>,
+    pub country: Option<String>,
     pub created_at: i64,
 }
 
@@ -29,6 +30,7 @@ pub struct SaveStationProfileInput {
     pub contact: Option<String>,
     pub oc_station_name: Option<String>,
     pub oc_station_rank: Option<String>,
+    pub country: Option<String>,
 }
 
 pub async fn get_station_profile(pool: &SqlitePool) -> Result<Option<StationProfile>, sqlx::Error> {
@@ -43,15 +45,16 @@ pub async fn save_station_profile(
     input: SaveStationProfileInput,
 ) -> Result<StationProfile, sqlx::Error> {
     sqlx::query(
-        "INSERT INTO station_profile (id, name, address, jurisdiction, contact, oc_station_name, oc_station_rank)
-         VALUES ('default', ?, ?, ?, ?, ?, ?)
+        "INSERT INTO station_profile (id, name, address, jurisdiction, contact, oc_station_name, oc_station_rank, country)
+         VALUES ('default', ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
             address = excluded.address,
             jurisdiction = excluded.jurisdiction,
             contact = excluded.contact,
             oc_station_name = excluded.oc_station_name,
-            oc_station_rank = excluded.oc_station_rank",
+            oc_station_rank = excluded.oc_station_rank,
+            country = excluded.country",
     )
     .bind(&input.name)
     .bind(&input.address)
@@ -59,6 +62,7 @@ pub async fn save_station_profile(
     .bind(&input.contact)
     .bind(&input.oc_station_name)
     .bind(&input.oc_station_rank)
+    .bind(input.country.as_deref().filter(|c| super::rules::is_known_country(c)))
     .execute(pool)
     .await?;
 
@@ -86,6 +90,7 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
                 contact: Some("0800 199 888".to_string()),
                 oc_station_name: Some("Okello, J.".to_string()),
                 oc_station_rank: Some("Superintendent of Police".to_string()),
+                country: Some("UG".to_string()),
             },
         )
         .await?;

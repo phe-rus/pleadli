@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { custodyLimits } from '@/features/custody/schema'
 import { caseFolders, isNavActive, navFor, sectionsFor, type NavItem } from '@/data/navigationItems'
 import { BrandLogo } from '@/features/brand'
 import { CommandMenu } from '@/components/command-menu'
@@ -126,7 +127,7 @@ const useQuickAdd = (): QuickAddItem[] => {
     item('diary', Notebook01Icon, m["quick.diary_title"](), m["quick.diary_desc"](), ({ onDirtyChange, close }) => <StationDiaryEntryForm onDirtyChange={onDirtyChange} onSuccess={close} />),
     item('incident', SirenIcon, m["quick.incident_title"](), m["quick.incident_desc"](), ({ onDirtyChange, close }) => <IncidentForm onDirtyChange={onDirtyChange} onSuccess={close} />),
     item('case', BinocularsIcon, m["quick.case_title"](), m["quick.case_desc"](), (context) => <QuickCaseForm {...context} />),
-    item('custody', CellsIcon, m["quick.custody_title"](), m["quick.custody_desc"](), ({ onDirtyChange, close }) => <CustodyRecordForm onDirtyChange={onDirtyChange} onSuccess={close} />),
+    item('custody', CellsIcon, m["quick.custody_title"](), m["quick.custody_desc"](custodyLimits()), ({ onDirtyChange, close }) => <CustodyRecordForm onDirtyChange={onDirtyChange} onSuccess={close} />),
     item('person', UserGroupIcon, m["quick.person_title"](), m["quick.person_desc"](), ({ close }) => <PersonForm onSuccess={close} />),
   ]
 }

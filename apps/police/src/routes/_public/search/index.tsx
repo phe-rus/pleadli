@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { custodyLimits } from '@/features/custody/schema'
 import { entityTypeLabel, useSearch, type SearchResult } from '@/features/search'
 import { parseSearchRoute } from '@/lib/parse-search-route'
 import {
@@ -32,7 +33,7 @@ export const Route = createFileRoute('/_public/search/')({
 const quickLinks = () =>
   [
     { icon: UserIcon, label: m["nav.people"](), to: '/search/people', description: m["search_page.people_desc"]() },
-    { icon: CellsIcon, label: m["search_page.cells"](), to: '/search/custody', description: m["search_page.cells_desc"]() },
+    { icon: CellsIcon, label: m["search_page.cells"](custodyLimits()), to: '/search/custody', description: m["search_page.cells_desc"](custodyLimits()) },
     { icon: File02Icon, label: m["nav.bonds_and_sureties"](), to: '/search/bonds', description: m["search_page.bonds_desc"]() },
     { icon: FolderViewIcon, label: m["nav.cases"](), to: '/investigations', description: m["search_page.intake_desc"]() },
     { icon: SirenIcon, label: m["nav.incidents"](), to: '/incidents', description: m["search_page.incidents_desc"]() },

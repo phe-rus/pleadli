@@ -8,6 +8,7 @@ export const stationProfileSchema = z.object({
   contact: z.string().nullable(),
   ocStationName: z.string().nullable(),
   ocStationRank: z.string().nullable(),
+  country: z.string().nullable(),
   createdAt: z.number(),
 })
 
@@ -20,6 +21,7 @@ export const saveStationProfileSchema = z.object({
   contact: z.string(),
   ocStationName: z.string(),
   ocStationRank: z.string(),
+  country: z.string(),
 })
 
 export type SaveStationProfileInput = z.infer<typeof saveStationProfileSchema>

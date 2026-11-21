@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { custodyLimits } from './schema'
 import { PersonPicker } from '@/components/person-picker'
 import { JuvenileNotice } from '@/features/people/juvenile-notice'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
@@ -145,6 +146,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
             )
           }}
         </form.Subscribe>
+        {custodyLimits().hasTransferWindow && (<>
 
         <form.AppField name="crossJurisdictionTransfer">
           {(f) => (
@@ -168,7 +170,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
                       onChange={(e) => f.handleChange(e.target.value)}
                     />
                     <FieldDescription>
-                      {m["custody.transfer_hint"]()}
+                      {m["custody.transfer_hint"](custodyLimits())}
                     </FieldDescription>
                   </Field>
                 )}
@@ -177,6 +179,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
           }
         </form.Subscribe>
 
+        </>)}
         <form.AppField name="status">
           {(f) => (
             <Field>

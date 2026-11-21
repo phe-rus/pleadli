@@ -64,10 +64,12 @@ const HOUR_MS = 60 * 60 * 1000
 /** The two limits custody is counted against. They come from the legal rules in force and are set
  * when those load (see features/rules); these are the values until then. */
 let limitHours = 48
-let transferWindowDays = 7
+let transferWindowDays: number | null = 7
+/** The limits for words (a message names the number of hours and days) and for the form: `days` is null in a country whose rules have no transfer window. */
+export const custodyLimits = () => ({ hours: limitHours, days: transferWindowDays ?? 0, hasTransferWindow: transferWindowDays !== null })
 export function setCustodyLimits(limits: { hours?: number | null; transferDays?: number | null }) {
-  if (limits.hours && limits.hours > 0) limitHours = limits.hours
-  if (limits.transferDays && limits.transferDays > 0) transferWindowDays = limits.transferDays
+  limitHours = limits.hours && limits.hours > 0 ? limits.hours : 48
+  transferWindowDays = limits.transferDays && limits.transferDays > 0 ? limits.transferDays : null
 }
 
 export type CustodyCompliance = {
@@ -100,11 +102,11 @@ export function custodyCompliance(record: Pick<CustodyRecord, 'arrestedAt' | 'cr
   let deadline: number
   let basis: CustodyCompliance['basis']
 
-  if (!record.crossJurisdictionTransfer) {
+  if (!record.crossJurisdictionTransfer || transferWindowDays === null) {
     deadline = record.arrestedAt + limitHours * HOUR_MS
     basis = 'arrest+48h'
   } else if (!record.transferredAt) {
-    deadline = record.arrestedAt + transferWindowDays * 24 * HOUR_MS
+    deadline = record.arrestedAt + (transferWindowDays ?? 0) * 24 * HOUR_MS
     basis = 'transfer-window+7d'
   } else {
     deadline = record.transferredAt + limitHours * HOUR_MS
@@ -118,8 +120,8 @@ export function custodyCompliance(record: Pick<CustodyRecord, 'arrestedAt' | 'cr
 /** The basis of a deadline in words, for people. */
 export function custodyBasisLabel(basis: CustodyCompliance['basis']) {
   return {
-    'arrest+48h': m["custody.basis.arrest"],
-    'transfer-window+7d': m["custody.basis.transfer_window"],
-    'post-transfer+48h (inferred)': m["custody.basis.post_transfer"],
+    'arrest+48h': () => m["custody.basis.arrest"](custodyLimits()),
+    'transfer-window+7d': () => m["custody.basis.transfer_window"](custodyLimits()),
+    'post-transfer+48h (inferred)': () => m["custody.basis.post_transfer"](custodyLimits()),
   }[basis]()
 }

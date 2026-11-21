@@ -1,0 +1,54 @@
+{
+  "country": "CD",
+  "name": "République démocratique du Congo",
+  "version": 1,
+  "updatedOn": "2026-11-21",
+  "rules": [
+    {
+      "id": "custody.limit_hours",
+      "title": "Heures pendant lesquelles une personne peut être retenue avant d'être présentée au magistrat",
+      "kind": "number",
+      "value": 48,
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Règle de travail écrite par l'équipe Pleadli de mémoire : la Constitution de la RDC de 2006, article 18, fixe 48 heures avant la présentation au magistrat compétent. Non vérifiée sur le texte et non revue par un juriste : votre juriste fixe ici le nombre et la référence."
+    },
+    {
+      "id": "bond.not_police_bailable",
+      "title": "Infractions pour lesquelles la police ne peut pas libérer",
+      "kind": "offence_list",
+      "terms": [],
+      "exceptions": [],
+      "text": "La police ne peut pas libérer une personne poursuivie pour cette infraction. Transmettre le dossier au parquet et maintenir la personne en garde à vue.",
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Aucune infraction n'est listée pour le moment. Votre juriste liste ici les infractions pour lesquelles la police ne peut pas libérer ; d'ici là l'application n'en refuse aucune."
+    },
+    {
+      "id": "juvenile.age",
+      "title": "Âge en dessous duquel une personne est un enfant",
+      "kind": "number",
+      "value": 18,
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Règle de travail de mémoire : la loi n° 09/001 du 10 janvier 2009 portant protection de l'enfant définit l'enfant comme toute personne âgée de moins de dix-huit ans. Non vérifiée sur le texte."
+    },
+    {
+      "id": "juvenile.custody_guidance",
+      "title": "Que faire lorsqu'un mineur est amené",
+      "kind": "guidance",
+      "text": "Garder l'enfant à l'écart des adultes. Prévenir un parent ou le tuteur. Confirmer avec un juriste les démarches, le délai et la juridiction applicables à un enfant.",
+      "citation": null,
+      "status": "draft",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Indication générale, pas un exposé des démarches légales exactes. À faire vérifier et à référencer."
+    }
+  ]
+}

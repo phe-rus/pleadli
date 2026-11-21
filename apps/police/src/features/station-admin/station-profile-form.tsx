@@ -6,6 +6,13 @@ import { FieldGroup } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useSaveStationProfile, useStationProfile } from './queries'
 
+/** The countries the app ships legal rules for, each named as its people name it. Their rules load from the station's country. */
+const countryOptions = [
+  { value: 'UG', label: 'Uganda' },
+  { value: 'KE', label: 'Kenya' },
+  { value: 'CD', label: 'République démocratique du Congo' },
+]
+
 export type StationProfileFormProps = {
   onSuccess?: () => void
   onDirtyChange?: (dirty: boolean) => void
@@ -25,6 +32,7 @@ export function StationProfileForm({ onSuccess, onDirtyChange }: StationProfileF
       contact: profile?.contact ?? '',
       ocStationName: profile?.ocStationName ?? '',
       ocStationRank: profile?.ocStationRank ?? '',
+      country: profile?.country ?? 'UG',
     },
     onSubmit: async ({ value }) => {
       try {
@@ -54,6 +62,8 @@ export function StationProfileForm({ onSuccess, onDirtyChange }: StationProfileF
             {(f) => <f.input label={m["station_profile.jurisdiction"]()} placeholder={m["station_profile.jurisdiction_placeholder"]()} />}
           </form.AppField>
         </div>
+
+        <form.AppField name="country">{(f) => <f.select label={m["station_profile.country"]()} options={countryOptions} />}</form.AppField>
 
         <form.AppField name="address">{(f) => <f.input label={m["people.address"]()} />}</form.AppField>
 

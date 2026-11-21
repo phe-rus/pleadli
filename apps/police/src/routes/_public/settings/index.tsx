@@ -9,6 +9,7 @@ import { Segmented } from '@pleadli/ui/segmented'
 import { cn } from '@pleadli/ui/lib/utils'
 import type { ReactNode } from 'react'
 import * as m from '@/paraglide/messages'
+import { custodyLimits } from '@/features/custody/schema'
 import { SettingsTable, type SettingsRow as TableRow } from '@/components/settings-table'
 import { LogoCard, type LogoCardLabels } from '@/features/brand'
 import { changeLocale, localeNames, selectableLocales, useLocale } from '@/features/i18n'
@@ -316,7 +317,7 @@ function NotificationsPane() {
   const [alertsEnabled, setAlertsEnabled] = useState(isCustodyAlertsEnabled)
   return (
     <SettingsCard hint={isTauri() ? undefined : m["settings.desktop_only"]()}>
-      <SettingsRow label={m["settings.custody_alerts"]()} hint={m["settings.custody_alerts_desc"]()}>
+      <SettingsRow label={m["settings.custody_alerts"]()} hint={m["settings.custody_alerts_desc"](custodyLimits())}>
         <Switch
           checked={alertsEnabled}
           onCheckedChange={(checked) => {

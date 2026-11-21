@@ -1,4 +1,5 @@
 import * as m from '@/paraglide/messages'
+import { custodyLimits } from '@/features/custody/schema'
 import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
 import {
@@ -145,7 +146,7 @@ function RouteComponent() {
               { value: 'all', label: m["custody_page.all_records"]() },
             ]}
           />
-          <PanelButton label={m["custody_page.new"]()} title={m["custody_page.new"]()} description={m["custody_page.new_desc"]()} variant="default">
+          <PanelButton label={m["custody_page.new"]()} title={m["custody_page.new"]()} description={m["custody_page.new_desc"](custodyLimits())} variant="default">
             {({ close, setDirty }) => <CustodyRecordForm onSuccess={close} onDirtyChange={setDirty} />}
           </PanelButton>
         </div>

@@ -68,7 +68,7 @@ pub(crate) async fn write_bond_markdown(pool: &SqlitePool, vault_root: &Path, re
  * on the case the bond names, against the offences the rules pack says police cannot bail. */
 pub async fn refusal(pool: &SqlitePool, input: &CreateBondInput) -> Result<Option<String>, sqlx::Error> {
     let Some(case_id) = &input.case_id else { return Ok(None) };
-    let pack = super::rules::active(pool, super::rules::DEFAULT_COUNTRY).await?;
+    let pack = super::rules::active_for_station(pool).await?;
     let Some(rule) = pack.rule("bond.not_police_bailable") else { return Ok(None) };
     let offences: Vec<String> =
         sqlx::query_scalar("SELECT offence FROM charge_sheets WHERE case_id = ? AND (accused_person_id = ? OR accused_person_id IS NULL)")
