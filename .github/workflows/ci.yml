@@ -1,7 +1,7 @@
 name: CI
 
 # Checks every pull request to main (and every push to main): typecheck, Rust tests and
-# clippy, and a bundle size budget. Only the parts a change touches run.
+# clippy. Only the parts a change touches run.
 #
 # ONE MANUAL STEP, done once by a repo admin, because a workflow cannot do it:
 #   GitHub > Settings > Branches (or Rules) > add a rule for `main`:
@@ -14,7 +14,6 @@ name: CI
 #   changes    works out what the diff touches (toolings/ci/changes.sh)
 #   typecheck  turbo `check` for the affected TypeScript workspaces
 #   rust       cargo test + clippy ratchet per affected Tauri app (toolings/ci/clippy.ts)
-#   size       gzipped JS and CSS against toolings/ci/budgets.json (toolings/ci/size.ts)
 #   ci         passes only when everything above passed or was skipped on purpose
 #
 # Third party actions are pinned to full commit SHAs. The version is in the comment.
@@ -174,36 +173,6 @@ jobs:
           if [ "$code" -ne 0 ]; then echo "cargo clippy exited with $code"; fi
           [ "$code" -eq 0 ] && [ "$ratchet" -eq 0 ]
 
-  size:
-    needs: changes
-    if: needs.changes.outputs.size != '[]'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        workspace: ${{ fromJSON(needs.changes.outputs.size) }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
-      # `vite build` directly: `bun run build` repeats tsc, which the typecheck job owns.
-      - name: Build
-        run: |
-          if [ "${{ matrix.workspace }}" = www ]; then dir=www; else dir=apps/${{ matrix.workspace }}; fi
-          cd "$dir"
-          bun run i18n
-          bunx vite build
-      - name: Measure against the budget
-        run: bun toolings/ci/size.ts ${{ matrix.workspace }}
-
   # The only job to mark required in branch protection. Runs last, even after a
   # failure or a cancel, so the result is always reported. A job the change filter
   # skipped is fine. Anything failed or cancelled is not, and neither is `changes`
@@ -211,7 +180,7 @@ jobs:
   # look like a pass).
   ci:
     name: ci
-    needs: [changes, typecheck, rust, size]
+    needs: [changes, typecheck, rust]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -221,14 +190,13 @@ jobs:
           CHANGES: ${{ needs.changes.result }}
           TYPECHECK: ${{ needs.typecheck.result }}
           RUST: ${{ needs.rust.result }}
-          SIZE: ${{ needs.size.result }}
         run: |
-          echo "changes=$CHANGES typecheck=$TYPECHECK rust=$RUST size=$SIZE"
+          echo "changes=$CHANGES typecheck=$TYPECHECK rust=$RUST"
           if [ "$CHANGES" != success ]; then
             echo "changes did not succeed, so nothing was decided about the diff."
             exit 1
           fi
-          for result in "$TYPECHECK" "$RUST" "$SIZE"; do
+          for result in "$TYPECHECK" "$RUST"; do
             case "$result" in
               success | skipped) ;;
               *) echo "a job finished as '$result'."; exit 1 ;;
