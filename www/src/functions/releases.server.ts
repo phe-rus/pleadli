@@ -6,7 +6,7 @@ const REPO = 'https://github.com/phe-rus/pleadli-releases/releases'
 export type Installer = { url: string; sizeBytes: number }
 export type ReleaseRequest = (url: string, options?: RequestInit) => Promise<Response>
 export type ReleaseAvailability =
-  | { status: 'available'; version: string; publishedAt: string; releaseUrl: string; installer: Installer; msi: Installer | null }
+  | { status: 'available'; version: string; publishedAt: string; releaseUrl: string; installer: Installer }
   | { status: 'missing' | 'unavailable' }
 
 function record(value: unknown): Record<string, unknown> {
@@ -46,10 +46,9 @@ export async function fetchRelease(app: ReleaseApp, request: ReleaseRequest = fe
     const release = record(await response.json())
     if (release.tag_name !== tag || release.draft !== false || release.prerelease !== false) return { status: 'unavailable' }
     if (typeof release.published_at !== 'string' || !Number.isFinite(Date.parse(release.published_at)) || !Array.isArray(release.assets)) return { status: 'unavailable' }
-    const exe = release.assets.map((asset) => installer(asset, tag, `_${feed.version}_x64-setup.exe`)).find(Boolean)
-    if (!exe) return { status: 'unavailable' }
-    const msi = release.assets.map((asset) => installer(asset, tag, `_${feed.version}_x64_en-US.msi`)).find(Boolean) ?? null
-    return { status: 'available', version: feed.version, publishedAt: release.published_at, releaseUrl: `${REPO}/tag/${tag}`, installer: exe, msi }
+    const msi = release.assets.map((asset) => installer(asset, tag, `_${feed.version}_x64_en-US.msi`)).find(Boolean)
+    if (!msi) return { status: 'unavailable' }
+    return { status: 'available', version: feed.version, publishedAt: release.published_at, releaseUrl: `${REPO}/tag/${tag}`, installer: msi }
   } catch {
     return { status: 'unavailable' }
   }

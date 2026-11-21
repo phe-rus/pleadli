@@ -40,7 +40,6 @@ export function DownloadActions({ name, availability, align = 'center' }: { name
         !start && 'justify-center',
       )}>
         <a className="underline underline-offset-4" href={availability.releaseUrl} target="_blank" rel="noreferrer">{m['downloads.release_notes']()}</a>
-        {availability.msi && <a className="underline underline-offset-4" href={availability.msi.url}>{m['downloads.msi']()}</a>}
       </div>
     </div>
   )

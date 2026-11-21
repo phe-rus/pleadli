@@ -303,7 +303,7 @@
       "offline_body": "Kila programu ya Pleadli imeundwa kufaa kikamilifu bila mtandao wowote. Huduma za wingu na ubadilishanaji kati ya taasisi huongeza kazi ya ndani; si sharti kamwe kwa kituo, mwendesha mashtaka, mahakama, wakili au gereza kuendelea kufanya kazi.",
       "offline_title": "Bila mtandao kwa chaguo-msingi",
       "open": {
-        "codesign": "Visakinishi vya Windows bado havijatiwa saini ya msimbo. Masasisho yametiwa saini, hivyo nakala iliyosakinishwa hupokea tu yale ya Pleadli.",
+        "codesign": "Visakinishi vya Windows vimetiwa saini kwa cheti cha Pleadli yenyewe, si cha mamlaka ya umma, kwa hiyo Windows bado huonya hadi ofisi iuamini. Masasisho pia yametiwa saini, hivyo nakala iliyosakinishwa hupokea tu yale ya Pleadli.",
         "exchange": "Ubadilishanaji kati ya kompyuta (usawazishaji wa vituo wa Prisons kwa TLS iliyobanwa, kampuni ya Lawyers kwenye mtandao mmoja wa ofisi, ubadilishanaji wa Police↔DPP) umejaribiwa kwenye kompyuta moja au katika majaribio, bado haujajaribiwa kati ya kompyuta zilizosakinishwa kando kazini.",
         "police": "Hazina ya viambatisho ya Police bado haijafungwa chini ya ufunguo wake, na bado haina kumbukumbu ya ukaguzi iliyofungamanishwa ambayo nyingine nne zinazo.",
         "roles": "Majukumu hayalingani kati ya programu. Lawyers huamua kwa jukumu nani anaweza kutia saini, kuwasilisha au kulipa; nyingine bado hazijaweka mipaka hiyo kwa undani ndani ya ofisi moja."
@@ -362,12 +362,11 @@
     "lookup_failed": "Hatukuweza kuhakiki maelezo ya kipakuzi. Jaribu baadaye au tazama matoleo yaliyochapishwa.",
     "metadata": "Windows biti 64 · v{version} · {size} MB · {date}",
     "missing": "Kipakuzi cha Windows bado hakipatikani hapa.",
-    "msi": "MSI ya usakinishaji ofisini",
     "not_available": "Haipatikani",
     "release_notes": "Maelezo ya toleo",
     "stand": {
-      "codesign": "Windows inaweza kuonyesha onyo la mchapishaji au usalama. Saini za masasisho ni tofauti na saini za mchapishaji wa Windows. Wasiliana na timu ya TEHAMA au msaada wa Pleadli kabla ya kuendelea.",
-      "installers": "Chagua kisakinishi cha Windows hapo juu. Vifurushi vya MSI ni chaguo tofauti kwa usakinishaji unaosimamiwa ofisini.",
+      "codesign": "Visakinishi vimetiwa saini na Pleadli. Windows huonya hadi timu yako ya TEHAMA iamini cheti cha Pleadli mara moja (pleadli.com/pleadli-code-signing.cer, kama Trusted Root na Trusted Publisher, kwa mfano kupitia Group Policy). Linganisha alama yake ya SHA-256 na ile utakayopewa na Pleadli kabla ya kuiamini.",
+      "installers": "Chagua kisakinishi cha Windows hapo juu. Ni kifurushi cha MSI, kinachofaa usakinishaji unaosimamiwa ofisini.",
       "rest": "Windows ndiyo jukwaa la sasa la vipakuliwa vya umma. Courts bado inatengenezwa. AI na miunganiko ya ofisi nyingine inaweza kuhitaji intaneti na usanidi tofauti.",
       "updates": "Programu zilizotolewa hutafuta masasisho yaliyosainiwa kwa ufunguo wa Pleadli na kuuliza kabla ya kusakinisha. Weka nakala rudufu kabla ya kusasisha."
     },

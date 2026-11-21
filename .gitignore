@@ -47,3 +47,6 @@ __pycache__/
 
 # CI uses this root lockfile for reproducible desktop releases.
 !/bun.lock
+
+# Local code-signing material (never committed)
+/.signing/

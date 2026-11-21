@@ -303,7 +303,7 @@
       "offline_body": "Chaque application Pleadli est conçue pour être pleinement utile sans aucune connexion internet. Les services cloud et les échanges entre institutions complètent le travail local ; ils ne sont jamais une condition pour qu'un poste, un procureur, un tribunal, un avocat ou un établissement continue de travailler.",
       "offline_title": "Hors ligne par défaut",
       "open": {
-        "codesign": "Les installateurs Windows ne sont pas encore signés numériquement. Les mises à jour le sont : une copie installée n'accepte que celles de Pleadli.",
+        "codesign": "Les installateurs Windows sont signés avec le certificat propre à Pleadli, non celui d’une autorité publique : Windows avertit donc tant qu’un bureau ne l’a pas approuvé. Les mises à jour sont signées aussi : une copie installée n’accepte que celles de Pleadli.",
         "exchange": "Les échanges entre machines (synchronisation des établissements de Prisons en TLS épinglé, un cabinet Lawyers sur un réseau de bureau, l'échange Police↔DPP) ont été testés sur une machine ou en essais, jamais encore entre des machines installées séparément sur le terrain.",
         "police": "Le coffre de pièces jointes de Police n'est pas encore scellé sous sa clé, et Police n'a pas encore le journal d'audit chaîné des quatre autres.",
         "roles": "Les rôles sont inégaux d'une application à l'autre. Lawyers décide par rôle qui peut signer, déposer ou décaisser ; les autres ne tracent pas encore des limites aussi fines au sein d'un même bureau."
@@ -362,12 +362,11 @@
     "lookup_failed": "Impossible de vérifier le téléchargement. Réessayez plus tard ou consultez les versions publiées.",
     "metadata": "Windows 64 bits · v{version} · {size} Mo · {date}",
     "missing": "Le téléchargement Windows n’est pas encore disponible ici.",
-    "msi": "MSI pour le déploiement au bureau",
     "not_available": "Non disponible",
     "release_notes": "Notes de version",
     "stand": {
-      "codesign": "Windows peut afficher un avertissement de sécurité ou d’éditeur. La signature des mises à jour diffère de celle de l’éditeur Windows. Contactez votre équipe informatique ou Pleadli avant de continuer.",
-      "installers": "Choisissez l’installateur Windows ci-dessus. Les paquets MSI sont une autre option pour un déploiement géré au bureau.",
+      "codesign": "Les installateurs sont signés par Pleadli. Windows affiche un avertissement tant que votre équipe informatique n’a pas approuvé une fois le certificat Pleadli (pleadli.com/pleadli-code-signing.cer, comme racine de confiance et éditeur approuvé, par exemple par stratégie de groupe). Comparez son empreinte SHA-256 avec celle que Pleadli vous remet avant de l’approuver.",
+      "installers": "Choisissez l’installateur Windows ci-dessus. C’est un paquet MSI, adapté à un déploiement géré au bureau.",
       "rest": "Windows est la plateforme de téléchargement public actuelle. Courts reste en développement. L’IA et les connexions entre bureaux peuvent nécessiter internet et une configuration séparée.",
       "updates": "Les applications publiées recherchent des mises à jour signées avec la clé de Pleadli et demandent votre accord. Faites une sauvegarde avant la mise à jour."
     },

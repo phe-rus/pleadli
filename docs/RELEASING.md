@@ -67,7 +67,7 @@ Review a new official version and digest together before changing the pin.
 
 ## What is not done yet
 
-- Windows publisher signing is not configured in the inspected workflow.
+- Windows publisher signing uses a self-issued Pleadli certificate (CN=Pleadli, valid to 2031-11-20, SHA-256 fingerprint 71:F3:E6:3A:81:90:85:17:98:9A:94:76:94:53:7F:B1:01:B5:AD:F4:B6:3D:1B:B0:51:5F:65:94:58:BA:05:E6). Private key and PFX password stay in .signing/ (git-ignored) (back them up offline) and in the repo secrets WINDOWS_CERT_PFX_BASE64 and WINDOWS_CERT_PASSWORD. Offices trust the public pleadli.com/pleadli-code-signing.cer once (Trusted Root and Trusted Publisher). It is not a public authority, so unmanaged computers still see the SmartScreen warning.
   Tauri updater signatures do not establish Windows publisher trust. Classify
   any reported prompt on clean Windows and verify the downloaded binaries.
   Do not make bypassing a warning the standard office installation procedure.

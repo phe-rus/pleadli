@@ -4,7 +4,7 @@ import { fetchRelease, type ReleaseRequest } from '../src/functions/releases.ser
 
 const base = 'https://github.com/phe-rus/pleadli-releases/releases'
 const tag = 'police-v0.1.2'
-const exe = { name: 'Pleadli.Police_0.1.2_x64-setup.exe', size: 26655492, browser_download_url: `${base}/download/${tag}/Pleadli.Police_0.1.2_x64-setup.exe` }
+const exe = { name: 'Pleadli.Police_0.1.2_x64_en-US.msi', size: 36151296, browser_download_url: `${base}/download/${tag}/Pleadli.Police_0.1.2_x64_en-US.msi` }
 const metadata = { tag_name: tag, draft: false, prerelease: false, published_at: '2026-10-08T03:44:46Z', assets: [exe] }
 
 function fixture(feed: unknown, release: unknown = metadata, statuses = [200, 200]) {
@@ -21,7 +21,7 @@ test('offers a versioned installer only when feed and public release agree', asy
   const { request, calls } = fixture({ version: '0.1.2' })
   assert.deepEqual(await fetchRelease('police', request), {
     status: 'available', version: '0.1.2', publishedAt: metadata.published_at,
-    releaseUrl: `${base}/tag/${tag}`, installer: { url: exe.browser_download_url, sizeBytes: exe.size }, msi: null,
+    releaseUrl: `${base}/tag/${tag}`, installer: { url: exe.browser_download_url, sizeBytes: exe.size },
   })
   assert.equal(calls[1]?.url, `https://api.github.com/repos/phe-rus/pleadli-releases/releases/tags/${tag}`)
   assert.ok(calls[0]?.signal instanceof AbortSignal)
@@ -64,13 +64,11 @@ test('refuses foreign, rolling, wrong-version or altered download URLs and inval
   }
 })
 
-test('an optional MSI must pass the same repository and size validation', async () => {
-  const name = 'Pleadli.Police_0.1.2_x64_en-US.msi'
-  const msi = { name, size: 36151296, browser_download_url: `${base}/download/${tag}/${name}` }
-  const { request } = fixture({ version: '0.1.2' }, { ...metadata, assets: [exe, msi] })
-  const result = await fetchRelease('police', request)
-  assert.equal(result.status, 'available')
-  if (result.status === 'available') assert.deepEqual(result.msi, { url: msi.browser_download_url, sizeBytes: msi.size })
+test('an EXE-only release is not offered', async () => {
+  const name = 'Pleadli.Police_0.1.2_x64-setup.exe'
+  const setup = { name, size: 26655492, browser_download_url: `${base}/download/${tag}/${name}` }
+  const { request } = fixture({ version: '0.1.2' }, { ...metadata, assets: [setup] })
+  assert.deepEqual(await fetchRelease('police', request), { status: 'unavailable' })
 })
 
 test('network and malformed JSON failures become an unavailable state', async () => {

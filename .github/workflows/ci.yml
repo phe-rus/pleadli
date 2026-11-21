@@ -235,8 +235,28 @@ jobs:
           if gh release view "$tag" -R "$RELEASES_REPO" --json isDraft > release-state.json; then
             bun -e 'if (!(await Bun.file("release-state.json").json()).isDraft) throw new Error("This version is already public. Raise the app version.")'
           else
-            gh release create "$tag" -R "$RELEASES_REPO" --draft --target main --title "Pleadli $RELEASE_APP $RELEASE_VERSION" --notes "Windows installers for Pleadli $RELEASE_APP $RELEASE_VERSION. Includes signed updater artifacts; Windows publisher verification is separate."
+            gh release create "$tag" -R "$RELEASES_REPO" --draft --target main --title "Pleadli $RELEASE_APP $RELEASE_VERSION" --notes "Windows installers for Pleadli $RELEASE_APP $RELEASE_VERSION. Signed with the Pleadli code-signing certificate (see pleadli.com/downloads)."
           fi
+
+      # Publisher signing: the installers carry Pleadli's own code-signing
+      # certificate (self-issued, so offices trust the public .cer once; see
+      # docs/RELEASING.md). The private half lives only in these two secrets.
+      - name: Import Windows signing certificate
+        id: signing
+        shell: pwsh
+        env:
+          PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          PFX_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          if (-not $env:PFX_BASE64 -or -not $env:PFX_PASSWORD) { throw "WINDOWS_CERT_PFX_BASE64 and WINDOWS_CERT_PASSWORD must be set" }
+          $path = Join-Path $env:RUNNER_TEMP "pleadli-signing.pfx"
+          [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:PFX_BASE64))
+          $secure = ConvertTo-SecureString $env:PFX_PASSWORD -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath $path -CertStoreLocation Cert:\CurrentUser\My -Password $secure
+          Remove-Item $path
+          $config = (Join-Path $env:RUNNER_TEMP "signing.tauri.json") -replace "\\", "/"
+          @{ bundle = @{ windows = @{ certificateThumbprint = $cert.Thumbprint; digestAlgorithm = "sha256"; timestampUrl = "http://timestamp.digicert.com" } } } | ConvertTo-Json -Depth 5 | Set-Content -Path $config -Encoding utf8
+          "config=$config" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
 
       - name: Build and upload draft artifacts
         uses: tauri-apps/tauri-action@v0
@@ -251,10 +271,11 @@ jobs:
           repo: pleadli-releases
           tagName: ${{ matrix.app }}-v${{ steps.version.outputs.version }}
           releaseName: Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}
-          releaseBody: Windows installers for Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}. Includes signed updater artifacts; Windows publisher verification is separate.
+          releaseBody: Windows installers for Pleadli ${{ matrix.app }} ${{ steps.version.outputs.version }}. Signed with the Pleadli code-signing certificate (see pleadli.com/downloads).
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
+          args: --config ${{ steps.signing.outputs.config }}
 
       - name: Validate draft assets and upload checksums
         shell: bash

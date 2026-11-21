@@ -303,7 +303,7 @@
       "offline_body": "Every Pleadli application is designed to be fully useful with no internet connection at all. Cloud services and cross-institution exchange supplement local work; they are never a requirement for a station, prosecutor, court, advocate, or facility to keep working.",
       "offline_title": "Offline by default",
       "open": {
-        "codesign": "The Windows installers are not yet code-signed. Updates are signed, so an installed copy accepts only Pleadli’s own.",
+        "codesign": "The Windows installers are signed with Pleadli’s own certificate, not one from a public authority, so Windows still warns until an office trusts it. Updates are signed too, so an installed copy accepts only Pleadli’s own.",
         "exchange": "Exchange between machines (Prisons’ pinned-TLS facility sync, a Lawyers firm on one office network, the Police↔DPP interchange) has been tested on one machine or in test runs, never yet between separately installed machines in the field.",
         "police": "Police's attachment vault is not yet sealed under its key, and it does not yet keep the hash-chained audit trail the other four have.",
         "roles": "Roles are uneven across the applications. Lawyers decides by role who may sign, file, or pay out; the others do not yet draw lines that fine within one office."
@@ -362,12 +362,11 @@
     "lookup_failed": "We could not check the download details. Try again later or view the published releases.",
     "metadata": "Windows 64-bit · v{version} · {size} MB · {date}",
     "missing": "A Windows download is not available here yet.",
-    "msi": "MSI for office deployment",
     "not_available": "Not available",
     "release_notes": "Release notes",
     "stand": {
-      "codesign": "Windows may show a publisher or security warning. Update signatures are different from Windows publisher signatures. Ask your IT team or Pleadli support before continuing.",
-      "installers": "Choose the Windows installer above. MSI packages are a separate option for managed office deployment.",
+      "codesign": "The installers are signed by Pleadli. Windows shows a warning until your IT team trusts the Pleadli certificate once (pleadli.com/pleadli-code-signing.cer, as a Trusted Root and Trusted Publisher, for example by Group Policy). Compare its SHA-256 fingerprint with the one Pleadli gives you before trusting it.",
+      "installers": "Choose the Windows installer above. It is an MSI package, which suits managed office deployment.",
       "rest": "Windows is the current public download platform. Courts is still in development. AI and connections to other offices may need internet and separate setup.",
       "updates": "Released apps check for updates signed with Pleadli’s update key and ask before installing. Keep a backup before an update."
     },
