@@ -233,7 +233,7 @@ pub async fn issue(pool: &SqlitePool, id: &str, input: IssueInput, signer: Optio
 
     let now = chrono::Utc::now();
     let year: i64 = now.format("%Y").to_string().parse().unwrap_or(0);
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let next: i64 = sqlx::query_scalar("SELECT next FROM document_counters WHERE prefix = ? AND year = ?").bind(&prefix).bind(year).fetch_optional(&mut *tx).await?.unwrap_or(1);
     sqlx::query("INSERT INTO document_counters (prefix, year, next) VALUES (?, ?, ?) ON CONFLICT (prefix, year) DO UPDATE SET next = excluded.next")
         .bind(&prefix)

@@ -19,8 +19,10 @@ pub async fn record(conn: &mut SqliteConnection, entry: Entry<'_>) -> Result<(),
 /// Appends an entry on its own, for events that change nothing else (a
 /// sign-in, a refused attempt).
 pub async fn log(pool: &SqlitePool, entry: Entry<'_>) -> Result<(), sqlx::Error> {
-    let mut conn = pool.acquire().await?;
-    record(&mut conn, entry).await
+    // Read the last hash, then append: one write lock, so two events at once cannot take the same place.
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    record(&mut tx, entry).await?;
+    tx.commit().await
 }
 
 pub async fn recent(pool: &SqlitePool, case_id: Option<&str>, limit: i64) -> Result<Vec<AuditEntry>, sqlx::Error> {

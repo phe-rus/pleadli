@@ -210,7 +210,7 @@ pub async fn decide(pool: &SqlitePool, actor: &Actor, request_id: &str, approve:
         return Err(DomainError::rejected("This station has been revoked."));
     }
     let now = now_ms();
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     if approve {
         sqlx::query("UPDATE connection_requests SET status = 'superseded' WHERE station_id = ? AND id != ? AND status IN ('pending', 'approved')")
             .bind(&station_id)
@@ -298,7 +298,7 @@ pub async fn request_connection(pool: &SqlitePool, input: ConnectInput, requeste
     let now = now_ms();
     let request_id = Uuid::new_v4().to_string();
     let code = input.activation_code.as_deref().map(str::trim).filter(|c| !c.is_empty());
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
 
     if let Some(code) = code {
         let stored: (Option<String>, Option<i64>) = sqlx::query_as("SELECT activation_code_hash, activation_expires_at FROM command_stations WHERE id = ?")

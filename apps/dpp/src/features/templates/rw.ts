@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import type { Block } from '@/features/documents/schema'
 import type { Template, TemplateContext } from './types'
 
@@ -11,8 +12,8 @@ import type { Template, TemplateContext } from './types'
  */
 
 const DASH = '....................'
-const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-const when = (ms: number) => new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: zoneFor(ms) })
+const when = (ms: number) => new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: zoneFor(ms) })
 const suspects = (ctx: TemplateContext) => (ctx.accused.length ? ctx.accused.join(', ') : DASH)
 const offences = (ctx: TemplateContext) => (ctx.charges.length ? ctx.charges.map((c) => `${c.offence}${c.section ? ` (${c.section})` : ''}`).join('; ') : DASH)
 const last = (ctx: TemplateContext, kind: string) => [...ctx.custody].reverse().find((e) => e.kind === kind)

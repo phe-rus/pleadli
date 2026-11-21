@@ -48,6 +48,7 @@ export const ugPack: JurisdictionPack = {
   },
   regions: ugRegions,
   numbering: { pattern: '{SEQ:4}/{YEAR}', reset: 'yearly', provisional: true },
+  dischargeBeforeNoon: true,
   examples: { facilityCode: 'UG-LUZ-001', badge: 'UP-0142' },
 }
 

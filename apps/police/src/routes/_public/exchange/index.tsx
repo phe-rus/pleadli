@@ -1,5 +1,6 @@
 import * as m from '@/paraglide/messages'
 import { acceptInvite, createIdentity, exportReferral, getIdentity, importPackage, listConnections, listIncoming, pickPackage, savePackage, type Connection, type Incoming, type StationIdentity } from '@/features/exchange/data'
+import { answerInvitation, checkRelay, declineInvitation, getRelay, reopenReceived, retryRelay, sendByPostbox, type RelayStatus, type Stage } from '@/features/relay/data'
 import { api } from '@/lib/api'
 import { format } from '@/lib/date'
 import { Badge } from '@pleadli/ui/badge'
@@ -24,6 +25,7 @@ function RouteComponent() {
   const [name, setName] = useState('')
   const [area, setArea] = useState('')
   const [inCharge, setInCharge] = useState('')
+  const [relay, setRelay] = useState<RelayStatus | null>(null)
 
   const load = useCallback(async () => {
     const id = await getIdentity()
@@ -32,6 +34,7 @@ function RouteComponent() {
       setConnections(await listConnections())
       setIncoming(await listIncoming())
       setReferrals(await api('/referrals?query='))
+      setRelay(await getRelay().catch(() => null))
     }
   }, [])
   useEffect(() => {
@@ -49,6 +52,18 @@ function RouteComponent() {
   }
 
   const trusted = connections.some((c) => c.status === 'trusted')
+  const stageLabel: Record<Stage, string> = {
+    queued: m['relay.stage_queued'](),
+    sent: m['relay.stage_sent'](),
+    delivered: m['relay.stage_delivered'](),
+    opened: m['relay.stage_opened'](),
+    accepted: m['relay.stage_accepted'](),
+    rejected: m['relay.stage_rejected'](),
+    attention: m['relay.stage_attention'](),
+    expired: m['relay.stage_expired'](),
+  }
+  const invitations = (relay?.received ?? []).filter((r) => r.status === 'new' && r.invitation)
+  const turnedAway = (relay?.received ?? []).filter((r) => r.status === 'refused')
 
   return (
     <article className="page">
@@ -157,9 +172,68 @@ function RouteComponent() {
                     >
                       {m['exchange.save_file']()}
                     </Button>
+                    <Button
+                      size="sm"
+                      disabled={!trusted || !relay?.ready}
+                      onClick={() =>
+                        run(async () => {
+                          await sendByPostbox(r.id)
+                          return m['relay.queued']()
+                        })
+                      }
+                    >
+                      {m['relay.send_postbox']()}
+                    </Button>
                   </div>
                 ))
               )}
+            </SettingsCard>
+
+            <SettingsCard
+              title={m['relay.title']()}
+              description={relay?.ready ? m['relay.hint']({ address: relay.address ?? '' }) : m['relay.needs_licence']()}
+              action={
+                <Button variant="secondary" disabled={!relay?.ready} onClick={() => run(async () => void setRelay(await checkRelay()))}>
+                  {m['relay.check_now']()}
+                </Button>
+              }
+            >
+              {relay?.last.error && <p className="text-destructive">{m['relay.last_failed']({ error: relay.last.error })}</p>}
+              {invitations.map((r) => (
+                <div key={r.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="flex flex-col">
+                    <span>{m['relay.invitation_from']({ office: r.invitation!.officeName })}</span>
+                    <span className="text-muted-foreground">{m['exchange.fingerprint']()} <span className="font-mono">{r.invitation!.fingerprint}</span></span>
+                  </span>
+                  <span className="flex gap-2">
+                    <Button size="sm" onClick={() => run(async () => void setRelay(await answerInvitation(r.id, inCharge)))}>{m['relay.answer']()}</Button>
+                    <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await declineInvitation(r.id, '')))}>{m['relay.decline']()}</Button>
+                  </span>
+                </div>
+              ))}
+              {(relay?.sent ?? []).map((x) => (
+                <div key={x.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="flex flex-col">
+                    <span>{x.policeReference ?? x.kind} {x.office ? <span className="text-muted-foreground">· {x.office}</span> : null}</span>
+                    {x.error && <span className="text-destructive">{x.error}</span>}
+                    {x.reason && <span className="text-muted-foreground">{x.reason}</span>}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Badge variant={x.stage === 'accepted' ? 'default' : x.stage === 'attention' || x.stage === 'rejected' ? 'destructive' : 'secondary'}>{stageLabel[x.stage]}</Badge>
+                    {(x.stage === 'attention' || x.stage === 'queued') && <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await retryRelay(x.id)))}>{m['relay.retry']()}</Button>}
+                  </span>
+                </div>
+              ))}
+              {turnedAway.map((r) => (
+                <div key={r.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="flex flex-col">
+                    <span>{m['relay.turned_away']({ kind: r.kind, from: r.from })}</span>
+                    <span className="text-destructive">{r.reason}</span>
+                  </span>
+                  <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await reopenReceived(r.id)))}>{m['relay.retry']()}</Button>
+                </div>
+              ))}
+              {relay?.ready && relay.sent.length === 0 && invitations.length === 0 && turnedAway.length === 0 && <p className="text-muted-foreground">{m['relay.nothing']()}</p>}
             </SettingsCard>
 
             <SettingsCard title={m['exchange.incoming_title']()}>
@@ -170,7 +244,7 @@ function RouteComponent() {
                   const body = safe(i.payload)
                   return (
                     <div key={i.id} className="flex flex-col gap-0.5">
-                      <span>{i.kind === 'receipt' ? m['exchange.receipt']() : m['exchange.decision']()} · {i.officeName} · {format(i.receivedAt, 'PP')}</span>
+                      <span>{i.kind === 'receipt' ? (safe(i.payload).outcome === 'received' ? m['relay.stage_opened']() : m['exchange.receipt']()) : m['exchange.decision']()} · {i.officeName} · {format(i.receivedAt, 'PP')}</span>
                       <span className="text-muted-foreground">{[body.policeReference, body.outcome ?? body.decisionType, body.dppReference, body.reason].filter(Boolean).join(' · ')}</span>
                     </div>
                   )

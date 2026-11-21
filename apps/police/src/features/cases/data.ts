@@ -1,4 +1,3 @@
-import * as m from '@/paraglide/messages'
 import { api, DEV_API_URL } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
@@ -45,13 +44,10 @@ export type DocumentFormat = 'pdf' | 'docx'
  * split; returns `false` only if the officer cancels the save dialog. */
 export async function exportCaseDocument(id: string, format: DocumentFormat) {
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({
-      defaultPath: `case-file.${format}`,
-      filters: [{ name: format === 'pdf' ? m["common.pdf_document"]() : m["common.word_document"](), extensions: [format] }],
-    })
-    if (typeof path !== 'string') return false
+    const { downloadPath, saidSaved } = await import('@/lib/downloads')
+    const path = await downloadPath(`case-file.${format}`)
     await invoke('export_case_document', { id, format, destinationPath: path })
+    saidSaved(path)
     return true
   }
   window.open(`${DEV_SERVER_URL}/cases/${encodeURIComponent(id)}/export/${format}`, '_blank')

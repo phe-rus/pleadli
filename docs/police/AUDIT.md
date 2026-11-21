@@ -327,3 +327,58 @@ Files are sealed (ChaCha20-Poly1305, vault key from the keystore) as `attachment
 - "Show in folder" is gone (there is no folder to show).
 
 Not yet seen in a real window: adopting a real Documents folder, a restored backup, opening a file in another program. Covered by tests: sealing, virtual folders, restricted listing, adoption and removal of plain copies, the export zip.
+
+### 2026-11-21 (later): first real use in the desktop window
+
+Run in the real Tauri window (WebDriver, fresh data folder), not only tests:
+
+- **Setup, sign-in and loading now share one branded side panel** (`packages/setup/src/brand-panel.tsx`, used by `SetupFlow`, `SignInScreen`, `BootScreen`), the original Police/Prisons design: round logo, product name, the app's own headline and text, a large faint icon, the accent colour chosen in setup. Each app passes its own words (`brand`); only Police does so far. Police setup starts at the Licence step (`skipWelcome`).
+- **Window opens sized to the screen** (82% by 84%, clamped, centred) instead of a fixed 1280 by 840. Police only so far.
+- **Bug fixed: "Open a case from this" could never be saved** (the shared Save button needed an edit; a pre-filled form has none). `allowPristine` on `form.submit`.
+- **Phone-capture link now uses a real local-network address** (`transport::lan_address`), not the first interface (which can be a VPN or Docker address). On this Chromebook container only a 100.x address exists, so a phone still cannot reach it here.
+- Seen working in the window: incident, people, case with roles, custody (48-hour limit from the rules, deadline, linked case), statement, photo frames filled through the phone-capture route, sealed vault on disk (`.enc` files with the `PLVAULT1` header, no plain image or Markdown files).
+- Seen later the same day: an exhibit (broken bottle, mark EX-1/WDG/2026, linked to the case) with the scene photograph attached and sealed on disk; a charge sheet (PF 53 layout with crest, accused, section, particulars, signature lines, Word/PDF/print buttons); a referral to the Resident State Attorney with notes; a recorded statement with sealed audio that plays back.
+- Kenya rules seen in the window (test station switched to KE, then back): the custody record changed from 48 to "24 hours from the arrest" with "23 hours left". DR Congo not tried (same mechanism). (Fixed the same night, see below.) The paper header read "UGANDA POLICE FORCE" for every country.
+- Fixed in the code, seen in the window: the exhibit form now pre-fills Receiving officer with the signed-in officer.
+- Not yet seen: a real face photograph, a real voice, the paper outputs actually printed or saved to PDF/Word, the app's own download button against the real GitHub address.
+- Found: (fixed 2026-11-21, see below) the charge sheet and referral had no step that carried the exhibit or statement across.
+- Known small flaws: a case's summary appears twice in the list when opened from an incident; Police has no "choose an image" option for photographs when there is no camera; the Look step preselects Blue while the app's own colour is teal; the floating language pill duplicates the language step in setup.
+- Spoken statements (audio with a live offline transcript) designed in `SPOKEN-STATEMENTS.md`; the shared engine is built and tested, the Police screen is not.
+
+### 2026-11-21 (evening): paper outputs checked as files
+
+Saved and looked at (rendered the PDFs with Ghostscript, read the Word XML). The native Save window cannot be clicked by the test driver and the page's `invoke` cannot be replaced, so the app's own PDF and Word generator (`packages/paper/src/files.ts`) was run on the real on-screen charge sheet and written with the real `save_paper_file` command. The button handlers themselves were not exercised.
+
+- **Charge sheet, from the screen (app PDF and Word):** correct text, verification code and station, readable A4 page, valid Word file. Missing compared with the screen: the crest, the signature lines (they print as "Preferred by: / Sarah Namukasa / Before me: / Magistrate"), and the two-column layout (Date and Accused stack on the right). The force name and the title appear twice.
+- **Charge sheet, from `export_charge_sheet_document` (not reachable from any button today):** a plain data sheet, no crest, times in UTC (14:34 for 17:34 local, so a Kampala officer would read a time three hours early), and "Accused: Dennis Ssemanda ()" with an empty bracket when there is no ID number.
+- **Case document from `export_case_document` (reached from the case's export):** produced; not examined in detail.
+- To do: crest and signature lines in the generated PDF and Word; local time zone in the export commands; the empty bracket; one path for all paper rather than two.
+
+### 2026-11-21 (night): saving papers needs no Save window (owner request)
+
+Every save in Police (Save as Word / PDF on any paper, the case, person and charge-sheet exports, the exchange package) now goes straight to the computer's **Downloads folder**, shows "Saved to Downloads: <name>", and never overwrites: a taken name becomes "Name (2).pdf". New command `downloads_path` (`commands/documents.rs`) picks the folder (`PLEADLI_DOWNLOADS_DIR` overrides it for a test copy) and cleans the file name (no folders, no characters a file system dislikes); the window helper is `src/lib/downloads.ts`. Opening a file for the officer to choose (importing a package, adding attachments) still uses the system window.
+
+Seen in the real window: clicking Save as PDF and Save as Word on the charge sheet wrote `Charge-sheet (2).pdf` and `Charge-sheet.docx` into the real Downloads folder next to an older `Charge-sheet.pdf`, which was left untouched; the PDF showed the text, the Word file passed a zip check; a name like `../../etc/evil?.pdf` became `evil_.pdf`. Test files were removed afterwards. Not yet seen: the case, person and package saves from their buttons (same helper), and on Windows (the Downloads folder is found by the same OS call).
+
+### 2026-11-21 (night, later): PDF and Word now carry the crest and the lines
+
+`packages/paper/src/files.ts` (shared by all five apps) now reads pictures and lines off the sheet: the crest goes into the PDF (as a JPEG, DCTDecode) and into the Word file (`word/media`, relationships, content type), and a line becomes a line: signature lines (short, with room above to sign) and dividers (full width). A line is an element with a border on one side only, so bordered photo frames do not turn into stray lines.
+
+Seen by clicking the real Save as PDF and Save as Word buttons (test copy, files into a scratch folder via `PLEADLI_DOWNLOADS_DIR`): the charge sheet PDF shows the crest, dividers, and "Preferred by" / "Before me" with real signature lines; the Word file passes a zip test, its XML parts are well formed, the crest is in `word/media/image1.jpg`. The custody record PDF shows the crest and its two officer signature lines. The Word file has not been opened in Word or LibreOffice (neither is installed here).
+
+Still different from the screen: two-column rows (Station left, Date right) come out as separate lines; the force name and title appear twice; the custody record's photo frames and details run together in reading order, and no person photographs appeared (the test person has none in this copy, so photos in the PDF are unproven); the other four apps share the generator but were not run.
+
+### 2026-11-21 (night, later still): the file travels together
+
+A case's statements and exhibits now follow it onto the paperwork (`src/features/paper/use-enclosures.ts`):
+
+- The **charge sheet** has a "Statements and exhibits" list after the particulars ("Statement of Okello, Moses, November 21st, 2026", "Exhibit EX-1/WDG/2026: Broken beer bottle..."). Because the saved PDF and Word files are made from the same sheet, they carry it too.
+- The **referral form** shows "Goes with this referral" once a case is chosen, listing the same, with an "Add the list to the notes" button (the officer keeps control of the notes text; nothing is added silently). In English, Kiswahili and French.
+
+Seen in the real window with the test case: the list on the charge sheet and the list and the button on the referral form. Correction: the referral does already have a printable paper, "Case file referral" (covering letter with the destination, case, date, status, the officer's notes and a signature line); it is on the Referrals page, not a separate screen. It now also carries the "Statements and exhibits" list, and the saved PDF shows it (seen). Not done: the DPP app does not yet receive the list as structured data, only as notes text and on the paper.
+
+### 2026-11-21 (night, last): the papers carry the country's own police name
+
+`usePoliceForce()` (`src/features/rules/force.ts`) picks the name from the station's rules country: Uganda "Uganda Police Force" (Kiswahili "Jeshi la Polisi Uganda"), Kenya "Kenya Police Service" (Kiswahili "Huduma ya Polisi ya Kenya"), DR Congo "Police Nationale Congolaise" (in every language). Used by the station head on every record paper, the charge sheet and the case binder heading. Seen in the real window: switching the test station UG, KE, CD changed the charge sheet header each time (then back to unset).
+
+**The Kenya and DR Congo names are my draft from recall and have not been reviewed by anyone from those services.** Kenya's police are formally the National Police Service, made of the Kenya Police Service and the Administration Police Service; "Kenya Police Service" suits a station's own paper but a reviewer should confirm. Other wording still Uganda-specific: ranks (`officers/ranks.ts`), the PF 53 form number, offence section citations typed by the officer.

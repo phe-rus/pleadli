@@ -1,4 +1,3 @@
-import * as m from '@/paraglide/messages'
 import { DEV_API_URL } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
@@ -12,6 +11,11 @@ import {
 
 const DEV_SERVER_URL = DEV_API_URL
 
+/** The system Save window, opened by the application itself so that only the place the person picks can be written. */
+async function pickSavePath(defaultName: string, extension: string): Promise<string | null> {
+  return invoke<string | null>('pick_save_path', { defaultName, extension })
+}
+
 /**
  * Regenerates every record's Markdown fresh, adds an index/README on top,
  * and zips the whole Police Vault. In Tauri, the officer picks where it
@@ -23,12 +27,8 @@ const DEV_SERVER_URL = DEV_API_URL
  */
 export async function exportAllMarkdown() {
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({
-      defaultPath: 'pleadli-police-vault.zip',
-      filters: [{ name: m["common.zip_archive"](), extensions: ['zip'] }],
-    })
-    if (typeof path !== 'string') return false
+    const path = await pickSavePath('pleadli-police-vault.zip', 'zip')
+    if (!path) return false
     await invoke('export_all_markdown', { destinationPath: path })
     return true
   }
@@ -40,12 +40,8 @@ export async function exportAllMarkdown() {
  * the Tauri/dev-fallback split. */
 export async function exportAllXlsx() {
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({
-      defaultPath: 'pleadli-police-data.xlsx',
-      filters: [{ name: m["common.excel_workbook"](), extensions: ['xlsx'] }],
-    })
-    if (typeof path !== 'string') return false
+    const path = await pickSavePath('pleadli-police-data.xlsx', 'xlsx')
+    if (!path) return false
     await invoke('export_all_xlsx', { destinationPath: path })
     return true
   }
@@ -60,12 +56,8 @@ export type DocumentFormat = 'pdf' | 'docx'
  * for the Tauri/dev-fallback split. */
 export async function exportAllDocument(format: DocumentFormat) {
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({
-      defaultPath: `pleadli-police-data.${format}`,
-      filters: [{ name: format === 'pdf' ? m["common.pdf_document"]() : m["common.word_document"](), extensions: [format] }],
-    })
-    if (typeof path !== 'string') return false
+    const path = await pickSavePath(`pleadli-police-data.${format}`, format)
+    if (!path) return false
     await invoke(format === 'pdf' ? 'export_all_pdf' : 'export_all_docx', { destinationPath: path })
     return true
   }

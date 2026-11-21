@@ -49,6 +49,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
+            if let Some(window) = app.get_webview_window("police") {
+                fit_window_to_screen(&window);
+            }
             let dev_dir = dev_data_dir();
             let data_dir = match &dev_dir {
                 Some(dir) => dir.clone(),
@@ -231,6 +234,8 @@ pub fn run() {
             commands::documents::export_case_document,
             commands::documents::export_charge_sheet_document,
             commands::documents::save_paper_file,
+            commands::documents::downloads_path,
+            commands::documents::pick_save_path,
             commands::documents::read_paper_file,
             commands::documents::office_apps,
             commands::documents::open_paper_file,
@@ -276,4 +281,19 @@ pub(crate) fn port_from_env(name: &str, default: u16) -> u16 {
     } else {
         default
     }
+}
+
+/// Opens the window at a size that suits the screen it is on: most of the
+/// width and height, never cramped and never larger than is comfortable, then
+/// centred. A fixed size looked small on a big screen and could overflow a small one.
+fn fit_window_to_screen(window: &tauri::WebviewWindow) {
+    let Ok(Some(monitor)) = window.current_monitor().or_else(|_| window.primary_monitor()) else {
+        return;
+    };
+    let scale = monitor.scale_factor();
+    let (screen_w, screen_h) = (monitor.size().width as f64 / scale, monitor.size().height as f64 / scale);
+    let width = (screen_w * 0.82).clamp(1100.0, 1680.0).min(screen_w);
+    let height = (screen_h * 0.84).clamp(700.0, 1050.0).min(screen_h);
+    let _ = window.set_size(tauri::LogicalSize::new(width, height));
+    let _ = window.center();
 }

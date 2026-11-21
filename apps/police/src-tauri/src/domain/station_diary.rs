@@ -53,7 +53,7 @@ pub async fn create_entry(
 
     // The number is taken in the same transaction that writes the entry, so
     // a failed write gives it back.
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let (number, year) = registers::take_next(&mut tx, registers::SD).await?;
     sqlx::query(
         "INSERT INTO station_diary_entries (id, category, content, person_id, entry_year, entry_number) VALUES (?, ?, ?, ?, ?, ?)",

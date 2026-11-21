@@ -1,4 +1,5 @@
 import { DEFAULT_LOGO, setBrandLogo } from '@/features/brand'
+import { PrisonGuardIcon } from '@hugeicons/core-free-icons'
 import { changeLocale, useLocale } from '@/features/i18n'
 import { conventionsSchema, identitySchema, initialDraft, type Draft } from '@/features/onboarding/schema'
 import { ConventionsStep } from '@/features/onboarding/setup-steps'
@@ -7,10 +8,14 @@ import { TextField } from '@/components/form-fields'
 import { ApiError } from '@/lib/api'
 import { m } from '@/paraglide/messages'
 import { DesktopControls } from '@pleadli/shell'
-import { applyAccent, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type ExtraStep, type Locale, type SetupRole } from '@pleadli/setup'
+import { applyAccent, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type ExtraStep, type Locale, type SetupRole, type Brand } from '@pleadli/setup'
 import { useQuery } from '@tanstack/react-query'
 import { useRef, type ReactNode } from 'react'
 import { listSignInPeople, requestSecondFactor, sharedSignIn } from './data'
+
+/** What the panel beside setup, sign-in and loading says. This app writes its own words. */
+const panelBrand = (): Brand => ({ label: m.brand_label(), headline: m.brand_headline(), body: m.brand_body(), icon: PrisonGuardIcon })
+
 
 const PRODUCT = 'Pleadli Prisons'
 const ACCENT_KEY = 'pleadli:prisons:accent'
@@ -84,7 +89,7 @@ export function SharedSetup({ welcomeAction, onDone, onStarted }: { welcomeActio
   return (
     <SetupFlow
       institution="prisons"
-      productName={PRODUCT}
+      productName={PRODUCT} brand={panelBrand()}
       defaultLogo={DEFAULT_LOGO}
       defaultAccent="green"
       locale={locale}
@@ -131,11 +136,11 @@ export function SharedSetup({ welcomeAction, onDone, onStarted }: { welcomeActio
 export function SharedSignIn({ officeName, logo, onSignedIn }: { officeName: string | null; logo: string; onSignedIn: () => void }) {
   const locale = useLocale() as Locale
   const { data: people } = useQuery({ queryKey: ['session', 'people'], queryFn: listSignInPeople, retry: false })
-  if (!people) return <BootScreen logo={logo} productName={PRODUCT} label={SETUP_MESSAGES[locale].loading} />
+  if (!people) return <BootScreen logo={logo} productName={PRODUCT} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   return (
     <SignInScreen
       locale={locale}
-      productName={PRODUCT}
+      productName={PRODUCT} brand={panelBrand()}
       officeName={officeName}
       logo={logo}
       people={people}

@@ -25,7 +25,7 @@ import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Card, CardContent } from '@pleadli/ui/card'
 import { t } from '@pleadli/ui/goey-toaster'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useState } from 'react'
 import { m } from '@/paraglide/messages'
 

@@ -6,9 +6,11 @@
 //! because they need the operating system (a file dialog, a path, an event).
 
 pub mod exchange;
+pub mod relay;
 pub mod hq;
 pub mod orchestra;
 pub mod session;
+pub mod speech;
 
 use axum::{
     body::Body,
@@ -749,10 +751,10 @@ async fn save_station_profile_handler(
     State(state): State<AppState>,
     Json(input): Json<SaveStationProfileInput>,
 ) -> Result<Json<StationProfile>, ApiError> {
-    station_admin::save_station_profile(&state.pool, &state.vault_root, input)
-        .await
-        .map(Json)
-        .map_err(internal_error)
+    let profile = station_admin::save_station_profile(&state.pool, &state.vault_root, input).await.map_err(internal_error)?;
+    // A changed country can change which zone applies by default.
+    crate::domain::station_clock::reload(&state.pool).await.map_err(internal_error)?;
+    Ok(Json(profile))
 }
 
 async fn create_referral_handler(
@@ -1149,7 +1151,7 @@ async fn edit_rule_handler(
     if actor.role != "admin" {
         return Err((StatusCode::FORBIDDEN, "Only an administrator can change a rule.".to_string()));
     }
-    let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let today = pleadli_node_core::timezone::local_date(crate::domain::time::now_ms(), &pleadli_node_core::timezone::current_zone().unwrap_or_else(|| "UTC".to_string()));
     crate::domain::rules::update_rule(&state.pool, &id, edit, &actor.name, &today)
         .await
         .map(Json)
@@ -1336,6 +1338,28 @@ async fn create_attachment_handler(
     }
 
     attachments::add_attachment_bytes(&state.pool, &state.vault_root, &entity_type, &entity_id, &file_name, &bytes)
+        .await
+        .map(Json)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AttachBytesInput {
+    entity_type: String,
+    entity_id: String,
+    file_name: String,
+    /// The file's bytes as base64, with or without a `data:...;base64,` prefix.
+    data_base64: String,
+}
+
+/// Keeps a file the window made itself (a recorded statement) with its record. Sent as JSON so it
+/// works the same in a release build as in the browser, where there is no file path to give.
+async fn create_attachment_from_bytes_handler(State(state): State<AppState>, Json(input): Json<AttachBytesInput>) -> Result<Json<Attachment>, ApiError> {
+    use base64::Engine;
+    let raw = input.data_base64.split_once(',').map(|(_, b)| b).unwrap_or(&input.data_base64);
+    let bytes = base64::engine::general_purpose::STANDARD.decode(raw).map_err(|_| (StatusCode::BAD_REQUEST, "That file could not be read.".to_string()))?;
+    attachments::add_attachment_bytes(&state.pool, &state.vault_root, &input.entity_type, &input.entity_id, &input.file_name, &bytes)
         .await
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
@@ -1541,7 +1565,7 @@ struct LocalNetworkInfo {
 
 async fn get_local_network_info_handler() -> Json<LocalNetworkInfo> {
     Json(LocalNetworkInfo {
-        address: local_ip_address::local_ip().ok().map(|ip| ip.to_string()),
+        address: crate::transport::lan_address().map(|ip| ip.to_string()),
         port: crate::transport::remote_server::DEFAULT_PORT,
     })
 }
@@ -1578,6 +1602,7 @@ async fn next_register_number_handler(
 /// uses `router`; a test of one route's behaviour may use this.
 fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
     let state = AppState { pool, vault_root };
+    let audit_state = state.clone();
     #[cfg(debug_assertions)]
     let dev_state = state.clone();
     let routes = Router::new()
@@ -1594,6 +1619,8 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/auth/me", get(session::me))
         .route("/auth/policy", get(session::get_policy).put(session::save_policy))
         .route("/auth/events", get(session::list_events))
+        .route("/audit", get(list_audit))
+        .route("/audit/verify", get(verify_audit))
         .route("/exchange/identity", get(exchange::get_identity).post(exchange::create_identity))
         .route("/exchange/connections", get(exchange::list_connections))
         .route("/exchange/accept-invite", post(exchange::accept_invite))
@@ -1655,6 +1682,10 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/custody/{id}", put(update_custody_record_handler))
         .route("/medical", post(create_medical_handler).get(list_medical_handler))
         .route("/medical/{id}", put(update_medical_handler))
+        .route("/transcription/status", get(speech::status))
+        .route("/transcription/install", post(speech::install))
+        .route("/transcription/transcribe", post(speech::transcribe).layer(axum::extract::DefaultBodyLimit::max(16 * 1024 * 1024)))
+        .route("/timezone", get(get_timezone_handler).put(set_timezone_handler))
         .route("/rules", get(get_rules_handler))
         .route("/rules/import", post(import_rules_handler))
         .route("/rules/item/{id}", axum::routing::put(edit_rule_handler))
@@ -1676,6 +1707,7 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         )
         .route("/attachments", post(create_attachment_handler).get(list_attachments_handler))
         .route("/attachments/bulk", post(bulk_attach_files_handler))
+        .route("/attachments/bytes", post(create_attachment_from_bytes_handler).layer(axum::extract::DefaultBodyLimit::max(256 * 1024 * 1024)))
         .route("/attachments/all", get(list_all_attachments_handler))
         .route("/attachments/route", get(get_attachment_route_handler))
         .route("/vault", get(list_vault_directory_handler))
@@ -1722,15 +1754,52 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/system/dev-mode", post(session::dev_mode).with_state(dev_state.clone()))
         .route("/auth/dev-sign-in", post(session::dev_sign_in).with_state(dev_state));
 
-    Router::new().nest("/api", routes)
+    // Inside the sign-in guard, so the officer is already known; outside every handler, so no
+    // route can be added that the trail does not see.
+    Router::new().nest("/api", routes).layer(axum::middleware::from_fn_with_state(audit_state, record_audit))
+}
+
+/// Writes the audit entry for a request that is an event (see `domain::audit::classify`) once its
+/// answer is known. If the entry cannot be written the caller is told, because a change the trail
+/// does not hold must not look like an ordinary success.
+async fn record_audit(State(state): State<AppState>, request: axum::extract::Request, next: axum::middleware::Next) -> Response {
+    let method = request.method().to_string();
+    let path = request.extensions().get::<axum::extract::OriginalUri>().map(|u| u.path().to_string()).unwrap_or_else(|| request.uri().path().to_string());
+    let actor = request.extensions().get::<Actor>().cloned();
+    let response = next.run(request).await;
+    let Some(event) = crate::domain::audit::classify(&method, &path, response.status().as_u16()) else {
+        return response;
+    };
+    match crate::domain::audit::log(&state.pool, actor.as_ref(), &event).await {
+        Ok(()) => response,
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("The action was done but could not be written to the audit trail: {e}")).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct AuditQuery {
+    case: Option<String>,
+    limit: Option<i64>,
+}
+
+async fn list_audit(State(state): State<AppState>, Query(q): Query<AuditQuery>) -> Result<Json<Vec<crate::domain::audit::AuditEntry>>, ApiError> {
+    crate::domain::audit::recent(&state.pool, q.case.as_deref(), q.limit.unwrap_or(100)).await.map(Json).map_err(internal_error)
+}
+
+async fn verify_audit(State(state): State<AppState>) -> Result<Json<crate::domain::audit::Verification>, ApiError> {
+    crate::domain::audit::verify(&state.pool).await.map(Json).map_err(internal_error)
 }
 
 /// The whole API, nested under `/api`, with the guard in front of every
 /// route: no valid session, no answer.
 pub fn router(pool: SqlitePool, vault_root: PathBuf, orchestra: Option<std::sync::Arc<pleadli_node_core::orchestra::Orchestra>>) -> Router {
     let state = AppState { pool: pool.clone(), vault_root: vault_root.clone() };
-    let mut all = routes(pool, vault_root);
+    let mut all = routes(pool.clone(), vault_root.clone());
     if let Some(o) = orchestra {
+        // The postbox rides on the licence the same Orchestra holds.
+        let relay = crate::domain::relay::Relay::new(pool.clone(), vault_root.clone(), o.clone());
+        tauri::async_runtime::spawn(relay.clone().run());
+        all = all.merge(relay::routes(state.clone(), relay));
         all = all.nest("/api/orchestra", orchestra::routes(o));
     }
     all.layer(axum::middleware::from_fn_with_state(state, session::guard))
@@ -1784,6 +1853,39 @@ mod tests {
         (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
     }
 
+
+    /// Every successful write is on the audit trail with the officer who made it, a read is not,
+    /// the chain verifies, and rewriting one entry behind the database's guards is caught.
+    #[tokio::test]
+    async fn writes_are_on_a_tamper_evident_trail() {
+        let dir = std::env::temp_dir().join(format!("pleadli-audit-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let vault_root = dir.join("vault");
+        let db = crate::db::startup(&dir, vault_root.clone()).await.ok().unwrap();
+        let app = as_admin(routes(db.pool.clone(), vault_root));
+
+        assert_eq!(call(&app, Method::GET, "/api/custody", None).await.0, StatusCode::OK);
+        let entry = json!({ "category": "general", "content": "Trail test", "personId": null });
+        assert_eq!(call(&app, Method::POST, "/api/station-diary", Some(entry)).await.0, StatusCode::OK);
+        assert_eq!(call(&app, Method::POST, "/api/cases", Some(json!({}))).await.0.is_success(), false, "a rejected write is not an event");
+
+        let (status, rows) = call(&app, Method::GET, "/api/audit", None).await;
+        assert_eq!(status, StatusCode::OK);
+        let rows = rows.as_array().unwrap();
+        assert_eq!(rows.len(), 1, "one write succeeded; the read and the failed write are not events");
+        assert_eq!(rows[0]["action"], "POST /station-diary");
+        assert_eq!(rows[0]["actor"], "Test Administrator");
+
+        let (_, verdict) = call(&app, Method::GET, "/api/audit/verify", None).await;
+        assert_eq!(verdict["intact"], true);
+
+        sqlx::query("DROP TRIGGER audit_log_no_update").execute(&db.pool).await.unwrap();
+        sqlx::query("UPDATE audit_log SET actor = 'Someone Else'").execute(&db.pool).await.unwrap();
+        let (_, verdict) = call(&app, Method::GET, "/api/audit/verify", None).await;
+        assert_eq!(verdict["intact"], false);
+        assert_eq!(verdict["brokenAt"], 1);
+        db.pool.close().await;
+    }
     /// The router as the desktop shell uses it, over a real migrated database:
     /// everything answers under `/api` only, diary entries and blank-reference
     /// cases take consecutive register numbers, and the command structure
@@ -2175,4 +2277,32 @@ mod tests {
         db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);
     }
+}
+
+// ---------- timezone ----------
+
+async fn get_timezone_handler(State(state): State<AppState>) -> Result<Json<pleadli_node_core::timezone::ZoneStatus>, ApiError> {
+    crate::domain::station_clock::status(&state.pool).await.map(Json).map_err(internal_error)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetTimezoneInput {
+    zone_id: String,
+    reason: Option<String>,
+}
+
+/// The station's timezone for legal times. Only an administrator; every change is kept in the history with who, when and why.
+async fn set_timezone_handler(
+    State(state): State<AppState>,
+    Extension(actor): Extension<crate::domain::sessions::Actor>,
+    Json(input): Json<SetTimezoneInput>,
+) -> Result<Json<pleadli_node_core::timezone::ZoneStatus>, ApiError> {
+    if actor.role != "admin" {
+        return Err((StatusCode::FORBIDDEN, "Only an administrator can change the station's timezone.".to_string()));
+    }
+    crate::domain::station_clock::set(&state.pool, &input.zone_id, &actor.name, input.reason.as_deref().filter(|r| !r.trim().is_empty()))
+        .await
+        .map_err(|reason| (StatusCode::UNPROCESSABLE_ENTITY, reason))?;
+    crate::domain::station_clock::status(&state.pool).await.map(Json).map_err(internal_error)
 }

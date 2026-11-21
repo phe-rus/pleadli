@@ -2,7 +2,7 @@ import { useFacilities, facilityStatusLabel, type FacilityOfficer } from '@/feat
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import type { ReactNode } from 'react'
 import { OfficerAvatar } from './officer-avatar'
 import { useOfficerActivity } from './queries'

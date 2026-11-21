@@ -25,7 +25,7 @@ pub async fn save_interchange_file(state: State<'_, Db>, kind: String, id: Strin
         "outgoing" => interchange::export_outgoing(&state.pool, &id).await.map_err(|e| e.to_string())?.0,
         _ => return Err("Unknown kind of file.".to_string()),
     };
-    std::fs::write(&path, bytes).map_err(|e| e.to_string())
+    std::fs::write(pleadli_node_core::save_grants::take(&path)?, bytes).map_err(|e| e.to_string())
 }
 
 /// The name to offer in the save dialog.

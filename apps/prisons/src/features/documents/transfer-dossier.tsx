@@ -2,7 +2,7 @@ import { instrumentKinds, prisonerFileOptions, sentenceTermText } from '@/featur
 import { prisonerFullName, prisonerStatusLabel } from '@/features/prisoners/schema'
 import { checklistItems, parseChecklist, transfersOptions } from '@/features/transfers'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { DocFacts, DocSection, PrintFrame } from './print-frame'
 import type { IssuedDocument } from './schema'
 import { useDocumentTab } from './use-document-tab'

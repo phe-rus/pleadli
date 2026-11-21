@@ -274,13 +274,14 @@ pub async fn discard(pool: &SqlitePool, id: &str) -> Result<(), DomainError> {
     Ok(())
 }
 
-/// East Africa Time, UTC+3, which Uganda keeps all year.
+/// The institution's own offset (its configured timezone, never the computer's) now. The name is kept from when
+/// this was a fixed +3h for Uganda only.
 fn eat() -> FixedOffset {
-    FixedOffset::east_opt(3 * 3600).expect("a valid offset")
+    pleadli_node_core::timezone::offset_at(chrono::Utc::now().timestamp_millis())
 }
 
 fn eat_time(ms: i64) -> Option<DateTime<FixedOffset>> {
-    DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&eat()))
+    DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&pleadli_node_core::timezone::offset_at(ms)))
 }
 
 fn long_date(ms: i64) -> String {

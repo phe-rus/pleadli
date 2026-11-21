@@ -13,6 +13,7 @@ pub mod export;
 pub mod filings;
 pub mod hearings;
 pub mod installation;
+pub mod institution_clock;
 pub mod keys;
 pub mod lock;
 pub mod matter_types;

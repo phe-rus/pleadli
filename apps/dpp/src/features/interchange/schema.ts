@@ -111,6 +111,7 @@ export const outgoingSchema = z.object({
   decisionId: z.string().nullable(),
   preparedAt: z.number(),
   exportedAt: z.number().nullable(),
+  relayPackageId: z.string().nullable(),
   stationName: z.string().nullable(),
   fileTitle: z.string().nullable(),
   policeReference: z.string().nullable(),

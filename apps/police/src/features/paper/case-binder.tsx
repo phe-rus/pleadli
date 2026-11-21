@@ -7,6 +7,7 @@ import { StatementForm } from '@/features/statements/statement-form'
 import { statementPersonName, type Statement } from '@/features/statements/schema'
 import { format } from '@/lib/date'
 import * as m from '@/paraglide/messages'
+import { usePoliceForce } from '@/features/rules/force'
 import { PaperField, PaperPage, SignatureLine, type PaperLink } from '@pleadli/paper'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -17,9 +18,10 @@ type Picked = { kind: 'statement' | 'exhibit' | 'charge'; id: string }
 
 /** The case's own heading on every paper: the case reference and what it is about. */
 function CaseHead({ reference, summary }: { reference: string; summary: string }) {
+  const force = usePoliceForce()
   return (
     <header className="mb-6 flex flex-col items-center gap-0.5 text-center">
-      <p className="text-xs tracking-wide uppercase">{m["charge_sheet.force"]()}</p>
+      <p className="text-xs tracking-wide uppercase">{force}</p>
       <p className="font-semibold uppercase">{reference}</p>
       {summary && <p className="text-xs">{summary}</p>}
     </header>

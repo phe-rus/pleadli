@@ -7,7 +7,7 @@ import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms
 import { Badge } from '@pleadli/ui/badge'
 import { buttonVariants } from '@pleadli/ui/button'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useEffect, useMemo } from 'react'
 import { m } from '@/paraglide/messages'
 

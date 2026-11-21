@@ -128,7 +128,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     if sent == 0 {
         return bad("That receipt answers a filing this office did not send to this registry.");
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO court_incoming (id, link_id, kind, seq, in_reply_to, sent_at, received_at, package_sha256, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&opened.header.id)
         .bind(&link_id)
@@ -207,7 +207,7 @@ pub async fn export_filing(pool: &SqlitePool, file_id: &str, court_level: &str, 
     let (court, _) = court_public(pool, &link_id).await?;
     let payload = filing_payload(pool, file_id, court_level, filed_by).await?;
     let json = serde_json::to_value(&payload).map_err(|_| DomainError::Invalid("Could not build the filing.".into()))?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM court_links WHERE id = ?").bind(&link_id).fetch_one(&mut *tx).await?;
     sqlx::query("UPDATE court_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(&link_id).execute(&mut *tx).await?;
     let (bytes, header) = envelope::seal(&me, &court, KIND_FILING, seq as u64, None, &Body::new(json.clone())).map_err(|e| DomainError::Invalid(e.to_string()))?;
@@ -298,7 +298,7 @@ pub async fn export_withdrawal(pool: &SqlitePool, file_id: &str, decision: &str,
     let (court, _) = court_public(pool, &link_id).await?;
     let payload = WithdrawalPayload { dpp_file_key: file_id.to_string(), court_number: court_number.trim().to_string(), decision: decision.to_string(), reason: reason.map(|r| r.trim().to_string()).filter(|r| !r.is_empty()), decided_at: now(), decided_by: decided_by.map(str::to_string) };
     let json = serde_json::to_value(&payload).map_err(|_| DomainError::Invalid("Could not build the withdrawal.".into()))?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM court_links WHERE id = ?").bind(&link_id).fetch_one(&mut *tx).await?;
     sqlx::query("UPDATE court_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(&link_id).execute(&mut *tx).await?;
     let (bytes, header) = envelope::seal(&me, &court, KIND_WITHDRAWAL, seq as u64, None, &Body::new(json.clone())).map_err(|e| DomainError::Invalid(e.to_string()))?;

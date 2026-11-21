@@ -187,7 +187,7 @@ pub async fn create_decision(pool: &SqlitePool, input: CreateDecisionInput) -> R
 
     let scopes: Vec<Option<String>> = if charge_ids.is_empty() { vec![None] } else { charge_ids.into_iter().map(Some).collect() };
     let mut ids = Vec::with_capacity(scopes.len());
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     for scope in &scopes {
         let id = Uuid::new_v4().to_string();
         sqlx::query(

@@ -6,7 +6,7 @@ import { transferDirectionLabel, transferStateLabel, useTransfersForPrisoner } f
 import { useVisitsForPrisoner } from '@/features/visits'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { Badge } from '@pleadli/ui/badge'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { Dash, ProfileSection, ProfileTable } from './blocks'
 import { buildTimeline, timelineKindLabel } from './timeline'
 import { m } from '@/paraglide/messages'

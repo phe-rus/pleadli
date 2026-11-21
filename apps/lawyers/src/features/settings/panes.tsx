@@ -58,7 +58,7 @@ const say = (error: unknown) => (error instanceof ApiError ? error.message : m["
 
 export const roleLabel = (role: StaffRole) => ({ advocate: m["staff.role.advocate"], paralegal: m["staff.role.paralegal"], accounts: m["staff.role.accounts"] })[role]()
 
-function useIsAdmin() {
+export function useIsAdmin() {
   const { data: status } = useSessionStatus()
   return status?.actor?.isAdmin === true
 }

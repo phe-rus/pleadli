@@ -251,7 +251,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     if filing.dpp_file_key.trim().is_empty() || filing.title.trim().is_empty() || !matches!(filing.court_level.as_str(), "magistrate" | "high") || filing.parties.iter().all(|p| p.role != "accused") {
         return bad("The filing is incomplete: it needs the office's file key, a title, a court level and at least one accused.");
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO exchange_incoming (id, link_id, kind, seq, sent_at, received_at, package_sha256, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&opened.header.id)
         .bind(&link_id)
@@ -292,7 +292,7 @@ async fn seal_receipt(pool: &SqlitePool, link_id: &str, in_reply_to: &str, recei
     let me = require_identity(pool).await?;
     let (dpp, _) = dpp_public(pool, link_id).await?;
     let json = serde_json::to_value(receipt).map_err(|_| DomainError::Invalid("Could not build the receipt.".into()))?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM dpp_links WHERE id = ?").bind(link_id).fetch_one(&mut *tx).await?;
     sqlx::query("UPDATE dpp_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(link_id).execute(&mut *tx).await?;
     let (bytes, header) = envelope::seal(&me, &dpp, KIND_FILING_RECEIPT, seq as u64, Some(in_reply_to), &Body::new(json.clone())).map_err(|e| DomainError::Invalid(e.to_string()))?;

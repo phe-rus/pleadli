@@ -11,6 +11,12 @@ export type Block =
   | { kind: 'heading'; level: 1 | 2 | 3; runs: Run[]; center: boolean }
   | { kind: 'para'; runs: Run[]; center: boolean; right: boolean; bullet?: boolean }
   | { kind: 'table'; rows: string[][] }
+  /** Pieces that sit side by side on the sheet (Station left, Date right). No borders. */
+  | { kind: 'columns'; cells: { text: string; right: boolean }[] }
+  /** A picture on the sheet (the crest), as a JPEG on white. Width in points. */
+  | { kind: 'image'; jpeg: Uint8Array; px: [number, number]; width: number; center: boolean }
+  /** A line on the sheet: a signature line (short) or a divider (full width). */
+  | { kind: 'rule'; short: boolean }
 
 const BLOCK_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'P', 'LI', 'TABLE', 'BLOCKQUOTE', 'PRE', 'SECTION', 'DIV', 'HEADER', 'FOOTER', 'UL', 'OL', 'ARTICLE'])
 
@@ -44,8 +50,84 @@ const hasBlockChild = (el: Element) => [...el.children].some((c) => BLOCK_TAGS.h
 export function sheetBlocks(sheet: HTMLElement): Block[] {
   const blocks: Block[] = []
   const root = sheet.querySelector<HTMLElement>('[data-paper-body]') ?? sheet
+  const sheetWidth = sheet.getBoundingClientRect().width || 1
+  const edge = (st: CSSStyleDeclaration, side: 'Top' | 'Bottom' | 'Left' | 'Right') =>
+    Number.parseFloat(st[`border${side}Width` as 'borderTopWidth']) > 0 && st[`border${side}Style` as 'borderTopStyle'] !== 'none'
+  // A line is an element with a border on one side only. A bordered box (a photo frame) is not a line.
+  const hasBorder = (el: Element, side: 'Top' | 'Bottom') => {
+    const st = getComputedStyle(el)
+    return edge(st, side) && !edge(st, 'Left') && !edge(st, 'Right') && st.display !== 'table-cell'
+  }
   const visit = (el: Element) => {
-    if (el.matches('[data-paper-tools], svg, img, button, style, script')) return
+    if (el.matches('[data-paper-tools], svg, button, style, script')) return
+    if (el.tagName === 'IMG') return void pushImage(el as HTMLImageElement)
+    if (el.tagName === 'HR') return void blocks.push({ kind: 'rule', short: false })
+    const short = el.getBoundingClientRect().width < sheetWidth * 0.6
+    if (el.tagName !== 'TABLE' && hasBorder(el, 'Top')) blocks.push({ kind: 'rule', short })
+    visitInner(el)
+    if (el.tagName !== 'TABLE' && hasBorder(el, 'Bottom')) blocks.push({ kind: 'rule', short })
+  }
+  const pushImage = (img: HTMLImageElement) => {
+    if (!img.complete || !img.naturalWidth) return
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0)
+      const bin = atob(canvas.toDataURL('image/jpeg', 0.92).split(',')[1])
+      const jpeg = Uint8Array.from(bin, (c) => c.charCodeAt(0))
+      const r = img.getBoundingClientRect()
+      const root = sheet.getBoundingClientRect()
+      const center = Math.abs(r.left + r.width / 2 - (root.left + root.width / 2)) < 24
+      blocks.push({ kind: 'image', jpeg, px: [canvas.width, canvas.height], width: Math.min(110, Math.max(24, r.width * 0.75)), center })
+    } catch {
+      // a picture that cannot be read is left out; the words still say everything
+    }
+  }
+  /** The words of a cell, with a space where blocks meet ("Preferred by:" then the name), and a dotted leader where
+   * the sheet draws a signature line, so a printed file still has a place to sign. */
+  const cellText = (el: Element): string => {
+    const parts: string[] = []
+    const walk = (node: Node) => {
+      if (node.nodeType === 3) return void parts.push(node.textContent ?? '')
+      if (!(node instanceof Element) || node.matches('[data-paper-tools], svg, button, style, script')) return
+      const block = BLOCK_TAGS.has(node.tagName)
+      if (block) parts.push(' ')
+      if (node !== el && hasBorder(node, 'Top')) parts.push(' ........................ ')
+      node.childNodes.forEach(walk)
+      if (block) parts.push(' ')
+    }
+    walk(el)
+    return parts.join('').replace(/[ \t\r\f\n]+/g, ' ').trim()
+  }
+  /** Children laid out on one or more lines (a flex row, a wrapping flex, a grid): each line is a row of columns. */
+  const columnsOf = (el: Element): Block[] | null => {
+    if (['TABLE', 'UL', 'OL', 'P', 'LI', 'H1', 'H2', 'H3', 'H4'].includes(el.tagName)) return null
+    const kids = [...el.children].filter((c) => cellText(c) && !c.matches('[data-paper-tools], svg, button, style, script'))
+    if (kids.length < 2 || kids.length > 8) return null
+    if (kids.some((k) => k.querySelector('table, img, hr, ul, ol, h1, h2, h3'))) return null
+    if (!/flex|grid/.test(getComputedStyle(el).display)) return null
+    const rects = kids.map((k) => k.getBoundingClientRect())
+    // group by line
+    const lines: number[][] = []
+    kids.forEach((_, i) => {
+      const line = lines.find((l) => Math.abs(rects[l[0]].top - rects[i].top) < Math.max(6, rects[l[0]].height * 0.5))
+      if (line) line.push(i)
+      else lines.push([i])
+    })
+    if (lines.some((l) => l.length > 4)) return null
+    if (!lines.some((l) => l.length > 1)) return null
+    const ordered = lines.map((l) => [...l].sort((a, b) => rects[a].left - rects[b].left))
+    return ordered.map((l) => ({
+      kind: 'columns' as const,
+      cells: l.map((i) => ({ text: cellText(kids[i]), right: ['right', 'end'].includes(getComputedStyle(kids[i]).textAlign) })),
+    }))
+  }
+  const visitInner = (el: Element) => {
     const align = getComputedStyle(el).textAlign
     const center = align === 'center'
     const right = align === 'right' || align === 'end'
@@ -72,6 +154,8 @@ export function sheetBlocks(sheet: HTMLElement): Block[] {
         return
       }
     }
+    const sideBySide = columnsOf(el)
+    if (sideBySide) return void blocks.push(...sideBySide)
     if (!hasBlockChild(el)) {
       // a flex row of short pieces (a label and its value, two signatures) reads as one line per child
       const kids = [...el.children].filter((c) => (c.textContent ?? '').trim())
@@ -177,8 +261,19 @@ function wRuns(runs: Run[], size?: number, forceBold = false) {
 
 export function docxFile(sheet: HTMLElement, title: string): Uint8Array {
   const blocks = sheetBlocks(sheet)
+  const pictures: { name: string; data: Uint8Array }[] = []
   const body = blocks
     .map((b) => {
+      if (b.kind === 'image') {
+        const n = pictures.length + 1
+        pictures.push({ name: `word/media/image${n}.jpg`, data: b.jpeg })
+        const cx = Math.round(b.width * 12700)
+        const cy = Math.round((b.width * b.px[1]) / b.px[0] * 12700)
+        return `<w:p><w:pPr><w:spacing w:after="100"/>${b.center ? '<w:jc w:val="center"/>' : ''}</w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${n}" name="Picture ${n}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="image${n}.jpg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdImg${n}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`
+      }
+      if (b.kind === 'rule') {
+        return `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="000000"/></w:pBdr><w:spacing w:before="${b.short ? 480 : 120}" w:after="60"/>${b.short ? '<w:ind w:right="5200"/>' : ''}</w:pPr></w:p>`
+      }
       if (b.kind === 'heading') {
         const size = b.level === 1 ? 28 : b.level === 2 ? 24 : 22
         return `<w:p><w:pPr><w:keepNext/><w:spacing w:before="200" w:after="100"/>${b.center ? '<w:jc w:val="center"/>' : ''}</w:pPr>${wRuns(b.runs, size, true)}</w:p>`
@@ -187,6 +282,11 @@ export function docxFile(sheet: HTMLElement, title: string): Uint8Array {
         const jc = b.center ? '<w:jc w:val="center"/>' : b.right ? '<w:jc w:val="right"/>' : ''
         const lead = b.bullet ? '<w:r><w:t xml:space="preserve">• </w:t></w:r>' : ''
         return `<w:p><w:pPr><w:spacing w:after="100"/>${b.bullet ? '<w:ind w:left="360"/>' : ''}${jc}</w:pPr>${lead}${wRuns(b.runs)}</w:p>`
+      }
+      if (b.kind === 'columns') {
+        const n = b.cells.length
+        const cw = Math.floor(9000 / n)
+        return `<w:tbl><w:tblPr><w:tblW w:w="9000" w:type="dxa"/></w:tblPr><w:tblGrid>${b.cells.map(() => `<w:gridCol w:w="${cw}"/>`).join('')}</w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr>${b.cells.map((c) => `<w:tc><w:tcPr><w:tcW w:w="${cw}" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:after="60"/>${c.right ? '<w:jc w:val="right"/>' : ''}</w:pPr><w:r><w:t xml:space="preserve">${esc(clean(c.text))}</w:t></w:r></w:p></w:tc>`).join('')}</w:tr></w:tbl>`
       }
       const cols = Math.max(...b.rows.map((r) => r.length), 1)
       const w = Math.floor(9000 / cols)
@@ -199,10 +299,19 @@ export function docxFile(sheet: HTMLElement, title: string): Uint8Array {
   const enc = new TextEncoder()
   const xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
   return zipStore([
-    { name: '[Content_Types].xml', data: enc.encode(`${xml}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`) },
+    { name: '[Content_Types].xml', data: enc.encode(`${xml}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`) },
     { name: '_rels/.rels', data: enc.encode(`${xml}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`) },
     { name: 'docProps/core.xml', data: enc.encode(`${xml}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${esc(clean(title))}</dc:title></cp:coreProperties>`) },
-    { name: 'word/document.xml', data: enc.encode(`${xml}<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1021" w:bottom="1134" w:left="1021" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`) },
+    { name: 'word/document.xml', data: enc.encode(`${xml}<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1021" w:bottom="1134" w:left="1021" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`) },
+    ...(pictures.length
+      ? [
+          ...pictures,
+          {
+            name: 'word/_rels/document.xml.rels',
+            data: enc.encode(`${xml}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${pictures.map((_, i) => `<Relationship Id="rIdImg${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image${i + 1}.jpg"/>`).join('')}</Relationships>`),
+          },
+        ]
+      : []),
   ])
 }
 
@@ -287,8 +396,23 @@ export function pdfFile(sheet: HTMLElement, title: string): Uint8Array {
       })
     }
   }
+  const images: { jpeg: Uint8Array; px: [number, number] }[] = []
   for (const b of blocks) {
-    if (b.kind === 'heading') {
+    if (b.kind === 'image') {
+      const h = (b.width * b.px[1]) / b.px[0]
+      need(h + 6)
+      y -= h
+      const x = b.center ? M + (maxW - b.width) / 2 : M
+      images.push({ jpeg: b.jpeg, px: b.px })
+      pages[pages.length - 1].push(`q ${b.width.toFixed(2)} 0 0 ${h.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im${images.length - 1} Do Q`)
+      y -= 6
+    } else if (b.kind === 'rule') {
+      if (b.short) y -= 20
+      need(8)
+      y -= 4
+      pages[pages.length - 1].push(`0 G 0.6 w ${M} ${y.toFixed(2)} m ${(M + (b.short ? 210 : maxW)).toFixed(2)} ${y.toFixed(2)} l S`)
+      y -= 4
+    } else if (b.kind === 'heading') {
       const size = b.level === 1 ? 14 : b.level === 2 ? 12 : 11
       y -= 6
       need(size * 2.7)
@@ -299,6 +423,17 @@ export function pdfFile(sheet: HTMLElement, title: string): Uint8Array {
       const runs = b.bullet ? [{ text: '• ' }, ...b.runs] : b.runs
       drawLines(wrap(runs, 11, maxW - indent, false), 11, b.center ? 'center' : b.right ? 'right' : 'left', M + indent, maxW - indent)
       y -= 4
+    } else if (b.kind === 'columns') {
+      const cw = maxW / b.cells.length
+      const cells = b.cells.map((c) => wrap([{ text: c.text }], 11, cw - 8, false))
+      const rows = Math.max(...cells.map((c) => c.length))
+      need(rows * 11 * 1.35 + 4)
+      const top = y
+      cells.forEach((lines, i) => {
+        y = top
+        drawLines(lines, 11, b.cells[i].right ? 'right' : 'left', M + i * cw + 4, cw - 8)
+      })
+      y = top - rows * 11 * 1.35 - 4
     } else {
       const cols = Math.max(...b.rows.map((r) => r.length), 1)
       const cw = maxW / cols
@@ -325,11 +460,19 @@ export function pdfFile(sheet: HTMLElement, title: string): Uint8Array {
   add(`<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>`)
   add('<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>')
   add('<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding /WinAnsiEncoding >>')
+  const firstImage = 5 + pages.length * 2
+  const xobjects = images.length ? ` /XObject << ${images.map((_, i) => `/Im${i} ${firstImage + i} 0 R`).join(' ')} >>` : ''
   pages.forEach((ops, i) => {
-    add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${6 + i * 2} 0 R >>`)
+    add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${xobjects} >> /Contents ${6 + i * 2} 0 R >>`)
     const content = ops.join('\n')
     add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`)
   })
+  for (const im of images) {
+    // the picture's bytes go in as they are: each character here stands for one byte
+    let bin = ''
+    for (let i = 0; i < im.jpeg.length; i += 0x8000) bin += String.fromCharCode(...im.jpeg.subarray(i, i + 0x8000))
+    add(`<< /Type /XObject /Subtype /Image /Width ${im.px[0]} /Height ${im.px[1]} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.jpeg.length} >>\nstream\n${bin}\nendstream`)
+  }
   const info = add(`<< /Title ${pdfString(title)} /Producer (Pleadli) >>`)
   // content streams hold only ASCII (strings are escaped), so string length equals byte length
   let out = '%PDF-1.4\n'

@@ -1,6 +1,6 @@
 import { JurisdictionContext } from '@/features/jurisdiction/jurisdiction-context'
 import type { TodayView } from '@/features/obligations'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import type { ReactNode } from 'react'
 import { m } from '@/paraglide/messages'
 

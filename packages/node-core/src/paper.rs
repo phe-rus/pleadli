@@ -107,6 +107,8 @@ pub fn qr(code: &str) -> Option<String> {
 /// returns what to print on it.
 pub async fn stamp(pool: &SqlitePool, input: PaperInput<'_>) -> Result<Stamp, sqlx::Error> {
     let body_sha = sha256(input.body);
+    // Look and insert under one write lock, so two identical prints at once cannot both be recorded.
+    let mut tx = crate::db::begin_write(pool).await?;
     let existing: Option<(String, i64)> = sqlx::query_as(
         "SELECT code, printed_at FROM paper_prints WHERE entity_type = ? AND entity_id = ? AND body_sha256 = ? AND title = ? AND reference IS ?",
     )
@@ -115,7 +117,7 @@ pub async fn stamp(pool: &SqlitePool, input: PaperInput<'_>) -> Result<Stamp, sq
     .bind(&body_sha)
     .bind(input.title)
     .bind(input.reference)
-    .fetch_optional(pool)
+    .fetch_optional(&mut *tx)
     .await?;
     if let Some((code, printed_at)) = existing {
         return Ok(Stamp { qr: qr(&code), code, printed_at });
@@ -145,8 +147,9 @@ pub async fn stamp(pool: &SqlitePool, input: PaperInput<'_>) -> Result<Stamp, sq
     .bind(&body_sha)
     .bind(input.printed_by)
     .bind(printed_at)
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
+    tx.commit().await?;
     Ok(Stamp { qr: qr(&code), code, printed_at })
 }
 
@@ -243,6 +246,26 @@ mod tests {
         let a = stamp(&pool, input("Text")).await.unwrap();
         assert!(sqlx::query("UPDATE paper_prints SET body = 'x' WHERE code = ?").bind(&a.code).execute(&pool).await.is_err());
         assert!(sqlx::query("DELETE FROM paper_prints").execute(&pool).await.is_err());
+        pool.close().await;
+    }
+
+    /// Two identical prints at the same moment are one paper with one code, not two.
+    #[tokio::test]
+    async fn identical_prints_at_the_same_moment_get_one_code() {
+        let dir = std::env::temp_dir().join(format!("pleadli-paper-concurrent-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = sqlx::sqlite::SqlitePoolOptions::new().max_connections(4).connect_with(crate::db::connect_options(&dir.join("paper.db"))).await.unwrap();
+        sqlx::raw_sql(TABLE_SQL).execute(&pool).await.unwrap();
+        let mut tasks = Vec::new();
+        for _ in 0..12 {
+            let pool = pool.clone();
+            tasks.push(tokio::spawn(async move { stamp(&pool, input("I saw him.")).await.map(|s| s.code) }));
+        }
+        let mut codes = std::collections::HashSet::new();
+        for task in tasks {
+            codes.insert(task.await.unwrap().expect("no print is refused"));
+        }
+        assert_eq!(codes.len(), 1);
         pool.close().await;
     }
 }

@@ -2,6 +2,7 @@ import { SidebarProvider } from '@/components/sidebar-provider'
 import { permissionsForPath } from '@/data/navigationItems'
 import { sessionOptions } from '@/features/session'
 import { getSessionToken } from '@/lib/api'
+import { useInstalledZone } from '@/features/timezone'
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public')({
@@ -19,9 +20,11 @@ export const Route = createFileRoute('/_public')({
 })
 
 function RouteComponent() {
+  // Signed in: the facility's own timezone for every time on screen. Before that, UTC with the offset shown.
+  const zone = useInstalledZone(getSessionToken() !== null)
   return (
     <SidebarProvider>
-      <Outlet />
+      <Outlet key={zone} />
     </SidebarProvider>
   )
 }

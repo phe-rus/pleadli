@@ -75,6 +75,8 @@ pub async fn startup(data_dir: &Path, legacy_vault: Option<&Path>) -> Result<Db,
         crate::domain::prosecution_files::seed_if_empty(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
     }
 
+    crate::domain::institution_clock::reload(&pool).await.map_err(|e| StartupError::Fatal(format!("could not load the timezone: {e}")))?;
+
     let security = Arc::new(Security::new());
     security.load(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
 

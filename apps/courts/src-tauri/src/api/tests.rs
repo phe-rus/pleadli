@@ -1056,3 +1056,36 @@ async fn the_profile_that_signs_orders_follows_the_person_who_set_up() {
     assert_eq!(profile["name"], "Registrar Test");
     assert_eq!(profile["courtName"], "Kampala Chief Magistrates Court");
 }
+
+/// The failure seen in the real window: `setup/complete` answered 500 "database is locked" when it ran in the
+/// first seconds after launch, while Orchestra was writing its own state. Here the database is a real file with
+/// several connections (as in the app, not one in-memory connection), a background writer plays Orchestra, and
+/// setup runs against it with each protection level. It must answer 200 every time.
+#[tokio::test]
+async fn setup_completes_while_something_else_is_writing_to_the_database() {
+    use pleadli_node_core::db::connect_options;
+    for protection in ["none", "basic", "none", "basic", "none", "basic"] {
+        let dir = std::env::temp_dir().join(format!("courts-lock-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = SqlitePoolOptions::new().max_connections(4).connect_with(connect_options(&dir.join("courts.db"))).await.unwrap();
+        sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+        sqlx::query("CREATE TABLE orchestra_like (k TEXT PRIMARY KEY, v INTEGER)").execute(&pool).await.unwrap();
+
+        let background = pool.clone();
+        let writer = tokio::spawn(async move {
+            for i in 0..300i64 {
+                sqlx::query("INSERT INTO orchestra_like (k, v) VALUES ('state', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(i).execute(&background).await?;
+                tokio::task::yield_now().await;
+            }
+            Ok::<(), sqlx::Error>(())
+        });
+
+        let security = std::sync::Arc::new(crate::domain::security::Security::new());
+        security.load(&pool).await.unwrap();
+        let app = router(AppState { pool: pool.clone(), vault_root: dir.join("vault"), orchestra: None, security: Some(security) });
+        let (status, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body(protection))).await;
+        assert_eq!(status, StatusCode::OK, "setup with {protection} protection: {body}");
+        writer.await.unwrap().expect("the background writer was not refused either");
+        pool.close().await;
+    }
+}

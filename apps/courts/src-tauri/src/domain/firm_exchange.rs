@@ -131,7 +131,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     if sent == 0 {
         return bad("That receipt answers a notice this registry did not send to this firm.");
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO firm_incoming (id, link_id, notice_key, notice_package_id, outcome, reason, seq, sent_at, received_at, package_sha256) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&opened.header.id)
         .bind(&link_id)
@@ -169,7 +169,7 @@ async fn import_filing(pool: &SqlitePool, bytes: &[u8], peeked: envelope::Peeked
     if f.filing_key.trim().is_empty() || f.court_number.trim().is_empty() || f.title.trim().is_empty() || f.paragraphs.is_empty() {
         return bad("The filing is incomplete: it needs a title, the case number and its text.");
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO firm_filings (id, link_id, seq, sent_at, received_at, package_sha256, payload) VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(&opened.header.id)
         .bind(link_id)
@@ -207,7 +207,7 @@ async fn seal_filing_receipt(pool: &SqlitePool, link_id: &str, package_id: &str,
     let me = require_identity(pool).await?;
     let firm = trusted_firm(pool, link_id).await?;
     let json = serde_json::to_value(receipt).map_err(|_| DomainError::Invalid("Could not build the receipt.".into()))?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM firm_links WHERE id = ?").bind(link_id).fetch_one(&mut *tx).await?;
     sqlx::query("UPDATE firm_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(link_id).execute(&mut *tx).await?;
     let (bytes, _) = envelope::seal(&me, &firm, KIND_FIRM_FILING_RECEIPT, seq as u64, Some(package_id), &Body::new(json)).map_err(|e| DomainError::Invalid(e.to_string()))?;
@@ -275,7 +275,7 @@ async fn seal_notice(pool: &SqlitePool, link_id: &str, payload: &CourtNoticePayl
     let me = require_identity(pool).await?;
     let firm = trusted_firm(pool, link_id).await?;
     let json = serde_json::to_value(payload).map_err(|_| DomainError::Invalid("Could not build the notice.".into()))?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM firm_links WHERE id = ?").bind(link_id).fetch_one(&mut *tx).await?;
     sqlx::query("UPDATE firm_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(link_id).execute(&mut *tx).await?;
     let (bytes, header) = envelope::seal(&me, &firm, KIND_COURT_NOTICE, seq as u64, None, &Body::new(json.clone())).map_err(|e| DomainError::Invalid(e.to_string()))?;

@@ -170,6 +170,7 @@ pub fn routes() -> Router<AppState> {
         .route("/installation", get(get_installation).put(update_installation))
         .route("/installation/brand", get(get_brand))
         .route("/installation/protection", axum::routing::put(set_protection))
+        .route("/timezone", get(get_timezone).put(set_timezone))
         .route("/session/people", get(session_people))
         .route("/session/sign-in", post(sign_in))
         .route("/session/sign-out", post(sign_out))
@@ -207,4 +208,27 @@ pub async fn gate(State(s): State<AppState>, request: axum::extract::Request, ne
     }
     sec.touch();
     next.run(request).await
+}
+
+// ---------- timezone ----------
+
+async fn get_timezone(State(s): State<AppState>) -> ApiResult<pleadli_node_core::timezone::ZoneStatus> {
+    Ok(Json(crate::domain::institution_clock::status(&s.pool).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TimezoneInput {
+    zone_id: String,
+    #[serde(default)]
+    reason: Option<String>,
+}
+
+/// The court's timezone for legal times. Administrator only; each change is audited with who and why.
+async fn set_timezone(State(s): State<AppState>, Json(input): Json<TimezoneInput>) -> ApiResult<pleadli_node_core::timezone::ZoneStatus> {
+    let admin = require_admin(&s)?;
+    crate::domain::institution_clock::set(&s.pool, &input.zone_id, &admin.name, input.reason.as_deref().filter(|r| !r.trim().is_empty()))
+        .await
+        .map_err(DomainError::Invalid)?;
+    Ok(Json(crate::domain::institution_clock::status(&s.pool).await?))
 }

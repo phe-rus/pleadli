@@ -6,7 +6,7 @@ import { useVisits } from './queries'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { cn } from '@pleadli/ui/lib/utils'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 import { m } from '@/paraglide/messages'
 

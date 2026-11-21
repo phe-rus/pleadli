@@ -1,4 +1,5 @@
 import { Button } from '@pleadli/ui/button'
+import { BrandPanel, type Brand } from './brand-panel'
 import { cn } from '@pleadli/ui/lib/utils'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -71,6 +72,10 @@ export type SetupFlowProps = {
   identifierLabel?: string
   /** Under the welcome: another way in than a new setup (Lawyers: join the firm's office computer). */
   welcomeAction?: ReactNode
+  /** What the app says on the branded panel beside every step. */
+  brand?: Brand
+  /** Start straight on the questions, with no welcome screen. */
+  skipWelcome?: boolean
 }
 
 const BUILT_IN = ['welcome', 'licence', 'where', 'model', 'protection', 'look', 'people', 'done'] as const
@@ -148,7 +153,7 @@ export function SetupFlow(props: SetupFlowProps) {
   }))
   const update = (patch: Partial<SetupState>) => setState((s) => ({ ...s, ...patch }))
 
-  const steps = useMemo(() => stepOrder(props.extraSteps), [props.extraSteps])
+  const steps = useMemo(() => stepOrder(props.extraSteps).filter((s) => !(props.skipWelcome && s === 'welcome')), [props.extraSteps, props.skipWelcome])
   const step = steps[index]
   const scroller = useRef<HTMLElement>(null)
   // A new step starts at its top, not where a longer one was left scrolled.
@@ -322,7 +327,9 @@ export function SetupFlow(props: SetupFlowProps) {
 
   return (
     // Absolute, not fixed: it fills the app's frame and keeps the desktop window's rounded corners.
-    <div className="typeset absolute inset-0 z-50 flex flex-col bg-background">
+    <div className="typeset absolute inset-0 z-50 flex bg-background">
+      <div className="hidden w-[34%] max-w-sm shrink-0 md:block"><BrandPanel productName={props.productName} logo={state.logo ?? props.defaultLogo} brand={props.brand} /></div>
+      <div className="flex min-w-0 flex-1 flex-col">
       <header data-tauri-drag-region className="flex h-12 shrink-0 items-center gap-4 px-4">
         {/* The window's buttons where a Mac has them; the progress in the middle; nothing else. */}
         <div className="flex min-w-14">{props.windowControls}</div>
@@ -386,6 +393,7 @@ export function SetupFlow(props: SetupFlowProps) {
           )}
         </div>
       </footer>
+      </div>
     </div>
   )
 }

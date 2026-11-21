@@ -13,7 +13,7 @@ import {
   PatientIcon,
 } from '@hugeicons/core-free-icons'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo } from 'react'
 import { prisonerFileOptions } from '@/features/custody'
 import { prisonerOptions } from '@/features/prisoners'

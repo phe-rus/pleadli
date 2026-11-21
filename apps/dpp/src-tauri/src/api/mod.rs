@@ -1359,6 +1359,7 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/installation", get(get_installation).put(update_installation))
         .route("/installation/brand", get(get_brand))
         .route("/installation/protection", axum::routing::put(set_protection))
+        .route("/timezone", get(get_timezone).put(set_timezone))
         .route("/installation/jurisdiction", axum::routing::put(set_jurisdiction))
         .route("/session/people", get(session_people))
         .route("/session/sign-in", post(sign_in))
@@ -1369,6 +1370,10 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/staff/{id}/second-factor", delete(reset_second_factor));
     // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
     if let Some(o) = orchestra {
+        // The postbox rides on the licence the same Orchestra holds.
+        let relay = crate::domain::relay::Relay::new(state.pool.clone(), state.vault_root.clone(), o.clone());
+        tauri::async_runtime::spawn(relay.clone().run());
+        api = api.nest("/relay", relay::routes(relay));
         api = api.nest("/orchestra", orchestra::routes(o));
     }
 
@@ -1464,6 +1469,7 @@ pub async fn serve_dev(router: Router) {
 }
 
 pub mod orchestra;
+pub mod relay;
 
 #[cfg(test)]
 mod tests;
@@ -1542,4 +1548,27 @@ mod court_api {
         let (bytes, name) = court_exchange::export_filing(&s.pool, &id, &i.court_level, i.filed_by.as_deref(), "file").await?;
         Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name }))
     }
+}
+
+// ---------- timezone ----------
+
+async fn get_timezone(State(s): State<AppState>) -> ApiResult<pleadli_node_core::timezone::ZoneStatus> {
+    Ok(Json(crate::domain::institution_clock::status(&s.pool).await.map_err(|e| ApiError::from(crate::domain::error::DomainError::from(e)))?))
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TimezoneInput {
+    zone_id: String,
+    #[serde(default)]
+    reason: Option<String>,
+}
+
+/// The office's timezone for legal times. Administrator only; each change is audited with who and why.
+async fn set_timezone(State(s): State<AppState>, Json(input): Json<TimezoneInput>) -> ApiResult<pleadli_node_core::timezone::ZoneStatus> {
+    let admin = require_admin(&s)?;
+    crate::domain::institution_clock::set(&s.pool, &input.zone_id, &admin.name, input.reason.as_deref().filter(|r| !r.trim().is_empty()))
+        .await
+        .map_err(|reason| ApiError(StatusCode::UNPROCESSABLE_ENTITY, "INVALID", reason))?;
+    get_timezone(State(s)).await
 }

@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import * as z from 'zod'
 import { adjournmentSchema, sittingSchema } from '../sittings/schema'
 import { exhibitSchema } from '../exhibits/schema'
@@ -90,5 +91,5 @@ export function custodyText(party: { role: string; custody: string | null; reman
   if (party.custody === 'on_bail') return 'On bail'
   if (party.custody === 'not_in_custody') return 'Not in custody'
   const where = party.custodyPlace ? ` at ${party.custodyPlace}` : ''
-  return party.remandUntil ? `Remanded${where} until ${new Date(party.remandUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : `Remanded${where}, no end date recorded`
+  return party.remandUntil ? `Remanded${where} until ${new Date(party.remandUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: zoneFor(party.remandUntil) })}` : `Remanded${where}, no end date recorded`
 }

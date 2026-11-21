@@ -235,6 +235,10 @@ pub async fn complete_setup(pool: &SqlitePool, input: SetupInput) -> Result<Inst
         _ => None,
     };
 
+    // Hashing is slow on purpose, so every PIN or password is hashed before the write lock is taken.
+    let admin_secret = staff::prepare_secret(protection, admin)?;
+    let people_secrets = input.people.iter().map(|p| staff::prepare_secret(protection, p)).collect::<Result<Vec<_>, _>>()?;
+
     let now = chrono::Utc::now().timestamp_millis();
     let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let exists: Option<String> = sqlx::query_scalar("SELECT id FROM installation").fetch_optional(&mut *tx).await?;
@@ -250,11 +254,7 @@ pub async fn complete_setup(pool: &SqlitePool, input: SetupInput) -> Result<Inst
             if admin.name.trim().is_empty() {
                 return invalid("A name is required.");
             }
-            let secret = match (protection, admin.secret.as_deref()) {
-                (Protection::None, _) => None,
-                (_, Some(s)) => staff::hash_secret(protection, s)?,
-                (_, None) => return invalid("A PIN or password is required."),
-            };
+            let secret = admin_secret.clone();
             sqlx::query("UPDATE staff SET name = ?, title = ?, role = ?, secret_kind = ?, secret_hash = ?, totp_secret = ?, active = 1, updated_at = ? WHERE id = ?")
                 .bind(admin.name.trim())
                 .bind(clean(admin.title.clone()))
@@ -270,12 +270,12 @@ pub async fn complete_setup(pool: &SqlitePool, input: SetupInput) -> Result<Inst
         }
         None => {
             let first = PersonInput { is_admin: true, ..admin.clone() };
-            staff::insert(&mut tx, protection, &first, admin_totp.as_deref()).await?
+            staff::insert_hashed(&mut tx, &first, admin_secret, admin_totp.as_deref()).await?
         }
     };
-    for person in &input.people {
+    for (person, secret) in input.people.iter().zip(people_secrets) {
         let person = PersonInput { is_admin: false, ..person.clone() };
-        staff::insert(&mut tx, protection, &person, None).await?;
+        staff::insert_hashed(&mut tx, &person, secret, None).await?;
     }
     usages::replace(&mut tx, &practice.usages).await?;
 
@@ -327,7 +327,7 @@ pub async fn update(pool: &SqlitePool, input: UpdateInstallationInput) -> Result
     check_common(&input.language, &input.accent, &input.logo, &input.office_name, &input.setting, &input.practice_kind)?;
     // The count and setting must see one database snapshot. A concurrent
     // staff change cannot slip between validation and this transaction's write.
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     if input.setting == "alone" {
         let others: i64 = sqlx::query_scalar("SELECT count(*) FROM staff WHERE active = 1").fetch_one(&mut *tx).await?;
         if others > 1 {

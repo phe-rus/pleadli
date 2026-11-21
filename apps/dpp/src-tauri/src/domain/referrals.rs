@@ -59,7 +59,7 @@ pub async fn create_resubmission(pool: &SqlitePool, input: CreateResubmissionInp
     }
 
     let id = Uuid::new_v4().to_string();
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query(
         "INSERT INTO referrals
             (id, prosecution_file_id, police_station, police_reference, received_at, material_summary, is_resubmission, notes, answers_decision_id)

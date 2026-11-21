@@ -15,7 +15,7 @@ pub struct DataDir(pub std::path::PathBuf);
 #[tauri::command]
 pub async fn create_backup(state: State<'_, Db>, path: String, passphrase: String) -> Result<i64, String> {
     state.security.ensure_unlocked()?;
-    let file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+    let file = std::fs::File::create(pleadli_node_core::save_grants::take(&path)?).map_err(|e| e.to_string())?;
     let out = std::io::BufWriter::new(file);
     match backup::write_backup(&state.pool, &state.vault_root, &state.data_dir, &passphrase, out).await {
         Ok(meta) => Ok(meta.documents),

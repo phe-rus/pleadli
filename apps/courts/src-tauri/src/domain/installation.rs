@@ -197,8 +197,12 @@ pub async fn complete_setup(pool: &SqlitePool, input: SetupInput) -> Result<Inst
         _ => None,
     };
 
+    // Hashing is slow on purpose, so every PIN or password is hashed before the write lock is taken.
+    let admin_secret = staff::prepare_secret(protection, admin)?;
+    let people_secrets = input.people.iter().map(|p| staff::prepare_secret(protection, p)).collect::<Result<Vec<_>, _>>()?;
+
     let now = chrono::Utc::now().timestamp_millis();
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let exists: Option<String> = sqlx::query_scalar("SELECT id FROM installation").fetch_optional(&mut *tx).await?;
     if exists.is_some() {
         return Err(DomainError::Forbidden("This installation is already set up.".to_string()));
@@ -209,11 +213,7 @@ pub async fn complete_setup(pool: &SqlitePool, input: SetupInput) -> Result<Inst
     let legacy: Option<String> = sqlx::query_scalar("SELECT id FROM staff WHERE role = 'administrator' ORDER BY created_at LIMIT 1").fetch_optional(&mut *tx).await?;
     let admin_id = match legacy {
         Some(id) => {
-            let secret = match (protection, admin.secret.as_deref()) {
-                (Protection::None, _) => None,
-                (_, Some(s)) => staff::hash_secret(protection, s)?,
-                (_, None) => return invalid("A PIN or password is required."),
-            };
+            let secret = admin_secret.clone();
             if admin.name.trim().is_empty() {
                 return invalid("A name is required.");
             }
@@ -230,10 +230,10 @@ pub async fn complete_setup(pool: &SqlitePool, input: SetupInput) -> Result<Inst
                 .await?;
             id
         }
-        None => staff::insert(&mut tx, protection, admin, admin_totp.as_deref()).await?,
+        None => staff::insert_hashed(&mut tx, admin, admin_secret, admin_totp.as_deref()).await?,
     };
-    for person in &input.people {
-        staff::insert(&mut tx, protection, person, None).await?;
+    for (person, secret) in input.people.iter().zip(people_secrets) {
+        staff::insert_hashed(&mut tx, person, secret, None).await?;
     }
 
     sqlx::query(

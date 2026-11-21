@@ -3,7 +3,7 @@ import { usePermissions } from '@/features/session'
 import { weekBucketStarts, weeklyBuckets } from '@/lib/weekly-buckets'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 import { m } from '@/paraglide/messages'
 

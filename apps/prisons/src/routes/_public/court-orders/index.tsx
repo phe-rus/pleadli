@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import { createIdentity, createInvite, getIdentity, importPackage, listLinks, listOrders, listPrisoners, pickPackage, recordOrder, reportToCourt, returnOrder, savePackage, trustLink, type CourtLink, type FacilityIdentity, type IncomingOrder, type OrderClaim, type PrisonerOption } from '@/features/court-orders/data'
 import { m } from '@/paraglide/messages'
 import { Badge } from '@pleadli/ui/badge'
@@ -18,7 +19,7 @@ const parse = (payload: string): OrderClaim => {
     return {}
   }
 }
-const shortDate = (ms: number) => new Date(ms).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })
+const shortDate = (ms: number) => new Date(ms).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric', timeZone: zoneFor(ms) })
 
 /** Court orders arriving as files: read as claims, recorded by a person against
  * the prisoner they are about, answered with a receipt. */

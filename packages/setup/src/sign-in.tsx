@@ -1,4 +1,5 @@
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
+import { BrandPanel, type Brand } from './brand-panel'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -42,6 +43,7 @@ export function SignInScreen({
   onSignIn,
   describeError,
   windowControls,
+  brand,
 }: {
   locale: Locale
   productName: string
@@ -52,6 +54,8 @@ export function SignInScreen({
   onSignIn: (attempt: SignInAttempt) => Promise<SignInResult>
   describeError?: (error: unknown) => string | null
   windowControls?: ReactNode
+  /** What the app says on the branded panel. */
+  brand?: Brand
 }) {
   const t = SETUP_MESSAGES[locale]
   const [chosen, setChosen] = useState<SignInPerson | null>(people.length === 1 ? people[0] : null)
@@ -112,7 +116,9 @@ export function SignInScreen({
   )
 
   return (
-    <div className="typeset fixed inset-0 z-50 flex flex-col bg-background">
+    <div className="typeset fixed inset-0 z-50 flex bg-background">
+      <div className="hidden w-[34%] max-w-sm shrink-0 md:block"><BrandPanel productName={productName} logo={logo} brand={brand} /></div>
+      <div className="flex min-w-0 flex-1 flex-col">
       <header data-tauri-drag-region className="flex h-12 shrink-0 items-center justify-end px-4">
         {windowControls}
       </header>
@@ -247,6 +253,7 @@ export function SignInScreen({
           )}
         </div>
       </main>
+      </div>
     </div>
   )
 }

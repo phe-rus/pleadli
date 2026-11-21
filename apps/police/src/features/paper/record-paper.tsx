@@ -1,5 +1,6 @@
 import * as m from '@/paraglide/messages'
 import { BrandLogo } from '@/features/brand'
+import { usePoliceForce } from '@/features/rules/force'
 import { stationProfileOptions } from '@/features/station-admin/queries'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -13,10 +14,11 @@ import { useState, type ReactNode } from 'react'
  * station's own name and address, as on its letterhead. */
 export function StationHead({ subtitle }: { subtitle?: string | null }) {
   const { data: profile } = useQuery(stationProfileOptions())
+  const force = usePoliceForce()
   return (
     <header className="mb-6 flex flex-col items-center gap-0.5 text-center">
       <BrandLogo className="mb-1 size-12" />
-      <p className="text-xs tracking-wide uppercase">{m["charge_sheet.force"]()}</p>
+      <p className="text-xs tracking-wide uppercase">{force}</p>
       {profile?.name && <p className="font-semibold uppercase">{profile.name}</p>}
       {profile?.address && <p className="text-xs">{profile.address}</p>}
       {subtitle && <p className="mt-1 text-xs">{subtitle}</p>}

@@ -8,7 +8,7 @@ import { RichTextPreview } from '@pleadli/rich-text'
 import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 import { m } from '@/paraglide/messages'
 

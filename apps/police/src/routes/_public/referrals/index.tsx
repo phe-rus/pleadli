@@ -1,5 +1,6 @@
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
+import { useEnclosures } from '@/features/paper/use-enclosures'
 import { RecordList } from '@/features/paper/record-list'
 import { RecordPaper } from '@/features/paper/record-paper'
 import { ReferralForm, referralDestinationTypeLabel, referralsOptions, referralStatusLabel, useReferrals, type Referral } from '@/features/referrals'
@@ -27,6 +28,7 @@ const destination = (r: Referral) => r.destinationName || referralDestinationTyp
 
 /** The covering letter a case file leaves the station with. */
 function ReferralPaper({ referral }: { referral: Referral }) {
+  const { lines: enclosed } = useEnclosures(referral.caseId)
   return (
     <RecordPaper
       entityType="referral"
@@ -50,6 +52,16 @@ function ReferralPaper({ referral }: { referral: Referral }) {
       </section>
       <p>{(referral.destinationType === 'dpp' ? m["referrals_page.covering"] : m["referrals_page.covering_plain"])({ reference: referral.caseReference, destination: destination(referral) })}</p>
       {referral.notes && <p className="whitespace-pre-wrap">{referral.notes}</p>}
+      {enclosed.length > 0 && (
+        <section className="mt-4">
+          <h2 className="mb-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">{m['charge_sheet.enclosed_heading']()}</h2>
+          <ul className="list-disc pl-5">
+            {enclosed.map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section className="mt-12 flex justify-end">
         <SignatureLine name={referral.officerName} caption={m["referrals.referring_officer"]()} />
       </section>

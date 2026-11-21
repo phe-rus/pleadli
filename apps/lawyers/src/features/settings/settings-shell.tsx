@@ -11,6 +11,8 @@ type NavIcon = typeof UserCircleIcon
 import { AssistPane } from '@/features/assist/assist-settings'
 import { NetworkPane } from '@/features/network'
 import { BackupsPane as DailyBackupsPane, LicencePane as PleadliLicencePane } from '@/features/orchestra'
+import { TimezonePane } from '@/features/timezone'
+import { useIsAdmin } from './panes'
 import { AppearancePane, UpdatesPane, PeoplePane, PracticePane, SecurityPane, YouPane } from './panes'
 
 const sectionIds = ['you', 'practice', 'people', 'assist', 'appearance', 'security', 'network', 'updates', 'pleadli-licence', 'daily-backups', 'roadmap'] as const
@@ -79,9 +81,18 @@ function RoadmapPane() {
   )
 }
 
+function PracticeTimezone() {
+  return <TimezonePane canChange={useIsAdmin()} />
+}
+
 const panes: Record<SettingsSectionId, () => ReactNode> = {
   you: () => <YouPane />,
-  practice: () => <PracticePane />,
+  practice: () => (
+    <>
+      <PracticePane />
+      <PracticeTimezone />
+    </>
+  ),
   people: () => <PeoplePane />,
   assist: () => <AssistPane />,
   appearance: () => <AppearancePane />,

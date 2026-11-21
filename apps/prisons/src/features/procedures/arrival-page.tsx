@@ -17,7 +17,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
 import { Textarea } from '@pleadli/ui/textarea'
 import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useState, type ReactNode } from 'react'
 import { m } from '@/paraglide/messages'
 

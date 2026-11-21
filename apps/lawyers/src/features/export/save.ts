@@ -1,3 +1,5 @@
+import * as m from '@/paraglide/messages'
+import { t } from '@pleadli/ui/goey-toaster'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 
 export type ExportKind = 'pdf' | 'docx' | 'doc' | 'csv' | 'zip' | 'json' | 'png' | 'jpg' | 'webp'
@@ -22,12 +24,10 @@ export const kindOfMime = (mime: string): ExportKind | null =>
 export async function saveFile(bytes: Uint8Array, name: string, kind: ExportKind): Promise<boolean> {
   const file = name.replace(/[^\w.-]+/g, '-')
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({ defaultPath: file, filters: [{ name: TYPES[kind].name, extensions: [kind] }] })
-    if (!path) return false
     let binary = ''
     for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-    await invoke('save_export', { path, kind, data: btoa(binary) })
+    const saved = await invoke<string>('save_export_download', { fileName: file, kind, data: btoa(binary) })
+    t.success(m['downloads.saved']({ name: saved.split(/[\\/]/).pop() ?? saved }))
     return true
   }
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: TYPES[kind].mime }))

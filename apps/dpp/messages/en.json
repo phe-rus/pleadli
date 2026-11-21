@@ -2529,5 +2529,45 @@
     "withdraw_reason": "Reason (optional)",
     "withdraw_button": "Withdraw and save the file",
     "withdraw_notice": "Saved. Give the withdrawal file to the registry."
+  },
+  "pre_auth": {
+    "label": "Prosecution",
+    "headline": "Prosecution files, kept in order.",
+    "body": "Pleadli DPP is built for the prosecutor: files from the police, decisions, charges and court dates, offline first."
+  },
+  "timezone": {
+    "title": "Time zone",
+    "about": "Every time on a printed paper is shown in this office's own time zone, with the UTC offset beside it. It does not depend on this computer's settings.",
+    "label": "Time zone of this office",
+    "hint": "A change applies from now on. Times already recorded keep the zone they were made in.",
+    "not_set": "Not chosen yet",
+    "not_set_hint": "Until an administrator chooses, times print in UTC.",
+    "admin_only": "Only an administrator can change this.",
+    "now_label": "Now, in this zone",
+    "saved": "Time zone saved",
+    "failed": "The time zone could not be changed",
+    "clock_title": "This computer's clock",
+    "clock_ok": "Nothing looks wrong. A correct time zone does not correct a wrong clock, so check the time against a trusted watch.",
+    "clock_before_release": "The clock shows a date before this version of the app was made. Set the date and time on this computer before relying on any printed time.",
+    "clock_behind": "The clock is behind the newest record kept here. Set the date and time on this computer before relying on any printed time.",
+    "clock_far_ahead": "The clock is more than a year ahead of the newest record. Check the date and time on this computer."
+  },
+  "downloads": {
+    "saved": "Saved to Downloads: {name}"
+  },
+  "relay": {
+    "check_now": "Check now",
+    "by_postbox": "Through the postbox",
+    "station_address": "Station postbox address",
+    "send_invite": "Send",
+    "invite_queued": "The invitation is waiting for the postbox. The station answers it in its own app.",
+    "invite_failed": "The invitation was not sent",
+    "turned_away": "Turned away: {kind}",
+    "stage_queued": "Waiting to send",
+    "stage_sent": "Sent",
+    "stage_delivered": "Delivered",
+    "stage_attention": "Needs attention",
+    "stage_expired": "Not delivered",
+    "connected": "Connected to Pleadli as {address}."
   }
 }

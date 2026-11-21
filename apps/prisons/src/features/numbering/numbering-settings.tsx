@@ -10,7 +10,7 @@ import { Field, FieldDescription, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
 import { cn } from '@pleadli/ui/lib/utils'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 import { useEstatePolicy, useFetchHeadOfficeDefaults, useNumbering, useSaveEstateNumbering, useSaveEstateUniforms, useSaveNumbering, useSaveUniforms } from './queries'
 import {

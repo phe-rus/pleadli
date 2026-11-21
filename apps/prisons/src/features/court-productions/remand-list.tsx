@@ -2,7 +2,7 @@ import { daysInCustody, mandatoryBailThresholdDays, prisonerFullName } from '@/f
 import { DataTable, type DataTableColumnDef } from '@pleadli/forms-tables'
 import { Badge } from '@pleadli/ui/badge'
 import { useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo } from 'react'
 import { useRemandList } from './queries'
 import type { RemandListEntry } from './schema'

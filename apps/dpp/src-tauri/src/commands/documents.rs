@@ -12,7 +12,7 @@ pub async fn save_document_export(state: State<'_, Db>, id: String, format: Stri
     state.security.ensure_unlocked()?;
     let doc = documents::get(&state.pool, &id).await.map_err(|e| e.to_string())?;
     let (bytes, _, _) = export_bytes(&doc, &format).map_err(|e| format!("{}", e.2))?;
-    std::fs::write(&path, bytes).map_err(|e| e.to_string())
+    std::fs::write(pleadli_node_core::save_grants::take(&path)?, bytes).map_err(|e| e.to_string())
 }
 
 /// The file name to offer in the save dialog.

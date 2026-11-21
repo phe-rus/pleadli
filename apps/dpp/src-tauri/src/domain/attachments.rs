@@ -112,7 +112,7 @@ pub async fn add_attachment_bytes(
     let stored_path = vault::write(vault_root, &id, bytes)?;
 
     let extension = Path::new(file_name).extension().and_then(|e| e.to_str()).unwrap_or("");
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query(
         "INSERT INTO attachments (id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, content_sha256)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -213,7 +213,7 @@ pub fn clear_opened(opened_dir: &Path) {
 
 pub async fn delete_attachment(pool: &SqlitePool, vault_root: &Path, id: &str) -> Result<(), AttachmentError> {
     let attachment = get_attachment(pool, id).await?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("DELETE FROM attachments WHERE id = ?").bind(id).execute(&mut *tx).await?;
     if let Some(a) = &attachment {
         audit::record(&mut tx, Entry::new("attachment_removed").subject("attachment", id).detail(a.file_name.clone())).await?;

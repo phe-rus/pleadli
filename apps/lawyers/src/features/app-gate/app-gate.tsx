@@ -1,4 +1,5 @@
 import { Controls } from '@/components/toolbar/controls'
+import { Briefcase01Icon } from '@hugeicons/core-free-icons'
 import { DEFAULT_LOGO, defaultLogo, useDocumentBrand } from '@/features/brand'
 import { changeLocale, useLocale } from '@/features/i18n'
 import {
@@ -18,9 +19,13 @@ import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
 import { initialPractice, practiceOf, practiceSteps, practiceSummary, roles, type PracticeAnswers } from '@/features/practice-setup/steps'
 import { ApiError, onLocked } from '@/lib/api'
-import { applyAccent, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type Locale } from '@pleadli/setup'
+import { applyAccent, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type Locale, type Brand } from '@pleadli/setup'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
+
+/** What the panel beside setup, sign-in and loading says. This app writes its own words. */
+const panelBrand = (): Brand => ({ label: m["pre_auth.label"](), headline: m["pre_auth.headline"](), body: m["pre_auth.body"](), icon: Briefcase01Icon })
+
 
 const PRODUCT = 'Pleadli Lawyers'
 /** Long enough to read the name, short enough never to feel like waiting. */
@@ -35,11 +40,11 @@ function forgetRecords(queryClient: ReturnType<typeof useQueryClient>) {
 
 function Setup({ locale, onFinished, onJoin }: { locale: Locale; onFinished: () => void; onJoin: () => void }) {
   const { data: status } = useQuery(setupStatusOptions())
-  if (!status) return <BootScreen logo={DEFAULT_LOGO} productName={PRODUCT} label={SETUP_MESSAGES[locale].loading} />
+  if (!status) return <BootScreen logo={DEFAULT_LOGO} productName={PRODUCT} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   return (
     <SetupFlow
       institution="lawyers"
-      productName={PRODUCT}
+      productName={PRODUCT} brand={panelBrand()}
       welcomeAction={
         <div className="flex flex-col items-center gap-1">
           <p className="text-muted-foreground">{m["network.join_welcome"]()}</p>
@@ -74,11 +79,11 @@ function Setup({ locale, onFinished, onJoin }: { locale: Locale; onFinished: () 
 
 function SignIn({ locale, officeName, logo, retryAfter, onSignedIn }: { locale: Locale; officeName: string | null; logo: string; retryAfter: number; onSignedIn: () => Promise<void> }) {
   const { data: people } = useQuery(signInPeopleOptions())
-  if (!people) return <BootScreen logo={logo} productName={PRODUCT} label={SETUP_MESSAGES[locale].loading} />
+  if (!people) return <BootScreen logo={logo} productName={PRODUCT} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   return (
     <SignInScreen
       locale={locale}
-      productName={PRODUCT}
+      productName={PRODUCT} brand={panelBrand()}
       officeName={officeName}
       logo={logo}
       people={people}
@@ -142,7 +147,7 @@ export function AppGate({ children, onUnlocked }: { children: ReactNode; onUnloc
     onUnlocked?.()
   }
 
-  if (!booted || (!status && !isError)) return <BootScreen logo={logo} productName={PRODUCT} label={SETUP_MESSAGES[locale].loading} />
+  if (!booted || (!status && !isError)) return <BootScreen logo={logo} productName={PRODUCT} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   // A computer joined to an office holds nothing itself: when the office does
   // not answer, say so, instead of showing an empty practice.
   if (!status && network?.mode === 'terminal' && error instanceof ApiError && error.code === 'OFFICE_UNREACHABLE') {

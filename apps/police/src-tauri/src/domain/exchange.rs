@@ -208,7 +208,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         envelope::PackageError::BadSignature => bad("The signature does not match the office this station trusts. Nothing was kept."),
         other => bad(other.to_string()),
     })?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO exchange_incoming (id, connection_id, kind, seq, in_reply_to, sent_at, received_at, package_sha256, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&opened.header.id)
         .bind(&connection_id)
@@ -222,6 +222,19 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         .execute(&mut *tx)
         .await?;
     sqlx::query("UPDATE dpp_connections SET last_seq_in = MAX(last_seq_in, ?) WHERE id = ?").bind(opened.header.seq as i64).bind(&connection_id).execute(&mut *tx).await?;
+    // The office's answer is applied to the referral it answers, in the same transaction as keeping the receipt:
+    // accepted or rejected, never anything else, and only for a referral this station sent to this office.
+    if opened.header.kind == KIND_RECEIPT {
+        let outcome = opened.body.json.get("outcome").and_then(|v| v.as_str()).filter(|o| *o == "accepted" || *o == "rejected");
+        if let (Some(outcome), Some(reply_to)) = (outcome, opened.header.in_reply_to.as_deref()) {
+            sqlx::query("UPDATE referrals SET status = ? WHERE id = (SELECT referral_id FROM exchange_outgoing WHERE id = ? AND connection_id = ? AND kind = 'referral')")
+                .bind(outcome)
+                .bind(reply_to)
+                .bind(&connection_id)
+                .execute(&mut *tx)
+                .await?;
+        }
+    }
     tx.commit().await?;
     let what = if opened.header.kind == KIND_RECEIPT { "A receipt" } else { "A decision notice" };
     Ok(Imported { kind: opened.header.kind, message: format!("{what} from {} is waiting for you to read.", office.name) })
@@ -260,6 +273,9 @@ pub async fn list_outgoing(pool: &SqlitePool) -> Result<Vec<Outgoing>, DomainErr
     Ok(sqlx::query_as("SELECT o.id, o.kind, o.seq, o.prepared_at, o.exported_at, o.route, c.office_name, json_extract(o.payload, '$.policeReference') AS police_reference FROM exchange_outgoing o JOIN dpp_connections c ON c.id = o.connection_id ORDER BY o.prepared_at DESC").fetch_all(pool).await?)
 }
 
+/// The most file bytes one referral carries. A larger case is sent in more than one referral.
+const MAX_REFERRAL_FILES_BYTES: usize = 40 * 1024 * 1024;
+
 fn claim_role(role: &str) -> &'static str {
     match role {
         "suspect" | "accused" => "accused",
@@ -269,7 +285,23 @@ fn claim_role(role: &str) -> &'static str {
 }
 
 /// What the referral says, read from the station's own case records.
-async fn referral_payload(pool: &SqlitePool, referral_id: &str) -> Result<ReferralPayload, DomainError> {
+async fn referral_payload(pool: &SqlitePool, vault_root: &std::path::Path, referral_id: &str) -> Result<(ReferralPayload, Vec<(String, String, String, Vec<u8>)>), DomainError> {
+    // Files travel with the record they are attached to (a statement's signed copy, an exhibit's photograph). Each is
+    // opened from the sealed vault here, and the package carries its own SHA-256 so DPP checks it on opening.
+    let mut files: Vec<(String, String, String, Vec<u8>)> = Vec::new();
+    let mut total: usize = 0;
+    let files_of = |entity_type: &'static str, entity_id: String| {
+        let pool = pool.clone();
+        let vault_root = vault_root.to_path_buf();
+        async move {
+            let mut found = Vec::new();
+            for a in crate::domain::attachments::list_attachments(&pool, entity_type, &entity_id).await? {
+                let Some((att, bytes)) = crate::domain::attachments::read_attachment(&pool, &vault_root, &a.id).await.map_err(|_| bad("A file attached to this case could not be opened, so the referral was not sent."))? else { continue };
+                found.push((att.id, att.file_name, att.mime_type, bytes));
+            }
+            Ok::<_, DomainError>(found)
+        }
+    };
     let referral: Option<(String, i64, Option<String>, Option<String>)> = sqlx::query_as("SELECT case_id, referred_at, officer_name, notes FROM referrals WHERE id = ?").bind(referral_id).fetch_optional(pool).await?;
     let (case_id, referred_at, officer, notes) = referral.ok_or_else(|| DomainError::NotFound("No such referral.".into()))?;
     let (reference, summary): (String, String) = sqlx::query_as("SELECT reference, summary FROM cases WHERE id = ?").bind(&case_id).fetch_one(pool).await?;
@@ -284,31 +316,54 @@ async fn referral_payload(pool: &SqlitePool, referral_id: &str) -> Result<Referr
     let people = people.into_iter().map(|(key, role, first_name, last_name, other_names, phone, national_id, address)| PersonClaim { key, role: claim_role(&role).into(), first_name, last_name, other_names, phone, national_id, address }).collect();
 
     let statements: Vec<(String, String, i64, String, Option<String>)> = sqlx::query_as("SELECT id, person_id, given_at, content, officer_name FROM statements WHERE case_id = ? ORDER BY given_at").bind(&case_id).fetch_all(pool).await?;
-    let statements = statements.into_iter().map(|(key, person_key, given_at, content, taken_by)| StatementClaim { key, person_key, role: "witness".into(), given_at, content, taken_by, file_ids: vec![] }).collect();
+    let mut statement_claims = Vec::new();
+    for (key, person_key, given_at, content, taken_by) in statements {
+        let found = files_of("statement", key.clone()).await?;
+        let file_ids = found.iter().map(|f| f.0.clone()).collect();
+        for f in found {
+            total += f.3.len();
+            files.push(f);
+        }
+        statement_claims.push(StatementClaim { key, person_key, role: "witness".into(), given_at, content, taken_by, file_ids });
+    }
+    let statements = statement_claims;
 
     let exhibits: Vec<(String, String, Option<String>, i64, Option<String>)> = sqlx::query_as("SELECT id, description, identification_mark, recovered_at, recovered_from_location FROM exhibits WHERE case_id = ?").bind(&case_id).fetch_all(pool).await?;
-    let exhibits = exhibits.into_iter().map(|(key, description, identification_mark, recovered_at, recovered_from_location)| ExhibitClaim { key, description, identification_mark, recovered_at: Some(recovered_at), recovered_from_location, file_ids: vec![] }).collect();
+    let mut exhibit_claims = Vec::new();
+    for (key, description, identification_mark, recovered_at, recovered_from_location) in exhibits {
+        let found = files_of("exhibit", key.clone()).await?;
+        let file_ids = found.iter().map(|f| f.0.clone()).collect();
+        for f in found {
+            total += f.3.len();
+            files.push(f);
+        }
+        exhibit_claims.push(ExhibitClaim { key, description, identification_mark, recovered_at: Some(recovered_at), recovered_from_location, file_ids });
+    }
+    let exhibits = exhibit_claims;
+    if total > MAX_REFERRAL_FILES_BYTES {
+        return Err(bad("The files attached to this case are too large for one referral (over 40 MB). Send fewer or smaller files."));
+    }
 
     let charges: Vec<(Option<String>, String, String, String)> = sqlx::query_as("SELECT accused_person_id, offence, statutory_section, particulars FROM charge_sheets WHERE case_id = ?").bind(&case_id).fetch_all(pool).await?;
     let charges = charges.into_iter().map(|(accused_person_key, offence, section, particulars)| ChargeClaim { accused_person_key, offence, statutory_section: Some(section), particulars: Some(particulars) }).collect();
 
-    Ok(ReferralPayload { police_reference: reference, station_name, referred_at, referring_officer: officer, summary, people, statements, exhibits, charges, resubmission_of: None, notes })
+    Ok((ReferralPayload { police_reference: reference, station_name, referred_at, referring_officer: officer, summary, people, statements, exhibits, charges, resubmission_of: None, notes }, files))
 }
 
 /// Seals a referral to the one trusted office, for saving as a file or for the
 /// postbox. Returns the package bytes and a file name. Sending twice makes a
 /// second package (a new sequence number), never a silent overwrite.
-pub async fn export_referral(pool: &SqlitePool, referral_id: &str, route: &str) -> Result<(Vec<u8>, String), DomainError> {
+pub async fn export_referral(pool: &SqlitePool, vault_root: &std::path::Path, referral_id: &str, route: &str) -> Result<(Vec<u8>, String), DomainError> {
     let station = require_identity(pool).await?;
     let connection: Option<String> = sqlx::query_scalar("SELECT id FROM dpp_connections WHERE status = 'trusted' ORDER BY trusted_at DESC LIMIT 1").fetch_optional(pool).await?;
     let connection_id = connection.ok_or_else(|| bad("No DPP office has confirmed this station yet. Connect to an office first."))?;
     let (office, _) = office_public(pool, &connection_id).await?;
-    let payload = referral_payload(pool, referral_id).await?;
-    let mut tx = pool.begin().await?;
+    let (payload, files) = referral_payload(pool, vault_root, referral_id).await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM dpp_connections WHERE id = ?").bind(&connection_id).fetch_one(&mut *tx).await?;
     sqlx::query("UPDATE dpp_connections SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(&connection_id).execute(&mut *tx).await?;
     let json = serde_json::to_value(&payload).map_err(|_| bad("Could not build the referral."))?;
-    let (bytes, header) = envelope::seal(&station, &office, KIND_REFERRAL, seq as u64, None, &Body::new(json.clone())).map_err(|e| bad(e.to_string()))?;
+    let (bytes, header) = envelope::seal(&station, &office, KIND_REFERRAL, seq as u64, None, &files.into_iter().fold(Body::new(json.clone()), |body, (id, name, mime, bytes)| body.with_file(&id, &name, &mime, bytes))).map_err(|e| bad(e.to_string()))?;
     sqlx::query("INSERT INTO exchange_outgoing (id, connection_id, kind, seq, referral_id, payload, prepared_at, exported_at, route) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&header.id)
         .bind(&connection_id)
@@ -359,14 +414,14 @@ mod tests {
         sqlx::query("INSERT INTO case_people (id, case_id, person_id, role) VALUES ('cp1', 'c1', 'p1', 'accused')").execute(&pool).await.unwrap();
         sqlx::query("INSERT INTO charge_sheets (id, case_id, accused_person_id, offence, statutory_section, particulars, charged_at, officer_name, station_name) VALUES ('cs1', 'c1', 'p1', 'Theft', 'Penal Code Act, section 254', 'Stole goods.', 1, 'IO', 'Exchange Test Police Station')").execute(&pool).await.unwrap();
         sqlx::query("INSERT INTO referrals (id, case_id, destination_type, destination_name, referred_at, status, officer_name) VALUES ('r1', 'c1', 'dpp', 'DPP', 2, 'sent', 'IO')").execute(&pool).await.unwrap();
-        assert!(export_referral(&pool, "r1", "file").await.is_err());
+        assert!(export_referral(&pool, std::path::Path::new(""), "r1", "file").await.is_err());
 
         let confirmation = pairing::make_confirmation(&office, &response.station, &invite.invite_id, "trusted", None).unwrap();
         assert_eq!(import_package(&pool, &confirmation).await.unwrap().kind, KIND_CONFIRMATION);
         assert!(import_package(&pool, &confirmation).await.is_err(), "a confirmation is used once");
 
         // The referral is sealed to the office, who can open it and read the case.
-        let (bytes, name) = export_referral(&pool, "r1", "file").await.unwrap();
+        let (bytes, name) = export_referral(&pool, std::path::Path::new(""), "r1", "file").await.unwrap();
         assert!(name.ends_with(".pxpkg"));
         let peeked = envelope::peek(&bytes).unwrap();
         let opened = envelope::open(&office, peeked, &response.station).unwrap();
@@ -383,6 +438,9 @@ mod tests {
         let (receipt_bytes, _) = envelope::seal(&office, &response.station, KIND_RECEIPT, 1, Some(&opened.header.id), &Body::new(serde_json::to_value(&receipt).unwrap())).unwrap();
         assert_eq!(import_package(&pool, &receipt_bytes).await.unwrap().kind, KIND_RECEIPT);
         assert!(import_package(&pool, &receipt_bytes).await.is_err(), "replay refused");
+        // The office's answer is applied to the referral it answers.
+        let status: String = sqlx::query_scalar("SELECT status FROM referrals WHERE id = 'r1'").fetch_one(&pool).await.unwrap();
+        assert_eq!(status, "accepted", "a receipt sets the referral's status");
         let held = list_incoming(&pool).await.unwrap();
         assert_eq!(held.len(), 1);
         assert!(held[0].payload.contains("DPP 7/2026"));

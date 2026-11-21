@@ -5,7 +5,7 @@ import { releaseTypeLabel } from '@/features/releases'
 import { requestCategoryLabel } from '@/features/requests'
 import { visitTypeLabel } from '@/features/visits'
 import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
 import { m } from '@/paraglide/messages'
 

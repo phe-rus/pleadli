@@ -1,4 +1,4 @@
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo } from 'react'
 import { periodRange } from './period'
 import { useReports } from './queries'

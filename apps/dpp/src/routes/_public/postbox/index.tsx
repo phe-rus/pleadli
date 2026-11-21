@@ -1,7 +1,8 @@
 import * as m from '@/paraglide/messages'
 import { listIncoming, listOutgoing, outgoingKindLabels, type Outgoing } from '@/features/interchange'
 import { PostboxView, type PostboxLabels, type PostboxMessage } from '@pleadli/shell'
-import { buttonVariants } from '@pleadli/ui/button'
+import { checkRelay, getRelay, type RelayStatus } from '@/features/relay/data'
+import { Button, buttonVariants } from '@pleadli/ui/button'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -27,12 +28,16 @@ function RouteComponent() {
   const labels = useLabels()
   const [incoming, setIncoming] = useState<Row[]>([])
   const [outgoing, setOutgoing] = useState<Outgoing[]>([])
+  const [relay, setRelay] = useState<RelayStatus | null>(null)
   useEffect(() => {
     // Before the office has an exchange identity these answer with nothing.
     listIncoming().then(setIncoming).catch(() => {})
     listOutgoing().then(setOutgoing).catch(() => {})
+    getRelay().then(setRelay).catch(() => {})
   }, [])
 
+  const sent = (id?: string | null) => (id ? relay?.sent.find((x) => x.id === id) : undefined)
+  const refused = (relay?.received ?? []).filter((r) => r.status === 'refused')
   const messages = useMemo<PostboxMessage[]>(
     () => [
       ...incoming.map((i) => ({
@@ -55,7 +60,8 @@ function RouteComponent() {
       })),
       ...outgoing.map((o) => ({
         id: o.id,
-        box: (o.exportedAt ? 'sent' : 'outbox') as 'sent' | 'outbox',
+        box: (o.exportedAt && !['queued', 'attention'].includes(sent(o.relayPackageId)?.stage ?? '') ? 'sent' : 'outbox') as 'sent' | 'outbox',
+        state: sent(o.relayPackageId) ? m[`relay.stage_${sent(o.relayPackageId)!.stage}`]() : undefined,
         party: o.stationName ?? '',
         at: o.exportedAt ?? o.preparedAt,
         subject: `${outgoingKindLabels[o.kind] ?? o.kind}${o.policeReference ? `: ${o.policeReference}` : ''}`,
@@ -63,8 +69,25 @@ function RouteComponent() {
         body: <p className="whitespace-pre-wrap">{o.summary}</p>,
       })),
     ],
-    [incoming, outgoing],
+    [incoming, outgoing, relay],
+  )
+  const all = useMemo<PostboxMessage[]>(
+    () => [
+      ...messages,
+      ...refused.map((r) => ({ id: r.id, box: 'inbox' as const, unread: true, party: r.from, at: r.arrivedAt, subject: m['relay.turned_away']({ kind: r.kind }), preview: r.reason ?? '', body: <p className="whitespace-pre-wrap text-destructive">{r.reason}</p>, state: m['relay.stage_attention']() })),
+    ],
+    [messages, refused],
   )
 
-  return <PostboxView labels={labels} messages={messages} />
+  return (
+    <PostboxView
+      labels={relay?.ready ? { ...labels, status: m['relay.connected']({ address: relay.address ?? '' }) } : labels}
+      messages={all}
+      actions={
+        <Button size="sm" variant="secondary" onClick={() => checkRelay().then(setRelay).then(() => listIncoming().then(setIncoming)).then(() => listOutgoing().then(setOutgoing)).catch(() => {})}>
+          {m['relay.check_now']()}
+        </Button>
+      }
+    />
+  )
 }

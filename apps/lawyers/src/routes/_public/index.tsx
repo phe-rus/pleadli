@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import { formatDay, formatTime, formatWeekday } from '@/lib/dates'
 import { getLocale } from '@/paraglide/runtime'
 import * as m from '@/paraglide/messages'
@@ -82,7 +83,7 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <p className="text-[0.8125rem] font-medium text-muted-foreground">{new Intl.DateTimeFormat(getLocale(), { dateStyle: 'full' }).format(new Date())}</p>
+          <p className="text-[0.8125rem] font-medium text-muted-foreground">{new Intl.DateTimeFormat(getLocale(), { dateStyle: 'full', timeZone: zoneFor(Date.now()) }).format(new Date())}</p>
           <h1>{m["today.title"]()}</h1>
         </div>
         <div className="page-actions">

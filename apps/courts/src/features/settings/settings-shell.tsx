@@ -4,6 +4,8 @@ import { Tag } from '@/components/status-tag'
 import { IntegrityCard } from '@/features/audit'
 import { LogoCard } from '@/features/brand'
 import { PeoplePane, ProtectionPane } from './people-panes'
+import { TimezonePane } from '@/features/timezone'
+import { useSecurityStatus } from '@/features/installation/queries'
 import { ProfileCard } from '@/features/profile'
 import { BackupsPane, LicencePane } from '@/features/orchestra'
 import { m } from '@/features/orchestra/text'
@@ -60,10 +62,16 @@ function RoadmapPane() {
   )
 }
 
+function CourtTimezone() {
+  const { data } = useSecurityStatus()
+  return <TimezonePane canChange={data?.actor?.role === 'administrator'} />
+}
+
 const panes: Record<SettingsSectionId, () => ReactNode> = {
   bench: () => (
     <>
       <ProfileCard />
+      <CourtTimezone />
       <LogoCard />
     </>
   ),

@@ -57,6 +57,8 @@ fn admin_only(method: &Method, path: &str) -> bool {
     let write = method != Method::GET;
     path == "/api/auth/policy" && write
         || path == "/api/auth/events"
+        || path == "/api/audit"
+        || path == "/api/audit/verify"
         || (path == "/api/officers" || path.starts_with("/api/officers/")) && write
         || path == "/api/station-profile" && write
         || path == "/api/units/chain" && write

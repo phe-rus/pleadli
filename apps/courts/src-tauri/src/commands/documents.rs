@@ -18,19 +18,18 @@ fn decode_document(format: &str, content: &str) -> Result<Vec<u8>, String> {
 }
 
 #[tauri::command]
-pub async fn export_document(app: AppHandle, name: String, format: String, content_base64: String) -> Result<bool, String> {
+pub async fn export_document(app: AppHandle, name: String, format: String, content_base64: String) -> Result<Option<String>, String> {
     let bytes = decode_document(&format, &content_base64)?;
     let label = match format.as_str() { "pdf" => "PDF document", "docx" => "Word document", _ => "Markdown document" };
     let stem = name.strip_suffix(&format!(".{format}")).unwrap_or(&name);
     let safe: String = stem.chars().take(100).map(|c| if c.is_alphanumeric() || matches!(c, ' ' | '-' | '_' | '.') { c } else { '-' }).collect();
     let safe = format!("{}.{}", safe.trim_start_matches('.'), format);
-    let chosen = tauri::async_runtime::spawn_blocking(move || {
-        app.dialog().file().add_filter(label, &[format.as_str()]).set_file_name(safe).blocking_save_file()
-    }).await.map_err(|_| "The save dialog could not open.".to_string())?;
-    let Some(file) = chosen else { return Ok(false) };
-    let path = file.into_path().map_err(|_| "Choose a file on this computer.".to_string())?;
-    std::fs::write(path, bytes).map_err(|_| "The document could not be saved at that destination.".to_string())?;
-    Ok(true)
+    let _ = label;
+    // No Save window: the Downloads folder, under a name that is free there. The window learns the path from the answer.
+    use tauri::Manager;
+    let dir = pleadli_node_core::downloads::resolve_dir(app.path().download_dir().ok(), app.path().home_dir().ok())?;
+    let path = pleadli_node_core::downloads::save_unique(&dir, &safe, &bytes)?;
+    Ok(Some(path.to_string_lossy().into_owned()))
 }
 
 /// Save only a verified original belonging to this case. No caller supplied path.

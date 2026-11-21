@@ -6,7 +6,8 @@ import { useFormContext } from "../contexts"
 /** The form's save button. When the form's own check refuses to save (for example a date that is
  * needed), the reason is shown under the button, so the person is never left with a button that
  * does nothing and no word as to why. */
-export function Submit({ label, disabled = false }: { label: string; disabled?: boolean }) {
+/** `allowPristine`: a new record that starts filled in (for example a case opened from an incident) can be saved as it is. */
+export function Submit({ label, disabled = false, allowPristine = false }: { label: string; disabled?: boolean; allowPristine?: boolean }) {
   const form = useFormContext()
 
   return (
@@ -21,7 +22,7 @@ export function Submit({ label, disabled = false }: { label: string; disabled?: 
       })}
     >
       {({ isSubmitting, canSubmit, isDirty, isTouched, reasons }) => {
-        const isDisabled = disabled || isSubmitting || !canSubmit || !isDirty || !isTouched
+        const isDisabled = disabled || isSubmitting || !canSubmit || (!allowPristine && (!isDirty || !isTouched))
         return (
           <div className="flex flex-col gap-2">
             <Button type="submit" disabled={isDisabled}>

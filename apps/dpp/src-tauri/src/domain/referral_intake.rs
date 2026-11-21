@@ -205,7 +205,7 @@ pub async fn accept_referral(pool: &SqlitePool, vault_root: &Path, package_id: &
     let mut attach: Vec<(String, &'static str, String)> = Vec::new();
     let mut claimed_files = std::collections::HashSet::new();
 
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     if target.is_none() {
         sqlx::query("INSERT INTO prosecution_files (id, odpp_registration_number, title, police_station, police_reference, received_at, notes, police_connection_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(&file_id)
@@ -363,7 +363,7 @@ pub async fn reject_referral(pool: &SqlitePool, vault_root: &Path, package_id: &
         return invalid("Say why the referral is being rejected: the station is told.");
     }
     let by = sqlx::query_scalar::<_, String>("SELECT name FROM prosecutor_profile WHERE id = 'default'").fetch_optional(pool).await?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("UPDATE incoming_packages SET status = 'rejected', decided_at = ?, decided_by = ?, reject_reason = ? WHERE id = ?").bind(chrono::Utc::now().timestamp_millis()).bind(&by).bind(reason.trim()).bind(package_id).execute(&mut *tx).await?;
     interchange::record_receipt(&mut tx, &detail.summary.connection_id, package_id, &detail.payload, "rejected", None, Some(reason.trim()), detail.summary.received_at, by).await?;
     audit::record(&mut tx, Entry::new("referral_rejected").subject("incoming_package", package_id).detail(format!("{}: {}", detail.payload.police_reference, reason.trim()))).await?;

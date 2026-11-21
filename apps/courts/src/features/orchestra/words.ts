@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 /** Courts is in English for now. */
 const getLocale = () => 'en-GB'
 import { m } from './text'
@@ -96,10 +97,10 @@ export function sizeText(bytes: number | null): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-export const formatDay = (ms: number) => new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short', year: 'numeric' }).format(ms)
+export const formatDay = (ms: number) => new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: zoneFor(ms) }).format(ms)
 
 /** A moment as a day and a time. */
-export const when = (ms: number) => new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(ms)
+export const when = (ms: number) => new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: zoneFor(ms) }).format(ms)
 
 /** How many days ago, in the reader's language ("today", "3 days ago"). */
 export const ago = (ms: number) => new Intl.RelativeTimeFormat(getLocale(), { numeric: 'auto' }).format(Math.round((ms - Date.now()) / 86_400_000), 'day')

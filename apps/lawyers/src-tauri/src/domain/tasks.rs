@@ -22,18 +22,19 @@ use uuid::Uuid;
 use super::error::{check_date, clean, invalid, DomainError};
 use pleadli_node_core::db::begin_write;
 
-/// East Africa Time, UTC+3, which Uganda keeps all year.
+/// The practice's own offset (its configured timezone), now.
 fn eat() -> FixedOffset {
-    FixedOffset::east_opt(3 * 3600).expect("a valid offset")
+    pleadli_node_core::timezone::offset_at(chrono::Utc::now().timestamp_millis())
 }
 
 pub fn eat_date(ms: i64) -> Option<NaiveDate> {
-    chrono::DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&eat()).date_naive())
+    chrono::DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&pleadli_node_core::timezone::offset_at(ms)).date_naive())
 }
 
 /// The start of a local day, as milliseconds.
 pub fn day_start(date: NaiveDate) -> i64 {
-    date.and_hms_opt(0, 0, 0).expect("midnight").and_utc().timestamp_millis() - 3 * 3600 * 1000
+    let wall = date.and_hms_opt(0, 0, 0).expect("midnight").and_utc().timestamp_millis();
+    wall - pleadli_node_core::timezone::offset_at(wall).local_minus_utc() as i64 * 1000
 }
 
 /// `n` working days after `from` (before it if `n` is negative), as the start of

@@ -3336,5 +3336,22 @@
   "court_orders_event_not_produced": "Hakuweza kufikishwa",
   "court_orders_event_other": "Nyingine",
   "auth_policy_full_title": "Nenosiri na msimbo wa kithibitishaji",
-  "auth_policy_full_description": "Kila afisa huingia kwa nenosiri na msimbo wa tarakimu sita kutoka kwa programu ya kithibitishaji kwenye simu yake. Kila kuingia kunarekodiwa."
+  "auth_policy_full_description": "Kila afisa huingia kwa nenosiri na msimbo wa tarakimu sita kutoka kwa programu ya kithibitishaji kwenye simu yake. Kila kuingia kunarekodiwa.",
+  "brand_label": "Gereza",
+  "timezone_title": "Saa za eneo",
+  "timezone_about": "Kila wakati kwenye karatasi iliyochapishwa unaonyeshwa kwa saa za eneo la ofisi hii, pamoja na tofauti na UTC. Haitegemei mipangilio ya kompyuta hii.",
+  "timezone_label": "Saa za eneo za ofisi hii",
+  "timezone_hint": "Mabadiliko yanaanza sasa. Nyakati zilizokwisha rekodiwa zinabaki na saa za eneo zilizotumika wakati huo.",
+  "timezone_not_set": "Bado haijachaguliwa",
+  "timezone_not_set_hint": "Hadi msimamizi achague, nyakati zinachapishwa kwa UTC.",
+  "timezone_admin_only": "Ni msimamizi pekee anayeweza kubadilisha hili.",
+  "timezone_now_label": "Sasa, katika eneo hili",
+  "timezone_saved": "Saa za eneo zimehifadhiwa",
+  "timezone_failed": "Saa za eneo hazikuweza kubadilishwa",
+  "timezone_clock_title": "Saa ya kompyuta hii",
+  "timezone_clock_ok": "Hakuna kinachoonekana kuwa kibaya. Saa za eneo sahihi hazirekebishi saa isiyo sahihi, kwa hiyo linganisha na saa unayoiamini.",
+  "timezone_clock_before_release": "Saa inaonyesha tarehe kabla ya toleo hili la programu kutengenezwa. Weka tarehe na saa kwenye kompyuta hii kabla ya kutegemea wakati wowote uliochapishwa.",
+  "timezone_clock_behind": "Saa iko nyuma ya rekodi mpya zaidi iliyohifadhiwa hapa. Weka tarehe na saa kwenye kompyuta hii kabla ya kutegemea wakati wowote uliochapishwa.",
+  "timezone_clock_far_ahead": "Saa iko mbele zaidi ya mwaka mmoja kuliko rekodi mpya zaidi. Angalia tarehe na saa kwenye kompyuta hii.",
+  "downloads_saved": "Imehifadhiwa kwenye Downloads: {name}"
 }

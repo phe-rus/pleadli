@@ -261,8 +261,7 @@ export async function buildFilingPack(input: PackInput): Promise<Uint8Array> {
 export async function savePack(bytes: Uint8Array, name: string): Promise<boolean> {
   const file = name.replace(/[^\w.-]+/g, '-')
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({ defaultPath: file, filters: [{ name: 'PDF', extensions: ['pdf'] }] })
+    const path = await invoke<string | null>('pick_save_path', { defaultName: file, extension: 'pdf' })
     if (!path) return false
     let binary = ''
     for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))

@@ -1,4 +1,5 @@
 import { Controls } from '@/components/toolbar/controls'
+import { JusticeScale01Icon } from '@hugeicons/core-free-icons'
 import { setCustodyReader } from '@/features/assist/context'
 import type { CustodyEvent } from '@/features/custody'
 import { DEFAULT_LOGO, defaultLogo } from '@/features/brand'
@@ -8,9 +9,13 @@ import { completeSetup, getSetupStatus, requestSecondFactor, signIn, signInPeopl
 import { LockScreen, RecoveryScreen, securityStatusOptions, useSecurityStatus } from '@/features/security'
 import { ApiError, onLocked } from '@/lib/api'
 import * as m from '@/paraglide/messages'
-import { applyAccent, prosecutionNames, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type Locale, type SetupRole } from '@pleadli/setup'
+import { applyAccent, prosecutionNames, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type Locale, type SetupRole, type Brand } from '@pleadli/setup'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
+
+/** What the panel beside setup, sign-in and loading says. This app writes its own words. */
+const panelBrand = (): Brand => ({ label: m["pre_auth.label"](), headline: m["pre_auth.headline"](), body: m["pre_auth.body"](), icon: JusticeScale01Icon })
+
 
 const PRODUCT = 'Pleadli DPP'
 /** Before setup the app is simply Pleadli DPP; after it, the office's own service name. */
@@ -33,11 +38,11 @@ function forgetRecords(queryClient: ReturnType<typeof useQueryClient>) {
 
 function Setup({ locale, onFinished }: { locale: Locale; onFinished: () => void }) {
   const { data: status } = useQuery({ queryKey: ['installation', 'setup'], queryFn: getSetupStatus, retry: false })
-  if (!status) return <BootScreen logo={DEFAULT_LOGO} productName={product()} label={SETUP_MESSAGES[locale].loading} />
+  if (!status) return <BootScreen logo={DEFAULT_LOGO} productName={product()} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   return (
     <SetupFlow
       institution="dpp"
-      productName={product()}
+      productName={product()} brand={panelBrand()}
       defaultLogo={DEFAULT_LOGO}
       defaultAccent="gold"
       locale={locale}
@@ -62,11 +67,11 @@ function Setup({ locale, onFinished }: { locale: Locale; onFinished: () => void 
 
 function SignIn({ locale, officeName, logo, retryAfter, onSignedIn }: { locale: Locale; officeName: string | null; logo: string; retryAfter: number; onSignedIn: () => Promise<void> }) {
   const { data: people } = useQuery(signInPeopleOptions())
-  if (!people) return <BootScreen logo={logo} productName={product()} label={SETUP_MESSAGES[locale].loading} />
+  if (!people) return <BootScreen logo={logo} productName={product()} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   return (
     <SignInScreen
       locale={locale}
-      productName={product()}
+      productName={product()} brand={panelBrand()}
       officeName={officeName}
       logo={logo}
       people={people}
@@ -134,7 +139,7 @@ export function AppGate({ children, onUnlocked }: { children: ReactNode; onUnloc
     onUnlocked?.()
   }
 
-  if (!booted || (!status && !isError)) return <BootScreen logo={logo} productName={product()} label={SETUP_MESSAGES[locale].loading} />
+  if (!booted || (!status && !isError)) return <BootScreen logo={logo} productName={product()} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   // The API cannot be reached at all: the app's own error handling takes over.
   if (!status) return <>{children}</>
   if (status.state === 'recovery') return <RecoveryScreen reason={status.reason} pending={status.restorePending} />

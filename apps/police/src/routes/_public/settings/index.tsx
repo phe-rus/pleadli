@@ -3,7 +3,7 @@ import { SettingsCard, SettingsRow } from '@/components/settings-card'
 import { useTheme } from '@/components/theme-provider'
 import { useStationProfile } from '@/features/station-admin'
 import { autoUpdate, checkNow, download as downloadUpdate, restart as restartApp, setAutoUpdate, useUpdateState } from '@/lib/updater'
-import { Building06Icon, CloudUploadIcon, Database01Icon, LicenseIcon, Download04Icon, InformationCircleIcon, Notification03Icon, PaintBoardIcon, Share08Icon, SmartPhone01Icon, SquareLock02Icon, UserIcon } from '@hugeicons/core-free-icons'
+import { Building06Icon, FileSearchIcon, CloudUploadIcon, Database01Icon, LicenseIcon, Download04Icon, InformationCircleIcon, Notification03Icon, PaintBoardIcon, Share08Icon, SmartPhone01Icon, SquareLock02Icon, UserIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Segmented } from '@pleadli/ui/segmented'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -40,14 +40,16 @@ import { ListenerCard } from '@/features/command'
 import { DevModeSwitch, SignInSettings, useInstallation, useMe } from '@/features/session'
 import { restartTour } from '@/features/overview'
 import { RulesPane } from '@/features/rules'
+import { IntegrityCard } from '@/features/audit'
+import { TimezoneCard } from '@/features/timezone'
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { format } from '@/lib/date'
 import { useEffect, useState } from 'react'
 
-type Section = 'station' | 'sign-in' | 'command' | 'remote' | 'records' | 'licence' | 'backups' | 'appearance' | 'notifications' | 'updates' | 'rules' | 'about'
-const SECTIONS: Section[] = ['station', 'sign-in', 'command', 'remote', 'records', 'licence', 'backups', 'appearance', 'notifications', 'updates', 'rules', 'about']
+type Section = 'station' | 'sign-in' | 'command' | 'remote' | 'records' | 'licence' | 'backups' | 'appearance' | 'notifications' | 'updates' | 'rules' | 'audit' | 'about'
+const SECTIONS: Section[] = ['station', 'sign-in', 'command', 'remote', 'records', 'licence', 'backups', 'appearance', 'notifications', 'updates', 'rules', 'audit', 'about']
 
 export const Route = createFileRoute('/_public/settings/')({
   validateSearch: (search: Record<string, unknown>): { section?: Section } => (SECTIONS.includes(search.section as Section) ? { section: search.section as Section } : {}),
@@ -415,9 +417,11 @@ function RouteComponent() {
   const navigate = Route.useNavigate()
   const { data: installation } = useInstallation()
   const command = installation?.mode === 'command'
+  const { data: me } = useMe()
+  const admin = me?.role === 'admin'
 
   const groups: { id: string; label: string; sections: Section[] }[] = [
-    { id: 'station', label: command ? m["settings.group.command"]() : m["settings.group.station"](), sections: command ? ['station', 'sign-in', 'command'] : ['station', 'sign-in', 'command', 'remote', 'records'] },
+    { id: 'station', label: command ? m["settings.group.command"]() : m["settings.group.station"](), sections: [...(command ? ['station', 'sign-in', 'command'] : ['station', 'sign-in', 'command', 'remote', 'records']), ...(admin ? ['audit'] : [])] as Section[] },
     { id: 'pleadli', label: m["orchestra.settings.group"](), sections: ['licence', 'backups'] },
     { id: 'computer', label: m["settings.group.computer"](), sections: ['appearance', 'notifications', 'updates'] },
     { id: 'about', label: m["settings.group.about"](), sections: ['rules', 'about'] },
@@ -437,6 +441,7 @@ function RouteComponent() {
     notifications: { label: m["settings.nav.notifications"](), about: m["settings.about.notifications"](), icon: Notification03Icon },
     updates: { label: m["update.title"](), about: m["update.about"](), icon: Download04Icon },
     rules: { label: m["rules.title"](), about: m["rules.about"](), icon: LicenseIcon },
+    audit: { label: m['audit.title'](), about: m['audit.about'](), icon: FileSearchIcon },
     about: { label: m["settings.tab_about"](), about: m["settings.about.about"](), icon: InformationCircleIcon },
   }
 
@@ -451,7 +456,13 @@ function RouteComponent() {
     appearance: () => <AppearancePane />,
     notifications: () => <NotificationsPane />,
     updates: () => <UpdatesPane />,
-    rules: () => <RulesPane />,
+    rules: () => (
+      <>
+        <TimezoneCard />
+        <RulesPane />
+      </>
+    ),
+    audit: () => <IntegrityCard />,
     about: () => <AppInfo />,
   }
 

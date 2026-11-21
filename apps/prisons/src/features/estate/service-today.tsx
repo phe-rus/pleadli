@@ -1,6 +1,6 @@
 import { Group, GroupRow } from '@pleadli/ui/grouped'
 import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { m } from '@/paraglide/messages'
 import type { Estate } from './schema'
 

@@ -87,9 +87,8 @@ export async function importPackage(file?: File): Promise<ImportOutcome | null> 
 /** Saves an invitation or an outgoing package where the prosecutor chooses. */
 export async function saveFile(kind: 'invite' | 'outgoing', id: string): Promise<boolean> {
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
     const name = await invoke<string>('interchange_file_name', { kind, id })
-    const path = await save({ defaultPath: name, filters: [{ name: m["interchange.package_filter"](), extensions: ['pxpkg'] }] })
+    const path = await invoke<string | null>('pick_save_path', { defaultName: name, extension: 'pxpkg' })
     if (!path) return false
     await invoke('save_interchange_file', { kind, id, path })
     return true

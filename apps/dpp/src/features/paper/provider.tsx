@@ -3,7 +3,7 @@ import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
 import { PaperProvider as SharedPaperProvider, type OfficeApps, type PaperApp, type PaperStamp } from '@pleadli/paper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
-import { save } from '@tauri-apps/plugin-dialog'
+import { t } from '@pleadli/ui/goey-toaster'
 import type { ReactNode } from 'react'
 
 const b64 = (bytes: Uint8Array) => {
@@ -14,9 +14,9 @@ const b64 = (bytes: Uint8Array) => {
 
 async function saveFile(name: string, bytes: Uint8Array, mime: string, extension: string) {
   if (isTauri()) {
-    const path = await save({ defaultPath: name, filters: [{ name: extension.toUpperCase(), extensions: [extension] }] })
-    if (!path) return false
-    await invoke('save_paper_file', { path, data: b64(bytes) })
+    void extension
+    const saved = await invoke<string>('save_paper_download', { fileName: name, data: b64(bytes) })
+    t.success(m['downloads.saved']({ name: saved.split(/[\\/]/).pop() ?? saved }))
     return true
   }
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: mime }))

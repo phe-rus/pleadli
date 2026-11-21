@@ -78,9 +78,9 @@ const SELECT: &str = "SELECT r.id, r.register, r.number, r.kind, r.on_day, r.pla
     r.voided_at, r.voided_reason, r.created_at
     FROM register_entries r LEFT JOIN matters m ON m.id = r.matter_id";
 
-/// East Africa Time: the register's year is the year in Kampala.
+/// The register's year is the year at the practice, in its own configured timezone.
 fn eat() -> FixedOffset {
-    FixedOffset::east_opt(3 * 3600).expect("valid offset")
+    pleadli_node_core::timezone::offset_at(chrono::Utc::now().timestamp_millis())
 }
 
 /// The first millisecond of `year` and of the next, in Kampala.

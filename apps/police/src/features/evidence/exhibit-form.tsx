@@ -2,6 +2,7 @@ import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
+import { useMe } from '@/features/session'
 import { incidentsOptions, type Incident } from '@/features/incidents'
 import { useReportDirty } from '@/hooks/use-report-dirty'
 import { useAppForm } from '@pleadli/forms-tables/forms'
@@ -88,6 +89,7 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
   const updateExhibit = useUpdateExhibit()
   const { data: cases } = useSuspenseQuery(casesOptions(''))
   const { data: incidents } = useSuspenseQuery(incidentsOptions(''))
+  const { data: me } = useMe()
 
   const form = useAppForm({
     defaultValues: {
@@ -100,7 +102,8 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
       recoveredFromLocation: exhibit?.recoveredFromLocation ?? '',
       handedOverBy: exhibit?.handedOverBy ?? '',
       witnesses: exhibit?.witnesses ?? '',
-      receivingOfficerName: exhibit?.receivingOfficerName ?? '',
+      // A new exhibit is received by whoever is signed in; an edit keeps who was recorded.
+      receivingOfficerName: exhibit ? exhibit.receivingOfficerName ?? '' : [me?.rank, me?.name].filter(Boolean).join(' '),
       storageLocation: exhibit?.storageLocation ?? '',
       status: exhibit?.status ?? 'in_storage',
       notes: exhibit?.notes ?? '',

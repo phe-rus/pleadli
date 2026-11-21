@@ -287,12 +287,13 @@ pub async fn discard(pool: &SqlitePool, id: &str) -> Result<(), DomainError> {
     Ok(())
 }
 
+/// The practice's own offset (its configured timezone, never the computer's or a fixed country's).
 fn eat() -> FixedOffset {
-    FixedOffset::east_opt(3 * 3600).expect("a valid offset")
+    pleadli_node_core::timezone::offset_at(chrono::Utc::now().timestamp_millis())
 }
 
 fn eat_time(ms: i64) -> Option<DateTime<FixedOffset>> {
-    DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&eat()))
+    DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&pleadli_node_core::timezone::offset_at(ms)))
 }
 
 fn long_date(ms: i64) -> String {

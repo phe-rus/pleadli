@@ -1,12 +1,17 @@
 import { Controls } from '@/components/toolbar/controls'
+import { LegalHammerIcon } from '@hugeicons/core-free-icons'
 import { DEFAULT_LOGO } from '@/features/brand'
 import { changeLocale, useLocale } from '@/features/i18n'
 import { completeSetup, getSetupStatus, requestSecondFactor, securityStatusOptions, signIn, signInPeopleOptions, useBrand, useSecurityStatus } from '@/features/installation'
 import { ApiError, onLocked } from '@/lib/api'
 import * as m from '@/paraglide/messages'
-import { applyAccent, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type Locale, type SetupRole } from '@pleadli/setup'
+import { applyAccent, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type Locale, type SetupRole, type Brand } from '@pleadli/setup'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
+
+/** What the panel beside setup, sign-in and loading says. This app writes its own words. */
+const panelBrand = (): Brand => ({ label: m["pre_auth.label"](), headline: m["pre_auth.headline"](), body: m["pre_auth.body"](), icon: LegalHammerIcon })
+
 
 const PRODUCT = 'Pleadli Courts'
 /** Long enough to read the name, short enough never to feel like waiting. */
@@ -22,11 +27,11 @@ const roles: readonly SetupRole[] = [
 
 function Setup({ locale, onFinished }: { locale: Locale; onFinished: () => void }) {
   const { data: status } = useQuery({ queryKey: ['installation', 'setup'], queryFn: getSetupStatus, retry: false })
-  if (!status) return <BootScreen logo={DEFAULT_LOGO} productName={PRODUCT} label={SETUP_MESSAGES[locale].loading} />
+  if (!status) return <BootScreen logo={DEFAULT_LOGO} productName={PRODUCT} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   return (
     <SetupFlow
       institution="courts"
-      productName={PRODUCT}
+      productName={PRODUCT} brand={panelBrand()}
       defaultLogo={DEFAULT_LOGO}
       defaultAccent="gold"
       locale={locale}
@@ -48,11 +53,11 @@ function Setup({ locale, onFinished }: { locale: Locale; onFinished: () => void 
 
 function SignIn({ locale, officeName, logo, retryAfter, onSignedIn }: { locale: Locale; officeName: string | null; logo: string; retryAfter: number; onSignedIn: () => Promise<void> }) {
   const { data: people } = useQuery(signInPeopleOptions())
-  if (!people) return <BootScreen logo={logo} productName={PRODUCT} label={SETUP_MESSAGES[locale].loading} />
+  if (!people) return <BootScreen logo={logo} productName={PRODUCT} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   return (
     <SignInScreen
       locale={locale}
-      productName={PRODUCT}
+      productName={PRODUCT} brand={panelBrand()}
       officeName={officeName}
       logo={logo}
       people={people}
@@ -98,7 +103,7 @@ export function AppGate({ children }: { children: ReactNode }) {
     await queryClient.invalidateQueries({ queryKey: ['installation'] })
   }
 
-  if (!booted || (!status && !isError)) return <BootScreen logo={logo} productName={PRODUCT} label={SETUP_MESSAGES[locale].loading} />
+  if (!booted || (!status && !isError)) return <BootScreen logo={logo} productName={PRODUCT} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
   if (!status) return <>{children}</>
   if (status.state === 'recovery') return <>{children}</>
   if (setupOpen || !status.installed) {

@@ -96,7 +96,7 @@ pub async fn create_identity(pool: &SqlitePool, office_name: &str, jurisdiction:
         return invalid("This office already has an identity. It cannot be changed, because every station has confirmed its fingerprint.");
     }
     let identity = Identity::generate(IdentityKind::DppOffice, name, clean(jurisdiction).as_deref());
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query(
         "INSERT INTO interchange_identity (id, office_id, office_name, jurisdiction, verifying_key, encryption_key, signing_secret, encryption_secret)
          VALUES ('default', ?, ?, ?, ?, ?, ?, ?)",
@@ -213,7 +213,7 @@ pub async fn create_invite(pool: &SqlitePool, intended_station: &str, valid_days
     let office = require_identity(pool).await?;
     let expires_at = now() + valid_days * 86_400_000;
     let (bytes, invite) = pairing::make_invite(&office, station, expires_at).map_err(|e| DomainError::Invalid(e.to_string()))?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO police_connections (id, intended_station, status, invite_nonce, invite_expires_at) VALUES (?, ?, 'invited', ?, ?)")
         .bind(&invite.invite_id)
         .bind(station)
@@ -256,7 +256,7 @@ pub async fn trust_connection(pool: &SqlitePool, connection_id: &str, typed_fing
         return Err(DomainError::Forbidden("That code does not match this station's fingerprint. Ask the station to read theirs out again, and do not trust it until it matches.".to_string()));
     }
     let by = sqlx::query_scalar::<_, String>("SELECT name FROM prosecutor_profile WHERE id = 'default'").fetch_optional(pool).await?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("UPDATE police_connections SET status = 'trusted', confirmed_at = ?, confirmed_by = ? WHERE id = ?").bind(now()).bind(by).bind(connection_id).execute(&mut *tx).await?;
     audit::record(&mut tx, Entry::new("station_trusted").subject("connection", connection_id).detail(format!("{} {}", station.name, station.fingerprint()))).await?;
     prepare_confirmation(&mut tx, connection_id, "trusted", None).await?;
@@ -269,7 +269,7 @@ pub async fn decline_connection(pool: &SqlitePool, connection_id: &str, reason: 
     if c.state != "awaiting_confirmation" {
         return invalid("Only a station that has answered and is not yet trusted can be declined.");
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("UPDATE police_connections SET status = 'declined', revoked_at = ?, revoked_reason = ? WHERE id = ?").bind(now()).bind(clean(reason.clone())).bind(connection_id).execute(&mut *tx).await?;
     audit::record(&mut tx, Entry::new("station_declined").subject("connection", connection_id).detail(c.station_name.clone().unwrap_or_default())).await?;
     prepare_confirmation(&mut tx, connection_id, "declined", reason.as_deref()).await?;
@@ -286,7 +286,7 @@ pub async fn revoke_connection(pool: &SqlitePool, connection_id: &str, reason: &
     if reason.trim().is_empty() {
         return invalid("Say why the connection is being ended.");
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("UPDATE police_connections SET status = 'revoked', revoked_at = ?, revoked_reason = ? WHERE id = ?").bind(now()).bind(reason.trim()).bind(connection_id).execute(&mut *tx).await?;
     audit::record(&mut tx, Entry::new("station_revoked").subject("connection", connection_id).detail(format!("{}: {}", c.station_name.clone().unwrap_or_default(), reason.trim()))).await?;
     prepare_confirmation(&mut tx, connection_id, "revoked", Some(reason.trim())).await?;
@@ -358,7 +358,6 @@ pub async fn import_package(pool: &SqlitePool, vault_root: &Path, bytes: &[u8]) 
 
             let sha = envelope::sha256_hex(bytes);
             let mut files = Vec::new();
-            let mut tx = pool.begin().await?;
             for file in &opened.body.files {
                 if file.id.is_empty() || !file.id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
                     return invalid("A file in the package has an invalid id.");
@@ -366,6 +365,8 @@ pub async fn import_package(pool: &SqlitePool, vault_root: &Path, bytes: &[u8]) 
                 vault::write_at(vault_root, &format!("incoming/{}/{}.enc", opened.header.id, file.id), &format!("{}/{}", opened.header.id, file.id), &file.bytes).map_err(|_| DomainError::Invalid("A file in the package could not be stored.".to_string()))?;
                 files.push(serde_json::json!({ "id": file.id, "name": file.name, "mime": file.mime, "sha256": file.sha256, "size": file.bytes.len() }));
             }
+            // The write lock is taken only once the files are on disk, so it is never held while they are written.
+            let mut tx = pleadli_node_core::db::begin_write(pool).await?;
             sqlx::query(
                 "INSERT INTO incoming_packages (id, connection_id, kind, seq, sent_at, received_at, sender_fingerprint, package_sha256, payload, files)
                  VALUES (?, ?, 'referral', ?, ?, ?, ?, ?, ?, ?)",
@@ -411,7 +412,7 @@ async fn import_response(pool: &SqlitePool, bytes: &[u8], header: &envelope::Hea
         return Err(refuse(pool, "station already connected", header, DomainError::Invalid("That station already has a connection to this office.".to_string())).await);
     }
     let station = &response.station;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query(
         "UPDATE police_connections SET status = 'awaiting_confirmation', station_id = ?, station_name = ?, station_jurisdiction = ?, station_verifying_key = ?,
                 station_encryption_key = ?, officer_in_charge = ?, fingerprint = ?, responded_at = ? WHERE id = ?",
@@ -475,6 +476,8 @@ pub struct OutgoingPackage {
     pub decision_id: Option<String>,
     pub prepared_at: i64,
     pub exported_at: Option<i64>,
+    /// The id the package carries, which the postbox and the relay know it by; none for a file route.
+    pub relay_package_id: Option<String>,
     pub station_name: Option<String>,
     pub file_title: Option<String>,
     pub police_reference: Option<String>,
@@ -519,8 +522,8 @@ async fn prepare_confirmation(conn: &mut sqlx::SqliteConnection, connection_id: 
 }
 
 pub async fn list_outgoing(pool: &SqlitePool) -> Result<Vec<OutgoingPackage>, DomainError> {
-    let rows: Vec<(String, String, String, i64, Option<String>, Option<String>, Option<String>, i64, Option<i64>, Option<String>, Option<String>, Option<String>, String)> = sqlx::query_as(
-        "SELECT o.id, o.connection_id, o.kind, o.seq, o.in_reply_to, o.prosecution_file_id, o.decision_id, o.prepared_at, o.exported_at,
+    let rows: Vec<(String, String, String, i64, Option<String>, Option<String>, Option<String>, i64, Option<i64>, Option<String>, Option<String>, Option<String>, Option<String>, String)> = sqlx::query_as(
+        "SELECT o.id, o.connection_id, o.kind, o.seq, o.in_reply_to, o.prosecution_file_id, o.decision_id, o.prepared_at, o.exported_at, o.relay_package_id,
                 c.station_name, f.title, f.police_reference, o.payload
            FROM outgoing_packages o JOIN police_connections c ON c.id = o.connection_id LEFT JOIN prosecution_files f ON f.id = o.prosecution_file_id
           ORDER BY o.prepared_at DESC, o.rowid DESC",
@@ -529,14 +532,14 @@ pub async fn list_outgoing(pool: &SqlitePool) -> Result<Vec<OutgoingPackage>, Do
     .await?;
     Ok(rows
         .into_iter()
-        .map(|(id, connection_id, kind, seq, in_reply_to, prosecution_file_id, decision_id, prepared_at, exported_at, station_name, file_title, police_reference, payload)| {
+        .map(|(id, connection_id, kind, seq, in_reply_to, prosecution_file_id, decision_id, prepared_at, exported_at, relay_package_id, station_name, file_title, police_reference, payload)| {
             let p: serde_json::Value = serde_json::from_str(&payload).unwrap_or_default();
             let summary = match kind.as_str() {
                 KIND_RECEIPT => format!("Receipt: {}", p["outcome"].as_str().unwrap_or("")),
                 KIND_DECISION_NOTICE => format!("Decision: {}", p["decisionType"].as_str().unwrap_or("").replace('_', " ")),
                 _ => format!("Connection {}", p["outcome"].as_str().unwrap_or("")),
             };
-            OutgoingPackage { id, connection_id, kind, seq, in_reply_to, prosecution_file_id, decision_id, prepared_at, exported_at, station_name, file_title, police_reference, summary }
+            OutgoingPackage { id, connection_id, kind, seq, in_reply_to, prosecution_file_id, decision_id, prepared_at, exported_at, relay_package_id, station_name, file_title, police_reference, summary }
         })
         .collect())
 }
@@ -561,7 +564,7 @@ pub async fn export_outgoing(pool: &SqlitePool, id: &str) -> Result<(Vec<u8>, St
         Body::new(json)
     };
     let (bytes, _) = envelope::seal(&office, &station, &kind, seq as u64, in_reply_to.as_deref(), &body).map_err(|e| DomainError::Invalid(e.to_string()))?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("UPDATE outgoing_packages SET exported_at = ? WHERE id = ?").bind(now()).bind(id).execute(&mut *tx).await?;
     audit::record(&mut tx, Entry::new("package_exported").subject("outgoing_package", id).detail(format!("{kind} to {}", station.name))).await?;
     tx.commit().await?;
@@ -655,7 +658,7 @@ pub async fn prepare_decision_notice(pool: &SqlitePool, decision_id: &str) -> Re
         documents,
         court_case_number: file.court_case_number.clone(),
     };
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let id = prepare_outgoing(&mut tx, &connection_id, KIND_DECISION_NOTICE, None, Some(&file.id), Some(&decision.id), serde_json::to_value(&notice).unwrap_or_default()).await?;
     audit::record(&mut tx, Entry::new("notice_prepared").subject("outgoing_package", &id).file(&file.id).detail(decision.decision_type.clone())).await?;
     tx.commit().await?;
@@ -685,5 +688,24 @@ pub(crate) async fn record_receipt(
         decided_by,
     };
     prepare_outgoing(conn, connection_id, KIND_RECEIPT, Some(referral_package_id), file.map(|(id, _)| id), None, serde_json::to_value(&receipt).unwrap_or_default()).await?;
+    Ok(())
+}
+
+/// A referral that arrived, was verified (signature, addressee, not seen
+/// before) and was kept: say so to the station, once, in a receipt whose
+/// outcome is `received`. That is "Opened" on the station's progress line. It
+/// is not a decision: only `accepted` or `rejected`, which a person here makes,
+/// changes what the station records about the referral.
+pub async fn acknowledge_opened(pool: &SqlitePool, package_id: &str) -> Result<(), DomainError> {
+    let row: Option<(String, String, i64)> = sqlx::query_as("SELECT connection_id, payload, received_at FROM incoming_packages WHERE id = ? AND kind = 'referral'").bind(package_id).fetch_optional(pool).await?;
+    let Some((connection_id, payload, received_at)) = row else { return Ok(()) };
+    let already: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM outgoing_packages WHERE in_reply_to = ? AND kind = 'receipt' AND json_extract(payload, '$.outcome') = 'received'").bind(package_id).fetch_one(pool).await?;
+    if already > 0 {
+        return Ok(());
+    }
+    let referral: ReferralPayload = serde_json::from_str(&payload).map_err(|_| DomainError::Invalid("The stored referral could not be read.".to_string()))?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    record_receipt(&mut tx, &connection_id, package_id, &referral, "received", None, None, received_at, None).await?;
+    tx.commit().await?;
     Ok(())
 }

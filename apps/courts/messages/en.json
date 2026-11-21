@@ -187,5 +187,30 @@
       "change_failed": "Could not change it.",
       "try_again": "Try again."
     }
+  },
+  "pre_auth": {
+    "label": "Court",
+    "headline": "The bench's work, in one place.",
+    "body": "Pleadli Courts is built for the court: the register, sittings, orders and the cause list, offline first."
+  },
+  "timezone": {
+    "title": "Time zone",
+    "about": "Every time on a printed paper is shown in this office's own time zone, with the UTC offset beside it. It does not depend on this computer's settings.",
+    "label": "Time zone of this office",
+    "hint": "A change applies from now on. Times already recorded keep the zone they were made in.",
+    "not_set": "Not chosen yet",
+    "not_set_hint": "Until an administrator chooses, times print in UTC.",
+    "admin_only": "Only an administrator can change this.",
+    "now_label": "Now, in this zone",
+    "saved": "Time zone saved",
+    "failed": "The time zone could not be changed",
+    "clock_title": "This computer's clock",
+    "clock_ok": "Nothing looks wrong. A correct time zone does not correct a wrong clock, so check the time against a trusted watch.",
+    "clock_before_release": "The clock shows a date before this version of the app was made. Set the date and time on this computer before relying on any printed time.",
+    "clock_behind": "The clock is behind the newest record kept here. Set the date and time on this computer before relying on any printed time.",
+    "clock_far_ahead": "The clock is more than a year ahead of the newest record. Check the date and time on this computer."
+  },
+  "downloads": {
+    "saved": "Saved to Downloads: {name}"
   }
 }

@@ -60,9 +60,8 @@ export async function discardDocument(id: string) {
  * made by the backend from the stored content; in a browser it downloads. */
 export async function saveExport(id: string, format: ExportFormat): Promise<boolean> {
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
     const name = await invoke<string>('document_export_name', { id, format })
-    const path = await save({ defaultPath: name })
+    const path = await invoke<string | null>('pick_save_path', { defaultName: name, extension: format })
     if (!path) return false
     await invoke('save_document_export', { id, format, path })
     return true

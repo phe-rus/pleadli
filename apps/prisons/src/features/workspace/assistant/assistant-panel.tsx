@@ -2,7 +2,7 @@ import { AiMagicIcon, ArrowDown01Icon, ArrowUp02Icon, Cancel01Icon, Copy01Icon, 
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { identityForPath } from '../tab-identity'
 import { useWorkspace } from '@pleadli/shell'

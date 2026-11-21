@@ -16,6 +16,8 @@ export type JurisdictionPack = {
   timezone: { id: string; label: string }
   regions: readonly string[]
   numbering: { pattern: string; reset: 'yearly' | 'never'; provisional: boolean }
+  /** Prisons Act 2006 s.83 (Uganda): an entitlement discharge is before noon. A pack that has no such rule says false, so the warning is never shown by assumption. */
+  dischargeBeforeNoon: boolean
   /** Placeholders that show the shape of a value; never stored. */
   examples: { facilityCode: string; badge: string }
 }

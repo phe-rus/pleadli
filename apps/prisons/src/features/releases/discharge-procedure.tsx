@@ -1,6 +1,8 @@
 import { ProcedureShell, type ProcedureStep } from '@/components/procedure'
 import { usePrisoner, prisonerFullName } from '@/features/prisoners'
 import { propertyRecordsForPrisonerOptions, useReturnPropertyRecord } from '@/features/property-records'
+import { facilityProfileOptions } from '@/features/facility'
+import { jurisdictionPack } from '@/features/jurisdiction'
 import { usePermissions } from '@/features/session'
 import { ApiError } from '@/lib/api'
 import { fromDatetimeLocal, toDatetimeLocal } from '@/lib/datetime'
@@ -13,17 +15,18 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Textarea } from '@pleadli/ui/textarea'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 import { useCreateRelease, useDischargeCheck, dischargeCheckOptions } from './queries'
 import { isEntitlementRelease, releaseTypeLabel, releaseTypes, type GateCheck } from './schema'
 import { m } from '@/paraglide/messages'
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 
 type StepId = 'authority' | 'gates' | 'exception' | 'confirm'
 
-/** East Africa Time hour (UTC+3, no daylight saving): s.83 discharge is before noon. */
+/** The hour at the facility, in its own configured timezone (used for the Uganda s.83 before-noon rule only). */
 function eatHour(ms: number) {
-  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: m.releases_africa_kampala(), hour: '2-digit', hourCycle: 'h23' }).formatToParts(ms)
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: zoneFor(ms), hour: '2-digit', hourCycle: 'h23' }).formatToParts(ms)
   return Number(parts.find((p) => p.type === 'hour')?.value ?? '0')
 }
 
@@ -51,6 +54,7 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
   const { data: prisoner } = usePrisoner(prisonerId)
   const assessmentQuery = useDischargeCheck(prisonerId)
   const propertyQuery = useQuery(propertyRecordsForPrisonerOptions(prisonerId))
+  const profileQuery = useQuery(facilityProfileOptions())
   const returnProperty = useReturnPropertyRecord(prisonerId)
   const createRelease = useCreateRelease()
   const queryClient = useQueryClient()
@@ -95,7 +99,9 @@ export function DischargeProcedure({ prisonerId }: { prisonerId: string }) {
   }
 
   const releasedAtMs = fromDatetimeLocal(releasedAt)
-  const afterNoon = isEntitlementRelease(releaseType) && Number.isFinite(releasedAtMs) && eatHour(releasedAtMs) >= 12
+  // The before-noon rule is Uganda's (s.83): shown only when the facility's own jurisdiction pack has it.
+  const dischargeBeforeNoon = profileQuery.data ? jurisdictionPack(profileQuery.data.jurisdiction).dischargeBeforeNoon : false
+  const afterNoon = dischargeBeforeNoon && isEntitlementRelease(releaseType) && Number.isFinite(releasedAtMs) && eatHour(releasedAtMs) >= 12
   const authorityDone = releaseType !== '' && basis.trim() !== ''
   const exceptionDone = !needsException || (reason.trim() !== '' && (canAuthorise || (badgeNumber.trim() !== '' && password !== '')))
 

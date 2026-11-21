@@ -18,6 +18,7 @@ pub fn eat_datetime(ms: i64) -> DateTime<FixedOffset> {
     eat().timestamp_millis_opt(ms).single().unwrap_or_else(|| eat().timestamp_millis_opt(0).unwrap())
 }
 
+#[cfg(test)]
 pub fn eat_hour(ms: i64) -> u32 {
     eat_datetime(ms).hour()
 }

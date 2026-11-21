@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import type { Block } from '@/features/documents/schema'
 import type { Template, TemplateContext } from './types'
 
@@ -8,7 +9,7 @@ import type { Template, TemplateContext } from './types'
  */
 
 const DASH = '....................'
-const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: zoneFor(ms) })
 
 const refs = (ctx: TemplateContext): Block => ({
   type: 'fields',

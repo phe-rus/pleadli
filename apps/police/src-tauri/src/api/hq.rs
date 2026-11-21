@@ -81,5 +81,5 @@ pub struct Listener {
 /// Where stations reach this command: this machine's address on the network and
 /// the command's port, for the station's Settings.
 pub async fn listener() -> Json<Listener> {
-    Json(Listener { address: local_ip_address::local_ip().ok().map(|ip| ip.to_string()), port: crate::transport::command_server::PORT })
+    Json(Listener { address: crate::transport::lan_address().map(|ip| ip.to_string()), port: crate::transport::command_server::PORT })
 }

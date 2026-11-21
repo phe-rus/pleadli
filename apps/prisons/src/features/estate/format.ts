@@ -1,4 +1,4 @@
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
 
 /** How long ago, in words. Every figure on the estate says how old it is,

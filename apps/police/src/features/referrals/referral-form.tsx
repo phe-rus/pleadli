@@ -12,6 +12,8 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 import { Textarea } from '@pleadli/ui/textarea'
 import { listChargeSheets } from '@/features/legal-forms'
+import { useEnclosures } from '@/features/paper/use-enclosures'
+import { Button } from '@pleadli/ui/button'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useCreateReferral, useUpdateReferral } from './queries'
 import { referralDestinationTypes, referralStatuses, createReferralSchema, type Referral } from './schema'
@@ -153,6 +155,14 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
             }
           </form.Subscribe>
 
+        <form.Subscribe selector={(s) => s.values.caseId}>
+          {(caseId) => (
+            <form.AppField name="notes">
+              {(f) => <Enclosures caseId={caseId} onAdd={(text) => f.handleChange(f.state.value ? `${f.state.value}\n${text}` : text)} />}
+            </form.AppField>
+          )}
+        </form.Subscribe>
+
         <form.AppField name="notes">
           {(f) => (
             <Field>
@@ -171,6 +181,31 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
         </form.AppForm>
       </DrawerFooter>
     </form>
+  )
+}
+
+/** What goes with the referral: the case's statements and exhibits, which the officer can put into the notes. */
+function Enclosures({ caseId, onAdd }: { caseId: string; onAdd: (text: string) => void }) {
+  const { lines } = useEnclosures(caseId)
+  if (!caseId) return null
+  return (
+    <div className="flex flex-col gap-2 rounded-md bg-muted px-3 py-2 text-sm">
+      <p className="font-medium">{m['referrals.enclosed_title']()}</p>
+      {lines.length === 0 ? (
+        <p className="text-muted-foreground">{m['referrals.enclosed_none']()}</p>
+      ) : (
+        <>
+          <ul className="list-disc pl-5">
+            {lines.map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+          <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => onAdd(m['referrals.enclosed_text']({ list: lines.join('; ') }))}>
+            {m['referrals.enclosed_add']()}
+          </Button>
+        </>
+      )}
+    </div>
   )
 }
 

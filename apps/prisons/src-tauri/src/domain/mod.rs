@@ -17,6 +17,7 @@ pub mod error;
 pub mod estate;
 pub mod exchange;
 pub mod facility_profile;
+pub mod institution_clock;
 pub mod inbox;
 pub mod instruments;
 pub mod keys;

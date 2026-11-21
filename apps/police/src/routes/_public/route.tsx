@@ -1,5 +1,6 @@
 import { SidebarProvider } from '@/components/sidebar-provider'
 import { useInstallation } from '@/features/session'
+import { useInstalledZone } from '@/features/timezone'
 import { useCustodyDeadlineAlerts } from '@/hooks/use-custody-deadline-alerts'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
@@ -16,11 +17,12 @@ function CustodyDeadlineAlerts() {
 
 function RouteComponent() {
   const { data: installation } = useInstallation()
+  const zone = useInstalledZone(installation?.mode === 'station')
 
   return (
     <SidebarProvider>
       {installation?.mode === 'station' && <CustodyDeadlineAlerts />}
-      <Outlet />
+      <Outlet key={zone} />
     </SidebarProvider>
   )
 }

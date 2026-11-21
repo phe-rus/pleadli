@@ -133,7 +133,7 @@ pub(crate) async fn write_case_markdown(pool: &SqlitePool, vault_root: &Path, re
 
 pub async fn create_case(pool: &SqlitePool, vault_root: &Path, input: CreateCaseInput) -> Result<Case, sqlx::Error> {
     let id = Uuid::new_v4().to_string();
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
 
     // A case opened without a reference is numbered by the Crime Record Book:
     // the next number of the year, cited the way the register cites it. A
@@ -172,7 +172,7 @@ pub async fn create_case(pool: &SqlitePool, vault_root: &Path, input: CreateCase
 }
 
 pub async fn update_case(pool: &SqlitePool, vault_root: &Path, id: &str, input: CreateCaseInput) -> Result<Case, sqlx::Error> {
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
 
     sqlx::query("UPDATE cases SET reference = ?, summary = ?, status = ?, incident_id = ?, restricted = ?,
          restricted_by = CASE WHEN ? = 1 THEN COALESCE(restricted_by, ?) ELSE NULL END WHERE id = ?")

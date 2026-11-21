@@ -86,7 +86,7 @@ fn clean(value: &Option<String>) -> Option<String> {
 pub async fn save_chain(pool: &SqlitePool, input: SaveChainInput) -> Result<Chain, sqlx::Error> {
     let station = local_unit(pool).await?;
     let old = chain(pool).await?.above;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
 
     sqlx::query("UPDATE police_units SET parent_id = NULL WHERE id = ?").bind(&station.id).execute(&mut *tx).await?;
     for unit in old.iter().rev() {

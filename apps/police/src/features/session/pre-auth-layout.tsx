@@ -34,7 +34,7 @@ export function PreAuthLayout({ mode, children }: { mode?: Mode; children: React
   )
 }
 
-function BrandPanel({ mode }: { mode?: Mode }) {
+export function BrandPanel({ mode }: { mode?: Mode }) {
   const content = brand()[mode ?? 'neutral']
   return (
     <div data-tauri-drag-region className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground md:flex">

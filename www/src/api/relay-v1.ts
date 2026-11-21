@@ -273,6 +273,11 @@ async function getCertificate(address: string, caller: Caller) {
   return json({ certificate: row.certificate })
 }
 
+/** Who the relay takes this computer to be: the office address its posts come from and its mail goes to. The app shows this instead of guessing. */
+async function whoami(caller: Caller) {
+  return json({ address: caller.address, licensed: caller.licensed, relay: relayHost() })
+}
+
 /** /api/orchestra/v1/relay/<call> */
 export async function handleRelayV1(request: Request, call: string) {
   try {
@@ -281,6 +286,7 @@ export async function handleRelayV1(request: Request, call: string) {
     const url = new URL(request.url)
     const parts = call.split('/').filter(Boolean)
     const method = request.method
+    if (method === 'GET' && parts.length === 1 && parts[0] === 'whoami') return await whoami(caller)
     if (method === 'POST' && parts.length === 1 && parts[0] === 'messages') return await post(request, caller)
     if (method === 'POST' && parts.length === 1 && parts[0] === 'connections') return await askToConnect(request, caller)
     if (method === 'GET' && parts.length === 1 && parts[0] === 'connections') return await myConnections(caller)

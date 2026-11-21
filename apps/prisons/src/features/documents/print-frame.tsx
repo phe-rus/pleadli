@@ -1,6 +1,6 @@
 import { facilityProfileOptions } from '@/features/facility'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import type { ReactNode } from 'react'
 import { documentKindLabel, type DocumentKind, type IssuedDocument } from './schema'
 import { m } from '@/paraglide/messages'

@@ -7,7 +7,7 @@ use super::authz::Actor;
 use super::custody;
 use super::prisoners;
 use super::sentences;
-use super::time::{eat_hour, now_ms};
+use super::time::now_ms;
 
 /// Discharge (docs/prisons/product-map/02 W4, decision D13).
 ///
@@ -222,6 +222,7 @@ pub async fn create_release(
     }
     let correction = input.release_type == "erroneous_release_correction";
     let assessment = assess(conn, &input.prisoner_id).await?;
+    let rules = super::jurisdiction::for_conn(conn).await?;
 
     if correction {
         // s.79: a re-arrest of someone wrongly discharged. The person is not
@@ -248,7 +249,10 @@ pub async fn create_release(
         }
     }
 
-    let after_noon = matches!(input.release_type.as_str(), "full_remission" | "partial_remission") && eat_hour(input.released_at) >= 12;
+    // Only where the facility's own law has the before-noon rule (Uganda s.83), and by the hour in the facility's zone.
+    let after_noon = rules.discharge_before_noon
+        && matches!(input.release_type.as_str(), "full_remission" | "partial_remission")
+        && hour_at_facility(input.released_at) >= 12;
     let id = Uuid::new_v4().to_string();
     let gates_json = (!waived.is_empty()).then(|| serde_json::to_string(&waived).unwrap_or_default());
 
@@ -327,4 +331,10 @@ pub async fn search(pool: &SqlitePool, query: &str) -> Result<Vec<ReleaseSearchR
     .bind(like)
     .fetch_all(pool)
     .await
+}
+
+/// The clock hour at the facility when `ms` happened: its configured zone, never the computer's.
+fn hour_at_facility(ms: i64) -> u32 {
+    use chrono::{TimeZone, Timelike, Utc};
+    Utc.timestamp_millis_opt(ms).single().map(|t| t.with_timezone(&pleadli_node_core::timezone::offset_at(ms)).hour()).unwrap_or(0)
 }

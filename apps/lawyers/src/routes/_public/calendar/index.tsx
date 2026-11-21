@@ -1,3 +1,4 @@
+import { instantAt, offsetMs, zoneFor } from '@pleadli/ui/lib/institution-zone'
 import { clockLabel, usePracticeClocks } from '@/features/clocks'
 import { diaryOptions } from '@/features/hearings'
 import { tasksOptions } from '@/features/tasks'
@@ -14,19 +15,18 @@ import { useMemo } from 'react'
 import { CalendarViewSwitch } from '@/features/calendar/view-switch'
 
 const DAY = 86_400_000
-const EAT = 3 * 3_600_000
 
 /** A month as `YYYY-MM`; the current one when missing or malformed. */
 function parseMonth(value: unknown): { y: number; mo: number } {
   const match = typeof value === 'string' ? /^(\d{4})-(\d{2})$/.exec(value) : null
   if (match) return { y: Number(match[1]), mo: Number(match[2]) - 1 }
-  const now = new Date(Date.now() + EAT)
+  const now = new Date(Date.now() + offsetMs(Date.now()))
   return { y: now.getUTCFullYear(), mo: now.getUTCMonth() }
 }
 const monthKey = (y: number, mo: number) => `${y}-${String(mo + 1).padStart(2, '0')}`
-/** The start of a local (EAT) day as milliseconds. */
-const dayStart = (y: number, mo: number, d: number) => Date.UTC(y, mo, d) - EAT
-const localDayOf = (ms: number) => Math.floor((ms + EAT) / DAY)
+/** The start of a day at this practice (its own zone, not the computer's) as milliseconds. */
+const dayStart = (y: number, mo: number, d: number) => instantAt(y, mo, d)
+const localDayOf = (ms: number) => Math.floor((ms + offsetMs(ms)) / DAY)
 
 export const Route = createFileRoute('/_public/calendar/')({
   validateSearch: (search: Record<string, unknown>): { month?: string } => (typeof search.month === 'string' ? { month: search.month } : {}),
@@ -44,7 +44,7 @@ function RouteComponent() {
   const first = dayStart(y, mo, 1)
   const last = dayStart(y, mo + 1, 1)
   // Weeks start on Monday: from the Monday on or before the 1st to the Sunday on or after the last day.
-  const lead = (new Date(first + EAT).getUTCDay() + 6) % 7
+  const lead = (new Date(first + offsetMs(first)).getUTCDay() + 6) % 7
   const gridStart = first - lead * DAY
   const weeks = Math.ceil((lead + Math.round((last - first) / DAY)) / 7)
   const gridEnd = gridStart + weeks * 7 * DAY
@@ -126,10 +126,10 @@ function RouteComponent() {
             <div
               key={k}
               role="gridcell"
-              aria-label={new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'long', timeZone: 'Africa/Kampala' }).format(at + EAT)}
+              aria-label={new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'long', timeZone: zoneFor(at) }).format(at)}
               className={cn('flex min-h-24 flex-col gap-1 border-b border-r border-border/60 p-1.5 [&:nth-child(7n)]:border-r-0', !inMonth && 'bg-muted/20 text-muted-foreground/60')}
             >
-              <span className={cn('flex size-6 items-center justify-center self-end rounded-full text-[0.8125rem] tabular-nums', k === today && 'bg-destructive font-semibold text-white')}>{new Date(at + EAT).getUTCDate()}</span>
+              <span className={cn('flex size-6 items-center justify-center self-end rounded-full text-[0.8125rem] tabular-nums', k === today && 'bg-destructive font-semibold text-white')}>{new Date(at + offsetMs(at)).getUTCDate()}</span>
               {items.slice(0, 4).map((item) => {
                 const body = (
                   <span

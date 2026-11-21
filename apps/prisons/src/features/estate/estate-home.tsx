@@ -1,6 +1,6 @@
 import { usePendingFacilityAlerts } from '@/hooks/use-pending-facility-alerts'
 import { usePermissions } from '@/features/session'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { m } from '@/paraglide/messages'
 import { EstateAttention } from './estate-attention'
 import { FacilitiesByRegion } from './facilities-by-region'

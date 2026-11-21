@@ -15,6 +15,10 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createStatementSchema, type Statement } from './schema'
 import { useCreateStatement, useUpdateStatement } from './queries'
+import { SpokenStatement } from './spoken-statement'
+import { blobToBase64 } from './use-speech-recorder'
+import { api } from '@/lib/api'
+import { useRef } from 'react'
 
 export type StatementFormProps = {
   statement?: Statement
@@ -34,6 +38,8 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
   const { data: cases } = useSuspenseQuery(casesOptions(''))
 
   const { data: me } = useMe()
+  // The recording of a spoken statement, sealed with the statement once it exists.
+  const recording = useRef<Blob | null>(null)
   const form = useAppForm({
     defaultValues: {
       content: statement?.content ?? '',
@@ -59,6 +65,17 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
         const result = statement
           ? await updateStatement.mutateAsync({ id: statement.id, input })
           : await createStatement.mutateAsync(input)
+        if (recording.current) {
+          try {
+            await api('/attachments/bytes', {
+              method: 'POST',
+              body: JSON.stringify({ entityType: entityTypes.statement, entityId: result.id, fileName: `${m["statements.spoken_audio_name"]()}.webm`, dataBase64: await blobToBase64(recording.current) }),
+            })
+          } catch {
+            t.error(m["statements.spoken_audio_failed"]())
+          }
+          recording.current = null
+        }
         t.success(statement ? m["statements.updated"]() : m["statements.recorded"]())
         if (!statement) formApi.reset()
         onSuccess?.(result)
@@ -89,6 +106,16 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
             </Field>
           )}
         </form.AppField>
+
+        <form.Subscribe selector={(state) => state.values.content}>
+          {(content) => (
+            <SpokenStatement
+              hasText={content.trim() !== ''}
+              onWords={(text) => form.setFieldValue('content', text)}
+              onAudio={(audio) => (recording.current = audio)}
+            />
+          )}
+        </form.Subscribe>
 
         <form.AppField name="content">
           {(f) => (

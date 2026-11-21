@@ -7,3 +7,4 @@ export { SetupFlow, type ExtraStep, type ExtraStepContext, type SetupFlowProps, 
 export { ChoiceCard, Chip, StepHeader, TextField } from './parts'
 export { SignInScreen, type SignInAttempt, type SignInPerson, type SignInResult } from './sign-in'
 export { BootScreen } from './boot-screen'
+export { BrandPanel, type Brand } from './brand-panel'

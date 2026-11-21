@@ -29,7 +29,9 @@ pub const TABLE_SQL: &str = "CREATE TABLE postbox_outbox (
     next_try_at INTEGER NOT NULL,
     posted_at INTEGER,
     status TEXT NOT NULL DEFAULT 'queued',
-    error TEXT
+    error TEXT,
+    delivered_at INTEGER,
+    acked_at INTEGER
 );
 
 CREATE INDEX postbox_outbox_due ON postbox_outbox (status, next_try_at);
@@ -40,7 +42,10 @@ CREATE TABLE postbox_inbox (
     kind TEXT NOT NULL,
     sha256 TEXT NOT NULL,
     bytes BLOB NOT NULL,
-    arrived_at INTEGER NOT NULL
+    arrived_at INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'new',
+    note TEXT,
+    handled_at INTEGER
 );";
 
 const SECOND: i64 = 1000;
@@ -132,8 +137,11 @@ pub struct Sent {
     pub kind: String,
     pub status: String,
     pub error: Option<String>,
+    pub attempts: i64,
     pub queued_at: i64,
     pub posted_at: Option<i64>,
+    pub delivered_at: Option<i64>,
+    pub acked_at: Option<i64>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -151,13 +159,30 @@ pub struct Postbox {
     pool: SqlitePool,
     http: reqwest::Client,
     base: String,
+    /// One round at a time: the timer and a person pressing "Check now" must not post the same package twice.
+    round: tokio::sync::Mutex<()>,
+}
+
+/// One package in the inbox, with what became of it. `new` waits for the app,
+/// `imported` was opened and kept (its bytes are dropped), `refused` was
+/// turned away with a reason and is kept so it can be looked at or tried again.
+#[derive(Debug, Clone)]
+pub struct InboxRow {
+    pub id: String,
+    pub from: String,
+    pub kind: String,
+    pub size: i64,
+    pub status: String,
+    pub note: Option<String>,
+    pub arrived_at: i64,
+    pub handled_at: Option<i64>,
 }
 
 impl Postbox {
     /// `base` is the site, for example `https://pleadli.com`.
     pub fn new(pool: SqlitePool, base: &str) -> Postbox {
         let http = reqwest::Client::builder().connect_timeout(Duration::from_secs(15)).timeout(Duration::from_secs(120)).build().unwrap_or_default();
-        Postbox { pool, http, base: base.trim_end_matches('/').to_string() }
+        Postbox { pool, http, base: base.trim_end_matches('/').to_string(), round: tokio::sync::Mutex::new(()) }
     }
 
     fn url(&self, path: &str) -> String {
@@ -186,7 +211,7 @@ impl Postbox {
 
     /// What was sent lately and how far it got, newest first.
     pub async fn sent(&self) -> Result<Vec<Sent>, PostboxError> {
-        let rows = sqlx::query("SELECT id, to_address, kind, status, error, queued_at, posted_at FROM postbox_outbox ORDER BY queued_at DESC LIMIT 200").fetch_all(&self.pool).await?;
+        let rows = sqlx::query("SELECT id, to_address, kind, status, error, attempts, queued_at, posted_at, delivered_at, acked_at FROM postbox_outbox ORDER BY queued_at DESC LIMIT 200").fetch_all(&self.pool).await?;
         Ok(rows
             .iter()
             .map(|r| Sent {
@@ -195,8 +220,11 @@ impl Postbox {
                 kind: r.get("kind"),
                 status: r.get("status"),
                 error: r.get("error"),
+                attempts: r.get("attempts"),
                 queued_at: r.get("queued_at"),
                 posted_at: r.get("posted_at"),
+                delivered_at: r.get("delivered_at"),
+                acked_at: r.get("acked_at"),
             })
             .collect())
     }
@@ -209,6 +237,22 @@ impl Postbox {
             None => "UPDATE postbox_outbox SET status = 'queued', error = NULL, next_try_at = ? WHERE status = 'blocked' AND ? IS NOT NULL",
         };
         Ok(sqlx::query(q).bind(now()).bind(to.unwrap_or("")).execute(&self.pool).await?.rows_affected())
+    }
+
+    /// A person asked to try again now: every queued package is due, and a
+    /// package that failed or was blocked goes back in the queue. Nothing is
+    /// ever deleted by this, and a package the relay already has is answered as
+    /// a duplicate, never stored twice.
+    pub async fn retry_now(&self, id: Option<&str>) -> Result<u64, PostboxError> {
+        let t = now();
+        let n = sqlx::query("UPDATE postbox_outbox SET status = 'queued', error = NULL, next_try_at = ? WHERE status IN ('queued', 'blocked', 'failed') AND length(bytes) > 0 AND (? IS NULL OR id = ?)")
+            .bind(t)
+            .bind(id)
+            .bind(id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+        Ok(n)
     }
 
     /// Posts what is due. Stops quietly at the first sign of being offline.
@@ -290,7 +334,17 @@ impl Postbox {
         for item in value.get("items").and_then(Value::as_array).into_iter().flatten() {
             let (Some(id), Some(status)) = (item.get("id").and_then(Value::as_str), item.get("status").and_then(Value::as_str)) else { continue };
             if matches!(status, "delivered" | "acked" | "expired") {
-                changed += sqlx::query("UPDATE postbox_outbox SET status = ? WHERE id = ? AND status != ?").bind(status).bind(id).bind(status).execute(&self.pool).await?.rows_affected() as usize;
+                let t = item.get("deliveredAt").and_then(Value::as_i64);
+                let a = item.get("ackedAt").and_then(Value::as_i64);
+                changed += sqlx::query("UPDATE postbox_outbox SET status = ?, delivered_at = COALESCE(?, delivered_at), acked_at = COALESCE(?, acked_at) WHERE id = ? AND status != ?")
+                    .bind(status)
+                    .bind(t)
+                    .bind(a)
+                    .bind(id)
+                    .bind(status)
+                    .execute(&self.pool)
+                    .await?
+                    .rows_affected() as usize;
             }
         }
         Ok(changed)
@@ -321,7 +375,7 @@ impl Postbox {
                     log::warn!("postbox: package {id} does not match its hash, left at the relay");
                     continue;
                 }
-                let inserted = sqlx::query("INSERT OR IGNORE INTO postbox_inbox (id, from_address, kind, sha256, bytes, arrived_at) VALUES (?, ?, ?, ?, ?, ?)")
+                let inserted = sqlx::query("INSERT OR IGNORE INTO postbox_inbox (id, from_address, kind, sha256, bytes, arrived_at, status) VALUES (?, ?, ?, ?, ?, ?, 'new')")
                     .bind(&id)
                     .bind(&from)
                     .bind(&kind)
@@ -344,17 +398,36 @@ impl Postbox {
 
     /// Packages that arrived and are waiting for the app to open them.
     pub async fn unread(&self) -> Result<Vec<Arrived>, PostboxError> {
-        let rows = sqlx::query("SELECT id, from_address, kind, sha256, bytes, arrived_at FROM postbox_inbox ORDER BY arrived_at").fetch_all(&self.pool).await?;
+        let rows = sqlx::query("SELECT id, from_address, kind, sha256, bytes, arrived_at FROM postbox_inbox WHERE status = 'new' ORDER BY arrived_at").fetch_all(&self.pool).await?;
         Ok(rows
             .iter()
             .map(|r| Arrived { id: r.get("id"), from: r.get("from_address"), kind: r.get("kind"), sha256: r.get("sha256"), bytes: r.get("bytes"), arrived_at: r.get("arrived_at") })
             .collect())
     }
 
-    /// The app has opened (or refused) this package and kept what it needs.
+    /// The app has opened this package and kept what it needs: its bytes are dropped, the row stays as the record.
     pub async fn handled(&self, id: &str) -> Result<(), PostboxError> {
-        sqlx::query("DELETE FROM postbox_inbox WHERE id = ?").bind(id).execute(&self.pool).await?;
+        sqlx::query("UPDATE postbox_inbox SET status = 'imported', bytes = x'', note = NULL, handled_at = ? WHERE id = ?").bind(now()).bind(id).execute(&self.pool).await?;
         Ok(())
+    }
+
+    /// The app turned this package away, with the reason. It is kept (bytes and
+    /// all) so a person can read the reason and, once the cause is fixed (for
+    /// example the sender's connection is confirmed), try it again.
+    pub async fn refused(&self, id: &str, reason: &str) -> Result<(), PostboxError> {
+        sqlx::query("UPDATE postbox_inbox SET status = 'refused', note = ?, handled_at = ? WHERE id = ? AND status != 'imported'").bind(reason).bind(now()).bind(id).execute(&self.pool).await?;
+        Ok(())
+    }
+
+    /// Puts a refused package back to be opened again.
+    pub async fn reopen(&self, id: &str) -> Result<bool, PostboxError> {
+        Ok(sqlx::query("UPDATE postbox_inbox SET status = 'new', note = NULL WHERE id = ? AND status = 'refused'").bind(id).execute(&self.pool).await?.rows_affected() > 0)
+    }
+
+    /// Everything that arrived lately, newest first, without the bytes.
+    pub async fn received(&self) -> Result<Vec<InboxRow>, PostboxError> {
+        let rows = sqlx::query("SELECT id, from_address, kind, length(bytes) AS size, status, note, arrived_at, handled_at FROM postbox_inbox ORDER BY arrived_at DESC LIMIT 200").fetch_all(&self.pool).await?;
+        Ok(rows.iter().map(|r| InboxRow { id: r.get("id"), from: r.get("from_address"), kind: r.get("kind"), size: r.get("size"), status: r.get("status"), note: r.get("note"), arrived_at: r.get("arrived_at"), handled_at: r.get("handled_at") }).collect())
     }
 
     // ---- the whole round ----
@@ -363,6 +436,7 @@ impl Postbox {
     /// Called every ten to fifteen minutes by the app, only when it has a
     /// licence token. Each part runs even if an earlier one fails.
     pub async fn tick(&self, token: &str) -> Result<Tick, PostboxError> {
+        let _one_at_a_time = self.round.lock().await;
         let mut out = Tick::default();
         let mut first: Option<PostboxError> = None;
         match self.flush(token).await {
@@ -381,6 +455,24 @@ impl Postbox {
             Some(e) if out == Tick::default() => Err(e),
             _ => Ok(out),
         }
+    }
+
+    /// Asks the relay to connect this office to another one. The other office's
+    /// administrator approves it on Pleadli Account; until then posts are blocked.
+    pub async fn request_connection(&self, token: &str, to: &str) -> Result<Value, PostboxError> {
+        let res = self.http.post(self.url("connections")).bearer_auth(token).json(&serde_json::json!({ "to": to })).send().await.map_err(|e| PostboxError::Offline(e.to_string()))?;
+        let status = res.status().as_u16();
+        let value: Value = res.json().await.map_err(|e| PostboxError::Offline(e.to_string()))?;
+        if status >= 400 {
+            let s = |k: &str| value.get(k).and_then(Value::as_str).unwrap_or("").to_string();
+            return Err(PostboxError::Api { status, error: s("error"), message: s("message") });
+        }
+        Ok(value)
+    }
+
+    /// This office's connections to others, with their status.
+    pub async fn connections(&self, token: &str) -> Result<Value, PostboxError> {
+        self.get_json("connections", token).await
     }
 
     async fn get_json(&self, path: &str, token: &str) -> Result<Value, PostboxError> {

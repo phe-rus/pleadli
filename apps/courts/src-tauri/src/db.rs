@@ -70,6 +70,8 @@ pub async fn startup(data_dir: &Path) -> Result<Db, StartupError> {
     #[cfg(debug_assertions)]
     crate::domain::seed::seed_if_empty(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
 
+    crate::domain::institution_clock::reload(&pool).await.map_err(|e| StartupError::Fatal(format!("could not load the timezone: {e}")))?;
+
     let security = std::sync::Arc::new(crate::domain::security::Security::new());
     security.load(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;
     crate::domain::profile::sync_from_session(&pool).await.map_err(|e| StartupError::Fatal(e.to_string()))?;

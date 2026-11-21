@@ -67,6 +67,7 @@ pub async fn startup(data_dir: &Path, vault_root: &Path, legacy_vault: Option<&P
     let pre_migration_snapshot = core::snapshot_if_migrating(&pool, &migrator, data_dir, opened.existed, "prisons").await;
 
     migrator.run(&pool).await.map_err(|e| StartupError::Fatal(format!("migration failed: {e}")))?;
+    crate::domain::institution_clock::reload(&pool).await.map_err(|e| StartupError::Fatal(format!("could not load the timezone: {e}")))?;
     crate::domain::secrets::seal_existing(&pool).await.map_err(|e| StartupError::Fatal(format!("could not seal stored credentials: {e}")))?;
 
     if let Some(applied) = &restored {

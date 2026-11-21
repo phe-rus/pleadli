@@ -1,7 +1,7 @@
 import { instrumentKinds, instrumentStatusLabels, prisonerFileOptions, stayEntryKinds } from '@/features/custody'
 import { custodyStatusLabel, nationalities, prisonerFullName, prisonerSexes, prisonerStatusLabel } from '@/features/prisoners/schema'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { DocFacts, DocSection, PrintFrame } from './print-frame'
 import type { IssuedDocument } from './schema'
 import { useDocumentTab } from './use-document-tab'

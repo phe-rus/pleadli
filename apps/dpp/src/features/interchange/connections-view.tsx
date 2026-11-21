@@ -13,6 +13,7 @@ import { Segmented } from '@pleadli/ui/segmented'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
+import { sendInviteByPostbox } from '@/features/relay/data'
 import { createIdentity, createInvite, declineConnection, revokeConnection, saveFile, trustConnection } from './data'
 import { ImportButton } from './import-button'
 import { useConnections, useIdentity } from './queries'
@@ -108,6 +109,8 @@ function AddStation({ open, onOpenChange }: { open: boolean; onOpenChange: (open
 function StationPanel({ connection: c, onClose }: { connection: Connection; onClose: () => void }) {
   const [typed, setTyped] = useState('')
   const [reason, setReason] = useState('')
+  const [address, setAddress] = useState('')
+  const byPostbox = useMutation({ mutationFn: () => sendInviteByPostbox(c.id, address), onSuccess: () => t.success(m["relay.invite_queued"]()), onError: (e) => t.error(m["relay.invite_failed"](), { description: say(e) }) })
   const trust = useMutation({ mutationFn: () => trustConnection(c.id, typed), onSuccess: () => t.success(m["interchange.conn.trusted_toast"]()), onError: (e) => t.error(m["interchange.review.not_trusted"](), { description: say(e) }) })
   const decline = useMutation({ mutationFn: () => declineConnection(c.id, reason), onSuccess: onClose, onError: (e) => t.error(m["interchange.conn.decline_failed"](), { description: say(e) }) })
   const revoke = useMutation({ mutationFn: () => revokeConnection(c.id, reason), onSuccess: () => { t.success(m["interchange.conn.ended"]()); onClose() }, onError: (e) => t.error(m["interchange.conn.end_failed"](), { description: say(e) }) })
@@ -118,6 +121,15 @@ function StationPanel({ connection: c, onClose }: { connection: Connection; onCl
         <Group footer={m["interchange.conn.waiting_answer"]({ station: c.intendedStation, date: formatDate(c.inviteExpiresAt) })}>
           <GroupRow label={m["stations.invitation"]()} value={<Button size="xs" variant="secondary" onClick={() => void saveFile('invite', c.id)}>{m["interchange.conn.save_again"]()}</Button>} />
           <GroupRow label={m["stations.reply"]()} value={<ImportButton label={m["stations.open_reply"]()} variant="secondary" />} />
+          <GroupRow
+            label={m["relay.by_postbox"]()}
+            value={
+              <span className="flex items-center gap-2">
+                <Input aria-label={m["relay.station_address"]()} placeholder={m["relay.station_address"]()} value={address} onChange={(e) => setAddress(e.target.value)} className="w-56" />
+                <Button size="xs" disabled={byPostbox.isPending || !address.trim()} onClick={() => byPostbox.mutate()}>{m["relay.send_invite"]()}</Button>
+              </span>
+            }
+          />
         </Group>
       )}
 

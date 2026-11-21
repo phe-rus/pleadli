@@ -80,8 +80,8 @@ pub(crate) fn format_value(key: &str, value: &Value) -> String {
         },
         Value::Number(n) if is_timestamp_key(key) => n
             .as_i64()
-            .and_then(chrono::DateTime::<chrono::Utc>::from_timestamp_millis)
-            .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
+            .map(crate::domain::time::display_ms)
+            .filter(|s| !s.is_empty())
             .unwrap_or_else(|| n.to_string()),
         Value::Number(n) => n.to_string(),
         other => other.to_string(),

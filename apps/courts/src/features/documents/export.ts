@@ -1,3 +1,5 @@
+import * as m from '@/paraglide/messages'
+import { t } from '@pleadli/ui/goey-toaster'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { documentMarkdown, paperBlocks, readPaper } from './paper'
 export type ExportFormat = 'pdf' | 'docx' | 'md'
@@ -22,7 +24,9 @@ export async function exportPaper(title: string, paper: Element, format: ExportF
   if (isTauri()) {
     let binary = ''
     for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192))
-    return invoke<boolean>('export_document', { name, format, contentBase64: btoa(binary) })
+    const saved = await invoke<string | null>('export_document', { name, format, contentBase64: btoa(binary) })
+    if (saved) t.success(m['downloads.saved']({ name: saved.split(/[\\/]/).pop() ?? saved }))
+    return saved !== null
   }
   const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: exportFormats[format].mime }))
   const link = document.createElement('a')

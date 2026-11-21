@@ -1,5 +1,7 @@
 import * as m from '@/paraglide/messages'
 import { format } from '@/lib/date'
+import { useEnclosures } from '@/features/paper/use-enclosures'
+import { usePoliceForce } from '@/features/rules/force'
 import { chargeSheetAccusedName } from './schema'
 import type { ChargeSheet } from './schema'
 
@@ -7,13 +9,17 @@ import type { ChargeSheet } from './schema'
  * and its `/print` route, so the two never drift apart. */
 export function ChargeSheetPrintable({ chargeSheet, bare = false }: { chargeSheet: ChargeSheet; bare?: boolean }) {
   const accusedName = chargeSheetAccusedName(chargeSheet)
+  const force = usePoliceForce()
+  const { lines: enclosed } = useEnclosures(chargeSheet.caseId)
 
   return (
     <div className={bare ? 'text-sm leading-relaxed' : 'mx-auto w-full max-w-2xl rounded-md border border-border/60 bg-card p-8 text-sm leading-relaxed print:rounded-none print:border-none'}>
-      <header className="mb-6 text-center">
-        <p className="text-xs tracking-wide text-muted-foreground uppercase">{m["charge_sheet.force"]()}</p>
-        <h1 className="text-base font-semibold tracking-wide uppercase">{m["charge_sheet.heading"]()}</h1>
-      </header>
+      {!bare && (
+          <header className="mb-6 text-center">
+          <p className="text-xs tracking-wide text-muted-foreground uppercase">{force}</p>
+          <h1 className="text-base font-semibold tracking-wide uppercase">{m["charge_sheet.heading"]()}</h1>
+        </header>
+      )}
 
       <section className="mb-5 grid grid-cols-2 gap-2 border-b border-border/60 pb-4 text-xs">
         <div>
@@ -45,6 +51,17 @@ export function ChargeSheetPrintable({ chargeSheet, bare = false }: { chargeShee
         <h2 className="mb-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">{m["charge_sheet.particulars_heading"]()}</h2>
         <p className="whitespace-pre-wrap">{chargeSheet.particulars}</p>
       </section>
+
+      {enclosed.length > 0 && (
+        <section className="mb-5">
+          <h2 className="mb-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">{m['charge_sheet.enclosed_heading']()}</h2>
+          <ul className="list-disc pl-5">
+            {enclosed.map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="mt-8 flex items-end justify-between border-t border-border/60 pt-4 text-xs">
         <div>

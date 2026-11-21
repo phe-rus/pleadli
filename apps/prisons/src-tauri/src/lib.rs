@@ -77,6 +77,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            if let Some(window) = app.webview_windows().values().next() {
+                fit_window_to_screen(window);
+            }
             // The ceiling on memory and CPU: see `watchdog.rs`.
             #[cfg(target_os = "linux")]
             watchdog::start(app.handle().clone());
@@ -197,4 +200,19 @@ pub fn run() {
                 }
             }
         });
+}
+
+/// Opens the window at a size that suits the screen it is on: most of the
+/// width and height, never cramped and never larger than is comfortable, then
+/// centred. A fixed size looked small on a big screen and could overflow a small one.
+fn fit_window_to_screen(window: &tauri::WebviewWindow) {
+    let Ok(Some(monitor)) = window.current_monitor().or_else(|_| window.primary_monitor()) else {
+        return;
+    };
+    let scale = monitor.scale_factor();
+    let (screen_w, screen_h) = (monitor.size().width as f64 / scale, monitor.size().height as f64 / scale);
+    let width = (screen_w * 0.82).clamp(1100.0, 1680.0).min(screen_w);
+    let height = (screen_h * 0.84).clamp(700.0, 1050.0).min(screen_h);
+    let _ = window.set_size(tauri::LogicalSize::new(width, height));
+    let _ = window.center();
 }

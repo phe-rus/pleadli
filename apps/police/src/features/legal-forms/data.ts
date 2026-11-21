@@ -1,4 +1,3 @@
-import * as m from '@/paraglide/messages'
 import { api, DEV_API_URL } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import * as z from 'zod'
@@ -30,13 +29,10 @@ export type DocumentFormat = 'pdf' | 'docx'
  * split; returns `false` only if the officer cancels the save dialog. */
 export async function exportChargeSheetDocument(id: string, format: DocumentFormat) {
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({
-      defaultPath: `charge-sheet.${format}`,
-      filters: [{ name: format === 'pdf' ? m["common.pdf_document"]() : m["common.word_document"](), extensions: [format] }],
-    })
-    if (typeof path !== 'string') return false
+    const { downloadPath, saidSaved } = await import('@/lib/downloads')
+    const path = await downloadPath(`charge-sheet.${format}`)
     await invoke('export_charge_sheet_document', { id, format, destinationPath: path })
+    saidSaved(path)
     return true
   }
   window.open(`${DEV_SERVER_URL}/charge-sheets/${encodeURIComponent(id)}/export/${format}`, '_blank')

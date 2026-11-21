@@ -13,6 +13,7 @@ pub mod orders;
 pub mod overview;
 pub mod profile;
 pub mod installation;
+pub mod institution_clock;
 pub mod security;
 pub mod staff;
 pub mod totp;

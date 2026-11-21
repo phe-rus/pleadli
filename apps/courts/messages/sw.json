@@ -187,5 +187,30 @@
       "change_failed": "Imeshindwa kubadilisha.",
       "try_again": "Jaribu tena."
     }
+  },
+  "pre_auth": {
+    "label": "Mahakama",
+    "headline": "Kazi ya mahakama, mahali pamoja.",
+    "body": "Pleadli Courts imejengwa kwa mahakama: rejista, vikao, amri na orodha ya kesi, bila kutegemea mtandao."
+  },
+  "timezone": {
+    "title": "Saa za eneo",
+    "about": "Kila wakati kwenye karatasi iliyochapishwa unaonyeshwa kwa saa za eneo la ofisi hii, pamoja na tofauti na UTC. Haitegemei mipangilio ya kompyuta hii.",
+    "label": "Saa za eneo za ofisi hii",
+    "hint": "Mabadiliko yanaanza sasa. Nyakati zilizokwisha rekodiwa zinabaki na saa za eneo zilizotumika wakati huo.",
+    "not_set": "Bado haijachaguliwa",
+    "not_set_hint": "Hadi msimamizi achague, nyakati zinachapishwa kwa UTC.",
+    "admin_only": "Ni msimamizi pekee anayeweza kubadilisha hili.",
+    "now_label": "Sasa, katika eneo hili",
+    "saved": "Saa za eneo zimehifadhiwa",
+    "failed": "Saa za eneo hazikuweza kubadilishwa",
+    "clock_title": "Saa ya kompyuta hii",
+    "clock_ok": "Hakuna kinachoonekana kuwa kibaya. Saa za eneo sahihi hazirekebishi saa isiyo sahihi, kwa hiyo linganisha na saa unayoiamini.",
+    "clock_before_release": "Saa inaonyesha tarehe kabla ya toleo hili la programu kutengenezwa. Weka tarehe na saa kwenye kompyuta hii kabla ya kutegemea wakati wowote uliochapishwa.",
+    "clock_behind": "Saa iko nyuma ya rekodi mpya zaidi iliyohifadhiwa hapa. Weka tarehe na saa kwenye kompyuta hii kabla ya kutegemea wakati wowote uliochapishwa.",
+    "clock_far_ahead": "Saa iko mbele zaidi ya mwaka mmoja kuliko rekodi mpya zaidi. Angalia tarehe na saa kwenye kompyuta hii."
+  },
+  "downloads": {
+    "saved": "Imehifadhiwa kwenye Downloads: {name}"
   }
 }

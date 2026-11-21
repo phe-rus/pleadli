@@ -88,6 +88,7 @@ pub async fn startup(data_dir: &Path, legacy_vault: PathBuf) -> Result<Db, Start
     std::fs::create_dir_all(&vault_root).map_err(|e| StartupError::Fatal(format!("could not create the Police Vault: {e}")))?;
 
     crate::domain::rules::ensure_built_in(&pool).await.map_err(|e| StartupError::Fatal(format!("could not load the legal rules: {e}")))?;
+    crate::domain::station_clock::reload(&pool).await.map_err(|e| StartupError::Fatal(format!("could not load the station timezone: {e}")))?;
 
     // Documents become sealed files inside the data folder. Whatever older builds left as plain files in
     // the Police Vault in Documents is sealed, read back to prove it, and only then overwritten and removed;

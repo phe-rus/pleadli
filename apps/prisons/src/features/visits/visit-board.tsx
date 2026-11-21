@@ -2,8 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Badge } from '@pleadli/ui/badge'
 import { Card, CardContent } from '@pleadli/ui/card'
 import { cn } from '@pleadli/ui/lib/utils'
-import { format } from 'date-fns/format'
-import { isToday, isTomorrow, startOfDay, addDays } from 'date-fns'
+import { format, isToday, isTomorrow, startOfDay, startOfDayPlus } from '@/lib/date'
 import { useMemo } from 'react'
 import { VisitActions } from './visit-actions'
 import { isSpecialType, visitListItemFullName, visitTypeLabel, type VisitListItem } from './schema'
@@ -43,7 +42,7 @@ function VisitCard({ visit }: { visit: VisitListItem }) {
 export function TodayBoard({ visits }: { visits: VisitListItem[] }) {
   const today = useMemo(() => visits.filter((v) => isToday(v.visitedAt)).sort((a, b) => a.visitedAt - b.visitedAt), [visits])
   const stale = useMemo(() => {
-    const start = startOfDay(new Date()).getTime()
+    const start = startOfDay(Date.now())
     return visits.filter((v) => v.visitedAt < start && ['requested', 'scheduled', 'checked_in', 'in_progress'].includes(v.status)).sort((a, b) => a.visitedAt - b.visitedAt)
   }, [visits])
   const closed = today.filter((v) => ['denied', 'no_show', 'cancelled'].includes(v.status)).length
@@ -103,14 +102,14 @@ function dayLabel(ms: number) {
 /** The next two weeks of requested and scheduled visits, day by day. */
 export function UpcomingVisits({ visits }: { visits: VisitListItem[] }) {
   const groups = useMemo(() => {
-    const from = startOfDay(addDays(new Date(), 1)).getTime()
-    const to = startOfDay(addDays(new Date(), 15)).getTime()
+    const from = startOfDayPlus(Date.now(), 1)
+    const to = startOfDayPlus(Date.now(), 15)
     const rows = visits
       .filter((v) => v.visitedAt >= from && v.visitedAt < to && ['requested', 'scheduled'].includes(v.status))
       .sort((a, b) => a.visitedAt - b.visitedAt)
     const byDay = new Map<number, VisitListItem[]>()
     for (const row of rows) {
-      const key = startOfDay(row.visitedAt).getTime()
+      const key = startOfDay(row.visitedAt)
       byDay.set(key, [...(byDay.get(key) ?? []), row])
     }
     return [...byDay.entries()]

@@ -6,7 +6,6 @@ import { activeJurisdiction, packText, referenceLabel } from '@/lib/jurisdiction
 import * as m from '@/paraglide/messages'
 import { sectionFor } from '@pleadli/setup'
 import { invoke, isTauri } from '@tauri-apps/api/core'
-import { save } from '@tauri-apps/plugin-dialog'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
 
@@ -237,7 +236,7 @@ const fileName = (title: string) => `${title.replace(/[^\p{L}\p{N}]+/gu, '-').re
 export async function saveCaseFile(bytes: Uint8Array, title: string): Promise<boolean> {
   const name = fileName(title)
   if (isTauri()) {
-    const path = await save({ defaultPath: name, filters: [{ name: 'PDF', extensions: ['pdf'] }] })
+    const path = await invoke<string | null>('pick_save_path', { defaultName: name, extension: 'pdf' })
     if (!path) return false
     await invoke('save_case_pdf', { path, data: b64(bytes) })
     return true

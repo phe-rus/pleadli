@@ -131,7 +131,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     if sent == 0 {
         return bad("That receipt answers an order this registry did not send to this facility.");
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO prison_incoming (id, link_id, order_id, order_package_id, outcome, reason, seq, sent_at, received_at, package_sha256) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&opened.header.id)
         .bind(&link_id)
@@ -169,7 +169,7 @@ async fn import_report(pool: &SqlitePool, bytes: &[u8], peeked: envelope::Peeked
     // Only a report about an order this registry sent to this facility counts.
     let case_id: Option<String> = sqlx::query_scalar("SELECT o.case_id FROM prison_outgoing p JOIN orders o ON o.id = p.order_id WHERE p.link_id = ? AND p.order_id = ? LIMIT 1").bind(link_id).bind(&r.order_key).fetch_optional(pool).await?;
     let Some(case_id) = case_id else { return bad("That report is about an order this registry did not send to this facility.") };
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     sqlx::query("INSERT INTO prison_reports (id, link_id, order_id, case_id, court_number, accused, event, occurred_at, note, reported_by, seq, sent_at, received_at, package_sha256) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&opened.header.id)
         .bind(link_id)
@@ -265,7 +265,7 @@ pub async fn export_order(pool: &SqlitePool, order_id: &str, link_id: &str) -> R
         content_sha256: order.content_sha256.clone(),
     };
     let json = serde_json::to_value(&payload).map_err(|_| DomainError::Invalid("Could not build the order.".into()))?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM prison_links WHERE id = ?").bind(link_id).fetch_one(&mut *tx).await?;
     sqlx::query("UPDATE prison_links SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(link_id).execute(&mut *tx).await?;
     let (bytes, header) = envelope::seal(&me, &prison, KIND_CUSTODY_ORDER, seq as u64, None, &Body::new(json.clone())).map_err(|e| DomainError::Invalid(e.to_string()))?;

@@ -1,7 +1,8 @@
 import * as m from '@/paraglide/messages'
 import { listIncoming, listOutgoing, type Incoming, type Outgoing } from '@/features/exchange/data'
+import { checkRelay, getRelay, type RelayStatus } from '@/features/relay/data'
 import { PostboxView, type PostboxLabels, type PostboxMessage } from '@pleadli/shell'
-import { buttonVariants } from '@pleadli/ui/button'
+import { Button, buttonVariants } from '@pleadli/ui/button'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -35,12 +36,15 @@ function RouteComponent() {
   const labels = useLabels()
   const [incoming, setIncoming] = useState<Incoming[]>([])
   const [outgoing, setOutgoing] = useState<Outgoing[]>([])
+  const [relay, setRelay] = useState<RelayStatus | null>(null)
   useEffect(() => {
     // Before the station has an exchange identity these answer with nothing.
     listIncoming().then(setIncoming).catch(() => {})
     listOutgoing().then(setOutgoing).catch(() => {})
+    getRelay().then(setRelay).catch(() => {})
   }, [])
 
+  const stage = (id: string) => relay?.sent.find((x) => x.id === id)
   const messages = useMemo<PostboxMessage[]>(
     () => [
       ...incoming.map((i) => {
@@ -50,17 +54,17 @@ function RouteComponent() {
       }),
       ...outgoing.map((o) => ({
         id: o.id,
-        box: (o.route === 'postbox' && !o.exportedAt ? 'outbox' : 'sent') as 'outbox' | 'sent',
+        box: (o.route === 'postbox' && (!o.exportedAt || ['queued', 'attention'].includes(stage(o.id)?.stage ?? '')) ? 'outbox' : 'sent') as 'outbox' | 'sent',
         party: o.officeName,
         at: o.exportedAt ?? o.preparedAt,
         subject: m['postbox.referral_subject']({ reference: o.policeReference ?? '' }),
         preview: o.route === 'postbox' ? m['postbox.by_postbox']() : m['postbox.by_file'](),
         body: <p>{m['postbox.referral_body']({ office: o.officeName })}</p>,
-        state: o.route === 'postbox' ? m['postbox.by_postbox']() : m['postbox.by_file'](),
+        state: o.route === 'postbox' ? (stage(o.id) ? m[`relay.stage_${stage(o.id)!.stage}`]() : m['postbox.by_postbox']()) : m['postbox.by_file'](),
       })),
     ],
-    [incoming, outgoing],
+    [incoming, outgoing, relay],
   )
 
-  return <PostboxView labels={labels} messages={messages} actions={<Link to="/exchange" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m['exchange.title']()}</Link>} />
+  return <PostboxView labels={relay?.ready ? { ...labels, status: m['relay.connected']({ address: relay.address ?? '' }) } : labels} messages={messages} actions={<><Button size="sm" variant="secondary" onClick={() => checkRelay().then(setRelay).then(() => listIncoming().then(setIncoming)).then(() => listOutgoing().then(setOutgoing)).catch(() => {})}>{m['relay.check_now']()}</Button><Link to="/exchange" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m['exchange.title']()}</Link></>} />
 }

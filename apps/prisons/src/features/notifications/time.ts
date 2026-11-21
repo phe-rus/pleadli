@@ -1,4 +1,4 @@
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { m } from '@/paraglide/messages'
 
 /** A short time for a list: now, 5m, 3h, Yesterday, 12 Sep, 12 Sep 2025.

@@ -18,7 +18,7 @@ fn decode(data: &str) -> Result<Vec<u8>, String> {
 #[tauri::command]
 pub async fn save_case_pdf(state: State<'_, Db>, path: String, data: String) -> Result<(), String> {
     state.security.ensure_unlocked()?;
-    std::fs::write(&path, decode(&data)?).map_err(|e| e.to_string())
+    std::fs::write(pleadli_node_core::save_grants::take(&path)?, decode(&data)?).map_err(|e| e.to_string())
 }
 
 /// Writes a copy to the temporary folder and opens it in the system's PDF
@@ -44,7 +44,23 @@ pub async fn save_paper_file(state: State<'_, Db>, path: String, data: String) -
         return Err("This kind of file is not saved from here.".into());
     }
     let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
-    std::fs::write(&path, bytes).map_err(|e| e.to_string())
+    std::fs::write(pleadli_node_core::save_grants::take(&path)?, bytes).map_err(|e| e.to_string())
+}
+
+/// A paper or table saved to the computer's Downloads folder, with no Save window. The window supplies only a name,
+/// never a folder; a name already taken becomes "name (2)". Returns the path it was saved at.
+#[tauri::command]
+pub async fn save_paper_download(app: tauri::AppHandle, state: State<'_, Db>, file_name: String, data: String) -> Result<String, String> {
+    use tauri::Manager;
+    state.security.ensure_unlocked()?;
+    let lower = file_name.to_lowercase();
+    if ![".doc", ".docx", ".pdf", ".xlsx", ".csv", ".txt"].iter().any(|ext| lower.ends_with(ext)) {
+        return Err("This kind of file is not saved from here.".into());
+    }
+    let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
+    let dir = pleadli_node_core::downloads::resolve_dir(app.path().download_dir().ok(), app.path().home_dir().ok())?;
+    let path = pleadli_node_core::downloads::save_unique(&dir, &file_name, &bytes)?;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 /// Which office programs this computer has (Word, Excel, LibreOffice).
@@ -69,4 +85,22 @@ pub async fn open_paper_file(state: State<'_, Db>, name: String, data: String) -
     let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
     std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
     tauri_plugin_opener::open_path(&path, None::<&str>).map_err(|e| e.to_string())
+}
+
+/// Opens the system Save window and approves the one path the person picks, for a following save command, so the
+/// web layer can never name a place to write that the person did not choose. `None` when the window is cancelled.
+#[tauri::command]
+pub async fn pick_save_path(app: tauri::AppHandle, default_name: String, extension: String) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    if extension.is_empty() || !extension.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err("Not a valid file type.".to_string());
+    }
+    let name = pleadli_node_core::downloads::clean_file_name(&default_name);
+    let picked = tauri::async_runtime::spawn_blocking(move || app.dialog().file().set_file_name(name).add_filter("File", &[extension.as_str()]).blocking_save_file())
+        .await
+        .map_err(|e| e.to_string())?;
+    let Some(file) = picked else { return Ok(None) };
+    let path = file.into_path().map_err(|e| e.to_string())?;
+    pleadli_node_core::save_grants::approve(&path);
+    Ok(Some(path.to_string_lossy().to_string()))
 }

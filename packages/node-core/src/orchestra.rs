@@ -370,6 +370,20 @@ fn check_licence(signed: &Signed, device: &str, dev_key: Option<&str>) -> Option
     (licence.device == device).then_some(licence)
 }
 
+/// The credentials the postbox uses. The token is secret: never log or serialise it.
+#[derive(Clone)]
+pub struct RelayAccess {
+    pub base: String,
+    pub token: String,
+    pub address: String,
+}
+
+impl std::fmt::Debug for RelayAccess {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "RelayAccess {{ base: {}, address: {}, token: <hidden> }}", self.base, self.address)
+    }
+}
+
 pub struct Orchestra {
     app: App,
     pool: SqlitePool,
@@ -452,7 +466,10 @@ impl Orchestra {
     /// reinstall does not clear); the earlier of the two counts.
     async fn local_trial_start(&self) -> Result<i64, sqlx::Error> {
         let in_db = self.get_i64("trial_started_at").await;
-        let use_keystore = !cfg!(any(test, feature = "test-keys"));
+        // A debug build run with PLEADLI_TRIAL_FRESH=1 ignores the keystore, so an isolated data folder
+        // shows a true first day instead of this computer's old trial. A release build never reads it.
+        let fresh_for_testing = cfg!(debug_assertions) && std::env::var_os("PLEADLI_TRIAL_FRESH").is_some();
+        let use_keystore = !cfg!(any(test, feature = "test-keys")) && !fresh_for_testing;
         let entry = use_keystore.then(|| keyring::Entry::new(self.app.keystore_service, "orchestra-trial-start").ok()).flatten();
         let in_keystore = entry.as_ref().and_then(|e| e.get_password().ok()).and_then(|v| v.parse::<i64>().ok());
         let start = [in_db, in_keystore].into_iter().flatten().min().unwrap_or_else(now);
@@ -655,6 +672,19 @@ impl Orchestra {
             can_verify: ROOT_PUBLIC_KEY.is_some() || cfg!(debug_assertions),
             restore_pending: snapshot::pending(&self.data_dir),
         })
+    }
+
+    // ---- the postbox ----
+
+    /// What the postbox needs to speak for this computer: the site, the token
+    /// from activating the licence, and the office address it posts and collects
+    /// as. None until the computer holds a valid licence for an office, so an
+    /// unlicensed computer never calls the relay.
+    pub async fn relay_access(&self) -> Option<RelayAccess> {
+        let licence = self.licence().await?;
+        let token = self.get("token").await.ok().flatten()?;
+        let address = self.get("office").await.ok().flatten().or(licence.address)?;
+        Some(RelayAccess { base: self.base.clone(), token, address })
     }
 
     // ---- papers to /verify ----

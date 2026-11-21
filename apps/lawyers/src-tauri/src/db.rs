@@ -53,6 +53,7 @@ pub async fn startup(data_dir: &Path) -> Result<Db, StartupError> {
     let migrator = sqlx::migrate!("./migrations");
     core::snapshot_if_migrating(&pool, &migrator, data_dir, opened.existed, "lawyers").await;
     migrator.run(&pool).await.map_err(|e| StartupError::Fatal(format!("migration failed: {e}")))?;
+    crate::domain::institution_clock::reload(&pool).await.map_err(|e| StartupError::Fatal(format!("could not load the timezone: {e}")))?;
 
     // Restored papers, plain until now, sealed under this computer's key.
     match pleadli_node_core::snapshot::seal_restored(&incoming, &vault_root) {

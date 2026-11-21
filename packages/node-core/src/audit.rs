@@ -160,10 +160,12 @@ pub async fn record(conn: &mut SqliteConnection, actor: Option<&str>, entry: Ent
     Ok(())
 }
 
-/// For an event with no transaction of its own.
+/// For an event with no transaction of its own. Reading the last hash and appending the next is a read
+/// then a write, so it runs under one write lock: two events at once cannot both pick the same place in the chain.
 pub async fn log(pool: &SqlitePool, actor: Option<&str>, entry: Entry<'_>) -> Result<(), sqlx::Error> {
-    let mut conn = pool.acquire().await?;
-    record(&mut conn, actor, entry).await
+    let mut tx = crate::db::begin_write(pool).await?;
+    record(&mut tx, actor, entry).await?;
+    tx.commit().await
 }
 
 /// The newest entries first; with a scope, only that record's.
@@ -290,5 +292,27 @@ mod tests {
         };
         let shifted = AuditEntry { action: "a".into(), subject_type: Some("bc".into()), ..base.clone() };
         assert_ne!(digest("p", &base), digest("p", &shifted));
+    }
+
+    /// Events arriving at the same moment on several connections (requests, Orchestra, a background task)
+    /// must each take their own place in the chain: none refused, none forked, the whole chain verifying.
+    #[tokio::test]
+    async fn entries_written_at_the_same_moment_all_land_and_the_chain_verifies() {
+        let dir = std::env::temp_dir().join(format!("pleadli-audit-concurrent-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = SqlitePoolOptions::new().max_connections(4).connect_with(crate::db::connect_options(&dir.join("audit.db"))).await.unwrap();
+        sqlx::raw_sql(TABLE_SQL).execute(&pool).await.unwrap();
+        let mut tasks = Vec::new();
+        for i in 0..40 {
+            let pool = pool.clone();
+            tasks.push(tokio::spawn(async move { log(&pool, Some("Someone"), Entry::new("event").detail(i.to_string())).await }));
+        }
+        for task in tasks {
+            task.await.unwrap().expect("no entry is refused");
+        }
+        let verdict = verify(&pool).await.unwrap();
+        assert!(verdict.intact, "broken at {:?}", verdict.broken_at);
+        assert_eq!(verdict.entries, 40);
+        pool.close().await;
     }
 }

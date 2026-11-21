@@ -213,7 +213,7 @@ pub async fn derive(pool: &SqlitePool, now: i64) -> Result<Vec<Obligation>, sqlx
                     prisoner_id: Some(p.id.clone()),
                     prisoner_name: Some(name.clone()),
                     title: if due < now { "Discharge overdue".into() } else { "Discharge due on entitlement".into() },
-                    detail: Some("Computed entitlement date. Check the warrant. Discharge is before noon (s.83).".into()),
+                    detail: Some(if rules.discharge_before_noon { "Computed entitlement date. Check the warrant. Discharge is before noon (s.83).".into() } else { "Computed entitlement date. Check the warrant.".into() }),
                     due_at: Some(due),
                     procedure: Some(Procedure { kind: "discharge".into(), id: Some(p.id.clone()) }),
                     resolvable: false,

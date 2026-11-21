@@ -26,9 +26,8 @@ export async function verifyAudit() {
  * during development it downloads. Returns false if the prosecutor cancelled. */
 export async function createBackup(passphrase: string): Promise<boolean> {
   if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
     const stamp = new Date().toISOString().slice(0, 10)
-    const path = await save({ defaultPath: `pleadli-dpp-${stamp}.dppbk`, filters: [{ name: 'Pleadli DPP backup', extensions: ['dppbk'] }] })
+    const path = await invoke<string | null>('pick_save_path', { defaultName: `pleadli-dpp-${stamp}.dppbk`, extension: 'dppbk' })
     if (!path) return false
     await invoke('create_backup', { path, passphrase })
     return true

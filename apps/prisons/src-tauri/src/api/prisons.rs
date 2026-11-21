@@ -48,6 +48,8 @@ pub fn routes(node: NodeRef) -> RouteTable {
         // Head Office holds no prisoners but has an identity of its own to read and edit.
         .get("/api/prisons/facility", Need::AnyPerm(&[PRISONER_READ, NODE_MANAGE]), get_facility)
         .put("/api/prisons/facility", Need::Perm(NODE_MANAGE), save_facility)
+        .get("/api/prisons/timezone", Need::AnyPerm(&[PRISONER_READ, NODE_MANAGE]), get_timezone)
+        .put("/api/prisons/timezone", Need::Perm(NODE_MANAGE), set_timezone)
         .post("/api/prisons/receptions", Need::Perm(CUSTODY_ADMIT), receive)
         .get("/api/prisons/prisoners/{id}/file", Need::Perm(PRISONER_READ), prisoner_file)
         .get("/api/prisons/prisoners/{id}/instruments", Need::Perm(PRISONER_READ), instruments_for_prisoner)
@@ -741,4 +743,26 @@ async fn void_document(
 ) -> Result<StatusCode, ApiError> {
     write(&node, |c| Box::pin(async move { Ok(attachments::void_attachment(c, &actor, &id, &body.reason).await?) })).await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+// ---------- timezone ----------
+
+async fn get_timezone(State(node): State<NodeRef>) -> Api<pleadli_node_core::timezone::ZoneStatus> {
+    Ok(Json(crate::domain::institution_clock::status(&node.pool).await.map_err(|e| ApiError::from(crate::domain::error::DomainError::from(e)))?))
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TimezoneInput {
+    zone_id: String,
+    #[serde(default)]
+    reason: Option<String>,
+}
+
+/// The facility's timezone for legal times. Needs node management; each change is audited with who and why.
+async fn set_timezone(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Json(input): Json<TimezoneInput>) -> Api<pleadli_node_core::timezone::ZoneStatus> {
+    crate::domain::institution_clock::set(&node.pool, &actor, &input.zone_id, input.reason.as_deref().filter(|r| !r.trim().is_empty()))
+        .await
+        .map_err(|reason| ApiError::from(crate::domain::error::DomainError::rejected(reason)))?;
+    Ok(Json(crate::domain::institution_clock::status(&node.pool).await.map_err(|e| ApiError::from(crate::domain::error::DomainError::from(e)))?))
 }

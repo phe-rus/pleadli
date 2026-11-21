@@ -4,6 +4,7 @@ import { NumberingSettings } from '@/features/numbering'
 import { BackupsPane as DailyBackupsPane, LicencePane as PleadliLicencePane } from '@/features/orchestra'
 import { BackupsPanel, NodePanel } from '@/features/node'
 import { useHqConfig, usePermissions } from '@/features/session'
+import { TimezonePane } from '@/features/timezone'
 import { m } from '@/paraglide/messages'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Building03Icon, CloudSavingDone01Icon, CloudUploadIcon, ComputerIcon, GridTableIcon, LanguageSkillIcon, LicenseIcon, Notification03Icon, PaintBoardIcon, SquareLock02Icon, NetworkIcon } from '@hugeicons/core-free-icons'
@@ -14,9 +15,19 @@ import type { ReactNode } from 'react'
 import { AppearancePane, FacilityPane, LanguagePane, OrganisationPane, SecurityPane } from './panes'
 import { ownerHint, ownerLabel, visibleSections, type SectionDef, type SectionId } from './sections'
 
+function FacilityTimezone() {
+  const { can } = usePermissions()
+  return <TimezonePane canChange={can('node.manage')} />
+}
+
 const panes: Record<SectionId, () => ReactNode> = {
   jurisdiction: () => <JurisdictionPane />,
-  facility: () => <FacilityPane />,
+  facility: () => (
+    <>
+      <FacilityPane />
+      <FacilityTimezone />
+    </>
+  ),
   organisation: () => <OrganisationPane />,
   numbering: () => <NumberingSettings />,
   language: () => <LanguagePane />,

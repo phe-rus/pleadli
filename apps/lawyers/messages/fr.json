@@ -2386,5 +2386,30 @@
   "court_send_kind_notice_of_appeal": "Acte d'appel",
   "court_send_kind_defence": "Défense",
   "court_send_kind_submissions": "Conclusions",
-  "court_send_kind_other": "Autre"
+  "court_send_kind_other": "Autre",
+  "pre_auth": {
+    "label": "Cabinet",
+    "headline": "Votre cabinet, tenu comme un cabinet d'avocats.",
+    "body": "Pleadli Lawyers est conçu pour l'avocat : dossiers, honoraires, échéances et actes, sur votre propre ordinateur."
+  },
+  "timezone": {
+    "title": "Fuseau horaire",
+    "about": "Chaque heure d'un document imprimé est indiquée dans le fuseau horaire de ce bureau, avec le décalage UTC à côté. Elle ne dépend pas des réglages de cet ordinateur.",
+    "label": "Fuseau horaire de ce bureau",
+    "hint": "Un changement s'applique à partir de maintenant. Les heures déjà enregistrées gardent le fuseau dans lequel elles ont été faites.",
+    "not_set": "Pas encore choisi",
+    "not_set_hint": "Tant qu'un administrateur n'a pas choisi, les heures sont imprimées en UTC.",
+    "admin_only": "Seul un administrateur peut changer ceci.",
+    "now_label": "Maintenant, dans ce fuseau",
+    "saved": "Fuseau horaire enregistré",
+    "failed": "Le fuseau horaire n'a pas pu être changé",
+    "clock_title": "Horloge de cet ordinateur",
+    "clock_ok": "Rien ne semble anormal. Un bon fuseau horaire ne corrige pas une horloge fausse : vérifiez l'heure avec une montre fiable.",
+    "clock_before_release": "L'horloge indique une date antérieure à la création de cette version de l'application. Réglez la date et l'heure de cet ordinateur avant de vous fier à une heure imprimée.",
+    "clock_behind": "L'horloge est en retard sur le dernier enregistrement conservé ici. Réglez la date et l'heure de cet ordinateur avant de vous fier à une heure imprimée.",
+    "clock_far_ahead": "L'horloge a plus d'un an d'avance sur le dernier enregistrement. Vérifiez la date et l'heure de cet ordinateur."
+  },
+  "downloads": {
+    "saved": "Enregistré dans Téléchargements : {name}"
+  }
 }

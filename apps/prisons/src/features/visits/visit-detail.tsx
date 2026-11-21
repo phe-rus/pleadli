@@ -1,6 +1,6 @@
 import { Badge } from '@pleadli/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import type { ReactNode } from 'react'
 import { VisitActions } from './visit-actions'
 import { useVisitItems } from './queries'

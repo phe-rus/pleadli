@@ -13,7 +13,7 @@ import { VisitForm, visitStatusLabel, visitTypeLabel, useVisitsForPrisoner } fro
 import { RichTextPreview } from '@pleadli/rich-text'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useState } from 'react'
 import { Dash, FormDrawer, ItemDrawer, ProfileSection, ProfileTable } from './blocks'
 import { m } from '@/paraglide/messages'

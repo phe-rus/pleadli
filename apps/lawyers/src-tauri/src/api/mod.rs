@@ -1247,6 +1247,7 @@ pub fn core(state: AppState) -> Router {
         .route("/setup/complete", post(setup_complete))
         .route("/installation", get(get_installation).put(update_installation))
         .route("/installation/protection", put(set_protection))
+        .route("/timezone", get(get_timezone).put(set_timezone))
         .route("/installation/jurisdiction", put(set_jurisdiction))
         .route("/installation/idle", put(set_idle))
         .route("/session/people", get(session_people))
@@ -1513,4 +1514,27 @@ mod notices_api {
         let bytes = court_notices::return_notice(&s.pool, &id, &i.reason, &i.decided_by).await?;
         Ok(Json(Sealed { value: Nothing {}, file: B64.encode(bytes), name: "firm-receipt.pxpkg".into() }))
     }
+}
+
+// ---------- timezone ----------
+
+async fn get_timezone(State(s): State<AppState>) -> ApiResult<pleadli_node_core::timezone::ZoneStatus> {
+    Ok(Json(crate::domain::institution_clock::status(&s.pool).await.map_err(|e| ApiError::from(crate::domain::error::DomainError::from(e)))?))
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TimezoneInput {
+    zone_id: String,
+    #[serde(default)]
+    reason: Option<String>,
+}
+
+/// The practice's timezone for legal times. Administrator only; each change is audited with who and why.
+async fn set_timezone(State(s): State<AppState>, Json(input): Json<TimezoneInput>) -> ApiResult<pleadli_node_core::timezone::ZoneStatus> {
+    let admin = require_admin(&s)?;
+    crate::domain::institution_clock::set(&s.pool, &input.zone_id, &admin.name, input.reason.as_deref().filter(|r| !r.trim().is_empty()))
+        .await
+        .map_err(|reason| ApiError(StatusCode::UNPROCESSABLE_ENTITY, "INVALID", reason))?;
+    get_timezone(State(s)).await
 }

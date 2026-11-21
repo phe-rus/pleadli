@@ -1,5 +1,5 @@
 import { Row, RowList } from '@/components/operational-row'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { m } from '@/paraglide/messages'
 import { ago } from './format'
 import type { Estate, NetworkEvent } from './schema'

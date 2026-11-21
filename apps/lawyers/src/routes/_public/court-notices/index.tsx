@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import { createIdentity, createInvite, fileNotice, getIdentity, importPackage, listIncoming, listLinks, listOpenMatters, pickPackage, returnNotice, savePackage, trustLink, type CourtLink, type FirmIdentity, type IncomingNotice, type MatterOption, type NoticeClaim } from '@/features/court-notices/data'
 import * as m from '@/paraglide/messages'
 import { Badge } from '@pleadli/ui/badge'
@@ -19,7 +20,7 @@ const parse = (payload: string): NoticeClaim => {
   }
 }
 const normal = (s: string | null | undefined) => (s ?? '').replace(/[^a-z0-9]/gi, '').toUpperCase()
-const when = (ms: number) => new Date(ms).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+const when = (ms: number) => new Date(ms).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short', timeZone: zoneFor(ms) })
 
 /** Court notices arriving as files: read as claims, filed by a person against
  * the matter they belong to, answered with a receipt. */

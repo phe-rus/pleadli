@@ -89,7 +89,7 @@ pub struct LocalNetworkInfo {
 #[tauri::command]
 pub fn get_local_network_info(_who: super::api::SignedIn) -> LocalNetworkInfo {
     LocalNetworkInfo {
-        address: local_ip_address::local_ip().ok().map(|ip| ip.to_string()),
+        address: crate::transport::lan_address().map(|ip| ip.to_string()),
         port: remote_server::DEFAULT_PORT,
     }
 }

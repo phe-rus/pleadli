@@ -264,7 +264,7 @@ export function CaseForm({ case: existingCase, start, onSuccess, onDirtyChange }
 
       <DrawerFooter>
         <form.AppForm>
-          <form.submit label={existingCase ? m["common.save_changes"]() : m["cases.save_new"]()} disabled={!peopleReady} />
+          <form.submit label={existingCase ? m["common.save_changes"]() : m["cases.save_new"]()} disabled={!peopleReady} allowPristine={!existingCase && !!form.getFieldValue('summary')} />
         </form.AppForm>
       </DrawerFooter>
     </form>

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { t } from '@pleadli/ui/goey-toaster'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useEffect, useRef, useState } from 'react'
 import { closeCaptureSession, getCaptureStatus, openCaptureSession } from './data'
 import { photoViewLabel, photoViews, type CaptureSession, type PhotoView } from './schema'

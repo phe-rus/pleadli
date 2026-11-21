@@ -25,7 +25,40 @@ pub async fn save_pdf(security: State<'_, Arc<Security>>, network: State<'_, Arc
     if !bytes.starts_with(b"%PDF") {
         return Err("Only a PDF can be saved this way.".into());
     }
-    std::fs::write(&path, bytes).map_err(|e| e.to_string())
+    std::fs::write(pleadli_node_core::save_grants::take(&path)?, bytes).map_err(|e| e.to_string())
+}
+
+/// Whether bytes are what their kind says. Shared by every way a file leaves the application.
+fn bytes_match_kind(kind: &str, bytes: &[u8]) -> bool {
+    match kind {
+        "pdf" => bytes.starts_with(b"%PDF"),
+        "docx" | "zip" => bytes.starts_with(b"PK\x03\x04"),
+        "json" => bytes.first().is_some_and(|b| *b == b'{' || *b == b'['),
+        // A paper saved for Word: a web page Word opens as a document.
+        "doc" => bytes.starts_with(b"<html"),
+        "csv" => std::str::from_utf8(bytes).is_ok(),
+        "png" => bytes.starts_with(b"\x89PNG"),
+        "jpg" => bytes.starts_with(&[0xFF, 0xD8, 0xFF]),
+        "webp" => bytes.len() > 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP",
+        _ => false,
+    }
+}
+
+/// Any file the person exports, saved to the computer's Downloads folder with no Save window. The window supplies only a
+/// name and a kind, never a folder; a name already taken becomes "name (2)". Returns the path it was saved at.
+#[tauri::command]
+pub async fn save_export_download(app: tauri::AppHandle, security: State<'_, Arc<Security>>, network: State<'_, Arc<Network>>, file_name: String, kind: String, data: String) -> Result<String, String> {
+    use tauri::Manager;
+    if !may_save(&security, &network) {
+        return Err("Sign in to export.".into());
+    }
+    let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
+    if !bytes_match_kind(&kind, &bytes) {
+        return Err("That file is not what it says it is.".into());
+    }
+    let dir = pleadli_node_core::downloads::resolve_dir(app.path().download_dir().ok(), app.path().home_dir().ok())?;
+    let path = pleadli_node_core::downloads::save_unique(&dir, &file_name, &bytes)?;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 /// Any file the person exports (a document as PDF or Word, all the records as
@@ -36,22 +69,11 @@ pub async fn save_export(security: State<'_, Arc<Security>>, network: State<'_, 
         return Err("Sign in to export.".into());
     }
     let bytes = base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| e.to_string())?;
-    let ok = match kind.as_str() {
-        "pdf" => bytes.starts_with(b"%PDF"),
-        "docx" | "zip" => bytes.starts_with(b"PK\x03\x04"),
-        "json" => bytes.first().is_some_and(|b| *b == b'{' || *b == b'['),
-        // A paper saved for Word: a web page Word opens as a document.
-        "doc" => bytes.starts_with(b"<html"),
-        "csv" => std::str::from_utf8(&bytes).is_ok(),
-        "png" => bytes.starts_with(b"\x89PNG"),
-        "jpg" => bytes.starts_with(&[0xFF, 0xD8, 0xFF]),
-        "webp" => bytes.len() > 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP",
-        _ => false,
-    };
+    let ok = bytes_match_kind(&kind, &bytes);
     if !ok {
         return Err("That file is not what it says it is.".into());
     }
-    std::fs::write(&path, bytes).map_err(|e| e.to_string())
+    std::fs::write(pleadli_node_core::save_grants::take(&path)?, bytes).map_err(|e| e.to_string())
 }
 
 /// Which office programs this computer has (Word, Excel, LibreOffice).
@@ -117,4 +139,22 @@ pub async fn save_court_package(app: tauri::AppHandle, security: State<'_, Arc<S
     let path = file.into_path().map_err(|_| "Choose a file on this computer.".to_string())?;
     std::fs::write(path, bytes).map_err(|_| "The package could not be saved at that destination.".to_string())?;
     Ok(true)
+}
+
+/// Opens the system Save window and approves the one path the person picks, for a following save command, so the
+/// web layer can never name a place to write that the person did not choose. `None` when the window is cancelled.
+#[tauri::command]
+pub async fn pick_save_path(app: tauri::AppHandle, default_name: String, extension: String) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    if extension.is_empty() || !extension.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err("Not a valid file type.".to_string());
+    }
+    let name = pleadli_node_core::downloads::clean_file_name(&default_name);
+    let picked = tauri::async_runtime::spawn_blocking(move || app.dialog().file().set_file_name(name).add_filter("File", &[extension.as_str()]).blocking_save_file())
+        .await
+        .map_err(|e| e.to_string())?;
+    let Some(file) = picked else { return Ok(None) };
+    let path = file.into_path().map_err(|e| e.to_string())?;
+    pleadli_node_core::save_grants::approve(&path);
+    Ok(Some(path.to_string_lossy().to_string()))
 }

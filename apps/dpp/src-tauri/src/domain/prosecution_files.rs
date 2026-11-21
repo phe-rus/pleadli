@@ -82,7 +82,7 @@ pub async fn create_prosecution_file(
     let police_reference = clean(input.police_reference);
 
     let id = Uuid::new_v4().to_string();
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
 
     sqlx::query(
         "INSERT INTO prosecution_files

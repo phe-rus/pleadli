@@ -12,7 +12,7 @@ import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pleadli/ui/tabs'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { useMemo, useState } from 'react'
 import { m } from '@/paraglide/messages'
 

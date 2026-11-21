@@ -3336,5 +3336,22 @@
   "court_orders_event_not_produced": "Could not be produced",
   "court_orders_event_other": "Other",
   "auth_policy_full_title": "Password and authenticator code",
-  "auth_policy_full_description": "Every officer signs in with a password and a six-digit code from an authenticator app on their phone. Each sign-in is recorded."
+  "auth_policy_full_description": "Every officer signs in with a password and a six-digit code from an authenticator app on their phone. Each sign-in is recorded.",
+  "brand_label": "Facility",
+  "timezone_title": "Time zone",
+  "timezone_about": "Every time on a printed paper is shown in this office's own time zone, with the UTC offset beside it. It does not depend on this computer's settings.",
+  "timezone_label": "Time zone of this office",
+  "timezone_hint": "A change applies from now on. Times already recorded keep the zone they were made in.",
+  "timezone_not_set": "Not chosen yet",
+  "timezone_not_set_hint": "Until an administrator chooses, times print in UTC.",
+  "timezone_admin_only": "Only an administrator can change this.",
+  "timezone_now_label": "Now, in this zone",
+  "timezone_saved": "Time zone saved",
+  "timezone_failed": "The time zone could not be changed",
+  "timezone_clock_title": "This computer's clock",
+  "timezone_clock_ok": "Nothing looks wrong. A correct time zone does not correct a wrong clock, so check the time against a trusted watch.",
+  "timezone_clock_before_release": "The clock shows a date before this version of the app was made. Set the date and time on this computer before relying on any printed time.",
+  "timezone_clock_behind": "The clock is behind the newest record kept here. Set the date and time on this computer before relying on any printed time.",
+  "timezone_clock_far_ahead": "The clock is more than a year ahead of the newest record. Check the date and time on this computer.",
+  "downloads_saved": "Saved to Downloads: {name}"
 }

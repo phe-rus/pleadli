@@ -124,7 +124,7 @@ fn write_readme(vault_root: &Path, sections: &[(&str, &str, usize)]) -> std::io:
     }
     body.push_str(&format!(
         "\n_Generated {}._\n",
-        chrono::Utc::now().format("%Y-%m-%d %H:%M UTC")
+        crate::domain::time::display_now()
     ));
     std::fs::write(vault_root.join("README.md"), body)
 }
@@ -702,9 +702,7 @@ fn doc_table_section<T: Serialize>(heading: &str, rows: &[T]) -> DocSection {
 }
 
 fn format_timestamp(millis: i64) -> String {
-    chrono::DateTime::<chrono::Utc>::from_timestamp_millis(millis)
-        .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
-        .unwrap_or_default()
+    crate::domain::time::display_ms(millis)
 }
 
 const PHOTO_DISPLAY_WIDTH_PX: u32 = 140;
@@ -912,7 +910,7 @@ async fn build_bulk_export_document(pool: &SqlitePool, hidden: &[String]) -> Res
 
     Ok(Doc {
         title: "Pleadli Police \u{b7} Full Data Export".to_string(),
-        subtitle: Some(format!("Generated {}", chrono::Utc::now().format("%Y-%m-%d %H:%M UTC"))),
+        subtitle: Some(format!("Generated {}", crate::domain::time::display_now())),
         photo: None,
         sections,
     })
@@ -973,7 +971,7 @@ async fn build_person_document(pool: &SqlitePool, vault_root: &Path, id: &str) -
 
     Ok(Some(Doc {
         title: format!("{} {}", person.first_name, person.last_name),
-        subtitle: Some(format!("Person record · generated {}", chrono::Utc::now().format("%Y-%m-%d %H:%M UTC"))),
+        subtitle: Some(format!("Person record · generated {}", crate::domain::time::display_now())),
         photo,
         sections,
     }))
@@ -1057,7 +1055,7 @@ async fn build_case_document(pool: &SqlitePool, id: &str) -> Result<Option<Doc>,
 
     Ok(Some(Doc {
         title: case.reference.clone(),
-        subtitle: Some(format!("Case file · generated {}", chrono::Utc::now().format("%Y-%m-%d %H:%M UTC"))),
+        subtitle: Some(format!("Case file · generated {}", crate::domain::time::display_now())),
         photo: None,
         sections,
     }))
@@ -1111,7 +1109,7 @@ async fn build_charge_sheet_document(pool: &SqlitePool, id: &str) -> Result<Opti
         subtitle: Some(format!(
             "PF 53 \u{b7} Case {} \u{b7} generated {}",
             sheet.case_reference,
-            chrono::Utc::now().format("%Y-%m-%d %H:%M UTC")
+            crate::domain::time::display_now()
         )),
         photo: None,
         sections: vec![details, particulars],

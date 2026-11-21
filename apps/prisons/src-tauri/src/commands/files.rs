@@ -55,17 +55,16 @@ pub struct OpenedFile {
     content_base64: String,
 }
 
-/// Save dialog, then writes the decoded bytes. Returns the chosen path, or
-/// `None` if the officer cancelled.
+/// Saves a finished file to the computer's Downloads folder, with no Save window: the window supplies only a file
+/// name, never a folder, and a name already taken becomes "name (2)". Returns the path it was saved at.
 #[tauri::command]
 pub async fn export_file(app: AppHandle, default_name: String, content_base64: String) -> Result<Option<String>, String> {
+    if content_base64.len() > 140 * 1024 * 1024 {
+        return Err("This file is too large to save.".to_string());
+    }
     let bytes = base64::engine::general_purpose::STANDARD.decode(content_base64.as_bytes()).map_err(|_| "The file content is not valid.".to_string())?;
-    let chosen = tauri::async_runtime::spawn_blocking(move || app.dialog().file().set_file_name(default_name).blocking_save_file())
-        .await
-        .map_err(|e| e.to_string())?;
-    let Some(file) = chosen else { return Ok(None) };
-    let path = file.into_path().map_err(|e| e.to_string())?;
-    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    let dir = pleadli_node_core::downloads::resolve_dir(app.path().download_dir().ok(), app.path().home_dir().ok())?;
+    let path = pleadli_node_core::downloads::save_unique(&dir, &default_name, &bytes)?;
     Ok(Some(path.to_string_lossy().to_string()))
 }
 

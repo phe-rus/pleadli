@@ -16,6 +16,9 @@ pub struct JurisdictionRules {
     pub parole_window_months: i64,
     pub review_term_over_years: i64,
     pub review_cycle_years: i64,
+    /// Prisons Act 2006 s.83 (Uganda): an entitlement discharge happens before noon. Another country's pack states its
+    /// own rule, or none; the rule is never assumed.
+    pub discharge_before_noon: bool,
 }
 
 pub const UGANDA: JurisdictionRules = JurisdictionRules {
@@ -29,6 +32,7 @@ pub const UGANDA: JurisdictionRules = JurisdictionRules {
     parole_window_months: 6,
     review_term_over_years: 7,
     review_cycle_years: 4,
+    discharge_before_noon: true,
 };
 
 impl JurisdictionRules {

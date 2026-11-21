@@ -421,5 +421,22 @@
   "court_orders_event_not_produced": "N’a pas pu être présenté",
   "court_orders_event_other": "Autre",
   "auth_policy_full_title": "Mot de passe et code authentificateur",
-  "auth_policy_full_description": "Chaque agent se connecte avec un mot de passe et un code à six chiffres d’une application d’authentification sur son téléphone. Chaque connexion est enregistrée."
+  "auth_policy_full_description": "Chaque agent se connecte avec un mot de passe et un code à six chiffres d’une application d’authentification sur son téléphone. Chaque connexion est enregistrée.",
+  "brand_label": "Établissement",
+  "timezone_title": "Fuseau horaire",
+  "timezone_about": "Chaque heure d'un document imprimé est indiquée dans le fuseau horaire de ce bureau, avec le décalage UTC à côté. Elle ne dépend pas des réglages de cet ordinateur.",
+  "timezone_label": "Fuseau horaire de ce bureau",
+  "timezone_hint": "Un changement s'applique à partir de maintenant. Les heures déjà enregistrées gardent le fuseau dans lequel elles ont été faites.",
+  "timezone_not_set": "Pas encore choisi",
+  "timezone_not_set_hint": "Tant qu'un administrateur n'a pas choisi, les heures sont imprimées en UTC.",
+  "timezone_admin_only": "Seul un administrateur peut changer ceci.",
+  "timezone_now_label": "Maintenant, dans ce fuseau",
+  "timezone_saved": "Fuseau horaire enregistré",
+  "timezone_failed": "Le fuseau horaire n'a pas pu être changé",
+  "timezone_clock_title": "Horloge de cet ordinateur",
+  "timezone_clock_ok": "Rien ne semble anormal. Un bon fuseau horaire ne corrige pas une horloge fausse : vérifiez l'heure avec une montre fiable.",
+  "timezone_clock_before_release": "L'horloge indique une date antérieure à la création de cette version de l'application. Réglez la date et l'heure de cet ordinateur avant de vous fier à une heure imprimée.",
+  "timezone_clock_behind": "L'horloge est en retard sur le dernier enregistrement conservé ici. Réglez la date et l'heure de cet ordinateur avant de vous fier à une heure imprimée.",
+  "timezone_clock_far_ahead": "L'horloge a plus d'un an d'avance sur le dernier enregistrement. Vérifiez la date et l'heure de cet ordinateur.",
+  "downloads_saved": "Enregistré dans Téléchargements : {name}"
 }

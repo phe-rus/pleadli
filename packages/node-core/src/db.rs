@@ -360,6 +360,36 @@ mod tests {
         assert_eq!(sqlx::query_scalar::<_, String>("SELECT v FROM t").fetch_one(&mut conn).await.unwrap(), "kept");
     }
 
+
+    /// "database is locked" in a write that had read first: a plain transaction takes its snapshot at the
+    /// first read, and if another connection commits a write meanwhile, its own write is refused at once
+    /// (the busy timeout does not apply). `begin_write` takes the write lock first, so it waits instead.
+    #[tokio::test]
+    async fn a_transaction_that_reads_then_writes_is_not_refused_when_another_writer_commits_between() {
+        let dir = temp_dir();
+        let pool = SqlitePoolOptions::new().max_connections(2).connect_with(connect_options(&dir.join("lock.db"))).await.unwrap();
+        sqlx::query("CREATE TABLE t (v INTEGER)").execute(&pool).await.unwrap();
+
+        // The old way: read, someone else commits, then write.
+        let mut plain = pool.begin().await.unwrap();
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM t").fetch_one(&mut *plain).await.unwrap();
+        sqlx::query("INSERT INTO t VALUES (1)").execute(&pool).await.unwrap();
+        let refused = sqlx::query("INSERT INTO t VALUES (2)").execute(&mut *plain).await;
+        assert!(refused.is_err(), "a deferred transaction cannot upgrade over a newer commit");
+        drop(plain);
+
+        // The way every write now goes: the other writer has to wait for this one.
+        let mut tx = begin_write(&pool).await.unwrap();
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM t").fetch_one(&mut *tx).await.unwrap();
+        let other = pool.clone();
+        let waiting = tokio::spawn(async move { sqlx::query("INSERT INTO t VALUES (3)").execute(&other).await });
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        sqlx::query("INSERT INTO t VALUES (2)").execute(&mut *tx).await.unwrap();
+        tx.commit().await.unwrap();
+        waiting.await.unwrap().unwrap();
+        assert_eq!(sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM t").fetch_one(&pool).await.unwrap(), 3);
+        pool.close().await;
+    }
     #[tokio::test]
     async fn a_plain_database_is_encrypted_opened_and_checked_in_three_calls() {
         let dir = temp_dir();
@@ -387,6 +417,50 @@ mod tests {
         assert!(!sibling(&path, ".plain-old").exists() && !sibling(&path, ".encrypting").exists());
     }
 
+
+    /// The Courts failure, in the shape the apps really have: an encrypted database, a background writer
+    /// (Orchestra keeping its state while it talks to pleadli.com) and start-up work that reads and then
+    /// writes. Every transaction must succeed; none may be refused with "database is locked".
+    #[tokio::test]
+    async fn start_up_work_and_a_background_writer_share_an_encrypted_database_without_lock_errors() {
+        let dir = temp_dir();
+        let path = dir.join("shared.db");
+        let (keys, state) = match open_keys(SERVICE, &dir, &path) {
+            Ok(opened) => opened,
+            Err(_) => panic!("a new database may be given a key"),
+        };
+        let opened = match open_pool(&path, &dir, &keys, state, 4).await {
+            Ok(opened) => opened,
+            Err(_) => panic!("a new encrypted database must open"),
+        };
+        let pool = opened.pool;
+        sqlx::query("CREATE TABLE kept (k TEXT PRIMARY KEY, v INTEGER)").execute(&pool).await.unwrap();
+        sqlx::query("CREATE TABLE startup (n INTEGER)").execute(&pool).await.unwrap();
+        assert!(!is_plaintext(&path), "the database is encrypted");
+
+        let background = pool.clone();
+        let writer = tokio::spawn(async move {
+            for i in 0..150i64 {
+                sqlx::query("INSERT INTO kept (k, v) VALUES ('state', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(i).execute(&background).await?;
+                tokio::task::yield_now().await;
+            }
+            Ok::<(), sqlx::Error>(())
+        });
+
+        for _ in 0..50 {
+            let mut tx = begin_write(&pool).await.unwrap();
+            let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM startup").fetch_one(&mut *tx).await.unwrap();
+            sqlx::query("INSERT INTO startup (n) VALUES (?)").bind(seen + 1).execute(&mut *tx).await.unwrap();
+            tx.commit().await.unwrap();
+            tokio::task::yield_now().await;
+        }
+        writer.await.unwrap().expect("the background writer was never refused");
+        let rows: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM startup").fetch_one(&pool).await.unwrap();
+        assert_eq!(rows, 50);
+        let numbered: i64 = sqlx::query_scalar("SELECT MAX(n) FROM startup").fetch_one(&pool).await.unwrap();
+        assert_eq!(numbered, 50, "each transaction saw the one before it: no lost update");
+        pool.close().await;
+    }
     #[tokio::test]
     async fn an_encrypted_database_without_its_key_is_recovery_and_no_key_is_invented() {
         let dir = temp_dir();

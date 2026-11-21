@@ -3,7 +3,7 @@ import { instrumentKindLabel, instrumentStatusLabels, sentenceTermText, usePriso
 import { PrisonerAvatar } from '@/features/prisoners/prisoner-avatar'
 import { custodyStatusLabel, nationalities, prisonerFullName, prisonerSexes, prisonerStatusLabel } from '@/features/prisoners/schema'
 import { PaperField, SignatureLine } from '@pleadli/paper'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { m } from '@/paraglide/messages'
 
 const day = (ms: number | null | undefined) => (ms == null ? '' : format(ms, 'd MMMM yyyy'))

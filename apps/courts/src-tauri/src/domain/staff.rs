@@ -207,13 +207,18 @@ pub async fn set_second_factor(pool: &SqlitePool, id: &str, secret: Option<&str>
 }
 
 /// Adds a person inside a transaction the caller owns.
-pub async fn insert(conn: &mut SqliteConnection, protection: Protection, input: &PersonInput, totp: Option<&str>) -> Result<String, DomainError> {
+/// A person's PIN or password, hashed. Hashing is slow on purpose, so callers do it BEFORE they open a
+/// write transaction (`insert_hashed` takes the result): the write lock is never held while it runs.
+pub fn prepare_secret(protection: Protection, input: &PersonInput) -> Result<Option<(&'static str, String)>, DomainError> {
+    match (protection, input.secret.as_deref()) {
+        (Protection::None, _) => Ok(None),
+        (_, Some(s)) => hash_secret(protection, s),
+        (_, None) => invalid("A PIN or password is required."),
+    }
+}
+
+pub async fn insert_hashed(conn: &mut SqliteConnection, input: &PersonInput, secret: Option<(&'static str, String)>, totp: Option<&str>) -> Result<String, DomainError> {
     check_person(&input.name, &input.role)?;
-    let secret = match (protection, input.secret.as_deref()) {
-        (Protection::None, _) => None,
-        (_, Some(s)) => hash_secret(protection, s)?,
-        (_, None) => return invalid("A PIN or password is required."),
-    };
     let id = format!("staff-{}", uuid::Uuid::new_v4().simple());
     let now = chrono::Utc::now().timestamp_millis();
     sqlx::query(
@@ -239,19 +244,21 @@ pub async fn create(pool: &SqlitePool, protection: Protection, input: PersonInpu
     if protection == Protection::None {
         return invalid("With no sign-in, only one person uses this copy. Choose a protection level first.");
     }
-    let mut tx = pool.begin().await?;
+    check_person(&input.name, &input.role)?;
+    let secret = prepare_secret(protection, &input)?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let current: Option<String> = sqlx::query_scalar("SELECT protection FROM installation WHERE id = 'this'").fetch_optional(&mut *tx).await?;
     if current.as_deref() != Some(protection.as_str()) {
         return invalid("The sign-in settings changed. Try adding the person again.");
     }
-    let id = insert(&mut tx, protection, &input, None).await?;
+    let id = insert_hashed(&mut tx, &input, secret, None).await?;
     tx.commit().await?;
     Ok(get(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?)
 }
 
 pub async fn update(pool: &SqlitePool, id: &str, input: UpdateStaffInput) -> Result<Staff, DomainError> {
     check_person(&input.name, &input.role)?;
-    let mut tx = pool.begin().await?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let found = sqlx::query("UPDATE staff SET name = ?, rank = ?, role = ?, is_head = ?, active = ?, updated_at = ? WHERE id = ?")
         .bind(input.name.trim())
         .bind(clean(input.rank))

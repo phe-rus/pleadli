@@ -6,7 +6,7 @@ import { usePermissions } from '@/features/session'
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { formatDistanceToNowStrict } from 'date-fns/formatDistanceToNowStrict'
 import { m } from '@/paraglide/messages'
 

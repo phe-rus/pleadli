@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { invoke, isTauri } from '@tauri-apps/api/core'
@@ -87,7 +88,7 @@ export function CaseAttachments({ caseId }: { caseId: string }) {
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {query.isPending ? <p role="status">Loading attached files…</p> : query.isError ? <div role="alert"><p>{describe(query.error)}</p><Button size="sm" onClick={() => void query.refetch()}>Try again</Button></div> : query.data.length === 0 ? <p className="py-6 text-sm text-muted-foreground">No attached files yet. Add the original paper or scan when it becomes available.</p> :
       <ul className="divide-y rounded-xl border bg-background">{query.data.map(attachment => <li key={attachment.id} className="flex flex-wrap items-center gap-3 p-4">
-        <button className="min-w-0 flex-1 text-left focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setSelected(attachment)}><span className="block truncate font-medium">{attachment.name}</span><span className="text-xs text-muted-foreground">{Math.max(1, Math.round(attachment.size / 1024))} KB · {new Date(attachment.createdAt).toLocaleDateString()} · Original</span></button>
+        <button className="min-w-0 flex-1 text-left focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setSelected(attachment)}><span className="block truncate font-medium">{attachment.name}</span><span className="text-xs text-muted-foreground">{Math.max(1, Math.round(attachment.size / 1024))} KB · {new Date(attachment.createdAt).toLocaleDateString(undefined, { timeZone: zoneFor(attachment.createdAt) })} · Original</span></button>
         <Button size="sm" variant="ghost" onClick={() => setSelected(attachment)}>Preview</Button><Button size="sm" variant="ghost" disabled={saving} onClick={() => void save(attachment)}>Save copy</Button>
       </li>)}</ul>}
     <Dialog open={selected !== null} onOpenChange={open => { if (!open) setSelected(null) }}>

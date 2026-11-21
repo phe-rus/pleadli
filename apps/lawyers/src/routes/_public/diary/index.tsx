@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import { EmptyNote } from '@/components/planned'
 import { Tag } from '@/components/status-tag'
 import { diaryOptions, HearingActions, purposeLabel, useDiary, type DiaryRow } from '@/features/hearings'
@@ -39,7 +40,7 @@ function RouteComponent() {
   const { from, to } = dayBounds(at)
   const { data: rows } = useDiary(from, to)
   const isToday = toIsoDay(at) === toIsoDay(Date.now())
-  const title = new Intl.DateTimeFormat(getLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Kampala' }).format(at)
+  const title = new Intl.DateTimeFormat(getLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: zoneFor(Date.now()) }).format(at)
 
   return (
     <article className="page">

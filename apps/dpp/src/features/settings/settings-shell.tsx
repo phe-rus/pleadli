@@ -2,6 +2,7 @@ import { AssistPane } from '@/features/assist/assist-settings'
 import { SignatureCard, StampCard } from '@/features/documents/seals'
 import { BackupPane } from '@/features/security/settings-panes'
 import { useSecurityStatus } from '@/features/security'
+import { TimezonePane } from '@/features/timezone'
 import { BackupsPane as DailyBackupsPane, LicencePane as PleadliLicencePane } from '@/features/orchestra'
 import * as m from '@/paraglide/messages'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -74,6 +75,11 @@ const sectionIcon: Record<SettingsSectionId, { icon: typeof UserIcon; tone?: str
 const ownerOf = (group: GroupId) =>
   group === 'you' ? m["settings.owner.you"]() : group === 'office' || group === 'pleadli' ? m["settings.owner.office"]() : group === 'computer' ? m["settings.owner.this_machine"]() : m["settings.owner.read_only"]()
 
+function OfficeTimezone() {
+  const { data } = useSecurityStatus()
+  return <TimezonePane canChange={data?.actor?.role === 'administrator'} />
+}
+
 const panes: Record<SettingsSectionId, () => ReactNode> = {
   you: () => (
     <>
@@ -84,6 +90,7 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
   office: () => (
     <>
       <OfficePane />
+      <OfficeTimezone />
       <StampCard />
     </>
   ),

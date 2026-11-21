@@ -1,5 +1,6 @@
+import { t } from '@pleadli/ui/goey-toaster'
 import { api } from '@/lib/api'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { m } from '@/paraglide/messages'
 import { PaperProvider as SharedPaperProvider, type OfficeApps, type PaperApp, type PaperStamp } from '@pleadli/paper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
@@ -15,8 +16,9 @@ const q = (params: Record<string, string>) => new URLSearchParams(params).toStri
 async function saveFile(name: string, bytes: Uint8Array, mime: string, extension: string) {
   if (isTauri()) {
     void extension
-    const path = await invoke<string | null>('export_file', { defaultName: name, contentBase64: b64(bytes) })
-    return path != null
+    const saved = await invoke<string | null>('export_file', { defaultName: name, contentBase64: b64(bytes) })
+    if (saved) t.success(m.downloads_saved({ name: saved.split(/[\\/]/).pop() ?? saved }))
+    return saved != null
   }
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: mime }))
   const a = document.createElement('a')

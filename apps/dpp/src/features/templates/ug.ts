@@ -1,3 +1,4 @@
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 import type { Block } from '@/features/documents/schema'
 import type { Template, TemplateContext } from './types'
 
@@ -9,7 +10,7 @@ import type { Template, TemplateContext } from './types'
  */
 
 const DASH = '....................'
-const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: zoneFor(ms) })
 const firstParagraph = (text: string) => text.split(/\n\n/)[0].trim()
 const firstSentence = (text: string) => (text.match(/^.*?[.!?](\s|$)/)?.[0] ?? text).trim()
 const roman = (n: number) => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n - 1] ?? String(n)

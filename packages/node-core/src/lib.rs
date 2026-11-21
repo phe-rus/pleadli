@@ -12,6 +12,8 @@ pub mod audit;
 #[cfg(feature = "backup")]
 pub mod backup;
 pub mod db;
+pub mod downloads;
+pub mod save_grants;
 pub mod keys;
 #[cfg(feature = "lan")]
 pub mod lan;
@@ -20,8 +22,11 @@ pub mod office;
 pub mod orchestra;
 pub mod paper;
 pub mod site;
+pub mod timezone;
 #[cfg(feature = "postbox")]
 pub mod postbox;
+#[cfg(feature = "speech")]
+pub mod speech;
 #[cfg(feature = "backup")]
 pub mod snapshot;
 #[cfg(feature = "storage")]

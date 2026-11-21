@@ -105,6 +105,6 @@ pub async fn export_referral(State(state): State<AppState>, Extension(actor): Ex
         }
     }
     let route = if input.route == "postbox" { "postbox" } else { "file" };
-    let (bytes, name) = exchange::export_referral(&state.pool, &id, route).await.map_err(domain_error)?;
+    let (bytes, name) = exchange::export_referral(&state.pool, &state.vault_root, &id, route).await.map_err(domain_error)?;
     Ok(Json(Sealed { file: B64.encode(bytes), name }))
 }

@@ -1,6 +1,6 @@
 import { api } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
-import { open, save } from '@tauri-apps/plugin-dialog'
+import { open } from '@tauri-apps/plugin-dialog'
 
 export type StationIdentity = { stationId: string; stationName: string; jurisdiction: string | null; fingerprint: string }
 export type Connection = { id: string; officeName: string; officeJurisdiction: string | null; fingerprint: string; status: string; reason: string | null; respondedAt: number; trustedAt: number | null }
@@ -42,12 +42,13 @@ export async function pickPackage(): Promise<string | null> {
   })
 }
 
-/** Saves a package where the officer chooses. False if cancelled. */
+/** Saves a package to the Downloads folder. */
 export async function savePackage(sealed: Sealed): Promise<boolean> {
   if (isTauri()) {
-    const path = await save({ defaultPath: sealed.name, filters: [{ name: 'Pleadli package', extensions: ['pxpkg'] }] })
-    if (!path) return false
+    const { downloadPath, saidSaved } = await import('@/lib/downloads')
+    const path = await downloadPath(sealed.name)
     await invoke('save_paper_file', { path, data: sealed.file })
+    saidSaved(path)
     return true
   }
   const bytes = Uint8Array.from(atob(sealed.file), (c) => c.charCodeAt(0))

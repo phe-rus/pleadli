@@ -63,7 +63,7 @@ pub struct OpenedLink {
 
 /// Opens a link for one person, starting the listener if it is not running.
 pub async fn open(pool: SqlitePool, vault_root: PathBuf, person_id: &str) -> Result<OpenedLink, String> {
-    let address = local_ip_address::local_ip().map_err(|_| "This computer is not on a network a phone can reach.".to_string())?;
+    let address = crate::transport::lan_address().ok_or_else(|| "This computer is not on a network a phone can reach.".to_string())?;
     let port = match LISTENING.get() {
         Some(port) => *port,
         None => {

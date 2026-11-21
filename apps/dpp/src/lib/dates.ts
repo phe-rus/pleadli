@@ -1,4 +1,5 @@
 import { getLocale } from '@/paraglide/runtime'
+import { zoneFor } from '@pleadli/ui/lib/institution-zone'
 
 /**
  * Dates in the reader's language. `Intl` knows every language the app ships
@@ -33,7 +34,8 @@ function formatter(kind: Kind, timeZone?: string) {
 }
 
 export function formatDate(value: number | Date, kind: Kind = 'date', timeZone?: string) {
-  return formatter(kind, timeZone).format(value)
+  // The office's zone, never the computer's, unless a caller names one on purpose.
+  return formatter(kind, timeZone ?? zoneFor(+value)).format(value)
 }
 
 export function formatNumber(value: number) {

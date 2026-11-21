@@ -1,4 +1,5 @@
 import { getLocale } from '@/paraglide/runtime'
+import { wallClock } from '@pleadli/ui/lib/institution-zone'
 import type { FormatDistanceToken, Locale } from 'date-fns'
 import { format as formatWith } from 'date-fns/format'
 import { formatDistanceToNowStrict as distanceWith } from 'date-fns/formatDistanceToNowStrict'
@@ -82,7 +83,8 @@ function dateLocale(): Locale {
 }
 
 export function format(date: Date | number, pattern: string) {
-  return formatWith(date, pattern, { locale: dateLocale() })
+  // The station's wall clock, not the computer's: see @pleadli/ui/lib/institution-zone.
+  return formatWith(wallClock(+date), pattern, { locale: dateLocale() })
 }
 
 export function formatDistanceToNowStrict(date: Date | number, options?: { addSuffix?: boolean }) {

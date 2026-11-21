@@ -1,7 +1,7 @@
 import { ApiError } from '@/lib/api'
 import { Button } from '@pleadli/ui/button'
 import { t } from '@pleadli/ui/goey-toaster'
-import { format } from 'date-fns/format'
+import { format } from '@/lib/date'
 import { DischargeCertificate } from './discharge-certificate'
 import { useIssueDocument, useIssuedDocument } from './queries'
 import { ReceptionRecord } from './reception-record'

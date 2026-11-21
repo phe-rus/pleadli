@@ -106,6 +106,7 @@ For each domain: what work it supports, what it owns, what it legitimately relat
 - **Owns**: the statement content, who gave it, who took it, when, its status.
 - **Relates to**: Person (who gave it), Investigation (the context).
 - **Kind**: record, first-class — not text attached to a case.
+- **Spoken statements (2026-11-21, owner request)**: a statement can be spoken. The app records the audio and writes the words as they are said, on this computer, with no network. Both belong to the one Statement record: the sealed audio, and the transcript as the statement's own text. The officer reads the transcript against the recording, corrects it and keeps it; the officer is the author, the machine only drafts. Design and limits in `SPOKEN-STATEMENTS.md`.
 - **Do not assume**: an elaborate document-management system is needed before there's a proven requirement for one.
 
 ### Evidence & Exhibits

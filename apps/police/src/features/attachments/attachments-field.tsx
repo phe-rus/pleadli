@@ -8,6 +8,7 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { isTauri } from '@tauri-apps/api/core'
 import { useRef } from 'react'
 import { openAttachment } from './data'
+import { useAttachmentDataUrl } from './queries'
 import { useAddAttachment, useAttachments, useDeleteAttachment } from './queries'
 import { formatFileSize, type EntityType } from './schema'
 
@@ -15,6 +16,12 @@ export type AttachmentsFieldProps = {
   entityType: EntityType
   entityId: string | null | undefined
   label?: string
+}
+
+/** A recorded statement or other audio plays here, unsealed in memory only, not opened in another program. */
+function AudioPlayer({ id }: { id: string }) {
+  const { data: src } = useAttachmentDataUrl(id)
+  return src ? <audio controls src={src} className="h-8 w-full" /> : null
 }
 
 export function AttachmentsField({ entityType, entityId, label = m["attachments.label"]() }: AttachmentsFieldProps) {
@@ -90,6 +97,7 @@ export function AttachmentsField({ entityType, entityId, label = m["attachments.
                 <span className="min-w-0 truncate text-xs">{attachment.fileName}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">{formatFileSize(attachment.sizeBytes)}</span>
               </button>
+              {attachment.mimeType.startsWith('audio/') && <AudioPlayer id={attachment.id} />}
               <Button
                 type="button"
                 size="icon-xs"
