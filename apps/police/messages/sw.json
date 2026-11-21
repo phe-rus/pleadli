@@ -2263,7 +2263,24 @@
     "status_reviewed": "Imekaguliwa",
     "no_citation": "Bado hakuna rejeleo",
     "reviewed_by": "Imekaguliwa na {name} tarehe {date}",
-    "awaiting_one": "Mwongozo huu ni sheria ya kazi na unasubiri ukaguzi wa kisheria."
+    "awaiting_one": "Mwongozo huu ni sheria ya kazi na unasubiri ukaguzi wa kisheria.",
+    "edit_button": "Hariri",
+    "edit_title": "Hariri sheria hii",
+    "edit_hint": "Mabadiliko yako yanakuwa toleo linalofuata la sheria. Matoleo ya awali yanahifadhiwa.",
+    "edit_value": "Nambari",
+    "edit_terms": "Makosa (moja kwa kila mstari)",
+    "edit_exceptions": "Ubaguzi (mmoja kwa kila mstari)",
+    "edit_text": "Maelezo yanayoonyeshwa kwa maafisa",
+    "edit_citation": "Inatoka wapi (sheria na kifungu)",
+    "edit_status": "Sheria hii ina uhakika kiasi gani",
+    "edit_reviewed_by": "Imekaguliwa na",
+    "edit_reviewed_on": "Imekaguliwa tarehe",
+    "edit_note": "Maelezo",
+    "edit_save": "Hifadhi sheria",
+    "edit_cancel": "Ghairi",
+    "edit_saved": "Sheria imehifadhiwa",
+    "edit_saved_detail": "Sheria sasa ziko toleo la {version}",
+    "edit_failed": "Sheria haikuhifadhiwa"
   },
   "medical": {
     "kind": {

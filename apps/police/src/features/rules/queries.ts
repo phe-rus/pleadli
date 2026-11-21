@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { setCustodyLimits } from '@/features/custody/schema'
-import { getRules, importRules } from './data'
+import { editRule, getRules, importRules, type RuleEdit } from './data'
 import type { Pack, Rule } from './schema'
 
 /** Hand the limits in the rules to the code that counts custody against them. */
@@ -38,3 +38,16 @@ export function useImportRules() {
 }
 
 export const findRule = (pack: Pack | undefined, id: string): Rule | undefined => pack?.rules.find((rule) => rule.id === id)
+
+export function useEditRule() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, edit }: { id: string; edit: RuleEdit }) => editRule(id, edit),
+    onSuccess: (pack) => {
+      applyRules(pack)
+      queryClient.setQueryData(rulesOptions().queryKey, pack)
+      void queryClient.invalidateQueries({ queryKey: ['custody'] })
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['rules'] }),
+  })
+}

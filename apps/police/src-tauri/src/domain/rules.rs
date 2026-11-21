@@ -127,9 +127,127 @@ pub async fn import(pool: &SqlitePool, json: &str, imported_by: &str) -> Result<
     Ok(pack)
 }
 
+/// What an office may change on one rule. Everything else about it (its id
+/// and what kind of rule it is) belongs to the code that applies it, so it stays as shipped.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RuleEdit {
+    pub value: Option<i64>,
+    pub terms: Option<Vec<String>>,
+    pub exceptions: Option<Vec<String>>,
+    pub text: Option<String>,
+    pub citation: Option<String>,
+    pub status: String,
+    pub reviewed_by: Option<String>,
+    pub reviewed_on: Option<String>,
+    pub note: Option<String>,
+}
+
+fn blank_to_none(text: Option<String>) -> Option<String> {
+    text.map(|t| t.trim().to_string()).filter(|t| !t.is_empty())
+}
+
+/// Change one rule in the pack in force. The result is saved as the next version of the pack (the
+/// earlier versions stay in the table), so who changed what, and when, is never lost. Marking a rule
+/// reviewed fills in the reviewer from whoever is signed in, and today's date, unless given.
+pub async fn update_rule(pool: &SqlitePool, rule_id: &str, edit: RuleEdit, edited_by: &str, today: &str) -> Result<Pack, String> {
+    let mut pack = active(pool, DEFAULT_COUNTRY).await.map_err(|e| e.to_string())?;
+    let rule = pack.rules.iter_mut().find(|r| r.id == rule_id).ok_or_else(|| "There is no such rule.".to_string())?;
+
+    if rule.kind == "number" {
+        match edit.value {
+            Some(v) if v > 0 => rule.value = Some(v),
+            _ => return Err("This rule is a number of hours or days. Enter a number above zero.".into()),
+        }
+    }
+    if rule.kind == "offence_list" {
+        let clean = |list: Option<Vec<String>>| list.unwrap_or_default().into_iter().map(|t| t.trim().to_lowercase()).filter(|t| !t.is_empty()).collect::<Vec<_>>();
+        rule.terms = clean(edit.terms);
+        rule.exceptions = clean(edit.exceptions);
+        if rule.terms.is_empty() {
+            return Err("An offence list needs at least one offence.".into());
+        }
+    }
+    if rule.kind != "number" {
+        rule.text = blank_to_none(edit.text);
+    }
+    rule.citation = blank_to_none(edit.citation);
+    rule.note = blank_to_none(edit.note);
+    rule.status = edit.status;
+    if rule.status == "reviewed" {
+        rule.reviewed_by = blank_to_none(edit.reviewed_by).or_else(|| Some(edited_by.to_string()));
+        rule.reviewed_on = blank_to_none(edit.reviewed_on).or_else(|| Some(today.to_string()));
+    } else {
+        rule.reviewed_by = None;
+        rule.reviewed_on = None;
+    }
+
+    pack.version += 1;
+    pack.updated_on = today.to_string();
+    if let Some(reason) = problem(&pack) {
+        return Err(reason);
+    }
+    let body = serde_json::to_string(&pack).map_err(|e| e.to_string())?;
+    sqlx::query("INSERT INTO rule_packs (id, country, version, body, source, imported_at, imported_by) VALUES (?, ?, ?, ?, 'edited in the app', ?, ?)")
+        .bind(Uuid::new_v4().to_string())
+        .bind(&pack.country)
+        .bind(pack.version)
+        .bind(body)
+        .bind(now())
+        .bind(edited_by)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(pack)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    async fn test_pool() -> SqlitePool {
+        let dir = std::env::temp_dir().join(format!("pleadli-rules-test-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        crate::db::startup(&dir, dir.join("vault")).await.ok().unwrap().pool
+    }
+
+    fn edit(value: Option<i64>, status: &str) -> RuleEdit {
+        RuleEdit { value, terms: None, exceptions: None, text: None, citation: Some("Police Act, s. 25".into()), status: status.into(), reviewed_by: None, reviewed_on: None, note: None }
+    }
+
+    #[tokio::test]
+    async fn an_office_can_change_a_rule_and_the_old_version_is_kept() {
+        let pool = test_pool().await;
+        ensure_built_in(&pool).await.unwrap();
+        let before = active(&pool, DEFAULT_COUNTRY).await.unwrap();
+
+        let pack = update_rule(&pool, "custody.limit_hours", edit(Some(72), "reviewed"), "Legal Officer", "2026-12-01").await.unwrap();
+        assert_eq!(pack.version, before.version + 1);
+        let rule = pack.rule("custody.limit_hours").unwrap();
+        assert_eq!(rule.value, Some(72));
+        assert_eq!(rule.reviewed_by.as_deref(), Some("Legal Officer"), "the signed-in officer is the reviewer unless one is named");
+        assert_eq!(rule.reviewed_on.as_deref(), Some("2026-12-01"));
+        assert_eq!(active(&pool, DEFAULT_COUNTRY).await.unwrap().version, pack.version);
+        let kept: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM rule_packs WHERE country = ?").bind(DEFAULT_COUNTRY).fetch_one(&pool).await.unwrap();
+        assert!(kept >= 2, "the earlier version stays in the table");
+
+        // Refused: a number that is not above zero, an unknown rule, "sourced" without a citation.
+        assert!(update_rule(&pool, "custody.limit_hours", edit(Some(0), "sourced"), "x", "2026-12-01").await.is_err());
+        assert!(update_rule(&pool, "no.such.rule", edit(Some(1), "draft"), "x", "2026-12-01").await.is_err());
+        let mut no_citation = edit(Some(48), "sourced");
+        no_citation.citation = None;
+        assert!(update_rule(&pool, "custody.limit_hours", no_citation, "x", "2026-12-01").await.is_err());
+
+        // An offence list keeps its offences, lower-cased and trimmed, and cannot be emptied.
+        let mut list = edit(None, "draft");
+        list.terms = Some(vec!["  Murder ".into(), "".into(), "Treason".into()]);
+        let pack = update_rule(&pool, "bond.not_police_bailable", list, "x", "2026-12-01").await.unwrap();
+        assert_eq!(pack.rule("bond.not_police_bailable").unwrap().terms, vec!["murder", "treason"]);
+        let mut empty = edit(None, "draft");
+        empty.terms = Some(vec![]);
+        assert!(update_rule(&pool, "bond.not_police_bailable", empty, "x", "2026-12-01").await.is_err());
+        pool.close().await;
+    }
 
     #[test]
     fn the_built_in_pack_is_valid() {

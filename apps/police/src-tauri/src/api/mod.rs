@@ -141,11 +141,9 @@ async fn export_all_markdown_handler(State(state): State<AppState>, Extension(ac
 }
 
 async fn export_all_xlsx_handler(State(state): State<AppState>, Extension(actor): Extension<Actor>) -> Result<Response, ApiError> {
-    if !cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "This export would include restricted cases you may not open. Ask an administrator to export it.".to_string()));
-    }
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
     let temp_path = std::env::temp_dir().join(format!("pleadli-police-data-{}.xlsx", uuid::Uuid::new_v4()));
-    documents::export_all_xlsx(&state.pool, &temp_path)
+    documents::export_all_xlsx(&state.pool, &hidden, &temp_path)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let bytes = tokio::fs::read(&temp_path).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -171,16 +169,14 @@ async fn export_all_document_handler(
     Extension(actor): Extension<Actor>,
     Path(format): Path<String>,
 ) -> Result<Response, ApiError> {
-    if !cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "This export would include restricted cases you may not open. Ask an administrator to export it.".to_string()));
-    }
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
     let parsed = documents::DocumentFormat::parse(&format)
         .ok_or((StatusCode::BAD_REQUEST, "Invalid document format.".to_string()))?;
     let temp_path = std::env::temp_dir().join(format!("pleadli-police-data-{}.{format}", uuid::Uuid::new_v4()));
 
     let result = match parsed {
-        documents::DocumentFormat::Pdf => documents::export_all_pdf(&state.pool, &temp_path).await,
-        documents::DocumentFormat::Docx => documents::export_all_docx(&state.pool, &temp_path).await,
+        documents::DocumentFormat::Pdf => documents::export_all_pdf(&state.pool, &hidden, &temp_path).await,
+        documents::DocumentFormat::Docx => documents::export_all_docx(&state.pool, &hidden, &temp_path).await,
     };
     result.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -1134,6 +1130,25 @@ async fn import_rules_handler(
         .map_err(|reason| (StatusCode::UNPROCESSABLE_ENTITY, reason))
 }
 
+/// Change one rule: the number, the offences, the wording, where it comes from, who checked it. Saved as the
+/// next version of the pack, so every earlier version is kept. Only an administrator, who answers for the
+/// station's rules, may do this.
+async fn edit_rule_handler(
+    State(state): State<AppState>,
+    Extension(actor): Extension<crate::domain::sessions::Actor>,
+    Path(id): Path<String>,
+    Json(edit): Json<crate::domain::rules::RuleEdit>,
+) -> Result<Json<crate::domain::rules::Pack>, ApiError> {
+    if actor.role != "admin" {
+        return Err((StatusCode::FORBIDDEN, "Only an administrator can change a rule.".to_string()));
+    }
+    let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    crate::domain::rules::update_rule(&state.pool, &id, edit, &actor.name, &today)
+        .await
+        .map(Json)
+        .map_err(|reason| (StatusCode::UNPROCESSABLE_ENTITY, reason))
+}
+
 async fn create_medical_handler(
     State(state): State<AppState>,
     Json(input): Json<crate::domain::medical::CreateMedicalExamInput>,
@@ -1634,6 +1649,7 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/medical/{id}", put(update_medical_handler))
         .route("/rules", get(get_rules_handler))
         .route("/rules/import", post(import_rules_handler))
+        .route("/rules/item/{id}", axum::routing::put(edit_rule_handler))
         .route("/bonds", post(create_bond_handler).get(list_bonds_handler))
         .route("/bonds/{id}", put(update_bond_handler))
         .route("/station-profile", get(get_station_profile_handler).put(save_station_profile_handler))

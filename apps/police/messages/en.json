@@ -2263,7 +2263,24 @@
     "status_reviewed": "Reviewed",
     "no_citation": "No citation yet",
     "reviewed_by": "Reviewed by {name} on {date}",
-    "awaiting_one": "This guidance is a working rule and is awaiting legal review."
+    "awaiting_one": "This guidance is a working rule and is awaiting legal review.",
+    "edit_button": "Edit",
+    "edit_title": "Edit this rule",
+    "edit_hint": "Your changes become the next version of the rules. Earlier versions are kept.",
+    "edit_value": "Number",
+    "edit_terms": "Offences (one per line)",
+    "edit_exceptions": "Exceptions (one per line)",
+    "edit_text": "Wording shown to officers",
+    "edit_citation": "Where it comes from (law and section)",
+    "edit_status": "How sure is this rule",
+    "edit_reviewed_by": "Checked by",
+    "edit_reviewed_on": "Checked on",
+    "edit_note": "Note",
+    "edit_save": "Save the rule",
+    "edit_cancel": "Cancel",
+    "edit_saved": "Rule saved",
+    "edit_saved_detail": "The rules are now version {version}",
+    "edit_failed": "The rule was not saved"
   },
   "medical": {
     "kind": {

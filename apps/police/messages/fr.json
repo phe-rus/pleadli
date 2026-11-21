@@ -2263,7 +2263,24 @@
     "status_reviewed": "Vérifiée",
     "no_citation": "Pas encore de référence",
     "reviewed_by": "Vérifiée par {name} le {date}",
-    "awaiting_one": "Cette indication est une règle de travail en attente de vérification juridique."
+    "awaiting_one": "Cette indication est une règle de travail en attente de vérification juridique.",
+    "edit_button": "Modifier",
+    "edit_title": "Modifier cette règle",
+    "edit_hint": "Vos modifications deviennent la version suivante des règles. Les versions précédentes sont conservées.",
+    "edit_value": "Nombre",
+    "edit_terms": "Infractions (une par ligne)",
+    "edit_exceptions": "Exceptions (une par ligne)",
+    "edit_text": "Texte montré aux agents",
+    "edit_citation": "D'où elle provient (loi et article)",
+    "edit_status": "Degré de certitude de cette règle",
+    "edit_reviewed_by": "Vérifiée par",
+    "edit_reviewed_on": "Vérifiée le",
+    "edit_note": "Remarque",
+    "edit_save": "Enregistrer la règle",
+    "edit_cancel": "Annuler",
+    "edit_saved": "Règle enregistrée",
+    "edit_saved_detail": "Les règles sont maintenant en version {version}",
+    "edit_failed": "La règle n'a pas été enregistrée"
   },
   "medical": {
     "kind": {
