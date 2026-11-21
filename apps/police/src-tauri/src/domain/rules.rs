@@ -79,7 +79,9 @@ fn built_in() -> Pack {
     serde_json::from_str(BUILT_IN).expect("the pack inside the app is valid JSON")
 }
 
-/// Make sure the pack that ships with the app is in the table.
+/// Make sure the pack that ships with the app is in the table, and that the pack in force has every
+/// rule the app now ships. An office's own edits always win: a rule it already has is never replaced,
+/// but a rule added by a newer release (which the app's code may rely on) is appended as the next version.
 pub async fn ensure_built_in(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     let pack = built_in();
     sqlx::query(
@@ -92,6 +94,22 @@ pub async fn ensure_built_in(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     .bind(now())
     .execute(pool)
     .await?;
+
+    let mut current = active(pool, &pack.country).await?;
+    let missing: Vec<Rule> = pack.rules.iter().filter(|r| current.rule(&r.id).is_none()).cloned().collect();
+    if !missing.is_empty() {
+        current.rules.extend(missing);
+        current.version += 1;
+        let body = serde_json::to_string(&current).unwrap_or_default();
+        sqlx::query("INSERT INTO rule_packs (id, country, version, body, source, imported_at) VALUES (?, ?, ?, ?, 'new rules from an update', ?)")
+            .bind(Uuid::new_v4().to_string())
+            .bind(&current.country)
+            .bind(current.version)
+            .bind(body)
+            .bind(now())
+            .execute(pool)
+            .await?;
+    }
     Ok(())
 }
 
@@ -215,6 +233,35 @@ mod tests {
         RuleEdit { value, terms: None, exceptions: None, text: None, citation: Some("Police Act, s. 25".into()), status: status.into(), reviewed_by: None, reviewed_on: None, note: None }
     }
 
+
+    #[tokio::test]
+    async fn a_rule_the_app_adds_later_is_merged_without_undoing_the_offices_edits() {
+        let pool = test_pool().await;
+        ensure_built_in(&pool).await.unwrap();
+        update_rule(&pool, "custody.limit_hours", edit(Some(72), "draft"), "Legal Officer", "2026-12-01").await.unwrap();
+
+        // An office pack that lacks one of the shipped rules, as if the app had added it since.
+        let mut trimmed = active(&pool, DEFAULT_COUNTRY).await.unwrap();
+        trimmed.rules.retain(|r| r.id != "juvenile.age");
+        trimmed.version += 1;
+        sqlx::query("INSERT INTO rule_packs (id, country, version, body, source, imported_at) VALUES ('t', ?, ?, ?, 'imported', 1)")
+            .bind(&trimmed.country)
+            .bind(trimmed.version)
+            .bind(serde_json::to_string(&trimmed).unwrap())
+            .execute(&pool)
+            .await
+            .unwrap();
+        assert!(active(&pool, DEFAULT_COUNTRY).await.unwrap().rule("juvenile.age").is_none());
+
+        ensure_built_in(&pool).await.unwrap();
+        let merged = active(&pool, DEFAULT_COUNTRY).await.unwrap();
+        assert!(merged.rule("juvenile.age").is_some(), "the missing rule comes back");
+        assert_eq!(merged.rule("custody.limit_hours").unwrap().value, Some(72), "the office's edit is kept");
+        let version = merged.version;
+        ensure_built_in(&pool).await.unwrap();
+        assert_eq!(active(&pool, DEFAULT_COUNTRY).await.unwrap().version, version, "running it again changes nothing");
+        pool.close().await;
+    }
     #[tokio::test]
     async fn an_office_can_change_a_rule_and_the_old_version_is_kept() {
         let pool = test_pool().await;
