@@ -6,9 +6,9 @@ name: CI
 #   :test      typecheck, shell tests, cargo test for every app. Nothing else.
 #   :lint      clippy and its ratchet for every app. Nothing else.
 #   :release   build, sign and publish the Windows installers of all five apps.
-#   :all       test, lint and release together, at the same time.
+#   :all       test, then lint, then release, one after the other (stops at the first failure).
 #
-# Runs are queued one after another (one CI at a time, nothing is cancelled).
+# Runs are queued one after another (one CI at a time, nothing is cancelled). Stages and apps also go one at a time.
 # Third party actions in the test and lint jobs are pinned to commit SHAs.
 # Secrets are used only by the release job.
 
@@ -57,7 +57,7 @@ jobs:
             echo "$job=$v"
           done
 
-  test:
+  typecheck:
     needs: plan
     if: needs.plan.outputs.test == 'true'
     runs-on: ubuntu-latest
@@ -92,117 +92,77 @@ jobs:
       - name: Shell budget
         run: bun toolings/ci/shell-budget.ts
 
+  # One at a time: typecheck, then cargo test, then lint, then release. Each stage
+  # needs the one before it, so `:all` runs them in that order and stops at the
+  # first failure. Within a stage the apps go one after another in one job, sharing
+  # one build folder (toolings/ci/cargo-config.toml), so a dependency is built once.
   cargo-test:
-    needs: plan
-    if: needs.plan.outputs.test == 'true'
+    needs: [plan, typecheck]
+    if: ${{ !cancelled() && needs.plan.outputs.test == 'true' && needs.typecheck.result == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [dpp, lawyers, prisons, police, courts]
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      - name: System packages for Tauri
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential pkg-config libssl-dev libwebkit2gtk-4.1-dev libgtk-3-dev \
-            libsoup-3.0-dev libayatana-appindicator3-dev librsvg2-dev
-      - name: Rust toolchain
-        run: |
-          rustup toolchain install stable --profile minimal
-          rustup default stable
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: ./.github/actions/rust
         with:
-          workspaces: apps/${{ matrix.app }}/src-tauri -> target
-          key: ${{ matrix.app }}
-          cache-on-failure: true
-      # tauri::generate_context needs the frontendDist folder to exist to compile.
-      - run: mkdir -p apps/${{ matrix.app }}/dist
-      # Empty placeholders for sidecars so the build can see them.
-      - name: Sidecar placeholders
+          kind: test
+      - name: cargo test, app by app
         run: |
-          bun -e '
-            const conf = await Bun.file("apps/${{ matrix.app }}/src-tauri/tauri.conf.json").json();
-            for (const bin of conf.bundle?.externalBin ?? []) console.log(bin);
-          ' | while read -r bin; do
-            path="apps/${{ matrix.app }}/src-tauri/${bin}-x86_64-unknown-linux-gnu"
-            mkdir -p "$(dirname "$path")"
-            : > "$path"
-            chmod +x "$path"
+          failed=""
+          for app in dpp lawyers prisons police courts; do
+            echo "::group::cargo test $app"
+            toolings/ci/sidecar-placeholders.sh "$app"
+            cargo test --manifest-path "apps/$app/src-tauri/Cargo.toml" || failed="$failed $app"
+            echo "::endgroup::"
           done
-      - name: cargo test
-        run: cargo test --manifest-path apps/${{ matrix.app }}/src-tauri/Cargo.toml
+          if [ -n "$failed" ]; then echo "cargo test failed for:$failed"; exit 1; fi
 
   lint:
-    needs: plan
-    if: needs.plan.outputs.lint == 'true'
+    needs: [plan, typecheck, cargo-test]
+    if: ${{ !cancelled() && needs.plan.outputs.lint == 'true' && needs.typecheck.result != 'failure' && needs.cargo-test.result != 'failure' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [dpp, lawyers, prisons, police, courts]
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      - name: System packages for Tauri
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential pkg-config libssl-dev libwebkit2gtk-4.1-dev libgtk-3-dev \
-            libsoup-3.0-dev libayatana-appindicator3-dev librsvg2-dev
-      - name: Rust toolchain
-        run: |
-          rustup toolchain install stable --profile minimal --component clippy
-          rustup default stable
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: ./.github/actions/rust
         with:
-          workspaces: apps/${{ matrix.app }}/src-tauri -> target
-          key: lint-${{ matrix.app }}
-          cache-on-failure: true
-      - run: mkdir -p apps/${{ matrix.app }}/dist
-      - name: Sidecar placeholders
+          kind: lint
+      - name: clippy and the ratchet, app by app
         run: |
-          bun -e '
-            const conf = await Bun.file("apps/${{ matrix.app }}/src-tauri/tauri.conf.json").json();
-            for (const bin of conf.bundle?.externalBin ?? []) console.log(bin);
-          ' | while read -r bin; do
-            path="apps/${{ matrix.app }}/src-tauri/${bin}-x86_64-unknown-linux-gnu"
-            mkdir -p "$(dirname "$path")"
-            : > "$path"
-            chmod +x "$path"
+          failed=""
+          for app in dpp lawyers prisons police courts; do
+            echo "::group::clippy $app"
+            toolings/ci/sidecar-placeholders.sh "$app"
+            out="$RUNNER_TEMP/clippy-$app.jsonl"
+            code=0
+            cargo clippy --manifest-path "apps/$app/src-tauri/Cargo.toml" \
+              --all-targets --message-format=json > "$out" || code=$?
+            bun toolings/ci/clippy.ts check "$app" "$out" || code=1
+            [ "$code" -eq 0 ] || failed="$failed $app"
+            echo "::endgroup::"
           done
-      - name: cargo clippy and the ratchet
-        run: |
-          out="$RUNNER_TEMP/clippy.jsonl"
-          code=0
-          cargo clippy --manifest-path apps/${{ matrix.app }}/src-tauri/Cargo.toml \
-            --all-targets --message-format=json > "$out" || code=$?
-          ratchet=0
-          bun toolings/ci/clippy.ts check "${{ matrix.app }}" "$out" || ratchet=$?
-          if [ "$code" -ne 0 ]; then echo "cargo clippy exited with $code"; fi
-          [ "$code" -eq 0 ] && [ "$ratchet" -eq 0 ]
+          if [ -n "$failed" ]; then echo "clippy failed for:$failed"; exit 1; fi
 
   # Windows installers for all five apps, signed for the updater, published to the
   # public phe-rus/pleadli-releases. Each app's version in tauri.conf.json must be
   # above its published feed (docs/RELEASING.md). Courts' first release is allowed
   # to create its own feed.
   release:
-    needs: plan
-    if: needs.plan.outputs.release == 'true'
+    needs: [plan, typecheck, cargo-test, lint]
+    if: ${{ !cancelled() && needs.plan.outputs.release == 'true' && needs.typecheck.result != 'failure' && needs.cargo-test.result != 'failure' && needs.lint.result != 'failure' }}
     runs-on: windows-latest
     concurrency:
       group: desktop-release-${{ matrix.app }}
       cancel-in-progress: false
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         app: [dpp, lawyers, prisons, police, courts]
     env:

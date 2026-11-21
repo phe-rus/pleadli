@@ -1,0 +1,15 @@
+# The laptop's ~/.cargo/config.toml, for CI. Same idea: one folder for the compiled
+# dependencies of every app (built once, not once per app), trimmed debug info, mold.
+# The step in .github/actions/rust replaces @BUILD_DIR@ and installs this as the user config.
+[build]
+build-dir = "@BUILD_DIR@"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
