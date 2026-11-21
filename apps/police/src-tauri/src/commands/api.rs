@@ -134,3 +134,10 @@ pub async fn api_request(
     }
     Ok(ApiResponse { status, body })
 }
+
+/// Who is signed in at this window, as the node knows them: the same officer the HTTP routes
+/// see, so a desktop command applies the same restricted-case rules as the matching route.
+pub async fn signed_in_actor(session: &LocalSession, pool: &sqlx::SqlitePool) -> Result<crate::domain::sessions::Actor, String> {
+    let token = session.token().ok_or_else(|| "Sign in to continue.".to_string())?;
+    crate::domain::sessions::resolve(pool, &token).await.map_err(|e| e.to_string())?.ok_or_else(|| "Sign in to continue.".to_string())
+}

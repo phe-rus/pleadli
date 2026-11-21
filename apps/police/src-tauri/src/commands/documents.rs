@@ -1,36 +1,52 @@
 use tauri::State;
 
+use super::api::{signed_in_actor, LocalSession};
 use crate::db::Db;
-use crate::domain::documents;
+use crate::domain::{cases, documents};
+
+const RESTRICTED: &str = "This case is restricted. Only an administrator or the officer who restricted it can open it.";
 
 /// `destination_path` is chosen by the frontend's own `save()` dialog
 /// before this is called; this just writes bytes to it, same as
 /// `attachments::add_attachment_bytes` writes to a path the frontend
 /// already resolved.
+///
+/// The Markdown vault copies files off disk, so an officer who cannot open some restricted case
+/// is refused it (the spreadsheet, PDF and Word exports leave those cases out instead).
 #[tauri::command]
-pub async fn export_all_markdown(_who: super::api::SignedIn, state: State<'_, Db>, destination_path: String) -> Result<(), String> {
+pub async fn export_all_markdown(session: State<'_, LocalSession>, state: State<'_, Db>, destination_path: String) -> Result<(), String> {
+    let actor = signed_in_actor(&session, &state.pool).await?;
+    if !cases::hidden_case_ids(&state.pool, &actor).await.map_err(|e| e.to_string())?.is_empty() {
+        return Err("This export would include restricted cases you may not open. Ask an administrator to export it.".to_string());
+    }
     documents::export_all_markdown(&state.pool, &state.vault_root, std::path::Path::new(&destination_path))
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn export_all_xlsx(_who: super::api::SignedIn, state: State<'_, Db>, destination_path: String) -> Result<(), String> {
-    documents::export_all_xlsx(&state.pool, std::path::Path::new(&destination_path))
+pub async fn export_all_xlsx(session: State<'_, LocalSession>, state: State<'_, Db>, destination_path: String) -> Result<(), String> {
+    let actor = signed_in_actor(&session, &state.pool).await?;
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(|e| e.to_string())?;
+    documents::export_all_xlsx(&state.pool, &hidden, std::path::Path::new(&destination_path))
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn export_all_pdf(_who: super::api::SignedIn, state: State<'_, Db>, destination_path: String) -> Result<(), String> {
-    documents::export_all_pdf(&state.pool, std::path::Path::new(&destination_path))
+pub async fn export_all_pdf(session: State<'_, LocalSession>, state: State<'_, Db>, destination_path: String) -> Result<(), String> {
+    let actor = signed_in_actor(&session, &state.pool).await?;
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(|e| e.to_string())?;
+    documents::export_all_pdf(&state.pool, &hidden, std::path::Path::new(&destination_path))
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn export_all_docx(_who: super::api::SignedIn, state: State<'_, Db>, destination_path: String) -> Result<(), String> {
-    documents::export_all_docx(&state.pool, std::path::Path::new(&destination_path))
+pub async fn export_all_docx(session: State<'_, LocalSession>, state: State<'_, Db>, destination_path: String) -> Result<(), String> {
+    let actor = signed_in_actor(&session, &state.pool).await?;
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(|e| e.to_string())?;
+    documents::export_all_docx(&state.pool, &hidden, std::path::Path::new(&destination_path))
         .await
         .map_err(|e| e.to_string())
 }
@@ -43,36 +59,55 @@ fn parse_format(format: &str) -> Result<documents::DocumentFormat, String> {
 /// the frontend only offers this action from a record's own page, so
 /// that's an edge case (deleted mid-export), not a broken request.
 #[tauri::command]
-pub async fn export_person_document(_who: super::api::SignedIn,
+pub async fn export_person_document(
+    session: State<'_, LocalSession>,
     state: State<'_, Db>,
     id: String,
     format: String,
     destination_path: String,
 ) -> Result<bool, String> {
+    let actor = signed_in_actor(&session, &state.pool).await?;
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(|e| e.to_string())?;
+    // The person document lists their cases, so it is refused whenever any case they appear in is hidden from this officer.
+    let their_cases: Vec<String> = sqlx::query_scalar("SELECT case_id FROM case_people WHERE person_id = ?").bind(&id).fetch_all(&state.pool).await.map_err(|e| e.to_string())?;
+    if their_cases.iter().any(|c| hidden.contains(c)) {
+        return Err(RESTRICTED.to_string());
+    }
     documents::export_person_document(&state.pool, &state.vault_root, &id, parse_format(&format)?, std::path::Path::new(&destination_path))
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn export_case_document(_who: super::api::SignedIn,
+pub async fn export_case_document(
+    session: State<'_, LocalSession>,
     state: State<'_, Db>,
     id: String,
     format: String,
     destination_path: String,
 ) -> Result<bool, String> {
+    let actor = signed_in_actor(&session, &state.pool).await?;
+    if !cases::can_open(&state.pool, &id, &actor).await.map_err(|e| e.to_string())? {
+        return Err(RESTRICTED.to_string());
+    }
     documents::export_case_document(&state.pool, &id, parse_format(&format)?, std::path::Path::new(&destination_path))
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn export_charge_sheet_document(_who: super::api::SignedIn,
+pub async fn export_charge_sheet_document(
+    session: State<'_, LocalSession>,
     state: State<'_, Db>,
     id: String,
     format: String,
     destination_path: String,
 ) -> Result<bool, String> {
+    let actor = signed_in_actor(&session, &state.pool).await?;
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(|e| e.to_string())?;
+    if !cases::may_see_entity(&state.pool, "charge_sheet", &id, &hidden).await.map_err(|e| e.to_string())? {
+        return Err(RESTRICTED.to_string());
+    }
     documents::export_charge_sheet_document(&state.pool, &id, parse_format(&format)?, std::path::Path::new(&destination_path))
         .await
         .map_err(|e| e.to_string())

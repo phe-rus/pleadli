@@ -514,21 +514,75 @@ fn write_sheet<T: Serialize>(workbook: &mut Workbook, sheet_name: &str, rows: &[
     Ok(())
 }
 
+/// How a table's rows tie back to a restricted case, so a station-wide
+/// export can leave out what an officer may not open instead of refusing.
+#[derive(Clone, Copy)]
+enum Ties {
+    /// Rows carry a `case_id` (statements, custody, bonds, exhibits, charge sheets, referrals).
+    ByCaseId,
+    /// The rows are the cases themselves (matched on `id`).
+    Cases,
+    /// Incidents belong to a case through `cases.incident_id`.
+    Incidents,
+    /// A person is left out only when every case they appear in is hidden.
+    People,
+}
+
+/// The rows an officer may see, given the restricted cases hidden from them.
+/// Checked on each row's serialized form, so a new field never leaks silently:
+/// only the named link (`case_id`, `id`) decides.
+async fn visible_rows<T: Serialize>(pool: &SqlitePool, rows: Vec<T>, ties: Ties, hidden: &[String]) -> Result<Vec<T>, DocumentError> {
+    if hidden.is_empty() {
+        return Ok(rows);
+    }
+    let hidden_incidents: Vec<String> = if matches!(ties, Ties::Incidents) {
+        let mut found = Vec::new();
+        for case_id in hidden {
+            let incident: Option<Option<String>> = sqlx::query_scalar("SELECT incident_id FROM cases WHERE id = ?").bind(case_id).fetch_optional(pool).await?;
+            if let Some(Some(id)) = incident {
+                found.push(id);
+            }
+        }
+        found
+    } else {
+        Vec::new()
+    };
+    let mut kept = Vec::with_capacity(rows.len());
+    for row in rows {
+        let value = serde_json::to_value(&row).unwrap_or(Value::Null);
+        let text = |key: &str| value.get(key).and_then(Value::as_str).map(str::to_string);
+        let drop = match ties {
+            Ties::ByCaseId => text("case_id").is_some_and(|c| hidden.contains(&c)),
+            Ties::Cases => text("id").is_some_and(|c| hidden.contains(&c)),
+            Ties::Incidents => text("id").is_some_and(|i| hidden_incidents.contains(&i)),
+            Ties::People => match text("id") {
+                Some(id) => !cases::person_visible(pool, &id, hidden).await?,
+                None => false,
+            },
+        };
+        if !drop {
+            kept.push(row);
+        }
+    }
+    Ok(kept)
+}
+
 /// One workbook, one sheet per table: the natural "all the data"
 /// spreadsheet, read straight through each domain's own unlimited
-/// `list_all`.
-pub async fn export_all_xlsx(pool: &SqlitePool, destination: &Path) -> Result<(), DocumentError> {
+/// `list_all`. `hidden` is the restricted cases the officer may not open
+/// (empty for an administrator); their rows are left out.
+pub async fn export_all_xlsx(pool: &SqlitePool, hidden: &[String], destination: &Path) -> Result<(), DocumentError> {
     let mut workbook = Workbook::new();
 
-    write_sheet(&mut workbook, "People", &people::list_all(pool).await?)?;
-    write_sheet(&mut workbook, "Cases", &cases::list_all(pool).await?)?;
-    write_sheet(&mut workbook, "Incidents", &incidents::list_all(pool).await?)?;
-    write_sheet(&mut workbook, "Statements", &statements::list_all(pool).await?)?;
-    write_sheet(&mut workbook, "Custody", &custody::list_all(pool).await?)?;
-    write_sheet(&mut workbook, "Bonds", &bonds::list_all(pool).await?)?;
-    write_sheet(&mut workbook, "Exhibits", &exhibits::list_all(pool).await?)?;
-    write_sheet(&mut workbook, "Charge Sheets", &charge_sheets::list_all(pool).await?)?;
-    write_sheet(&mut workbook, "Referrals", &referrals::list_all(pool).await?)?;
+    write_sheet(&mut workbook, "People", &visible_rows(pool, people::list_all(pool).await?, Ties::People, hidden).await?)?;
+    write_sheet(&mut workbook, "Cases", &visible_rows(pool, cases::list_all(pool).await?, Ties::Cases, hidden).await?)?;
+    write_sheet(&mut workbook, "Incidents", &visible_rows(pool, incidents::list_all(pool).await?, Ties::Incidents, hidden).await?)?;
+    write_sheet(&mut workbook, "Statements", &visible_rows(pool, statements::list_all(pool).await?, Ties::ByCaseId, hidden).await?)?;
+    write_sheet(&mut workbook, "Custody", &visible_rows(pool, custody::list_all(pool).await?, Ties::ByCaseId, hidden).await?)?;
+    write_sheet(&mut workbook, "Bonds", &visible_rows(pool, bonds::list_all(pool).await?, Ties::ByCaseId, hidden).await?)?;
+    write_sheet(&mut workbook, "Exhibits", &visible_rows(pool, exhibits::list_all(pool).await?, Ties::ByCaseId, hidden).await?)?;
+    write_sheet(&mut workbook, "Charge Sheets", &visible_rows(pool, charge_sheets::list_all(pool).await?, Ties::ByCaseId, hidden).await?)?;
+    write_sheet(&mut workbook, "Referrals", &visible_rows(pool, referrals::list_all(pool).await?, Ties::ByCaseId, hidden).await?)?;
     write_sheet(&mut workbook, "Station Diary", &station_diary::list_all(pool).await?)?;
     write_sheet(&mut workbook, "Duty Roster", &duty::list_all(pool).await?)?;
     write_sheet(&mut workbook, "Station Assets", &station_assets::list_all(pool).await?)?;
@@ -820,17 +874,17 @@ async fn write_doc(doc: &Doc, format: DocumentFormat, destination: &Path) -> Res
 /// Same tables as `export_all_xlsx`, laid out as one flowing document
 /// instead of a workbook: the "plain but organized" tier of PDF/DOCX
 /// export, distinct from the polished per-record templates below.
-async fn build_bulk_export_document(pool: &SqlitePool) -> Result<Doc, DocumentError> {
+async fn build_bulk_export_document(pool: &SqlitePool, hidden: &[String]) -> Result<Doc, DocumentError> {
     let sections = vec![
-        doc_table_section("People", &people::list_all(pool).await?),
-        doc_table_section("Cases", &cases::list_all(pool).await?),
-        doc_table_section("Incidents", &incidents::list_all(pool).await?),
-        doc_table_section("Statements", &statements::list_all(pool).await?),
-        doc_table_section("Custody", &custody::list_all(pool).await?),
-        doc_table_section("Bonds", &bonds::list_all(pool).await?),
-        doc_table_section("Evidence", &exhibits::list_all(pool).await?),
-        doc_table_section("Charge Sheets", &charge_sheets::list_all(pool).await?),
-        doc_table_section("Referrals", &referrals::list_all(pool).await?),
+        doc_table_section("People", &visible_rows(pool, people::list_all(pool).await?, Ties::People, hidden).await?),
+        doc_table_section("Cases", &visible_rows(pool, cases::list_all(pool).await?, Ties::Cases, hidden).await?),
+        doc_table_section("Incidents", &visible_rows(pool, incidents::list_all(pool).await?, Ties::Incidents, hidden).await?),
+        doc_table_section("Statements", &visible_rows(pool, statements::list_all(pool).await?, Ties::ByCaseId, hidden).await?),
+        doc_table_section("Custody", &visible_rows(pool, custody::list_all(pool).await?, Ties::ByCaseId, hidden).await?),
+        doc_table_section("Bonds", &visible_rows(pool, bonds::list_all(pool).await?, Ties::ByCaseId, hidden).await?),
+        doc_table_section("Evidence", &visible_rows(pool, exhibits::list_all(pool).await?, Ties::ByCaseId, hidden).await?),
+        doc_table_section("Charge Sheets", &visible_rows(pool, charge_sheets::list_all(pool).await?, Ties::ByCaseId, hidden).await?),
+        doc_table_section("Referrals", &visible_rows(pool, referrals::list_all(pool).await?, Ties::ByCaseId, hidden).await?),
         doc_table_section("Station Diary", &station_diary::list_all(pool).await?),
         doc_table_section("Duty Roster", &duty::list_all(pool).await?),
         doc_table_section("Station Assets", &station_assets::list_all(pool).await?),
@@ -848,13 +902,13 @@ async fn build_bulk_export_document(pool: &SqlitePool) -> Result<Doc, DocumentEr
     })
 }
 
-pub async fn export_all_pdf(pool: &SqlitePool, destination: &Path) -> Result<(), DocumentError> {
-    let doc = build_bulk_export_document(pool).await?;
+pub async fn export_all_pdf(pool: &SqlitePool, hidden: &[String], destination: &Path) -> Result<(), DocumentError> {
+    let doc = build_bulk_export_document(pool, hidden).await?;
     write_doc(&doc, DocumentFormat::Pdf, destination).await
 }
 
-pub async fn export_all_docx(pool: &SqlitePool, destination: &Path) -> Result<(), DocumentError> {
-    let doc = build_bulk_export_document(pool).await?;
+pub async fn export_all_docx(pool: &SqlitePool, hidden: &[String], destination: &Path) -> Result<(), DocumentError> {
+    let doc = build_bulk_export_document(pool, hidden).await?;
     write_doc(&doc, DocumentFormat::Docx, destination).await
 }
 
@@ -1059,4 +1113,48 @@ pub async fn export_charge_sheet_document(
     };
     write_doc(&doc, format, destination).await?;
     Ok(true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn a_station_export_leaves_out_restricted_cases_and_the_people_only_in_them() {
+        let dir = std::env::temp_dir().join(format!("pleadli-export-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = crate::db::startup(&dir, dir.join("vault")).await.ok().unwrap().pool;
+
+        sqlx::query("INSERT INTO cases (id, reference, summary, status, restricted, restricted_by) VALUES ('hidden', 'CRB 1/2026', 'Sensitive', 'open', 1, 'someone-else')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO cases (id, reference, summary, status) VALUES ('open1', 'CRB 2/2026', 'Theft', 'open')").execute(&pool).await.unwrap();
+        for (id, first) in [("only-hidden", "Amina"), ("only-open", "Moses"), ("both", "Peter"), ("no-case", "Grace")] {
+            sqlx::query("INSERT INTO people (id, first_name, last_name) VALUES (?, ?, 'Test')").bind(id).bind(first).execute(&pool).await.unwrap();
+        }
+        for (link, case_id, person) in [("l1", "hidden", "only-hidden"), ("l2", "open1", "only-open"), ("l3", "hidden", "both"), ("l4", "open1", "both")] {
+            sqlx::query("INSERT INTO case_people (id, case_id, person_id, role) VALUES (?, ?, ?, 'accused')").bind(link).bind(case_id).bind(person).execute(&pool).await.unwrap();
+        }
+
+        let hidden = vec!["hidden".to_string()];
+        let cases_kept = visible_rows(&pool, cases::list_all(&pool).await.unwrap(), Ties::Cases, &hidden).await.unwrap();
+        let case_ids: Vec<&str> = cases_kept.iter().map(|c| c.id.as_str()).collect();
+        assert!(!case_ids.contains(&"hidden") && case_ids.contains(&"open1"));
+
+        let people_kept = visible_rows(&pool, people::list_all(&pool).await.unwrap(), Ties::People, &hidden).await.unwrap();
+        let ids: Vec<&str> = people_kept.iter().map(|p| p.id.as_str()).collect();
+        assert!(!ids.contains(&"only-hidden"), "a person only in a restricted case is left out");
+        for stays in ["both", "no-case", "only-open"] {
+            assert!(ids.contains(&stays), "{stays} stays: also in an open case, or in none");
+        }
+
+        // An administrator has nothing hidden, so nothing is left out.
+        let all = cases::list_all(&pool).await.unwrap().len();
+        assert_eq!(visible_rows(&pool, cases::list_all(&pool).await.unwrap(), Ties::Cases, &[]).await.unwrap().len(), all);
+        assert_eq!(cases_kept.len(), all - 1);
+
+        // And the real export runs on the filtered rows.
+        let file = dir.join("out.xlsx");
+        export_all_xlsx(&pool, &hidden, &file).await.unwrap();
+        assert!(file.exists());
+        pool.close().await;
+    }
 }
