@@ -1,6 +1,6 @@
 import { api } from '@/lib/api'
 
-export type Stage = 'queued' | 'sent' | 'delivered' | 'opened' | 'accepted' | 'rejected' | 'attention' | 'expired'
+export type Stage = 'queued' | 'sent' | 'delivered' | 'opened' | 'accepted' | 'rejected' | 'refused' | 'attention' | 'expired'
 export type RelaySent = {
   id: string
   to: string

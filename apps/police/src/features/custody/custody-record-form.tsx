@@ -18,7 +18,7 @@ import { Textarea } from '@pleadli/ui/textarea'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { format } from '@/lib/date'
 import { useCreateCustodyRecord, useUpdateCustodyRecord } from './queries'
-import { custodyBasisLabel, custodyCompliance, custodyStatuses, createCustodyRecordSchema, type CustodyRecord } from './schema'
+import { custodyBasisLabel, custodyCompliance, custodyStatuses, createCustodyRecordSchema, legalAccessKinds, legalAccessLabel, legalAccessNeedsName, type CustodyRecord } from './schema'
 
 export type CustodyRecordFormProps = {
   record?: CustodyRecord
@@ -50,6 +50,8 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
       status: record?.status ?? 'in_custody',
       releasedAt: record?.releasedAt ? toDatetimeLocal(record.releasedAt) : '',
       notes: record?.notes ?? '',
+      legalAccess: record?.legalAccess ?? (null as string | null),
+      legalName: record?.legalName ?? '',
     },
     validators: {
       onSubmit: ({ value }) => {
@@ -59,6 +61,7 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
           transferredAt: value.transferredAt ? new Date(value.transferredAt).getTime() : null,
           releasedAt: value.releasedAt ? new Date(value.releasedAt).getTime() : null,
         })
+        if (legalAccessNeedsName(value.legalAccess) && !value.legalName.trim()) return m["custody.legal.name_needed"]()
         return parsed.success ? undefined : parsed.error.issues[0]?.message
       },
     },
@@ -69,6 +72,9 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
           arrestedAt: new Date(value.arrestedAt).getTime(),
           transferredAt: value.transferredAt ? new Date(value.transferredAt).getTime() : null,
           releasedAt: value.releasedAt ? new Date(value.releasedAt).getTime() : null,
+          legalName: value.legalAccess ? value.legalName.trim() : '',
+          legalRequestedAt: value.legalAccess ? (record?.legalRequestedAt ?? Date.now()) : null,
+          legalNote: record?.legalNote ?? null,
         }
         const result = record
           ? await updateRecord.mutateAsync({ id: record.id, input })
@@ -280,6 +286,44 @@ export function CustodyRecordForm({ record, onSuccess, onDirtyChange }: CustodyR
             )}
           </form.AppField>
         </div>
+
+        <form.AppField name="legalAccess">
+          {(f) => (
+            <Field>
+              <FieldLabel>{m["custody.legal.label"]()}</FieldLabel>
+              <Select
+                items={[{ value: '', label: m["custody.legal.none"]() }, ...legalAccessKinds.map((k) => ({ value: k, label: legalAccessLabel(k) }))]}
+                value={f.state.value ?? ''}
+                onValueChange={(v) => f.handleChange(v ? v : null)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="">{m["custody.legal.none"]()}</SelectItem>
+                    {legalAccessKinds.map((k) => (
+                      <SelectItem key={k} value={k}>{legalAccessLabel(k)}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
+        </form.AppField>
+
+        <form.Subscribe selector={(state) => state.values.legalAccess}>
+          {(kind) => legalAccessNeedsName(kind) && (
+            <form.AppField name="legalName">
+              {(f) => (
+                <Field>
+                  <FieldLabel>{m["custody.legal.name"]()}</FieldLabel>
+                  <Input value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
+                </Field>
+              )}
+            </form.AppField>
+          )}
+        </form.Subscribe>
 
         <form.AppField name="notes">
           {(f) => (

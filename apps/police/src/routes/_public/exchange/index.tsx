@@ -52,6 +52,9 @@ function RouteComponent() {
   }
 
   const trusted = connections.some((c) => c.status === 'trusted')
+  // With nothing trusted, say so when the newest connection is one the office ended, rather than "no office has confirmed".
+  const newest = [...connections].sort((a, b) => b.respondedAt - a.respondedAt)[0]
+  const ended = !trusted && newest?.status === 'revoked' ? newest : undefined
   const stageLabel: Record<Stage, string> = {
     queued: m['relay.stage_queued'](),
     sent: m['relay.stage_sent'](),
@@ -59,6 +62,7 @@ function RouteComponent() {
     opened: m['relay.stage_opened'](),
     accepted: m['relay.stage_accepted'](),
     rejected: m['relay.stage_rejected'](),
+    refused: m['relay.stage_refused'](),
     attention: m['relay.stage_attention'](),
     expired: m['relay.stage_expired'](),
   }
@@ -140,9 +144,12 @@ function RouteComponent() {
               ) : (
                 connections.map((c) => (
                   <div key={c.id} className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="flex items-center gap-2">
-                      {c.officeName}
-                      <Badge variant={c.status === 'trusted' ? 'default' : 'secondary'}>{statusLabel(c.status)}</Badge>
+                    <span className="flex flex-col">
+                      <span className="flex items-center gap-2">
+                        {c.officeName}
+                        <Badge variant={c.status === 'trusted' ? 'default' : 'secondary'}>{statusLabel(c.status)}</Badge>
+                      </span>
+                      {c.status === 'revoked' && c.reason && <span className="text-muted-foreground">{m['exchange.ended_reason']({ reason: c.reason })}</span>}
                     </span>
                     <span className="font-mono text-muted-foreground">{c.fingerprint}</span>
                   </div>
@@ -150,7 +157,7 @@ function RouteComponent() {
               )}
             </SettingsCard>
 
-            <SettingsCard title={m['exchange.send_title']()} description={trusted ? m['exchange.send_hint']() : m['exchange.send_blocked']()}>
+            <SettingsCard title={m['exchange.send_title']()} description={trusted ? m['exchange.send_hint']() : ended ? m['exchange.send_ended']({ office: ended.officeName }) : m['exchange.send_blocked']()}>
               {referrals.length === 0 ? (
                 <p className="text-muted-foreground">{m['exchange.no_referrals']()}</p>
               ) : (
@@ -219,7 +226,7 @@ function RouteComponent() {
                     {x.reason && <span className="text-muted-foreground">{x.reason}</span>}
                   </span>
                   <span className="flex items-center gap-2">
-                    <Badge variant={x.stage === 'accepted' ? 'default' : x.stage === 'attention' || x.stage === 'rejected' ? 'destructive' : 'secondary'}>{stageLabel[x.stage]}</Badge>
+                    <Badge variant={x.stage === 'accepted' ? 'default' : x.stage === 'attention' || x.stage === 'rejected' || x.stage === 'refused' ? 'destructive' : 'secondary'}>{stageLabel[x.stage]}</Badge>
                     {(x.stage === 'attention' || x.stage === 'queued') && <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await retryRelay(x.id)))}>{m['relay.retry']()}</Button>}
                   </span>
                 </div>
@@ -245,7 +252,7 @@ function RouteComponent() {
                   return (
                     <div key={i.id} className="flex flex-col gap-0.5">
                       <span>{i.kind === 'receipt' ? (safe(i.payload).outcome === 'received' ? m['relay.stage_opened']() : m['exchange.receipt']()) : m['exchange.decision']()} · {i.officeName} · {format(i.receivedAt, 'PP')}</span>
-                      <span className="text-muted-foreground">{[body.policeReference, body.outcome ?? body.decisionType, body.dppReference, body.reason].filter(Boolean).join(' · ')}</span>
+                      <span className="text-muted-foreground">{[body.policeReference, answerLabel(body), body.dppReference, body.reason].filter(Boolean).join(' · ')}</span>
                     </div>
                   )
                 })
@@ -274,4 +281,13 @@ function safe(payload: string): Record<string, string | undefined> {
   } catch {
     return {}
   }
+}
+
+// What the office answered, in words for the officer. Anything this version does not know is shown as sent, never hidden.
+function answerLabel(body: Record<string, string | undefined>): string | undefined {
+  const raw = body.outcome ?? body.decisionType
+  if (!raw) return undefined
+  const key = body.outcome ? (`exchange.outcome.${raw}` as const) : (`exchange.decision_type.${raw}` as const)
+  const known = key in m
+  return known ? (m as unknown as Record<string, () => string>)[key]() : raw
 }

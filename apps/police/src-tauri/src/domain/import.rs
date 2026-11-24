@@ -531,6 +531,10 @@ async fn import_one(pool: &SqlitePool, vault_root: &Path, entity_type: &str, row
                 status: require(row, "status", "Status")?,
                 released_at: get_timestamp(row, "releasedAt")?,
                 notes: get_owned(row, "notes"),
+                legal_access: None,
+                legal_name: None,
+                legal_requested_at: None,
+                legal_note: None,
             };
             custody::create_record(pool, vault_root, input).await.map(|_| ()).map_err(|e| e.to_string())
         }

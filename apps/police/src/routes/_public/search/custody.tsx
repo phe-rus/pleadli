@@ -1,5 +1,5 @@
 import * as m from '@/paraglide/messages'
-import { custodyLimits } from '@/features/custody/schema'
+import { custodyLimits, legalAccessLabel } from '@/features/custody/schema'
 import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
 import {
@@ -75,6 +75,7 @@ function CustodyPaper({ record }: { record: CustodyRecord }) {
         { label: m["custody_page.arrested"](), value: format(record.arrestedAt, 'PPp') },
         ...(record.location ? [{ label: m["custody_page.where"](), value: record.location }] : []),
         ...(record.caseReference ? [{ label: m["nav.cases"](), value: record.caseReference, copy: record.caseReference }] : []),
+        { label: m["custody.legal.label"](), value: record.legalAccess ? legalAccessLabel(record.legalAccess) + (record.legalName ? `, ${record.legalName}` : "") : m["custody.legal.none"]() },
         { label: m["col.status"](), value: custodyStatusLabel(record.status) },
       ]}
       events={[
@@ -92,6 +93,7 @@ function CustodyPaper({ record }: { record: CustodyRecord }) {
         {record.crossJurisdictionTransfer && <PaperField label={m["custody_page.transferred"]()}>{record.transferredAt ? format(record.transferredAt, 'PPp') : m["custody_page.not_yet"]()}</PaperField>}
         <PaperField label={m["custody_page.limit"]()}>{`${format(limit.deadline, 'PPPPp')} (${custodyBasisLabel(limit.basis)})`}</PaperField>
         <PaperField label={m["col.status"]()}>{custodyStatusLabel(record.status)}</PaperField>
+        <PaperField label={m["custody.legal.label"]()}>{record.legalAccess ? legalAccessLabel(record.legalAccess) + (record.legalName ? `, ${record.legalName}` : "") : m["custody.legal.none"]()}</PaperField>
         {record.releasedAt && <PaperField label={m["custody_page.left_cells"]()}>{format(record.releasedAt, 'PPp')}</PaperField>}
       </section>
       {inCells && (
@@ -165,7 +167,7 @@ function RouteComponent() {
                   key={record.id}
                   icon={<CellsFace personId={record.personId} name={custodyPersonName(record)} />}
                   label={custodyPersonName(record)}
-                  detail={[m["custody.arrested_summary"]({ when: formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true }) }), record.location, record.caseReference].filter(Boolean).join(' · ')}
+                  detail={[m["custody.arrested_summary"]({ when: formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true }) }), record.location, record.caseReference, record.legalAccess ? m["custody.legal.shown"]({ what: legalAccessLabel(record.legalAccess) + (record.legalName ? `, ${record.legalName}` : "") }) : null].filter(Boolean).join(' · ')}
                   value={
                     <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium tabular-nums', past ? 'bg-destructive text-white' : near ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300' : 'text-muted-foreground')}>
                       {past ? m["custody.past_by"]({ time: remaining(limit.hoursRemaining) }) : m["custody.left"]({ time: remaining(limit.hoursRemaining) })}

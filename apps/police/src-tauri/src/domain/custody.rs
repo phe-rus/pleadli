@@ -30,6 +30,10 @@ pub struct CustodyRecord {
     pub status: String,
     pub released_at: Option<i64>,
     pub notes: Option<String>,
+    pub legal_access: Option<String>,
+    pub legal_name: Option<String>,
+    pub legal_requested_at: Option<i64>,
+    pub legal_note: Option<String>,
     pub created_at: i64,
 }
 
@@ -46,6 +50,29 @@ pub struct CreateCustodyRecordInput {
     pub status: String,
     pub released_at: Option<i64>,
     pub notes: Option<String>,
+    #[serde(default)]
+    pub legal_access: Option<String>,
+    #[serde(default)]
+    pub legal_name: Option<String>,
+    #[serde(default)]
+    pub legal_requested_at: Option<i64>,
+    #[serde(default)]
+    pub legal_note: Option<String>,
+}
+
+pub const LEGAL_ACCESS: [&str; 5] = ["own_advocate", "legal_aid", "duty_counsel", "declined", "not_yet_asked"];
+
+/// Who the person asked for is a record, so it must be one of the known answers, and a named lawyer or body needs a name.
+pub fn check_legal_access(input: &CreateCustodyRecordInput) -> Result<(), String> {
+    let Some(kind) = input.legal_access.as_deref() else { return Ok(()) };
+    if !LEGAL_ACCESS.contains(&kind) {
+        return Err("That is not a way a person in custody can reach a lawyer.".into());
+    }
+    let named = input.legal_name.as_deref().map(str::trim).is_some_and(|n| !n.is_empty());
+    if matches!(kind, "own_advocate" | "legal_aid" | "duty_counsel") && !named {
+        return Err("Write down who the lawyer or the legal aid body is.".into());
+    }
+    Ok(())
 }
 
 pub(crate) async fn write_custody_markdown(pool: &SqlitePool, vault_root: &Path, record: &CustodyRecord) {
@@ -67,8 +94,9 @@ pub async fn create_record(
     sqlx::query(
         "INSERT INTO custody_records
             (id, person_id, incident_id, case_id, arrested_at, location,
-             cross_jurisdiction_transfer, transferred_at, status, released_at, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             cross_jurisdiction_transfer, transferred_at, status, released_at, notes,
+             legal_access, legal_name, legal_requested_at, legal_note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(&input.person_id)
@@ -81,6 +109,10 @@ pub async fn create_record(
     .bind(&input.status)
     .bind(input.released_at)
     .bind(&input.notes)
+    .bind(&input.legal_access)
+    .bind(&input.legal_name)
+    .bind(input.legal_requested_at)
+    .bind(&input.legal_note)
     .execute(pool)
     .await?;
 
@@ -101,7 +133,8 @@ pub async fn update_record(
     sqlx::query(
         "UPDATE custody_records
          SET person_id = ?, incident_id = ?, case_id = ?, arrested_at = ?, location = ?,
-             cross_jurisdiction_transfer = ?, transferred_at = ?, status = ?, released_at = ?, notes = ?
+             cross_jurisdiction_transfer = ?, transferred_at = ?, status = ?, released_at = ?, notes = ?,
+             legal_access = ?, legal_name = ?, legal_requested_at = ?, legal_note = ?
          WHERE id = ?",
     )
     .bind(&input.person_id)
@@ -114,6 +147,10 @@ pub async fn update_record(
     .bind(&input.status)
     .bind(input.released_at)
     .bind(&input.notes)
+    .bind(&input.legal_access)
+    .bind(&input.legal_name)
+    .bind(input.legal_requested_at)
+    .bind(&input.legal_note)
     .bind(id)
     .execute(pool)
     .await?;
@@ -134,7 +171,7 @@ pub async fn list_records(pool: &SqlitePool, query: &str) -> Result<Vec<CustodyR
             "SELECT
                 cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
                 cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
-                cr.notes, cr.created_at,
+                cr.notes, cr.legal_access, cr.legal_name, cr.legal_requested_at, cr.legal_note, cr.created_at,
                 p.first_name AS person_first_name,
                 p.last_name AS person_last_name,
                 p.other_names AS person_other_names,
@@ -153,7 +190,7 @@ pub async fn list_records(pool: &SqlitePool, query: &str) -> Result<Vec<CustodyR
         "SELECT
             cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
             cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
-            cr.notes, cr.created_at,
+            cr.notes, cr.legal_access, cr.legal_name, cr.legal_requested_at, cr.legal_note, cr.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -175,7 +212,7 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<CustodyRecord>, sqlx::Err
         "SELECT
             cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
             cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
-            cr.notes, cr.created_at,
+            cr.notes, cr.legal_access, cr.legal_name, cr.legal_requested_at, cr.legal_note, cr.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -227,7 +264,7 @@ pub async fn list_alerts(pool: &SqlitePool) -> Result<Vec<CustodyAlert>, sqlx::E
         "SELECT
             cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
             cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
-            cr.notes, cr.created_at,
+            cr.notes, cr.legal_access, cr.legal_name, cr.legal_requested_at, cr.legal_note, cr.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -269,7 +306,7 @@ pub async fn list_for_person(pool: &SqlitePool, person_id: &str) -> Result<Vec<C
         "SELECT
             cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
             cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
-            cr.notes, cr.created_at,
+            cr.notes, cr.legal_access, cr.legal_name, cr.legal_requested_at, cr.legal_note, cr.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -290,7 +327,7 @@ pub async fn list_for_case(pool: &SqlitePool, case_id: &str) -> Result<Vec<Custo
         "SELECT
             cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
             cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
-            cr.notes, cr.created_at,
+            cr.notes, cr.legal_access, cr.legal_name, cr.legal_requested_at, cr.legal_note, cr.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -311,7 +348,7 @@ pub async fn get_record(pool: &SqlitePool, id: &str) -> Result<Option<CustodyRec
         "SELECT
             cr.id, cr.person_id, cr.incident_id, cr.case_id, cr.arrested_at, cr.location,
             cr.cross_jurisdiction_transfer, cr.transferred_at, cr.status, cr.released_at,
-            cr.notes, cr.created_at,
+            cr.notes, cr.legal_access, cr.legal_name, cr.legal_requested_at, cr.legal_note, cr.created_at,
             p.first_name AS person_first_name,
             p.last_name AS person_last_name,
             p.other_names AS person_other_names,
@@ -356,9 +393,48 @@ pub async fn seed_if_empty(pool: &SqlitePool, vault_root: &Path) -> Result<(), s
             status: "in_custody".to_string(),
             released_at: None,
             notes: None,
+            legal_access: None,
+            legal_name: None,
+            legal_requested_at: None,
+            legal_note: None,
         },
     )
     .await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod legal_access_tests {
+    use super::*;
+
+    fn input(kind: Option<&str>, name: Option<&str>) -> CreateCustodyRecordInput {
+        CreateCustodyRecordInput {
+            person_id: "p".into(),
+            incident_id: None,
+            case_id: None,
+            arrested_at: 0,
+            location: None,
+            cross_jurisdiction_transfer: false,
+            transferred_at: None,
+            status: "in_custody".into(),
+            released_at: None,
+            notes: None,
+            legal_access: kind.map(str::to_string),
+            legal_name: name.map(str::to_string),
+            legal_requested_at: None,
+            legal_note: None,
+        }
+    }
+
+    #[test]
+    fn who_the_person_asked_for_is_a_known_answer_and_a_lawyer_has_a_name() {
+        assert!(check_legal_access(&input(None, None)).is_ok(), "not recorded is allowed");
+        assert!(check_legal_access(&input(Some("declined"), None)).is_ok());
+        assert!(check_legal_access(&input(Some("not_yet_asked"), None)).is_ok());
+        assert!(check_legal_access(&input(Some("own_advocate"), Some("Adv. Nabirye"))).is_ok());
+        assert!(check_legal_access(&input(Some("own_advocate"), None)).is_err(), "a lawyer needs a name");
+        assert!(check_legal_access(&input(Some("legal_aid"), Some("  "))).is_err());
+        assert!(check_legal_access(&input(Some("magic"), Some("x"))).is_err());
+    }
 }

@@ -452,7 +452,19 @@
     },
     "notify_passed": "Muda wa mahabusu umepita",
     "notify_approaching": "Muda wa mahabusu unakaribia",
-    "notify_body": "{name}: {status}"
+    "notify_body": "{name}: {status}",
+    "legal": {
+      "label": "Wakili",
+      "none": "Haijarekodiwa",
+      "own_advocate": "Wakili wake mwenyewe",
+      "legal_aid": "Msaada wa kisheria",
+      "duty_counsel": "Wakili wa zamu",
+      "declined": "Mtu amekataa wakili",
+      "not_yet_asked": "Bado hajaulizwa",
+      "name": "Jina la wakili au chombo cha msaada wa kisheria",
+      "name_needed": "Andika wakili au chombo cha msaada wa kisheria ni nani.",
+      "shown": "Wakili: {what}"
+    }
   },
   "command_link": {
     "title": "Kamandi",
@@ -759,7 +771,10 @@
     "status": {
       "pending": "Inasubiri",
       "accepted": "Imekubaliwa",
-      "rejected": "Imekataliwa"
+      "rejected": "Imekataliwa",
+      "returned": "Imerudishwa kwa upelelezi zaidi",
+      "sanctioned": "Imeidhinishwa na DPP",
+      "declined": "Imekataliwa na DPP"
     },
     "updated": "Rufaa imesasishwa",
     "recorded": "Rufaa imerekodiwa",
@@ -2370,13 +2385,33 @@
     "send_title": "Tuma rufaa",
     "send_hint": "Hifadhi faili iliyofungwa na uibebe hadi ofisini, au itume kwa sanduku la posta.",
     "send_blocked": "Hakuna ofisi iliyothibitisha kituo hiki bado, kwa hivyo hakuna kinachoweza kutumwa.",
+    "send_ended": "{office} imesitisha muunganisho wake na kituo hiki, kwa hivyo hakuna kinachoweza kutumwa kwake. Iombe ofisi ikualike kituo hiki tena.",
+    "ended_reason": "Sababu iliyotolewa na ofisi: {reason}",
     "no_referrals": "Hakuna rufaa bado. Peleka kesi kwa DPP kwanza.",
     "save_file": "Hifadhi kama faili",
     "sent_file": "Imehifadhiwa {name}.",
     "incoming_title": "Kutoka ofisini",
     "no_incoming": "Hakuna kilichorudi bado.",
     "receipt": "Risiti",
-    "decision": "Uamuzi"
+    "decision": "Uamuzi",
+    "decision_type": {
+      "amend_charge": "Rekebisha / elekeza shtaka mbadala",
+      "committal_venue_high_court": "Kupeleka kesi / uamuzi wa mahakama (Mahakama Kuu)",
+      "decline": "Kukataa kushtaki",
+      "discontinue": "Kusitisha mashauri",
+      "divert": "Kuelekeza nje (mbadala wa mashtaka)",
+      "nolle_prosequi": "Nolle prosequi",
+      "plea_bargain_accepted": "Makubaliano ya kukiri kosa yamekubaliwa",
+      "return_for_investigation": "Rudisha kwa upelelezi zaidi",
+      "sanction": "Idhinisha (amua kushtaki)",
+      "take_over": "Chukua usimamizi wa mashtaka",
+      "threshold_charge": "Shtaka la Kipimo cha Kizingiti"
+    },
+    "outcome": {
+      "accepted": "Imekubaliwa",
+      "rejected": "Imekataliwa",
+      "received": "Imepokelewa"
+    }
   },
   "timezone": {
     "title": "Saa za eneo",
@@ -2465,6 +2500,7 @@
     "stage_opened": "Kimefunguliwa",
     "stage_accepted": "Kimekubaliwa",
     "stage_rejected": "Kimekataliwa",
+    "stage_refused": "Imerudishwa na ofisi",
     "stage_attention": "Kinahitaji hatua",
     "stage_expired": "Hakikufikishwa",
     "invitation_from": "Mwaliko kutoka {office}",

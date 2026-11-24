@@ -33,8 +33,15 @@ export const referralStatuses = [
   { value: 'rejected', get label() { return m["referrals.status.rejected"]() } },
 ] as const
 
+// What the DPP decided comes back from its decision notice and is never picked by hand, so it is not in the form list.
+const decidedStatuses = [
+  { value: 'returned', get label() { return m["referrals.status.returned"]() } },
+  { value: 'sanctioned', get label() { return m["referrals.status.sanctioned"]() } },
+  { value: 'declined', get label() { return m["referrals.status.declined"]() } },
+] as const
+
 export function referralStatusLabel(status: string) {
-  return referralStatuses.find((s) => s.value === status)?.label ?? status
+  return [...referralStatuses, ...decidedStatuses].find((s) => s.value === status)?.label ?? status
 }
 
 export const referralSchema = z.object({

@@ -761,6 +761,10 @@ async fn create_referral_handler(
     State(state): State<AppState>,
     Json(input): Json<CreateReferralInput>,
 ) -> Result<Json<Referral>, ApiError> {
+    // A referral to the DPP that could not be sent is refused here, so none is left behind half made.
+    if input.destination_type == "dpp" {
+        crate::domain::exchange::check_ready_to_refer(&state.pool, &input.case_id).await.map_err(session::domain_error)?;
+    }
     referrals::create_referral(&state.pool, &state.vault_root, input)
         .await
         .map(Json)
@@ -1094,6 +1098,7 @@ async fn create_custody_record_handler(
     State(state): State<AppState>,
     Json(input): Json<CreateCustodyRecordInput>,
 ) -> Result<Json<CustodyRecord>, ApiError> {
+    custody::check_legal_access(&input).map_err(|reason| (StatusCode::UNPROCESSABLE_ENTITY, reason))?;
     custody::create_record(&state.pool, &state.vault_root, input)
         .await
         .map(Json)
@@ -1105,6 +1110,7 @@ async fn update_custody_record_handler(
     Path(id): Path<String>,
     Json(input): Json<CreateCustodyRecordInput>,
 ) -> Result<Json<CustodyRecord>, ApiError> {
+    custody::check_legal_access(&input).map_err(|reason| (StatusCode::UNPROCESSABLE_ENTITY, reason))?;
     custody::update_record(&state.pool, &state.vault_root, &id, input)
         .await
         .map(Json)
@@ -2004,6 +2010,15 @@ mod tests {
         let (_, typed) = call(&app, Method::POST, "/api/referrals", Some(referral(Value::Null, json!("Sgt Someone")))).await;
         assert_eq!(typed["officerName"], "Sgt Someone");
         assert!(typed["officerId"].is_null());
+
+        // A referral for a case with a statement from someone not on it is refused up front, and none is left behind.
+        let (_, who) = call(&app, Method::POST, "/api/people", Some(json!({ "firstName": "Agnes", "lastName": "Lamunu" }))).await;
+        let (st, _) = call(&app, Method::POST, "/api/statements", Some(json!({ "caseId": case["id"], "personId": who["id"], "officerName": "Ada Okello", "givenAt": 1, "content": "I saw it." }))).await;
+        assert_eq!(st, StatusCode::OK);
+        let before = call(&app, Method::GET, "/api/referrals", None).await.1.as_array().unwrap().len();
+        let (status, why) = call(&app, Method::POST, "/api/referrals", Some(referral(Value::Null, json!("Sgt Someone")))).await; // the error text is plain, not JSON
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{why}");
+        assert_eq!(call(&app, Method::GET, "/api/referrals", None).await.1.as_array().unwrap().len(), before, "nothing was left behind");
 
         db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);

@@ -452,7 +452,19 @@
     },
     "notify_passed": "Custody deadline passed",
     "notify_approaching": "Custody deadline approaching",
-    "notify_body": "{name}: {status}"
+    "notify_body": "{name}: {status}",
+    "legal": {
+      "label": "Lawyer",
+      "none": "Not recorded",
+      "own_advocate": "Own advocate",
+      "legal_aid": "Legal aid",
+      "duty_counsel": "Duty counsel",
+      "declined": "Person declined a lawyer",
+      "not_yet_asked": "Not yet asked",
+      "name": "Name of the lawyer or legal aid body",
+      "name_needed": "Write down who the lawyer or the legal aid body is.",
+      "shown": "Lawyer: {what}"
+    }
   },
   "command_link": {
     "title": "Command",
@@ -759,7 +771,10 @@
     "status": {
       "pending": "Pending",
       "accepted": "Accepted",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "returned": "Returned for investigation",
+      "sanctioned": "Sanctioned by the DPP",
+      "declined": "Declined by the DPP"
     },
     "updated": "Referral updated",
     "recorded": "Referral recorded",
@@ -2370,13 +2385,33 @@
     "send_title": "Send a referral",
     "send_hint": "Save the sealed file and carry it to the office, or send it by postbox.",
     "send_blocked": "No office has confirmed this station yet, so nothing can be sent.",
+    "send_ended": "{office} has ended its connection with this station, so nothing can be sent to it. Ask the office to invite this station again.",
+    "ended_reason": "Reason given by the office: {reason}",
     "no_referrals": "No referrals yet. Refer a case to the DPP first.",
     "save_file": "Save as file",
     "sent_file": "Saved {name}.",
     "incoming_title": "From the office",
     "no_incoming": "Nothing has come back yet.",
     "receipt": "Receipt",
-    "decision": "Decision"
+    "decision": "Decision",
+    "decision_type": {
+      "amend_charge": "Amend / direct alternative charge",
+      "committal_venue_high_court": "Committal / venue decision (High Court)",
+      "decline": "Decline to charge",
+      "discontinue": "Discontinue proceedings",
+      "divert": "Divert (alternative to prosecution)",
+      "nolle_prosequi": "Nolle prosequi",
+      "plea_bargain_accepted": "Plea bargain accepted",
+      "return_for_investigation": "Return for further investigation",
+      "sanction": "Sanction (decide to prosecute)",
+      "take_over": "Take over prosecution",
+      "threshold_charge": "Threshold Test charge"
+    },
+    "outcome": {
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "received": "Received"
+    }
   },
   "timezone": {
     "title": "Time zone",
@@ -2465,6 +2500,7 @@
     "stage_opened": "Opened",
     "stage_accepted": "Accepted",
     "stage_rejected": "Rejected",
+    "stage_refused": "Turned away by the office",
     "stage_attention": "Needs attention",
     "stage_expired": "Not delivered",
     "invitation_from": "Invitation from {office}",

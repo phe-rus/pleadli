@@ -35,6 +35,10 @@ export const custodyRecordSchema = z.object({
   status: z.string(),
   releasedAt: z.number().nullable(),
   notes: z.string().nullable(),
+  legalAccess: z.string().nullable(),
+  legalName: z.string().nullable(),
+  legalRequestedAt: z.number().nullable(),
+  legalNote: z.string().nullable(),
   createdAt: z.number(),
 })
 
@@ -51,9 +55,18 @@ export const createCustodyRecordSchema = z.object({
   status: z.string().min(1, { error: () => m["validation.status_is_required"]() }),
   releasedAt: z.number().nullable(),
   notes: z.string(),
+  legalAccess: z.string().nullable(),
+  legalName: z.string(),
+  legalRequestedAt: z.number().nullable().optional(),
+  legalNote: z.string().nullable().optional(),
 })
 
 export type CreateCustodyRecordInput = z.infer<typeof createCustodyRecordSchema>
+
+/** How a person in custody reached, or did not reach, a lawyer. It is a record kept at the station; nothing is sent. */
+export const legalAccessKinds = ["own_advocate", "legal_aid", "duty_counsel", "declined", "not_yet_asked"] as const
+export const legalAccessNeedsName = (kind: string | null) => kind === "own_advocate" || kind === "legal_aid" || kind === "duty_counsel"
+export const legalAccessLabel = (kind: string) => (m as unknown as Record<string, () => string>)[`custody.legal.${kind}`]?.() ?? kind
 
 export function custodyPersonName(record: CustodyRecord) {
   return [record.personLastName, record.personFirstName, record.personOtherNames].filter(Boolean).join(', ')

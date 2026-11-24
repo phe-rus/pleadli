@@ -452,7 +452,19 @@
     },
     "notify_passed": "Échéance de garde à vue dépassée",
     "notify_approaching": "Échéance de garde à vue proche",
-    "notify_body": "{name} : {status}"
+    "notify_body": "{name} : {status}",
+    "legal": {
+      "label": "Avocat",
+      "none": "Non noté",
+      "own_advocate": "Son propre avocat",
+      "legal_aid": "Aide juridique",
+      "duty_counsel": "Avocat de permanence",
+      "declined": "La personne a refusé un avocat",
+      "not_yet_asked": "Pas encore demandé",
+      "name": "Nom de l'avocat ou de l'organisme d'aide juridique",
+      "name_needed": "Indiquez qui est l'avocat ou l'organisme d'aide juridique.",
+      "shown": "Avocat : {what}"
+    }
   },
   "command_link": {
     "title": "Commandement",
@@ -759,7 +771,10 @@
     "status": {
       "pending": "En attente",
       "accepted": "Acceptée",
-      "rejected": "Rejetée"
+      "rejected": "Rejetée",
+      "returned": "Renvoyée pour complément d'enquête",
+      "sanctioned": "Poursuite autorisée par le DPP",
+      "declined": "Classée par le DPP"
     },
     "updated": "Transmission mise à jour",
     "recorded": "Transmission enregistrée",
@@ -2370,13 +2385,33 @@
     "send_title": "Envoyer une transmission",
     "send_hint": "Enregistrez le fichier scellé et portez-le au bureau, ou envoyez-le par boîte aux lettres.",
     "send_blocked": "Aucun bureau n'a encore confirmé ce poste, rien ne peut donc être envoyé.",
+    "send_ended": "{office} a mis fin à sa connexion avec ce poste, rien ne peut donc lui être envoyé. Demandez au bureau d'inviter de nouveau ce poste.",
+    "ended_reason": "Motif donné par le bureau : {reason}",
     "no_referrals": "Aucune transmission pour l'instant. Transmettez d'abord une affaire au parquet.",
     "save_file": "Enregistrer comme fichier",
     "sent_file": "{name} enregistré.",
     "incoming_title": "Du bureau",
     "no_incoming": "Rien n'est encore revenu.",
     "receipt": "Accusé de réception",
-    "decision": "Décision"
+    "decision": "Décision",
+    "decision_type": {
+      "amend_charge": "Modifier / ordonner une qualification subsidiaire",
+      "committal_venue_high_court": "Renvoi / décision de compétence (Haute Cour)",
+      "decline": "Ne pas poursuivre",
+      "discontinue": "Abandonner les poursuites",
+      "divert": "Déjudiciariser (alternative aux poursuites)",
+      "nolle_prosequi": "Nolle prosequi",
+      "plea_bargain_accepted": "Accord sur la culpabilité accepté",
+      "return_for_investigation": "Renvoyer pour complément d'enquête",
+      "sanction": "Autoriser (décider de poursuivre)",
+      "take_over": "Reprendre l'action publique",
+      "threshold_charge": "Poursuite selon le critère du seuil"
+    },
+    "outcome": {
+      "accepted": "Accepté",
+      "rejected": "Refusé",
+      "received": "Reçu"
+    }
   },
   "timezone": {
     "title": "Fuseau horaire",
@@ -2465,6 +2500,7 @@
     "stage_opened": "Ouvert",
     "stage_accepted": "Accepté",
     "stage_rejected": "Refusé",
+    "stage_refused": "Écarté par le bureau",
     "stage_attention": "À traiter",
     "stage_expired": "Non remis",
     "invitation_from": "Invitation de {office}",

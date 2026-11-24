@@ -5,7 +5,7 @@ import { Tag } from '@/components/status-tag'
 import { Button } from '@pleadli/ui/button'
 import { format } from '@/lib/date'
 import { formatDistanceToNowStrict } from '@/lib/date'
-import { custodyBasisLabel, custodyCompliance, custodyPersonName, type CustodyRecord } from './schema'
+import { custodyBasisLabel, custodyCompliance, custodyPersonName, legalAccessLabel, type CustodyRecord } from './schema'
 
 /** Past this many hours before the limit a row is marked as needing action. */
 const NEAR_HOURS = 6
@@ -48,6 +48,7 @@ export function CustodyBoard({ records, onOpen }: { records: CustodyRecord[]; on
                 {m["custody.arrested_summary"]({ when: formatDistanceToNowStrict(record.arrestedAt, { addSuffix: true }) })}
                 {record.location ? m["custody.at_location"]({ location: record.location }) : ''}
                 {record.caseReference ? m["custody.case_ref"]({ reference: record.caseReference }) : ''}
+                {record.legalAccess ? `. ${m["custody.legal.shown"]({ what: legalAccessLabel(record.legalAccess) + (record.legalName ? `, ${record.legalName}` : "") })}` : ""}
                 {m["custody.limit_summary"]({ deadline: format(compliance.deadline, 'PP p'), basis: custodyBasisLabel(compliance.basis) })}
               </>
             }

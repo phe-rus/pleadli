@@ -183,6 +183,19 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
 
     if header.kind == KIND_CONFIRMATION {
         let (_, confirmation) = pairing::read_confirmation(&station, &office, bytes).map_err(|e| bad(e.to_string()))?;
+        // The office ended the connection. Its signature is the one this station pinned, so this is its own word:
+        // the station stops treating it as trusted, and says why. A second copy of the same notice changes nothing.
+        if confirmation.outcome == "revoked" {
+            let message = format!("{} has ended this station's connection. Referrals can no longer be sent to it.", office.name);
+            if status == "revoked" {
+                return Ok(Imported { kind: KIND_CONFIRMATION.into(), message });
+            }
+            if status != "trusted" && status != "answered" {
+                return Err(bad("That connection is not active."));
+            }
+            sqlx::query("UPDATE dpp_connections SET status = 'revoked', reason = ? WHERE id = ?").bind(&confirmation.reason).bind(&connection_id).execute(pool).await?;
+            return Ok(Imported { kind: KIND_CONFIRMATION.into(), message });
+        }
         if status != "answered" {
             return Err(bad("That connection is not waiting for a confirmation."));
         }
@@ -231,10 +244,29 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     if opened.header.kind == KIND_RECEIPT {
         let outcome = opened.body.json.get("outcome").and_then(|v| v.as_str()).filter(|o| *o == "accepted" || *o == "rejected");
         if let (Some(outcome), Some(reply_to)) = (outcome, opened.header.in_reply_to.as_deref()) {
-            sqlx::query("UPDATE referrals SET status = ? WHERE id = (SELECT referral_id FROM exchange_outgoing WHERE id = ? AND connection_id = ? AND kind = 'referral')")
+            sqlx::query("UPDATE referrals SET status = ? WHERE status NOT IN ('returned', 'sanctioned', 'declined') AND id = (SELECT referral_id FROM exchange_outgoing WHERE id = ? AND connection_id = ? AND kind = 'referral')")
                 .bind(outcome)
                 .bind(reply_to)
                 .bind(&connection_id)
+                .execute(&mut *tx)
+                .await?;
+        }
+    }
+    // The office's decision moves the referral on, so the list does not keep saying "accepted" after the file was
+    // returned, sanctioned or declined. It applies to the latest referral this station sent for that case.
+    if opened.header.kind == KIND_DECISION_NOTICE {
+        let status = match opened.body.json.get("decisionType").and_then(|v| v.as_str()) {
+            Some("return_for_investigation") => Some("returned"),
+            Some("sanction") | Some("threshold_charge") => Some("sanctioned"),
+            Some("decline") | Some("discontinue") | Some("nolle_prosequi") => Some("declined"),
+            _ => None,
+        };
+        let reference = opened.body.json.get("policeReference").and_then(|v| v.as_str());
+        if let (Some(status), Some(reference)) = (status, reference) {
+            sqlx::query("UPDATE referrals SET status = ? WHERE id = (SELECT r.id FROM referrals r JOIN cases c ON c.id = r.case_id JOIN exchange_outgoing o ON o.referral_id = r.id AND o.kind = 'referral' AND o.connection_id = ? WHERE c.reference = ? AND r.status IN ('pending', 'accepted') ORDER BY r.referred_at DESC LIMIT 1)")
+                .bind(status)
+                .bind(&connection_id)
+                .bind(reference)
                 .execute(&mut *tx)
                 .await?;
         }
@@ -289,6 +321,21 @@ fn claim_role(role: &str) -> &'static str {
 }
 
 /// What the referral says, read from the station's own case records.
+/// Everyone who gave a statement, or is charged, has to be on the case, or the DPP refuses the whole referral.
+/// Said here, to the officer, before a referral exists, rather than after it has gone.
+pub async fn check_ready_to_refer(pool: &SqlitePool, case_id: &str) -> Result<(), DomainError> {
+    let on_case: Vec<String> = sqlx::query_scalar("SELECT person_id FROM case_people WHERE case_id = ?").bind(case_id).fetch_all(pool).await?;
+    let speakers: Vec<(String, String, String)> = sqlx::query_as("SELECT DISTINCT s.person_id, p.first_name, p.last_name FROM statements s JOIN people p ON p.id = s.person_id WHERE s.case_id = ?").bind(case_id).fetch_all(pool).await?;
+    if let Some((_, first, last)) = speakers.iter().find(|(id, _, _)| !on_case.contains(id)) {
+        return Err(bad(format!("{first} {last} gave a statement on this case but is not listed on it. Add them to the case, for example as a witness, and refer again.")));
+    }
+    let accused: Vec<String> = sqlx::query_scalar("SELECT accused_person_id FROM charge_sheets WHERE case_id = ? AND accused_person_id IS NOT NULL").bind(case_id).fetch_all(pool).await?;
+    if accused.iter().any(|id| !on_case.contains(id)) {
+        return Err(bad("A charge names someone who is not listed on the case. Add them to the case and refer again."));
+    }
+    Ok(())
+}
+
 async fn referral_payload(pool: &SqlitePool, vault_root: &std::path::Path, referral_id: &str) -> Result<(ReferralPayload, Vec<(String, String, String, Vec<u8>)>), DomainError> {
     // Files travel with the record they are attached to (a statement's signed copy, an exhibit's photograph). Each is
     // opened from the sealed vault here, and the package carries its own SHA-256 so DPP checks it on opening.
@@ -310,6 +357,10 @@ async fn referral_payload(pool: &SqlitePool, vault_root: &std::path::Path, refer
     let (case_id, referred_at, officer, notes) = referral.ok_or_else(|| DomainError::NotFound("No such referral.".into()))?;
     let (reference, summary): (String, String) = sqlx::query_as("SELECT reference, summary FROM cases WHERE id = ?").bind(&case_id).fetch_one(pool).await?;
     let station_name: String = sqlx::query_scalar("SELECT station_name FROM exchange_identity WHERE id = 'default'").fetch_one(pool).await?;
+    // A file the DPP returned for further investigation comes back to the same file, not a new one: quote the DPP's
+    // own file key from its latest decision notice on this case, if that notice was a return.
+    let notices: Vec<String> = sqlx::query_scalar("SELECT payload FROM exchange_incoming WHERE kind = 'decision_notice' ORDER BY received_at DESC").fetch_all(pool).await?;
+    let resubmission_of = notices.iter().filter_map(|p| serde_json::from_str::<serde_json::Value>(p).ok()).find(|v| v["policeReference"].as_str() == Some(reference.as_str())).and_then(|v| if v["decisionType"].as_str() == Some("return_for_investigation") { v["dppFileKey"].as_str().map(str::to_string) } else { None });
 
     let people: Vec<(String, String, String, String, Option<String>, Option<String>, Option<String>, Option<String>)> = sqlx::query_as(
         "SELECT p.id, cp.role, p.first_name, p.last_name, p.other_names, p.phone, p.national_id, p.address FROM case_people cp JOIN people p ON p.id = cp.person_id WHERE cp.case_id = ? ORDER BY cp.created_at",
@@ -317,7 +368,7 @@ async fn referral_payload(pool: &SqlitePool, vault_root: &std::path::Path, refer
     .bind(&case_id)
     .fetch_all(pool)
     .await?;
-    let people = people.into_iter().map(|(key, role, first_name, last_name, other_names, phone, national_id, address)| PersonClaim { key, role: claim_role(&role).into(), first_name, last_name, other_names, phone, national_id, address }).collect();
+    let people: Vec<PersonClaim> = people.into_iter().map(|(key, role, first_name, last_name, other_names, phone, national_id, address)| PersonClaim { key, role: claim_role(&role).into(), first_name, last_name, other_names, phone, national_id, address }).collect();
 
     let statements: Vec<(String, String, i64, String, Option<String>)> = sqlx::query_as("SELECT id, person_id, given_at, content, officer_name FROM statements WHERE case_id = ? ORDER BY given_at").bind(&case_id).fetch_all(pool).await?;
     let mut statement_claims = Vec::new();
@@ -349,9 +400,11 @@ async fn referral_payload(pool: &SqlitePool, vault_root: &std::path::Path, refer
     }
 
     let charges: Vec<(Option<String>, String, String, String)> = sqlx::query_as("SELECT accused_person_id, offence, statutory_section, particulars FROM charge_sheets WHERE case_id = ?").bind(&case_id).fetch_all(pool).await?;
-    let charges = charges.into_iter().map(|(accused_person_key, offence, section, particulars)| ChargeClaim { accused_person_key, offence, statutory_section: Some(section), particulars: Some(particulars) }).collect();
+    let charges: Vec<ChargeClaim> = charges.into_iter().map(|(accused_person_key, offence, section, particulars)| ChargeClaim { accused_person_key, offence, statutory_section: Some(section), particulars: Some(particulars) }).collect();
 
-    Ok((ReferralPayload { police_reference: reference, station_name, referred_at, referring_officer: officer, summary, people, statements, exhibits, charges, resubmission_of: None, notes }, files))
+    check_ready_to_refer(pool, &case_id).await?;
+
+    Ok((ReferralPayload { police_reference: reference, station_name, referred_at, referring_officer: officer, summary, people, statements, exhibits, charges, resubmission_of, notes }, files))
 }
 
 /// Seals a referral to the one trusted office, for saving as a file or for the
@@ -394,6 +447,44 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let db = crate::db::startup(&dir, dir.join("vault")).await.ok().unwrap();
         db.pool
+    }
+
+    /// The office ends the connection. Its signed notice makes the station stop trusting it, keeps the office's reason,
+    /// can arrive twice, and nothing can be sent to the office afterwards. A notice from any other office is refused.
+    #[tokio::test]
+    async fn an_office_that_ends_the_connection_is_no_longer_trusted_by_the_station() {
+        let pool = test_pool().await;
+        create_identity(&pool, "Revoke Test Police Station", Some("Kampala")).await.unwrap();
+        let office = Identity::generate(IdentityKind::DppOffice, "Revoke Test DPP Office", Some("Kampala"));
+        let (invite_file, invite) = pairing::make_invite(&office, "Revoke Test Police Station", i64::MAX).unwrap();
+        let (_, response_file) = accept_invite(&pool, &invite_file, Some("OC Test")).await.unwrap();
+        let response = pairing::read_response(&response_file).unwrap();
+        let trusted = pairing::make_confirmation(&office, &response.station, &invite.invite_id, "trusted", None).unwrap();
+        import_package(&pool, &trusted).await.unwrap();
+        let state = |pool: SqlitePool| async move { sqlx::query_as::<_, (String, Option<String>)>("SELECT status, reason FROM dpp_connections").fetch_one(&pool).await.unwrap() };
+        assert_eq!(state(pool.clone()).await.0, "trusted");
+
+        // A notice signed by an office this station never connected to changes nothing.
+        let stranger = Identity::generate(IdentityKind::DppOffice, "Some Other Office", None);
+        let forged = pairing::make_confirmation(&stranger, &response.station, &invite.invite_id, "revoked", Some("Forged.")).unwrap();
+        assert!(import_package(&pool, &forged).await.is_err());
+        assert_eq!(state(pool.clone()).await.0, "trusted");
+
+        let notice = pairing::make_confirmation(&office, &response.station, &invite.invite_id, "revoked", Some("Station key was lost.")).unwrap();
+        let heard = import_package(&pool, &notice).await.unwrap();
+        assert_eq!(heard.kind, KIND_CONFIRMATION);
+        assert!(heard.message.contains("ended"), "{}", heard.message);
+        assert_eq!(state(pool.clone()).await, ("revoked".to_string(), Some("Station key was lost.".to_string())));
+
+        // The same notice again, or a newer copy, is accepted without changing anything or raising a failure.
+        let again = pairing::make_confirmation(&office, &response.station, &invite.invite_id, "revoked", Some("Station key was lost.")).unwrap();
+        assert_eq!(import_package(&pool, &again).await.unwrap().kind, KIND_CONFIRMATION);
+        assert_eq!(state(pool.clone()).await.0, "revoked");
+
+        // Nothing can be sent to an office that ended the connection.
+        sqlx::query("INSERT INTO cases (id, reference, summary, status) VALUES ('c9', 'REV CRB 9/2026', 'Theft', 'open')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO referrals (id, case_id, destination_type, destination_name, referred_at, status, officer_name) VALUES ('r9', 'c9', 'dpp', 'DPP', 2, 'sent', 'IO')").execute(&pool).await.unwrap();
+        assert!(export_referral(&pool, std::path::Path::new(""), "r9", "file").await.is_err());
     }
 
     /// The whole hand-over, with the office played by the shared contract:
@@ -448,6 +539,19 @@ mod tests {
         let held = list_incoming(&pool).await.unwrap();
         assert_eq!(held.len(), 1);
         assert!(held[0].payload.contains("DPP 7/2026"));
+
+        // The office then returns the file for investigation: the referral stops saying "accepted". A late or repeated
+        // receipt cannot put it back.
+        let notice = serde_json::json!({ "decisionType": "return_for_investigation", "policeReference": "EXCH CRB 1/2026", "directions": [] });
+        let (notice_bytes, _) = envelope::seal(&office, &response.station, KIND_DECISION_NOTICE, 2, None, &Body::new(notice)).unwrap();
+        assert_eq!(import_package(&pool, &notice_bytes).await.unwrap().kind, KIND_DECISION_NOTICE);
+        let after: String = sqlx::query_scalar("SELECT status FROM referrals WHERE id = 'r1'").fetch_one(&pool).await.unwrap();
+        assert_eq!(after, "returned", "a return moves the referral on");
+        let late = pleadli_interchange::messages::ReceiptPayload { referral_package_id: opened.header.id.clone(), police_reference: payload.police_reference.clone(), outcome: "accepted".into(), received_at: 1, decided_at: 2, ..Default::default() };
+        let (late_bytes, _) = envelope::seal(&office, &response.station, KIND_RECEIPT, 3, Some(&opened.header.id), &Body::new(serde_json::to_value(&late).unwrap())).unwrap();
+        import_package(&pool, &late_bytes).await.unwrap();
+        let still: String = sqlx::query_scalar("SELECT status FROM referrals WHERE id = 'r1'").fetch_one(&pool).await.unwrap();
+        assert_eq!(still, "returned", "a late receipt does not undo it");
 
         // A stranger's package is refused.
         let stranger = Identity::generate(IdentityKind::DppOffice, "Stranger", None);

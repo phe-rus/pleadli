@@ -143,14 +143,16 @@ impl Relay {
         let why_not = access.is_none().then(|| NO_LICENCE.to_string());
 
         // What each referral is, and what the office has said about it so far.
-        let referrals: HashMap<String, (String, Option<String>)> = sqlx::query_as::<_, (String, String, Option<String>)>(
-            "SELECT o.id, c.office_name, json_extract(o.payload, '$.policeReference') FROM exchange_outgoing o JOIN dpp_connections c ON c.id = o.connection_id WHERE o.kind = 'referral'",
+        // The last two fields are the connection's state and the office's reason for ending it: a referral the office
+        // never answered, to an office that has since ended the connection, was turned away and must not look delivered.
+        let referrals: HashMap<String, (String, Option<String>, String, Option<String>)> = sqlx::query_as::<_, (String, String, Option<String>, String, Option<String>)>(
+            "SELECT o.id, c.office_name, json_extract(o.payload, '$.policeReference'), c.status, c.reason FROM exchange_outgoing o JOIN dpp_connections c ON c.id = o.connection_id WHERE o.kind = 'referral'",
         )
         .fetch_all(&self.pool)
         .await
         .unwrap_or_default()
         .into_iter()
-        .map(|(id, office, reference)| (id, (office, reference)))
+        .map(|(id, office, reference, state, why)| (id, (office, reference, state, why)))
         .collect();
         let mut answers: HashMap<String, (String, Option<String>, Option<String>)> = HashMap::new();
         let receipts: Vec<(String, Option<String>, Option<String>, Option<String>)> = sqlx::query_as(
@@ -183,17 +185,20 @@ impl Relay {
                     "expired" => "expired",
                     _ => "attention",
                 };
+                let (office, police_reference, connection_state, ended_because) = referrals.get(&s.id).cloned().unwrap_or((String::new(), None, String::new(), None));
+                let ended = connection_state == "revoked";
                 let stage = match answer.map(|a| a.0.as_str()) {
                     Some("accepted") => "accepted",
                     Some("rejected") => "rejected",
                     // The office's own signed word that it read the referral beats the relay's guess.
                     Some("received") => "opened",
+                    _ if ended => "refused",
                     _ => transport,
                 };
-                let (office, police_reference) = referrals.get(&s.id).cloned().unwrap_or((String::new(), None));
+                let reason = if stage == "refused" { Some(ended_because.unwrap_or_else(|| "The office ended this connection.".to_string())) } else { answer.and_then(|a| a.1.clone()) };
                 SentView {
                     stage: stage.to_string(),
-                    reason: answer.and_then(|a| a.1.clone()),
+                    reason,
                     dpp_reference: answer.and_then(|a| a.2.clone()),
                     office: (!office.is_empty()).then_some(office),
                     police_reference,
@@ -322,6 +327,12 @@ impl Relay {
         }
         let address: Option<Option<String>> = sqlx::query_scalar("SELECT office_address FROM dpp_connections WHERE status = 'trusted' ORDER BY trusted_at DESC LIMIT 1").fetch_optional(&self.pool).await?;
         let Some(Some(to)) = address else {
+            // The newest connection was ended by the office: say so, with its reason, instead of asking to pair again blindly.
+            let ended: Option<(String, Option<String>)> = sqlx::query_as("SELECT office_name, reason FROM dpp_connections WHERE status = 'revoked' ORDER BY created_at DESC LIMIT 1").fetch_optional(&self.pool).await?;
+            if let Some((office, why)) = ended {
+                let why = why.filter(|w| !w.trim().is_empty()).map(|w| format!(" Reason: {}", w.trim())).unwrap_or_default();
+                return Err(DomainError::Invalid(format!("{office} has ended its connection with this station, so nothing can be sent to it.{why} Ask the office to invite this station again.")));
+            }
             return Err(DomainError::Invalid("The confirmed DPP office has not been reached through the postbox. Answer its invitation there first, or send the file by hand.".into()));
         };
         let (bytes, _) = exchange::export_referral(&self.pool, &self.vault_root, referral_id, "postbox").await?;
