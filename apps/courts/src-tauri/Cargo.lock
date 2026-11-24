@@ -1005,7 +1005,7 @@ dependencies = [
 
 [[package]]
 name = "courts"
-version = "0.1.0"
+version = "0.1.5"
 dependencies = [
  "argon2 0.5.3",
  "axum",

@@ -1,6 +1,6 @@
 [package]
 name = "courts"
-version = "0.1.0"
+version = "0.1.5"
 description = "Pleadli Courts: the bench and courtroom workspace"
 authors = ["Pleadli"]
 edition = "2021"

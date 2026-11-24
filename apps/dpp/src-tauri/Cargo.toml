@@ -1,6 +1,6 @@
 [package]
 name = "dpp"
-version = "0.1.2"
+version = "0.1.5"
 description = "Pleadli DPP: prosecution review and charging decisions"
 authors = ["Pleadli"]
 edition = "2021"

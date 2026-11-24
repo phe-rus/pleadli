@@ -1,7 +1,7 @@
 {
   "name": "prisons",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.5",
   "type": "module",
   "scripts": {
     "dev": "NODE_OPTIONS=--max-old-space-size=768 vite",
