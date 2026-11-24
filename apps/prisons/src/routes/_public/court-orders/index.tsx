@@ -1,5 +1,5 @@
 import { zoneFor } from '@pleadli/ui/lib/institution-zone'
-import { createIdentity, createInvite, getIdentity, importPackage, listLinks, listOrders, listPrisoners, pickPackage, recordOrder, reportToCourt, returnOrder, savePackage, trustLink, type CourtLink, type FacilityIdentity, type IncomingOrder, type OrderClaim, type PrisonerOption } from '@/features/court-orders/data'
+import { createIdentity, createInvite, getIdentity, importPackage, listLinks, listOrders, listPrisoners, pickPackage, recordOrder, reportToCourt, returnOrder, savePackage, revokeLink, trustLink, type CourtLink, type FacilityIdentity, type IncomingOrder, type OrderClaim, type PrisonerOption } from '@/features/court-orders/data'
 import { m } from '@/paraglide/messages'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react'
 export const Route = createFileRoute('/_public/court-orders/')({ component: RouteComponent })
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
-const linkStatus = (s: string) => (s === 'trusted' ? m.court_orders_status_trusted() : s === 'awaiting_confirmation' ? m.court_orders_status_awaiting() : s === 'declined' ? m.court_orders_status_declined() : m.court_orders_status_invited())
+const linkStatus = (s: string) => (s === 'trusted' ? m.court_orders_status_trusted() : s === 'awaiting_confirmation' ? m.court_orders_status_awaiting() : s === 'declined' ? m.court_orders_status_declined() : s === 'revoked' ? m.court_orders_status_revoked() : m.court_orders_status_invited())
 const parse = (payload: string): OrderClaim => {
   try {
     return JSON.parse(payload)
@@ -33,6 +33,7 @@ function RouteComponent() {
   const [area, setArea] = useState('')
   const [court, setCourt] = useState('')
   const [codes, setCodes] = useState<Record<string, string>>({})
+  const [endReasons, setEndReasons] = useState<Record<string, string>>({})
   const [chosen, setChosen] = useState<Record<string, string>>({})
   const [reasons, setReasons] = useState<Record<string, string>>({})
   const [events, setEvents] = useState<Record<string, string>>({})
@@ -161,6 +162,26 @@ function RouteComponent() {
                           </Button>
                         </span>
                       )}
+
+                      {l.status === 'trusted' && (
+                        <span className="flex flex-wrap items-center gap-2">
+                          <Input aria-label={m.court_orders_end_ph()} placeholder={m.court_orders_end_ph()} value={endReasons[l.id] ?? ''} onChange={(e) => setEndReasons({ ...endReasons, [l.id]: e.target.value })} className="w-60" />
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={!(endReasons[l.id] ?? '').trim()}
+                            onClick={() =>
+                              run(async () => {
+                                const c = await revokeLink(l.id, endReasons[l.id] ?? '')
+                                if (await savePackage(c)) return m.court_orders_ended({ name: l.courtName ?? l.intendedCourt })
+                              })
+                            }
+                          >
+                            {m.court_orders_end()}
+                          </Button>
+                        </span>
+                      )}
+                      {l.status === 'revoked' && l.revokedReason && <span className="text-muted-foreground">{m.court_orders_ended_reason({ reason: l.revokedReason })}</span>}
                     </div>
                   ))
                 )}

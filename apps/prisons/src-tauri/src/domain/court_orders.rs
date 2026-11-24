@@ -104,14 +104,16 @@ pub struct CourtLink {
     pub invite_expires_at: i64,
     pub responded_at: Option<i64>,
     pub trusted_at: Option<i64>,
+    pub revoked_at: Option<i64>,
+    pub revoked_reason: Option<String>,
 }
 
 pub async fn list_links(conn: &mut SqliteConnection) -> Result<Vec<CourtLink>, DomainError> {
-    Ok(sqlx::query_as("SELECT id, intended_court, status, court_name, fingerprint, invite_expires_at, responded_at, trusted_at FROM court_links ORDER BY created_at DESC").fetch_all(&mut *conn).await?)
+    Ok(sqlx::query_as("SELECT id, intended_court, status, court_name, fingerprint, invite_expires_at, responded_at, trusted_at, revoked_at, revoked_reason FROM court_links ORDER BY created_at DESC").fetch_all(&mut *conn).await?)
 }
 
 async fn get_link(conn: &mut SqliteConnection, id: &str) -> Result<CourtLink, DomainError> {
-    sqlx::query_as("SELECT id, intended_court, status, court_name, fingerprint, invite_expires_at, responded_at, trusted_at FROM court_links WHERE id = ?").bind(id).fetch_optional(&mut *conn).await?.ok_or(DomainError::NotFound("No such connection."))
+    sqlx::query_as("SELECT id, intended_court, status, court_name, fingerprint, invite_expires_at, responded_at, trusted_at, revoked_at, revoked_reason FROM court_links WHERE id = ?").bind(id).fetch_optional(&mut *conn).await?.ok_or(DomainError::NotFound("No such connection."))
 }
 
 /// An invitation file for one court registry, open for `valid_days`.
@@ -161,6 +163,26 @@ pub async fn trust_link(conn: &mut SqliteConnection, actor: &Actor, id: &str, ty
     let trusted = get_link(conn, id).await?;
     audit::record(conn, actor, AuditEntry::new("court_exchange.trusted", "court_link", Some(id)).after(&trusted)).await?;
     Ok((trusted, bytes))
+}
+
+/// The facility ends a registry's connection, with the reason a person gave. The registry is told the same reason in a
+/// signed notice (returned to be sent on), nothing more is taken from it, and the relay link is ended later, once the notice is collected.
+pub async fn revoke_link(conn: &mut SqliteConnection, actor: &Actor, id: &str, reason: &str) -> Result<(CourtLink, Vec<u8>), DomainError> {
+    let link = get_link(conn, id).await?;
+    if link.status != "trusted" {
+        return bad("Only a trusted registry can be ended.");
+    }
+    let reason = reason.trim();
+    if reason.is_empty() {
+        return bad("Say why the connection is being ended.");
+    }
+    let me = require_identity(conn).await?;
+    let court = court_public(conn, id).await?;
+    let bytes = pairing::make_confirmation(&me, &court, id, "revoked", Some(reason)).map_err(|e| DomainError::rejected(e.to_string()))?;
+    sqlx::query("UPDATE court_links SET status = 'revoked', revoked_at = ?, revoked_reason = ? WHERE id = ? AND status = 'trusted'").bind(now_ms()).bind(reason).bind(id).execute(&mut *conn).await?;
+    let ended = get_link(conn, id).await?;
+    audit::record(conn, actor, AuditEntry::new("court_exchange.revoked", "court_link", Some(id)).after(&ended)).await?;
+    Ok((ended, bytes))
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -222,7 +244,7 @@ pub async fn import_package(conn: &mut SqliteConnection, bytes: &[u8]) -> Result
     let row: Option<(String, String)> = sqlx::query_as("SELECT id, status FROM court_links WHERE court_id = ? ORDER BY (status = 'trusted') DESC, created_at DESC LIMIT 1").bind(&header.from.id).fetch_optional(&mut *conn).await?;
     let Some((link_id, status)) = row else { return bad("This package is from a registry this facility has not connected to. Nothing was kept.") };
     if status != "trusted" {
-        return bad("That registry is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "This facility has ended its connection with that registry. Nothing was kept." } else { "That registry is not confirmed as trusted. Nothing was kept." });
     }
     let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM custody_orders_in WHERE id = ?").bind(&header.id).fetch_one(&mut *conn).await?;
     if seen > 0 {

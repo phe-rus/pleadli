@@ -463,5 +463,11 @@
   "postbox_address_copy": "Copier",
   "postbox_address_copied": "Copié",
   "postbox_address_unknown": "Pas encore connue. Connectez-vous à Pleadli pour la voir.",
-  "orchestra_licence_postbox_address": "Adresse de réception (boîte postale)"
+  "orchestra_licence_postbox_address": "Adresse de réception (boîte postale)",
+  "court_orders_status_revoked": "Terminée",
+  "court_orders_end_ph": "Pourquoi mettre fin à cette connexion ?",
+  "court_orders_end": "Mettre fin à la connexion",
+  "court_orders_ended": "La connexion avec {name} est terminée. Envoyez-lui le fichier d'avis s'il n'est pas sur la boîte postale.",
+  "court_orders_ended_reason": "Motif : {reason}",
+  "postbox_stage_refused": "Refusé par le bureau"
 }

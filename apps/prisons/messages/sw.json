@@ -3378,5 +3378,11 @@
   "postbox_address_copy": "Nakili",
   "postbox_address_copied": "Imenakiliwa",
   "postbox_address_unknown": "Haijulikani bado. Unganisha na Pleadli ili kuiona.",
-  "orchestra_licence_postbox_address": "Anwani ya kupokelea (sanduku la posta)"
+  "orchestra_licence_postbox_address": "Anwani ya kupokelea (sanduku la posta)",
+  "court_orders_status_revoked": "Imekatishwa",
+  "court_orders_end_ph": "Kwa nini muunganisho huu unakatishwa?",
+  "court_orders_end": "Katisha muunganisho",
+  "court_orders_ended": "Muunganisho na {name} umekatishwa. Wapelekee faili ya taarifa ikiwa hawako kwenye sanduku la posta.",
+  "court_orders_ended_reason": "Sababu: {reason}",
+  "postbox_stage_refused": "Imekataliwa na ofisi"
 }

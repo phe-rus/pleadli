@@ -20,7 +20,7 @@ const useLabels = (): RelayLabels => ({
   checkNow: m.postbox_check_now(),
   checking: m.postbox_checking(),
   connected: (address) => m.postbox_connected({ address }),
-  stage: { queued: m.postbox_stage_queued(), sent: m.postbox_stage_sent(), delivered: m.postbox_stage_delivered(), attention: m.postbox_stage_attention(), expired: m.postbox_stage_expired() },
+  stage: { queued: m.postbox_stage_queued(), sent: m.postbox_stage_sent(), delivered: m.postbox_stage_delivered(), refused: m.postbox_stage_refused(), attention: m.postbox_stage_attention(), expired: m.postbox_stage_expired() },
   turnedAway: (kind) => m.postbox_turned_away({ kind }),
   taken: m.postbox_taken(),
   tryAgain: m.postbox_try_again(),

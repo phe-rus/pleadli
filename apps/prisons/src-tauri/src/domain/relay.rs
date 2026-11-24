@@ -23,6 +23,7 @@ use super::error::DomainError;
 use crate::node::NodeRef;
 
 pub const COURTS: Links = Links { table: "court_links", peer_col: "court_id", peer: IdentityKind::CourtRegistry };
+const ALL: &[Links] = &[COURTS];
 
 pub struct FacilityAdapter {
     pub pool: SqlitePool,
@@ -86,6 +87,15 @@ impl Adapter for FacilityAdapter {
                 }
             }
         })
+    }
+
+    /// This facility issues the invitations to court registries, so it is the one that ends those links.
+    fn issued(&self) -> &'static [Links] {
+        ALL
+    }
+
+    fn peers(&self) -> &'static [Links] {
+        ALL
     }
 }
 
@@ -180,6 +190,49 @@ mod tests {
         assert!(m.contains("court registry is not allowed"), "{m}");
         assert!(court_orders::import_package(&mut c, &filing).await.is_err());
         drop(c);
+        pool.close().await;
+    }
+
+    /// The facility ends a registry's connection: a reason is required, the registry gets a signed notice carrying it,
+    /// nothing more is taken from the registry, and ending it twice is refused.
+    #[tokio::test]
+    async fn a_facility_that_ends_a_registrys_connection_tells_it_and_takes_nothing_more() {
+        let dir = std::env::temp_dir().join(format!("pleadli-prisons-revoke-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(dir.join("vault")).unwrap();
+        let pool = match crate::db::startup(&dir, &dir.join("vault"), None).await {
+            Ok(s) => s.pool,
+            Err(_) => panic!("startup"),
+        };
+        let adapter = FacilityAdapter { pool: pool.clone() };
+        let actor = Actor::system("revoke test");
+        let mut c = pool.acquire().await.unwrap();
+        court_orders::create_identity(&mut c, &actor, "Revoke Test Prison", Some("Kampala")).await.unwrap();
+        let (link, invite_file) = court_orders::create_invite(&mut c, &actor, "Revoke Test Court", 7).await.unwrap();
+        let me = court_orders::require_identity(&mut c).await.unwrap().public;
+        drop(c);
+        let invite = pairing::read_invite(&invite_file).unwrap();
+        sqlx::query("UPDATE court_links SET address = 'ug.court.real' WHERE id = ?").bind(&link.id).execute(&pool).await.unwrap();
+        let court = Identity::generate(IdentityKind::CourtRegistry, "Revoke Test Court", Some("Kampala"));
+        adapter.open(&arrived(KIND_RESPONSE, "ug.court.real", pairing::make_response(&court, &invite, None).unwrap())).await.unwrap();
+
+        let mut c = pool.acquire().await.unwrap();
+        assert!(court_orders::revoke_link(&mut c, &actor, &link.id, "Too early.").await.is_err(), "only a trusted registry can be ended");
+        let typed = court_orders::list_links(&mut c).await.unwrap()[0].fingerprint.clone().unwrap();
+        court_orders::trust_link(&mut c, &actor, &link.id, &typed).await.unwrap();
+        assert!(court_orders::revoke_link(&mut c, &actor, &link.id, "  ").await.is_err(), "a reason is required");
+        let (ended, notice) = court_orders::revoke_link(&mut c, &actor, &link.id, "Registry moved.").await.unwrap();
+        assert_eq!((ended.status.as_str(), ended.revoked_reason.as_deref()), ("revoked", Some("Registry moved.")));
+        assert!(court_orders::revoke_link(&mut c, &actor, &link.id, "Again.").await.is_err(), "ending it twice is refused");
+        drop(c);
+        let (_, said) = pairing::read_confirmation(&court, &me, &notice).unwrap();
+        assert_eq!((said.outcome.as_str(), said.reason.as_deref()), ("revoked", Some("Registry moved.")));
+
+        let order = CustodyOrderPayload { order_key: "o9".into(), kind: "remand".into(), court_name: "Revoke Test Court".into(), court_number: "CO 9/2026".into(), case_title: "Uganda v Y".into(), accused: "Test Accused".into(), prison: "Revoke Test Prison".into(), remand_until: Some(i64::MAX / 2), issued_at: 1, paragraphs: vec!["Remanded.".into()], content_sha256: Some("abc".into()), ..Default::default() };
+        let late = envelope::seal(&court, &me, KIND_CUSTODY_ORDER, 1, None, &Body::new(serde_json::to_value(&order).unwrap())).unwrap().0;
+        let m = refused(adapter.open(&arrived(KIND_CUSTODY_ORDER, "ug.court.real", late)).await);
+        assert!(m.contains("ended its connection"), "{m}");
+        let relay_ended: Option<i64> = sqlx::query_scalar("SELECT relay_ended_at FROM court_links WHERE id = ?").bind(&link.id).fetch_one(&pool).await.unwrap();
+        assert!(relay_ended.is_none(), "the relay link is ended only after the notice is collected");
         pool.close().await;
     }
 }

@@ -25,6 +25,7 @@ pub fn routes(node: NodeRef) -> RouteTable {
         .get("/api/prisons/court/links", Need::Perm(COURT_MANAGE), list_links)
         .post("/api/prisons/court/links", Need::Perm(NODE_MANAGE), create_invite)
         .post("/api/prisons/court/links/{id}/trust", Need::Perm(NODE_MANAGE), trust_link)
+        .post("/api/prisons/court/links/{id}/revoke", Need::Perm(NODE_MANAGE), revoke_link)
         .post("/api/prisons/court/import", Need::Perm(COURT_MANAGE), import_package)
         .get("/api/prisons/court/orders", Need::Perm(COURT_MANAGE), list_orders)
         .post("/api/prisons/court/orders/{id}/record", Need::Perm(CUSTODY_EDIT), record_order)
@@ -96,6 +97,17 @@ async fn trust_link(State(node): State<NodeRef>, Extension(actor): Extension<Act
     let (link, bytes) = write(&node, |c| Box::pin(async move { Ok(court_orders::trust_link(c, &actor, &id, &b.fingerprint).await?) })).await?;
     let delivery = super::relay::deliver(&node, &bytes).await;
     Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "prison-confirmation.pxpkg".into(), delivery: Some(delivery) }))
+}
+
+#[derive(Deserialize)]
+struct ReasonBody {
+    reason: String,
+}
+
+async fn revoke_link(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(b): Json<ReasonBody>) -> Api<WithFile<CourtLink>> {
+    let (link, bytes) = write(&node, |c| Box::pin(async move { Ok(court_orders::revoke_link(c, &actor, &id, &b.reason).await?) })).await?;
+    let delivery = super::relay::deliver(&node, &bytes).await;
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "prison-revocation.pxpkg".into(), delivery: Some(delivery) }))
 }
 
 #[derive(Deserialize)]

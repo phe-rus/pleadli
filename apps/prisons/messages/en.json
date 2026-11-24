@@ -3378,5 +3378,11 @@
   "postbox_address_copy": "Copy",
   "postbox_address_copied": "Copied",
   "postbox_address_unknown": "Not known yet. Connect to Pleadli to see it.",
-  "orchestra_licence_postbox_address": "Receiving address (Postbox)"
+  "orchestra_licence_postbox_address": "Receiving address (Postbox)",
+  "court_orders_status_revoked": "Ended",
+  "court_orders_end_ph": "Why is this connection being ended?",
+  "court_orders_end": "End connection",
+  "court_orders_ended": "Connection with {name} ended. Send them the notice file if they are not on the postbox.",
+  "court_orders_ended_reason": "Reason: {reason}",
+  "postbox_stage_refused": "Turned away by the office"
 }
