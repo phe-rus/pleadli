@@ -24,7 +24,7 @@ Principle from `PEOPLE-AND-NETWORK-PLAN.md`: **no search by name, ever.** A civi
 | `POST /api/public/v1/reports` | Report to a police station | Design. Gated by D4, D8 and D9, see below. |
 | `POST /api/public/v1/appointments` | Ask for a visit or an appointment at an office | Design. Gated by D8. |
 
-Rules for all public calls: Turnstile token on every POST; one WAF rate-limit rule at the edge; responses carry no cookies; every error is the same shape (`{error, retryAfter?}`); lookups return the same answer for "no such code" and "not yours" (nothing to learn by guessing).
+Rules for all public calls: Turnstile token on every POST; the quota layers and one WAF rate-limit rule at the edge (see "Limits"); responses carry no cookies; every error is the same shape (`{error, retryAfter?}`); lookups return the same answer for "no such code" and "not yours" (nothing to learn by guessing).
 
 ### Reporting to police: how it can be honest
 
@@ -38,6 +38,31 @@ Not promised: that a station reads it quickly, that a report is a complaint in l
 ### Visits and appointments
 
 Same shape: a sealed message `kind: appointment_request` to the office; the office replies with a sealed message the civilian reads by reference. Nothing is stored in clear.
+
+### Limits: what protects the lookups, and how far to trust each layer
+
+Written 2026-11-22. Verified against wrangler 4.164 and its generated types. **Status: written and unit-tested, NOT deployed, and the dashboard rule below is NOT configured.**
+
+| Layer | What it is | Strength | Where |
+|---|---|---|---|
+| 1. Edge rule (WAF rate limiting) | A Cloudflare dashboard rule on the route | Real, global per rule, before the Worker runs. **Not configured.** | Dashboard only |
+| 2. Rate Limiting binding `PUBLIC_LOOKUP` | `env.PUBLIC_LOOKUP.limit({ key })`, 30 per 60 s per hashed address | **Approximate and location scoped.** Cloudflare counts per location and may let a burst through; it returns only `success`, no reset time | `wrangler.jsonc` `ratelimits`, `lib/quota.server.ts` |
+| 3. Durable Object counter `QUOTA` | One atomic counter per bucket, worldwide (`lib/quota-counter.ts`, rule in `lib/quota-window.ts`) | **The authoritative quota.** Anonymous: 300 per hour per address | same |
+| 4. Isolate-local counter | A Map in one Worker isolate | **Not a limit you can rely on.** Used only if the Durable Object cannot be reached, so a fault degrades to a weak limit, never to none | `lib/rate-limit.server.ts` |
+
+**Order of checks on every call:** quota (needs only the address Cloudflare reports) -> shape of the code -> database read. A refused caller costs no database read and learns nothing: the 429 is the same body for a code that exists and one that does not.
+
+**Who names a bucket.** The server, from facts it verified. Anonymous: the connecting address from `cf-connecting-ip` (set by Cloudflare), hashed so no address is stored. `X-Forwarded-For`, any other header, a query parameter or a body field never chooses a bucket. A request with no address shares one strict bucket. Authenticated: after a credential is verified, per user, per credential and per institution (120, 600 and 3,000 per minute, `AUTHENTICATED` in `quota.server.ts`). An unauthenticated caller cannot spend any application's quota, because authentication comes before the quota is charged.
+
+**Answer.** `429 {"error":"too_many_requests","retryAfter":N}` with `Retry-After`. From the edge binding `retryAfter` is the whole period (60), because the binding gives no reset time; from the Durable Object it is exact.
+
+**Offline casework.** None of this is on the path of the five apps' own work. They run without pleadli.com. Only calls that reach pleadli.com's public lookups are limited. Institutional calls (Orchestra, Postbox) are not charged to these buckets.
+
+**Dashboard rule to add before announcing `/verify` and `/track` (not done):** Security -> WAF -> Rate limiting rules. Scope: URI path starts with `/api/public/`, plus `/verify` and `/track` (the pages call the same lookup through a server function). Counting characteristic: IP address. Action: block, with a duration. Plan limits: Cloudflare limits the number of rate limiting rules, the counting characteristics, the periods and the block durations by plan, and the free plan is the most restricted. Check the plan's limits in the dashboard when adding the rule, and record here what was configured and who verified it. **Until then, do not describe the lookups as protected against guessing or bulk enumeration.** Code space is the other defence: 12-character codes over a 32-symbol alphabet.
+
+**Free-plan caution.** Workers Free also caps requests per day for the whole account, and refused requests still count. Layers 2 and 3 protect the database, not the request budget; only the edge rule (1) stops traffic before the Worker runs. Moving to Workers Paid before a public launch stays the recommendation in section 4.
+
+**Not proven.** That Cloudflare serialises calls to one real Durable Object (a platform guarantee, relied on, not exercised here: the tests use a fake namespace with the same counting rule); the binding's behaviour in a real location; any of this under load on the deployed Worker.
 
 ## 3. Field officers: traffic and on duty
 
@@ -80,7 +105,7 @@ Workers Free is 100,000 requests a day for the whole account and 10 ms CPU per r
 
 ## 6. Build order
 
-1. DONE 2026-11-18: `verify` and `track` as JSON in `/api/public/v1`, no new tables. Still to do for this step: one Cloudflare WAF rate-limit rule on `/api/public/*` (dashboard setting, not code) before the route is announced.
+1. DONE 2026-11-18: `verify` and `track` as JSON in `/api/public/v1`, no new tables. Rate limiting: see "Limits" above (code written 2026-11-22; the WAF dashboard rule is still to do and is NOT configured).
 2. After `RELAY-DESIGN.md` step 1 (skeleton): `kind` labels and the duty-event flow, phone enrolment, duty pass.
 3. After the owner confirms D4, D8, D9: the office directory, appointments, then police reports.
 4. Traffic notices only after the directorate has confirmed the rules.
