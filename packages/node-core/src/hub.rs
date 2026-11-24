@@ -58,6 +58,16 @@ pub trait Adapter: Send + Sync + 'static {
     fn describe(&self, item: &Arrived) -> Option<Value>;
     /// A line for the application's own audit trail. Never case content.
     fn audit<'a>(&'a self, action: &'a str, detail: String) -> Fut<'a, ()>;
+    /// The link tables this institution issued the invitations for, so it is the one that may end them. Each needs
+    /// `status`, `address`, `revoked_at`, `revoked_reason` and `relay_ended_at`. Empty for an institution that only answers.
+    fn issued(&self) -> &'static [Links] {
+        &[]
+    }
+    /// Every link table this institution has, so a package sent to an office that ended its link is shown as turned
+    /// away rather than delivered. Each needs `status`, `address`, `revoked_at` and `revoked_reason`.
+    fn peers(&self) -> &'static [Links] {
+        &[]
+    }
 }
 
 /// A table of connections with a column holding the peer's identity id and one
@@ -107,6 +117,24 @@ pub async fn admit(me: IdentityKind, pool: &SqlitePool, links: &[Links], item: &
     authorization::check(header.from.kind, me, &header.kind).map_err(Reject::Refuse)?;
     check_bound(pool, links, &header.from.id, &item.from).await.map_err(Reject::Refuse)?;
     Ok(header)
+}
+
+/// Marks a link ended, with the reason a person gave, if it is in one of `from` (for the office that ended it: `trusted`;
+/// for the one told: `trusted` or `awaiting_confirmation`). Returns true when the link is ended afterwards, so a notice
+/// that arrives twice is not an error. The table needs `revoked_at` and `revoked_reason`.
+pub async fn set_revoked(pool: &SqlitePool, link: Links, link_id: &str, reason: &str, from: &[&str]) -> Result<bool, sqlx::Error> {
+    let marks = from.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
+    let sql = format!("UPDATE {} SET status = 'revoked', revoked_at = ?, revoked_reason = ? WHERE id = ? AND status IN ({marks})", link.table);
+    let mut q = sqlx::query(sqlx::AssertSqlSafe(sql)).bind(chrono::Utc::now().timestamp_millis()).bind(reason).bind(link_id);
+    for state in from {
+        q = q.bind(*state);
+    }
+    if q.execute(pool).await?.rows_affected() > 0 {
+        return Ok(true);
+    }
+    let sql = format!("SELECT status FROM {} WHERE id = ?", link.table);
+    let now: Option<String> = sqlx::query_scalar(sqlx::AssertSqlSafe(sql)).bind(link_id).fetch_optional(pool).await?;
+    Ok(now.as_deref() == Some("revoked"))
 }
 
 /// Where a link answers on the relay, if anywhere.
@@ -165,7 +193,7 @@ pub struct SentView {
     pub id: String,
     pub to: String,
     pub kind: String,
-    /// queued, sent, delivered, attention or expired.
+    /// queued, sent, delivered, refused (the office ended its link), attention or expired.
     pub stage: String,
     pub error: Option<String>,
     pub attempts: i64,
@@ -202,6 +230,54 @@ pub struct Status {
     pub last: Round,
     pub sent: Vec<SentView>,
     pub received: Vec<ReceivedView>,
+}
+
+/// Addresses whose office ended its link with this one, with when and why. `(revoked_at, a line for a person)`.
+async fn ended_peers(pool: &SqlitePool, peers: &[Links]) -> std::collections::HashMap<String, (i64, String)> {
+    let mut out = std::collections::HashMap::new();
+    for l in peers {
+        let sql = format!("SELECT address, COALESCE(revoked_at, 0), revoked_reason FROM {} WHERE status = 'revoked' AND address IS NOT NULL", l.table);
+        let rows: Vec<(String, i64, Option<String>)> = sqlx::query_as(sqlx::AssertSqlSafe(sql)).fetch_all(pool).await.unwrap_or_default();
+        for (address, at, why) in rows {
+            let line = match why.filter(|w| !w.trim().is_empty()) {
+                Some(w) => format!("The office ended this connection, so it turned this away. Reason: {}", w.trim()),
+                None => "The office ended this connection, so it turned this away.".to_string(),
+            };
+            out.insert(address, (at, line));
+        }
+    }
+    out
+}
+
+/// The relay side of links this institution ended. The relay drops the mail still waiting between two offices when a
+/// link ends, so this waits until the other office has collected the signed revocation notice, or a week has passed,
+/// whichever is first. Until then the other office's packages reach this one and are refused here.
+async fn end_revoked_links(pool: &SqlitePool, postbox: &Postbox, token: &str, issued: &[Links]) {
+    const WAIT: i64 = 7 * 24 * 60 * 60 * 1000;
+    if issued.is_empty() {
+        return;
+    }
+    let now = chrono::Utc::now().timestamp_millis();
+    let sent = postbox.sent().await.unwrap_or_default();
+    for l in issued {
+        let sql = format!("SELECT id, address, revoked_reason, COALESCE(revoked_at, 0) FROM {} WHERE status = 'revoked' AND address IS NOT NULL AND relay_ended_at IS NULL", l.table);
+        let rows: Vec<(String, String, Option<String>, i64)> = sqlx::query_as(sqlx::AssertSqlSafe(sql)).fetch_all(pool).await.unwrap_or_default();
+        for (id, address, reason, revoked_at) in rows {
+            let told = sent.iter().any(|s| s.to == address && s.kind == pleadli_interchange::pairing::KIND_CONFIRMATION && s.queued_at >= revoked_at && matches!(s.status.as_str(), "delivered" | "acked"));
+            if !told && now - revoked_at < WAIT {
+                continue;
+            }
+            let why = reason.filter(|r| !r.trim().is_empty()).unwrap_or_else(|| "This office ended the connection.".to_string());
+            match postbox.end_connection(token, &address, &why).await {
+                // Ended, or there was no live link left to end: either way the relay will refuse this peer.
+                Ok(_) | Err(PostboxError::Api { status: 404, .. }) => {
+                    let sql = format!("UPDATE {} SET relay_ended_at = ? WHERE id = ?", l.table);
+                    let _ = sqlx::query(sqlx::AssertSqlSafe(sql)).bind(now).bind(&id).execute(pool).await;
+                }
+                Err(e) => log::warn!("postbox: could not end the relay link with {address}: {}", human(&e)),
+            }
+        }
+    }
 }
 
 fn stage(status: &str) -> &'static str {
@@ -281,13 +357,22 @@ impl Hub {
     pub async fn status(&self) -> Status {
         let access = self.orchestra.relay_access().await;
         let why_not = access.is_none().then(|| NO_LICENCE.to_string());
+        // Offices that ended their link: what was sent to them after that was turned away, whatever the relay says.
+        let ended = ended_peers(&self.pool, self.adapter.peers()).await;
         let sent = self
             .postbox
             .sent()
             .await
             .unwrap_or_default()
             .into_iter()
-            .map(|s| SentView { stage: stage(&s.status).to_string(), id: s.id, to: s.to, kind: s.kind, error: s.error, attempts: s.attempts, queued_at: s.queued_at, posted_at: s.posted_at, acked_at: s.acked_at })
+            .map(|s| {
+                let turned_away = ended.get(&s.to).filter(|(at, _)| s.queued_at >= *at && s.kind != pleadli_interchange::pairing::KIND_CONFIRMATION && matches!(stage(&s.status), "sent" | "delivered"));
+                let (stage, error) = match turned_away {
+                    Some((_, why)) => ("refused", Some(why.clone())),
+                    None => (stage(&s.status), s.error),
+                };
+                SentView { stage: stage.to_string(), id: s.id, to: s.to, kind: s.kind, error, attempts: s.attempts, queued_at: s.queued_at, posted_at: s.posted_at, acked_at: s.acked_at }
+            })
             .collect();
         let waiting: std::collections::HashMap<String, Arrived> = self.postbox.unread().await.unwrap_or_default().into_iter().map(|a| (a.id.clone(), a)).collect();
         let received = self
@@ -317,6 +402,7 @@ impl Hub {
         let tick = self.postbox.tick(&token).await;
         process_inbox(&self.postbox, self.adapter.as_ref()).await;
         let second = self.postbox.flush(&token).await;
+        end_revoked_links(&self.pool, &self.postbox, &token, self.adapter.issued()).await;
         match (reset, tick, second) {
             (Some(e), _, _) => Err(e),
             (_, Err(e), _) => Err(human(&e)),

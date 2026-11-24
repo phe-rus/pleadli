@@ -322,6 +322,9 @@ pub struct CourtNoticePayload {
     pub at: Option<i64>,
     pub purpose: Option<String>,
     pub courtroom: Option<String>,
+    /// A record of a sitting the court adjourned: the next date it fixed, if it fixed one.
+    #[serde(default)]
+    pub next_at: Option<i64>,
     /// An order: the wording as issued, and the court's reference.
     pub paragraphs: Vec<String>,
     pub reference: Option<String>,

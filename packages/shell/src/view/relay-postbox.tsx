@@ -4,7 +4,7 @@ import { PostboxView, type PostboxLabels, type PostboxMessage } from './postbox'
 import { ReceivingAddress, type ReceivingAddressLabels } from './receiving-address'
 
 /** What one office's postbox reports (the same shape from every app's relay route). */
-export type RelaySent = { id: string; to: string; kind: string; stage: 'queued' | 'sent' | 'delivered' | 'attention' | 'expired'; error: string | null; attempts: number; queuedAt: number; postedAt: number | null; ackedAt: number | null }
+export type RelaySent = { id: string; to: string; kind: string; stage: 'queued' | 'sent' | 'delivered' | 'refused' | 'attention' | 'expired'; error: string | null; attempts: number; queuedAt: number; postedAt: number | null; ackedAt: number | null }
 export type RelayInvitation = { fingerprint: string; name: string; kind: string; intendedFor: string; expiresAt: number }
 export type RelayReceived = { id: string; from: string; kind: string; size: number; status: 'new' | 'imported' | 'refused'; reason: string | null; arrivedAt: number; handledAt: number | null; invitation?: RelayInvitation | null }
 export type RelayStatus = { ready: boolean; whyNot: string | null; address: string | null; name?: string | null; site: string; last: { at: number | null; error: string | null }; sent: RelaySent[]; received: RelayReceived[] }

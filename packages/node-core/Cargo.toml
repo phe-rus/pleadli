@@ -27,6 +27,10 @@ postbox = ["dep:reqwest", "dep:serde_json", "dep:tokio", "tokio/sync"]
 speech = ["dep:whisper-rs"]
 # The shared postbox driver for apps with a licence: it reads the sealed packages' headers, so it needs the contract.
 hub = ["postbox", "orchestra", "dep:pleadli-interchange"]
+# Help and diagnostics: a redacted, versioned report and an offline crash record (no network).
+diagnostics = ["dep:serde_json"]
+# Installable extensions: package integrity, signatures, capabilities, isolation (no network, no native code).
+extensions = ["dep:serde_json", "dep:ed25519-dalek"]
 orchestra = ["storage", "dep:ed25519-dalek", "dep:machine-uid", "tokio/sync"]
 
 [dependencies]

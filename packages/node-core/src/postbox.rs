@@ -470,6 +470,20 @@ impl Postbox {
         Ok(value)
     }
 
+    /// Ends this office's connection with another at the relay, with the reason a person gave. The relay then refuses
+    /// posts both ways and drops the mail still waiting between the two, so call it only after the other office has
+    /// collected whatever it needs to hear (the signed revocation notice).
+    pub async fn end_connection(&self, token: &str, with: &str, reason: &str) -> Result<Value, PostboxError> {
+        let res = self.http.post(self.url("connections/revoke")).bearer_auth(token).json(&serde_json::json!({ "with": with, "reason": reason })).send().await.map_err(|e| PostboxError::Offline(e.to_string()))?;
+        let status = res.status().as_u16();
+        let value: Value = res.json().await.map_err(|e| PostboxError::Offline(e.to_string()))?;
+        if status >= 400 {
+            let s = |k: &str| value.get(k).and_then(Value::as_str).unwrap_or("").to_string();
+            return Err(PostboxError::Api { status, error: s("error"), message: s("message") });
+        }
+        Ok(value)
+    }
+
     /// This office's connections to others, with their status.
     pub async fn connections(&self, token: &str) -> Result<Value, PostboxError> {
         self.get_json("connections", token).await

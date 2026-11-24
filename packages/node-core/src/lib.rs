@@ -12,7 +12,11 @@ pub mod audit;
 #[cfg(feature = "backup")]
 pub mod backup;
 pub mod db;
+#[cfg(feature = "diagnostics")]
+pub mod diagnostics;
 pub mod downloads;
+#[cfg(feature = "extensions")]
+pub mod extensions;
 pub mod save_grants;
 pub mod keys;
 #[cfg(feature = "lan")]
