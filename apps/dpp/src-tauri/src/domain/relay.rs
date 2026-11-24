@@ -158,11 +158,44 @@ impl Relay {
         self.process_inbox().await;
         self.queue_outgoing().await.map_err(|e| e.to_string())?;
         let second = self.postbox.flush(&token).await;
+        self.end_revoked_links(&token).await;
         match (first, tick, second) {
             (Some(e), _, _) => Err(e),
             (_, Err(e), _) => Err(human(&e)),
             (_, _, Err(e)) => Err(human(&e)),
             _ => Ok(()),
+        }
+    }
+
+    /// A station this office revoked is also cut off at the relay, so the relay itself refuses its posts. The relay
+    /// drops the mail still waiting between two offices when a link ends, so this waits until the station has
+    /// collected the signed revocation notice, or a week has passed, whichever is first. Until then the station's
+    /// referrals reach this office and are refused here, and each refusal says again that the connection ended.
+    async fn end_revoked_links(&self, token: &str) {
+        const WAIT: i64 = 7 * 24 * 60 * 60 * 1000;
+        let rows: Vec<(String, String, Option<String>, Option<i64>)> = sqlx::query_as("SELECT id, station_address, revoked_reason, revoked_at FROM police_connections WHERE status = 'revoked' AND station_address IS NOT NULL AND relay_ended_at IS NULL")
+            .fetch_all(&self.pool)
+            .await
+            .unwrap_or_default();
+        if rows.is_empty() {
+            return;
+        }
+        let sent = self.postbox.sent().await.unwrap_or_default();
+        let now = chrono::Utc::now().timestamp_millis();
+        for (id, address, reason, revoked_at) in rows {
+            let revoked_at = revoked_at.unwrap_or(0);
+            let told = sent.iter().any(|s| s.to == address && s.kind == KIND_CONFIRMATION && s.queued_at >= revoked_at && matches!(s.status.as_str(), "delivered" | "acked"));
+            if !told && now - revoked_at < WAIT {
+                continue;
+            }
+            let why = reason.filter(|r| !r.trim().is_empty()).unwrap_or_else(|| "This office ended the connection.".to_string());
+            match self.postbox.end_connection(token, &address, &why).await {
+                // Ended, or there was no live link left to end: either way the relay will refuse this station.
+                Ok(_) | Err(PostboxError::Api { status: 404, .. }) => {
+                    let _ = sqlx::query("UPDATE police_connections SET relay_ended_at = ? WHERE id = ?").bind(now).bind(&id).execute(&self.pool).await;
+                }
+                Err(e) => log::warn!("postbox: could not end the relay link with {address}: {}", human(&e)),
+            }
         }
     }
 

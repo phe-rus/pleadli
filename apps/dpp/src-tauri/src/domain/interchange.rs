@@ -340,6 +340,11 @@ pub async fn import_package(pool: &SqlitePool, vault_root: &Path, bytes: &[u8]) 
                 return Err(refuse(pool, "unknown sender", &header, DomainError::Forbidden("This package is from a station this office has not connected to. Nothing was kept.".to_string())).await);
             };
             if status != "trusted" {
+                // A station that is still sending has not heard that it was revoked (its notice may be lost or still
+                // queued). Say it again, signed, so the station stops showing the office as trusted.
+                if status == "revoked" {
+                    let _ = renotify_revoked(pool, &connection_id).await;
+                }
                 let why = if status == "revoked" { "This station's connection has been ended. Nothing was kept." } else { "This station has not been confirmed as trusted yet. Nothing was kept." };
                 return Err(refuse(pool, "sender not trusted", &header, DomainError::Forbidden(why.to_string())).await);
             }
@@ -360,7 +365,12 @@ pub async fn import_package(pool: &SqlitePool, vault_root: &Path, bytes: &[u8]) 
                 }
             };
             let payload: ReferralPayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::Invalid("The referral inside the package could not be read.".to_string()))?;
-            validate_referral(&payload)?;
+            if let Err(problem) = validate_referral(&payload) {
+                // The sender is verified and trusted, so say why the referral was not taken, in a signed receipt the station can read.
+                let why = problem.to_string();
+                let _ = refuse_with_receipt(pool, &connection_id, &opened.header.id, &payload, &why).await;
+                return Err(refuse(pool, "referral content refused", &header, DomainError::Invalid(format!("{why} The station has been told."))).await);
+            }
 
             // Everything that can be checked is checked before the first file is written, so a
             // package that is going to be refused leaves nothing in the vault.
@@ -489,6 +499,19 @@ async fn import_response(pool: &SqlitePool, bytes: &[u8], header: &envelope::Hea
     })
 }
 
+/// A referral that was authentic but could not be taken in. The station is told once, whatever the carrier, so a
+/// retry of the same package does not queue a second refusal.
+async fn refuse_with_receipt(pool: &SqlitePool, connection_id: &str, package_id: &str, payload: &ReferralPayload, why: &str) -> Result<(), sqlx::Error> {
+    let told: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM outgoing_packages WHERE kind = 'receipt' AND in_reply_to = ?").bind(package_id).fetch_one(pool).await?;
+    if told > 0 {
+        return Ok(());
+    }
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    record_receipt(&mut tx, connection_id, package_id, payload, "rejected", None, Some(why), now(), None).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
 fn validate_referral(p: &ReferralPayload) -> Result<(), DomainError> {
     if p.police_reference.trim().is_empty() {
         return invalid("The referral does not carry the station's reference for the case.");
@@ -504,7 +527,8 @@ fn validate_referral(p: &ReferralPayload) -> Result<(), DomainError> {
     }
     for s in &p.statements {
         if !["witness", "accused", "arresting_officer", "investigating_officer", "complainant"].contains(&s.role.as_str()) || !p.people.iter().any(|x| x.key == s.person_key) {
-            return invalid("A statement in the referral is not tied to a person on it, or has a kind this office does not use.");
+            let first: String = s.content.chars().take(60).collect();
+            return Err(DomainError::Invalid(format!("A statement (\"{}...\") is not tied to a person listed on the referral, or has a kind this office does not use. Add the person to the case at the station and refer again.", first.trim())));
         }
     }
     if p.charges.iter().any(|c| c.offence.trim().is_empty() || c.accused_person_key.as_ref().is_some_and(|k| !p.people.iter().any(|x| &x.key == k))) {
@@ -569,6 +593,25 @@ pub(crate) async fn prepare_outgoing(
 
 async fn prepare_confirmation(conn: &mut sqlx::SqliteConnection, connection_id: &str, outcome: &str, reason: Option<&str>) -> Result<(), sqlx::Error> {
     prepare_outgoing(conn, connection_id, KIND_CONFIRMATION, Some(connection_id), None, None, serde_json::json!({ "outcome": outcome, "reason": reason })).await?;
+    Ok(())
+}
+
+/// The station of a revoked connection sent something anyway: queue the signed revocation notice again, but no
+/// more than once an hour, so a station left running cannot make this office write a notice for every attempt.
+async fn renotify_revoked(pool: &SqlitePool, connection_id: &str) -> Result<(), DomainError> {
+    let recent: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM outgoing_packages WHERE connection_id = ? AND kind = ? AND prepared_at > ?")
+        .bind(connection_id)
+        .bind(KIND_CONFIRMATION)
+        .bind(now() - 60 * 60 * 1000)
+        .fetch_one(pool)
+        .await?;
+    if recent > 0 {
+        return Ok(());
+    }
+    let reason: Option<String> = sqlx::query_scalar("SELECT revoked_reason FROM police_connections WHERE id = ?").bind(connection_id).fetch_optional(pool).await?.flatten();
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    prepare_confirmation(&mut tx, connection_id, "revoked", reason.as_deref()).await?;
+    tx.commit().await?;
     Ok(())
 }
 

@@ -2502,6 +2502,7 @@
     "status_answered": "Imejibiwa, inasubiri mahakama",
     "status_trusted": "Anaaminika",
     "status_declined": "Imekataliwa",
+    "status_revoked": "Imekwisha",
     "read_code": "Msomee msajili msimbo huu:",
     "answered_notice": "Umejibu {court}. Watumie faili hiyo na uwasomee msimbo ulioko hapa chini.",
     "file_to": "Wasilisha kwa {court}",

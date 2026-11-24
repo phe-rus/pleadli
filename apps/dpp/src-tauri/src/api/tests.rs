@@ -278,6 +278,8 @@ async fn a_charging_decision_needs_a_review_that_supports_it() {
     let (status, decisions) = post(base("sanction", Some(&review))).await;
     assert_eq!(status, StatusCode::OK, "{decisions}");
     assert_eq!(status_of(&app, &file).await, "sanctioned");
+    let (_, f) = call(&app, Method::GET, &format!("/api/prosecution-files/{file}"), None).await;
+    assert_eq!(f["stage"], "prepare", "a sanction moves a file on from receive");
 
     // The review concluded with its decision and is frozen.
     assert_eq!(put(&app, &format!("/api/charging-reviews/{review}/assessments/relevance"), json!({ "finding": "favours" })).await.0, StatusCode::UNPROCESSABLE_ENTITY);
@@ -723,6 +725,29 @@ mod interchange_flow {
     }
 
     #[tokio::test]
+    async fn a_referral_that_cannot_be_taken_in_is_refused_and_the_station_is_told_why() {
+        let w = connected("Wandegeya Police Station").await;
+        // A statement from someone who is not listed on the referral.
+        let mut bad = referral("UNTIED 1/2026");
+        bad.statements[0].person_key = "nobody".into();
+        let bytes = package(&w, &bad, 1);
+        let (status, body) = import(&w.app, &bytes).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+        assert!(body["message"].as_str().unwrap().contains("I saw the accused") && body["message"].as_str().unwrap().contains("The station has been told"), "{body}");
+        assert_eq!(files_count(&w.app).await, 0, "nothing was kept");
+        // The station can read a signed refusal with the reason, and a retry of the same package queues no second one.
+        assert_eq!(import(&w.app, &bytes).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+        let (_, outgoing) = call(&w.app, Method::GET, "/api/interchange/outgoing", None).await;
+        let receipts: Vec<_> = outgoing.as_array().unwrap().iter().filter(|o| o["kind"] == "receipt").collect();
+        assert_eq!(receipts.len(), 1);
+        let (_, file_bytes) = call_bytes(&w.app, &format!("/api/interchange/outgoing/{}/file", receipts[0]["id"].as_str().unwrap())).await;
+        let opened = envelope::open(&w.station, envelope::peek(&file_bytes).unwrap(), &w.office).unwrap();
+        let payload: ReceiptPayload = serde_json::from_value(opened.body.json).unwrap();
+        assert_eq!(payload.outcome, "rejected");
+        assert!(payload.reason.as_deref().unwrap_or_default().contains("not tied to a person"));
+    }
+
+    #[tokio::test]
     async fn a_station_the_office_never_invited_cannot_send_and_an_unconfirmed_one_cannot_either() {
         let app = app().await;
         call(&app, Method::POST, "/api/interchange/identity", Some(json!({ "officeName": "Wandegeya DPP Office" }))).await;
@@ -905,6 +930,14 @@ mod interchange_flow {
         assert_eq!(call(&w.app, Method::POST, &format!("/api/interchange/connections/{}/revoke", w.connection), Some(json!({ "reason": "Station key was lost." }))).await.0, StatusCode::OK);
         // Nothing more is taken in, what was waiting can no longer be accepted, and no notice goes out.
         assert_eq!(import(&w.app, &package(&w, &referral("WANDEGEYA CRB 94/2026"), 3)).await.0, StatusCode::FORBIDDEN);
+        // The station is told once, signed, with the reason (the notice the revoke itself prepared). A station that keeps
+        // sending is not answered with a new notice for every attempt within the hour.
+        let notices = |outgoing: &Value| outgoing.as_array().unwrap().iter().filter(|p| p["kind"] == "pairing_confirmation" && p["summary"].as_str().unwrap_or("").contains("revoked")).count();
+        let (_, outgoing) = call(&w.app, Method::GET, "/api/interchange/outgoing", None).await;
+        assert_eq!(notices(&outgoing), 1, "{outgoing}");
+        assert_eq!(import(&w.app, &package(&w, &referral("WANDEGEYA CRB 95/2026"), 4)).await.0, StatusCode::FORBIDDEN);
+        let (_, outgoing) = call(&w.app, Method::GET, "/api/interchange/outgoing", None).await;
+        assert_eq!(notices(&outgoing), 1, "a second refusal within the hour must not queue a second notice");
         assert_eq!(call(&w.app, Method::POST, &format!("/api/interchange/incoming/{waiting}/accept"), Some(json!({}))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
         let (_, decision) = decide(&w.app, file, "take_over", 0).await;
         assert_eq!(call(&w.app, Method::POST, &format!("/api/interchange/decisions/{}/notice", decision["id"].as_str().unwrap()), None).await.0, StatusCode::UNPROCESSABLE_ENTITY);

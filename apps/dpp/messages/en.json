@@ -2502,6 +2502,7 @@
     "status_answered": "Answered, waiting for the court",
     "status_trusted": "Trusted",
     "status_declined": "Declined",
+    "status_revoked": "Ended",
     "read_code": "Read the registry this code:",
     "answered_notice": "Answered {court}. Send the file back and read them the code below.",
     "file_to": "File to {court}",

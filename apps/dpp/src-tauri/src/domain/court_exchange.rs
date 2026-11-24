@@ -36,7 +36,7 @@ pub struct CourtLink {
 }
 
 pub async fn list_links(pool: &SqlitePool) -> Result<Vec<CourtLink>, DomainError> {
-    Ok(sqlx::query_as("SELECT id, court_name, court_jurisdiction, fingerprint, status, reason, responded_at, trusted_at FROM court_links ORDER BY created_at DESC").fetch_all(pool).await?)
+    Ok(sqlx::query_as("SELECT id, court_name, court_jurisdiction, fingerprint, status, CASE WHEN status = 'revoked' THEN revoked_reason ELSE reason END AS reason, responded_at, trusted_at FROM court_links ORDER BY created_at DESC").fetch_all(pool).await?)
 }
 
 /// Reads a registry's invitation file and answers it. The registry becomes
@@ -67,7 +67,7 @@ pub async fn accept_invite(pool: &SqlitePool, invite_file: &[u8], contact: Optio
         .bind(now())
         .execute(pool)
         .await?;
-    let link = sqlx::query_as("SELECT id, court_name, court_jurisdiction, fingerprint, status, reason, responded_at, trusted_at FROM court_links WHERE id = ?").bind(&invite.invite_id).fetch_one(pool).await?;
+    let link = sqlx::query_as("SELECT id, court_name, court_jurisdiction, fingerprint, status, CASE WHEN status = 'revoked' THEN revoked_reason ELSE reason END AS reason, responded_at, trusted_at FROM court_links WHERE id = ?").bind(&invite.invite_id).fetch_one(pool).await?;
     Ok((link, response))
 }
 
@@ -102,10 +102,18 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     let (court, _) = court_public(pool, &link_id).await?;
 
     if header.kind == KIND_CONFIRMATION {
+        let (_, confirmation) = pairing::read_confirmation(&me, &court, bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
+        // The registry ending the connection. Signed by it, so it is taken as its word; ending twice changes nothing.
+        if confirmation.outcome == "revoked" {
+            let why = confirmation.reason.clone().unwrap_or_default();
+            if !pleadli_node_core::hub::set_revoked(pool, super::relay::COURTS, &link_id, &why, &["trusted", "answered"]).await? {
+                return bad("That connection is not active.");
+            }
+            return Ok(Imported { kind: KIND_CONFIRMATION.into(), message: format!("{} has ended its connection with this office. Nothing more will be accepted from it.", court.name) });
+        }
         if status != "answered" {
             return bad("That connection is not waiting for a confirmation.");
         }
-        let (_, confirmation) = pairing::read_confirmation(&me, &court, bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
         let trusted = confirmation.outcome == "trusted";
         sqlx::query("UPDATE court_links SET status = ?, reason = ?, trusted_at = CASE WHEN ? THEN ? ELSE NULL END WHERE id = ?").bind(if trusted { "trusted" } else { "declined" }).bind(&confirmation.reason).bind(trusted).bind(now()).bind(&link_id).execute(pool).await?;
         let message = if trusted { format!("{} has confirmed this office. Files can now be filed to it.", court.name) } else { format!("{} declined this office's answer.", court.name) };
@@ -115,7 +123,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         return bad(format!("This office does not receive packages of kind '{}' from a court registry.", header.kind));
     }
     if status != "trusted" {
-        return bad("That registry is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "That registry has ended its connection with this office. Nothing was kept." } else { "That registry is not confirmed as trusted. Nothing was kept." });
     }
     let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM court_incoming WHERE id = ?").bind(&header.id).fetch_one(pool).await?;
     if seen > 0 {
@@ -207,7 +215,10 @@ pub async fn export_filing(pool: &SqlitePool, file_id: &str, court_level: &str, 
     }
     let me = require_identity(pool).await?;
     let link_id: Option<String> = sqlx::query_scalar("SELECT id FROM court_links WHERE status = 'trusted' ORDER BY trusted_at DESC LIMIT 1").fetch_optional(pool).await?;
-    let Some(link_id) = link_id else { return bad("No court registry has confirmed this office yet. Connect to a registry first.") };
+    let Some(link_id) = link_id else {
+        let ended: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM court_links WHERE status = 'revoked'").fetch_one(pool).await?;
+        return bad(if ended > 0 { "The connection with the court registry has ended. Connect to a registry again before filing." } else { "No court registry has confirmed this office yet. Connect to a registry first." });
+    };
     let (court, _) = court_public(pool, &link_id).await?;
     let payload = filing_payload(pool, file_id, court_level, filed_by).await?;
     let json = serde_json::to_value(&payload).map_err(|_| DomainError::Invalid("Could not build the filing.".into()))?;
@@ -298,7 +309,10 @@ pub async fn export_withdrawal(pool: &SqlitePool, file_id: &str, decision: &str,
     let Some(number) = number else { return Err(DomainError::NotFound("File not found.".into())) };
     let Some(court_number) = number.filter(|n| !n.trim().is_empty()) else { return bad("This file has no court case number yet, so there is no case at the court to withdraw.") };
     let link_id: Option<String> = sqlx::query_scalar("SELECT id FROM court_links WHERE status = 'trusted' ORDER BY trusted_at DESC LIMIT 1").fetch_optional(pool).await?;
-    let Some(link_id) = link_id else { return bad("No court registry has confirmed this office yet. Connect to a registry first.") };
+    let Some(link_id) = link_id else {
+        let ended: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM court_links WHERE status = 'revoked'").fetch_one(pool).await?;
+        return bad(if ended > 0 { "The connection with the court registry has ended. Connect to a registry again before filing." } else { "No court registry has confirmed this office yet. Connect to a registry first." });
+    };
     let (court, _) = court_public(pool, &link_id).await?;
     let payload = WithdrawalPayload { dpp_file_key: file_id.to_string(), court_number: court_number.trim().to_string(), decision: decision.to_string(), reason: reason.map(|r| r.trim().to_string()).filter(|r| !r.is_empty()), decided_at: now(), decided_by: decided_by.map(str::to_string) };
     let json = serde_json::to_value(&payload).map_err(|_| DomainError::Invalid("Could not build the withdrawal.".into()))?;
@@ -399,6 +413,35 @@ mod tests {
         assert_eq!(doc.kind, "filing_sheet");
         let text = serde_json::to_string(&doc.content).unwrap();
         assert!(text.contains("Nakawa Chief Magistrates Court") && text.contains("Robbery") && text.contains("Kasozi") && text.contains("Court case number"));
+        pool.close().await;
+    }
+
+    /// The registry ends its connection: the office reads the signed notice, keeps the reason, refuses to file to it,
+    /// and a notice signed by someone else changes nothing.
+    #[tokio::test]
+    async fn a_registry_that_ends_its_connection_is_no_longer_filed_to() {
+        let dir = std::env::temp_dir().join(format!("pleadli-dpp-court-revoke-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = crate::db::startup(&dir, None).await.ok().unwrap().pool;
+        super::super::interchange::create_identity(&pool, "Court Revoke Test DPP", Some("Kampala".to_string())).await.unwrap();
+        let court = Identity::generate(IdentityKind::CourtRegistry, "Court Revoke Test Registry", Some("Kampala"));
+        let (invite_file, invite) = pairing::make_invite(&court, "Court Revoke Test DPP", i64::MAX).unwrap();
+        let (link, answer) = accept_invite(&pool, &invite_file, None).await.unwrap();
+        let response = pairing::read_response(&answer).unwrap();
+        let sign = |who: &Identity, outcome: &str, reason: Option<&str>| pairing::make_confirmation(who, &response.station, &invite.invite_id, outcome, reason).unwrap();
+        import_package(&pool, &sign(&court, "trusted", None)).await.unwrap();
+
+        let stranger = Identity::generate(IdentityKind::CourtRegistry, "Stranger", None);
+        assert!(import_package(&pool, &sign(&stranger, "revoked", Some("Forged."))).await.is_err());
+        let status = || sqlx::query_scalar::<_, String>("SELECT status FROM court_links WHERE id = ?").bind(link.id.clone()).fetch_one(&pool);
+        assert_eq!(status().await.unwrap(), "trusted", "a notice signed by someone else ended nothing");
+
+        import_package(&pool, &sign(&court, "revoked", Some("Registry closed."))).await.unwrap();
+        assert_eq!(status().await.unwrap(), "revoked");
+        let why: Option<String> = sqlx::query_scalar("SELECT revoked_reason FROM court_links WHERE id = ?").bind(&link.id).fetch_one(&pool).await.unwrap();
+        assert_eq!(why.as_deref(), Some("Registry closed."));
+        import_package(&pool, &sign(&court, "revoked", Some("Again."))).await.unwrap();
+        assert!(export_filing(&pool, "f1", "magistrate", None, "file").await.is_err(), "nothing is filed to a registry that ended the connection");
         pool.close().await;
     }
 }

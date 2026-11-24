@@ -2502,6 +2502,7 @@
     "status_answered": "Réponse envoyée, en attente du tribunal",
     "status_trusted": "Approuvé",
     "status_declined": "Refusé",
+    "status_revoked": "Terminée",
     "read_code": "Lisez ce code au greffe :",
     "answered_notice": "Réponse envoyée à {court}. Renvoyez le fichier et lisez-leur le code ci-dessous.",
     "file_to": "Déposer auprès de {court}",

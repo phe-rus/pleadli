@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react'
 export const Route = createFileRoute('/_public/courts/')({ component: RouteComponent })
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
-const status = (s: string) => (s === "trusted" ? m["court_exchange.status_trusted"]() : s === "declined" ? m["court_exchange.status_declined"]() : m["court_exchange.status_answered"]())
+const status = (s: string) => (s === "trusted" ? m["court_exchange.status_trusted"]() : s === "declined" ? m["court_exchange.status_declined"]() : s === "revoked" ? m["court_exchange.status_revoked"]() : m["court_exchange.status_answered"]())
 
 /** Filing to a court: answer a registry's invitation, send it a prosecution file
  * as a sealed file, and take back the receipt that carries the court's number. */
