@@ -9,6 +9,7 @@
 		"preview": "vite build && vite preview",
 		"deploy": "vite build && wrangler deploy",
 		"cf-typegen": "wrangler types",
+		"test:workerd": "bun tests/workerd/run.ts",
 		"auth:gen": "bunx auth generate --config ./src/auth/index.ts --output ./src/db/auth-schema.ts --yes",
 		"db:gen": "drizzle-kit generate",
 		"db:studio": "drizzle-kit studio",

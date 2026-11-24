@@ -589,7 +589,12 @@
       "licensed": "Ina leseni",
       "seen": "Ilionekana mwisho {date}",
       "trial": "Majaribio, siku {days} zimebaki",
-      "trial_ended": "Majaribio yameisha"
+      "trial_ended": "Majaribio yameisha",
+      "office": "Ofisi",
+      "office_hint": "Barua za kompyuta hufika kwenye anwani ya ofisi unayochagua hapa. Kubadilisha kunabadilisha mahali barua zake zinapofika, na ofisi zilizoidhinisha anwani ya zamani lazima zidhinishe mpya.",
+      "office_none": "Hakuna ofisi (anwani ya taasisi yenyewe)",
+      "office_saved": "Imehifadhiwa",
+      "receives_at": "Barua hufika {address}"
     },
     "failed": "Haikufanikiwa",
     "go_admin": "Pleadli Admin",
@@ -707,12 +712,18 @@
       "empty": "Hakuna miunganisho bado. Ofisi huomba kutoka programu yake ya Pleadli; wewe unaamua hapa.",
       "ended_title": "Zilizokataliwa au kukomeshwa",
       "lead": "Ofisi zipi zinaweza kutuma kwa ofisi yako, na zipi unaweza kuzitumia. Pleadli hubeba mafaili yaliyofungwa kati ya ofisi zilizoidhinishwa na haiyasomi kamwe.",
-      "note": "Pleadli Police na Pleadli DPP hutuma na kupokea kupitia Sanduku la Posta. Programu nyingine hazilitumii bado: kwazo, mafaili husafirishwa kwa kusafirisha na kuingiza.",
+      "note": "Pleadli Police, DPP, Courts, Lawyers na Prisons hutuma na kupokea kupitia Sanduku la Posta pale Pleadli inapoeleza ubadilishanaji kati yao. Mafaili pia yanaweza kusafirishwa kwa kusafirisha na kuingiza.",
       "revoke": "Komesha muunganisho",
       "revoke_hint": "Barua zinazosubiri kati ya ofisi zenu mbili zinafutwa.",
       "revoked": "Imekomeshwa",
       "sent_title": "Zinazosubiri jibu lao",
-      "waiting": "Barua zinazosubiri kuchukuliwa"
+      "waiting": "Barua zinazosubiri kuchukuliwa",
+      "cancel": "Ghairi",
+      "ended_reason": "Sababu: {reason}",
+      "revoke_body": "Ofisi nyingine inaarifiwa sababu hii. Barua zinazosubiri kati ya ofisi zenu mbili zinafutwa, na hakuna anayeweza kumtumia mwingine hadi muunganisho mpya uidhinishwe.",
+      "revoke_confirm": "Maliza muunganisho",
+      "revoke_reason": "Kwa nini unamalizwa?",
+      "revoke_title": "Maliza muunganisho na {name}"
     },
     "reg": {
       "add_office": "Ongeza ofisi",
@@ -968,7 +979,7 @@
     "not_found": "Hakuna kesi yenye msimbo huu",
     "not_found_body": "Hakiki msimbo tena. Ukiwa sahihi, huenda ofisi bado haijatuma taarifa.",
     "now": "Sasa",
-    "privacy": "Hatua, ofisi na tarehe ijayo pekee ndizo zinaonyeshwa. Hakuna majina, maelezo wala ushahidi, na hakuna kutafuta kwa jina.",
+    "privacy": "Hatua, ofisi na tarehe inayofuata pekee ndizo zinazoonyeshwa, na ni kwa sababu taasisi inayoshikilia kesi iliamua kuzichapisha. Kinachoweza kuonekana kuhusu kesi kinaamuliwa na taasisi hiyo na sheria inayotumika, si Pleadli. Kutopata msimbo hapa haimaanishi kuwa hakuna kesi. Hakuna majina, maelezo ya mashahidi wala ushahidi, na hakuna utafutaji kwa jina.",
     "since": "Tangu {date}",
     "stage": {
       "charged": "Imeshtakiwa",
@@ -985,6 +996,7 @@
     "title": "Kesi hii iko wapi?"
   },
   "verify": {
+    "authority_note": "Pleadli inathibitisha kwamba taasisi ilitoa karatasi hii. Si rekodi ya mahakama au ya usajili isipokuwa taasisi hiyo inasema hivyo.",
     "check": "Hakiki",
     "code": "Msimbo wa uhakiki",
     "code_hint": "Herufi na namba kumi na mbili, zilizochapishwa kando ya msimbo wa QR.",
@@ -996,6 +1008,7 @@
     "file_title": "Una PDF?",
     "genuine": "Halali",
     "genuine_body": "{kind} {reference}, imetolewa na {office} tarehe {date}.",
+    "genuine_limited": "Karatasi hii ilitolewa kupitia Pleadli na {institution}. Ofisi iliyoitoa imechagua kutoonyesha maelezo zaidi hapa.",
     "institution": "Taasisi",
     "kind": {
       "bond": "Dhamana",
@@ -1015,7 +1028,8 @@
     "meta_title": "Hakiki karatasi",
     "not_found": "Hakuna karatasi yenye msimbo huu",
     "not_found_body": "Hakiki msimbo tena. Ukiwa sahihi, huenda karatasi si halali, au ofisi bado haijaituma Pleadli. Uliza ofisi iliyoitoa.",
-    "privacy": "Pleadli inahifadhi alama ya kila karatasi pekee: msimbo, aina, ofisi na tarehe. Kamwe si maudhui yake.",
+    "privacy": "Pleadli inahifadhi alama ya kila karatasi na maelezo tu ambayo taasisi iliyoitoa iliamua kuonyesha. Kamwe yaliyomo. Mlingano unaonyesha kuwa taasisi ilitoa karatasi na kama iliondolewa au kubadilishwa. Si kauli kwamba karatasi ni halali kisheria, na kutopata msimbo haimaanishi kuwa karatasi ni ya uongo.",
+    "superseded_body": "Ilibadilishwa na karatasi mpya yenye msimbo {code}. Angalia msimbo huo pia.",
     "title": "Je, karatasi hii ni halali?",
     "withdrawn": "Imeondolewa",
     "withdrawn_body": "Karatasi hii ilikuwa halali lakini iliondolewa tarehe {date}. Usiitegemee."

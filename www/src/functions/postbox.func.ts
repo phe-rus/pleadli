@@ -52,5 +52,7 @@ export const decideConnection = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const user = requireUser(context.session)
     await memberOf(user, data.organizationId)
+    // Ending a connection tells the other office why, so a person must say. Declining and approving need no reason.
+    if (data.action === 'revoke' && !data.reason) throw new Error('Say why the connection is being ended.')
     return decideLink(data.organizationId, data.linkId, data.action, user.email, data.reason)
   })

@@ -2,8 +2,11 @@ import { decideConnection, getPostbox } from '@/functions/postbox.func'
 import { useServerMutation } from '@/lib/use-server-mutation'
 import * as m from '@/paraglide/messages'
 import { Button } from '@pleadli/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
+import { Textarea } from '@pleadli/ui/textarea'
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/_protected/account/$orgId/postbox')({
   loader: ({ params }) => getPostbox({ data: { organizationId: params.orgId } }),
@@ -18,7 +21,14 @@ function RouteComponent() {
   const { institution } = institutionRoute.useLoaderData()
   const { links, waiting } = Route.useLoaderData()
   const decide = useServerMutation(decideConnection, { success: () => m["orch.postbox.done"]() })
-  const act = (linkId: string, action: 'approve' | 'decline' | 'revoke') => decide.mutate({ organizationId: institution.id, linkId, action })
+  const act = (linkId: string, action: 'approve' | 'decline' | 'revoke', reason?: string) => decide.mutate({ organizationId: institution.id, linkId, action, reason })
+  // Ending a connection tells the other office why, so it asks for the reason first.
+  const [ending, setEnding] = useState<{ id: string; name: string } | null>(null)
+  const [reason, setReason] = useState('')
+  const close = () => {
+    setEnding(null)
+    setReason('')
+  }
 
   const asking = links.filter((l) => l.status === 'requested' && l.direction === 'asked_of_us')
   const sent = links.filter((l) => l.status === 'requested' && l.direction === 'asked')
@@ -64,7 +74,7 @@ function RouteComponent() {
               key={l.id}
               label={l.name}
               detail={l.address}
-              value={<Button size="xs" variant="ghost" disabled={decide.isPending} onClick={() => act(l.id, 'revoke')}>{m["orch.postbox.revoke"]()}</Button>}
+              value={<Button size="xs" variant="ghost" disabled={decide.isPending} onClick={() => setEnding({ id: l.id, name: l.name })}>{m["orch.postbox.revoke"]()}</Button>}
             />
           ))}
         </Group>
@@ -81,9 +91,36 @@ function RouteComponent() {
       {ended.length > 0 && (
         <Group title={m["orch.postbox.ended_title"]()}>
           {ended.map((l) => (
-            <GroupRow key={l.id} label={l.name} detail={l.address} value={l.status === 'declined' ? m["orch.postbox.declined"]() : m["orch.postbox.revoked"]()} />
+            <GroupRow
+              key={l.id}
+              label={l.name}
+              detail={l.reason ? `${l.address} · ${m["orch.postbox.ended_reason"]({ reason: l.reason })}` : l.address}
+              value={l.status === 'declined' ? m["orch.postbox.declined"]() : m["orch.postbox.revoked"]()}
+            />
           ))}
         </Group>
+      )}
+
+      {ending && (
+        <Dialog open onOpenChange={(open) => !open && close()}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{m["orch.postbox.revoke_title"]({ name: ending.name })}</DialogTitle>
+              <DialogDescription>{m["orch.postbox.revoke_body"]()}</DialogDescription>
+            </DialogHeader>
+            <Textarea aria-label={m["orch.postbox.revoke_reason"]()} placeholder={m["orch.postbox.revoke_reason"]()} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} />
+            <DialogFooter>
+              <Button variant="ghost" onClick={close}>{m["orch.postbox.cancel"]()}</Button>
+              <Button
+                variant="destructive"
+                disabled={decide.isPending || !reason.trim()}
+                onClick={() => decide.mutate({ organizationId: institution.id, linkId: ending.id, action: 'revoke', reason: reason.trim() }, { onSuccess: close })}
+              >
+                {m["orch.postbox.revoke_confirm"]()}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </article>
   )

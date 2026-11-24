@@ -140,6 +140,31 @@ export const addOffice = createServerFn({ method: 'POST' })
     return { ok: true }
   })
 
+const assignSchema = z.object({ organizationId: z.string().min(1), computerId: z.string().min(1), unitId: z.string().min(1).nullable() })
+
+/** Which office a computer works for. The relay delivers a computer's mail at its office's address (or the
+ * institution's own address when it has no office), so this decides where mail for that computer arrives. Only a
+ * computer of this institution, and only an office of this institution that has an address, may be chosen. */
+export const assignComputerOffice = createServerFn({ method: 'POST' })
+  .middleware([SessionMiddleware])
+  .validator(assignSchema)
+  .handler(async ({ data, context }) => {
+    const user = requireUser(context.session)
+    await memberOf(user, data.organizationId)
+    const [machine] = await db.select({ id: computer.id }).from(computer).where(and(eq(computer.id, data.computerId), eq(computer.organizationId, data.organizationId)))
+    if (!machine) throw new Error('That computer is not one of yours.')
+    if (data.unitId) {
+      const [office] = await db
+        .select({ id: organizationUnit.id, address: organizationUnit.address })
+        .from(organizationUnit)
+        .where(and(eq(organizationUnit.id, data.unitId), eq(organizationUnit.organizationId, data.organizationId)))
+      if (!office) throw new Error('That office is not one of yours.')
+      if (!office.address) throw new Error('That office has no Pleadli address yet. Pleadli issues it when your registration is approved.')
+    }
+    await db.update(computer).set({ unitId: data.unitId }).where(eq(computer.id, data.computerId))
+    return { ok: true }
+  })
+
 const inviteSchema = z.object({ organizationId: z.string().min(1), email: z.string().trim().email() })
 
 /** The owner invites an administrator by email; they become active when they

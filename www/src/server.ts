@@ -1,6 +1,7 @@
 import handler from "@tanstack/react-start/server-entry";
 import { sweepRelay } from "./api/relay-v1";
 import { sweepTunnels } from "@/api/tunnel-v1";
+export { QuotaCounter } from "./lib/quota-counter";
 import { paraglideMiddleware } from "./paraglide/server.js";
 
 /** The Worker's entry (wrangler.jsonc `main`): every request is rendered in

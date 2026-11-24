@@ -2,7 +2,7 @@ import { db } from '@/db'
 import { organization, organizationUnit } from '@/db/auth-schema'
 import { relayLink, relayMessage, relayOffice } from '@/db/relay-schema'
 import { sign, type Signed } from '@/lib/orchestra-signing'
-import { connected, hasMailbox, whoOwns } from '@/lib/relay-links.server'
+import { connected, decideLink, hasMailbox, whoOwns } from '@/lib/relay-links.server'
 import { relayPairAllowed, relayPermitted } from '@/lib/relay-paths'
 import { identify, sha256Of, type Caller } from '@/lib/computer-auth.server'
 import { env } from 'cloudflare:workers'
@@ -224,6 +224,26 @@ async function askToConnect(request: Request, caller: Caller) {
   return json({ ok: true, id, status: 'requested' }, 201)
 }
 
+/** An office ends its connection with another (a person at the office decided it in the app). Same effect as revoking on
+ * Pleadli Account: the link stops carrying mail either way and the mail still waiting between the two is dropped.
+ * Only the two ends of a link may do it, and only for a link that is live. */
+async function endConnection(request: Request, caller: Caller) {
+  if (!caller.licensed) throw new RelayError(403, 'licence_needed', 'Ending a connection needs a licence.')
+  const body = (await request.json().catch(() => null)) as { with?: unknown; reason?: unknown } | null
+  const other = typeof body?.with === 'string' ? body.with.trim() : ''
+  if (!ADDRESS.test(other)) throw new RelayError(400, 'bad_request', 'Send {"with": "<Orchestra address>", "reason": "..."}.')
+  const reason = typeof body?.reason === 'string' ? body.reason.trim().slice(0, 500) : ''
+  if (!reason) throw new RelayError(422, 'reason_needed', 'Say why the connection is being ended.')
+  const me = await whoOwns(caller.address)
+  const [link] = await db
+    .select()
+    .from(relayLink)
+    .where(and(or(and(eq(relayLink.fromAddress, caller.address), eq(relayLink.toAddress, other)), and(eq(relayLink.fromAddress, other), eq(relayLink.toAddress, caller.address))), or(eq(relayLink.status, 'approved'), eq(relayLink.status, 'requested'))))
+  if (!me || !link) throw new RelayError(404, 'not_found', 'No live connection with that office.')
+  await decideLink(me.organizationId, link.id, 'revoke', `computer:${caller.computerId}`, reason)
+  return json({ ok: true, id: link.id, status: 'revoked' })
+}
+
 /** My connections, both directions, with the other office's name and status. */
 async function myConnections(caller: Caller) {
   const rows = await db
@@ -311,6 +331,7 @@ export async function handleRelayV1(request: Request, call: string) {
     if (method === 'GET' && parts.length === 1 && parts[0] === 'whoami') return await whoami(caller)
     if (method === 'POST' && parts.length === 1 && parts[0] === 'messages') return await post(request, caller)
     if (method === 'POST' && parts.length === 1 && parts[0] === 'connections') return await askToConnect(request, caller)
+    if (method === 'POST' && parts.length === 2 && parts[0] === 'connections' && parts[1] === 'revoke') return await endConnection(request, caller)
     if (method === 'GET' && parts.length === 1 && parts[0] === 'connections') return await myConnections(caller)
     if (method === 'PUT' && parts.length === 1 && parts[0] === 'identity') return await putIdentity(request, caller)
     if (method === 'GET' && parts.length === 2 && parts[0] === 'certificates') return await getCertificate(parts[1], caller)

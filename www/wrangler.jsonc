@@ -20,6 +20,32 @@
 			"pattern": "pleadli.com"
 		}
 	],
+	"ratelimits": [
+		{
+			"name": "PUBLIC_LOOKUP",
+			"namespace_id": "1001",
+			"simple": {
+				"limit": 30,
+				"period": 60
+			}
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "QUOTA",
+				"class_name": "QuotaCounter"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "quota-v1",
+			"new_sqlite_classes": [
+				"QuotaCounter"
+			]
+		}
+	],
 	"triggers": {
 		"crons": [
 			"17 3 * * *"

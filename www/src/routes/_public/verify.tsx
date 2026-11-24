@@ -63,7 +63,8 @@ type Paper = NonNullable<Awaited<ReturnType<typeof verifyPaper>>>
 
 function Verdict({ paper }: { paper: Paper }) {
   const withdrawn = paper.withdrawnAt !== null
-  const kind = (kinds[paper.kind] ?? (() => m["verify.kind.other"]()))()
+  const kind = paper.kind ? (kinds[paper.kind] ?? (() => m["verify.kind.other"]()))() : null
+  const full = kind !== null && paper.reference !== null && paper.office !== null && paper.issuedAt !== null
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,14 +72,16 @@ function Verdict({ paper }: { paper: Paper }) {
         <HugeiconsIcon icon={withdrawn ? Alert02Icon : CheckmarkCircle02Icon} className={withdrawn ? 'mt-1 shrink-0 text-destructive' : 'mt-1 shrink-0 text-primary'} />
         <div className="flex flex-col gap-1">
           <h2 className="text-xl!">{withdrawn ? m["verify.withdrawn"]() : m["verify.genuine"]()}</h2>
-          <p>{m["verify.genuine_body"]({ kind, reference: paper.reference, office: paper.office, date: formatDate(paper.issuedAt) })}</p>
+          <p>{full ? m["verify.genuine_body"]({ kind, reference: paper.reference!, office: paper.office!, date: formatDate(paper.issuedAt!) }) : m["verify.genuine_limited"]({ institution: paper.institution })}</p>
           {withdrawn && (
             <p className="text-destructive">
               {m["verify.withdrawn_body"]({ date: formatDate(paper.withdrawnAt!) })}
               {paper.withdrawnReason && ` ${paper.withdrawnReason}`}
+              {paper.supersededByCode && ` ${m["verify.superseded_body"]({ code: paper.supersededByCode })}`}
             </p>
           )}
-          {paper.office !== paper.institution && (
+          <p className="text-sm text-muted-foreground">{m["verify.authority_note"]()}</p>
+          {paper.office && paper.office !== paper.institution && (
             <p className="text-muted-foreground">
               {m["verify.institution"]()}: {paper.institution}
             </p>

@@ -589,7 +589,12 @@
       "licensed": "Sous licence",
       "seen": "Vu pour la dernière fois le {date}",
       "trial": "Essai, {days} jours restants",
-      "trial_ended": "Essai terminé"
+      "trial_ended": "Essai terminé",
+      "office": "Bureau",
+      "office_hint": "Le courrier d'un ordinateur arrive à l'adresse du bureau choisi ici. Le changer modifie l'endroit où arrive son courrier, et les bureaux qui ont approuvé l'ancienne adresse doivent approuver la nouvelle.",
+      "office_none": "Aucun bureau (l'adresse de l'institution elle-même)",
+      "office_saved": "Enregistré",
+      "receives_at": "Le courrier arrive à {address}"
     },
     "failed": "Cela n'a pas fonctionné",
     "go_admin": "Pleadli Admin",
@@ -707,12 +712,18 @@
       "empty": "Aucune connexion pour l'instant. Un bureau la demande depuis son application Pleadli ; vous décidez ici.",
       "ended_title": "Refusés ou terminés",
       "lead": "Quels bureaux peuvent écrire au vôtre, et auxquels vous pouvez écrire. Pleadli transporte des fichiers scellés entre bureaux approuvés et ne les lit jamais.",
-      "note": "Pleadli Police et Pleadli DPP envoient et collectent par la boîte postale. Les autres applications ne l'utilisent pas encore : pour elles, les fichiers passent par export et import.",
+      "note": "Pleadli Police, DPP, Courts, Lawyers et Prisons envoient et collectent par la boîte postale là où Pleadli définit un échange entre eux. Les fichiers peuvent aussi passer par export et import.",
       "revoke": "Mettre fin à la connexion",
       "revoke_hint": "Le courrier encore en attente entre vos deux bureaux est supprimé.",
       "revoked": "Terminée",
       "sent_title": "En attente de leur réponse",
-      "waiting": "Courrier en attente de retrait"
+      "waiting": "Courrier en attente de retrait",
+      "cancel": "Annuler",
+      "ended_reason": "Motif : {reason}",
+      "revoke_body": "L'autre bureau est informé de ce motif. Le courrier encore en attente entre vos deux bureaux est supprimé, et aucun de vous ne peut écrire à l'autre tant qu'une nouvelle connexion n'est pas approuvée.",
+      "revoke_confirm": "Mettre fin à la connexion",
+      "revoke_reason": "Pourquoi y met-on fin ?",
+      "revoke_title": "Mettre fin à la connexion avec {name}"
     },
     "reg": {
       "add_office": "Ajouter un bureau",
@@ -968,7 +979,7 @@
     "not_found": "Aucune affaire avec ce code",
     "not_found_body": "Vérifiez de nouveau le code. S'il est correct, le bureau n'a peut-être pas encore transmis de mise à jour.",
     "now": "Maintenant",
-    "privacy": "Seuls l'étape, le bureau et la prochaine date sont affichés. Aucun nom, aucune déclaration ni preuve, et aucune recherche par nom.",
+    "privacy": "Seuls l'étape, le bureau et la prochaine date sont affichés, et uniquement parce que l'institution qui détient le dossier a choisi de les publier. Ce qui peut être vu d'un dossier est décidé par cette institution et par la loi applicable, pas par Pleadli. Ne pas trouver un code ici ne signifie pas qu'il n'y a pas de dossier. Aucun nom, déclaration ou preuve, et aucune recherche par nom.",
     "since": "Depuis le {date}",
     "stage": {
       "charged": "Mise en accusation",
@@ -985,6 +996,7 @@
     "title": "Où en est cette affaire ?"
   },
   "verify": {
+    "authority_note": "Pleadli confirme que l'institution a émis ce document. Ce n'est pas un registre de tribunal ou officiel, sauf si cette institution l'indique.",
     "check": "Vérifier",
     "code": "Code de vérification",
     "code_hint": "Douze lettres et chiffres, imprimés à côté du code QR.",
@@ -996,6 +1008,7 @@
     "file_title": "Vous avez le PDF ?",
     "genuine": "Authentique",
     "genuine_body": "{kind} {reference}, délivré par {office} le {date}.",
+    "genuine_limited": "Ce document a été émis par {institution} via Pleadli. Le bureau émetteur a choisi de ne pas afficher plus de détails ici.",
     "institution": "Institution",
     "kind": {
       "bond": "Caution",
@@ -1015,7 +1028,8 @@
     "meta_title": "Vérifier un document",
     "not_found": "Aucun document avec ce code",
     "not_found_body": "Vérifiez de nouveau le code. S'il est correct, le document n'est peut-être pas authentique, ou le bureau ne l'a pas encore transmis à Pleadli. Renseignez-vous auprès du bureau qui l'a délivré.",
-    "privacy": "Pleadli ne conserve qu'une empreinte de chaque document : son code, son type, son bureau et sa date. Jamais son contenu.",
+    "privacy": "Pleadli conserve l'empreinte de chaque document et seulement les détails que l'institution émettrice a choisi d'afficher. Jamais son contenu. Une correspondance montre que l'institution a émis le document et s'il a été retiré ou remplacé. Ce n'est pas une déclaration de validité juridique, et ne pas trouver un code ne signifie pas qu'un document est faux.",
+    "superseded_body": "Il a été remplacé par un document plus récent portant le code {code}. Vérifiez aussi ce code.",
     "title": "Ce document est-il authentique ?",
     "withdrawn": "Retiré",
     "withdrawn_body": "Ce document était authentique mais a été retiré le {date}. Ne vous y fiez pas."

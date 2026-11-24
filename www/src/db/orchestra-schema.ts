@@ -225,6 +225,11 @@ export const paper = sqliteTable(
     issuedAt: integer("issued_at", { mode: "timestamp_ms" }).notNull(),
     withdrawnAt: integer("withdrawn_at", { mode: "timestamp_ms" }),
     withdrawnReason: text("withdrawn_reason"),
+    /** The code of the paper that replaced this one, when the institution says so. */
+    supersededByCode: text("superseded_by_code"),
+    /** The fields the issuing institution chose to show the public (JSON array of
+     * "reference" | "kind" | "office" | "issuedAt"). Existing rows keep what was shown before. */
+    publicFields: text("public_fields").notNull().default('["reference","kind","office","issuedAt"]'),
     recordedAt: integer("recorded_at", { mode: "timestamp_ms" }).notNull(),
   },
   (t) => [index("paper_org").on(t.organizationId, t.issuedAt)],
@@ -241,6 +246,9 @@ export const trackingCode = sqliteTable("tracking_code", {
     onDelete: "set null",
   }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  /** Set when the institution stops publishing the case (for example it was sealed).
+   * The public then gets the same answer as for a code that never existed. */
+  unpublishedAt: integer("unpublished_at", { mode: "timestamp_ms" }),
 });
 
 /** One step of a tracked case: a stage from a fixed list, the office it is

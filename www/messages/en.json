@@ -589,7 +589,12 @@
       "licensed": "Licensed",
       "seen": "Last seen {date}",
       "trial": "Trial, {days} days left",
-      "trial_ended": "Trial ended"
+      "trial_ended": "Trial ended",
+      "office": "Office",
+      "office_hint": "Mail for a computer arrives at the address of the office you choose here. Changing it changes where its mail arrives, and offices that approved the old address must approve the new one.",
+      "office_none": "No office (the institution's own address)",
+      "office_saved": "Saved",
+      "receives_at": "Mail arrives at {address}"
     },
     "failed": "That did not work",
     "go_admin": "Pleadli Admin",
@@ -707,12 +712,18 @@
       "empty": "No connections yet. An office asks from its Pleadli app; you decide here.",
       "ended_title": "Declined or ended",
       "lead": "Which offices may send to yours, and which you may send to. Pleadli carries sealed files between approved offices and never reads them.",
-      "note": "Pleadli Police and Pleadli DPP send and collect through the Postbox. The other apps do not use it yet: for them, files move by export and import.",
+      "note": "Pleadli Police, DPP, Courts, Lawyers and Prisons send and collect through the Postbox where Pleadli defines an exchange between them. Files can also move by export and import.",
       "revoke": "End connection",
       "revoke_hint": "Mail still waiting between your two offices is deleted.",
       "revoked": "Ended",
       "sent_title": "Waiting for their answer",
-      "waiting": "Mail waiting to be collected"
+      "waiting": "Mail waiting to be collected",
+      "cancel": "Cancel",
+      "ended_reason": "Reason: {reason}",
+      "revoke_body": "The other office is told this reason. Mail still waiting between your two offices is deleted, and neither of you can send to the other until a new connection is approved.",
+      "revoke_confirm": "End connection",
+      "revoke_reason": "Why is it being ended?",
+      "revoke_title": "End the connection with {name}"
     },
     "reg": {
       "add_office": "Add an office",
@@ -968,7 +979,7 @@
     "not_found": "No case with this code",
     "not_found_body": "Check the code again. If it is right, the office may not have sent an update yet.",
     "now": "Now",
-    "privacy": "Only the stage, the office and the next date are shown. No names, statements or evidence, and no search by name.",
+    "privacy": "Only the stage, the office and the next date are shown, and only because the institution that holds the case chose to publish them. What may be seen about a case is decided by that institution and the law that applies, not by Pleadli. Not finding a code here does not mean there is no case. No names, statements or evidence, and no search by name.",
     "since": "Since {date}",
     "stage": {
       "charged": "Charged",
@@ -985,6 +996,7 @@
     "title": "Where is this case?"
   },
   "verify": {
+    "authority_note": "Pleadli confirms the institution issued this paper. It is not a court or registry record unless that institution says so.",
     "check": "Check",
     "code": "Verification code",
     "code_hint": "Twelve letters and numbers, printed beside the QR code.",
@@ -996,6 +1008,7 @@
     "file_title": "Have the PDF?",
     "genuine": "Genuine",
     "genuine_body": "{kind} {reference}, issued by {office} on {date}.",
+    "genuine_limited": "This paper was issued through Pleadli by {institution}. The issuing office chose not to show more details here.",
     "institution": "Institution",
     "kind": {
       "bond": "Bond",
@@ -1015,7 +1028,8 @@
     "meta_title": "Verify a paper",
     "not_found": "No paper with this code",
     "not_found_body": "Check the code again. If it is right, the paper may not be genuine, or the office has not yet sent it to Pleadli. Ask the office that issued it.",
-    "privacy": "Pleadli keeps only a fingerprint of each paper: its code, kind, office and date. Never what it says.",
+    "privacy": "Pleadli keeps a fingerprint of each paper and only the details the issuing institution chose to show. Never what it says. A match shows that the institution issued the paper and whether it was withdrawn or replaced. It is not a statement that the paper is legally valid, and not finding a code does not mean a paper is false.",
+    "superseded_body": "It was replaced by a newer paper with code {code}. Check that code too.",
     "title": "Is this paper genuine?",
     "withdrawn": "Withdrawn",
     "withdrawn_body": "This paper was genuine but was withdrawn on {date}. Do not rely on it."
