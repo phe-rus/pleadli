@@ -422,7 +422,8 @@
     "found_weak": "Majina yanayofanana kwenye kumbukumbu zako ({count})",
     "judge": "Kama ni mgongano wa maslahi ni wewe wa kuamua. Hakuna kinachozuiwa.",
     "none": "Hakuna anayeitwa {name} katika shauri lolote.",
-    "own_client": "Tayari ni mteja wako katika mashauri mengine ({count}). Hajapatikana dhidi ya ofisi."
+    "own_client": "Tayari ni mteja wako katika mashauri mengine ({count}). Hajapatikana dhidi ya ofisi.",
+    "restricted": "Jina hili linajulikana kwenye shauri lenye kizuizi katika ofisi hii. Hujaonyeshwa shauri la nani. Muulize mshirika kabla ya kuanza."
   },
   "court_level": {
     "appeal": "Mahakama ya Rufaa au Mahakama ya Juu",
@@ -643,8 +644,8 @@
       "substituted": "Ukabidhi mbadala"
     },
     "method_label": "Kwa njia gani",
-    "none": "Hakuna kilichowasilishwa. Andaa hati kwanza.",
-    "none_yet": "Bado hakuna kilichowasilishwa. Rasimu ziko tayari kuwasilishwa pamoja.",
+    "none": "Hakuna fungu la mawasilisho lililotayarishwa kwa shauri hili. Andaa hati kwanza. Hati zilizotumwa kwa usajili zimeorodheshwa chini ya Wasilisha mahakamani, hapa chini.",
+    "none_yet": "Bado hakuna fungu la mawasilisho. Rasimu ziko tayari kuwasilishwa pamoja. Hati zilizotumwa kwa usajili zimeorodheshwa chini ya Wasilisha mahakamani, hapa chini.",
     "not_served": "Haijakabidhiwa",
     "pack": {
       "building": "Inaandaliwa...",
@@ -669,7 +670,7 @@
     "service_failed": "Imeshindwa kuandika ukabidhi",
     "service_recorded": "Ukabidhi umeandikwa",
     "submit": "Wasilisha {count}",
-    "title": "Mawasilisho",
+    "title": "Mafungu ya mawasilisho",
     "which": "Nyaraka za kuwasilisha"
   },
   "give": {
@@ -980,12 +981,14 @@
     "title": "Hesabu",
     "total": "Jumla {amount}",
     "unbilled_hours": "Saa {hours} hazijadaiwa",
-    "what": "Nini kimetokea"
+    "what": "Nini kimetokea",
+    "partial": "Baadhi ya maingizo ni ya mashauri usiyoruhusiwa kuyaona, kwa hivyo salio halionyeshwi. Mhasibu ana kiasi kamili."
   },
   "mp": {
     "add": "Ongeza",
     "add_task": "Ongeza kazi",
     "add_task_description": "Kitu cha kufanya kwenye shauri hili.",
+    "court_record": "Kumbukumbu ya mahakama: {text}",
     "adjourned_to": "Imeahirishwa hadi {date}",
     "all_templates": "Hati zote ({count})",
     "close": "Funga",
@@ -1090,7 +1093,11 @@
     "time": "Muda",
     "time_total": "{duration} kwa jumla.",
     "update": "Sasisha",
-    "write": "Andika kwenye ukurasa wake"
+    "write": "Andika kwenye ukurasa wake",
+    "access": "Nani anaweza kuliona",
+    "restricted": "Limezuiwa",
+    "access_title": "Nani anaweza kuliona shauri hili",
+    "access_description": "Kizuizi cha taarifa ndani ya ofisi."
   },
   "nav": {
     "all_matters": "Majalada yote",
@@ -1785,7 +1792,9 @@
     "title": "Ripoti ya ofisi",
     "uls_paid": "Ada ya {year} imelipwa",
     "uls_unknown": "Ada haijarekodiwa",
-    "year": "Mwaka"
+    "year": "Mwaka",
+    "money_label": "Fedha",
+    "money_restricted": "Takwimu za fedha za wateja za ofisi ni za mhasibu na wasimamizi pekee."
   },
   "svc": {
     "debt": "Kudai deni",
@@ -2349,7 +2358,8 @@
     "taken": "Imepokelewa na kuchukuliwa.",
     "title": "Sanduku la posta",
     "try_again": "Jaribu tena",
-    "turned_away": "Imekataliwa: {kind}"
+    "turned_away": "Imekataliwa: {kind}",
+    "stage_refused": "Imekataliwa na ofisi"
   },
   "court_notices": {
     "title": "Taarifa za mahakama",
@@ -2394,7 +2404,12 @@
     "invite_saved": "Mwaliko umehifadhiwa kwa {court}. Wapelekee.",
     "confirmed": "{court} imethibitishwa. Itumie faili ya uthibitisho.",
     "filed_notice": "Imewekwa. Itumie mahakama risiti.",
-    "returned_notice": "Imerudishwa. Itumie mahakama risiti."
+    "returned_notice": "Imerudishwa. Itumie mahakama risiti.",
+    "status_revoked": "Imekatishwa",
+    "end_ph": "Kwa nini muunganisho huu unakatishwa?",
+    "end": "Katisha muunganisho",
+    "ended": "Muunganisho na {name} umekatishwa. Wapelekee faili ya taarifa ikiwa hawako kwenye sanduku la posta.",
+    "ended_reason": "Sababu: {reason}"
   },
   "court_send_title": "Wasilisha mahakamani",
   "court_send_desc": "Andaa hati ya kesi hii na umpe msajili wa mahakama faili. Atakagua nambari ya kesi na kujibu kwa risiti.",
@@ -2405,7 +2420,7 @@
   "court_send_button": "Hifadhi hati kwa mahakama",
   "court_send_saved": "Imehifadhiwa. Mpe msajili wa mahakama faili.",
   "court_send_waiting": "inasubiri mahakama",
-  "court_send_accepted": "imekubaliwa na mahakama",
+  "court_send_accepted": "imepokelewa na usajili. Uamuzi wa mahakama utakuja kama amri",
   "court_send_returned": "imerudishwa na mahakama: {reason}",
   "court_send_kind_application": "Maombi",
   "court_send_kind_bail_application": "Maombi ya dhamana",
@@ -2437,5 +2452,24 @@
   },
   "downloads": {
     "saved": "Imehifadhiwa kwenye Downloads: {name}"
+  },
+  "access": {
+    "changed": "Orodha ya wanaoruhusiwa ilibadilishwa",
+    "recovered": "Ilibadilishwa na msimamizi ambaye hayumo kwenye shauri",
+    "history": "Nani alibadilisha ruhusa",
+    "history_empty": "Hakuna aliyeibadilisha bado.",
+    "name_one": "Taja angalau mtu mmoja. Wengine hawataliona shauri hili kabisa.",
+    "not_available": "Huwezi kuona nani anaruhusiwa kuona shauri hili.",
+    "outside": "Hujaorodheshwa kwenye shauri hili. Bado unaweza kusahihisha orodha, lakini eleza sababu. Sababu yako huandikwa kwenye kumbukumbu ya shauri, na haikuruhusu kulisoma.",
+    "reason": "Kwa nini unabadilisha",
+    "reason_placeholder": "Kwa mfano: mshirika yuko safarini na aliniomba nilikabidhi.",
+    "restrict": "Zuia shauri hili",
+    "restrict_help": "Ni watu uliowataja tu wanaoliona, pamoja na nyaraka, vikao, muda, fedha na historia yake. Kwa wengine halipo. Ukaguzi wa mgongano wa maslahi bado huonya kwamba jina linajulikana.",
+    "save": "Hifadhi",
+    "save_failed": "Haikuwezekana kubadilisha ruhusa ya shauri hili",
+    "saved_open": "Shauri hili limefunguliwa tena kwa ofisi",
+    "saved_restricted": "Shauri hili limezuiwa",
+    "who": "Nani anaweza kuliona",
+    "you": "wewe"
   }
 }

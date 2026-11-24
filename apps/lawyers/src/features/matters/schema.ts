@@ -51,6 +51,7 @@ export const matterSchema = z.object({
   outcome: z.string().nullable(),
   closedAt: z.number().nullable(),
   notes: z.string().nullable(),
+  restricted: z.boolean().default(false),
   createdAt: z.number(),
   updatedAt: z.number(),
 })
@@ -145,6 +146,8 @@ export const conflictHitSchema = z.object({
   matterTitle: z.string().nullable(),
   matterStatus: z.string().nullable(),
   strong: z.boolean(),
+  /** The name is on a restricted matter the signed-in person may not see: only that fact is given. */
+  restricted: z.boolean().default(false),
 })
 export type ConflictHit = z.infer<typeof conflictHitSchema>
 

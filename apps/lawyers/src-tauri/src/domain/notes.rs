@@ -94,7 +94,8 @@ const TIME_SELECT: &str = "SELECT e.id, e.matter_id, e.worked_on, e.minutes, e.d
     FROM time_entries e JOIN matters m ON m.id = e.matter_id";
 
 pub async fn list_time(pool: &SqlitePool, matter_id: &str, from: i64, to: i64) -> Result<Vec<TimeEntry>, sqlx::Error> {
-    sqlx::query_as::<_, TimeEntry>(sqlx::AssertSqlSafe(format!("{TIME_SELECT} WHERE (?1 = '' OR e.matter_id = ?1) AND e.worked_on >= ?2 AND e.worked_on < ?3 ORDER BY e.worked_on DESC, e.created_at DESC")))
+    let visible = super::access::visible("m");
+    sqlx::query_as::<_, TimeEntry>(sqlx::AssertSqlSafe(format!("{TIME_SELECT} WHERE (?1 = '' OR e.matter_id = ?1) AND {visible} AND e.worked_on >= ?2 AND e.worked_on < ?3 ORDER BY e.worked_on DESC, e.created_at DESC")))
         .bind(matter_id)
         .bind(from)
         .bind(to)

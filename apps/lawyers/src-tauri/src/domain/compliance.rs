@@ -70,10 +70,11 @@ pub fn certificate_status(expires: Option<i64>, now: i64) -> &'static str {
 
 pub async fn get(pool: &SqlitePool, year: i32) -> Result<Compliance, sqlx::Error> {
     let (from, to) = year_bounds(year);
+    let seen = super::access::visible("m");
     let sql = format!(
         "SELECT s.id AS staff_id, s.name, s.practising_number, s.certificate_expires_on, s.uls_paid_year, s.commissioner_since, s.notary_since,
             (SELECT COALESCE(SUM(t.minutes), 0) FROM time_entries t JOIN matters m ON m.id = t.matter_id
-              WHERE t.staff_id = s.id AND m.engagement IN {PRO_BONO_ENGAGEMENTS} AND t.worked_on >= ?1 AND t.worked_on < ?2) AS pro_bono_minutes
+              WHERE t.staff_id = s.id AND m.engagement IN {PRO_BONO_ENGAGEMENTS} AND t.worked_on >= ?1 AND t.worked_on < ?2 AND {seen}) AS pro_bono_minutes
          FROM staff s WHERE s.role = 'advocate' AND s.active = 1 ORDER BY s.name"
     );
     let mut advocates = sqlx::query_as::<_, AdvocateCompliance>(sqlx::AssertSqlSafe(sql)).bind(from).bind(to).fetch_all(pool).await?;
@@ -84,7 +85,7 @@ pub async fn get(pool: &SqlitePool, year: i32) -> Result<Compliance, sqlx::Error
     let sql = format!(
         "SELECT COALESCE(SUM(t.minutes), 0) FROM time_entries t JOIN matters m ON m.id = t.matter_id
          LEFT JOIN staff s ON s.id = t.staff_id
-         WHERE m.engagement IN {PRO_BONO_ENGAGEMENTS} AND t.worked_on >= ? AND t.worked_on < ? AND (s.id IS NULL OR s.role <> 'advocate' OR s.active = 0)"
+         WHERE m.engagement IN {PRO_BONO_ENGAGEMENTS} AND t.worked_on >= ? AND t.worked_on < ? AND (s.id IS NULL OR s.role <> 'advocate' OR s.active = 0) AND {seen}"
     );
     let other_pro_bono_minutes = sqlx::query_scalar(sqlx::AssertSqlSafe(sql)).bind(from).bind(to).fetch_one(pool).await?;
     Ok(Compliance { year, target_minutes: PRO_BONO_TARGET_MINUTES, advocates, other_pro_bono_minutes })

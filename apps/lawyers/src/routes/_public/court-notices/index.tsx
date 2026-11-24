@@ -1,5 +1,5 @@
 import { zoneFor } from '@pleadli/ui/lib/institution-zone'
-import { createIdentity, createInvite, fileNotice, getIdentity, importPackage, listIncoming, listLinks, listOpenMatters, pickPackage, returnNotice, savePackage, trustLink, type CourtLink, type FirmIdentity, type IncomingNotice, type MatterOption, type NoticeClaim } from '@/features/court-notices/data'
+import { createIdentity, createInvite, fileNotice, getIdentity, importPackage, listIncoming, listLinks, listOpenMatters, pickPackage, returnNotice, savePackage, revokeLink, trustLink, type CourtLink, type FirmIdentity, type IncomingNotice, type MatterOption, type NoticeClaim } from '@/features/court-notices/data'
 import * as m from '@/paraglide/messages'
 import { Badge } from '@pleadli/ui/badge'
 import { Button } from '@pleadli/ui/button'
@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react'
 export const Route = createFileRoute('/_public/court-notices/')({ component: RouteComponent })
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
-const linkStatus = (s: string) => (s === 'trusted' ? m['court_notices.status_trusted']() : s === 'awaiting_confirmation' ? m['court_notices.status_awaiting']() : s === 'declined' ? m['court_notices.status_declined']() : m['court_notices.status_invited']())
+const linkStatus = (s: string) => (s === 'trusted' ? m['court_notices.status_trusted']() : s === 'awaiting_confirmation' ? m['court_notices.status_awaiting']() : s === 'declined' ? m['court_notices.status_declined']() : s === 'revoked' ? m['court_notices.status_revoked']() : m['court_notices.status_invited']())
 const parse = (payload: string): NoticeClaim => {
   try {
     return JSON.parse(payload)
@@ -34,6 +34,7 @@ function RouteComponent() {
   const [area, setArea] = useState('')
   const [court, setCourt] = useState('')
   const [codes, setCodes] = useState<Record<string, string>>({})
+  const [endReasons, setEndReasons] = useState<Record<string, string>>({})
   const [chosen, setChosen] = useState<Record<string, string>>({})
   const [reasons, setReasons] = useState<Record<string, string>>({})
   const [by, setBy] = useState('')
@@ -113,6 +114,7 @@ function RouteComponent() {
                     onClick={() =>
                       run(async () => {
                         const invite = await createInvite(court, 14)
+                        await load()
                         if (await savePackage(invite)) return m['court_notices.invite_saved']({ court })
                       })
                     }
@@ -149,6 +151,7 @@ function RouteComponent() {
                             onClick={() =>
                               run(async () => {
                                 const c = await trustLink(l.id, codes[l.id] ?? '')
+                                await load()
                                 if (await savePackage(c)) return m['court_notices.confirmed']({ court: l.courtName ?? '' })
                               })
                             }
@@ -157,6 +160,27 @@ function RouteComponent() {
                           </Button>
                         </span>
                       )}
+
+                      {l.status === 'trusted' && (
+                        <span className="flex flex-wrap items-center gap-2">
+                          <Input aria-label={m['court_notices.end_ph']()} placeholder={m['court_notices.end_ph']()} value={endReasons[l.id] ?? ''} onChange={(e) => setEndReasons({ ...endReasons, [l.id]: e.target.value })} className="w-60" />
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={!(endReasons[l.id] ?? '').trim()}
+                            onClick={() =>
+                              run(async () => {
+                                const c = await revokeLink(l.id, endReasons[l.id] ?? '')
+                                await load()
+                                if (await savePackage(c)) return m['court_notices.ended']({ name: l.courtName ?? l.intendedCourt })
+                              })
+                            }
+                          >
+                            {m['court_notices.end']()}
+                          </Button>
+                        </span>
+                      )}
+                      {l.status === 'revoked' && l.revokedReason && <span className="text-muted-foreground">{m['court_notices.ended_reason']({ reason: l.revokedReason })}</span>}
                     </div>
                   ))
                 )}

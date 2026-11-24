@@ -31,9 +31,11 @@ export type LedgerEntry = z.infer<typeof ledgerEntrySchema>
 export const clientMoneySchema = z.object({
   clientId: z.string(),
   clientName: z.string(),
-  clientBalance: z.number(),
-  disbursementsUnbilled: z.number(),
-  owed: z.number(),
+  clientBalance: z.number().nullable(),
+  disbursementsUnbilled: z.number().nullable(),
+  owed: z.number().nullable(),
+  /** Some entries belong to restricted matters this person may not see, so no balance is given. */
+  partial: z.boolean().default(false),
   entries: z.array(ledgerEntrySchema),
 })
 export type ClientMoney = z.infer<typeof clientMoneySchema>

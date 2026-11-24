@@ -20,6 +20,7 @@ use super::court_notices;
 use super::error::DomainError;
 
 pub const COURTS: Links = Links { table: "court_links", peer_col: "court_id", peer: IdentityKind::CourtRegistry };
+const ALL: &[Links] = &[COURTS];
 
 pub struct FirmAdapter {
     pub pool: SqlitePool,
@@ -75,6 +76,15 @@ impl Adapter for FirmAdapter {
         Box::pin(async move {
             let _ = audit::log(&self.pool, Entry::new(action).detail(detail)).await;
         })
+    }
+
+    /// This firm issues the invitations to court registries, so it is the one that ends those links.
+    fn issued(&self) -> &'static [Links] {
+        ALL
+    }
+
+    fn peers(&self) -> &'static [Links] {
+        ALL
     }
 }
 
@@ -143,6 +153,47 @@ mod tests {
         bad[last] ^= 1;
         refused(adapter.open(&arrived(KIND_COURT_NOTICE, "ug.court.real", bad)).await);
         assert_eq!(held().await.unwrap(), 1);
+        pool.close().await;
+    }
+
+    /// The firm ends a registry's connection: a reason is required, the registry gets a signed notice with it, nothing more
+    /// is taken from the registry, and ending it twice is refused.
+    #[tokio::test]
+    async fn a_firm_that_ends_a_registrys_connection_tells_it_and_takes_nothing_more_from_it() {
+        let dir = std::env::temp_dir().join(format!("pleadli-lawyers-revoke-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pool = crate::db::startup(&dir).await.ok().unwrap().pool;
+        court_notices::create_identity(&pool, "Revoke Test Advocates", Some("Kampala")).await.unwrap();
+        let adapter = FirmAdapter { pool: pool.clone() };
+        let court = Identity::generate(IdentityKind::CourtRegistry, "Revoke Test Registry", Some("Kampala"));
+        let (link, invite_file) = court_notices::create_invite(&pool, "Revoke Test Registry", 7).await.unwrap();
+        let invite = pairing::read_invite(&invite_file).unwrap();
+        hub::bind(&pool, COURTS, &link.id, "ug.court.real").await.unwrap();
+        adapter.open(&arrived(KIND_RESPONSE, "ug.court.real", pairing::make_response(&court, &invite, None).unwrap())).await.unwrap();
+        assert!(court_notices::revoke_link(&pool, &link.id, "Too early.").await.is_err(), "only a trusted registry can be ended");
+        let typed = court_notices::list_links(&pool).await.unwrap()[0].fingerprint.clone().unwrap();
+        court_notices::trust_link(&pool, &link.id, &typed).await.unwrap();
+
+        assert!(court_notices::revoke_link(&pool, &link.id, "   ").await.is_err(), "a reason is required");
+        let (ended, notice_file) = court_notices::revoke_link(&pool, &link.id, "Registry key was lost.").await.unwrap();
+        assert_eq!((ended.status.as_str(), ended.revoked_reason.as_deref()), ("revoked", Some("Registry key was lost.")));
+        assert!(ended.revoked_at.is_some());
+        // The registry reads a signed notice from the firm that carries the reason.
+        let firm = court_notices::require_identity(&pool).await.unwrap().public;
+        let (_, said) = pairing::read_confirmation(&court, &firm, &notice_file).unwrap();
+        assert_eq!((said.outcome.as_str(), said.reason.as_deref()), ("revoked", Some("Registry key was lost.")));
+        assert!(court_notices::revoke_link(&pool, &link.id, "Again.").await.is_err(), "ending it twice is refused");
+
+        // Nothing more is taken from the registry, and the refusal says why.
+        let notice = serde_json::to_value(CourtNoticePayload { notice_key: "s9".into(), kind: "hearing".into(), court_name: "Registry".into(), court_number: "CR 9/2026".into(), case_title: "Uganda v R".into(), title: "Notice".into(), at: Some(1), issued_at: 1, ..Default::default() }).unwrap();
+        let late = envelope::seal(&court, &firm, KIND_COURT_NOTICE, 1, None, &Body::new(notice)).unwrap().0;
+        let m = refused(adapter.open(&arrived(KIND_COURT_NOTICE, "ug.court.real", late)).await);
+        assert!(m.contains("ended its connection"), "{m}");
+        let held: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM notices_in").fetch_one(&pool).await.unwrap();
+        assert_eq!(held, 0);
+        // The relay link is ended later, so nothing is recorded as ended there yet.
+        let relay_ended: Option<i64> = sqlx::query_scalar("SELECT relay_ended_at FROM court_links WHERE id = ?").bind(&link.id).fetch_one(&pool).await.unwrap();
+        assert!(relay_ended.is_none());
         pool.close().await;
     }
 }

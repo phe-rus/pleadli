@@ -19,7 +19,7 @@ import { MoreHorizontalIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { HearingActions, HearingForm, hearingStatusLabels, purposeLabel, reasonLabel, responsibleLabel, type Hearing } from '@/features/hearings'
 import { inCourt, matterTypeLabel } from '@/features/matter-types'
-import { CloseMatterForm, engagementLabel, levelLabel, MatterForm, matterOptions, PartiesSection, PleaForm, pleaStatusLabel, StageStepper, useMatter, useReopenMatter } from '@/features/matters'
+import { MatterAccessPanel, CloseMatterForm, engagementLabel, levelLabel, MatterForm, matterOptions, PartiesSection, PleaForm, pleaStatusLabel, StageStepper, useMatter, useReopenMatter } from '@/features/matters'
 import { durationText, NoteComposer, NoteRow, TimeForm, useRemoveTime } from '@/features/practice'
 import { TaskForm, TaskRow } from '@/features/tasks'
 import { ApiError, messageOf } from '@/lib/api'
@@ -55,12 +55,25 @@ const hearingTone = { scheduled: 'open', attended: 'done', adjourned: 'waiting',
 
 function hearingSummary(h: Hearing) {
   const bits: (string | null)[] = [h.courtroom]
+  // What the court recorded at the sitting comes first: it is the one thing the advocate may not have seen.
+  // One line: the full wording is on the matter as a note. The note the app wrote when it listed the hearing (where it came from) is dropped once the record is there.
+  const record = h.courtRecord?.replace(/[.\s]+$/, "")
+  if (record) {
+    // Whole sentences only, so a date is never cut in two.
+    const sentences = record.split(/(?<=\.)\s+/)
+    let text = ""
+    for (const s of sentences) {
+      if (text && (text + " " + s).length > 110) break
+      text = text ? `${text} ${s}` : s
+    }
+    bits.push(m_["mp.court_record"]({ text: text.replace(/[.\s]+$/, "") + (text.length < record.length ? "…" : "") }))
+  }
   if (h.status === 'adjourned' && h.adjournReason) {
     bits.push(`${reasonLabel(h.adjournReason)}${h.adjournResponsible ? `, ${responsibleLabel(h.adjournResponsible).toLowerCase()}` : ''}`)
     bits.push(h.nextDate ? m_["mp.adjourned_to"]({ date: format(h.nextDate, 'PP') }) : m_["mp.date_to_fix"]())
     bits.push(h.outcome)
   } else {
-    bits.push(h.outcome, h.note)
+    bits.push(h.outcome, record ? null : h.note)
   }
   return bits.filter(Boolean).join('. ') || undefined
 }
@@ -76,7 +89,7 @@ function RouteComponent() {
   const removeTime = useRemoveTime()
   const navigate = useNavigate()
   const tab = Route.useSearch().tab ?? 'overview'
-  const [panel, setPanel] = useState<'edit' | 'document' | 'close' | null>(null)
+  const [panel, setPanel] = useState<'edit' | 'document' | 'close' | 'access' | null>(null)
   const { setRightOpen } = useWorkspace()
   const [dirty, setDirty] = useState(false)
   const m = detail.matter
@@ -130,6 +143,7 @@ function RouteComponent() {
             {(m.courtNumber || m.ourRef) && <p className="text-[0.8125rem] text-muted-foreground">{[m.courtNumber, m.ourRef].filter(Boolean).join(' · ')}</p>}
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="tracking-tight">{m.title}</h1>
+              {m.restricted && <Tag tone="waiting">{m_["mp.restricted"]()}</Tag>}
               {open ? court && !listed.length ? <Tag tone="urgent">{m_["mp.no_hearing_listed"]()}</Tag> : <Tag tone="open">{m_["mp.open"]()}</Tag> : <Tag tone="done">{m_["mp.closed"]()}</Tag>}
             </div>
             <p className="text-muted-foreground">
@@ -175,6 +189,7 @@ function RouteComponent() {
               />
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => setPanel('edit')}>{m_["mp.edit"]()}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPanel('access')}>{m_["mp.access"]()}</DropdownMenuItem>
                 {open && court && <DropdownMenuItem onClick={() => setPanel('document')}>{m_["mp.draft_document"]()}</DropdownMenuItem>}
                 <DropdownMenuItem onClick={() => setRightOpen(true)}>{m_["nav.assist"]()}</DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -381,6 +396,9 @@ function RouteComponent() {
       </Createpanel>
       <Createpanel open={panel === 'edit'} onOpenChange={(next) => !next && closePanel()} isDirty={dirty} headings={{ title: m_["mp.edit_title"](), description: m_["mp.edit_description"]() }}>
         <MatterForm existing={m} onSuccess={closePanel} onDirtyChange={setDirty} />
+      </Createpanel>
+      <Createpanel open={panel === 'access'} onOpenChange={(next) => !next && closePanel()} headings={{ title: m_["mp.access_title"](), description: m_["mp.access_description"]() }}>
+        <MatterAccessPanel matterId={matterId} onDone={closePanel} />
       </Createpanel>
       <Createpanel open={panel === 'document'} onOpenChange={(next) => !next && closePanel()} isDirty={dirty} headings={{ title: m_["mp.draft_document"](), description: m_["mp.draft_document_description"]() }}>
         {documentPanel(closePanel, setDirty)}

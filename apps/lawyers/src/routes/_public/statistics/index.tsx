@@ -84,8 +84,14 @@ function RouteComponent() {
           meta={<Badge variant="secondary">{m["stats.deadlines_soon"]({ count: stats.clocks.soon })}</Badge>}
           caption={m["stats.deadlines_caption"]({ running: stats.clocks.running })}
         />
-        <StatTile label={m["stats.billed"]()} icon={Invoice01Icon} tint="primary" value={ugx(stats.money.billed)} caption={m["stats.billed_caption"]({ year: stats.year })} />
-        <StatTile label={m["stats.collected"]()} icon={Wallet01Icon} tint="emerald" value={ugx(stats.money.collected)} meta={<Badge variant="secondary">{m["stats.held"]({ amount: ugx(stats.money.heldForClients) })}</Badge>} caption={m["stats.collected_caption"]()} />
+        {stats.money ? (
+          <>
+            <StatTile label={m["stats.billed"]()} icon={Invoice01Icon} tint="primary" value={ugx(stats.money.billed)} caption={m["stats.billed_caption"]({ year: stats.year })} />
+            <StatTile label={m["stats.collected"]()} icon={Wallet01Icon} tint="emerald" value={ugx(stats.money.collected)} meta={<Badge variant="secondary">{m["stats.held"]({ amount: ugx(stats.money.heldForClients) })}</Badge>} caption={m["stats.collected_caption"]()} />
+          </>
+        ) : (
+          <StatTile label={m["stats.money_label"]()} icon={Wallet01Icon} tint="primary" value="n/a" caption={m["stats.money_restricted"]()} />
+        )}
         <StatTile label={m["stats.time"]()} icon={Clock01Icon} tint="amber" value={hours(stats.minutesRecorded)} meta={<Badge variant="secondary">{m["stats.pro_bono_short"]({ hours: hours(stats.proBonoMinutes) })}</Badge>} caption={m["stats.time_caption"]()} />
       </section>
 

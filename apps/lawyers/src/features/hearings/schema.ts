@@ -58,6 +58,7 @@ export const hearingSchema = z.object({
   adjournResponsible: z.string().nullable(),
   nextDate: z.number().nullable(),
   note: z.string().nullable(),
+  courtRecord: z.string().nullable(),
   closedAt: z.number().nullable(),
   createdAt: z.number(),
 })

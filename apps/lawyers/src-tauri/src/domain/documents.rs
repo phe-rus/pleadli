@@ -218,12 +218,13 @@ pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Document>, sqlx::
 
 /// `status` is `draft`, `filed` or empty; `matter_id` empty for every matter.
 pub async fn list(pool: &SqlitePool, status: &str, matter_id: &str, limit: i64) -> Result<Vec<DocumentSummary>, sqlx::Error> {
-    sqlx::query_as::<_, DocumentSummary>(
+    let visible = super::access::visible("m");
+    sqlx::query_as::<_, DocumentSummary>(sqlx::AssertSqlSafe(format!(
         "SELECT d.id, d.matter_id, d.kind, d.title, d.status, d.reference, d.filed_on, d.updated_at, m.title AS matter_title, m.court_number
          FROM documents d JOIN matters m ON m.id = d.matter_id
-         WHERE (?1 = '' OR d.status = ?1) AND (?2 = '' OR d.matter_id = ?2)
-         ORDER BY d.updated_at DESC LIMIT ?3",
-    )
+         WHERE (?1 = '' OR d.status = ?1) AND (?2 = '' OR d.matter_id = ?2) AND {visible}
+         ORDER BY d.updated_at DESC LIMIT ?3"
+    )))
     .bind(status)
     .bind(matter_id)
     .bind(limit.clamp(1, 500))
@@ -451,7 +452,11 @@ pub struct Verification {
 pub async fn verify(pool: &SqlitePool, reference: &str, code: &str) -> Result<Verification, sqlx::Error> {
     let reference = reference.trim().to_uppercase();
     let row: Option<(String, Option<String>, Option<String>, Option<i64>, Option<String>)> =
-        sqlx::query_as("SELECT title, content, content_sha256, filed_on, filed_by FROM documents WHERE upper(reference) = ? AND status = 'filed'").bind(&reference).fetch_optional(pool).await?;
+        {
+            // A paper filed on a restricted matter answers "not found" to anyone not listed for it, like any other path.
+            let sql = format!("SELECT title, content, content_sha256, filed_on, filed_by FROM documents d WHERE upper(d.reference) = ? AND d.status = 'filed' AND {}", super::access::on("d.matter_id"));
+            sqlx::query_as(sqlx::AssertSqlSafe(sql)).bind(&reference).fetch_optional(pool).await?
+        };
     let Some((title, content, sha, filed_on, filed_by)) = row else {
         return Ok(Verification { result: "not_found", reference, title: None, filed_on: None, filed_by: None });
     };

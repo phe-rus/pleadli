@@ -19,6 +19,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
+use crate::domain::access;
 use crate::domain::assist::{self, Answer as AssistAnswer, AskInput, AssistSettings, AssistSettingsInput};
 use crate::domain::audit::{self, AuditEntry, Verification};
 use crate::domain::bills::{self, Bill, BillInput, BillSummary, NewBill};
@@ -278,7 +279,61 @@ async fn gate(State(s): State<AppState>, req: Request, next: Next) -> Response {
         return ApiError(StatusCode::LOCKED, "LOCKED", "Sign in to continue.".to_string()).into_response();
     }
     s.security.touch();
-    next.run(req).await
+    // A restricted matter, and everything under it, answers "not found" to anyone not listed for it, so nothing is
+    // learned about it. `/matters/{id}/access` is exempt: it checks for itself, so an administrator can repair a barrier.
+    if let Some(id) = path.strip_prefix("/matters/").and_then(|rest| rest.split('/').next()).filter(|id| !id.is_empty()) {
+        if !path.ends_with("/access") {
+            match access::can_see(&s.pool, id).await {
+                Ok(true) => {}
+                Ok(false) => return ApiError(StatusCode::NOT_FOUND, "NOT_FOUND", "Matter not found.".to_string()).into_response(),
+                Err(e) => return ApiError::from(DomainError::Db(e)).into_response(),
+            }
+        }
+    }
+    // The same for a record reached by its own id (`/documents/{id}`, `/papers/{id}/file`, `/bills/{id}` ...): it is
+    // the matter it belongs to that decides, so knowing the id of a hidden document is no more use than knowing the matter's.
+    let mut parts = path.trim_start_matches('/').split('/');
+    if let (Some(kind), Some(id)) = (parts.next(), parts.next()) {
+        if !id.is_empty() && kind != "matters" {
+            match access::record_hidden(&s.pool, kind, id).await {
+                Ok(false) => {}
+                Ok(true) => return ApiError(StatusCode::NOT_FOUND, "NOT_FOUND", "Not found.".to_string()).into_response(),
+                Err(e) => return ApiError::from(DomainError::Db(e)).into_response(),
+            }
+            // `/documents/verify` is a fixed route, not an id.
+            if !(kind == "documents" && id == "verify") {
+                match access::record_missing(&s.pool, kind, id).await {
+                    Ok(false) => {}
+                    Ok(true) => return ApiError(StatusCode::NOT_FOUND, "NOT_FOUND", "Not found.".to_string()).into_response(),
+                    Err(e) => return ApiError::from(DomainError::Db(e)).into_response(),
+                }
+            }
+        }
+    }
+    // An unknown matter must read exactly like a hidden one (`can_see` says "yes" to an unknown id so handlers answer),
+    // and any not-found under a matter or an owned record is rewritten to one body, so the handlers' own wording
+    // ("Filing not found.", "No such bill of costs.") cannot tell a hidden record from a missing one.
+    let kind = path.trim_start_matches('/').split('/').next().unwrap_or("").to_string();
+    let is_matter_path = kind == "matters" && !path.ends_with("/access") && path.trim_start_matches('/').split('/').nth(1).is_some_and(|i| !i.is_empty());
+    let matter_gone = if is_matter_path {
+        let id = path.trim_start_matches('/').split('/').nth(1).unwrap_or("").to_string();
+        match access::matter_exists(&s.pool, &id).await {
+            Ok(found) => !found,
+            Err(e) => return ApiError::from(DomainError::Db(e)).into_response(),
+        }
+    } else {
+        false
+    };
+    if matter_gone {
+        return ApiError(StatusCode::NOT_FOUND, "NOT_FOUND", "Matter not found.".to_string()).into_response();
+    }
+    let owned = access::is_owned_kind(&kind);
+    let res = next.run(req).await;
+    if owned && res.status() == StatusCode::NOT_FOUND {
+        let message = if kind == "matters" { "Matter not found." } else { "Not found." };
+        return ApiError(StatusCode::NOT_FOUND, "NOT_FOUND", message.to_string()).into_response();
+    }
+    res
 }
 
 // ---- Setup, sign-in, the people of the practice and what it does ----------
@@ -292,6 +347,23 @@ fn require_admin(s: &AppState) -> Result<Actor, ApiError> {
         Some(actor) if actor.is_admin => Ok(actor),
         _ => Err(forbidden("Only an administrator of the practice can do that.")),
     }
+}
+
+/// A paper, its handwriting or its prints, named by what it is a paper of: refused like an unknown one when that
+/// belongs to a matter the person acting may not see.
+async fn paper_of_visible(s: &AppState, kind: &str, id: &str) -> Result<(), ApiError> {
+    if access::record_hidden(&s.pool, kind, id).await.map_err(DomainError::from)? {
+        return Err(ApiError(StatusCode::NOT_FOUND, "NOT_FOUND", "Not found.".to_string()));
+    }
+    Ok(())
+}
+
+/// A matter named in a request body, which the gate cannot read.
+async fn matter_visible(s: &AppState, matter_id: Option<&str>) -> Result<(), ApiError> {
+    if let Some(id) = matter_id.filter(|i| !i.is_empty()) {
+        access::require(&s.pool, id).await?;
+    }
+    Ok(())
 }
 
 fn not_installed(s: &AppState) -> Result<(), ApiError> {
@@ -479,6 +551,14 @@ async fn update_client(State(s): State<AppState>, Path(id): Path<String>, Json(i
     Ok(Json(clients::update(&s.pool, &id, input).await?))
 }
 
+async fn get_matter_access(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<access::Access> {
+    Ok(Json(access::get(&s.pool, &id).await?))
+}
+
+async fn set_matter_access(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<access::AccessInput>) -> ApiResult<access::Access> {
+    Ok(Json(access::set(&s.pool, &id, input).await?))
+}
+
 async fn list_matters(State(s): State<AppState>, Query(p): Query<QueryParams>) -> ApiResult<Vec<MatterSummary>> {
     Ok(Json(matters::list(&s.pool, &p.query, &p.view, &p.matter_type, p.limit.unwrap_or(200)).await?))
 }
@@ -550,10 +630,12 @@ async fn list_tasks(State(s): State<AppState>, Query(p): Query<TaskListParams>) 
 }
 
 async fn create_task(State(s): State<AppState>, Json(input): Json<TaskInput>) -> ApiResult<Task> {
+    matter_visible(&s, input.matter_id.as_deref()).await?;
     Ok(Json(tasks::create(&s.pool, input).await?))
 }
 
 async fn update_task(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<TaskInput>) -> ApiResult<Task> {
+    matter_visible(&s, input.matter_id.as_deref()).await?;
     Ok(Json(tasks::update(&s.pool, &id, input).await?))
 }
 
@@ -598,11 +680,12 @@ async fn list_documents(State(s): State<AppState>, Query(p): Query<DocumentListP
 }
 
 async fn create_document(State(s): State<AppState>, Json(input): Json<DocumentCreate>) -> ApiResult<Document> {
+    matter_visible(&s, Some(&input.matter_id)).await?;
     Ok(Json(documents::create(&s.pool, input).await?))
 }
 
-async fn get_document(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Option<Document>> {
-    Ok(Json(documents::get(&s.pool, &id).await?))
+async fn get_document(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Document> {
+    Ok(Json(documents::get(&s.pool, &id).await?.ok_or_else(|| DomainError::NotFound("Not found.".to_string()))?))
 }
 
 async fn update_document(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<DocumentUpdate>) -> ApiResult<Document> {
@@ -647,6 +730,7 @@ async fn stamp_paper(State(s): State<AppState>, Json(input): Json<PrintInput>) -
     if input.body.trim().is_empty() || input.body.len() > 2_000_000 {
         return Err(DomainError::Invalid("This paper has no wording to record.".into()).into());
     }
+    paper_of_visible(&s, &input.entity_type, &input.entity_id).await?;
     let who = crate::domain::request::actor().map(|a| a.name);
     let stamp = pleadli_node_core::paper::stamp(
         &s.pool,
@@ -673,6 +757,7 @@ struct PrintEntityQuery {
 
 /// The handwriting on one paper (a received statement, a scan), if any.
 async fn get_paper_ink(State(s): State<AppState>, Query(q): Query<PrintEntityQuery>) -> ApiResult<Option<String>> {
+    paper_of_visible(&s, &q.entity_type, &q.entity_id).await?;
     Ok(Json(pleadli_node_core::paper::ink(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?))
 }
 
@@ -689,6 +774,7 @@ async fn put_paper_ink(State(s): State<AppState>, Json(input): Json<InkInput>) -
     if input.ink.as_ref().is_some_and(|i| i.len() > 4_000_000) {
         return Err(DomainError::Invalid("There is too much writing on this paper to keep.".into()).into());
     }
+    paper_of_visible(&s, &input.entity_type, &input.entity_id).await?;
     let actor = s.security.actor();
     pleadli_node_core::paper::set_ink(&s.pool, &input.entity_type, &input.entity_id, input.ink.as_deref(), actor.as_ref().map(|a| a.name.as_str()))
         .await
@@ -697,10 +783,12 @@ async fn put_paper_ink(State(s): State<AppState>, Json(input): Json<InkInput>) -
 }
 
 async fn last_paper_print(State(s): State<AppState>, Query(q): Query<PrintEntityQuery>) -> ApiResult<Option<pleadli_node_core::paper::PaperPrint>> {
+    paper_of_visible(&s, &q.entity_type, &q.entity_id).await?;
     Ok(Json(pleadli_node_core::paper::last_print(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?))
 }
 
 async fn paper_history(State(s): State<AppState>, Query(q): Query<PrintEntityQuery>) -> ApiResult<Vec<pleadli_node_core::paper::PaperPrint>> {
+    paper_of_visible(&s, &q.entity_type, &q.entity_id).await?;
     Ok(Json(pleadli_node_core::paper::history(&s.pool, &q.entity_type, &q.entity_id).await.map_err(DomainError::from)?))
 }
 
@@ -710,7 +798,13 @@ struct PrintVerifyQuery {
 }
 
 async fn verify_paper(State(s): State<AppState>, Query(q): Query<PrintVerifyQuery>) -> ApiResult<Option<pleadli_node_core::paper::PaperPrint>> {
-    Ok(Json(pleadli_node_core::paper::verify(&s.pool, &q.code).await.map_err(DomainError::from)?))
+    let found = pleadli_node_core::paper::verify(&s.pool, &q.code).await.map_err(DomainError::from)?;
+    if let Some(p) = &found {
+        if access::record_hidden(&s.pool, &p.entity_type, &p.entity_id).await.map_err(DomainError::from)? {
+            return Ok(Json(None));
+        }
+    }
+    Ok(Json(found))
 }
 
 async fn set_stage(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<StageInput>) -> ApiResult<Matter> {
@@ -866,7 +960,7 @@ fn signed_in(s: &AppState) -> Result<crate::domain::staff::Actor, ApiError> {
 }
 
 async fn money_positions(State(s): State<AppState>) -> ApiResult<Vec<ClientPosition>> {
-    signed_in(&s)?;
+    finance_only(&s)?;
     Ok(Json(money::positions(&s.pool).await?))
 }
 
@@ -877,6 +971,7 @@ async fn client_money(State(s): State<AppState>, Path(id): Path<String>) -> ApiR
 
 async fn record_ledger(State(s): State<AppState>, Json(input): Json<EntryInput>) -> ApiResult<LedgerEntry> {
     let actor = money_keeper(&s)?;
+    matter_visible(&s, input.matter_id.as_deref()).await?;
     Ok(Json(money::record(&s.pool, input, &actor.name).await?))
 }
 
@@ -911,11 +1006,13 @@ async fn get_fee_note(State(s): State<AppState>, Path(id): Path<String>) -> ApiR
 
 async fn create_fee_note(State(s): State<AppState>, Json(input): Json<FeeNoteInput>) -> ApiResult<FeeNote> {
     money_keeper(&s)?;
+    matter_visible(&s, Some(&input.matter_id)).await?;
     Ok(Json(money::create_note(&s.pool, input).await?))
 }
 
 async fn update_fee_note(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<FeeNoteInput>) -> ApiResult<FeeNote> {
     money_keeper(&s)?;
+    matter_visible(&s, Some(&input.matter_id)).await?;
     Ok(Json(money::update_note(&s.pool, &id, input).await?))
 }
 
@@ -1046,6 +1143,7 @@ async fn list_register(State(s): State<AppState>, Query(p): Query<RegisterParams
 async fn add_register_entry(State(s): State<AppState>, Json(input): Json<RegisterInput>) -> ApiResult<RegisterEntry> {
     let actor = signed_in(&s)?;
     oaths_on(&s).await?;
+    matter_visible(&s, input.matter_id.as_deref()).await?;
     Ok(Json(registers::add(&s.pool, &actor, input).await?))
 }
 
@@ -1066,6 +1164,20 @@ async fn put_compliance(State(s): State<AppState>, Path(id): Path<String>, Json(
         return Err(forbidden("You keep your own practising details; an administrator keeps everyone's."));
     }
     Ok(Json(compliance::update(&s.pool, &id, input).await?))
+}
+
+/// The firm-wide client-money figures: accounts and administrators only, and only as aggregates (no matter, title or description).
+fn finance_only(s: &AppState) -> Result<crate::domain::staff::Actor, ApiError> {
+    match s.security.actor() {
+        Some(a) if a.role == "accounts" || a.is_admin => Ok(a),
+        Some(_) => Err(forbidden("The practice's client-money totals are for its accounts person and administrators.")),
+        None => Err(forbidden("Nobody is signed in.")),
+    }
+}
+
+async fn reconciliation(State(s): State<AppState>) -> ApiResult<money::Reconciliation> {
+    finance_only(&s)?;
+    Ok(Json(money::reconciliation(&s.pool).await?))
 }
 
 async fn get_statistics(State(s): State<AppState>, Query(p): Query<YearParams>) -> ApiResult<Statistics> {
@@ -1266,6 +1378,7 @@ pub fn core(state: AppState) -> Router {
         .route("/notices/identity", get(notices_api::get_identity).post(notices_api::create_identity))
         .route("/notices/links", get(notices_api::list_links).post(notices_api::create_invite))
         .route("/notices/links/{id}/trust", post(notices_api::trust_link))
+        .route("/notices/links/{id}/revoke", post(notices_api::revoke_link))
         .route("/notices/import", post(notices_api::import_package))
         .route("/notices/incoming", get(notices_api::list_incoming))
         .route("/notices/incoming/{id}/file", post(notices_api::file_notice))
@@ -1273,6 +1386,7 @@ pub fn core(state: AppState) -> Router {
         .route("/matters/{id}/court-filings", get(notices_api::matter_filings).post(notices_api::send_filing))
         .route("/matters", post(create_matter).get(list_matters))
         .route("/matters/{id}", get(get_matter).put(update_matter))
+        .route("/matters/{id}/access", get(get_matter_access).put(set_matter_access))
         .route("/matters/{id}/close", post(close_matter))
         .route("/matters/{id}/reopen", post(reopen_matter))
         .route("/matters/{id}/hearings", post(schedule_hearing))
@@ -1322,6 +1436,7 @@ pub fn core(state: AppState) -> Router {
         .route("/network/pairing-code", post(network::pairing_code))
         .route("/network/devices/{id}", delete(network::remove_device))
         .route("/money/positions", get(money_positions))
+        .route("/accounts/reconciliation", get(reconciliation))
         .route("/clients/{id}/money", get(client_money))
         .route("/ledger", post(record_ledger))
         .route("/ledger/{id}/reverse", post(reverse_ledger))
@@ -1482,6 +1597,15 @@ mod notices_api {
         Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "firm-confirmation.pxpkg".into(), delivery: Some(delivery) }))
     }
     #[derive(Deserialize)]
+    pub struct ReasonInput {
+        reason: String,
+    }
+    pub async fn revoke_link(State(s): State<AppState>, hub: super::relay::SharedHub, Path(id): Path<String>, Json(i): Json<ReasonInput>) -> ApiResult<Sealed<CourtLink>> {
+        let (link, bytes) = court_notices::revoke_link(&s.pool, &id, &i.reason).await?;
+        let delivery = super::relay::deliver(&hub, &bytes).await;
+        Ok(Json(Sealed { value: link, file: B64.encode(bytes), name: "firm-revocation.pxpkg".into(), delivery: Some(delivery) }))
+    }
+    #[derive(Deserialize)]
     pub struct FileInput {
         file: String,
     }
@@ -1520,6 +1644,7 @@ mod notices_api {
         Ok(Json(court_notices::list_filings(&s.pool, &id).await?))
     }
     pub async fn file_notice(State(s): State<AppState>, hub: super::relay::SharedHub, Path(id): Path<String>, Json(i): Json<FileNoticeInput>) -> ApiResult<Sealed<Filed>> {
+        access::require(&s.pool, &i.matter_id).await?;
         let (made_id, bytes) = court_notices::file_notice(&s.pool, &id, &i.matter_id, &i.decided_by).await?;
         let delivery = super::relay::deliver(&hub, &bytes).await;
         Ok(Json(Sealed { value: Filed { made_id }, file: B64.encode(bytes), name: "firm-receipt.pxpkg".into(), delivery: Some(delivery) }))

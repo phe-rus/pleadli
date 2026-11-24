@@ -15,7 +15,7 @@ export const statisticsSchema = z.object({
   hearingsByStatus: z.array(keyCount),
   adjournmentsByCause: z.array(keyCount),
   clocks: z.object({ overdue: z.number(), soon: z.number(), running: z.number() }),
-  money: z.object({ billed: z.number(), collected: z.number(), disbursed: z.number(), heldForClients: z.number() }),
+  money: z.object({ billed: z.number(), collected: z.number(), disbursed: z.number(), heldForClients: z.number() }).nullable(),
   minutesRecorded: z.number(),
   proBonoMinutes: z.number(),
   registerByKind: z.array(keyCount),

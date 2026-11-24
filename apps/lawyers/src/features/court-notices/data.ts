@@ -2,7 +2,7 @@ import { api } from '@/lib/api'
 import { invoke } from '@tauri-apps/api/core'
 
 export type FirmIdentity = { officeId: string; officeName: string; jurisdiction: string | null; fingerprint: string }
-export type CourtLink = { id: string; intendedCourt: string; status: string; courtName: string | null; fingerprint: string | null; inviteExpiresAt: number; respondedAt: number | null; trustedAt: number | null }
+export type CourtLink = { id: string; intendedCourt: string; status: string; courtName: string | null; fingerprint: string | null; inviteExpiresAt: number; respondedAt: number | null; trustedAt: number | null; revokedAt: number | null; revokedReason: string | null }
 export type IncomingNotice = { id: string; courtName: string | null; status: string; sentAt: number; receivedAt: number; decidedAt: number | null; returnReason: string | null; matterId: string | null; payload: string }
 export type NoticeClaim = { kind?: string; courtNumber?: string; caseTitle?: string; title?: string; at?: number | null; purpose?: string | null; courtroom?: string | null; paragraphs?: string[]; reference?: string | null }
 export type MatterOption = { id: string; title: string; courtNumber: string | null }
@@ -14,6 +14,7 @@ export const listLinks = () => api('GET', '/api/notices/links') as Promise<Court
 export const listIncoming = () => api('GET', '/api/notices/incoming') as Promise<IncomingNotice[]>
 export const createInvite = (intendedCourt: string, validDays: number) => api('POST', '/api/notices/links', { body: { intendedCourt, validDays } }) as Promise<CourtLink & WithFile>
 export const trustLink = (id: string, fingerprint: string) => api('POST', `/api/notices/links/${encodeURIComponent(id)}/trust`, { body: { fingerprint } }) as Promise<CourtLink & WithFile>
+export const revokeLink = (id: string, reason: string) => api('POST', `/api/notices/links/${encodeURIComponent(id)}/revoke`, { body: { reason } }) as Promise<CourtLink & WithFile>
 export const importPackage = (file: string) => api('POST', '/api/notices/import', { body: { file } }) as Promise<{ kind: string; message: string }>
 export const fileNotice = (id: string, matterId: string, decidedBy: string) => api('POST', `/api/notices/incoming/${encodeURIComponent(id)}/file`, { body: { matterId, decidedBy } }) as Promise<{ madeId: string } & WithFile>
 export const returnNotice = (id: string, reason: string, decidedBy: string) => api('POST', `/api/notices/incoming/${encodeURIComponent(id)}/return`, { body: { reason, decidedBy } }) as Promise<WithFile>

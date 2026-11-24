@@ -35,6 +35,8 @@ pub struct Hearing {
     pub note: Option<String>,
     pub closed_at: Option<i64>,
     pub created_at: i64,
+    /// The court's own record of the sitting, if it has sent one.
+    pub court_record: Option<String>,
 }
 
 /// A hearing in the diary, with the matter it belongs to.
@@ -82,7 +84,7 @@ pub struct Adjourned {
     pub next_hearing: Option<Hearing>,
 }
 
-const COLUMNS: &str = "id, matter_id, at, purpose, courtroom, status, outcome, adjourn_reason, adjourn_responsible, next_date, note, closed_at, created_at";
+const COLUMNS: &str = "id, matter_id, at, purpose, courtroom, status, outcome, adjourn_reason, adjourn_responsible, next_date, note, closed_at, created_at, court_record";
 
 pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Hearing>, sqlx::Error> {
     sqlx::query_as::<_, Hearing>(sqlx::AssertSqlSafe(format!("SELECT {COLUMNS} FROM hearings WHERE id = ?"))).bind(id).fetch_optional(pool).await
@@ -94,13 +96,14 @@ pub async fn list_for_matter(pool: &SqlitePool, matter_id: &str) -> Result<Vec<H
 
 /// The hearings falling in `[from, to)`, earliest first, cancelled ones left out.
 pub async fn diary(pool: &SqlitePool, from: i64, to: i64) -> Result<Vec<DiaryRow>, sqlx::Error> {
-    sqlx::query_as::<_, DiaryRow>(
+    let visible = super::access::visible("m");
+    sqlx::query_as::<_, DiaryRow>(sqlx::AssertSqlSafe(format!(
         "SELECT h.id, h.matter_id, h.at, h.purpose, h.courtroom, h.status, h.outcome, m.title AS matter_title, m.court_number, m.court_name,
             c.name AS client_name, c.custody AS client_custody, m.engagement
          FROM hearings h JOIN matters m ON m.id = h.matter_id JOIN clients c ON c.id = m.client_id
-         WHERE h.at >= ? AND h.at < ? AND h.status <> 'cancelled'
-         ORDER BY h.at, m.court_number",
-    )
+         WHERE h.at >= ? AND h.at < ? AND h.status <> 'cancelled' AND {visible}
+         ORDER BY h.at, m.court_number"
+    )))
     .bind(from)
     .bind(to)
     .fetch_all(pool)

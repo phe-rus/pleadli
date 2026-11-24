@@ -94,8 +94,9 @@ pub async fn list(pool: &SqlitePool, view: &str, matter_id: &str, limit: i64) ->
         "done" => "AND t.done_at IS NOT NULL",
         _ => "",
     };
+    let visible = super::access::visible("m");
     sqlx::query_as::<_, Task>(sqlx::AssertSqlSafe(format!(
-        "{SELECT} WHERE (?1 = '' OR t.matter_id = ?1) {filter}
+        "{SELECT} WHERE (?1 = '' OR t.matter_id = ?1) AND (t.matter_id IS NULL OR {visible}) {filter}
          ORDER BY t.done_at IS NOT NULL, t.due_on IS NULL, t.due_on, t.created_at LIMIT ?2"
     )))
     .bind(matter_id)

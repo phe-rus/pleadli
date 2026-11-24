@@ -72,12 +72,16 @@ pub struct EntryInput {
 pub struct ClientMoney {
     pub client_id: String,
     pub client_name: String,
-    /// Held for the client in the client account.
-    pub client_balance: i64,
+    /// Held for the client in the client account. `None` when the books shown are partial (see `partial`): a balance summed
+    /// from only some of the entries would be wrong, so none is given.
+    pub client_balance: Option<i64>,
     /// Paid by the practice for the client and not yet billed back.
-    pub disbursements_unbilled: i64,
+    pub disbursements_unbilled: Option<i64>,
     /// Owed on issued fee notes.
-    pub owed: i64,
+    pub owed: Option<i64>,
+    /// True when some of this client's entries belong to restricted matters this person may not see and so are left out.
+    /// Accounts and administrators always see whole books (with the restricted entries masked).
+    pub partial: bool,
     pub entries: Vec<LedgerEntry>,
 }
 
@@ -231,7 +235,28 @@ async fn entry(pool: &SqlitePool, id: &str) -> Result<Option<LedgerEntry>, sqlx:
 pub async fn client_money(pool: &SqlitePool, client_id: &str) -> Result<ClientMoney, DomainError> {
     let name: String = sqlx::query_scalar("SELECT name FROM clients WHERE id = ?").bind(client_id).fetch_optional(pool).await?.ok_or_else(|| DomainError::NotFound("No such client.".into()))?;
     let sql = format!("SELECT {ENTRY_COLUMNS} FROM ledger_entries e LEFT JOIN fee_notes f ON f.id = e.fee_note_id LEFT JOIN matters m ON m.id = e.matter_id WHERE e.client_id = ? ORDER BY e.on_day, e.created_at");
-    let entries = sqlx::query_as::<_, LedgerEntry>(sqlx::AssertSqlSafe(sql)).bind(client_id).fetch_all(pool).await?;
+    let mut entries = sqlx::query_as::<_, LedgerEntry>(sqlx::AssertSqlSafe(sql)).bind(client_id).fetch_all(pool).await?;
+    // The books stay whole (the balance counts every entry); what a restricted matter is called is not shown to people outside it.
+    let hidden = super::access::hidden_matters(pool).await?;
+    let finance = super::access::finance_scope();
+    let mut partial = false;
+    if !finance {
+        // Ordinary staff see the entries of the matters they may see, and no totals that would be wrong without the rest.
+        let before = entries.len();
+        entries.retain(|e| !e.matter_id.as_ref().is_some_and(|id| hidden.contains(id)));
+        partial = entries.len() != before;
+    }
+    // Accounts and administrators see every entry, so the books are whole; what a restricted matter's money was for, and where, is not shown.
+    for e in &mut entries {
+        if e.matter_id.as_ref().is_some_and(|id| hidden.contains(id)) {
+            e.matter_id = None;
+            e.matter_title = Some("A restricted matter".to_string());
+            e.description = "A restricted matter".to_string();
+            e.reference = None;
+            e.fee_note_id = None;
+            e.fee_note_number = None;
+        }
+    }
     let mut conn = pool.acquire().await?;
     let client_balance = client_balance(&mut conn, client_id).await?;
     let disbursed: i64 = sqlx::query_scalar(
@@ -254,7 +279,16 @@ pub async fn client_money(pool: &SqlitePool, client_id: &str) -> Result<ClientMo
     .bind(client_id)
     .fetch_one(&mut *conn)
     .await?;
-    Ok(ClientMoney { client_id: client_id.to_string(), client_name: name, client_balance, disbursements_unbilled: (disbursed - billed).max(0), owed, entries })
+    let whole = !partial;
+    Ok(ClientMoney {
+        client_id: client_id.to_string(),
+        client_name: name,
+        client_balance: whole.then_some(client_balance),
+        disbursements_unbilled: whole.then_some((disbursed - billed).max(0)),
+        owed: whole.then_some(owed),
+        partial,
+        entries,
+    })
 }
 
 // ---------------------------------------------------------------- fee notes
@@ -328,9 +362,10 @@ const NOTE_COLUMNS: &str = "f.id, f.number, f.matter_id, f.client_id, f.status, 
     (SELECT COALESCE(SUM(amount * (CASE WHEN reverses IS NULL THEN 1 ELSE -1 END)), 0) FROM ledger_entries WHERE fee_note_id = f.id AND kind IN ('to_office', 'fee_received')) AS paid";
 
 pub async fn list_notes(pool: &SqlitePool, matter_id: &str, client_id: &str) -> Result<Vec<FeeNoteSummary>, sqlx::Error> {
+    let visible = super::access::visible("m");
     let sql = format!(
         "SELECT {NOTE_COLUMNS} FROM fee_notes f JOIN matters m ON m.id = f.matter_id JOIN clients c ON c.id = f.client_id
-         WHERE (?1 = '' OR f.matter_id = ?1) AND (?2 = '' OR f.client_id = ?2) ORDER BY COALESCE(f.issued_on, f.created_at) DESC"
+         WHERE (?1 = '' OR f.matter_id = ?1) AND (?2 = '' OR f.client_id = ?2) AND {visible} ORDER BY COALESCE(f.issued_on, f.created_at) DESC"
     );
     sqlx::query_as::<_, FeeNoteSummary>(sqlx::AssertSqlSafe(sql)).bind(matter_id).bind(client_id).fetch_all(pool).await
 }
@@ -527,6 +562,8 @@ pub struct ClientPosition {
     pub owed: i64,
 }
 
+/// Every client's balance across the whole practice. For the finance scope only (the router checks): it includes money
+/// attributable to restricted matters.
 pub async fn positions(pool: &SqlitePool) -> Result<Vec<ClientPosition>, sqlx::Error> {
     let sql = format!(
         "SELECT c.id AS client_id, c.name AS client_name,
@@ -539,4 +576,63 @@ pub async fn positions(pool: &SqlitePool) -> Result<Vec<ClientPosition>, sqlx::E
          ORDER BY c.name"
     );
     sqlx::query_as::<_, ClientPosition>(sqlx::AssertSqlSafe(sql)).fetch_all(pool).await
+}
+
+// ------------------------------------------------------------ reconciliation
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Overdrawn {
+    pub client_id: String,
+    pub client_name: String,
+    pub balance: i64,
+}
+
+/// What the books can say about the trust account, and what they cannot. The client ledger is the practice's liability to
+/// its clients, summed over EVERY entry whoever may see the matter it belongs to. The bank side (the balance on the bank's
+/// statement, cheques not yet cleared, deposits in transit) is not recorded anywhere in this application, so it is reported
+/// as unavailable and no discrepancy is computed. This is not a completed reconciliation and must not be presented as one.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Reconciliation {
+    pub as_of: i64,
+    /// Total held for clients, from the client ledger (reversals netted).
+    pub client_ledger_liability: i64,
+    pub clients_with_balance: i64,
+    pub ledger_entries: i64,
+    /// Clients whose ledger shows less than nothing: money paid out that was not held. A discrepancy in the books themselves.
+    pub overdrawn: Vec<Overdrawn>,
+    pub trust_bank_balance: Option<i64>,
+    pub outstanding_transactions: Option<i64>,
+    pub discrepancy: Option<i64>,
+    pub bank_side: &'static str,
+    pub complete: bool,
+    pub notes: Vec<&'static str>,
+}
+
+pub async fn reconciliation(pool: &SqlitePool) -> Result<Reconciliation, sqlx::Error> {
+    let sign = "(CASE l.kind WHEN 'received' THEN 1 WHEN 'paid_out' THEN -1 WHEN 'to_office' THEN -1 ELSE 0 END) * l.amount * (CASE WHEN l.reverses IS NULL THEN 1 ELSE -1 END)";
+    let liability: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT COALESCE(SUM({sign}), 0) FROM ledger_entries l WHERE l.account = 'client'"))).fetch_one(pool).await?;
+    let entries: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM ledger_entries").fetch_one(pool).await?;
+    let rows: Vec<(String, String, i64)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT c.id, c.name, SUM({sign}) FROM ledger_entries l JOIN clients c ON c.id = l.client_id WHERE l.account = 'client' GROUP BY c.id, c.name ORDER BY c.name"
+    )))
+    .fetch_all(pool)
+    .await?;
+    Ok(Reconciliation {
+        as_of: chrono::Utc::now().timestamp_millis(),
+        client_ledger_liability: liability,
+        clients_with_balance: rows.iter().filter(|r| r.2 != 0).count() as i64,
+        ledger_entries: entries,
+        overdrawn: rows.iter().filter(|r| r.2 < 0).map(|r| Overdrawn { client_id: r.0.clone(), client_name: r.1.clone(), balance: r.2 }).collect(),
+        trust_bank_balance: None,
+        outstanding_transactions: None,
+        discrepancy: None,
+        bank_side: "not_recorded",
+        complete: false,
+        notes: vec![
+            "The client ledger total is the whole practice's, restricted matters included.",
+            "No bank statement balance, uncleared cheques or deposits in transit are recorded in this application, so the trust account is not reconciled here and no discrepancy is shown.",
+        ],
+    })
 }

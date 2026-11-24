@@ -32,6 +32,8 @@ pub struct Matter {
     pub outcome: Option<String>,
     pub closed_at: Option<i64>,
     pub notes: Option<String>,
+    /// Seen only by the people listed for it (see `access`).
+    pub restricted: bool,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -106,7 +108,7 @@ fn check(input: &MatterInput) -> Result<Checked, DomainError> {
     Ok(Checked { title, our_ref: clean(input.our_ref.clone()), level, appointed_on })
 }
 
-const COLUMNS: &str = "id, client_id, title, our_ref, court_number, court_name, court_level, offence, engagement, appointed_on, remanded_on, committed_on, matter_type, stage, status, outcome, closed_at, notes, created_at, updated_at";
+const COLUMNS: &str = "id, client_id, title, our_ref, court_number, court_name, court_level, offence, engagement, appointed_on, remanded_on, committed_on, matter_type, stage, status, outcome, closed_at, notes, restricted, created_at, updated_at";
 
 pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Matter>, sqlx::Error> {
     sqlx::query_as::<_, Matter>(sqlx::AssertSqlSafe(format!("SELECT {COLUMNS} FROM matters WHERE id = ?"))).bind(id).fetch_optional(pool).await
@@ -122,6 +124,7 @@ pub async fn list(pool: &SqlitePool, query: &str, view: &str, matter_type: &str,
         "no_hearing" => "AND m.status = 'open' AND m.matter_type NOT IN ('land_transaction', 'company_matter', 'advice') AND NOT EXISTS (SELECT 1 FROM hearings h WHERE h.matter_id = m.id AND h.status = 'scheduled')",
         _ => "",
     };
+    let visible = super::access::visible("m");
     let like = format!("%{}%", query.trim().replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
     sqlx::query_as::<_, MatterSummary>(sqlx::AssertSqlSafe(format!(
         "SELECT m.id, m.client_id, c.name AS client_name, m.title, m.our_ref, m.court_number, m.court_name, m.court_level, m.offence, m.engagement, m.matter_type, m.stage, m.status, m.outcome,
@@ -132,6 +135,7 @@ pub async fn list(pool: &SqlitePool, query: &str, view: &str, matter_type: &str,
          WHERE (m.title LIKE ?1 ESCAPE '\\' OR COALESCE(m.our_ref, '') LIKE ?1 ESCAPE '\\' OR COALESCE(m.court_number, '') LIKE ?1 ESCAPE '\\'
                 OR COALESCE(m.offence, '') LIKE ?1 ESCAPE '\\' OR c.name LIKE ?1 ESCAPE '\\')
          AND (?3 = '' OR m.matter_type = ?3)
+         AND {visible}
          {filter}
          ORDER BY m.created_at DESC LIMIT ?2"
     )))
@@ -200,14 +204,15 @@ pub async fn update(pool: &SqlitePool, id: &str, input: MatterInput) -> Result<M
         return Err(DomainError::NotFound("Client not found.".to_string()));
     }
     let done = sqlx::query(
-        "UPDATE matters SET client_id = ?, title = ?, our_ref = ?, court_number = ?, court_name = ?, court_level = ?, offence = ?, engagement = ?, appointed_on = ?, notes = ?,
+        "UPDATE matters SET client_id = ?, title = ?, our_ref = ?, court_number = ?, court_name = ?, court_id = CASE WHEN COALESCE(court_number, '') = COALESCE(?, '') THEN court_id ELSE NULL END, court_level = ?, offence = ?, engagement = ?, appointed_on = ?, notes = ?,
             updated_at = cast(unixepoch('subsecond') * 1000 as integer) WHERE id = ?",
     )
     .bind(&input.client_id)
     .bind(&c.title)
     .bind(&c.our_ref)
-    .bind(clean(input.court_number))
+    .bind(clean(input.court_number.clone()))
     .bind(clean(input.court_name))
+    .bind(clean(input.court_number))
     .bind(&c.level)
     .bind(clean(input.offence))
     .bind(&input.engagement)

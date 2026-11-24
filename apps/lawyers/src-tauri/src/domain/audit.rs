@@ -25,8 +25,45 @@ pub async fn log(pool: &SqlitePool, entry: Entry<'_>) -> Result<(), sqlx::Error>
     tx.commit().await
 }
 
+/// The trail as the person asking may read it: what was done to a restricted matter, or to anything under it, is left
+/// out for anyone not listed for it (the chain itself stays whole, and `verify` still walks every entry).
 pub async fn recent(pool: &SqlitePool, case_id: Option<&str>, limit: i64) -> Result<Vec<AuditEntry>, sqlx::Error> {
-    chain::recent(pool, case_id, limit).await
+    let want = limit.clamp(1, 500) as usize;
+    if let Some(id) = case_id {
+        if super::access::record_hidden(pool, "matter", id).await? {
+            return Ok(Vec::new());
+        }
+    }
+    let hidden = super::access::hidden_matters(pool).await?;
+    if hidden.is_empty() {
+        return chain::recent(pool, case_id, want as i64).await;
+    }
+    let mut kept = Vec::new();
+    let mut known: std::collections::HashMap<(String, String), bool> = std::collections::HashMap::new();
+    for entry in chain::recent(pool, case_id, 500).await? {
+        if entry.scope_id.as_ref().is_some_and(|s| hidden.contains(s)) {
+            continue;
+        }
+        if let (Some(kind), Some(id)) = (&entry.subject_type, &entry.subject_id) {
+            let key = (kind.clone(), id.clone());
+            let gone = match known.get(&key) {
+                Some(v) => *v,
+                None => {
+                    let v = super::access::record_hidden(pool, kind, id).await?;
+                    known.insert(key, v);
+                    v
+                }
+            };
+            if gone {
+                continue;
+            }
+        }
+        kept.push(entry);
+        if kept.len() == want {
+            break;
+        }
+    }
+    Ok(kept)
 }
 
 pub async fn verify(pool: &SqlitePool) -> Result<Verification, sqlx::Error> {

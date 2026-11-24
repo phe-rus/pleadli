@@ -99,7 +99,9 @@ fn prefix(register: &str) -> &'static str {
 
 pub async fn list(pool: &SqlitePool, register: &str, year: i32) -> Result<Vec<RegisterEntry>, sqlx::Error> {
     let (from, to) = year_bounds(year);
-    let sql = format!("{SELECT} WHERE r.register = ? AND r.on_day >= ? AND r.on_day < ? ORDER BY r.number DESC");
+    // An entry made for a restricted matter is not shown (nor its number skipped over silently: the register's own
+    // numbering is kept by the database, and a gap is what a restricted entry looks like to someone outside it).
+    let sql = format!("{SELECT} WHERE r.register = ? AND r.on_day >= ? AND r.on_day < ? AND {} ORDER BY r.number DESC", super::access::on("r.matter_id"));
     sqlx::query_as::<_, RegisterEntry>(sqlx::AssertSqlSafe(sql)).bind(register).bind(from).bind(to).fetch_all(pool).await
 }
 

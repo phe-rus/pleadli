@@ -422,7 +422,8 @@
     "found_weak": "Noms proches dans vos dossiers ({count})",
     "judge": "C'est à vous de juger s'il y a conflit. Rien n'est bloqué.",
     "none": "Personne du nom de {name} dans un dossier.",
-    "own_client": "Déjà votre client dans d'autres dossiers ({count}). Jamais trouvé contre le cabinet."
+    "own_client": "Déjà votre client dans d'autres dossiers ({count}). Jamais trouvé contre le cabinet.",
+    "restricted": "Ce nom figure dans un dossier à accès restreint du cabinet. On ne vous montre pas de quel dossier il s'agit. Demandez à un associé avant d'agir."
   },
   "court_level": {
     "appeal": "Cour d'appel ou Cour suprême",
@@ -643,8 +644,8 @@
       "substituted": "Signification substituée"
     },
     "method_label": "Comment",
-    "none": "Rien n'a été déposé. Rédigez d'abord un document.",
-    "none_yet": "Rien n'a encore été déposé. Les brouillons peuvent être déposés ensemble.",
+    "none": "Aucun dossier de dépôt n'a été préparé pour cette affaire. Rédigez d'abord un document. Les documents envoyés au greffe sont listés sous Déposer auprès du tribunal, ci-dessous.",
+    "none_yet": "Aucun dossier de dépôt pour l'instant. Les brouillons peuvent être déposés ensemble. Les documents envoyés au greffe sont listés sous Déposer auprès du tribunal, ci-dessous.",
     "not_served": "Non signifié",
     "pack": {
       "building": "Préparation...",
@@ -669,7 +670,7 @@
     "service_failed": "Impossible d'enregistrer la signification",
     "service_recorded": "Signification enregistrée",
     "submit": "Déposer {count}",
-    "title": "Dépôts",
+    "title": "Dossiers de dépôt",
     "which": "Documents à déposer"
   },
   "give": {
@@ -980,12 +981,14 @@
     "title": "Comptabilité",
     "total": "Total {amount}",
     "unbilled_hours": "{hours} h non facturées",
-    "what": "Ce qui s'est passé"
+    "what": "Ce qui s'est passé",
+    "partial": "Certaines écritures relèvent de dossiers que vous ne pouvez pas voir : aucun solde n’est affiché. Le comptable a le chiffre complet."
   },
   "mp": {
     "add": "Ajouter",
     "add_task": "Ajouter une tâche",
     "add_task_description": "Quelque chose à faire sur ce dossier.",
+    "court_record": "Compte rendu du tribunal : {text}",
     "adjourned_to": "Renvoyé au {date}",
     "all_templates": "Tous les documents ({count})",
     "close": "Clôturer",
@@ -1090,7 +1093,11 @@
     "time": "Temps",
     "time_total": "{duration} au total.",
     "update": "Mettre à jour",
-    "write": "Rédiger sur sa page"
+    "write": "Rédiger sur sa page",
+    "access": "Qui peut le voir",
+    "restricted": "Restreint",
+    "access_title": "Qui peut voir ce dossier",
+    "access_description": "Une barrière d’information au sein du cabinet."
   },
   "nav": {
     "all_matters": "Tous les dossiers",
@@ -1785,7 +1792,9 @@
     "title": "Rapport du cabinet",
     "uls_paid": "Cotisation {year} payée",
     "uls_unknown": "Cotisation non renseignée",
-    "year": "Année"
+    "year": "Année",
+    "money_label": "Fonds",
+    "money_restricted": "Les chiffres des fonds de clients du cabinet sont réservés au comptable et aux administrateurs."
   },
   "svc": {
     "debt": "Recouvrement de créance",
@@ -2349,7 +2358,8 @@
     "taken": "Reçu et pris en compte.",
     "title": "Boîte postale",
     "try_again": "Réessayer",
-    "turned_away": "Refusé : {kind}"
+    "turned_away": "Refusé : {kind}",
+    "stage_refused": "Refusé par le bureau"
   },
   "court_notices": {
     "title": "Avis des tribunaux",
@@ -2394,7 +2404,12 @@
     "invite_saved": "Invitation enregistrée pour {court}. Envoyez-la-lui.",
     "confirmed": "{court} est confirmé. Envoyez-lui le fichier de confirmation.",
     "filed_notice": "Classé. Renvoyez le reçu au tribunal.",
-    "returned_notice": "Renvoyé. Renvoyez le reçu au tribunal."
+    "returned_notice": "Renvoyé. Renvoyez le reçu au tribunal.",
+    "status_revoked": "Terminée",
+    "end_ph": "Pourquoi mettre fin à cette connexion ?",
+    "end": "Mettre fin à la connexion",
+    "ended": "La connexion avec {name} est terminée. Envoyez-lui le fichier d'avis s'il n'est pas sur la boîte postale.",
+    "ended_reason": "Motif : {reason}"
   },
   "court_send_title": "Déposer auprès du tribunal",
   "court_send_desc": "Préparez un document pour cette affaire et remettez le fichier au greffe. Il vérifie le numéro d'affaire et répond par un reçu.",
@@ -2405,7 +2420,7 @@
   "court_send_button": "Enregistrer le dépôt pour le tribunal",
   "court_send_saved": "Enregistré. Remettez le fichier au greffe.",
   "court_send_waiting": "en attente du tribunal",
-  "court_send_accepted": "accepté par le tribunal",
+  "court_send_accepted": "reçu par le greffe. La décision du tribunal viendra sous forme d'ordonnance",
   "court_send_returned": "renvoyé par le tribunal : {reason}",
   "court_send_kind_application": "Requête",
   "court_send_kind_bail_application": "Demande de mise en liberté",
@@ -2437,5 +2452,24 @@
   },
   "downloads": {
     "saved": "Enregistré dans Téléchargements : {name}"
+  },
+  "access": {
+    "changed": "La liste des personnes autorisées a été modifiée",
+    "recovered": "Modifiée par un administrateur qui n’est pas sur le dossier",
+    "history": "Qui a modifié les accès",
+    "history_empty": "Personne ne l’a encore modifié.",
+    "name_one": "Nommez au moins une personne. Les autres ne verront pas du tout ce dossier.",
+    "not_available": "Vous ne pouvez pas voir qui a accès à ce dossier.",
+    "outside": "Vous n’êtes pas sur ce dossier. Vous pouvez tout de même corriger la liste, mais dites pourquoi. Votre motif est inscrit au dossier, et il ne vous permet pas de le lire.",
+    "reason": "Pourquoi vous le modifiez",
+    "reason_placeholder": "Par exemple : l’associé est absent et m’a demandé de le transmettre.",
+    "restrict": "Restreindre ce dossier",
+    "restrict_help": "Seules les personnes que vous nommez le voient, avec ses documents, audiences, temps, fonds et historique. Pour tous les autres, il n’existe pas. La recherche de conflit signale tout de même que le nom est connu.",
+    "save": "Enregistrer",
+    "save_failed": "Impossible de modifier les accès à ce dossier",
+    "saved_open": "Ce dossier est de nouveau ouvert au cabinet",
+    "saved_restricted": "Ce dossier est restreint",
+    "who": "Qui peut le voir",
+    "you": "vous"
   }
 }

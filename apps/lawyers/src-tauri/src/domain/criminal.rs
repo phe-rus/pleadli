@@ -34,16 +34,17 @@ pub struct CriminalRow {
 }
 
 pub async fn register(pool: &SqlitePool) -> Result<Vec<CriminalRow>, sqlx::Error> {
-    sqlx::query_as::<_, CriminalRow>(
+    let visible = super::access::visible("m");
+    sqlx::query_as::<_, CriminalRow>(sqlx::AssertSqlSafe(format!(
         "SELECT m.id, m.title, m.our_ref, m.court_number, m.court_name, m.court_level, m.offence, m.stage, m.status, m.engagement,
                 c.id AS client_id, c.name AS client_name, c.custody, c.custody_place, m.remanded_on, m.committed_on,
                 (SELECT COUNT(*) FROM hearings h WHERE h.matter_id = m.id AND h.status = 'adjourned') AS adjournments,
                 (SELECT MIN(h.at) FROM hearings h WHERE h.matter_id = m.id AND h.status = 'scheduled') AS next_hearing_at,
                 m.created_at
          FROM matters m JOIN clients c ON c.id = m.client_id
-         WHERE m.matter_type = 'criminal_defence'
-         ORDER BY m.status = 'open' DESC, next_hearing_at IS NULL, next_hearing_at, m.created_at DESC",
-    )
+         WHERE m.matter_type = 'criminal_defence' AND {visible}
+         ORDER BY m.status = 'open' DESC, next_hearing_at IS NULL, next_hearing_at, m.created_at DESC"
+    )))
     .fetch_all(pool)
     .await
 }

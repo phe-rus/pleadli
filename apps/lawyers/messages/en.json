@@ -422,7 +422,8 @@
     "found_weak": "Similar names in your records ({count})",
     "judge": "Whether it is a conflict is yours to judge. Nothing is blocked.",
     "none": "No one called {name} in any matter.",
-    "own_client": "Already your client in other matters ({count}). Not found against the practice."
+    "own_client": "Already your client in other matters ({count}). Not found against the practice.",
+    "restricted": "The name is known on a restricted matter in this practice. You are not shown whose matter it is. Ask a partner before you act."
   },
   "court_level": {
     "appeal": "Court of Appeal or Supreme Court",
@@ -643,8 +644,8 @@
       "substituted": "Substituted service"
     },
     "method_label": "How",
-    "none": "Nothing has been filed. Draft a document first.",
-    "none_yet": "Nothing has been filed yet. The drafts are ready to file together.",
+    "none": "No filing pack has been made for this matter. Draft a document first. Documents sent to the registry are listed under File with the court, below.",
+    "none_yet": "No filing pack has been made yet. The drafts are ready to file together. Documents sent to the registry are listed under File with the court, below.",
     "not_served": "Not served",
     "pack": {
       "building": "Preparing...",
@@ -669,7 +670,7 @@
     "service_failed": "Could not record service",
     "service_recorded": "Service recorded",
     "submit": "File {count}",
-    "title": "Filings",
+    "title": "Filing packs",
     "which": "Documents to file"
   },
   "give": {
@@ -980,12 +981,14 @@
     "title": "Accounts",
     "total": "Total {amount}",
     "unbilled_hours": "{hours} h not billed",
-    "what": "What happened"
+    "what": "What happened",
+    "partial": "Some entries belong to matters you may not see, so no balance is shown. The accounts person has the whole figure."
   },
   "mp": {
     "add": "Add",
     "add_task": "Add a task",
     "add_task_description": "Something to do on this matter.",
+    "court_record": "Court record: {text}",
     "adjourned_to": "Adjourned to {date}",
     "all_templates": "All documents ({count})",
     "close": "Close",
@@ -1090,7 +1093,11 @@
     "time": "Time",
     "time_total": "{duration} in all.",
     "update": "Update",
-    "write": "Write on its own page"
+    "write": "Write on its own page",
+    "access": "Who can see this",
+    "restricted": "Restricted",
+    "access_title": "Who can see this matter",
+    "access_description": "An information barrier inside the practice."
   },
   "nav": {
     "all_matters": "All files",
@@ -1785,7 +1792,9 @@
     "title": "Practice report",
     "uls_paid": "Subscription {year} paid",
     "uls_unknown": "Subscription not recorded",
-    "year": "Year"
+    "year": "Year",
+    "money_label": "Money",
+    "money_restricted": "The practice’s client-money figures are for its accounts person and administrators."
   },
   "svc": {
     "debt": "Recovering a debt",
@@ -2349,7 +2358,8 @@
     "taken": "Received and taken in.",
     "title": "Postbox",
     "try_again": "Try again",
-    "turned_away": "Turned away: {kind}"
+    "turned_away": "Turned away: {kind}",
+    "stage_refused": "Turned away by the office"
   },
   "court_notices": {
     "title": "Court notices",
@@ -2394,7 +2404,12 @@
     "invite_saved": "Invitation saved for {court}. Send it to them.",
     "confirmed": "{court} is confirmed. Send it the confirmation file.",
     "filed_notice": "Filed. Send the receipt back to the court.",
-    "returned_notice": "Returned. Send the receipt back to the court."
+    "returned_notice": "Returned. Send the receipt back to the court.",
+    "status_revoked": "Ended",
+    "end_ph": "Why is this connection being ended?",
+    "end": "End connection",
+    "ended": "Connection with {name} ended. Send them the notice file if they are not on the postbox.",
+    "ended_reason": "Reason: {reason}"
   },
   "court_send_title": "File with the court",
   "court_send_desc": "Prepare a document for this case and give the file to the court registry. It checks the case number and answers with a receipt.",
@@ -2405,7 +2420,7 @@
   "court_send_button": "Save the filing for the court",
   "court_send_saved": "Saved. Give the file to the court registry.",
   "court_send_waiting": "waiting for the court",
-  "court_send_accepted": "accepted by the court",
+  "court_send_accepted": "received by the registry. The court's decision comes as an order",
   "court_send_returned": "returned by the court: {reason}",
   "court_send_kind_application": "Application",
   "court_send_kind_bail_application": "Bail application",
@@ -2437,5 +2452,24 @@
   },
   "downloads": {
     "saved": "Saved to Downloads: {name}"
+  },
+  "access": {
+    "changed": "Who may see it was changed",
+    "recovered": "Changed by an administrator who is not on the matter",
+    "history": "Who changed who may see this",
+    "history_empty": "Nobody has changed it yet.",
+    "name_one": "Name at least one person. Everyone else will not see this matter at all.",
+    "not_available": "You cannot see who may see this matter.",
+    "outside": "You are not on this matter. You may still correct who sees it, but say why. Your reason is written to the matter’s record, and it does not let you read the matter.",
+    "reason": "Why you are changing it",
+    "reason_placeholder": "For example: the partner is away and asked me to hand it over.",
+    "restrict": "Restrict this matter",
+    "restrict_help": "Only the people you name can see it, with its documents, hearings, time, money and history. To everyone else it does not exist. A conflict check still warns that the name is known.",
+    "save": "Save",
+    "save_failed": "Could not change who may see this matter",
+    "saved_open": "This matter is open to the practice again",
+    "saved_restricted": "This matter is restricted",
+    "who": "Who may see it",
+    "you": "you"
   }
 }

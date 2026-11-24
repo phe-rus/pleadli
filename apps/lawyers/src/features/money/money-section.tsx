@@ -86,7 +86,7 @@ export function MoneySection({ matterId, clientId, engagement, open }: { matterI
       {!billed && <p className="text-muted-foreground">{m["money.not_billed"]()}</p>}
       {books && (
         <p>
-          {m["money.held"]({ amount: ugx(books.clientBalance) })} · {m["money.owed"]({ amount: ugx(books.owed) })}
+          {books.partial || books.clientBalance == null || books.owed == null ? m["money.partial"]() : <>{m["money.held"]({ amount: ugx(books.clientBalance) })} · {m["money.owed"]({ amount: ugx(books.owed) })}</>}
           {billed && hours > 0 && <> · {m["money.unbilled_hours"]({ hours: hours.toFixed(1) })}</>}
           {' · '}
           <Link to="/money" search={{ client: clientId }} className="text-primary underline">
@@ -146,14 +146,20 @@ export function ClientBooks({ clientId }: { clientId: string }) {
   const rows = books.entries.map((e) => {
     const sign = e.account === 'client' ? (e.kind === 'received' ? 1 : -1) * (e.reverses ? -1 : 1) : 0
     running += sign * e.amount
-    return { e, sign, balance: e.account === 'client' ? running : null }
+    return { e, sign, balance: e.account === 'client' && !books.partial ? running : null }
   })
 
   return (
     <div className="flex flex-col gap-4 overflow-y-auto p-4">
       <p>
-        <strong>{m["money.held"]({ amount: ugx(books.clientBalance) })}</strong> · {m["money.owed"]({ amount: ugx(books.owed) })}
-        {books.disbursementsUnbilled > 0 && <> · {m["money.disbursed_unbilled"]({ amount: ugx(books.disbursementsUnbilled) })}</>}
+        {books.partial || books.clientBalance == null || books.owed == null ? (
+          m["money.partial"]()
+        ) : (
+          <>
+            <strong>{m["money.held"]({ amount: ugx(books.clientBalance) })}</strong> · {m["money.owed"]({ amount: ugx(books.owed) })}
+            {(books.disbursementsUnbilled ?? 0) > 0 && <> · {m["money.disbursed_unbilled"]({ amount: ugx(books.disbursementsUnbilled ?? 0) })}</>}
+          </>
+        )}
       </p>
       <p className="text-muted-foreground">{m["money.books_lead"]()}</p>
       {keeps && (

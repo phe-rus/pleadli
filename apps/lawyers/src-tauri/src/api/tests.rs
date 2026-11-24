@@ -1175,3 +1175,421 @@ async fn an_administrator_takes_every_record_out_without_anyones_secrets() {
     post(&app, "/api/session/sign-in", json!({ "staffId": clerk, "secret": "111111" })).await;
     assert_eq!(get(&app, "/api/export").await.0, StatusCode::FORBIDDEN);
 }
+
+/// An information barrier inside a firm: a restricted matter is seen only by the people listed for it, in every list
+/// and under every path, and a conflict search still warns without saying whose matter it is.
+#[tokio::test]
+async fn a_restricted_matter_is_seen_only_by_those_listed_and_conflict_searches_still_warn() {
+    let app = fresh_app().await;
+    let people = json!([
+        { "name": "B. Clerk", "rank": "Legal assistant", "role": "paralegal", "flag": false, "secret": "111111" },
+        { "name": "C. Books", "rank": "", "role": "accounts", "flag": false, "secret": "222222" }
+    ]);
+    assert_eq!(post(&app, "/api/setup/complete", setup_payload("basic", Some("654321"), "firm", "advocate", people)).await.0, StatusCode::OK);
+    let (_, list) = get(&app, "/api/session/people").await;
+    let id_of = |name: &str| list.as_array().unwrap().iter().find(|p| p["name"] == name).unwrap()["id"].as_str().unwrap().to_string();
+    let (advocate, clerk) = (id_of("A. Nabirye"), id_of("B. Clerk"));
+    let sign_in = |who: String, secret: &'static str| {
+        let app = app.clone();
+        async move {
+            post(&app, "/api/session/sign-out", json!({})).await;
+            assert_eq!(post(&app, "/api/session/sign-in", json!({ "staffId": who, "secret": secret })).await.1["status"], "signed_in");
+        }
+    };
+
+    // A signed-in advocate opens an ordinary matter and a sensitive one, with a party, a hearing, a task, time and a note under it.
+    let client = new_client(&app, "Okello Traders").await;
+    let (_, open) = post(&app, "/api/matters", json!({ "clientId": client, "title": "Ordinary lease dispute", "courtNumber": "HCT 1/2026", "engagement": "private" })).await;
+    let open = open["id"].as_str().unwrap().to_string();
+    let (_, secret) = post(&app, "/api/matters", json!({ "clientId": client, "title": "Project Heron buyout", "courtNumber": "HCT 2/2026", "engagement": "private" })).await;
+    let secret = secret["id"].as_str().unwrap().to_string();
+    post(&app, &format!("/api/matters/{secret}/parties"), json!({ "role": "opposing_party", "name": "Kiiza Robert" })).await;
+    post(&app, &format!("/api/matters/{secret}/hearings"), json!({ "at": now() + DAY, "purpose": "hearing" })).await;
+    post(&app, "/api/tasks", json!({ "matterId": secret, "title": "Prepare Heron term sheet", "dueOn": now() + 2 * DAY })).await;
+    post(&app, &format!("/api/matters/{secret}/time"), json!({ "workedOn": now() - DAY, "minutes": 60, "description": "Heron negotiation" })).await;
+    post(&app, &format!("/api/matters/{secret}/notes"), json!({ "body": "Heron valuation" })).await;
+
+    // Restricting needs a named, active person and keeps the person acting on the list.
+    let path = format!("/api/matters/{secret}/access");
+    assert_eq!(put(&app, &path, json!({ "restricted": true, "staffIds": [] })).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(put(&app, &path, json!({ "restricted": true, "staffIds": ["no-such-person"] })).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    let (status, body) = put(&app, &path, json!({ "restricted": true, "staffIds": [advocate] })).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(get(&app, &path).await.1["staffIds"], json!([advocate]));
+
+    // Those listed carry on as before, and the conflict search shows them the whole picture.
+    assert_eq!(get(&app, &format!("/api/matters/{secret}")).await.0, StatusCode::OK);
+    let (_, hits) = get(&app, "/api/conflicts?name=Kiiza%20Robert").await;
+    assert_eq!(hits[0]["matterTitle"], "Project Heron buyout");
+    assert_eq!(hits[0]["restricted"], false);
+
+    // Someone not listed finds nothing of it anywhere, and the conflict hit says only that the name is known.
+    sign_in(clerk.clone(), "111111").await;
+    let everywhere = |what: &str, value: &Value| assert!(!value.to_string().contains("Heron"), "{what} leaked a restricted matter: {value}");
+    let day = now() - 2 * DAY;
+    for path in [
+        "/api/matters".to_string(),
+        format!("/api/overview?from={day}&to={}", day + DAY),
+        format!("/api/diary?from={day}&to={}", day + 10 * DAY),
+        "/api/tasks".to_string(),
+        "/api/documents".to_string(),
+        format!("/api/time?from=0&to={}", now() + 10 * DAY),
+        "/api/fee-notes".to_string(),
+        "/api/criminal-register".to_string(),
+        "/api/clocks".to_string(),
+        "/api/matters?query=Heron".to_string(),
+    ] {
+        let (status, body) = get(&app, &path).await;
+        assert_eq!(status, StatusCode::OK, "{path}");
+        everywhere(&path, &body);
+    }
+    let (_, ordinary) = get(&app, "/api/matters").await;
+    assert_eq!(ordinary.as_array().unwrap().len(), 1, "the ordinary matter is still listed");
+    for path in [format!("/api/matters/{secret}"), format!("/api/matters/{secret}/plea"), format!("/api/matters/{secret}/bills"), format!("/api/matters/{secret}/unbilled-time")] {
+        let (status, body) = get(&app, &path).await;
+        assert_eq!((status, body["code"].as_str()), (StatusCode::NOT_FOUND, Some("NOT_FOUND")), "{path}");
+    }
+    assert_eq!(post(&app, &format!("/api/matters/{secret}/notes"), json!({ "body": "x" })).await.0, StatusCode::NOT_FOUND, "writing is refused the same way");
+    // The refusal is the same as for a matter that does not exist.
+    let (unknown, unknown_body) = get(&app, "/api/matters/no-such-matter").await;
+    let (hidden, hidden_body) = get(&app, &format!("/api/matters/{secret}")).await;
+    assert_eq!((unknown, &unknown_body), (hidden, &hidden_body));
+    let (_, hits) = get(&app, "/api/conflicts?name=Kiiza%20Robert").await;
+    assert_eq!(hits[0]["restricted"], true);
+    assert_eq!(hits[0]["matterTitle"], Value::Null);
+    assert_eq!(hits[0]["matterId"], Value::Null);
+    assert_eq!(hits[0]["name"], "");
+    everywhere("conflicts", &hits);
+    // Not listed and not an administrator: not even the list of who may see it.
+    assert_eq!(get(&app, &path).await.0, StatusCode::NOT_FOUND);
+    assert_eq!(put(&app, &path, json!({ "restricted": false, "staffIds": [] })).await.0, StatusCode::NOT_FOUND);
+
+    // An administrator who is not listed cannot read the matter, but can repair the barrier without reading it.
+    sign_in(advocate.clone(), "654321").await;
+    assert_eq!(put(&app, &path, json!({ "restricted": true, "staffIds": [clerk] })).await.0, StatusCode::OK, "a listed administrator hands the matter over");
+    assert_eq!(get(&app, &format!("/api/matters/{secret}")).await.0, StatusCode::NOT_FOUND, "an administrator is not let in by role");
+    assert_eq!(get(&app, &path).await.1["staffIds"], json!([clerk]));
+    assert_eq!(put(&app, &path, json!({ "restricted": false, "staffIds": [] })).await.0, StatusCode::UNPROCESSABLE_ENTITY, "now unlisted, an administrator must say why");
+    assert_eq!(put(&app, &path, json!({ "restricted": false, "staffIds": [], "reason": "Conflict cleared" })).await.0, StatusCode::OK);
+    assert_eq!(get(&app, &format!("/api/matters/{secret}")).await.0, StatusCode::OK);
+    assert_eq!(get(&app, &format!("/api/matters/{open}")).await.0, StatusCode::OK);
+
+    // Every change is on the audit trail, without the names.
+    let (_, trail) = get(&app, "/api/audit").await;
+    let changes: Vec<_> = trail.as_array().unwrap().iter().filter(|e| e["action"].as_str().is_some_and(|a| a.starts_with("matter_access_"))).collect();
+    assert_eq!(changes.len(), 3, "{trail}");
+    assert!(!trail.to_string().contains("no-such-person"));
+    assert_eq!(get(&app, "/api/audit/verify").await.1["intact"], true);
+}
+
+/// The barrier holds on every other way in: a record reached by its own id, a matter named in a request body, a
+/// printed paper, the totals, the audit trail, the client list, the books and the export. It is also what the
+/// administrator who repairs a barrier can and cannot read, and what the trail says about it.
+#[tokio::test]
+async fn a_restricted_matter_leaks_nothing_by_id_by_total_by_print_by_trail_or_by_export() {
+    let app = fresh_app().await;
+    let people = json!([{ "name": "B. Clerk", "rank": "Legal assistant", "role": "paralegal", "flag": false, "secret": "111111" }]);
+    assert_eq!(post(&app, "/api/setup/complete", setup_payload("basic", Some("654321"), "firm", "advocate", people)).await.0, StatusCode::OK);
+    let (_, list) = get(&app, "/api/session/people").await;
+    let id_of = |name: &str| list.as_array().unwrap().iter().find(|p| p["name"] == name).unwrap()["id"].as_str().unwrap().to_string();
+    let (advocate, clerk) = (id_of("A. Nabirye"), id_of("B. Clerk"));
+    let sign_in = |who: String, secret: &'static str| {
+        let app = app.clone();
+        async move {
+            post(&app, "/api/session/sign-out", json!({})).await;
+            assert_eq!(post(&app, "/api/session/sign-in", json!({ "staffId": who, "secret": secret })).await.1["status"], "signed_in");
+        }
+    };
+    let id = |v: &Value| v["id"].as_str().unwrap().to_string();
+
+    let client = new_client(&app, "Okello Traders").await;
+    let (_, open) = post(&app, "/api/matters", json!({ "clientId": client, "title": "Ordinary lease dispute", "courtNumber": "HCT 1/2026", "engagement": "private" })).await;
+    let (_, sec) = post(&app, "/api/matters", json!({ "clientId": client, "title": "Project Heron buyout", "courtNumber": "HCT 2/2026", "engagement": "private" })).await;
+    let (open, secret) = (id(&open), id(&sec));
+    let (_, party) = post(&app, &format!("/api/matters/{secret}/parties"), json!({ "role": "opposing_party", "name": "Kiiza Robert" })).await;
+    let (_, hearing) = post(&app, &format!("/api/matters/{secret}/hearings"), json!({ "at": now() + DAY, "purpose": "hearing" })).await;
+    let (_, task) = post(&app, "/api/tasks", json!({ "matterId": secret, "title": "Prepare Heron term sheet", "dueOn": now() + 2 * DAY })).await;
+    let (_, time) = post(&app, &format!("/api/matters/{secret}/time"), json!({ "workedOn": now() - DAY, "minutes": 60, "description": "Heron negotiation" })).await;
+    let (_, note) = post(&app, &format!("/api/matters/{secret}/notes"), json!({ "body": "Heron valuation" })).await;
+    let (_, doc) = post(&app, "/api/documents", json!({ "matterId": secret, "kind": "letter", "title": "Heron letter of intent" })).await;
+    let (hearing, task, time, note, doc, party) = (id(&hearing), id(&task), id(&time), id(&note), id(&doc), id(&party));
+    let deposit = json!({ "clientId": client, "matterId": secret, "kind": "received", "amount": 2_000_000, "onDay": now() - DAY, "description": "Heron deposit" });
+    let (status, ledger) = post(&app, "/api/ledger", deposit).await;
+    assert_eq!(status, StatusCode::OK, "{ledger}");
+    let ledger = id(&ledger);
+    let (status, stamp) = post(&app, "/api/prints", json!({ "entityType": "document", "entityId": doc, "title": "Heron letter of intent", "body": "Heron wording", "reference": null })).await;
+    assert_eq!(status, StatusCode::OK, "{stamp}");
+    let code = stamp["code"].as_str().unwrap().to_string();
+
+    // The advocate, listed, sees all of it, and the totals count both matters.
+    assert_eq!(put(&app, &format!("/api/matters/{secret}/access"), json!({ "restricted": true, "staffIds": [advocate] })).await.0, StatusCode::OK);
+    assert_eq!(get(&app, &format!("/api/documents/{doc}")).await.1["title"], "Heron letter of intent");
+    let open_total = |stats: &Value| stats["byType"].as_array().unwrap().iter().map(|t| t["open"].as_i64().unwrap()).sum::<i64>();
+    assert_eq!(open_total(&get(&app, "/api/statistics").await.1), 2);
+    assert_eq!(get(&app, "/api/clients").await.1[0]["matters"], 2);
+    assert!(get(&app, &format!("/api/prints/last?entityType=document&entityId={doc}")).await.1["body"].as_str().unwrap().contains("Heron"));
+
+    // Someone not listed, who knows every id, still gets nothing.
+    sign_in(clerk.clone(), "111111").await;
+    let nothing = |what: &str, value: &Value| {
+        let text = value.to_string();
+        assert!(!text.contains("Heron") && !text.contains(&secret) && !text.contains(&doc), "{what} leaked: {text}");
+    };
+    for path in [format!("/api/documents/{doc}"), format!("/api/prints/last?entityType=document&entityId={doc}"), format!("/api/prints/history?entityType=document&entityId={doc}"), format!("/api/prints/ink?entityType=document&entityId={doc}")] {
+        let (status, body) = get(&app, &path).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{path}: {body}");
+        nothing(&path, &body);
+    }
+    let (status, body) = get(&app, &format!("/api/prints/verify?code={code}")).await;
+    assert_eq!((status, &body), (StatusCode::OK, &Value::Null), "a printed paper's code answers as if unknown");
+    let patch = json!({ "title": "x", "dueOn": now() });
+    for (method, path, body) in [
+        (Method::PUT, format!("/api/tasks/{task}"), Some(patch.clone())),
+        (Method::DELETE, format!("/api/tasks/{task}"), None),
+        (Method::POST, format!("/api/tasks/{task}/done"), Some(json!({ "done": true }))),
+        (Method::PUT, format!("/api/notes/{note}"), Some(json!({ "body": "x" }))),
+        (Method::DELETE, format!("/api/notes/{note}"), None),
+        (Method::DELETE, format!("/api/time/{time}"), None),
+        (Method::POST, format!("/api/hearings/{hearing}/cancel"), Some(json!({}))),
+        (Method::PUT, format!("/api/parties/{party}"), Some(json!({ "role": "opposing_party", "name": "x" }))),
+        (Method::DELETE, format!("/api/parties/{party}"), None),
+        (Method::PUT, format!("/api/documents/{doc}"), Some(json!({ "title": "x" }))),
+        (Method::DELETE, format!("/api/documents/{doc}"), None),
+        (Method::POST, format!("/api/ledger/{ledger}/reverse"), Some(json!({ "reason": "x" }))),
+        (Method::POST, "/api/tasks".to_string(), Some(json!({ "matterId": secret, "title": "Mine now", "dueOn": now() }))),
+        (Method::POST, "/api/documents".to_string(), Some(json!({ "matterId": secret, "kind": "letter", "title": "Mine now" }))),
+        (Method::POST, "/api/prints".to_string(), Some(json!({ "entityType": "document", "entityId": doc, "title": "t", "body": "b", "reference": null }))),
+    ] {
+        let (status, body) = call(&app, method.clone(), &path, body).await;
+        assert!(status == StatusCode::NOT_FOUND || status == StatusCode::FORBIDDEN, "{method} {path} gave {status}: {body}");
+        nothing(&path, &body);
+    }
+    // What the totals, the client list, the books and the trail show is what this person may see.
+    let (_, stats) = get(&app, "/api/statistics").await;
+    assert_eq!(open_total(&stats), 1);
+    assert_eq!(get(&app, "/api/clients").await.1[0]["matters"], 1);
+    let (_, trail) = get(&app, "/api/audit?limit=500").await;
+    nothing("the audit trail", &trail);
+    assert!(trail.as_array().unwrap().iter().any(|e| e["action"] == "matter_opened"), "the ordinary matter's history is still there");
+    let (_, trail) = get(&app, &format!("/api/audit?matterId={secret}")).await;
+    assert_eq!(trail, json!([]));
+    let (status, money) = get(&app, &format!("/api/clients/{client}/money")).await;
+    if status == StatusCode::OK {
+        nothing("the client's books", &money);
+        assert_eq!(money["partial"], true, "an ordinary member of staff is told the books are partial, and given no balance");
+        assert!(money["clientBalance"].is_null());
+    }
+    assert_eq!(get(&app, "/api/export").await.0, StatusCode::FORBIDDEN);
+
+    // An administrator who is not listed cannot read it either, not even by exporting, and the repair is explained.
+    sign_in(advocate.clone(), "654321").await;
+    let path = format!("/api/matters/{secret}/access");
+    let (status, access) = put(&app, &path, json!({ "restricted": true, "staffIds": [clerk] })).await;
+    assert_eq!(status, StatusCode::OK, "{access}");
+    assert_eq!(access["staff"][0]["name"], "B. Clerk");
+    let (_, export) = get(&app, "/api/export").await;
+    nothing("the export", &export);
+    assert!(export.to_string().contains("Ordinary lease dispute"), "everything else is exported");
+    assert_eq!(get(&app, &format!("/api/documents/{doc}")).await.0, StatusCode::NOT_FOUND, "the live session lost access at once");
+    // Repairing it from outside needs a reason, which the people on the matter can then read.
+    assert_eq!(put(&app, &path, json!({ "restricted": true, "staffIds": [clerk, advocate] })).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    let (status, access) = put(&app, &path, json!({ "restricted": true, "staffIds": [clerk, advocate], "reason": "Clerk is away; I must cover the hearing" })).await;
+    assert_eq!(status, StatusCode::OK, "{access}");
+    assert_eq!(get(&app, &format!("/api/documents/{doc}")).await.0, StatusCode::OK, "added to the list, and only then");
+    let history = access["history"].clone();
+    assert_eq!(history[0]["action"], "matter_access_recovered");
+    let detail = history[0]["detail"].as_str().unwrap();
+    assert!(detail.contains("added: A. Nabirye") && detail.contains("reason: Clerk is away"), "{detail}");
+    assert_eq!(history[1]["action"], "matter_access_changed");
+    assert!(history[1]["detail"].as_str().unwrap().contains("removed: A. Nabirye"));
+    // The clerk, now listed, reads the same history on the matter's own trail.
+    sign_in(clerk.clone(), "111111").await;
+    let (_, trail) = get(&app, &format!("/api/audit?matterId={secret}")).await;
+    assert!(trail.to_string().contains("matter_access_recovered"));
+    assert_eq!(get(&app, "/api/audit/verify").await.1["intact"], true);
+    let _ = open;
+}
+
+/// Matter confidentiality and firm-wide finance are two scopes. Matter counts follow what a person may see; the client-money
+/// liability is the whole practice's, for accounts and administrators only, restricted matters included, and says nothing
+/// about those matters. The bank side is not recorded, so reconciliation says it is incomplete rather than pretending.
+#[tokio::test]
+async fn client_money_totals_are_firm_wide_for_finance_only_and_leak_nothing_about_restricted_matters() {
+    let app = fresh_app().await;
+    let people = json!([
+        { "name": "B. Clerk", "rank": "Legal assistant", "role": "paralegal", "flag": false, "secret": "111111" },
+        { "name": "C. Books", "rank": "", "role": "accounts", "flag": false, "secret": "222222" }
+    ]);
+    assert_eq!(post(&app, "/api/setup/complete", setup_payload("basic", Some("654321"), "firm", "advocate", people)).await.0, StatusCode::OK);
+    let (_, list) = get(&app, "/api/session/people").await;
+    let id_of = |name: &str| list.as_array().unwrap().iter().find(|p| p["name"] == name).unwrap()["id"].as_str().unwrap().to_string();
+    let advocate = id_of("A. Nabirye");
+    let sign_in = |who: String, secret: &'static str| {
+        let app = app.clone();
+        async move {
+            post(&app, "/api/session/sign-out", json!({})).await;
+            assert_eq!(post(&app, "/api/session/sign-in", json!({ "staffId": who, "secret": secret })).await.1["status"], "signed_in");
+        }
+    };
+    let id = |v: &Value| v["id"].as_str().unwrap().to_string();
+
+    let client = new_client(&app, "Okello Traders").await;
+    let (_, open) = post(&app, "/api/matters", json!({ "clientId": client, "title": "Ordinary lease dispute", "courtNumber": "HCT 1/2026", "engagement": "private" })).await;
+    let (_, sec) = post(&app, "/api/matters", json!({ "clientId": client, "title": "Project Heron buyout", "courtNumber": "HCT 2/2026", "engagement": "private" })).await;
+    let (open, secret) = (id(&open), id(&sec));
+    for (matter, amount, what) in [(&open, 500_000, "Lease deposit"), (&secret, 2_000_000, "Heron deposit")] {
+        let (status, body) = post(&app, "/api/ledger", json!({ "clientId": client, "matterId": matter, "kind": "received", "amount": amount, "onDay": now() - DAY, "description": what })).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+    }
+    assert_eq!(put(&app, &format!("/api/matters/{secret}/access"), json!({ "restricted": true, "staffIds": [advocate] })).await.0, StatusCode::OK);
+    let leaks = |what: &str, v: &Value| {
+        let t = v.to_string();
+        assert!(!t.contains("Heron") && !t.contains(&secret), "{what} leaked: {t}");
+    };
+    let open_total = |stats: &Value| stats["byType"].as_array().unwrap().iter().map(|t| t["open"].as_i64().unwrap()).sum::<i64>();
+
+    // Accounts, not listed on the restricted matter: the whole liability, restricted money included, and no matter details.
+    sign_in(id_of("C. Books"), "222222").await;
+    let (status, rec) = get(&app, "/api/accounts/reconciliation").await;
+    assert_eq!(status, StatusCode::OK, "{rec}");
+    assert_eq!(rec["clientLedgerLiability"], 2_500_000, "the restricted matter's money is in the authoritative total");
+    assert_eq!(rec["overdrawn"], json!([]));
+    leaks("reconciliation", &rec);
+    // The bank side is not recorded: stated, not invented.
+    assert_eq!((rec["bankSide"].as_str(), rec["complete"].as_bool()), (Some("not_recorded"), Some(false)));
+    assert!(rec["trustBankBalance"].is_null() && rec["outstandingTransactions"].is_null() && rec["discrepancy"].is_null());
+    let (_, stats) = get(&app, "/api/statistics").await;
+    assert_eq!(stats["money"]["heldForClients"], 2_500_000, "the statistics screen and the reconciliation share one source");
+    assert_eq!(open_total(&stats), 1, "matter counts stay scoped to what accounts may see");
+    leaks("statistics", &stats);
+    let (status, positions) = get(&app, "/api/money/positions").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(positions[0]["clientBalance"], 2_500_000);
+    leaks("positions", &positions);
+    let (_, books) = get(&app, &format!("/api/clients/{client}/money")).await;
+    assert_eq!((books["partial"].as_bool(), books["clientBalance"].as_i64()), (Some(false), Some(2_500_000)));
+    assert_eq!(books["entries"].as_array().unwrap().len(), 2, "whole books, the restricted entry masked");
+    leaks("the client's books", &books);
+    assert_eq!(get(&app, &format!("/api/matters/{secret}")).await.0, StatusCode::NOT_FOUND, "aggregate access is not matter access");
+    assert_eq!(get(&app, &format!("/api/matters/{secret}/bills")).await.0, StatusCode::NOT_FOUND);
+
+    // An ordinary member of staff: no firm-wide money anywhere, nothing to infer the restricted matter from.
+    sign_in(id_of("B. Clerk"), "111111").await;
+    for path in ["/api/accounts/reconciliation", "/api/money/positions"] {
+        let (status, body) = get(&app, path).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{path}");
+        leaks(path, &body);
+    }
+    let (_, stats) = get(&app, "/api/statistics").await;
+    assert!(stats["money"].is_null(), "no figure at all, rather than one summed from visible matters");
+    assert_eq!(open_total(&stats), 1, "matter-level statistics stay scoped to this person");
+    leaks("statistics", &stats);
+    let (_, books) = get(&app, &format!("/api/clients/{client}/money")).await;
+    assert_eq!(books["partial"], true);
+    assert!(books["clientBalance"].is_null() && books["owed"].is_null(), "no balance is given that would be wrong without the rest: {books}");
+    assert_eq!(books["entries"].as_array().unwrap().len(), 1);
+    leaks("the client's books", &books);
+
+    // The administrator is in the finance scope but is not let into the matter by it.
+    sign_in(advocate.clone(), "654321").await;
+    assert_eq!(get(&app, "/api/accounts/reconciliation").await.1["clientLedgerLiability"], 2_500_000);
+    // Lifting the restriction changes who sees the matter, not what is owed to clients.
+    assert_eq!(put(&app, &format!("/api/matters/{secret}/access"), json!({ "restricted": false, "staffIds": [] })).await.0, StatusCode::OK);
+    assert_eq!(get(&app, "/api/accounts/reconciliation").await.1["clientLedgerLiability"], 2_500_000);
+}
+
+/// Status, every header and the exact bytes: the whole of what a caller can observe.
+async fn raw(app: &Router, method: Method, path: &str, body: Option<Value>) -> (StatusCode, Vec<(String, String)>, Vec<u8>) {
+    let request = Request::builder()
+        .method(method)
+        .uri(path)
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(body.map_or_else(Body::empty, |b| Body::from(b.to_string())))
+        .unwrap();
+    let response = app.clone().oneshot(request).await.unwrap();
+    let status = response.status();
+    let mut headers: Vec<(String, String)> = response.headers().iter().map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("").to_string())).collect();
+    headers.sort();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap().to_vec();
+    (status, headers, bytes)
+}
+
+/// A record hidden by a restricted matter and a record that does not exist must be indistinguishable to the caller:
+/// same status, same headers, same bytes, across every by-id family and every method, including a matter and its
+/// sub-resources.
+#[tokio::test]
+async fn a_hidden_record_and_an_unknown_one_answer_byte_for_byte_alike() {
+    let app = fresh_app().await;
+    let people = json!([{ "name": "B. Clerk", "rank": "Legal assistant", "role": "paralegal", "flag": false, "secret": "111111" }]);
+    assert_eq!(post(&app, "/api/setup/complete", setup_payload("basic", Some("654321"), "firm", "advocate", people)).await.0, StatusCode::OK);
+    let (_, list) = get(&app, "/api/session/people").await;
+    let id_of = |name: &str| list.as_array().unwrap().iter().find(|p| p["name"] == name).unwrap()["id"].as_str().unwrap().to_string();
+    let (advocate, clerk) = (id_of("A. Nabirye"), id_of("B. Clerk"));
+    let id = |v: &Value| v["id"].as_str().unwrap().to_string();
+
+    let client = new_client(&app, "Okello Traders").await;
+    let (_, sec) = post(&app, "/api/matters", json!({ "clientId": client, "title": "Project Heron buyout", "courtNumber": "HCT 2/2026", "engagement": "private" })).await;
+    let secret = id(&sec);
+    let (_, party) = post(&app, &format!("/api/matters/{secret}/parties"), json!({ "role": "opposing_party", "name": "Kiiza Robert" })).await;
+    let (_, hearing) = post(&app, &format!("/api/matters/{secret}/hearings"), json!({ "at": now() + DAY, "purpose": "hearing" })).await;
+    let (_, task) = post(&app, "/api/tasks", json!({ "matterId": secret, "title": "Prepare Heron term sheet", "dueOn": now() + 2 * DAY })).await;
+    let (_, time) = post(&app, &format!("/api/matters/{secret}/time"), json!({ "workedOn": now() - DAY, "minutes": 60, "description": "Heron negotiation" })).await;
+    let (_, note) = post(&app, &format!("/api/matters/{secret}/notes"), json!({ "body": "Heron valuation" })).await;
+    let (_, doc) = post(&app, "/api/documents", json!({ "matterId": secret, "kind": "letter", "title": "Heron letter of intent" })).await;
+    let (_, ledger) = post(&app, "/api/ledger", json!({ "clientId": client, "matterId": secret, "kind": "received", "amount": 2_000_000, "onDay": now() - DAY, "description": "Heron deposit" })).await;
+    let (hearing, task, time, note, doc, party, ledger) = (id(&hearing), id(&task), id(&time), id(&note), id(&doc), id(&party), id(&ledger));
+    assert_eq!(put(&app, &format!("/api/matters/{secret}/access"), json!({ "restricted": true, "staffIds": [advocate] })).await.0, StatusCode::OK);
+    let _ = clerk.clone();
+    post(&app, "/api/session/sign-out", json!({})).await;
+    assert_eq!(post(&app, "/api/session/sign-in", json!({ "staffId": clerk, "secret": "111111" })).await.1["status"], "signed_in");
+
+    // (method, path template with `{}` for the id, body). The unknown id has the shape of a real one.
+    let ghost = "00000000-0000-4000-8000-000000000000";
+    let cases: Vec<(Method, &str, &str, Option<Value>)> = vec![
+        (Method::GET, "/api/documents/{}", &doc, None),
+        (Method::PUT, "/api/documents/{}", &doc, Some(json!({ "title": "x" }))),
+        (Method::DELETE, "/api/documents/{}", &doc, None),
+        (Method::POST, "/api/documents/{}/file", &doc, Some(json!({}))),
+        (Method::PUT, "/api/tasks/{}", &task, Some(json!({ "title": "x", "dueOn": 1 }))),
+        (Method::DELETE, "/api/tasks/{}", &task, None),
+        (Method::POST, "/api/tasks/{}/done", &task, Some(json!({ "done": true }))),
+        (Method::PUT, "/api/notes/{}", &note, Some(json!({ "body": "x" }))),
+        (Method::DELETE, "/api/notes/{}", &note, None),
+        (Method::DELETE, "/api/time/{}", &time, None),
+        (Method::PUT, "/api/hearings/{}", &hearing, Some(json!({ "at": 1 }))),
+        (Method::POST, "/api/hearings/{}/cancel", &hearing, Some(json!({}))),
+        (Method::PUT, "/api/parties/{}", &party, Some(json!({ "role": "opposing_party", "name": "x" }))),
+        (Method::DELETE, "/api/parties/{}", &party, None),
+        (Method::POST, "/api/ledger/{}/reverse", &ledger, Some(json!({ "reason": "x" }))),
+        (Method::GET, "/api/papers/{}", &doc, None),
+        (Method::GET, "/api/papers/{}/file", &doc, None),
+        (Method::GET, "/api/bills/{}", &doc, None),
+        (Method::GET, "/api/fee-notes/{}", &doc, None),
+        (Method::GET, "/api/filings/{}", &doc, None),
+        (Method::GET, "/api/matters/{}", &secret, None),
+        (Method::GET, "/api/matters/{}/parties", &secret, None),
+        (Method::GET, "/api/matters/{}/hearings", &secret, None),
+        (Method::GET, "/api/matters/{}/notes", &secret, None),
+        (Method::GET, "/api/matters/{}/time", &secret, None),
+        (Method::GET, "/api/matters/{}/plea", &secret, None),
+        (Method::GET, "/api/matters/{}/documents", &secret, None),
+        (Method::GET, "/api/matters/{}/access", &secret, None),
+        (Method::PUT, "/api/matters/{}/access", &secret, Some(json!({ "restricted": false, "staffIds": [] }))),
+    ];
+    let mut checked = 0;
+    for (method, template, real, body) in cases {
+        let hidden = raw(&app, method.clone(), &template.replace("{}", real), body.clone()).await;
+        let unknown = raw(&app, method.clone(), &template.replace("{}", ghost), body.clone()).await;
+        let label = format!("{method} {template}");
+        let text = String::from_utf8_lossy(&hidden.2).to_string();
+        for needle in ["Heron", real, "restricted"] {
+            assert!(!text.contains(needle), "{label} leaked {needle}: {text}");
+        }
+        // The `/access` route checks for itself and is allowed to say "forbidden" to a non-administrator; what matters
+        // is that a hidden matter and an unknown one agree.
+        assert_eq!(hidden, unknown, "{label}: hidden and unknown differ ({:?} vs {:?})", String::from_utf8_lossy(&hidden.2), String::from_utf8_lossy(&unknown.2));
+        assert!(hidden.0 == StatusCode::NOT_FOUND || hidden.0 == StatusCode::FORBIDDEN, "{label} gave {}", hidden.0);
+        checked += 1;
+    }
+    assert!(checked > 25);
+}

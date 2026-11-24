@@ -56,7 +56,15 @@ export function ConflictCheck({ name, exceptMatter, asClient = false }: { name: 
       <ul className="flex flex-col gap-1">
         {hits.slice(0, 6).map((h, i) => (
           <li key={i} className="text-muted-foreground">
-            <span className="text-foreground">{h.name}</span>, {partyRoleLabel(h.role).toLowerCase()}
+            {h.restricted ? (
+              <>
+                {partyRoleLabel(h.role)}: {m["conflict.restricted"]()}
+              </>
+            ) : (
+              <>
+                <span className="text-foreground">{h.name}</span>, {partyRoleLabel(h.role).toLowerCase()}
+              </>
+            )}
             {h.matterId && h.matterTitle && (
               <>
                 {' · '}

@@ -11,6 +11,7 @@ use pleadli_interchange::pairing::{self, KIND_RESPONSE};
 use serde::Serialize;
 use sqlx::{FromRow, SqlitePool};
 
+use super::audit;
 use super::hearings::{self, HearingInput};
 use super::notes::{self, NoteInput};
 use super::error::{invalid, DomainError};
@@ -101,14 +102,16 @@ pub struct Link {
     pub invite_expires_at: i64,
     pub responded_at: Option<i64>,
     pub trusted_at: Option<i64>,
+    pub revoked_at: Option<i64>,
+    pub revoked_reason: Option<String>,
 }
 
 pub async fn list_links(pool: &SqlitePool) -> Result<Vec<Link>, DomainError> {
-    Ok(sqlx::query_as("SELECT id, intended_court, status, court_name, fingerprint, invite_expires_at, responded_at, trusted_at FROM court_links ORDER BY created_at DESC").fetch_all(pool).await?)
+    Ok(sqlx::query_as("SELECT id, intended_court, status, court_name, fingerprint, invite_expires_at, responded_at, trusted_at, revoked_at, revoked_reason FROM court_links ORDER BY created_at DESC").fetch_all(pool).await?)
 }
 
 async fn get_link(pool: &SqlitePool, id: &str) -> Result<Link, DomainError> {
-    sqlx::query_as("SELECT id, intended_court, status, court_name, fingerprint, invite_expires_at, responded_at, trusted_at FROM court_links WHERE id = ?").bind(id).fetch_optional(pool).await?.ok_or_else(|| DomainError::NotFound("No such connection.".into()))
+    sqlx::query_as("SELECT id, intended_court, status, court_name, fingerprint, invite_expires_at, responded_at, trusted_at, revoked_at, revoked_reason FROM court_links WHERE id = ?").bind(id).fetch_optional(pool).await?.ok_or_else(|| DomainError::NotFound("No such connection.".into()))
 }
 
 /// An invitation file for one court registry, open for `valid_days`.
@@ -141,6 +144,11 @@ async fn court_public(pool: &SqlitePool, link_id: &str) -> Result<(PublicIdentit
     }
 }
 
+/// A date as the firm reads it, in the institution's own zone.
+fn long_date(ms: i64) -> String {
+    chrono::DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&pleadli_node_core::timezone::offset_at(ms)).format("%-d %B %Y").to_string()).unwrap_or_default()
+}
+
 fn normal(code: &str) -> String {
     code.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_uppercase()
 }
@@ -159,6 +167,25 @@ pub async fn trust_link(pool: &SqlitePool, id: &str, typed_fingerprint: &str) ->
     let (court, _) = court_public(pool, id).await?;
     let bytes = pairing::make_confirmation(&me, &court, id, "trusted", None).map_err(|e| DomainError::Invalid(e.to_string()))?;
     sqlx::query("UPDATE court_links SET status = 'trusted', trusted_at = ? WHERE id = ?").bind(now()).bind(id).execute(pool).await?;
+    Ok((get_link(pool, id).await?, bytes))
+}
+
+/// The firm ends a registry's connection, with the reason a person gave. The registry is told the same reason in a signed
+/// notice (returned to be sent on), nothing more is taken from it, and the relay link is ended later, once the notice has been collected.
+pub async fn revoke_link(pool: &SqlitePool, id: &str, reason: &str) -> Result<(Link, Vec<u8>), DomainError> {
+    let link = get_link(pool, id).await?;
+    if link.status != "trusted" {
+        return bad("Only a trusted court registry can be ended.");
+    }
+    let reason = reason.trim();
+    if reason.is_empty() {
+        return bad("Say why the connection is being ended.");
+    }
+    let me = require_identity(pool).await?;
+    let (court, _) = court_public(pool, id).await?;
+    let bytes = pairing::make_confirmation(&me, &court, id, "revoked", Some(reason)).map_err(|e| DomainError::Invalid(e.to_string()))?;
+    pleadli_node_core::hub::set_revoked(pool, super::relay::COURTS, id, reason, &["trusted"]).await?;
+    let _ = audit::log(pool, audit::Entry::new("court_link_revoked").detail(format!("{}: {reason}", link.court_name.clone().unwrap_or_default()))).await;
     Ok((get_link(pool, id).await?, bytes))
 }
 
@@ -224,7 +251,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     let row: Option<(String, String)> = sqlx::query_as("SELECT id, status FROM court_links WHERE court_id = ? ORDER BY (status = 'trusted') DESC, created_at DESC LIMIT 1").bind(&header.from.id).fetch_optional(pool).await?;
     let Some((link_id, status)) = row else { return bad("This package is from an office this firm has not connected to. Nothing was kept.") };
     if status != "trusted" {
-        return bad("That office is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "This firm has ended its connection with that office. Nothing was kept." } else { "That office is not confirmed as trusted. Nothing was kept." });
     }
     let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM notices_in WHERE id = ?").bind(&header.id).fetch_one(pool).await?;
     if seen > 0 {
@@ -237,7 +264,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         other => DomainError::Invalid(other.to_string()),
     })?;
     let notice: CourtNoticePayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| DomainError::Invalid("The notice inside the package could not be read.".into()))?;
-    if notice.notice_key.trim().is_empty() || notice.court_number.trim().is_empty() || !matches!(notice.kind.as_str(), "hearing" | "order") || (notice.kind == "hearing" && notice.at.is_none()) || (notice.kind == "order" && notice.paragraphs.is_empty()) {
+    if notice.notice_key.trim().is_empty() || notice.court_number.trim().is_empty() || !matches!(notice.kind.as_str(), "hearing" | "order" | "outcome") || (matches!(notice.kind.as_str(), "hearing" | "outcome") && notice.at.is_none()) || (matches!(notice.kind.as_str(), "order" | "outcome") && notice.paragraphs.is_empty()) {
         return bad("The notice is incomplete: it needs the court's key, the case number, a kind, and a date or the order's wording.");
     }
     let mut tx = pleadli_node_core::db::begin_write(pool).await?;
@@ -268,11 +295,26 @@ pub async fn file_to_court(pool: &SqlitePool, matter_id: &str, kind: &str, title
         return bad("A filing needs a title and its text.");
     }
     let me = require_identity(pool).await?;
-    let row: Option<(Option<String>, String, Option<String>)> = sqlx::query_as("SELECT court_number, title, our_ref FROM matters WHERE id = ?").bind(matter_id).fetch_optional(pool).await?;
-    let Some((court_number, matter_title, our_ref)) = row else { return Err(DomainError::NotFound("Matter not found.".into())) };
+    let row: Option<(Option<String>, String, Option<String>, Option<String>)> = sqlx::query_as("SELECT court_number, title, our_ref, court_id FROM matters WHERE id = ?").bind(matter_id).fetch_optional(pool).await?;
+    let Some((court_number, matter_title, our_ref, bound_court)) = row else { return Err(DomainError::NotFound("Matter not found.".into())) };
     let Some(court_number) = court_number.filter(|n| !n.trim().is_empty()) else { return bad("This matter has no court case number yet. Put the number the court gave on the matter first.") };
-    let link_id: Option<String> = sqlx::query_scalar("SELECT id FROM court_links WHERE status = 'trusted' ORDER BY trusted_at DESC LIMIT 1").fetch_optional(pool).await?;
-    let Some(link_id) = link_id else { return bad("No court registry has confirmed this firm yet. Connect to a registry first.") };
+    let link_id: Option<String> = if let Some(bound) = &bound_court {
+        let found: Option<String> = sqlx::query_scalar("SELECT id FROM court_links WHERE status = 'trusted' AND court_id = ? LIMIT 1").bind(bound).fetch_optional(pool).await?;
+        if found.is_none() {
+            return bad("This matter belongs to a court this firm is no longer connected to. Connect to that court again before filing.");
+        }
+        found
+    } else {
+        let trusted: Vec<String> = sqlx::query_scalar("SELECT id FROM court_links WHERE status = 'trusted' ORDER BY trusted_at DESC").fetch_all(pool).await?;
+        if trusted.len() > 1 {
+            return bad("This firm is connected to more than one court, and this matter is not tied to one yet. File a notice from the right court on this matter first.");
+        }
+        trusted.into_iter().next()
+    };
+    let Some(link_id) = link_id else {
+        let ended: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM court_links WHERE status = 'revoked'").fetch_one(pool).await?;
+        return bad(if ended > 0 { "This firm has ended its connection with the court registry. Connect to a registry again before filing." } else { "No court registry has confirmed this firm yet. Connect to a registry first." });
+    };
     let (court, _) = court_public(pool, &link_id).await?;
     let firm: String = sqlx::query_scalar("SELECT office_name FROM firm_identity").fetch_one(pool).await?;
     let key = uuid::Uuid::new_v4().to_string();
@@ -293,6 +335,7 @@ pub async fn file_to_court(pool: &SqlitePool, matter_id: &str, kind: &str, title
         .bind(now())
         .execute(&mut *tx)
         .await?;
+    sqlx::query("UPDATE matters SET court_id = (SELECT court_id FROM court_links WHERE id = ?) WHERE id = ? AND court_id IS NULL").bind(&link_id).bind(matter_id).execute(&mut *tx).await?;
     tx.commit().await?;
     let _ = matter_title;
     Ok((bytes, format!("filing-{}-{}.pxpkg", kind.replace('_', "-"), seq)))
@@ -321,7 +364,7 @@ async fn import_filing_receipt(pool: &SqlitePool, bytes: &[u8], peeked: envelope
     let row: Option<(String, String)> = sqlx::query_as("SELECT id, status FROM court_links WHERE court_id = ? ORDER BY (status = 'trusted') DESC, created_at DESC LIMIT 1").bind(&header.from.id).fetch_optional(pool).await?;
     let Some((link_id, status)) = row else { return bad("This package is from an office this firm has not connected to. Nothing was kept.") };
     if status != "trusted" {
-        return bad("That office is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "This firm has ended its connection with that office. Nothing was kept." } else { "That office is not confirmed as trusted. Nothing was kept." });
     }
     let (court, _) = court_public(pool, &link_id).await?;
     let opened = envelope::open(me, peeked, &court).map_err(|e| match e {
@@ -354,7 +397,9 @@ pub struct IncomingNotice {
 }
 
 pub async fn list_incoming(pool: &SqlitePool) -> Result<Vec<IncomingNotice>, DomainError> {
-    Ok(sqlx::query_as("SELECT i.id, l.court_name, i.status, i.sent_at, i.received_at, i.decided_at, i.return_reason, i.matter_id, i.payload FROM notices_in i JOIN court_links l ON l.id = i.link_id ORDER BY i.received_at DESC").fetch_all(pool).await?)
+    // A notice already filed on a restricted matter is that matter's, so it is not listed for anyone outside it.
+    let sql = format!("SELECT i.id, l.court_name, i.status, i.sent_at, i.received_at, i.decided_at, i.return_reason, i.matter_id, i.payload FROM notices_in i JOIN court_links l ON l.id = i.link_id WHERE {} ORDER BY i.received_at DESC", super::access::on("i.matter_id"));
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(sql)).fetch_all(pool).await?)
 }
 
 /// The receipt, sealed to the office and recorded as sent.
@@ -397,8 +442,8 @@ async fn pending(pool: &SqlitePool, package_id: &str) -> Result<(String, CourtNo
 /// never filed on another case. Returns what was made and the receipt to send back.
 pub async fn file_notice(pool: &SqlitePool, package_id: &str, matter_id: &str, decided_by: &str) -> Result<(String, Vec<u8>), DomainError> {
     let (link_id, notice, received_at) = pending(pool, package_id).await?;
-    let matter: Option<(Option<String>, String)> = sqlx::query_as("SELECT court_number, status FROM matters WHERE id = ?").bind(matter_id).fetch_optional(pool).await?;
-    let Some((court_number, status)) = matter else { return bad("Choose the matter this notice belongs to.") };
+    let matter: Option<(Option<String>, String, Option<String>)> = sqlx::query_as("SELECT court_number, status, court_id FROM matters WHERE id = ?").bind(matter_id).fetch_optional(pool).await?;
+    let Some((court_number, status, bound_court)) = matter else { return bad("Choose the matter this notice belongs to.") };
     if status != "open" {
         return bad("That matter is closed.");
     }
@@ -407,10 +452,57 @@ pub async fn file_notice(pool: &SqlitePool, package_id: &str, matter_id: &str, d
             return bad(format!("This notice is for case {}, but that matter is {}.", notice.court_number, number));
         }
     }
+    let sender_court: Option<String> = sqlx::query_scalar("SELECT court_id FROM court_links WHERE id = ?").bind(&link_id).fetch_optional(pool).await?.flatten();
+    if let (Some(bound), Some(sender)) = (&bound_court, &sender_court) {
+        if bound != sender {
+            let bound_name: Option<String> = sqlx::query_scalar("SELECT court_name FROM court_links WHERE court_id = ? AND court_name IS NOT NULL ORDER BY created_at DESC LIMIT 1").bind(bound).fetch_optional(pool).await?.flatten();
+            return bad(format!("This notice is from {}, but that matter belongs to {}. Case numbers repeat between courts, so it was not filed.", notice.court_name, bound_name.unwrap_or_else(|| "another court".into())));
+        }
+    }
     let made = if notice.kind == "hearing" {
         let purpose = notice.purpose.clone().filter(|p| hearings::PURPOSES.contains(&p.as_str())).unwrap_or_else(|| "other".to_string());
         let note = format!("Notice from {}.", notice.court_name);
         hearings::schedule(pool, matter_id, HearingInput { at: notice.at.unwrap_or_default(), purpose, courtroom: notice.courtroom.clone(), note: Some(note) }).await?.id
+    } else if notice.kind == "outcome" {
+        // The court's record of a sitting. It is kept beside the hearing, never closing it: whether counsel
+        // attended is counsel's own record.
+        let when = notice.at.map(|ms| long_date(ms)).unwrap_or_default();
+        let what = notice.purpose.clone().unwrap_or_else(|| "sitting".into()).replace('_', " ");
+        let mut body = format!("Court record of the {what} on {when}, from {}", notice.court_name);
+        for p in &notice.paragraphs {
+            body.push('\n');
+            body.push_str(p);
+        }
+        // Put the court's words on the firm's own hearing for that sitting, so the diary row shows that the court has
+        // recorded something. The hearing is not closed: whether counsel attended is counsel's own record. If the firm
+        // never had that hearing, list it now (still to be closed by counsel) so the sitting is not only a note.
+        if let Some(at) = notice.at {
+            let purpose = notice.purpose.clone().filter(|p| hearings::PURPOSES.contains(&p.as_str())).unwrap_or_else(|| "other".to_string());
+            let record = notice.paragraphs.join(" ");
+            let found = sqlx::query("UPDATE hearings SET court_record = ? WHERE id = (SELECT id FROM hearings WHERE matter_id = ? AND purpose = ? AND ABS(at - ?) < 43200000 ORDER BY ABS(at - ?) LIMIT 1)")
+                .bind(&record)
+                .bind(matter_id)
+                .bind(&purpose)
+                .bind(at)
+                .bind(at)
+                .execute(pool)
+                .await?
+                .rows_affected();
+            if found == 0 {
+                let note = format!("Listed from the court's record of the sitting, from {}.", notice.court_name);
+                let listed = hearings::schedule(pool, matter_id, HearingInput { at, purpose: purpose.clone(), courtroom: notice.courtroom.clone(), note: Some(note) }).await?;
+                sqlx::query("UPDATE hearings SET court_record = ? WHERE id = ?").bind(&record).bind(&listed.id).execute(pool).await?;
+            }
+            // The date the court fixed when it adjourned goes into the diary too, unless the firm already has a hearing then.
+            if let Some(next) = notice.next_at {
+                let have: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM hearings WHERE matter_id = ? AND ABS(at - ?) < 43200000").bind(matter_id).bind(next).fetch_one(pool).await?;
+                if have == 0 {
+                    let note = format!("Date fixed by the court when it adjourned the sitting, from {}.", notice.court_name);
+                    hearings::schedule(pool, matter_id, HearingInput { at: next, purpose, courtroom: notice.courtroom.clone(), note: Some(note) }).await?;
+                }
+            }
+        }
+        notes::add_note(pool, matter_id, NoteInput { body }).await?.id
     } else {
         let mut body = format!("{} ({}), from {}", notice.title, notice.reference.clone().unwrap_or_else(|| notice.court_number.clone()), notice.court_name);
         for p in &notice.paragraphs {
@@ -419,6 +511,9 @@ pub async fn file_notice(pool: &SqlitePool, package_id: &str, matter_id: &str, d
         }
         notes::add_note(pool, matter_id, NoteInput { body }).await?.id
     };
+    if let Some(sender) = &sender_court {
+        sqlx::query("UPDATE matters SET court_id = ? WHERE id = ? AND court_id IS NULL").bind(sender).bind(matter_id).execute(pool).await?;
+    }
     sqlx::query("UPDATE notices_in SET status = 'filed', decided_at = ?, decided_by = ?, matter_id = ?, outcome_ref = ? WHERE id = ?").bind(now()).bind(decided_by).bind(matter_id).bind(&made).bind(package_id).execute(pool).await?;
     let receipt = CourtNoticeReceiptPayload { notice_package_id: package_id.to_string(), notice_key: notice.notice_key, outcome: "filed".into(), reason: None, received_at, decided_at: now(), decided_by: Some(decided_by.to_string()) };
     Ok((made, seal_receipt(pool, &link_id, package_id, &receipt).await?))
@@ -491,6 +586,29 @@ mod tests {
         assert_eq!((receipt.outcome.as_str(), receipt.notice_key.as_str()), ("filed", "s1"));
 
         // The firm files a document in the case; the court answers.
+        // The court's record of a sitting is filed as a note and does not close the firm's hearing.
+        let outcome = CourtNoticePayload { notice_key: "s1:outcome".into(), kind: "outcome".into(), title: "Record of sitting".into(), paragraphs: vec!["Held. Plea of not guilty entered.".into()], ..hearing.clone() };
+        assert_eq!(import_package(&pool, &seal(20, &outcome)).await.unwrap().kind, KIND_COURT_NOTICE);
+        let rec = list_incoming(&pool).await.unwrap().into_iter().find(|i| i.payload.contains("s1:outcome")).unwrap();
+        let (rec_note, _) = file_notice(&pool, &rec.id, "m1", "Clerk").await.unwrap();
+        assert!(notes::list_notes(&pool, "m1").await.unwrap().iter().any(|n| n.id == rec_note && n.body.contains("Court record of the plea") && n.body.contains("Plea of not guilty entered.")));
+        assert!(hearings::list_for_matter(&pool, "m1").await.unwrap().iter().all(|h| h.status == "scheduled"), "the hearing is still the firm's to close");
+        let plea = hearings::list_for_matter(&pool, "m1").await.unwrap().into_iter().find(|h| h.purpose == "plea").unwrap();
+        assert_eq!(plea.court_record.as_deref(), Some("Held. Plea of not guilty entered."), "the hearing row carries the court's record");
+        // A record of a sitting the firm never had listed: the sitting is listed from it (still to be closed by counsel)
+        // and the date the court fixed when it adjourned goes into the diary.
+        let before = hearings::list_for_matter(&pool, "m1").await.unwrap().len();
+        let day = 86_400_000i64;
+        let (sat, next) = (hearing.at.unwrap() + 40 * day, hearing.at.unwrap() + 80 * day);
+        let unmatched = CourtNoticePayload { notice_key: "s9:outcome".into(), kind: "outcome".into(), title: "Record of sitting".into(), at: Some(sat), purpose: Some("mention".into()), next_at: Some(next), paragraphs: vec!["Adjourned. Reason: prisoner not produced.".into()], ..hearing.clone() };
+        import_package(&pool, &seal(40, &unmatched)).await.unwrap();
+        let un = list_incoming(&pool).await.unwrap().into_iter().find(|i| i.payload.contains("s9:outcome")).unwrap();
+        file_notice(&pool, &un.id, "m1", "Clerk").await.unwrap();
+        let after = hearings::list_for_matter(&pool, "m1").await.unwrap();
+        assert_eq!(after.len(), before + 2, "the sitting and the next date are both listed");
+        let listed = after.iter().find(|h| h.at == sat).unwrap();
+        assert_eq!((listed.status.as_str(), listed.court_record.as_deref()), ("scheduled", Some("Adjourned. Reason: prisoner not produced.")));
+        assert!(after.iter().any(|h| h.at == next && h.court_record.is_none()), "the next date is in the diary");
         assert!(file_to_court(&pool, "m1", "poem", "T", &["x".into()], None).await.is_err(), "the kind is checked");
         assert!(file_to_court(&pool, "m1", "application", "Application for bail", &[], None).await.is_err(), "a filing needs text");
         sqlx::query("INSERT INTO matters (id, client_id, title) VALUES ('m3', 'c1', 'No number')").execute(&pool).await.unwrap();
@@ -507,6 +625,18 @@ mod tests {
         assert!(import_package(&pool, &sealr(11, &answer)).await.is_err(), "answered once");
         let listed = list_filings(&pool, "m1").await.unwrap();
         assert_eq!((listed.len(), listed[0].outcome.as_deref()), (1, Some("accepted")));
+
+        // Case numbers repeat between courts: m1 now belongs to the first court, so another court's notice with the same number is refused.
+        let first_court: Option<String> = sqlx::query_scalar("SELECT court_id FROM matters WHERE id = 'm1'").fetch_one(&pool).await.unwrap();
+        assert!(first_court.is_some(), "filing bound the matter to its court");
+        sqlx::query("INSERT INTO court_links (id, intended_court, status, invite_nonce, invite_expires_at, court_id, court_name) VALUES ('other-link', 'Other', 'trusted', 'n', 0, 'other-court', 'Other High Court')").execute(&pool).await.unwrap();
+        let same_number = CourtNoticePayload { notice_key: "x1".into(), court_name: "Other High Court".into(), ..hearing.clone() };
+        sqlx::query("INSERT INTO notices_in (id, link_id, kind, seq, sent_at, received_at, package_sha256, payload) VALUES ('pkg-x1', 'other-link', 'court_notice', 1, 1, 1, 'h', ?)").bind(serde_json::to_string(&same_number).unwrap()).execute(&pool).await.unwrap();
+        let refused = file_notice(&pool, "pkg-x1", "m1", "Clerk").await.unwrap_err().to_string();
+        assert!(refused.contains("Other High Court") && refused.contains("belongs to"), "{refused}");
+        assert!(file_to_court(&pool, "m1", "application", "T", &["x".into()], None).await.is_ok(), "m1 files to its own court although two are trusted");
+        sqlx::query("UPDATE matters SET court_id = NULL WHERE id = 'm1'").execute(&pool).await.unwrap();
+        assert!(file_to_court(&pool, "m1", "application", "T", &["x".into()], None).await.is_err(), "two trusted courts and no binding: ask for a notice first");
         pool.close().await;
     }
 }

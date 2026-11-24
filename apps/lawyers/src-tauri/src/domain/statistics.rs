@@ -67,7 +67,9 @@ pub struct Statistics {
     pub hearings_by_status: Vec<KeyCount>,
     pub adjournments_by_cause: Vec<KeyCount>,
     pub clocks: Clocks,
-    pub money: Money,
+    /// Firm-wide money: only for the finance scope (accounts, administrators). `None` for everyone else: a figure summed from the
+    /// matters one may see would be wrong, and the real one is not for ordinary staff.
+    pub money: Option<Money>,
     pub minutes_recorded: i64,
     pub pro_bono_minutes: i64,
     pub register_by_kind: Vec<KeyCount>,
@@ -78,34 +80,40 @@ const SIGNED: &str = "CASE WHEN reverses IS NULL THEN amount ELSE -amount END";
 
 pub async fn get(pool: &SqlitePool, year: i32) -> Result<Statistics, sqlx::Error> {
     let (from, to) = year_bounds(year);
+    // Only what the person asking may see is counted: a total that included a restricted matter would say it exists.
+    let seen = super::access::visible("matters");
+    let finance = super::access::finance_scope();
+    let hearing_seen = super::access::on("hearings.matter_id");
+    let time_seen = super::access::on("time_entries.matter_id");
+    let register_seen = super::access::on("register_entries.matter_id");
 
-    let by_type = sqlx::query_as::<_, TypeCount>(
+    let by_type = sqlx::query_as::<_, TypeCount>(sqlx::AssertSqlSafe(format!(
         "SELECT matter_type,
             SUM(status = 'open') AS open,
             SUM(created_at >= ?1 AND created_at < ?2) AS opened,
             SUM(status = 'closed' AND closed_at >= ?1 AND closed_at < ?2) AS closed
-         FROM matters GROUP BY matter_type ORDER BY open DESC, matter_type",
-    )
+         FROM matters WHERE {seen} GROUP BY matter_type ORDER BY open DESC, matter_type",
+    )))
     .bind(from)
     .bind(to)
     .fetch_all(pool)
     .await?;
 
-    let open_by_stage = sqlx::query_as::<_, StageCount>(
-        "SELECT matter_type, stage, COUNT(*) AS count FROM matters WHERE status = 'open' GROUP BY matter_type, stage ORDER BY matter_type, count DESC",
-    )
+    let open_by_stage = sqlx::query_as::<_, StageCount>(sqlx::AssertSqlSafe(format!(
+        "SELECT matter_type, stage, COUNT(*) AS count FROM matters WHERE status = 'open' AND {seen} GROUP BY matter_type, stage ORDER BY matter_type, count DESC",
+    )))
     .fetch_all(pool)
     .await?;
 
-    let opened_by_engagement = sqlx::query_as::<_, KeyCount>(
-        "SELECT engagement AS key, COUNT(*) AS count FROM matters WHERE created_at >= ? AND created_at < ? GROUP BY engagement ORDER BY count DESC",
-    )
+    let opened_by_engagement = sqlx::query_as::<_, KeyCount>(sqlx::AssertSqlSafe(format!(
+        "SELECT engagement AS key, COUNT(*) AS count FROM matters WHERE created_at >= ? AND created_at < ? AND {seen} GROUP BY engagement ORDER BY count DESC",
+    )))
     .bind(from)
     .bind(to)
     .fetch_all(pool)
     .await?;
 
-    let created: Vec<i64> = sqlx::query_scalar("SELECT created_at FROM matters WHERE created_at >= ? AND created_at < ?").bind(from).bind(to).fetch_all(pool).await?;
+    let created: Vec<i64> = sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT created_at FROM matters WHERE created_at >= ? AND created_at < ? AND {seen}"))).bind(from).bind(to).fetch_all(pool).await?;
     let mut opened_by_month = vec![0; 12];
     for at in created {
         if year_of(at) == year {
@@ -114,16 +122,16 @@ pub async fn get(pool: &SqlitePool, year: i32) -> Result<Statistics, sqlx::Error
         }
     }
 
-    let hearings_by_status = sqlx::query_as::<_, KeyCount>(
-        "SELECT status AS key, COUNT(*) AS count FROM hearings WHERE at >= ? AND at < ? GROUP BY status ORDER BY count DESC",
-    )
+    let hearings_by_status = sqlx::query_as::<_, KeyCount>(sqlx::AssertSqlSafe(format!(
+        "SELECT status AS key, COUNT(*) AS count FROM hearings WHERE at >= ? AND at < ? AND {hearing_seen} GROUP BY status ORDER BY count DESC",
+    )))
     .bind(from)
     .bind(to)
     .fetch_all(pool)
     .await?;
-    let adjournments_by_cause = sqlx::query_as::<_, KeyCount>(
-        "SELECT COALESCE(adjourn_reason, 'other') AS key, COUNT(*) AS count FROM hearings WHERE status = 'adjourned' AND at >= ? AND at < ? GROUP BY key ORDER BY count DESC",
-    )
+    let adjournments_by_cause = sqlx::query_as::<_, KeyCount>(sqlx::AssertSqlSafe(format!(
+        "SELECT COALESCE(adjourn_reason, 'other') AS key, COUNT(*) AS count FROM hearings WHERE status = 'adjourned' AND at >= ? AND at < ? AND {hearing_seen} GROUP BY key ORDER BY count DESC",
+    )))
     .bind(from)
     .bind(to)
     .fetch_all(pool)
@@ -139,10 +147,10 @@ pub async fn get(pool: &SqlitePool, year: i32) -> Result<Statistics, sqlx::Error
         }
     }
 
-    let billed: i64 = sqlx::query_scalar(
+    let billed: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         "SELECT COALESCE(SUM(l.amount), 0) FROM fee_note_lines l JOIN fee_notes f ON f.id = l.fee_note_id
          WHERE f.status = 'issued' AND f.issued_on >= ? AND f.issued_on < ?",
-    )
+    )))
     .bind(from)
     .bind(to)
     .fetch_one(pool)
@@ -153,27 +161,24 @@ pub async fn get(pool: &SqlitePool, year: i32) -> Result<Statistics, sqlx::Error
     };
     let collected = sum("('to_office', 'fee_received')").await?;
     let disbursed = sum("('disbursement')").await?;
-    let held_for_clients: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT COALESCE(SUM(CASE WHEN kind = 'received' THEN 1 ELSE -1 END * ({SIGNED})), 0) FROM ledger_entries WHERE account = 'client'"
-    )))
-    .fetch_one(pool)
-    .await?;
+    // One source of truth for what is held for clients: the same ledger sum the reconciliation uses.
+    let held_for_clients = super::money::reconciliation(pool).await?.client_ledger_liability;
 
     let minutes_recorded: i64 =
-        sqlx::query_scalar("SELECT COALESCE(SUM(minutes), 0) FROM time_entries WHERE worked_on >= ? AND worked_on < ?").bind(from).bind(to).fetch_one(pool).await?;
+        sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT COALESCE(SUM(minutes), 0) FROM time_entries WHERE worked_on >= ? AND worked_on < ? AND {time_seen}"))).bind(from).bind(to).fetch_one(pool).await?;
     let pro = compliance::get(pool, year).await?;
     let pro_bono_minutes = pro.advocates.iter().map(|a| a.pro_bono_minutes).sum::<i64>() + pro.other_pro_bono_minutes;
 
-    let register_by_kind = sqlx::query_as::<_, KeyCount>(
+    let register_by_kind = sqlx::query_as::<_, KeyCount>(sqlx::AssertSqlSafe(format!(
         "SELECT register || ':' || kind AS key, COUNT(*) AS count FROM register_entries
-         WHERE voided_at IS NULL AND on_day >= ? AND on_day < ? GROUP BY register, kind ORDER BY count DESC",
-    )
+         WHERE voided_at IS NULL AND on_day >= ? AND on_day < ? AND {register_seen} GROUP BY register, kind ORDER BY count DESC",
+    )))
     .bind(from)
     .bind(to)
     .fetch_all(pool)
     .await?;
 
-    let first: Option<i64> = sqlx::query_scalar("SELECT MIN(created_at) FROM matters").fetch_one(pool).await?;
+    let first: Option<i64> = sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT MIN(created_at) FROM matters WHERE {seen}"))).fetch_one(pool).await?;
     let now_year = year_of(chrono::Utc::now().timestamp_millis());
     let first_year = first.map(year_of).unwrap_or(now_year).min(now_year);
     let years = (first_year..=now_year).rev().collect();
@@ -188,7 +193,7 @@ pub async fn get(pool: &SqlitePool, year: i32) -> Result<Statistics, sqlx::Error
         hearings_by_status,
         adjournments_by_cause,
         clocks: open_clocks,
-        money: Money { billed, collected, disbursed, held_for_clients },
+        money: finance.then_some(Money { billed, collected, disbursed, held_for_clients }),
         minutes_recorded,
         pro_bono_minutes,
         register_by_kind,

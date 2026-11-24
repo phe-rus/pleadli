@@ -93,14 +93,17 @@ pub async fn get(pool: &SqlitePool, id: &str) -> Result<Option<Client>, sqlx::Er
 
 pub async fn list(pool: &SqlitePool, query: &str, limit: i64) -> Result<Vec<ClientSummary>, sqlx::Error> {
     let like = format!("%{}%", query.trim().replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
-    sqlx::query_as::<_, ClientSummary>(
+    // The counts are of the matters the person asking may see, so a client whose only matter is restricted does not
+    // show that it exists. (The client themselves stays listed: conflict checking needs the name.)
+    let seen = super::access::visible("m");
+    sqlx::query_as::<_, ClientSummary>(sqlx::AssertSqlSafe(format!(
         "SELECT c.id, c.name, c.kind, c.phone, c.email, c.address, c.custody, c.custody_place, c.notes,
-            (SELECT COUNT(*) FROM matters m WHERE m.client_id = c.id) AS matters,
-            (SELECT COUNT(*) FROM matters m WHERE m.client_id = c.id AND m.status = 'open') AS open_matters,
+            (SELECT COUNT(*) FROM matters m WHERE m.client_id = c.id AND {seen}) AS matters,
+            (SELECT COUNT(*) FROM matters m WHERE m.client_id = c.id AND m.status = 'open' AND {seen}) AS open_matters,
             c.created_at
          FROM clients c WHERE c.name LIKE ?1 ESCAPE '\\' OR COALESCE(c.phone, '') LIKE ?1 ESCAPE '\\'
-         ORDER BY c.name COLLATE NOCASE LIMIT ?2",
-    )
+         ORDER BY c.name COLLATE NOCASE LIMIT ?2"
+    )))
     .bind(like)
     .bind(limit.clamp(1, 500))
     .fetch_all(pool)

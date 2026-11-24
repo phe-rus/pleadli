@@ -55,6 +55,15 @@ pub struct ConflictHit {
     pub matter_status: Option<String>,
     /// Every word of the shorter name was found.
     pub strong: bool,
+    /// The name is on a restricted matter the person asking may not see: only that fact is given.
+    pub restricted: bool,
+}
+
+impl ConflictHit {
+    fn restricted(role: &str, strong: bool) -> Self {
+        // The role is kept (a conflict is of a client or an opponent); the name, matter and status are not.
+        ConflictHit { role: role.to_string(), name: String::new(), matter_id: None, matter_title: None, matter_status: None, strong, restricted: true }
+    }
 }
 
 const NOISE: [&str; 16] = ["and", "the", "of", "ltd", "limited", "co", "company", "plc", "inc", "uganda", "advocates", "sons", "mr", "mrs", "ms", "dr"];
@@ -152,29 +161,43 @@ pub async fn conflicts(pool: &SqlitePool, name: &str, except_matter: Option<&str
     if wanted.is_empty() {
         return Ok(Vec::new());
     }
-    let clients: Vec<(String, Option<String>, Option<String>, Option<String>)> = sqlx::query_as(
-        "SELECT c.name, m.id, m.title, m.status FROM clients c LEFT JOIN matters m ON m.client_id = c.id",
-    )
+    // A restricted matter still counts as a conflict, but a person outside it is told only that the name is known
+    // elsewhere in the practice, not whose matter it is, what it is called or where it stands.
+    let seen = super::access::visible("m");
+    let clients: Vec<(String, Option<String>, Option<String>, Option<String>, Option<i64>)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT c.name, m.id, m.title, m.status, CASE WHEN m.id IS NULL THEN NULL WHEN {seen} THEN 1 ELSE 0 END FROM clients c LEFT JOIN matters m ON m.client_id = c.id"
+    )))
     .fetch_all(pool)
     .await?;
-    let parties: Vec<(String, String, String, String, String)> =
-        sqlx::query_as("SELECT p.name, p.role, m.id, m.title, m.status FROM parties p JOIN matters m ON m.id = p.matter_id").fetch_all(pool).await?;
+    let parties: Vec<(String, String, String, String, String, i64)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT p.name, p.role, m.id, m.title, m.status, CASE WHEN {seen} THEN 1 ELSE 0 END FROM parties p JOIN matters m ON m.id = p.matter_id"
+    )))
+    .fetch_all(pool)
+    .await?;
 
     let mut hits = Vec::new();
-    for (who, matter_id, title, status) in clients {
+    for (who, matter_id, title, status, may_see) in clients {
         if matter_id.is_some() && matter_id.as_deref() == except_matter {
             continue;
         }
         if let Some(strong) = compare(&wanted, &words(&who)) {
-            hits.push(ConflictHit { role: "client".to_string(), name: who, matter_id, matter_title: title, matter_status: status, strong });
+            if may_see == Some(0) {
+                hits.push(ConflictHit::restricted("client", strong));
+            } else {
+                hits.push(ConflictHit { role: "client".to_string(), name: who, matter_id, matter_title: title, matter_status: status, strong, restricted: false });
+            }
         }
     }
-    for (who, role, matter_id, title, status) in parties {
+    for (who, role, matter_id, title, status, may_see) in parties {
         if Some(matter_id.as_str()) == except_matter {
             continue;
         }
         if let Some(strong) = compare(&wanted, &words(&who)) {
-            hits.push(ConflictHit { role, name: who, matter_id: Some(matter_id), matter_title: Some(title), matter_status: Some(status), strong });
+            if may_see == 0 {
+                hits.push(ConflictHit::restricted(&role, strong));
+            } else {
+                hits.push(ConflictHit { role, name: who, matter_id: Some(matter_id), matter_title: Some(title), matter_status: Some(status), strong, restricted: false });
+            }
         }
     }
     hits.sort_by(|a, b| b.strong.cmp(&a.strong).then(a.name.cmp(&b.name)));

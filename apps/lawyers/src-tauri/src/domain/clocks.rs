@@ -323,8 +323,8 @@ pub struct PracticeClock {
 /// Every clock not yet answered on every open matter, soonest first.
 pub async fn open_clocks(pool: &SqlitePool) -> Result<Vec<PracticeClock>, sqlx::Error> {
     let Some(rules) = rules_for(&jurisdiction(pool).await?) else { return Ok(Vec::new()) };
-    let matters: Vec<(String, String, String, Option<String>)> =
-        sqlx::query_as("SELECT id, matter_type, title, court_number FROM matters WHERE status = 'open' AND EXISTS (SELECT 1 FROM matter_events e WHERE e.matter_id = matters.id)").fetch_all(pool).await?;
+    let sql = format!("SELECT id, matter_type, title, court_number FROM matters WHERE status = 'open' AND {} AND EXISTS (SELECT 1 FROM matter_events e WHERE e.matter_id = matters.id)", super::access::visible("matters"));
+    let matters: Vec<(String, String, String, Option<String>)> = sqlx::query_as(sqlx::AssertSqlSafe(sql)).fetch_all(pool).await?;
     let now = chrono::Utc::now().timestamp_millis();
     let mut out = Vec::new();
     for (id, matter_type, title, court_number) in matters {

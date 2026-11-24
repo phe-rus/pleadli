@@ -60,25 +60,26 @@ pub async fn overview(pool: &SqlitePool, from: i64, to: i64, now: i64) -> Result
     let hearings_today = hearings::diary(pool, from, to).await?;
     let upcoming = hearings::diary(pool, to, to + 7 * DAY).await?;
 
-    let attention = sqlx::query_as::<_, Attention>(
+    let visible = super::access::visible("m");
+    let attention = sqlx::query_as::<_, Attention>(sqlx::AssertSqlSafe(format!(
         "SELECT 'hearing_not_closed' AS kind, m.id AS matter_id, m.title AS matter_title, m.court_number, h.at AS at, NULL AS detail, h.id AS ref_id
            FROM hearings h JOIN matters m ON m.id = h.matter_id
-          WHERE h.status = 'scheduled' AND h.at < ?1 AND m.status = 'open'
+          WHERE h.status = 'scheduled' AND h.at < ?1 AND m.status = 'open' AND {visible}
          UNION ALL
          SELECT 'no_hearing', m.id, m.title, m.court_number, (SELECT MAX(h.at) FROM hearings h WHERE h.matter_id = m.id), NULL, NULL
            FROM matters m
-          WHERE m.status = 'open' AND m.matter_type NOT IN ('land_transaction', 'company_matter', 'advice')
+          WHERE m.status = 'open' AND m.matter_type NOT IN ('land_transaction', 'company_matter', 'advice') AND {visible}
             AND NOT EXISTS (SELECT 1 FROM hearings h WHERE h.matter_id = m.id AND h.status = 'scheduled')
          UNION ALL
          SELECT CASE WHEN t.due_on < ?1 THEN 'task_overdue' ELSE 'task_soon' END, t.matter_id, m.title, m.court_number, t.due_on, t.title, t.id
            FROM tasks t LEFT JOIN matters m ON m.id = t.matter_id
-          WHERE t.done_at IS NULL AND t.due_on IS NOT NULL AND t.due_on < ?1 + ?2 * 86400000
+          WHERE t.done_at IS NULL AND t.due_on IS NOT NULL AND t.due_on < ?1 + ?2 * 86400000 AND (t.matter_id IS NULL OR {visible})
          UNION ALL
          SELECT 'plea_unconfirmed', m.id, m.title, m.court_number, p.signed_on, NULL, NULL
            FROM plea_negotiations p JOIN matters m ON m.id = p.matter_id
-          WHERE p.status = 'agreed' AND m.status = 'open'
-         ORDER BY 1, 5",
-    )
+          WHERE p.status = 'agreed' AND m.status = 'open' AND {visible}
+         ORDER BY 1, 5"
+    )))
     .bind(from)
     .bind(SOON_DAYS)
     .fetch_all(pool)
