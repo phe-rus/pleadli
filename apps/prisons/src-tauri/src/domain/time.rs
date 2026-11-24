@@ -2,7 +2,9 @@
 //! no daylight saving, so legal dates and the s.83 before-noon rule are
 //! computed against a fixed +03:00 offset, not the machine's zone.
 
-use chrono::{DateTime, Datelike, FixedOffset, Months, NaiveDate, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, FixedOffset, Months, NaiveDate, TimeZone, Utc};
+#[cfg(test)]
+use chrono::Timelike;
 
 pub const DAY_MS: i64 = 86_400_000;
 

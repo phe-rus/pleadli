@@ -65,7 +65,7 @@ async fn send_referral(State(state): State<AppState>, Extension(actor): Extensio
     let case_id: Option<String> = sqlx::query_scalar("SELECT case_id FROM referrals WHERE id = ?").bind(&id).fetch_optional(&state.pool).await.map_err(super::internal_error)?;
     if let Some(case_id) = case_id {
         let hidden = crate::domain::cases::hidden_case_ids(&state.pool, &actor).await.map_err(super::internal_error)?;
-        if hidden.iter().any(|h| *h == case_id) {
+        if hidden.contains(&case_id) {
             return Err((StatusCode::FORBIDDEN, "You may not open that case, so you may not send it.".to_string()));
         }
     }

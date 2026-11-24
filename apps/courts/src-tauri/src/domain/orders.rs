@@ -274,12 +274,6 @@ pub async fn discard(pool: &SqlitePool, id: &str) -> Result<(), DomainError> {
     Ok(())
 }
 
-/// The institution's own offset (its configured timezone, never the computer's) now. The name is kept from when
-/// this was a fixed +3h for Uganda only.
-fn eat() -> FixedOffset {
-    pleadli_node_core::timezone::offset_at(chrono::Utc::now().timestamp_millis())
-}
-
 fn eat_time(ms: i64) -> Option<DateTime<FixedOffset>> {
     DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&pleadli_node_core::timezone::offset_at(ms)))
 }

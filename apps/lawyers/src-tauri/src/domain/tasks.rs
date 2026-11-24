@@ -14,18 +14,13 @@
 //! day the 2 working days run is read as the day of appointment; the Rules'
 //! wording should be checked before anyone relies on the exact day.
 
-use chrono::{Datelike, Duration, FixedOffset, NaiveDate, Weekday};
+use chrono::{Datelike, Duration, NaiveDate, Weekday};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqliteConnection, SqlitePool};
 use uuid::Uuid;
 
 use super::error::{check_date, clean, invalid, DomainError};
 use pleadli_node_core::db::begin_write;
-
-/// The practice's own offset (its configured timezone), now.
-fn eat() -> FixedOffset {
-    pleadli_node_core::timezone::offset_at(chrono::Utc::now().timestamp_millis())
-}
 
 pub fn eat_date(ms: i64) -> Option<NaiveDate> {
     chrono::DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&pleadli_node_core::timezone::offset_at(ms)).date_naive())
