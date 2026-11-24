@@ -19,7 +19,7 @@ const labels: RelayLabels = {
   checkNow: 'Check now',
   checking: 'Checking the connection to Pleadli…',
   connected: (address) => `Connected to Pleadli as ${address}.`,
-  stage: { queued: 'Waiting to send', sent: 'Sent', delivered: 'Delivered', attention: 'Needs attention', expired: 'Not delivered' },
+  stage: { queued: 'Waiting to send', sent: 'Sent', delivered: 'Delivered', refused: 'Turned away by the office', attention: 'Needs attention', expired: 'Not delivered' },
   turnedAway: (kind) => `Turned away: ${kind}`,
   taken: 'Received and taken in.',
   tryAgain: 'Try again',

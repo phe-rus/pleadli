@@ -7,7 +7,7 @@ import { Input } from '@pleadli/ui/input'
 import { useCallback, useEffect, useState } from 'react'
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
-const status = (s: string) => (s === 'trusted' ? m['firm.status_trusted']() : s === 'declined' ? m['firm.status_declined']() : m['firm.status_answered']())
+const status = (s: string) => (s === 'trusted' ? m['firm.status_trusted']() : s === 'declined' ? m['firm.status_declined']() : s === 'revoked' ? m['firm.status_revoked']() : m['firm.status_answered']())
 
 /** The prisons that invited this registry: answer an invitation, read their
  * confirmation. Orders are sent from the order itself. */

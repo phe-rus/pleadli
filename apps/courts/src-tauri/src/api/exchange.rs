@@ -74,6 +74,17 @@ pub async fn trust_link(State(s): State<AppState>, Path(id): Path<String>, hub: 
 }
 
 #[derive(Deserialize)]
+pub struct ReasonInput {
+    reason: String,
+}
+
+pub async fn revoke_link(State(s): State<AppState>, Path(id): Path<String>, hub: super::relay::SharedHub, Json(i): Json<ReasonInput>) -> ApiResult<WithFile<Link>> {
+    let (link, bytes) = exchange::revoke_link(&s.pool, &id, &i.reason).await?;
+    let delivery = super::relay::deliver(&hub, &bytes).await;
+    Ok(Json(WithFile { value: link, file: B64.encode(bytes), name: "court-revocation.pxpkg".into(), delivery: Some(delivery) }))
+}
+
+#[derive(Deserialize)]
 pub struct FileInput {
     file: String,
 }

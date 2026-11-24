@@ -10,6 +10,7 @@
     "identity_desc": "Mpe msajili utambulisho wake mara moja, kama ofisi za DPP zinazowasilisha kwake zinavyomjua. Hauwezi kubadilishwa baadaye.",
     "registry_name": "Jina la msajili",
     "area": "Eneo",
+    "name_differs": "Mahakama katika wasifu wako inaitwa \"{profile}\". Ofisi zinazowasilisha hapa zinaijua sajili kwa jina lililo juu, ambalo haliwezi kubadilishwa. Hakikisha ni mahakama moja.",
     "create_identity": "Unda utambulisho",
     "fingerprint": "Alama ya utambulisho {code}",
     "offices": "Ofisi za DPP",
@@ -54,7 +55,11 @@
     "nolle": "Imeondolewa na upande wa mashtaka (nolle prosequi)",
     "discontinued": "Imesitishwa na upande wa mashtaka",
     "record_withdrawal": "Rekodi kuondolewa",
-    "withdrawal_notice": "Imerekodiwa na kesi imehitimishwa. Tuma risiti."
+    "withdrawal_notice": "Imerekodiwa na kesi imehitimishwa. Tuma risiti.",
+    "end_ph": "Kwa nini muunganisho huu unakatishwa?",
+    "end": "Katisha muunganisho",
+    "ended": "Muunganisho na {name} umekatishwa. Wapelekee faili ya taarifa ikiwa hawako kwenye sanduku la posta.",
+    "ended_reason": "Sababu: {reason}"
   },
   "prison": {
     "title": "Magereza",
@@ -66,6 +71,7 @@
     "status_answered": "Imejibiwa, inalisubiri gereza",
     "status_trusted": "Linaaminika",
     "status_declined": "Limekataliwa",
+    "status_revoked": "Imekwisha",
     "read_code": "Liambie gereza msimbo huu: {code}",
     "answered_notice": "Umejibu {prison}. Walitumie faili hiyo na uwasomee msimbo ulioonyeshwa.",
     "send_title": "Tuma gerezani",
@@ -97,6 +103,7 @@
     "status_answered": "Imejibiwa, inaisubiri ofisi",
     "status_trusted": "Inaaminika",
     "status_declined": "Imekataliwa",
+    "status_revoked": "Imekwisha",
     "read_code": "Iambie ofisi msimbo huu: {code}",
     "answered_notice": "Umejibu {firm}. Itumie faili hiyo na uwasomee msimbo ulioonyeshwa.",
     "send_title": "Mjulishe wakili",

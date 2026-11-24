@@ -2,7 +2,7 @@ import { api } from '@/lib/api'
 import { invoke } from '@tauri-apps/api/core'
 
 export type RegistryIdentity = { officeId: string; officeName: string; jurisdiction: string | null; fingerprint: string }
-export type Link = { id: string; intendedOffice: string; status: string; dppName: string | null; fingerprint: string | null; inviteExpiresAt: number; respondedAt: number | null; trustedAt: number | null }
+export type Link = { id: string; intendedOffice: string; status: string; dppName: string | null; fingerprint: string | null; inviteExpiresAt: number; respondedAt: number | null; trustedAt: number | null; revokedAt: number | null; revokedReason: string | null }
 export type Incoming = { id: string; kind: string; dppName: string | null; status: string; sentAt: number; receivedAt: number; decidedAt: number | null; rejectReason: string | null; caseId: string | null; payload: string }
 type WithFile = { file: string; name: string }
 
@@ -12,6 +12,7 @@ export const listLinks = () => api('GET', '/api/exchange/links') as Promise<Link
 export const listIncoming = () => api('GET', '/api/exchange/incoming') as Promise<Incoming[]>
 export const createInvite = (intendedOffice: string, validDays: number) => api('POST', '/api/exchange/links', { body: { intendedOffice, validDays } }) as Promise<Link & WithFile>
 export const trustLink = (id: string, fingerprint: string) => api('POST', `/api/exchange/links/${encodeURIComponent(id)}/trust`, { body: { fingerprint } }) as Promise<Link & WithFile>
+export const revokeLink = (id: string, reason: string) => api('POST', `/api/exchange/links/${encodeURIComponent(id)}/revoke`, { body: { reason } }) as Promise<Link & WithFile>
 export const importPackage = (file: string) => api('POST', '/api/exchange/import', { body: { file } }) as Promise<{ kind: string; message: string }>
 export const acceptFiling = (id: string, courtNumber: string, decidedBy: string) => api('POST', `/api/exchange/incoming/${encodeURIComponent(id)}/accept`, { body: { courtNumber, decidedBy } }) as Promise<{ caseId: string } & WithFile>
 export const rejectFiling = (id: string, reason: string, decidedBy: string) => api('POST', `/api/exchange/incoming/${encodeURIComponent(id)}/reject`, { body: { reason, decidedBy } }) as Promise<WithFile>

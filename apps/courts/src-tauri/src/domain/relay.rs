@@ -26,6 +26,7 @@ pub const DPP: Links = Links { table: "dpp_links", peer_col: "dpp_id", peer: Ide
 pub const FIRMS: Links = Links { table: "firm_links", peer_col: "firm_id", peer: IdentityKind::LawFirm };
 pub const PRISONS: Links = Links { table: "prison_links", peer_col: "prison_id", peer: IdentityKind::PrisonFacility };
 pub const ALL: &[Links] = &[DPP, FIRMS, PRISONS];
+const ISSUED: &[Links] = &[DPP];
 
 pub struct CourtsAdapter {
     pub pool: SqlitePool,
@@ -99,6 +100,15 @@ impl Adapter for CourtsAdapter {
         Box::pin(async move {
             let _ = audit::log(&self.pool, Entry::new(action).detail(detail)).await;
         })
+    }
+
+    /// This registry issues the invitations to DPP offices, so it is the one that ends those links.
+    fn issued(&self) -> &'static [Links] {
+        ISSUED
+    }
+
+    fn peers(&self) -> &'static [Links] {
+        ALL
     }
 }
 
@@ -265,6 +275,53 @@ mod tests {
         let ok_filing = seal(&firm, &registry_public, KIND_FIRM_FILING, 3, serde_json::to_value(FirmFilingPayload { filing_key: "k2".into(), kind: "other".into(), title: "T".into(), court_number: "X".into(), firm_name: "Postbox Test Advocates".into(), paragraphs: vec!["The applicant prays.".into()], filed_at: 1, ..Default::default() }).unwrap());
         adapter.open(&arrived(KIND_FIRM_FILING, "ug.firm.a", ok_filing)).await.unwrap();
         assert_eq!(count(&pool, "firm_filings").await, 1);
+        pool.close().await;
+    }
+
+    /// A firm ends its link: the registry reads the signed notice, keeps the reason, takes nothing more from the firm, and
+    /// ignores a copy. A notice signed by someone else changes nothing. The registry can end the DPP's link itself, with a reason.
+    #[tokio::test]
+    async fn a_connection_that_is_ended_is_ended_on_both_sides() {
+        let pool = registry().await;
+        let adapter = CourtsAdapter { pool: pool.clone() };
+        let registry_public = exchange::require_identity(&pool).await.unwrap().public;
+
+        let firm = Identity::generate(IdentityKind::LawFirm, "Revoke Test Advocates", Some("Kampala"));
+        let (firm_invite_file, firm_invite) = pairing::make_invite(&firm, "Revoke Test Court", i64::MAX).unwrap();
+        let (flink, f_answer) = firm_exchange::accept_invite(&pool, &firm_invite_file, None).await.unwrap();
+        hub::bind(&pool, FIRMS, &flink.id, "ug.firm.r").await.unwrap();
+        let f_response = pairing::read_response(&f_answer).unwrap();
+        let confirm = |outcome: &str, who: &Identity, reason: Option<&str>| pairing::make_confirmation(who, &f_response.station, &firm_invite.invite_id, outcome, reason).unwrap();
+        adapter.open(&arrived(pairing::KIND_CONFIRMATION, "ug.firm.r", confirm("trusted", &firm, None))).await.unwrap();
+
+        let stranger = Identity::generate(IdentityKind::LawFirm, "Stranger", None);
+        refused(adapter.open(&arrived(pairing::KIND_CONFIRMATION, "ug.firm.r", confirm("revoked", &stranger, Some("Forged.")))).await);
+        assert_eq!(firm_exchange::list_links(&pool).await.unwrap()[0].status, "trusted", "a notice signed by someone else ended nothing");
+
+        adapter.open(&arrived(pairing::KIND_CONFIRMATION, "ug.firm.r", confirm("revoked", &firm, Some("We closed the practice.")))).await.unwrap();
+        let ended: (String, Option<String>) = sqlx::query_as("SELECT status, revoked_reason FROM firm_links WHERE id = ?").bind(&flink.id).fetch_one(&pool).await.unwrap();
+        assert_eq!((ended.0.as_str(), ended.1.as_deref()), ("revoked", Some("We closed the practice.")));
+        adapter.open(&arrived(pairing::KIND_CONFIRMATION, "ug.firm.r", confirm("revoked", &firm, Some("Again.")))).await.unwrap();
+        let m = refused(adapter.open(&arrived(KIND_FIRM_FILING, "ug.firm.r", seal(&firm, &registry_public, KIND_FIRM_FILING, 1, serde_json::json!({})))).await);
+        assert!(!m.is_empty());
+
+        // The registry ends the DPP's link.
+        let dpp = Identity::generate(IdentityKind::DppOffice, "Revoke Test DPP", Some("Kampala"));
+        let (link, invite_file) = exchange::create_invite(&pool, "Revoke Test DPP", 7).await.unwrap();
+        let invite = pairing::read_invite(&invite_file).unwrap();
+        hub::bind(&pool, DPP, &link.id, "ug.dpp.r").await.unwrap();
+        adapter.open(&arrived(KIND_RESPONSE, "ug.dpp.r", pairing::make_response(&dpp, &invite, None).unwrap())).await.unwrap();
+        assert!(exchange::revoke_link(&pool, &link.id, "Too early.").await.is_err());
+        let typed = exchange::list_links(&pool).await.unwrap()[0].fingerprint.clone().unwrap();
+        exchange::trust_link(&pool, &link.id, &typed).await.unwrap();
+        assert!(exchange::revoke_link(&pool, &link.id, " ").await.is_err(), "a reason is required");
+        let (ended, notice) = exchange::revoke_link(&pool, &link.id, "Office moved.").await.unwrap();
+        assert_eq!((ended.status.as_str(), ended.revoked_reason.as_deref()), ("revoked", Some("Office moved.")));
+        let (_, said) = pairing::read_confirmation(&dpp, &registry_public, &notice).unwrap();
+        assert_eq!((said.outcome.as_str(), said.reason.as_deref()), ("revoked", Some("Office moved.")));
+        let m = refused(adapter.open(&arrived(KIND_FILING, "ug.dpp.r", seal(&dpp, &registry_public, KIND_FILING, 1, filing("F-7")))).await);
+        assert!(m.contains("ended its connection"), "{m}");
+        assert_eq!(count(&pool, "exchange_incoming").await, 0);
         pool.close().await;
     }
 }

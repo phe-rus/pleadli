@@ -5,7 +5,7 @@
 //! changes a case: the receipt is kept beside the notice.
 
 use pleadli_interchange::envelope::{self, Body};
-use pleadli_interchange::identity::{IdentityKind, PublicIdentity};
+use pleadli_interchange::identity::{Identity, IdentityKind, PublicIdentity};
 use pleadli_interchange::messages::{CourtNoticePayload, CourtNoticeReceiptPayload, FirmFilingPayload, FirmFilingReceiptPayload, KIND_COURT_NOTICE, KIND_COURT_NOTICE_RECEIPT, KIND_FIRM_FILING, KIND_FIRM_FILING_RECEIPT};
 use pleadli_interchange::pairing::{self, KIND_CONFIRMATION};
 use serde::Serialize;
@@ -37,7 +37,7 @@ pub struct FirmLink {
 }
 
 pub async fn list_links(pool: &SqlitePool) -> Result<Vec<FirmLink>, DomainError> {
-    Ok(sqlx::query_as("SELECT id, firm_name, firm_jurisdiction, fingerprint, status, reason, responded_at, trusted_at FROM firm_links ORDER BY created_at DESC").fetch_all(pool).await?)
+    Ok(sqlx::query_as("SELECT id, firm_name, firm_jurisdiction, fingerprint, status, CASE WHEN status = 'revoked' THEN revoked_reason ELSE reason END AS reason, responded_at, trusted_at FROM firm_links ORDER BY created_at DESC").fetch_all(pool).await?)
 }
 
 /// Reads a firm's invitation file and answers it. The firm becomes
@@ -102,10 +102,18 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     let (firm, _) = firm_public(pool, &link_id).await?;
 
     if header.kind == KIND_CONFIRMATION {
+        let (_, confirmation) = pairing::read_confirmation(&me, &firm, bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
+        // The other side ending the connection. Signed by it, so it is taken as its word; ending twice changes nothing.
+        if confirmation.outcome == "revoked" {
+            let why = confirmation.reason.clone().unwrap_or_default();
+            if !pleadli_node_core::hub::set_revoked(pool, super::relay::FIRMS, &link_id, &why, &["trusted", "answered"]).await? {
+                return bad("That connection is not active.");
+            }
+            return Ok(Imported { kind: KIND_CONFIRMATION.into(), message: format!("{} has ended its connection with this registry. Nothing more will be accepted from it.", firm.name) });
+        }
         if status != "answered" {
             return bad("That connection is not waiting for a confirmation.");
         }
-        let (_, confirmation) = pairing::read_confirmation(&me, &firm, bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
         let trusted = confirmation.outcome == "trusted";
         sqlx::query("UPDATE firm_links SET status = ?, reason = ?, trusted_at = CASE WHEN ? THEN ? ELSE NULL END WHERE id = ?").bind(if trusted { "trusted" } else { "declined" }).bind(&confirmation.reason).bind(trusted).bind(now()).bind(&link_id).execute(pool).await?;
         let message = if trusted { format!("{} has confirmed this registry. Notices can now be sent to it.", firm.name) } else { format!("{} declined this registry's answer.", firm.name) };
@@ -118,7 +126,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         return bad(format!("This registry does not receive packages of kind '{}' from a firm.", header.kind));
     }
     if status != "trusted" {
-        return bad("That firm is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "That firm has ended its connection with this registry. Nothing was kept." } else { "That firm is not confirmed as trusted. Nothing was kept." });
     }
     let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM firm_incoming WHERE id = ?").bind(&header.id).fetch_one(pool).await?;
     if seen > 0 {
@@ -158,7 +166,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
 /// Counsel files a document. Kept as received until a person decides.
 async fn import_filing(pool: &SqlitePool, bytes: &[u8], peeked: envelope::Peeked, me: &pleadli_interchange::identity::Identity, firm: &PublicIdentity, link_id: &str, status: &str) -> Result<Imported, DomainError> {
     if status != "trusted" {
-        return bad("That firm is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "That firm has ended its connection with this registry. Nothing was kept." } else { "That firm is not confirmed as trusted. Nothing was kept." });
     }
     let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM firm_filings WHERE id = ?").bind(&peeked.header.id).fetch_one(pool).await?;
     if seen > 0 {
@@ -262,14 +270,14 @@ pub struct Delivery {
 
 /// Where each order stands with the firms it was sent to.
 pub async fn list_deliveries(pool: &SqlitePool, notice_key: &str) -> Result<Vec<Delivery>, DomainError> {
-    Ok(sqlx::query_as("SELECT o.notice_key, l.firm_name, o.prepared_at, r.outcome, r.reason FROM firm_outgoing o JOIN firm_links l ON l.id = o.link_id LEFT JOIN firm_incoming r ON r.notice_package_id = o.id WHERE (? = '' OR o.notice_key = ?) ORDER BY o.prepared_at DESC").bind(notice_key).bind(notice_key).fetch_all(pool).await?)
+    Ok(sqlx::query_as("SELECT o.notice_key, l.firm_name, o.prepared_at, r.outcome, r.reason FROM firm_outgoing o JOIN firm_links l ON l.id = o.link_id LEFT JOIN firm_incoming r ON r.notice_package_id = o.id WHERE (? = '' OR o.notice_key = ? OR o.notice_key = ? || ':outcome') ORDER BY o.prepared_at DESC").bind(notice_key).bind(notice_key).bind(notice_key).fetch_all(pool).await?)
 }
 
 
 async fn trusted_firm(pool: &SqlitePool, link_id: &str) -> Result<PublicIdentity, DomainError> {
     let (firm, status) = firm_public(pool, link_id).await.map_err(|_| DomainError::NotFound("No such firm.".into()))?;
     if status != "trusted" {
-        return bad("That firm has not confirmed this registry yet.");
+        return bad(if status == "revoked" { "That firm has ended its connection with this registry. Nothing can be sent to it." } else { "That firm has not confirmed this registry yet." });
     }
     Ok(firm)
 }
@@ -293,12 +301,38 @@ async fn seal_notice(pool: &SqlitePool, link_id: &str, payload: &CourtNoticePayl
 pub async fn export_hearing(pool: &SqlitePool, sitting_id: &str, link_id: &str) -> Result<(Vec<u8>, String), DomainError> {
     let me = require_identity(pool).await?;
     let sitting = sittings::get(pool, sitting_id).await?.ok_or_else(|| DomainError::NotFound("No such sitting.".into()))?;
-    if sitting.status != "scheduled" {
-        return bad("Only a sitting that is still to be held can be noticed.");
-    }
     let case = cases::get(pool, &sitting.case_id).await?.ok_or_else(|| DomainError::NotFound("No such case.".into()))?;
+    if matches!(sitting.status.as_str(), "held" | "adjourned") {
+        return export_outcome(pool, &me, &sitting, &case, link_id).await;
+    }
+    if sitting.status != "scheduled" {
+        return bad("Only a sitting that is still to be held, or one with a recorded outcome, can be sent.");
+    }
     let payload = CourtNoticePayload { notice_key: sitting.id.clone(), kind: "hearing".into(), court_name: me.public.name.clone(), court_number: case.court_number.clone(), case_title: case.title.clone(), title: "Notice of hearing".into(), at: Some(sitting.scheduled_at), purpose: Some(sitting.purpose.clone()), courtroom: sitting.courtroom.clone(), issued_at: now(), ..Default::default() };
     seal_notice(pool, link_id, &payload, "hearing").await
+}
+
+/// What the court recorded at a sitting, as a notice to counsel: held with its outcome, or adjourned with the
+/// reason, who was responsible and the next date. Counsel files it as a note on the matter; it never closes
+/// counsel's own hearing, because whether counsel attended is counsel's own record.
+async fn export_outcome(pool: &SqlitePool, me: &Identity, sitting: &sittings::Sitting, case: &cases::Case, link_id: &str) -> Result<(Vec<u8>, String), DomainError> {
+    let long = |ms: i64| chrono::DateTime::from_timestamp_millis(ms).map(|t| t.with_timezone(&pleadli_node_core::timezone::offset_at(ms)).format("%-d %B %Y").to_string()).unwrap_or_default();
+    let mut paragraphs = Vec::new();
+    let mut next_at = None;
+    if sitting.status == "held" {
+        paragraphs.push(format!("Held. {}", sitting.outcome.clone().unwrap_or_default()).trim().to_string());
+    } else {
+        let adj = sittings::adjournments_for_case(pool, &sitting.case_id).await?.into_iter().find(|a| a.sitting_id == sitting.id);
+        let Some(adj) = adj else { return bad("This sitting was adjourned but no adjournment is recorded.") };
+        paragraphs.push(format!("Adjourned. Reason: {}. Responsible: {}.", adj.reason.replace('_', " "), adj.responsible));
+        if let Some(note) = adj.note.as_deref().filter(|n| !n.trim().is_empty()) {
+            paragraphs.push(note.trim().to_string());
+        }
+        next_at = adj.next_date;
+        paragraphs.push(match adj.next_date { Some(d) => format!("Next date: {}.", long(d)), None => "No next date has been fixed yet.".to_string() });
+    }
+    let payload = CourtNoticePayload { notice_key: format!("{}:outcome", sitting.id), kind: "outcome".into(), court_name: me.public.name.clone(), court_number: case.court_number.clone(), case_title: case.title.clone(), title: "Record of sitting".into(), at: Some(sitting.scheduled_at), purpose: Some(sitting.purpose.clone()), courtroom: sitting.courtroom.clone(), next_at, paragraphs, issued_at: now(), ..Default::default() };
+    seal_notice(pool, link_id, &payload, "outcome").await
 }
 
 /// An issued order of any kind, as a copy to counsel with the signed wording.
@@ -391,6 +425,12 @@ mod tests {
         assert_eq!(sent.kind, "order");
         assert!(!sent.paragraphs.is_empty());
 
+        // Once held, the same send gives counsel the court's record of the sitting instead of a notice of hearing.
+        sittings::hold(&pool, &sitting.id, "Plea of not guilty entered.").await.unwrap();
+        let (held_bytes, _) = export_hearing(&pool, &sitting.id, &link.id).await.unwrap();
+        let held: CourtNoticePayload = serde_json::from_value(envelope::open(&firm, envelope::peek(&held_bytes).unwrap(), &response.station).unwrap().body.json).unwrap();
+        assert_eq!((held.kind.as_str(), held.at, held.paragraphs.first().map(String::as_str)), ("outcome", Some(sitting.scheduled_at), Some("Held. Plea of not guilty entered.")));
+
         let receipt = CourtNoticeReceiptPayload { notice_package_id: opened.header.id.clone(), notice_key: sitting.id.clone(), outcome: "filed".into(), received_at: 1, decided_at: 2, ..Default::default() };
         let seal = |seq: u64, r: &CourtNoticeReceiptPayload| envelope::seal(&firm, &response.station, KIND_COURT_NOTICE_RECEIPT, seq, Some(&opened.header.id), &Body::new(serde_json::to_value(r).unwrap())).unwrap().0;
         let receipt_bytes = seal(1, &receipt);
@@ -398,7 +438,8 @@ mod tests {
         assert!(import_package(&pool, &receipt_bytes).await.is_err(), "replay refused");
         assert!(import_package(&pool, &seal(2, &CourtNoticeReceiptPayload { notice_package_id: "never-sent".into(), ..receipt.clone() })).await.is_err());
         let d = list_deliveries(&pool, &sitting.id).await.unwrap();
-        assert_eq!((d.len(), d[0].outcome.as_deref()), (1, Some("filed")));
+        assert_eq!(d.len(), 2, "the notice of hearing and the later record of the sitting");
+        assert!(d.iter().any(|x| x.notice_key == sitting.id && x.outcome.as_deref() == Some("filed")) && d.iter().any(|x| x.notice_key.ends_with(":outcome") && x.outcome.is_none()));
         pool.close().await;
     }
 }

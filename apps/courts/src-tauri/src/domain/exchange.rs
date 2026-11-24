@@ -100,14 +100,16 @@ pub struct Link {
     pub invite_expires_at: i64,
     pub responded_at: Option<i64>,
     pub trusted_at: Option<i64>,
+    pub revoked_at: Option<i64>,
+    pub revoked_reason: Option<String>,
 }
 
 pub async fn list_links(pool: &SqlitePool) -> Result<Vec<Link>, DomainError> {
-    Ok(sqlx::query_as("SELECT id, intended_office, status, dpp_name, fingerprint, invite_expires_at, responded_at, trusted_at FROM dpp_links ORDER BY created_at DESC").fetch_all(pool).await?)
+    Ok(sqlx::query_as("SELECT id, intended_office, status, dpp_name, fingerprint, invite_expires_at, responded_at, trusted_at, revoked_at, revoked_reason FROM dpp_links ORDER BY created_at DESC").fetch_all(pool).await?)
 }
 
 async fn get_link(pool: &SqlitePool, id: &str) -> Result<Link, DomainError> {
-    sqlx::query_as("SELECT id, intended_office, status, dpp_name, fingerprint, invite_expires_at, responded_at, trusted_at FROM dpp_links WHERE id = ?").bind(id).fetch_optional(pool).await?.ok_or_else(|| DomainError::NotFound("No such connection.".into()))
+    sqlx::query_as("SELECT id, intended_office, status, dpp_name, fingerprint, invite_expires_at, responded_at, trusted_at, revoked_at, revoked_reason FROM dpp_links WHERE id = ?").bind(id).fetch_optional(pool).await?.ok_or_else(|| DomainError::NotFound("No such connection.".into()))
 }
 
 /// An invitation file for one DPP office, open for `valid_days`.
@@ -158,6 +160,24 @@ pub async fn trust_link(pool: &SqlitePool, id: &str, typed_fingerprint: &str) ->
     let (dpp, _) = dpp_public(pool, id).await?;
     let bytes = pairing::make_confirmation(&me, &dpp, id, "trusted", None).map_err(|e| DomainError::Invalid(e.to_string()))?;
     sqlx::query("UPDATE dpp_links SET status = 'trusted', trusted_at = ? WHERE id = ?").bind(now()).bind(id).execute(pool).await?;
+    Ok((get_link(pool, id).await?, bytes))
+}
+
+/// This registry ends the DPP office's connection, with the reason a person gave. The office is told the same reason in a
+/// signed notice (returned to be sent on), nothing more is taken from it, and the relay link is ended later, once the notice is collected.
+pub async fn revoke_link(pool: &SqlitePool, id: &str, reason: &str) -> Result<(Link, Vec<u8>), DomainError> {
+    let link = get_link(pool, id).await?;
+    if link.status != "trusted" {
+        return bad("Only a trusted office can be ended.");
+    }
+    let reason = reason.trim();
+    if reason.is_empty() {
+        return bad("Say why the connection is being ended.");
+    }
+    let me = require_identity(pool).await?;
+    let (dpp, _) = dpp_public(pool, id).await?;
+    let bytes = pairing::make_confirmation(&me, &dpp, id, "revoked", Some(reason)).map_err(|e| DomainError::Invalid(e.to_string()))?;
+    pleadli_node_core::hub::set_revoked(pool, super::relay::DPP, id, reason, &["trusted"]).await?;
     Ok((get_link(pool, id).await?, bytes))
 }
 
@@ -220,7 +240,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     let row: Option<(String, String)> = sqlx::query_as("SELECT id, status FROM dpp_links WHERE dpp_id = ? ORDER BY (status = 'trusted') DESC, created_at DESC LIMIT 1").bind(&header.from.id).fetch_optional(pool).await?;
     let Some((link_id, status)) = row else { return bad("This package is from an office this registry has not connected to. Nothing was kept.") };
     if status != "trusted" {
-        return bad("That office is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "This registry has ended its connection with that office. Nothing was kept." } else { "That office is not confirmed as trusted. Nothing was kept." });
     }
     let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM exchange_incoming WHERE id = ?").bind(&header.id).fetch_one(pool).await?;
     if seen > 0 {

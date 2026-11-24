@@ -149,7 +149,7 @@ function RouteComponent() {
           )}
         </div>
       </header>
-      {sitting.status === "scheduled" && <NotifyCounsel kind="sitting" id={sitting.id} />}
+      {["scheduled", "held", "adjourned"].includes(sitting.status) && <NotifyCounsel kind="sitting" id={sitting.id} />}
 
       {reading && <RecordPaper detail={detail} />}
       <div className={reading ? 'hidden' : 'contents'} inert={reading}>

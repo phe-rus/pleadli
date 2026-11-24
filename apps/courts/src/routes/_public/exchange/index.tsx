@@ -1,4 +1,4 @@
-import { acceptFiling, recordWithdrawal, createIdentity, createInvite, getIdentity, importPackage, listIncoming, listLinks, pickPackage, rejectFiling, savePackage, trustLink, type Incoming, type Link, type RegistryIdentity } from '@/features/exchange/data'
+import { acceptFiling, recordWithdrawal, createIdentity, createInvite, getIdentity, importPackage, listIncoming, listLinks, pickPackage, rejectFiling, savePackage, revokeLink, trustLink, type Incoming, type Link, type RegistryIdentity } from '@/features/exchange/data'
 import * as m from "@/paraglide/messages"
 import { PrisonLinks } from "@/features/exchange/prison-links"
 import { FirmLinks } from "@/features/exchange/firm-links"
@@ -10,6 +10,7 @@ import { Input } from '@pleadli/ui/input'
 import { createFileRoute, Link as RouterLink } from '@tanstack/react-router'
 import { format } from 'date-fns/format'
 import { useCallback, useEffect, useState } from 'react'
+import { useProfile } from '@/features/profile/queries'
 
 export const Route = createFileRoute('/_public/exchange/')({ component: RouteComponent })
 
@@ -32,9 +33,12 @@ function RouteComponent() {
   const [incoming, setIncoming] = useState<Incoming[]>([])
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null)
   const [name, setName] = useState('')
+  const { data: profile } = useProfile()
+  const courtName = profile?.courtName?.trim() || ''
   const [area, setArea] = useState('')
   const [office, setOffice] = useState('')
   const [codes, setCodes] = useState<Record<string, string>>({})
+  const [endReasons, setEndReasons] = useState<Record<string, string>>({})
   const [numbers, setNumbers] = useState<Record<string, string>>({})
   const [reasons, setReasons] = useState<Record<string, string>>({})
   const [by, setBy] = useState('')
@@ -79,9 +83,9 @@ function RouteComponent() {
               <CardDescription>{m["exchange.identity_desc"]()}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
-              <Input aria-label={m["exchange.registry_name"]()} placeholder={m["exchange.registry_name"]()} value={name} onChange={(e) => setName(e.target.value)} className="w-full sm:w-72" />
+              <Input aria-label={m["exchange.registry_name"]()} placeholder={m["exchange.registry_name"]()} value={name || courtName} onChange={(e) => setName(e.target.value)} className="w-full sm:w-72" />
               <Input aria-label={m["exchange.area"]()} placeholder={m["exchange.area"]()} value={area} onChange={(e) => setArea(e.target.value)} className="w-full sm:w-48" />
-              <Button disabled={!name.trim()} onClick={() => run(async () => void (await createIdentity(name, area)))}>{m["exchange.create_identity"]()}</Button>
+              <Button disabled={!(name || courtName).trim()} onClick={() => run(async () => void (await createIdentity(name || courtName, area)))}>{m["exchange.create_identity"]()}</Button>
             </CardContent>
           </Card>
         )}
@@ -94,6 +98,7 @@ function RouteComponent() {
                 <CardDescription>
                   {m["exchange.fingerprint"]({ code: identity.fingerprint })}
                 </CardDescription>
+                {courtName && courtName !== identity.officeName.trim() && <p role="status" className="text-sm text-muted-foreground">{m["exchange.name_differs"]({ profile: courtName })}</p>}
               </CardHeader>
             </Card>
 
@@ -138,6 +143,25 @@ function RouteComponent() {
                         </Button>
                       </span>
                     )}
+                    {l.status === 'trusted' && (
+                      <span className="flex flex-wrap items-center gap-2">
+                        <Input aria-label={m["exchange.end_ph"]()} placeholder={m["exchange.end_ph"]()} value={endReasons[l.id] ?? ''} onChange={(e) => setEndReasons({ ...endReasons, [l.id]: e.target.value })} className="w-60" />
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={!(endReasons[l.id] ?? '').trim()}
+                          onClick={() =>
+                            run(async () => {
+                              const c = await revokeLink(l.id, endReasons[l.id] ?? '')
+                              if (await savePackage(c)) return m["exchange.ended"]({ name: l.dppName ?? l.intendedOffice })
+                            })
+                          }
+                        >
+                          {m["exchange.end"]()}
+                        </Button>
+                      </span>
+                    )}
+                    {l.status === 'revoked' && l.revokedReason && <span className="text-muted-foreground">{m["exchange.ended_reason"]({ reason: l.revokedReason })}</span>}
                   </div>
                 ))}
               </CardContent>

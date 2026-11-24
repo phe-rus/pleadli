@@ -10,6 +10,7 @@
     "identity_desc": "Give the registry its identity once, as the DPP offices that file to it know it. It cannot be changed afterwards.",
     "registry_name": "Registry name",
     "area": "Area",
+    "name_differs": "The court in your profile is called \"{profile}\". Offices that file here know the registry by the name above, which cannot be changed. Make sure they are the same court.",
     "create_identity": "Create identity",
     "fingerprint": "Fingerprint {code}",
     "offices": "DPP offices",
@@ -54,7 +55,11 @@
     "nolle": "Withdrawn by the prosecution (nolle prosequi)",
     "discontinued": "Discontinued by the prosecution",
     "record_withdrawal": "Record the withdrawal",
-    "withdrawal_notice": "Recorded and the case concluded. Send the receipt back."
+    "withdrawal_notice": "Recorded and the case concluded. Send the receipt back.",
+    "end_ph": "Why is this connection being ended?",
+    "end": "End connection",
+    "ended": "Connection with {name} ended. Send them the notice file if they are not on the postbox.",
+    "ended_reason": "Reason: {reason}"
   },
   "prison": {
     "title": "Prisons",
@@ -66,6 +71,7 @@
     "status_answered": "Answered, waiting for the prison",
     "status_trusted": "Trusted",
     "status_declined": "Declined",
+    "status_revoked": "Ended",
     "read_code": "Read the prison this code: {code}",
     "answered_notice": "Answered {prison}. Send the file back and read them the code shown.",
     "send_title": "Send to a prison",
@@ -97,6 +103,7 @@
     "status_answered": "Answered, waiting for the firm",
     "status_trusted": "Trusted",
     "status_declined": "Declined",
+    "status_revoked": "Ended",
     "read_code": "Read the firm this code: {code}",
     "answered_notice": "Answered {firm}. Send the file back and read them the code shown.",
     "send_title": "Notify counsel",

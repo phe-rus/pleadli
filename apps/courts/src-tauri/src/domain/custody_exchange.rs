@@ -37,7 +37,7 @@ pub struct PrisonLink {
 }
 
 pub async fn list_links(pool: &SqlitePool) -> Result<Vec<PrisonLink>, DomainError> {
-    Ok(sqlx::query_as("SELECT id, prison_name, prison_jurisdiction, fingerprint, status, reason, responded_at, trusted_at FROM prison_links ORDER BY created_at DESC").fetch_all(pool).await?)
+    Ok(sqlx::query_as("SELECT id, prison_name, prison_jurisdiction, fingerprint, status, CASE WHEN status = 'revoked' THEN revoked_reason ELSE reason END AS reason, responded_at, trusted_at FROM prison_links ORDER BY created_at DESC").fetch_all(pool).await?)
 }
 
 /// Reads a facility's invitation file and answers it. The facility becomes
@@ -102,10 +102,18 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
     let (prison, _) = prison_public(pool, &link_id).await?;
 
     if header.kind == KIND_CONFIRMATION {
+        let (_, confirmation) = pairing::read_confirmation(&me, &prison, bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
+        // The other side ending the connection. Signed by it, so it is taken as its word; ending twice changes nothing.
+        if confirmation.outcome == "revoked" {
+            let why = confirmation.reason.clone().unwrap_or_default();
+            if !pleadli_node_core::hub::set_revoked(pool, super::relay::PRISONS, &link_id, &why, &["trusted", "answered"]).await? {
+                return bad("That connection is not active.");
+            }
+            return Ok(Imported { kind: KIND_CONFIRMATION.into(), message: format!("{} has ended its connection with this registry. Nothing more will be accepted from it.", prison.name) });
+        }
         if status != "answered" {
             return bad("That connection is not waiting for a confirmation.");
         }
-        let (_, confirmation) = pairing::read_confirmation(&me, &prison, bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
         let trusted = confirmation.outcome == "trusted";
         sqlx::query("UPDATE prison_links SET status = ?, reason = ?, trusted_at = CASE WHEN ? THEN ? ELSE NULL END WHERE id = ?").bind(if trusted { "trusted" } else { "declined" }).bind(&confirmation.reason).bind(trusted).bind(now()).bind(&link_id).execute(pool).await?;
         let message = if trusted { format!("{} has confirmed this registry. Orders can now be sent to it.", prison.name) } else { format!("{} declined this registry's answer.", prison.name) };
@@ -118,7 +126,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         return bad(format!("This registry does not receive packages of kind '{}' from a facility.", header.kind));
     }
     if status != "trusted" {
-        return bad("That facility is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "That facility has ended its connection with this registry. Nothing was kept." } else { "That facility is not confirmed as trusted. Nothing was kept." });
     }
     let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM prison_incoming WHERE id = ?").bind(&header.id).fetch_one(pool).await?;
     if seen > 0 {
@@ -158,7 +166,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
 /// A facility reports what happened to a person this registry committed.
 async fn import_report(pool: &SqlitePool, bytes: &[u8], peeked: envelope::Peeked, me: &Identity, prison: &PublicIdentity, link_id: &str, status: &str) -> Result<Imported, DomainError> {
     if status != "trusted" {
-        return bad("That facility is not confirmed as trusted. Nothing was kept.");
+        return bad(if status == "revoked" { "That facility has ended its connection with this registry. Nothing was kept." } else { "That facility is not confirmed as trusted. Nothing was kept." });
     }
     let seen: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM prison_reports WHERE id = ?").bind(&peeked.header.id).fetch_one(pool).await?;
     if seen > 0 {
@@ -245,7 +253,7 @@ pub async fn export_order(pool: &SqlitePool, order_id: &str, link_id: &str) -> R
     let Some(content) = order.content.as_ref() else { return bad("This order has no recorded wording.") };
     let (prison, status) = prison_public(pool, link_id).await.map_err(|_| DomainError::NotFound("No such facility.".into()))?;
     if status != "trusted" {
-        return bad("That facility has not confirmed this registry yet.");
+        return bad(if status == "revoked" { "That facility has ended its connection with this registry. Nothing can be sent to it." } else { "That facility has not confirmed this registry yet." });
     }
     let payload = CustodyOrderPayload {
         order_key: order.id.clone(),

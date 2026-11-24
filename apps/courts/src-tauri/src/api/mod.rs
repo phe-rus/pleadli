@@ -465,6 +465,7 @@ pub fn router(state: AppState) -> Router {
         .route("/exchange/identity", get(exchange::get_identity).post(exchange::create_identity))
         .route("/exchange/links", get(exchange::list_links).post(exchange::create_invite))
         .route("/exchange/links/{id}/trust", post(exchange::trust_link))
+        .route("/exchange/links/{id}/revoke", post(exchange::revoke_link))
         .route("/exchange/import", post(exchange::import_package))
         .route("/exchange/incoming", get(exchange::list_incoming))
         .route("/exchange/incoming/{id}/accept", post(exchange::accept_filing))
