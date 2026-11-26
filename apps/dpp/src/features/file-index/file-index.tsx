@@ -1,10 +1,11 @@
+import { ChoiceSelect } from '@/components/choice-select'
 import { formatDate } from '@/lib/dates'
 import { packText } from '@/lib/jurisdiction'
 import { openAttachment } from '@/features/attachments'
 import { DocumentView } from '@/components/document-viewer'
 import { useJurisdiction } from '@/features/installation'
 import * as m from '@/paraglide/messages'
-import { Add01Icon, ArrowExpand01Icon, ArrowShrink02Icon, Delete02Icon, File02Icon, SparklesIcon, TextIcon } from '@hugeicons/core-free-icons'
+import { Add01Icon, ArrowExpand01Icon, ArrowShrink02Icon, Delete02Icon, File02Icon, Layers01Icon, SparklesIcon, TextIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { DOC_KINDS, sectionFor, type Country, type FileSection } from '@pleadli/setup'
 import { Button } from '@pleadli/ui/button'
@@ -15,6 +16,8 @@ import { Textarea } from '@pleadli/ui/textarea'
 import { useState } from 'react'
 import type { FileItem } from './data'
 import { ImportPaper } from './import-paper'
+import { usePageCount } from './page-count'
+import { SortPages } from './sort-pages'
 import { useConfirmFileItems, useCreateFileItem, useDeleteFileItem, useFileItems, useUpdateFileItem } from './queries'
 
 export const kindLabel = (kind: string) => {
@@ -48,7 +51,7 @@ export function groups(country: Country | undefined, items: FileItem[]): Group[]
 export function KindSelect({ value, onChange }: { value: string; onChange: (kind: string) => void }) {
   const country = useJurisdiction()
   return (
-    <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
+    <ChoiceSelect className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
       {DOC_KINDS.map((k) => {
         const section = sectionFor(country, k.id)
         return (
@@ -58,7 +61,7 @@ export function KindSelect({ value, onChange }: { value: string; onChange: (kind
           </option>
         )
       })}
-    </select>
+    </ChoiceSelect>
   )
 }
 
@@ -118,6 +121,9 @@ function Reader({ item, fileId, onClose }: { item: FileItem; fileId: string; onC
   const [title, setTitle] = useState(item.title)
   const [showText, setShowText] = useState(!item.attachmentId)
   const [full, setFull] = useState(false)
+  const [sorting, setSorting] = useState(false)
+  const { data: scanPages = 1 } = usePageCount(item.attachmentId)
+  const manyPapers = !!item.attachmentId && (item.pageTo ?? scanPages) - (item.pageFrom ?? 1) > 0
   const unconfirmed = item.source === 'assist' && !item.confirmedAt
 
   return (
@@ -173,6 +179,12 @@ function Reader({ item, fileId, onClose }: { item: FileItem; fileId: string; onC
             <HugeiconsIcon icon={full ? ArrowShrink02Icon : ArrowExpand01Icon} />
             {full ? m["viewer.exit_full"]() : m["viewer.full"]()}
           </Button>
+          {manyPapers && (
+            <Button size="sm" variant="secondary" onClick={() => setSorting(true)}>
+              <HugeiconsIcon icon={Layers01Icon} />
+              {m["sort.button"]()}
+            </Button>
+          )}
           {item.attachmentId && (
             <Button size="sm" variant="ghost" onClick={() => openAttachment({ id: item.attachmentId! })}>
               {m["index.open_scan"]()}
@@ -191,6 +203,7 @@ function Reader({ item, fileId, onClose }: { item: FileItem; fileId: string; onC
             {m["index.people_named"]()}: {item.people}
           </p>
         )}
+        {sorting && <SortPages item={item} fileId={fileId} onClose={() => setSorting(false)} onSaved={onClose} />}
         <div className="flex justify-between gap-2">
           <Button
             size="sm"

@@ -11,6 +11,11 @@ import type { Template, TemplateContext } from './types'
 
 const DASH = '....................'
 const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: zoneFor(ms) })
+/** When the file is to come back: the latest date any direction carries, else left for the officer to fill. */
+const resubmitBy = (ds: { dueAt: number | null }[]) => {
+  const last = Math.max(0, ...ds.map((d) => d.dueAt ?? 0))
+  return last ? `by ${day(last)}` : `within ${DASH} days`
+}
 const firstParagraph = (text: string) => text.split(/\n\n/)[0].trim()
 const firstSentence = (text: string) => (text.match(/^.*?[.!?](\s|$)/)?.[0] ?? text).trim()
 const roman = (n: number) => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n - 1] ?? String(n)
@@ -43,9 +48,9 @@ export const ugandaTemplates: Template[] = [
       header(ctx, [{ label: 'Court case no.', value: ctx.file.courtCaseNumber ?? DASH }]),
       { type: 'heading', text: 'Uganda versus' },
       { type: 'list', ordered: true, items: (ctx.accused.length ? ctx.accused : [DASH]).map((a) => ({ title: null, text: a })) },
-      ...(ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, particulars: DASH, accused: null }]).flatMap((c, i): Block[] => [
+      ...(ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, statement: null, particulars: DASH, accused: null }]).flatMap((c, i): Block[] => [
         { type: 'heading', text: `Count ${roman(i + 1)}` },
-        { type: 'fields', rows: [{ label: 'Statement of offence', value: `${c.offence}${c.section ? `, contrary to ${c.section}` : ''}` }] },
+        { type: 'fields', rows: [{ label: 'Statement of offence', value: c.statement ?? `${c.offence}${c.section ? `, contrary to ${c.section}` : ''}` }] },
         { type: 'paragraph', text: `Particulars of offence: ${c.particulars ?? DASH}` },
       ]),
       signature(ctx, 'Sanctioned by', `for the Director of Public Prosecutions, ${day(ctx.today)}`),
@@ -63,8 +68,8 @@ export const ugandaTemplates: Template[] = [
       header(ctx),
       { type: 'heading', text: `RE: ${ctx.file.title}` },
       { type: 'paragraph', text: 'The above file has been reviewed. The evidence on it is not yet sufficient to reach a charging decision. It is returned for the following inquiries to be made:' },
-      { type: 'list', ordered: true, items: (ctx.directions.length ? ctx.directions : [{ kind: '', instruction: DASH }]).map((d) => ({ title: null, text: d.instruction })) },
-      { type: 'paragraph', text: `Please complete these inquiries and resubmit the file to this office within ${DASH} days.` },
+      { type: 'list', ordered: true, items: (ctx.directions.length ? ctx.directions : [{ kind: '', instruction: DASH, dueAt: null }]).map((d) => ({ title: null, text: d.dueAt ? `${d.instruction} (by ${day(d.dueAt)})` : d.instruction })) },
+      { type: 'paragraph', text: `Please complete these inquiries and resubmit the file to this office ${resubmitBy(ctx.directions)}.` },
       signature(ctx, 'Signed', `for the Director of Public Prosecutions`),
     ],
   },
@@ -90,7 +95,7 @@ export const ugandaTemplates: Template[] = [
     forDecisions: ['committal_venue_high_court', 'sanction'],
     build: (ctx) => {
       const accused = ctx.accused.length ? ctx.accused : [DASH]
-      const charges = ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, particulars: DASH, accused: null }]
+      const charges = ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, statement: null, particulars: DASH, accused: null }]
       const arising = [ctx.file.courtCaseNumber, ctx.file.policeReference].filter(Boolean).join('; ')
       return [
         { type: 'heading', text: `In the High Court of Uganda at ${DASH}` },
@@ -102,7 +107,7 @@ export const ugandaTemplates: Template[] = [
         // s.24(2): more than one offence, each in its own count.
         ...charges.flatMap((c, i): Block[] => [
           ...(charges.length > 1 ? [{ type: 'heading', text: `Count ${roman(i + 1)}` } as Block] : []),
-          { type: 'fields', rows: [{ label: 'Statement of offence', value: `${c.offence}${c.section ? `, contrary to ${c.section}` : ''}` }] },
+          { type: 'fields', rows: [{ label: 'Statement of offence', value: c.statement ?? `${c.offence}${c.section ? `, contrary to ${c.section}` : ''}` }] },
           { type: 'paragraph', text: `Particulars of offence: ${c.particulars ? firstParagraph(c.particulars) : DASH}` },
         ]),
         // s.27: in the name of, and signed for, the Director of Public Prosecutions.

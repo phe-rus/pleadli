@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
 import { Attachment01Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { PaperField, PaperPage, SignatureLine, type PaperLink } from '@pleadli/paper'
+import { PaperField, PaperPage, SignatureLine, type PaperExtraTab, type PaperLink } from '@pleadli/paper'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { Button } from '@pleadli/ui/button'
 import { useQuery } from '@tanstack/react-query'
@@ -46,7 +46,7 @@ export const hasText = (rich: string | null) => !!rich && rich.replace(/<[^>]+>|
 
 export type PaperLinks = { related?: PaperLink[]; citedBy?: PaperLink[] }
 
-export function StatementPaper({ file, statement, links }: { file: ProsecutionFile; statement: Statement; links?: PaperLinks }) {
+export function StatementPaper({ file, statement, links, extraTabs }: { file: ProsecutionFile; statement: Statement; links?: PaperLinks; extraTabs?: PaperExtraTab[] }) {
   const name = [statement.personFirstName, statement.personOtherNames, statement.personLastName].filter(Boolean).join(' ')
   const reference = file.policeReference ?? file.odppRegistrationNumber
   return (
@@ -56,6 +56,7 @@ export function StatementPaper({ file, statement, links }: { file: ProsecutionFi
       reference={reference}
       title={statementTitle(statement.statementRole)}
       head={<FileRefs file={file} />}
+      extraTabs={extraTabs}
       {...links}
       details={[
         ...(reference ? [{ label: m["paper.detail.reference"](), value: reference, copy: reference }] : []),
@@ -80,7 +81,7 @@ export function StatementPaper({ file, statement, links }: { file: ProsecutionFi
   )
 }
 
-export function EvidencePaper({ file, item, links }: { file: ProsecutionFile; item: EvidenceItem; links?: PaperLinks }) {
+export function EvidencePaper({ file, item, links, extraTabs }: { file: ProsecutionFile; item: EvidenceItem; links?: PaperLinks; extraTabs?: PaperExtraTab[] }) {
   const reference = item.identificationMark ?? file.policeReference
   return (
     <PaperPage
@@ -89,6 +90,7 @@ export function EvidencePaper({ file, item, links }: { file: ProsecutionFile; it
       reference={reference}
       title={m["paper.evidence.title"]()}
       head={<FileRefs file={file} />}
+      extraTabs={extraTabs}
       {...links}
       details={[
         ...(reference ? [{ label: m["paper.detail.reference"](), value: reference, copy: reference }] : []),

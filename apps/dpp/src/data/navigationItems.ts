@@ -18,6 +18,7 @@ import {
   KanbanIcon,
   Calendar03Icon,
   Clock01Icon,
+  Building03Icon,
 } from '@hugeicons/core-free-icons'
 import { fileViews } from '@/features/prosecution-files/schema'
 import * as m from '@/paraglide/messages'
@@ -25,7 +26,7 @@ import * as m from '@/paraglide/messages'
 export type NavIcon = typeof DashboardBrowsingIcon
 
 /** Which count from the workload read model an item carries beside its name. */
-export type NavCount = 'thresholdDue' | 'draftDocuments' | 'incomingWaiting'
+export type NavCount = 'thresholdDue' | 'draftDocuments' | 'incomingWaiting' | 'needsYou'
 
 export type NavItem = {
   /** Display only: a message getter, so it follows the current language. */
@@ -43,33 +44,36 @@ export type NavItem = {
 
 /** Where an item sits in the sidebar: the day's work at the top, the inbox
  * above the file folders, and the office below them. */
-export type NavSection = 'main' | 'inbox' | 'office'
+export type NavSection = 'main' | 'work'
 
 /**
- * The sidebar, organised the way the work is: what is on today, then the
- * files in folders by the stage they are at (the same stages a file's own
- * steps show, so there is one way of seeing a file everywhere), then the
- * office. Each thing has one place. The office-wide registers that used to be
- * separate places (decisions, police material, court matters, charging review)
- * are reached from inside a file or by search, and keep their addresses.
+ * The sidebar is six places: Today, Inbox, Files, Diary, Registry, and Settings
+ * (in the footer). Search and Assist are always present and are not places.
+ * Everything that used to be its own place is a step inside a file or part of
+ * the Registry, and keeps its address so no link or tab breaks (spec 0001).
  */
 export const dppNav: readonly NavItem[] = [
   { label: m["nav.item.today"], icon: DashboardBrowsingIcon, to: '/', exact: true, section: 'main' },
-  { label: m["nav.item.recent"], icon: Clock01Icon, to: '/recent', section: 'main' },
-  { label: m["nav.item.tasks"], icon: Task01Icon, to: '/board', section: 'main' },
-  { label: m["nav.item.calendar"], icon: Calendar03Icon, to: '/calendar', section: 'main' },
-  { label: m["nav.item.documents"], icon: LegalDocument01Icon, to: '/documents', count: 'draftDocuments', section: 'main' },
 
-  { label: m["nav.item.inbox"], icon: FileImportIcon, to: '/incoming', count: 'incomingWaiting', section: 'inbox' },
+  { label: m["nav.item.inbox"], icon: FileImportIcon, to: '/incoming', count: 'incomingWaiting', section: 'work' },
+  { label: m["nav.item.files"], icon: Folder01Icon, to: '/files', count: 'needsYou', section: 'work' },
+  { label: m["nav.item.calendar"], icon: Calendar03Icon, to: '/calendar', section: 'work' },
+  { label: m["nav.item.registry"], icon: Building03Icon, to: '/registry', section: 'work' },
+
+  // Each folder of files, reached from the tabs on Files and by search.
   ...fileViews.map((v) => ({ label: () => v.label, icon: Folder01Icon, to: '/files', search: { view: v.id } })),
 
-  { label: m["nav.item.people"], icon: UserGroupIcon, to: '/people', section: 'office' },
-  { label: m["nav.item.police_stations"], icon: NetworkIcon, to: '/connections', section: 'office' },
-  { label: m["nav.item.courts"], icon: NetworkIcon, to: '/courts', section: 'office' },
-  { label: m["nav.item.workload"], icon: Analytics01Icon, to: '/capacity', section: 'office' },
-  { label: m["nav.item.statistics"], icon: ChartBarLineIcon, to: '/reports', section: 'office' },
-  { label: m["nav.item.postbox"], icon: Mail01Icon, to: '/postbox', section: 'office' },
-
+  // Places that are now inside the Registry or inside a file. Not listed in
+  // the sidebar; still reachable from the Registry, by search, and by link.
+  { label: m["nav.item.people"], icon: UserGroupIcon, to: '/people' },
+  { label: m["nav.item.police_stations"], icon: NetworkIcon, to: '/connections' },
+  { label: m["nav.item.courts"], icon: NetworkIcon, to: '/courts' },
+  { label: m["nav.item.workload"], icon: Analytics01Icon, to: '/capacity' },
+  { label: m["nav.item.statistics"], icon: ChartBarLineIcon, to: '/reports' },
+  { label: m["nav.item.postbox"], icon: Mail01Icon, to: '/postbox' },
+  { label: m["nav.item.recent"], icon: Clock01Icon, to: '/recent' },
+  { label: m["nav.item.tasks"], icon: Task01Icon, to: '/board' },
+  { label: m["nav.item.documents"], icon: LegalDocument01Icon, to: '/documents', count: 'draftDocuments' },
   { label: m["nav.item.cases"], icon: KanbanIcon, to: '/cases' },
   { label: m["nav.item.search"], icon: Search01Icon, to: '/search' },
   { label: m["nav.item.charging_review"], icon: BalanceScaleIcon, to: '/review', count: 'thresholdDue' },

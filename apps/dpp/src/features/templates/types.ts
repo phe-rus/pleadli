@@ -12,9 +12,9 @@ export type TemplateContext = {
   accused: string[]
   complainants: string[]
   witnesses: string[]
-  charges: { offence: string; section: string | null; particulars: string | null; accused: string | null }[]
+  charges: { offence: string; section: string | null; /** The offence as the office's legal guide words a charge, when the charge matches an entry. */ statement: string | null; particulars: string | null; accused: string | null }[]
   decision: { id: string; kind: string; label: string; reasons: string | null; decidedAt: number } | null
-  directions: { kind: string; instruction: string }[]
+  directions: { kind: string; instruction: string; dueAt: number | null }[]
   custody: CustodyEvent[]
   exhibits: string[]
   /** The statements on the file, in the order a prosecution calls them: witnesses by date, the investigating officer last. */

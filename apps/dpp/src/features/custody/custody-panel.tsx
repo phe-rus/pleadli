@@ -1,3 +1,4 @@
+import { ChoiceSelect } from '@/components/choice-select'
 import { useJurisdiction } from '@/features/installation'
 import { Group, GroupRow, RowIcon } from '@pleadli/ui/grouped'
 import { NewDocumentButton } from '@/features/templates/new-document'
@@ -132,13 +133,13 @@ export function CustodyPanel({ fileId, quiet = false }: { fileId: string; quiet?
             add.mutate({ prosecutionFileId: fileId, kind, at: new Date(when).getTime(), personName: person.trim() || null }, { onSuccess: () => { setOpen(false); setWhen('') } })
           }}
         >
-          <select className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm" value={kind} onChange={(e) => setKind(e.target.value as CustodyKind)}>
+          <ChoiceSelect className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm" value={kind} onChange={(e) => setKind(e.target.value as CustodyKind)}>
             {kinds.map((k) => (
               <option key={k} value={k}>
                 {custodyKindLabel(k)}
               </option>
             ))}
-          </select>
+          </ChoiceSelect>
           <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
           <Input value={person} onChange={(e) => setPerson(e.target.value)} placeholder={m["clock.person"]()} />
           <div className="flex gap-1">

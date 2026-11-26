@@ -1,3 +1,4 @@
+import { ChoiceSelect } from '@/components/choice-select'
 import { Button } from '@pleadli/ui/button'
 import { Field, FieldDescription, FieldLabel } from '@pleadli/ui/field'
 import { Textarea } from '@pleadli/ui/textarea'
@@ -27,7 +28,7 @@ export function DirectionsEditor({
         {value.map((direction, index) => (
           <div key={index} className="flex flex-col gap-2 rounded-md border border-border/60 p-3">
             <div className="flex flex-wrap items-center gap-2">
-              <select
+              <ChoiceSelect
                 aria-label={m["direction.editor.kind_aria"]({ number: index + 1 })}
                 className="h-8 rounded-md border border-input bg-input/20 px-2"
                 value={direction.kind}
@@ -38,9 +39,9 @@ export function DirectionsEditor({
                     {k.label}
                   </option>
                 ))}
-              </select>
+              </ChoiceSelect>
               {direction.kind === 'statement' && (
-                <select
+                <ChoiceSelect
                   aria-label={m["direction.editor.statement_from_aria"]()}
                   className="h-8 rounded-md border border-input bg-input/20 px-2"
                   value={direction.personId ?? ''}
@@ -52,8 +53,18 @@ export function DirectionsEditor({
                       {p.name}
                     </option>
                   ))}
-                </select>
+                </ChoiceSelect>
               )}
+              <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                {m["direction.editor.due"]()}
+                <input
+                  type="date"
+                  aria-label={m["direction.editor.due_aria"]({ number: index + 1 })}
+                  className="h-8 rounded-md border border-input bg-input/20 px-2 text-foreground"
+                  value={direction.dueAt ? new Date(direction.dueAt).toISOString().slice(0, 10) : ''}
+                  onChange={(e) => update(index, { dueAt: e.target.value ? new Date(`${e.target.value}T12:00:00`).getTime() : null })}
+                />
+              </label>
               <Button type="button" size="xs" variant="ghost" className="ml-auto" onClick={() => onChange(value.filter((_, i) => i !== index))}>
                 {m["common.remove"]()}
               </Button>
@@ -66,7 +77,7 @@ export function DirectionsEditor({
             />
           </div>
         ))}
-        <Button type="button" size="sm" variant="outline" className="w-fit" onClick={() => onChange([...value, { kind: 'evidence', instruction: '', personId: null }])}>
+        <Button type="button" size="sm" variant="outline" className="w-fit" onClick={() => onChange([...value, { kind: 'evidence', instruction: '', personId: null, dueAt: null }])}>
           {m["direction.editor.add"]()}
         </Button>
       </div>

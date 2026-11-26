@@ -9,6 +9,10 @@ use serde::{Deserialize, Serialize};
 pub const KIND_REFERRAL: &str = "referral";
 pub const KIND_RECEIPT: &str = "receipt";
 pub const KIND_DECISION_NOTICE: &str = "decision_notice";
+/// The office's minute of a hearing, for the officer in charge: what was decided, the next date, what the police must do.
+pub const KIND_HEARING_MINUTE: &str = "hearing_minute";
+/// The station's report on whether it could serve the witnesses the office named.
+pub const KIND_SERVICE_REPORT: &str = "service_report";
 
 /// A person on the file. `key` is the sender's own id for them, used only to
 /// join the statements and charges below to the right person.
@@ -79,6 +83,13 @@ pub struct ReferralPayload {
     /// DPP office gave in its receipt. A resubmission is never a new file.
     pub resubmission_of: Option<String>,
     pub notes: Option<String>,
+    /// When the accused was arrested, as the station recorded it. The office starts its custody clock from this, so a
+    /// sender that does not know it leaves it out. Added after the first version: an older reader ignores it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arrested_at: Option<i64>,
+    /// The PLACE the accused is held ("Kira Road Police Station cells"), as text the station writes. Not a time: the only time the clock needs is `arrested_at`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub held_place: Option<String>,
 }
 
 /// The office's answer to a referral, for the station's own record.
@@ -138,6 +149,61 @@ pub struct DecisionNoticePayload {
     pub directions: Vec<DirectionClaim>,
     pub documents: Vec<NoticeDocument>,
     pub court_case_number: Option<String>,
+    /// The date by which the station must answer the directions. Added after the first version: an older reader
+    /// ignores it, and the directions' own wording still carries the date.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub return_due_at: Option<i64>,
+}
+
+/// One witness the office asked the station to serve for a hearing.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WitnessToServe {
+    pub name: String,
+    pub role: Option<String>,
+}
+
+/// The office's minute of a hearing, sent to the officer in charge of the case.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct HearingMinutePayload {
+    pub police_reference: String,
+    pub dpp_file_key: String,
+    pub dpp_reference: Option<String>,
+    pub court_case_number: Option<String>,
+    pub heard_at: i64,
+    pub next_date: Option<i64>,
+    /// Why the hearing did not go on, when it was adjourned.
+    pub adjournment_cause: Option<String>,
+    pub witnesses_to_serve: Vec<WitnessToServe>,
+    /// Exhibits the court asked to be produced.
+    pub exhibits_to_produce: Vec<String>,
+    pub note: Option<String>,
+    pub sent_by: Option<String>,
+}
+
+/// What happened when the station tried to serve one witness.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceResult {
+    pub name: String,
+    pub served: bool,
+    /// Why not, when not served: moved, not found, refused, ill.
+    pub reason: Option<String>,
+    pub served_at: Option<i64>,
+}
+
+/// The station's answer to a hearing minute: which witnesses were served.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceReportPayload {
+    pub police_reference: String,
+    pub dpp_file_key: String,
+    /// The hearing the minute was for.
+    pub heard_at: i64,
+    pub results: Vec<ServiceResult>,
+    pub reported_at: i64,
+    pub reported_by: Option<String>,
 }
 
 pub const KIND_FILING: &str = "case_filing";

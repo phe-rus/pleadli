@@ -51,3 +51,10 @@ export const createFileItem = async (item: NewFileItem) => fileItemSchema.parse(
 export const updateFileItem = async (id: string, change: FileItemChange) => fileItemSchema.parse(await api('PATCH', `/api/file-items/${seg(id)}`, { body: change }))
 export const deleteFileItem = (id: string) => api('DELETE', `/api/file-items/${seg(id)}`)
 export const confirmFileItems = (fileId: string) => api('POST', '/api/file-items/confirm', { body: { fileId } })
+
+export type PaperStart = { pageFrom: number; kind: string; title: string }
+
+/** A scan was stored as one document. The clerk marks where each paper in it
+ * starts, and it becomes one document per paper over the same stored scan. */
+export const splitFileItem = async (id: string, pageCount: number, starts: PaperStart[]) =>
+  z.array(fileItemSchema).parse(await api('POST', `/api/file-items/${seg(id)}/split`, { body: { pageCount, starts } }))

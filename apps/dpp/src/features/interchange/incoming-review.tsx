@@ -1,3 +1,4 @@
+import { ChoiceSelect } from '@/components/choice-select'
 import { formatDate } from '@/lib/dates'
 import { referenceLabel } from '@/lib/jurisdiction'
 import { EmptyNote } from '@/components/planned'
@@ -7,6 +8,7 @@ import { Button } from '@pleadli/ui/button'
 import { Input } from '@pleadli/ui/input'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Textarea } from '@pleadli/ui/textarea'
+import { CountedTabs, RecordHeader } from '@pleadli/shell'
 import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -55,41 +57,15 @@ export function IncomingReview({ id }: { id: string }) {
     onError: (e) => t.error(m["interchange.review.reject_failed"](), { description: say(e) }),
   })
 
-  return (
-    <article className="page">
-      <header className="page-header">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1>{payload.policeReference}</h1>
-            <Tag tone={p.status === 'received' ? 'open' : p.status === 'accepted' ? 'done' : 'stopped'}>{p.status === 'received' ? m["interchange.status.waiting"]() : p.status === 'accepted' ? m["interchange.status.accepted"]() : m["interchange.status.rejected"]()}</Tag>
-            {payload.resubmissionOf && <Tag tone="waiting">{m["interchange.resubmission"]()}</Tag>}
-          </div>
-          <p>{m["interchange.review.referred_by"]({ station: `${p.stationName ?? payload.stationName}${payload.referringOfficer ? `, ${payload.referringOfficer}` : ''}`, date: formatDate(p.receivedAt, 'datetime') })}</p>
-        </div>
-      </header>
-
-      <section aria-label={m["interchange.review.origin"]()} className="flex flex-col gap-2 rounded-lg border bg-card p-4">
-        <h3>{m["interchange.review.who"]()}</h3>
-        <dl className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex flex-col"><dt className="text-xs text-muted-foreground">{m["interchange.review.signed_by"]()}</dt><dd>{p.stationName}</dd></div>
-          <div className="flex flex-col"><dt className="text-xs text-muted-foreground">{m["interchange.review.fingerprint"]()}</dt><dd className="font-mono text-xs">{p.senderFingerprint}</dd></div>
-          <div className="flex flex-col"><dt className="text-xs text-muted-foreground">{m["interchange.review.sent"]()}</dt><dd>{m["interchange.review.sent_value"]({ date: formatDate(p.sentAt, 'datetime'), seq: p.seq })}</dd></div>
-          <div className="flex min-w-0 flex-col"><dt className="text-xs text-muted-foreground">{m["interchange.review.sha"]()}</dt><dd className="truncate font-mono text-xs" title={p.packageSha256}>{p.packageSha256}</dd></div>
-        </dl>
-        <p>{m["interchange.review.signature_checked"]()}</p>
-        {p.nameDiffers && <p className="flex items-center gap-2"><Tag tone="urgent">{m["interchange.review.name_differs"]()}</Tag> {m["interchange.review.name_differs_body"]({ named: payload.stationName, confirmed: p.stationName ?? "" })}</p>}
-        {p.missingBefore > 0 && <p className="flex items-center gap-2"><Tag tone="open">{m["interchange.review.gap"]()}</Tag> {p.missingBefore === 1 ? m["interchange.review.gap_one"]() : m["interchange.review.gap_many"]({ count: p.missingBefore })}</p>}
-        {p.connectionState !== 'trusted' && <p className="flex items-center gap-2"><Tag tone="urgent">{m["interchange.review.not_trusted"]()}</Tag> {m["interchange.review.not_trusted_body"]()}</p>}
-      </section>
-
-      <section className="page-section">
-        <h2>{m["interchange.review.summary"]()}</h2>
+  const summaryTab = (
+      <section className="flex flex-col gap-3">
         <p className="whitespace-pre-wrap text-foreground">{payload.summary}</p>
         {payload.notes && <p className="whitespace-pre-wrap">{payload.notes}</p>}
       </section>
+  )
 
-      <section className="page-section">
-        <h2>{m["nav.item.people"]()}</h2>
+  const peopleTab = (
+      <section className="flex flex-col gap-3">
         <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
           {payload.people.map((person) => {
             const match = p.matches.find((x) => x.personKey === person.key)
@@ -104,10 +80,10 @@ export function IncomingReview({ id }: { id: string }) {
                   <label className="flex flex-wrap items-center gap-2">
                     <Tag tone="open">{m["interchange.review.already_here"]()}</Tag>
                     <span>{m["interchange.review.same_nin"]({ name: match.existingName })}</span>
-                    <select className="h-8 rounded-md border border-input bg-input/20 px-2" value={matches[person.key] ?? ''} onChange={(e) => setMatches({ ...matches, [person.key]: e.target.value || null })}>
+                    <ChoiceSelect className="h-8 rounded-md border border-input bg-input/20 px-2" value={matches[person.key] ?? ''} onChange={(e) => setMatches({ ...matches, [person.key]: e.target.value || null })}>
                       <option value="">{m["interchange.review.add_new"]()}</option>
                       <option value={match.existingPersonId}>{m["interchange.review.use_existing"]({ name: match.existingName })}</option>
-                    </select>
+                    </ChoiceSelect>
                   </label>
                 )}
               </div>
@@ -115,9 +91,10 @@ export function IncomingReview({ id }: { id: string }) {
           })}
         </div>
       </section>
+  )
 
-      <section className="page-section">
-        <h2>{m["interchange.review.statements"]()}</h2>
+  const statementsTab = (
+      <section className="flex flex-col gap-3">
         {payload.statements.length === 0 ? <EmptyNote>{m["common.none"]()}</EmptyNote> : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {payload.statements.map((s) => (
@@ -129,9 +106,10 @@ export function IncomingReview({ id }: { id: string }) {
           </div>
         )}
       </section>
+  )
 
-      <section className="page-section">
-        <h2>{m["interchange.review.exhibits"]()}</h2>
+  const exhibitsTab = (
+      <section className="flex flex-col gap-3">
         {payload.exhibits.length === 0 ? <EmptyNote>{m["common.none"]()}</EmptyNote> : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {payload.exhibits.map((e) => (
@@ -140,9 +118,10 @@ export function IncomingReview({ id }: { id: string }) {
           </div>
         )}
       </section>
+  )
 
-      <section className="page-section">
-        <h2>{m["interchange.review.charges"]()}</h2>
+  const chargesTab = (
+      <section className="flex flex-col gap-3">
         {payload.charges.length === 0 ? <EmptyNote>{m["common.none"]()}</EmptyNote> : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {payload.charges.map((c, i) => (
@@ -154,9 +133,10 @@ export function IncomingReview({ id }: { id: string }) {
           </div>
         )}
       </section>
+  )
 
-      <section className="page-section">
-        <h2>{m["interchange.review.files"]()}</h2>
+  const filesTab = (
+      <section className="flex flex-col gap-3">
         {p.files.length === 0 ? <EmptyNote>{m["interchange.review.no_files"]()}</EmptyNote> : (
           <div role="list" className="flex flex-col divide-y divide-border/60 border-y border-border/60">
             {p.files.map((f) => (
@@ -166,7 +146,49 @@ export function IncomingReview({ id }: { id: string }) {
         )}
         <p>{m["interchange.review.files_hint"]()}</p>
       </section>
+  )
 
+  return (
+    <article className="page">
+      <RecordHeader
+        className="mb-4"
+        crumb={<><Link to="/incoming" className="hover:underline">{m["nav.item.inbox"]()}</Link><span aria-hidden> / </span><span>{payload.policeReference}</span></>}
+        title={payload.policeReference}
+        tag={<>
+          <Tag tone={p.status === 'received' ? 'open' : p.status === 'accepted' ? 'done' : 'stopped'}>{p.status === 'received' ? m["interchange.status.waiting"]() : p.status === 'accepted' ? m["interchange.status.accepted"]() : m["interchange.status.rejected"]()}</Tag>
+          {payload.resubmissionOf && <Tag tone="waiting">{m["interchange.resubmission"]()}</Tag>}
+        </>}
+        subtitle={m["interchange.review.referred_by"]({ station: `${p.stationName ?? payload.stationName}${payload.referringOfficer ? `, ${payload.referringOfficer}` : ''}`, date: formatDate(p.receivedAt, 'datetime') })}
+        copyLabel={m["file_ws.d_copy"]()}
+        copiedLabel={m["file_ws.d_copied"]()}
+        facts={[
+          [
+            { label: m["interchange.review.signed_by"](), value: p.stationName },
+            { label: m["interchange.review.sent"](), value: m["interchange.review.sent_value"]({ date: formatDate(p.sentAt, 'datetime'), seq: p.seq }) },
+          ],
+          [
+            { label: m["interchange.review.fingerprint"](), value: <span className="font-mono text-xs">{p.senderFingerprint}</span>, copy: p.senderFingerprint },
+            { label: m["interchange.review.sha"](), value: <span className="font-mono text-xs" title={p.packageSha256}>{p.packageSha256}</span>, copy: p.packageSha256 },
+          ],
+        ]}
+      />
+      <section aria-label={m["interchange.review.origin"]()} className="mb-4 flex flex-col gap-1.5 text-sm text-muted-foreground">
+        <p className="m-0">{m["interchange.review.signature_checked"]()}</p>
+        {p.nameDiffers && <p className="m-0 flex items-center gap-2"><Tag tone="urgent">{m["interchange.review.name_differs"]()}</Tag> {m["interchange.review.name_differs_body"]({ named: payload.stationName, confirmed: p.stationName ?? "" })}</p>}
+        {p.missingBefore > 0 && <p className="m-0 flex items-center gap-2"><Tag tone="open">{m["interchange.review.gap"]()}</Tag> {p.missingBefore === 1 ? m["interchange.review.gap_one"]() : m["interchange.review.gap_many"]({ count: p.missingBefore })}</p>}
+        {p.connectionState !== 'trusted' && <p className="m-0 flex items-center gap-2"><Tag tone="urgent">{m["interchange.review.not_trusted"]()}</Tag> {m["interchange.review.not_trusted_body"]()}</p>}
+      </section>
+
+      <CountedTabs
+        tabs={[
+          { id: 'summary', label: m["interchange.review.summary"](), content: summaryTab },
+          { id: 'people', label: m["nav.item.people"](), count: payload.people.length, content: peopleTab },
+          { id: 'statements', label: m["interchange.review.statements"](), count: payload.statements.length, content: statementsTab },
+          { id: 'exhibits', label: m["interchange.review.exhibits"](), count: payload.exhibits.length, content: exhibitsTab },
+          { id: 'charges', label: m["interchange.review.charges"](), count: payload.charges.length, content: chargesTab },
+          { id: 'files', label: m["interchange.review.files"](), count: p.files.length, content: filesTab },
+        ]}
+      />
       {payload.resubmissionOf && (
         <section className="page-section">
           <h2>{m["interchange.review.answers"]()}</h2>
@@ -179,6 +201,7 @@ export function IncomingReview({ id }: { id: string }) {
           )}
         </section>
       )}
+
 
       {!decided && (
         <section className="page-section rounded-lg border bg-card p-4">

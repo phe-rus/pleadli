@@ -1,3 +1,4 @@
+import { ChoiceSelect } from '@/components/choice-select'
 import { SettingsCard, SettingsRow } from '@/components/settings-card'
 import { PinField } from '@pleadli/ui/pin-field'
 import { Segmented } from '@pleadli/ui/segmented'
@@ -629,9 +630,9 @@ export function ProtectionPane() {
       {level !== 'none' && (
         <SettingsCard title={m["protection.away"]()}>
           <SettingsRow label={m["protection.idle"]()} hint={m["protection.idle_description"]()}>
-            <select
+            <ChoiceSelect
               className="h-8 rounded-md border border-input bg-input/20 px-2"
-              value={status.idleMinutes}
+              value={String(status.idleMinutes)}
               disabled={!isAdmin}
               onChange={(e) => void setIdleMinutes(Number(e.target.value)).then(refresh, (err) => t.error(m["settings.save_failed"](), { description: say(err) }))}
             >
@@ -640,7 +641,7 @@ export function ProtectionPane() {
                   {c.label()}
                 </option>
               ))}
-            </select>
+            </ChoiceSelect>
           </SettingsRow>
           <SettingsRow label={m["protection.sign_out_now"]()}>
             <Button size="sm" variant="outline" onClick={() => void lockNow().then(refresh)}>

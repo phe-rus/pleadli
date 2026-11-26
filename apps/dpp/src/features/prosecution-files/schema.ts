@@ -32,6 +32,10 @@ export function fileStatusTone(status: string): StatusTone {
   return 'stopped'
 }
 
+/** The five sorts of ODPP work; the cover colour follows from the kind. */
+export const fileKinds = ['perusal', 'application', 'appeal', 'revision', 'complaint'] as const
+export type FileKind = (typeof fileKinds)[number]
+
 /** The slices of the register (server: `view_filter`). Each says what it is,
  * because the same file is in exactly one of them. */
 export const fileViews = [
@@ -48,6 +52,11 @@ export const fileViews = [
   { id: 'handover', get label() { return m["folder.handover"]() }, get about() { return m["stage.pipe.handover_about"]() } },
   { id: 'follow_up', get label() { return m["folder.follow_up"]() }, get about() { return m["stage.pipe.follow_up_about"]() } },
   { id: 'concluded', get label() { return m["folder.concluded"]() }, get about() { return m["stage.pipe.concluded_about"]() } },
+  { id: 'kind_perusal', get label() { return m["file.kind.perusal.label"]() }, get about() { return m["file.kind.perusal.about"]() } },
+  { id: 'kind_application', get label() { return m["file.kind.application.label"]() }, get about() { return m["file.kind.application.about"]() } },
+  { id: 'kind_appeal', get label() { return m["file.kind.appeal.label"]() }, get about() { return m["file.kind.appeal.about"]() } },
+  { id: 'kind_revision', get label() { return m["file.kind.revision.label"]() }, get about() { return m["file.kind.revision.about"]() } },
+  { id: 'kind_complaint', get label() { return m["file.kind.complaint.label"]() }, get about() { return m["file.kind.complaint.about"]() } },
 ] as const
 
 /** The folders in the sidebar, in the order the work moves: every file, then
@@ -84,6 +93,9 @@ export const prosecutionFileSchema = z.object({
   stageChangedAt: z.number().nullable().catch(null),
   outcome: z.string().nullable().catch(null),
   concludedAt: z.number().nullable().catch(null),
+  kind: z.enum(fileKinds).catch('perusal'),
+  cover: z.enum(['pink', 'yellow', 'green', 'blue', 'white']).catch('pink'),
+  assignedTo: z.string().nullable().catch(null),
 })
 
 export type ProsecutionFile = z.infer<typeof prosecutionFileSchema>
@@ -94,6 +106,7 @@ export const fileSummarySchema = prosecutionFileSchema.extend({
   reviewNoteCount: z.number(),
   statementCount: z.number(),
   chargeCount: z.number(),
+  offence: z.string().nullable(),
   decisionCount: z.number(),
   lastDecisionType: z.string().nullable(),
   lastDecisionAt: z.number().nullable(),
@@ -153,3 +166,18 @@ export type ProsecutionFilePerson = z.infer<typeof prosecutionFilePersonSchema>
 export function personFullNameForRole(link: Pick<ProsecutionFilePerson, 'personFirstName' | 'personLastName' | 'personOtherNames'>) {
   return [link.personLastName, link.personFirstName, link.personOtherNames].filter(Boolean).join(', ')
 }
+
+export const linkedFileSchema = z.object({
+  linkId: z.string(),
+  fileId: z.string(),
+  title: z.string(),
+  reference: z.string().nullable(),
+  kind: z.enum(fileKinds).catch('perusal'),
+  cover: z.string(),
+  stage: z.string(),
+  relation: z.enum(['trial', 'bail', 'appeal', 'revision', 'related']),
+})
+export type LinkedFile = z.infer<typeof linkedFileSchema>
+export const linkRelations = ['trial', 'bail', 'appeal', 'revision', 'related'] as const
+
+export const fileKindFolders = ['kind_perusal', 'kind_application', 'kind_appeal', 'kind_revision', 'kind_complaint'] as const satisfies readonly FileViewId[]

@@ -36,6 +36,8 @@ const PATHS: &[Path] = &[
     p(PoliceStation, DppOffice, KIND_REFERRAL, "a case file referred for a decision"),
     p(DppOffice, PoliceStation, KIND_RECEIPT, "the DPP's answer to a referral"),
     p(DppOffice, PoliceStation, KIND_DECISION_NOTICE, "the DPP's decision on a referred file"),
+    p(DppOffice, PoliceStation, KIND_HEARING_MINUTE, "the DPP's minute of a hearing, for the officer in charge"),
+    p(PoliceStation, DppOffice, KIND_SERVICE_REPORT, "the station's report on serving the witnesses the DPP named"),
     // The DPP and a court registry: a filing or a withdrawal goes to the court, the registry's answer comes back.
     p(DppOffice, CourtRegistry, KIND_FILING, "a prosecution file lodged with the registry"),
     p(DppOffice, CourtRegistry, KIND_WITHDRAWAL, "a withdrawal or discontinuance of a filed case"),

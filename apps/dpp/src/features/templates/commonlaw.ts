@@ -13,6 +13,11 @@ import type { Template, TemplateContext } from './types'
 
 const DASH = '....................'
 const day = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: zoneFor(ms) })
+/** When the file is to come back: the latest date any direction carries, else left for the officer to fill. */
+const resubmitBy = (ds: { dueAt: number | null }[]) => {
+  const last = Math.max(0, ...ds.map((d) => d.dueAt ?? 0))
+  return last ? `by ${day(last)}` : `within ${DASH} days`
+}
 const roman = (n: number) => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n - 1] ?? String(n)
 
 type CommonLaw = {
@@ -61,9 +66,9 @@ function commonLawTemplates(c: CommonLaw): Template[] {
         refs(ctx, [{ label: ctx.country?.references.court.label ?? 'Court case no.', value: ctx.file.courtCaseNumber ?? DASH }]),
         { type: 'heading', text: `${c.party} versus` },
         accusedList(ctx),
-        ...(ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, particulars: DASH, accused: null }]).flatMap((ch, i): Block[] => [
+        ...(ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, statement: null, particulars: DASH, accused: null }]).flatMap((ch, i): Block[] => [
           { type: 'heading', text: `Count ${roman(i + 1)}` },
-          { type: 'fields', rows: [{ label: 'Statement of offence', value: `${ch.offence}${ch.section ? `, contrary to ${ch.section}` : ''}` }] },
+          { type: 'fields', rows: [{ label: 'Statement of offence', value: ch.statement ?? `${ch.offence}${ch.section ? `, contrary to ${ch.section}` : ''}` }] },
           { type: 'paragraph', text: `Particulars of offence: ${ch.particulars ?? DASH}` },
         ]),
         sign(ctx, 'Approved by'),
@@ -81,8 +86,8 @@ function commonLawTemplates(c: CommonLaw): Template[] {
         refs(ctx),
         { type: 'heading', text: `RE: ${ctx.file.title}` },
         { type: 'paragraph', text: 'The above file has been reviewed. The evidence on it is not yet sufficient for a charging decision. It is returned for the following inquiries:' },
-        { type: 'list', ordered: true, items: (ctx.directions.length ? ctx.directions : [{ kind: '', instruction: DASH }]).map((d) => ({ title: null, text: d.instruction })) },
-        { type: 'paragraph', text: `Please complete these inquiries and resubmit the file to this office within ${DASH} days.` },
+        { type: 'list', ordered: true, items: (ctx.directions.length ? ctx.directions : [{ kind: '', instruction: DASH, dueAt: null }]).map((d) => ({ title: null, text: d.dueAt ? `${d.instruction} (by ${day(d.dueAt)})` : d.instruction })) },
+        { type: 'paragraph', text: `Please complete these inquiries and resubmit the file to this office ${resubmitBy(ctx.directions)}.` },
         sign(ctx, 'Signed'),
       ],
     },

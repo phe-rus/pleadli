@@ -78,6 +78,9 @@ pub struct Workload {
     pub charged: i64,
     pub court_matters: i64,
     pub charged_without_court_reference: i64,
+    /// What waits on the signed-in person, from `attention`: the one definition
+    /// Today, Inbox, Files and the status bar all share.
+    pub needs_you: super::attention::Summary,
     pub decisions_total: i64,
     pub decisions_last_30_days: i64,
     pub people: i64,
@@ -95,8 +98,9 @@ pub struct Workload {
     pub threshold_reviews: Vec<ThresholdReview>,
 }
 
-pub async fn workload(pool: &SqlitePool) -> Result<Workload, sqlx::Error> {
+pub async fn workload(pool: &SqlitePool, actor: Option<&super::staff::Actor>) -> Result<Workload, sqlx::Error> {
     let now = chrono::Utc::now().timestamp_millis();
+    let attention = super::attention::attention(pool, actor).await?;
 
     let counts: Counts = sqlx::query_as(
         "SELECT COUNT(*) AS total_files,
@@ -196,6 +200,7 @@ pub async fn workload(pool: &SqlitePool) -> Result<Workload, sqlx::Error> {
         charged: counts.charged,
         court_matters: counts.court_matters,
         charged_without_court_reference: counts.charged_without_court_reference,
+        needs_you: attention.summary,
         decisions_total,
         decisions_last_30_days,
         people,

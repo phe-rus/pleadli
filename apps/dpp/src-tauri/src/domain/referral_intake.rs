@@ -319,6 +319,28 @@ pub async fn accept_referral(pool: &SqlitePool, vault_root: &Path, package_id: &
             attach.push((f.id.clone(), "prosecution_file", file_id.clone()));
         }
     }
+    // The station's own account of the arrest starts the custody clock without anyone retyping it. It is kept as the
+    // station's claim (the note says so), once: a resubmission that repeats the same arrest adds nothing.
+    if let Some(arrested_at) = payload.arrested_at.filter(|at| *at > 0) {
+        let known: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM custody_events WHERE prosecution_file_id = ? AND kind = 'arrest' AND at = ?").bind(&file_id).bind(arrested_at).fetch_one(&mut *tx).await?;
+        if known == 0 {
+            let note = match payload.held_place.as_deref().map(str::trim).filter(|h| !h.is_empty()) {
+                Some(place) => format!("As reported by {station_name}. Held at {place}."),
+                None => format!("As reported by {station_name}."),
+            };
+            let accused: Option<String> = payload.people.iter().find(|x| x.role == "accused").map(|x| format!("{}, {}", x.last_name.trim(), x.first_name.trim()));
+            sqlx::query("INSERT INTO custody_events (id, prosecution_file_id, kind, at, person_name, note, source, created_by, created_at) VALUES (?, ?, 'arrest', ?, ?, ?, 'person', ?, ?)")
+                .bind(Uuid::new_v4().to_string())
+                .bind(&file_id)
+                .bind(arrested_at)
+                .bind(accused)
+                .bind(note)
+                .bind(&by)
+                .bind(chrono::Utc::now().timestamp_millis())
+                .execute(&mut *tx)
+                .await?;
+        }
+    }
     if target.is_some() {
         prosecution_files::recompute_status(&mut tx, &file_id).await?;
     }

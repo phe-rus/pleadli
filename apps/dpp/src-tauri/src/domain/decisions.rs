@@ -227,9 +227,10 @@ pub async fn create_decision(pool: &SqlitePool, input: CreateDecisionInput) -> R
     prosecution_files::recompute_status(&mut tx, &input.prosecution_file_id).await?;
     tx.commit().await?;
 
-    // A decision to charge moves a file still at receive, review or decide on to preparing the case, so the list does not
-    // keep saying "receive" for a file that has been sanctioned. Other decisions leave the stage to the person.
-    if matches!(input.decision_type.as_str(), "sanction" | "threshold_charge") {
+    // Any decision the review supports moves a file still at receive, review or decide on to Send: the answer to give
+    // (charge sheet, directions to Police, reasons for declining) is the next thing to do, and the list should not keep
+    // saying "receive". Other recorded decisions leave the stage to the person.
+    if matches!(input.decision_type.as_str(), "sanction" | "threshold_charge" | "return_for_investigation" | "decline" | "divert") {
         let stage: String = sqlx::query_scalar("SELECT stage FROM prosecution_files WHERE id = ?").bind(&input.prosecution_file_id).fetch_one(pool).await?;
         if matches!(stage.as_str(), "receive" | "review" | "decide") {
             super::pipeline::set_stage(pool, &input.prosecution_file_id, "prepare", decided_by.as_deref()).await?;

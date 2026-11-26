@@ -1,125 +1,121 @@
-import * as m from '@/paraglide/messages'
-import { formatDate } from '@/lib/dates'
+import { ClockChip, KindChip } from '@/components/file-chips'
 import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
-import { FileStatusTag, Tag } from '@/components/status-tag'
-import {
-  fileReference,
-  fileViews,
-  filesOptions,
-  isFileView,
-  ProsecutionFileForm,
-  useFiles,
-  type FileSummary,
-  type FileViewId,
-} from '@/features/prosecution-files'
-import { ageLabel } from '@/lib/present'
-import { DataTable, selectColumn, type DataTableColumnDef } from '@pleadli/forms-tables'
-import { cn } from '@pleadli/ui/lib/utils'
-import { boardOptions, CaseBoard } from '@/features/pipeline'
+import { useClocks, type OfficeClock } from '@/features/clocks'
+import { useCalendar } from '@/features/court/queries'
+import { fileReference, filesOptions, isFileView, ProsecutionFileForm, useFiles, type FileSummary, type FileViewId } from '@/features/prosecution-files'
+import { actionLabel, holderLabel, stepWord, useAttention } from '@/features/attention'
+import { FileStatusTag } from '@/components/status-tag'
+import { formatDate } from '@/lib/dates'
+import * as m from '@/paraglide/messages'
 import { Folder01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/files/')({
   validateSearch: (search: Record<string, unknown>): { view?: FileViewId; open?: string; layout?: 'list' | 'board' } => ({
     ...(isFileView(search.view) ? { view: search.view } : {}),
     ...(typeof search.open === 'string' ? { open: search.open } : {}),
-    ...(search.layout === 'board' ? { layout: 'board' as const } : {}),
   }),
-  loaderDeps: ({ search }) => ({ view: search.view ?? 'all' }),
-  loader: async ({ context, deps }) => {
-    await Promise.all([context.queryClient.query({ ...filesOptions(deps.view), staleTime: 'static' }), context.queryClient.query({ ...boardOptions(), staleTime: 'static' })])
+  loader: async ({ context }) => {
+    await context.queryClient.query({ ...filesOptions('all'), staleTime: 'static' })
   },
   component: RouteComponent,
 })
 
-/** One folder of files, chosen in the sidebar: every file, the files at one
- * stage, or those back with Police. All files can also be seen as a board of
- * the stages. Doing the work happens in the file itself, not here. */
-function RouteComponent() {
-  const { view = 'all', open, layout = 'list' } = Route.useSearch()
-  const navigate = useNavigate()
-  const current = fileViews.find((v) => v.id === view) ?? fileViews[0]
-  const { data: files } = useFiles(view)
-  const waiting = view === 'intake' || view === 'active' || view === 'returned'
-  const board = view === 'all' && layout === 'board'
+const DAY = 86_400_000
+const tabs = ['all', 'perusal', 'court', 'application', 'appeal', 'revision', 'complaint', 'closed'] as const
+type Tab = (typeof tabs)[number]
 
-  // A link from search or the Overview may name a file to open.
+const tabLabel = (t: Tab) =>
+  ({ all: m["files.tab.all"], perusal: m["files.tab.perusal"], court: m["files.tab.court"], application: m["files.tab.application"], appeal: m["files.tab.appeal"], revision: m["files.tab.revision"], complaint: m["files.tab.complaint"], closed: m["files.tab.closed"] })[t]()
+
+const inTab = (f: FileSummary, tab: Tab) => {
+  const open = f.stage !== 'concluded'
+  switch (tab) {
+    case 'all': return open
+    case 'closed': return !open
+    case 'court': return open && f.stage === 'follow_up'
+    default: return open && f.kind === tab
+  }
+}
+
+
+const inDays = (at: number) => Math.ceil((at - Date.now()) / DAY)
+
+function clockFor(f: FileSummary, clocks: OfficeClock[], hearing: number | undefined) {
+  const c = clocks.find((x) => x.fileId === f.id)
+  if (c?.kind === 'adjournment_review') return { urgent: true, label: m["files.clock.review_now"]() }
+  if (c?.dueAt != null) {
+    const d = inDays(c.dueAt)
+    const word = c.kind === 'allocation' ? m["files.clock.allocate"] : m["files.clock.reply"]
+    return d < 0 ? { urgent: true, label: m["files.clock.overdue"]({ what: word() }) } : { urgent: d <= 1, label: m["files.clock.in_days"]({ what: word(), days: d }) }
+  }
+  if (hearing != null) return { urgent: inDays(hearing) <= 1, label: formatDate(hearing, 'weekday') }
+  return null
+}
+
+function RouteComponent() {
+  const { view, open } = Route.useSearch()
+  const navigate = useNavigate()
+  const { data: files } = useFiles('all')
+  const { data: clocks = [] } = useClocks()
+  const [from] = useState(() => Date.now())
+  const { data: calendar = [] } = useCalendar(from, from + 90 * DAY)
+  const { forFile } = useAttention()
+
+  // "Mine" is the backend's answer: held by me or needing me, never a second rule here.
+  const isMine = (id: string) => { const n = forFile(id); return !!n && n.action !== 'closed' && (n.heldByMe || n.needsMe) }
+  const mineCount = files.filter((f) => isMine(f.id)).length
+  const [scope, setScope] = useState<'mine' | 'office' | null>(null)
+  const mine = (scope ?? (mineCount > 0 ? 'mine' : 'office')) === 'mine'
+  const initialTab: Tab = view?.startsWith('kind_') ? (view.slice(5) as Tab) : view === 'closed' || view === 'concluded' ? 'closed' : view === 'follow_up' ? 'court' : 'all'
+  const [tab, setTab] = useState<Tab>(tabs.includes(initialTab) ? initialTab : 'all')
+  const [query, setQuery] = useState('')
+  // A stage link from elsewhere (Today, search) narrows the list to that stage.
+  const stage = view && ['receive', 'review', 'decide', 'prepare', 'handover'].includes(view) ? view : null
+
   useEffect(() => {
     if (open) void navigate({ to: '/files/$fileId', params: { fileId: open }, replace: true })
   }, [open, navigate])
 
-  const columns: DataTableColumnDef<FileSummary>[] = useMemo<DataTableColumnDef<FileSummary>[]>(() => {
-    const waitingColumn: DataTableColumnDef<FileSummary>[] = waiting
-      ? [
-          {
-            id: 'waiting',
-            header: () => (view === 'returned' ? m["page.files.col.with_police"]() : m["page.files.col.waiting"]()),
-            accessorFn: (row: FileSummary) => row.awaitingSince,
-            cell: ({ row }: { row: { original: FileSummary } }) => ageLabel(view === 'returned' ? (row.original.lastDecisionAt ?? row.original.awaitingSince) : row.original.awaitingSince),
-          },
-        ]
-      : []
-    return [
-      selectColumn(),
-      {
-        accessorKey: 'title',
-        header: () => m["page.files.col.title"](),
-        cell: ({ row }) => (
-          <Link to="/files/$fileId" params={{ fileId: row.original.id }} className="flex max-w-md flex-col no-underline">
-            <span className="truncate font-medium text-foreground">{row.original.title}</span>
-            <span className="truncate text-muted-foreground">{fileReference(row.original)}</span>
-          </Link>
-        ),
-      },
-      { accessorKey: 'id', header: () => m["page.files.col.id"]() },
-      { id: 'reference', header: () => m["page.files.col.reference"](), accessorFn: (row) => fileReference(row), cell: ({ row }) => fileReference(row.original) },
-      { accessorKey: 'accused', header: () => m["page.files.col.accused"](), cell: ({ row }) => row.original.accused ?? '·' },
-      { accessorKey: 'policeStation', header: () => m["page.files.col.station"](), cell: ({ row }) => row.original.policeStation ?? '·' },
-      { accessorKey: 'currentStatus', header: () => m["page.files.col.status"](), cell: ({ row }) => <FileStatusTag status={row.original.currentStatus} /> },
-      ...waitingColumn,
-      { accessorKey: 'courtCaseNumber', header: () => m["page.files.col.court"](), cell: ({ row }) => row.original.courtCaseNumber ?? '·' },
-      { accessorKey: 'receivedAt', header: () => m["page.files.col.received"](), cell: ({ getValue }) => formatDate(getValue<number>(), 'datetime') },
-      { accessorKey: 'createdAt', header: () => m["page.files.col.recorded"](), cell: ({ getValue }) => formatDate(getValue<number>(), 'datetime') },
-    ]
-  }, [view, waiting])
+  const nextHearing = useMemo(() => {
+    const byFile = new Map<string, number>()
+    for (const e of calendar) if (e.source === 'hearing' && e.fileId && e.at >= from && !byFile.has(e.fileId)) byFile.set(e.fileId, e.at)
+    return byFile
+  }, [calendar, from])
+
+  const scoped = files.filter((f) => !mine || isMine(f.id))
+  const counts = Object.fromEntries(tabs.map((t) => [t, scoped.filter((f) => inTab(f, t)).length])) as Record<Tab, number>
+  const q = query.trim().toLowerCase()
+  const rows = scoped
+    .filter((f) => inTab(f, tab) && (!stage || f.stage === stage) && (!q || [f.title, fileReference(f), f.accused, f.policeStation, f.courtCaseNumber].filter(Boolean).join(' ').toLowerCase().includes(q)))
+    .sort((a, b) => (nextHearing.get(a.id) ?? Infinity) - (nextHearing.get(b.id) ?? Infinity) || b.lastActivityAt - a.lastActivityAt)
+  const openCount = files.filter((f) => f.stage !== 'concluded').length
 
   return (
-    <article className={cn('page', board && 'flex min-h-0 flex-1 flex-col')}>
+    <article className="page">
       <header className="page-header">
         <div>
-          <h1>{current.label}</h1>
-          <p>
-            {files.length === 1 ? m["files.count_one"]() : m["files.count"]({ count: files.length })} · {current.about}
-          </p>
+          <h1>{m["nav.item.files"]()}</h1>
+          <p>{m["files.subtitle"]({ open: openCount, mine: mineCount })}</p>
         </div>
         <div className="page-actions">
-          {view === 'all' && (
-            <div role="radiogroup" aria-label={m["files.layout.label"]()} className="flex rounded-lg bg-foreground/[0.05] p-0.5">
-              {(['list', 'board'] as const).map((id) => (
-                <Link
-                  key={id}
-                  to="/files"
-                  search={{ view: 'all', ...(id === 'board' ? { layout: 'board' as const } : {}) }}
-                  replace
-                  role="radio"
-                  aria-checked={layout === id}
-                  className={cn('rounded-md px-3 py-1 text-[0.8125rem] no-underline transition-colors', layout === id ? 'bg-background font-medium text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground')}
-                >
-                  {id === 'list' ? m["files.layout.list"]() : m["files.layout.board"]()}
-                </Link>
-              ))}
-            </div>
-          )}
+          <div role="radiogroup" aria-label={m["files.scope.label"]()} className="flex rounded-[10px] bg-secondary p-[3px]">
+            {([['mine', m["files.scope.mine"]({ count: mineCount })], ['office', m["files.scope.office"]({ count: openCount })]] as const).map(([id, label]) => (
+              <button key={id} type="button" role="radio" aria-checked={(id === 'mine') === mine} onClick={() => setScope(id)} className={cn('cursor-pointer rounded-lg px-3.5 py-1.5 text-sm', (id === 'mine') === mine ? 'bg-background font-semibold shadow-xs' : 'text-muted-foreground')}>
+                {label}
+              </button>
+            ))}
+          </div>
           <PanelButton label={m["workspace.quick.open_file"]()} title={m["workspace.quick.open_file"]()} description={m["workspace.quick.open_file_description"]()} variant="default">
             {({ close, setDirty }) => (
               <ProsecutionFileForm
                 onDirtyChange={setDirty}
                 onSuccess={(file) => {
                   close()
-                  // A new file opens straight away, on its (empty) folder, ready for the paper.
                   void navigate({ to: '/files/$fileId', params: { fileId: file.id } })
                 }}
               />
@@ -128,23 +124,63 @@ function RouteComponent() {
         </div>
       </header>
 
-      {board ? (
-        <CaseBoard />
-      ) : files.length === 0 ? (
-        <EmptyNote icon={<HugeiconsIcon icon={Folder01Icon} />}>{emptyText[view]?.() ?? m["page.files.empty"]()}</EmptyNote>
+      <nav aria-label={m["nav.item.files"]()} className="flex flex-wrap gap-1.5">
+        {tabs.map((t) => (
+          <button key={t} type="button" onClick={() => setTab(t)} aria-current={tab === t ? 'page' : undefined} className={cn('cursor-pointer whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm', tab === t ? 'bg-foreground font-semibold text-background' : 'text-muted-foreground hover:bg-secondary')}>
+            {tabLabel(t)}
+            {t !== 'closed' && t !== 'all' ? ` ${counts[t]}` : ''}
+          </button>
+        ))}
+      </nav>
+
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={m["files.search"]()}
+        aria-label={m["files.search"]()}
+        className="h-10 w-full rounded-[10px] border-0 bg-secondary px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      />
+
+      {rows.length === 0 ? (
+        <EmptyNote icon={<HugeiconsIcon icon={Folder01Icon} />}>{m["page.files.empty"]()}</EmptyNote>
       ) : (
-        <DataTable aria-label={current.label} data={files} columns={columns} getRowId={(row) => row.id} initialHidden={['id', 'reference', 'createdAt']} emptyMessage={m["page.files.empty"]()} searchPlaceholder={m["page.files.search_list"]()} />
+        <div className="overflow-x-auto">
+        <div role="table" aria-label={m["nav.item.files"]()} className="flex min-w-[56rem] flex-col">
+          <div role="row" className="flex gap-3.5 border-b border-border px-3 py-2 text-xs font-semibold tracking-wide text-muted-foreground">
+            <div className="flex-[2.4_1_0]">{m["files.col.file"]()}</div>
+            <div className="flex-[1.1_1_0]">{m["files.col.kind"]()}</div>
+            <div className="flex-[1.1_1_0]">{m["files.col.stage"]()}</div>
+            <div className="flex-[1.9_1_0]">{m["files.col.next"]()}</div>
+            <div className="flex-[1.2_1_0] text-right">{m["files.col.clock"]()}</div>
+          </div>
+          {rows.map((f) => {
+            const clock = clockFor(f, clocks, nextHearing.get(f.id))
+            const next = forFile(f.id)
+            return (
+              <Link key={f.id} to="/files/$fileId" params={{ fileId: f.id }} role="row" className="flex items-center gap-3.5 border-b border-border/60 px-3 py-3 text-foreground no-underline hover:bg-secondary/50">
+                <div className="min-w-0 flex-[2.4_1_0]">
+                  <div className="truncate text-[15px] font-semibold">{f.title}</div>
+                  <div className="truncate text-[13px] text-muted-foreground">{[f.accused, fileReference(f)].filter(Boolean).join(' · ')}</div>
+                </div>
+                <div className="min-w-0 flex-[1.1_1_0]">
+                  <KindChip kind={f.kind} />
+                </div>
+                <div className="flex min-w-0 flex-[1.1_1_0] flex-col items-start gap-1 text-[13px]">
+                  {next ? stepWord(next) : ''}
+                  {!['under_review', 'resubmitted'].includes(f.currentStatus) && <FileStatusTag status={f.currentStatus} stage={f.stage} />}
+                </div>
+                <div className="min-w-0 flex-[1.9_1_0] text-[13px] text-muted-foreground">
+                  {next ? actionLabel(next) : ''}
+                  {next && !next.needsMe && next.action !== 'closed' && <span className="block text-xs">{holderLabel(next)}</span>}
+                </div>
+                <div className="min-w-0 flex-[1.2_1_0] text-right">{clock && <ClockChip urgent={clock.urgent}>{clock.label}</ClockChip>}</div>
+              </Link>
+            )
+          })}
+        </div>
+        </div>
       )}
-      {view === 'intake' && files.length > 0 && <Tag tone="open" className="w-fit">{m["page.files.oldest_first"]()}</Tag>}
+      <p className="max-w-3xl text-[13px] text-muted-foreground">{m["files.footnote"]()}</p>
     </article>
   )
-}
-
-const emptyText: Partial<Record<FileViewId, () => string>> = {
-  reopened: m["page.files.empty_reopened"],
-  intake: m["page.files.empty_intake"],
-  active: m["page.files.empty_active"],
-  returned: m["page.files.empty_returned"],
-  closed: m["page.files.empty_closed"],
-  all: m["page.files.empty_all"],
 }

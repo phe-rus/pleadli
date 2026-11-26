@@ -45,7 +45,7 @@ export const rwandaTemplates: Template[] = [
       { type: 'paragraph', text: `To the President of the ${DASH} Court of ${ctx.office.region ?? DASH}` },
       refs(ctx),
       { type: 'heading', text: `Prosecution versus ${suspects(ctx)}` },
-      ...(ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, particulars: DASH, accused: null }]).flatMap((c, i): Block[] => [
+      ...(ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, statement: null, particulars: DASH, accused: null }]).flatMap((c, i): Block[] => [
         { type: 'heading', text: `Offence ${i + 1}` },
         { type: 'fields', rows: [{ label: 'Offence', value: `${c.offence}${c.section ? `, provided for and punished by ${c.section}` : ''}` }] },
         { type: 'paragraph', text: c.particulars ?? DASH },

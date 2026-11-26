@@ -27,7 +27,7 @@ export function StatusBar() {
   return (
     <>
       <span className="min-w-0 flex-1 truncate">{[brand?.officeName, actor ? `${actor.name}${actor.rank ? `, ${actor.rank}` : ''}` : null].filter(Boolean).join(' · ')}</span>
-      {workload && <span>{plural(workload.awaitingDecision, m["count.awaiting_file.one"], m["count.awaiting_file.many"])}</span>}
+      {workload && workload.needsYou.total > 0 && <span>{plural(workload.needsYou.total, m["count.awaiting_file.one"], m["count.awaiting_file.many"])}</span>}
       <span>{formatDate(new Date(), 'weekday')}</span>
     </>
   )

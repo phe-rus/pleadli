@@ -27,6 +27,12 @@ pub struct ProsecutionFile {
     pub stage_changed_at: Option<i64>,
     pub outcome: Option<String>,
     pub concluded_at: Option<i64>,
+    /// perusal, application, appeal, revision or complaint: the five sorts of ODPP work.
+    pub kind: String,
+    /// The cover colour that follows from the kind (pink, yellow, green, blue).
+    pub cover: String,
+    /// The member of staff who holds the file, when it has been given out.
+    pub assigned_to: Option<String>,
 }
 
 /// Creating a file always logs the intake referral event alongside it
@@ -43,6 +49,8 @@ pub struct CreateProsecutionFileInput {
     pub received_at: i64,
     pub material_summary: Option<String>,
     pub notes: Option<String>,
+    #[serde(default)]
+    pub kind: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -80,14 +88,18 @@ pub async fn create_prosecution_file(
     check_timestamp(input.received_at, "The date received")?;
     let police_station = clean(input.police_station);
     let police_reference = clean(input.police_reference);
+    let kind = match input.kind.as_deref().unwrap_or("perusal") {
+        k @ ("perusal" | "application" | "appeal" | "revision" | "complaint") => k,
+        _ => return invalid("Unknown kind of file."),
+    };
 
     let id = Uuid::new_v4().to_string();
     let mut tx = pleadli_node_core::db::begin_write(pool).await?;
 
     sqlx::query(
         "INSERT INTO prosecution_files
-            (id, odpp_registration_number, title, police_station, police_reference, received_at, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (id, odpp_registration_number, title, police_station, police_reference, received_at, notes, kind, cover)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(clean(input.odpp_registration_number))
@@ -96,6 +108,8 @@ pub async fn create_prosecution_file(
     .bind(&police_reference)
     .bind(input.received_at)
     .bind(clean(input.notes))
+    .bind(kind)
+    .bind(cover_of(kind))
     .execute(&mut *tx)
     .await?;
 
@@ -286,6 +300,8 @@ pub struct FileSummary {
     pub review_note_count: i64,
     pub statement_count: i64,
     pub charge_count: i64,
+    /// The first charge's offence, so a list can say what a file is about.
+    pub offence: Option<String>,
     pub decision_count: i64,
     pub last_decision_type: Option<String>,
     pub last_decision_at: Option<i64>,
@@ -307,6 +323,7 @@ const SUMMARY_SELECT: &str = "SELECT f.*,
     (SELECT COUNT(*) FROM review_notes n WHERE n.prosecution_file_id = f.id) AS review_note_count,
     (SELECT COUNT(*) FROM statements s WHERE s.prosecution_file_id = f.id) AS statement_count,
     (SELECT COUNT(*) FROM charges c WHERE c.prosecution_file_id = f.id) AS charge_count,
+    (SELECT c.offence FROM charges c WHERE c.prosecution_file_id = f.id ORDER BY c.created_at LIMIT 1) AS offence,
     (SELECT COUNT(*) FROM decisions d WHERE d.prosecution_file_id = f.id) AS decision_count,
     (SELECT d.decision_type FROM decisions d WHERE d.prosecution_file_id = f.id
       ORDER BY d.decided_at DESC, d.created_at DESC, d.rowid DESC LIMIT 1) AS last_decision_type,
@@ -330,6 +347,11 @@ const SUMMARY_SELECT: &str = "SELECT f.*,
 fn view_filter(view: &str) -> Result<&'static str, DomainError> {
     Ok(match view {
         "all" | "" => "1 = 1",
+        "kind_perusal" => "f.kind = 'perusal'",
+        "kind_application" => "f.kind = 'application'",
+        "kind_appeal" => "f.kind = 'appeal'",
+        "kind_revision" => "f.kind = 'revision'",
+        "kind_complaint" => "f.kind = 'complaint'",
         "intake" => "f.current_status = 'under_review' AND NOT EXISTS (SELECT 1 FROM review_notes n WHERE n.prosecution_file_id = f.id)",
         "active" => "(f.current_status = 'resubmitted' OR (f.current_status = 'under_review' AND EXISTS (SELECT 1 FROM review_notes n WHERE n.prosecution_file_id = f.id)))",
         "awaiting" => "f.current_status IN ('under_review', 'resubmitted')",
@@ -491,6 +513,7 @@ pub async fn seed_if_empty(pool: &SqlitePool) -> Result<(), DomainError> {
                     .to_string(),
             ),
             notes: None,
+            kind: None,
         },
     )
     .await?;
@@ -503,4 +526,17 @@ pub async fn seed_if_empty(pool: &SqlitePool) -> Result<(), DomainError> {
     }
 
     Ok(())
+}
+
+/// The ODPP cover colour for a kind of file: pink perusal and trial, yellow
+/// applications such as bail, green appeals, blue revisions. A written
+/// complaint has no colour of its own in the standards, so it is white.
+pub fn cover_of(kind: &str) -> &'static str {
+    match kind {
+        "application" => "yellow",
+        "appeal" => "green",
+        "revision" => "blue",
+        "complaint" => "white",
+        _ => "pink",
+    }
 }

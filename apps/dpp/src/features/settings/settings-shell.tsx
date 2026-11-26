@@ -1,3 +1,4 @@
+import { GuidePane } from '@/features/guide'
 import { AssistPane } from '@/features/assist/assist-settings'
 import { SignatureCard, StampCard } from '@/features/documents/seals'
 import { BackupPane } from '@/features/security/settings-panes'
@@ -18,7 +19,7 @@ import { AppearancePane, UpdatesPane, LicencePane, NotificationsPane, OfficePane
  * every label comes from the catalog at render time. */
 const groups = [
   { id: 'you', sections: ['you'] },
-  { id: 'office', sections: ['office', 'people', 'protection', 'assist'] },
+  { id: 'office', sections: ['office', 'people', 'protection', 'guide', 'assist'] },
   { id: 'computer', sections: ['appearance', 'notifications', 'backup', 'updates'] },
   { id: 'pleadli', sections: ['pleadli-licence', 'daily-backups'] },
   { id: 'about', sections: ['licence'] },
@@ -46,6 +47,7 @@ const sectionText: Record<SettingsSectionId, { label: () => string; about: () =>
   office: { label: m["settings.nav.office"], about: m["settings.about.office"] },
   people: { label: m["settings.nav.people"], about: m["settings.about.people"] },
   protection: { label: m["settings.nav.protection"], about: m["settings.about.protection"] },
+  guide: { label: m["guide.nav"], about: m["guide.about"] },
   assist: { label: m["settings.nav.assist"], about: m["settings.about.assist"] },
   appearance: { label: m["settings.nav.appearance"], about: m["settings.about.appearance"] },
   notifications: { label: m["settings.nav.notifications"], about: m["settings.about.notifications"] },
@@ -62,6 +64,7 @@ const sectionIcon: Record<SettingsSectionId, { icon: typeof UserIcon; tone?: str
   office: { icon: Building03Icon, tone: 'teal' },
   people: { icon: UserGroupIcon, tone: 'blue' },
   protection: { icon: SquareLock02Icon, tone: 'gray' },
+  guide: { icon: LegalDocument01Icon, tone: 'teal' },
   assist: { icon: SparklesIcon, tone: 'purple' },
   appearance: { icon: PaintBoardIcon, tone: 'orange' },
   notifications: { icon: Notification03Icon, tone: 'red' },
@@ -96,6 +99,7 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
   ),
   people: () => <PeoplePane />,
   protection: () => <ProtectionPane />,
+  guide: () => <GuidePane />,
   assist: () => <AssistPane />,
   appearance: () => <AppearancePane />,
   notifications: () => <NotificationsPane />,

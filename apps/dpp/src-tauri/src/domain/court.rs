@@ -166,7 +166,7 @@ pub async fn delete_filing(pool: &SqlitePool, id: &str) -> Result<(), DomainErro
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarEntry {
-    /// `hearing`, `task` or `threshold_review`.
+    /// `hearing`, `task`, `direction` or `threshold_review`.
     pub source: String,
     pub id: String,
     pub at: i64,
@@ -190,7 +190,12 @@ pub async fn calendar(pool: &SqlitePool, from: i64, to: i64) -> Result<Vec<Calen
          SELECT 'task', t.id, t.due_at, t.status, t.title, t.note,
                 f.id, f.title, COALESCE(f.odpp_registration_number, f.police_reference)
            FROM tasks t LEFT JOIN prosecution_files f ON f.id = t.prosecution_file_id
-          WHERE t.due_at BETWEEN ?1 AND ?2 AND t.proposed = 0",
+          WHERE t.due_at BETWEEN ?1 AND ?2 AND t.proposed = 0
+         UNION ALL
+         SELECT 'direction', dr.id, dr.due_at, dr.kind, dr.instruction, 'Directions to Police',
+                f.id, f.title, COALESCE(f.odpp_registration_number, f.police_reference)
+           FROM directions dr JOIN prosecution_files f ON f.id = dr.prosecution_file_id
+          WHERE dr.due_at BETWEEN ?1 AND ?2 AND dr.response = 'open'",
     )
     .bind(from)
     .bind(to)

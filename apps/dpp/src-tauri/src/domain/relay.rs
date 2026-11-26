@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 
 use pleadli_interchange::envelope;
 use pleadli_interchange::identity::IdentityKind;
-use pleadli_interchange::messages::{KIND_FILING_RECEIPT, KIND_REFERRAL};
+use pleadli_interchange::messages::{KIND_FILING_RECEIPT, KIND_REFERRAL, KIND_SERVICE_REPORT};
 use pleadli_interchange::pairing::{self, KIND_CONFIRMATION, KIND_INVITE, KIND_RESPONSE};
 use pleadli_node_core::hub::{self, Dispatched, Links, Reject};
 use pleadli_node_core::orchestra::{Orchestra, RelayAccess};
@@ -296,6 +296,16 @@ impl Relay {
                     interchange::acknowledge_opened(&self.pool, package_id).await?;
                 }
                 Ok(())
+            }
+            KIND_SERVICE_REPORT => {
+                let peeked = envelope::peek(&item.bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
+                let bound: Option<Option<String>> = sqlx::query_scalar("SELECT station_address FROM police_connections WHERE station_id = ? AND status = 'trusted'").bind(&peeked.header.from.id).fetch_optional(&self.pool).await?;
+                if let Some(Some(address)) = bound {
+                    if address != item.from {
+                        return Err(DomainError::Forbidden(format!("This report came from {}, but that station answered from {address}. Nothing was kept.", item.from)));
+                    }
+                }
+                interchange::import_package(&self.pool, &self.vault_root, &item.bytes).await.map(|_| ())
             }
             other => Err(DomainError::Invalid(format!("This office does not receive packages of kind '{other}' through the postbox."))),
         }

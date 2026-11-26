@@ -81,6 +81,13 @@ pub fn run() {
 
             let router = match tauri::async_runtime::block_on(db::startup(&data_dir, legacy_vault.as_deref())) {
                 Ok(db) => {
+                    #[cfg(debug_assertions)]
+                    if std::env::var("PLEADLI_DEV_RESET_LOGINS").is_ok() {
+                        match tauri::async_runtime::block_on(domain::staff::dev_reset_logins(&db.pool)) {
+                            Ok(names) => log::warn!("development: logins reset to 000000 / password123 for {}", names.join(", ")),
+                            Err(e) => log::error!("development: login reset failed: {e}"),
+                        }
+                    }
                     // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
                     let orchestra = domain::orchestra::start(db.pool.clone(), db.data_dir.clone(), db.vault_root.clone());
                     tauri::async_runtime::spawn(orchestra.clone().run());
@@ -150,6 +157,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::api::api_request,
             commands::attachments::add_attachment,
+            commands::attachments::list_scans_in_folder,
             commands::attachments::get_attachment_data_url,
             commands::attachments::open_attachment,
             commands::documents::save_document_export,

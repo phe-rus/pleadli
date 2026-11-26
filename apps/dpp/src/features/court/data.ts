@@ -32,7 +32,7 @@ export const filingSchema = z.object({
 export type Filing = z.infer<typeof filingSchema>
 
 export const calendarEntrySchema = z.object({
-  source: z.enum(['hearing', 'task', 'threshold_review']),
+  source: z.enum(['hearing', 'task', 'direction', 'threshold_review']),
   id: z.string(),
   at: z.number(),
   kind: z.string().nullable(),

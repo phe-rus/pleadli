@@ -1,101 +1,172 @@
-import { formatDate, formatRelative } from '@/lib/dates'
-import { clockSentence, computeClocks, urgent, useCustody } from '@/features/custody'
-import { useBoard } from '@/features/pipeline'
-import { useJurisdiction } from '@/features/installation'
-import { packText } from '@/lib/jurisdiction'
 import { PanelButton } from '@/components/add-panel'
-import { EmptyNote } from '@/components/planned'
-import { fileReference, filesOptions, ProsecutionFileForm, useFiles } from '@/features/prosecution-files'
-import { activityOptions, describeEvent, useActivity, useWorkload, workloadOptions } from '@/features/workload'
-import { ageLabel, plural } from '@/lib/present'
+import { clockSentence, computeClocks, urgent, useCustody } from '@/features/custody'
+import { useClocks } from '@/features/clocks'
+import { useCalendar } from '@/features/court/queries'
+import { useJurisdiction } from '@/features/installation'
+import { filesOptions, fileReference, ProsecutionFileForm, useFiles } from '@/features/prosecution-files'
+import { useSecurityStatus } from '@/features/security'
+import { useWorkload, workloadOptions } from '@/features/workload'
+import { tabTitle } from '@/features/workspace/tab-identity'
+import { formatDate } from '@/lib/dates'
+import { packText } from '@/lib/jurisdiction'
+import { plural } from '@/lib/present'
 import * as m from '@/paraglide/messages'
+import { useWorkspace } from '@pleadli/shell'
+import { cn } from '@pleadli/ui/lib/utils'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Group, GroupRow, RowIcon } from '@pleadli/ui/grouped'
-import { Stat } from '@pleadli/ui/stat'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { CheckmarkCircle02Icon, Clock01Icon, CourtHouseIcon, File02Icon, FileImportIcon, Folder01Icon, InboxIcon, PoliceCapIcon, RepeatIcon, SentIcon } from '@hugeicons/core-free-icons'
-import type { ReactNode } from 'react'
+import { useBoard } from '@/features/pipeline'
+import { actionLabel, actionRank, holderLabel, useAttention, verbLabel } from '@/features/attention'
 import { differenceInCalendarDays } from 'date-fns/differenceInCalendarDays'
+import { useState, type ReactNode } from 'react'
 
 export const Route = createFileRoute('/_public/')({
   loader: async ({ context }) => {
     const { queryClient } = context
     await Promise.all([
       queryClient.query({ ...workloadOptions(), staleTime: 'static' }),
-      queryClient.query({ ...filesOptions('awaiting'), staleTime: 'static' }),
-      queryClient.query({ ...filesOptions('returned'), staleTime: 'static' }),
-      queryClient.query({ ...filesOptions('reopened'), staleTime: 'static' }),
-      queryClient.query({ ...activityOptions(8), staleTime: 'static' }),
+      queryClient.query({ ...filesOptions('all'), staleTime: 'static' }),
     ])
   },
   component: RouteComponent,
 })
 
-/** The prosecutor's operational home: what needs attention now, how much work
- * is sitting here, and what has just happened. Every line is read from the
- * record. A section with nothing behind it does not appear, and there is no
- * date here that the record itself does not fix. */
+const DAY = 86_400_000
+
+type Line = { key: string; to: string; fileId?: string; dot?: string; title: string; detail: string; action?: string; lead?: ReactNode }
+
+function Card({ title, tone, lines, empty }: { title: string; tone?: 'attention'; lines: Line[]; empty: string }) {
+  return (
+    <section className={cn('flex min-w-0 flex-1 basis-80 flex-col gap-1.5 rounded-[18px] px-[22px] py-5', tone === 'attention' ? 'border border-[#f4d9c3] bg-[#fff7f0] dark:border-[#9a3a00]/40 dark:bg-[#9a3a00]/10' : 'bg-secondary/60')}>
+      <h2 className={cn('text-xs font-semibold tracking-wide', tone === 'attention' ? 'text-[#9a3a00] dark:text-[#ffd9b8]' : 'text-muted-foreground')}>{title}</h2>
+      {lines.length === 0 ? (
+        <p className="py-2 text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        lines.map((l, i) => (
+          <Link key={l.key} to="/files/$fileId" params={{ fileId: l.fileId ?? '' }} className={cn('flex items-center gap-3 py-[11px] text-foreground no-underline', i > 0 && 'border-t border-border/70')}>
+            {l.lead ?? <span className="size-[9px] shrink-0 rounded-full" style={{ background: l.dot ?? '#8a8a90' }} />}
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold">{l.title}</span>
+              <span className="block text-[13px] text-muted-foreground">{l.detail}</span>
+            </span>
+            {l.action && <span className="rounded-[9px] bg-primary px-3.5 py-1.5 text-[13px] font-semibold text-primary-foreground">{l.action}</span>}
+          </Link>
+        ))
+      )}
+    </section>
+  )
+}
+
+/** Today: what needs the prosecutor, in the order the day goes. It lists
+ * nothing of its own: every line is a file, and opening it puts you in that
+ * file with its papers, history and next step. */
 function RouteComponent() {
   const navigate = useNavigate()
+  const country = useJurisdiction()
   const { data: workload } = useWorkload()
-  const { data: awaiting } = useFiles('awaiting')
-  const { data: returned } = useFiles('returned')
-  const { data: reopened } = useFiles('reopened')
-  const { data: activity } = useActivity(8)
+  const { data: files } = useFiles('all')
+  const { items, forFile } = useAttention()
+  const { data: custody = [] } = useCustody()
+  const { data: board = [] } = useBoard()
+  const { data: clocks = [] } = useClocks()
+  const { data: status } = useSecurityStatus()
+  const { recents } = useWorkspace()
+  const [from] = useState(() => Date.now())
+  const { data: calendar = [] } = useCalendar(from, from + 7 * DAY)
 
-  const resubmitted = awaiting.filter((f) => f.currentStatus === 'resubmitted')
-  const unreviewedOrActive = awaiting.filter((f) => f.currentStatus === 'under_review')
-  const attentionCount =
-    workload.thresholdReviews.length + reopened.length + (workload.draftDocuments > 0 ? 1 : 0) + (workload.incomingWaiting > 0 ? 1 : 0) + (workload.outgoingPending > 0 ? 1 : 0) + resubmitted.length + unreviewedOrActive.length + returned.length + (workload.chargedWithoutCourtReference > 0 ? 1 : 0)
+  const first = status?.actor?.name ?? ''
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? m["today.morning"]({ name: first }) : hour < 18 ? m["today.afternoon"]({ name: first }) : m["today.evening"]({ name: first })
 
-  // Only figures with something behind them: a row of zeros tells nobody anything.
-  const figures = [
-    { id: 'awaiting', label: m["overview.figure.awaiting_decision"](), value: workload.awaitingDecision, tone: 'attention' as const, view: 'review' as const },
-    { id: 'returned', label: m["file.view.returned.label"](), value: workload.returned, tone: 'plain' as const, view: 'returned' as const },
-    { id: 'reopened', label: m["overview.figure.reopened"](), value: workload.reopened, tone: 'attention' as const, view: 'reopened' as const },
-    { id: 'decided', label: m["overview.figure.decided_30"](), value: workload.decisionsLast30Days, tone: 'plain' as const, view: 'all' as const },
-  ].filter((f) => f.value > 0)
+  // The legal clocks that have run out or are about to come first: nothing on
+  // this page matters more than an unlawful detention.
+  const custodyLines: Line[] = board.flatMap((card) =>
+    urgent(computeClocks(custody.filter((e) => e.prosecutionFileId === card.id), country)).map((clock, i) => ({
+      key: `custody:${card.id}:${i}`,
+      fileId: card.id,
+      to: 'case',
+      dot: '#e0661a',
+      title: `${card.title}${clock.person ? `, ${clock.person}` : ''}`,
+      detail: `${packText(clock.limit.label)}: ${clockSentence(clock)}`,
+      action: m["today.open"](),
+    })),
+  )
+  // Who needs what is decided once, in the backend (attention.rs). This page,
+  // the Files list, the Inbox and the status bar all read that one answer.
+  const titleOf = new Map(files.map((f) => [f.id, f]))
+  const mineLines = items
+    .filter((n) => n.needsMe && n.action !== 'closed' && !custodyLines.some((c) => c.fileId === n.fileId))
+    .sort((x, y) => Number(y.overdue) - Number(x.overdue) || actionRank[x.action] - actionRank[y.action])
+  const decideLines: Line[] = [
+    ...custodyLines,
+    ...mineLines.map<Line>((n) => {
+      const f = titleOf.get(n.fileId)
+      return {
+        key: `needs:${n.fileId}`,
+        fileId: n.fileId,
+        to: 'case',
+        dot: n.overdue ? '#e0661a' : n.action === 'decide' ? '#e0661a' : '#8a8a90',
+        title: f?.title ?? '',
+        detail: [actionLabel(n), f ? fileReference(f) : null, n.overdue && n.dueAt ? m['today.deadline.overdue']({ date: formatDate(n.dueAt) }) : null].filter(Boolean).join(' · '),
+        action: verbLabel(n),
+      }
+    }),
+  ]
 
-  const fileRow = (key: string, fileId: string, tab: string | undefined, icon: ReactNode, label: string, detail: string) => (
-    <GroupRow
-      key={key}
-      icon={icon}
-      label={label}
-      detail={detail}
-      chevron
-      render={({ className, children }) => (
-        <Link to="/files/$fileId" params={{ fileId }} search={tab ? { tab: tab as 'case' } : {}} className={className}>
-          {children}
-        </Link>
-      )}
-    />
-  )
-  const placeRow = (key: string, to: string, icon: ReactNode, label: string, detail: string) => (
-    <GroupRow
-      key={key}
-      icon={icon}
-      label={label}
-      detail={detail}
-      chevron
-      render={({ className, children }) => (
-        <Link to={to} className={className}>
-          {children}
-        </Link>
-      )}
-    />
-  )
-  const icon = (glyph: typeof Clock01Icon, tone: Parameters<typeof RowIcon>[0]['tone']) => (
-    <RowIcon tone={tone}>
-      <HugeiconsIcon icon={glyph} />
-    </RowIcon>
-  )
+  const courtLines: Line[] = calendar
+    .filter((e) => e.source === 'hearing' && e.fileId)
+    .map((e) => ({
+      key: `hearing:${e.id}`,
+      fileId: e.fileId ?? undefined,
+      to: 'file',
+      title: e.fileTitle ?? e.title,
+      detail: e.detail ?? e.title,
+      lead: (
+        <span className="w-[52px] shrink-0 text-[13px] font-semibold leading-snug">
+          {formatDate(e.at, 'weekday')}
+          <span className="block font-normal text-muted-foreground">{new Date(e.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </span>
+      ),
+    }))
+
+  const onMyList = new Set(mineLines.map((n) => n.fileId))
+  const deadlineLines: Line[] = [
+    ...clocks.filter((c) => !(c.kind === 'allocation' && onMyList.has(c.fileId))).map<Line>((c) => ({
+      key: `clock:${c.fileId}:${c.kind}`,
+      fileId: c.fileId,
+      to: 'file',
+      dot: '#0071e3',
+      title: `${c.kind === 'allocation' ? m["today.deadline.allocation"]() : c.kind === 'complaint_reply' ? m["today.deadline.reply"]() : m["today.deadline.review"]()}, ${c.fileTitle}`,
+      detail:
+        c.kind === 'adjournment_review'
+          ? m["today.deadline.adjournments"]({ count: c.count ?? 0 })
+          : c.overdue
+            ? m["today.deadline.overdue"]({ date: formatDate(c.dueAt ?? 0) })
+            : m["today.deadline.due_in"]({ days: Math.max(0, differenceInCalendarDays(c.dueAt ?? 0, new Date())) }),
+    })),
+    ...workload.thresholdReviews.map<Line>((r) => {
+      const days = differenceInCalendarDays(r.dueAt, new Date())
+      return { key: `threshold:${r.fileId}`, fileId: r.fileId, to: 'file', dot: '#0071e3', title: `${m["today.deadline.threshold"]()}, ${r.fileTitle}`, detail: days < 0 ? m["overview.attention.threshold_overdue"]({ date: formatDate(r.dueAt) }) : m["overview.attention.threshold_due"]({ date: formatDate(r.dueAt), left: `${days}` }) }
+    }),
+  ]
+
+  // Waiting on someone else: Police, the Director, or a colleague who holds it.
+  const waitingLines: Line[] = items
+    .filter((n) => !n.needsMe && n.action !== 'closed' && n.action !== 'follow_court' && (n.holder === 'police' || n.holder === 'director' || (n.holder === 'officer' && n.holderId && !n.heldByMe)))
+    .map((n) => {
+      const f = titleOf.get(n.fileId)
+      return { key: `waiting:${n.fileId}`, fileId: n.fileId, to: 'file', title: f?.title ?? '', detail: `${holderLabel(n)} · ${actionLabel(n)}${f ? ` · ${fileReference(f)}` : ''}` }
+    })
+
+  const needs = decideLines.length + workload.incomingWaiting
+  const continues = recents.filter((r) => r.kind === 'file' || r.kind === 'document').slice(0, 3)
 
   return (
-    <article className="page page-narrow">
+    <article className="page flex flex-col gap-6">
       <header className="page-header">
         <div>
-          <p className="text-[0.8125rem] font-medium text-muted-foreground">{formatDate(new Date(), 'weekday')}</p>
-          <h1>{m["nav.item.overview"]()}</h1>
+          <p className="text-sm text-muted-foreground">{formatDate(new Date(), 'weekday')}</p>
+          <h1>{greeting}</h1>
+          <p className="text-base">{needs === 0 ? m["today.nothing"]() : `${plural(needs, m["count.awaiting_file.one"], m["count.awaiting_file.many"])}.`}</p>
         </div>
         <div className="page-actions">
           <PanelButton label={m["workspace.quick.open_file"]()} title={m["workspace.quick.open_file"]()} description={m["workspace.quick.open_file_description"]()} variant="default">
@@ -104,7 +175,6 @@ function RouteComponent() {
                 onDirtyChange={setDirty}
                 onSuccess={(file) => {
                   close()
-                  // A new file opens straight away, on its (empty) folder, ready for the paper.
                   void navigate({ to: '/files/$fileId', params: { fileId: file.id } })
                 }}
               />
@@ -113,133 +183,32 @@ function RouteComponent() {
         </div>
       </header>
 
-      <TimeLimits />
-
-      {attentionCount === 0 ? (
-        <EmptyNote icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} />}>{m["overview.attention.empty"]()}</EmptyNote>
-      ) : (
-        <Group title={`${m["overview.attention.title"]()} · ${attentionCount}`}>
-          {workload.thresholdReviews.map((review) => {
-            const days = differenceInCalendarDays(review.dueAt, new Date())
-            return fileRow(
-              `threshold:${review.fileId}`,
-              review.fileId,
-              'case',
-              icon(Clock01Icon, days < 0 ? 'red' : 'orange'),
-              review.fileTitle,
-              days < 0
-                ? m["overview.attention.threshold_overdue"]({ date: formatDate(review.dueAt) })
-                : m["overview.attention.threshold_due"]({ date: formatDate(review.dueAt), left: plural(days, m["count.day.one"], m["count.day.many"]) }),
-            )
-          })}
-          {reopened.map((file) => fileRow(`reopened:${file.id}`, file.id, 'case', icon(RepeatIcon, 'purple'), file.title, m["overview.attention.reopened"]({ reference: fileReference(file) })))}
-          {resubmitted.map((file) =>
-            fileRow(
-              `resubmitted:${file.id}`,
-              file.id,
-              'case',
-              icon(FileImportIcon, 'blue'),
-              file.title,
-              `${m["overview.attention.resubmitted"]({ reference: fileReference(file), age: ageLabel(file.awaitingSince).toLowerCase() })}${file.directionsTotal > 0 ? ` ${m["overview.attention.directions_open"]({ open: file.directionsOpen, total: file.directionsTotal })}` : ''}`,
-            ),
-          )}
-          {unreviewedOrActive.map((file) =>
-            fileRow(
-              `awaiting:${file.id}`,
-              file.id,
-              undefined,
-              icon(Folder01Icon, 'blue'),
-              file.title,
-              `${[fileReference(file), file.accused].filter(Boolean).join(' · ')} · ${m["overview.waiting"]({ age: ageLabel(file.awaitingSince).toLowerCase() })}`,
-            ),
-          )}
-          {returned.map((file) =>
-            fileRow(
-              `returned:${file.id}`,
-              file.id,
-              'case',
-              icon(PoliceCapIcon, 'gray'),
-              file.title,
-              file.lastDecisionAt ? m["overview.attention.returned_since"]({ reference: fileReference(file), date: formatDate(file.lastDecisionAt) }) : m["overview.attention.returned"]({ reference: fileReference(file) }),
-            ),
-          )}
-          {workload.incomingWaiting > 0 &&
-            placeRow('incoming', '/incoming', icon(InboxIcon, 'blue'), m["overview.attention.incoming_title"]({ referrals: plural(workload.incomingWaiting, m["count.referral.one"], m["count.referral.many"]) }), m["overview.attention.incoming_summary"]())}
-          {workload.outgoingPending > 0 &&
-            placeRow('outgoing', '/incoming', icon(SentIcon, 'teal'), m["overview.attention.outgoing_title"]({ items: plural(workload.outgoingPending, m["count.receipt_or_notice.one"], m["count.receipt_or_notice.many"]) }), m["overview.attention.outgoing_summary"]())}
-          {workload.draftDocuments > 0 &&
-            placeRow('drafts', '/documents', icon(File02Icon, 'orange'), m["overview.attention.drafts_title"]({ documents: plural(workload.draftDocuments, m["count.document.one"], m["count.document.many"]) }), m["overview.attention.drafts_summary"]())}
-          {workload.chargedWithoutCourtReference > 0 &&
-            placeRow('court-ref', '/court-matters', icon(CourtHouseIcon, 'gray'), m["overview.attention.no_court_ref_title"]({ files: plural(workload.chargedWithoutCourtReference, m["count.charged_file.one"], m["count.charged_file.many"]) }), m["overview.attention.no_court_ref_summary"]())}
-        </Group>
-      )}
-
-      {figures.length > 0 && (
-        <section className="flex flex-col gap-1.5">
-          <div className="flex items-end justify-between px-1">
-            <h2 data-slot="group-title">{m["overview.workload"]()}</h2>
-            <Link to="/capacity" className="text-[0.8125rem]">
-              {m["nav.item.workload"]()}
-            </Link>
+      {continues.length > 0 && (
+        <section className="flex flex-col gap-2.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xs font-semibold tracking-wide text-muted-foreground">{m["today.continue"]()}</h2>
+            <span className="text-xs text-muted-foreground">{m["today.continue_note"]()}</span>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {figures.map((f) => (
-              <Stat key={f.id} label={f.label} value={f.value} tone={f.tone} onClick={() => void navigate({ to: '/files', search: { view: f.view } })} />
+          <div className="flex flex-wrap gap-3">
+            {continues.map((r) => (
+              <Link key={r.key} to={r.to} className="flex min-w-0 flex-1 basis-56 flex-col gap-0.5 rounded-[14px] border border-border px-4 py-3 text-foreground no-underline hover:bg-secondary/50">
+                <span className="truncate text-sm font-semibold">{tabTitle(r)}</span>
+                <span className="text-xs text-muted-foreground">{r.kind === 'document' ? m["nav.item.documents"]() : (() => { const n = forFile(r.key.replace('file:', '')); return n ? (n.needsMe ? actionLabel(n) : holderLabel(n)) : m["today.continue_file"]() })()}</span>
+              </Link>
             ))}
           </div>
         </section>
       )}
 
-      {activity.length > 0 && (
-        <Group title={m["overview.activity"]()}>
-          {activity.map((event) => {
-            const { title } = describeEvent(event)
-            return (
-              <GroupRow
-                key={`${event.kind}:${event.id}`}
-                label={title}
-                detail={event.fileTitle}
-                value={<span className="text-xs">{formatRelative(event.at)}</span>}
-                render={({ className, children }) => (
-                  <Link to="/files/$fileId" params={{ fileId: event.fileId }} search={{ tab: 'activity' }} className={className}>
-                    {children}
-                  </Link>
-                )}
-              />
-            )
-          })}
-        </Group>
-      )}
-    </article>
-  )
-}
+      <div className="flex flex-wrap items-stretch gap-[18px]">
+        <Card title={m["today.decide"]()} tone="attention" lines={decideLines} empty={m["today.decide_empty"]()} />
+        <Card title={m["today.court"]()} lines={courtLines} empty={m["today.court_empty"]()} />
+      </div>
+      <div className="flex flex-wrap items-stretch gap-[18px]">
+        <Card title={m["today.deadlines"]()} lines={deadlineLines} empty={m["today.deadlines_empty"]()} />
+        <Card title={m["today.waiting"]()} lines={waitingLines} empty={m["today.waiting_empty"]()} />
+      </div>
 
-/** Every open file whose legal clock has run out or is about to, first on
- * the page: nothing else on Today matters more than an unlawful detention. */
-function TimeLimits() {
-  const { data: events = [] } = useCustody()
-  const { data: cards = [] } = useBoard()
-  const country = useJurisdiction()
-  const rows = cards.flatMap((card) => urgent(computeClocks(events.filter((e) => e.prosecutionFileId === card.id), country)).map((clock) => ({ card, clock })))
-  if (rows.length === 0) return null
-  return (
-    <section aria-labelledby="limits" className="flex flex-col gap-2 rounded-xl bg-destructive/[0.06] p-4 ring-1 ring-destructive/20">
-      <h2 id="limits" className="text-destructive">{m["clock.today_title"]({ count: rows.length })}</h2>
-      <ul className="flex list-none flex-col gap-1 p-0">
-        {rows.map(({ card, clock }, i) => (
-          <li key={`${card.id}-${i}`}>
-            <Link to="/files/$fileId" params={{ fileId: card.id }} search={{ tab: 'case' }} className="-mx-2 flex flex-col rounded-xl px-2 py-1.5 text-foreground no-underline hover:bg-destructive/10">
-              <strong>
-                {card.title}
-                {clock.person ? ` · ${clock.person}` : ''}
-              </strong>
-              <span className={clock.status === 'overdue' ? 'text-destructive' : 'text-amber-800 dark:text-amber-300'}>
-                {packText(clock.limit.label)}: {clockSentence(clock)}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
+    </article>
   )
 }

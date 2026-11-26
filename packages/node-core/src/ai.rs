@@ -452,22 +452,56 @@ fn finish(text: String, want: &Want<'_>, reason: Option<&str>) -> Result<Option<
     }
 }
 
-async fn run(e: &Engine, system: &str, turns: &[(String, Vec<&Part>)], want: Want<'_>) -> Result<(Value, String), AiError> {
+/// What a piece of work needs from a model. Routine work (a brief, a chat
+/// answer, arranging papers) goes to the cheap, high-allowance model first.
+/// Judgement work (weighing evidence, proposing a decision) goes to the
+/// strongest model first, with the cheap one as its fallback. A free key allows
+/// only about twenty requests a day on the strongest models, so the split is
+/// what keeps the day's allowance for the work that needs it.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Tier {
+    Routine,
+    Judgement,
+}
+
+async fn run(e: &Engine, tier: Tier, system: &str, turns: &[(String, Vec<&Part>)], want: Want<'_>) -> Result<(Value, String), AiError> {
     let mut models = candidates(e).await?;
     // Scans and photos need a model that sees: those go first, the rest keep their order.
     let has_docs = turns.iter().any(|(_, parts)| parts.iter().any(|p| matches!(p, Part::Doc { .. })));
     if has_docs {
         models.sort_by_key(|m| !m.vision);
-        // Documents are heavy: two models at most, so a fallback can still be tried in time.
-        if models.iter().all(|m| m.free) {
-            models.truncate(2);
+    }
+    // A free key allows few requests a day, and a busy provider answers every
+    // model the same way: two tries at most (one fallback), then say so. The
+    // prosecutor can press again; the app never works through the whole list.
+    if models.iter().all(|m| m.free) && e.fixed_model.is_none() {
+        let is_lite = |m: &ModelInfo| m.id.contains("lite");
+        match tier {
+            Tier::Routine => models.sort_by_key(|m| !is_lite(m)),
+            Tier::Judgement => {
+                // Strongest first, then the cheap one rather than the next strong one.
+                if let Some(i) = models.iter().position(is_lite).filter(|&i| i > 1) {
+                    let lite = models.remove(i);
+                    models.insert(1, lite);
+                }
+            }
         }
+    }
+    if models.iter().all(|m| m.free) {
+        models.truncate(2);
     }
     for (i, model) in models.iter().enumerate() {
         if i > 0 {
             tokio::time::sleep(Duration::from_millis(800)).await;
         }
-        match call(e, model, system, turns, &want).await {
+        // A model that has gone quiet (providers do this under load) must not
+        // hold the whole request: scans get long, a text answer a short turn.
+        let limit = Duration::from_secs(if has_docs { 120 } else { 40 });
+        let attempt = match tokio::time::timeout(limit, call(e, model, system, turns, &want)).await {
+            Ok(r) => r,
+            Err(_) => Err(AiError("TIMEOUT".into())),
+        };
+        match attempt {
             Ok(Some(v)) => return Ok((v, model.id.clone())),
             Ok(None) => continue,
             // A slow or badly answering model is not the end: the next may do better.
@@ -485,17 +519,27 @@ async fn run(e: &Engine, system: &str, turns: &[(String, Vec<&Part>)], want: Wan
     Err(AiError("Every model is busy at the provider. Try again in a minute.".into()))
 }
 
-/// An answer in the given JSON Schema shape.
+/// An answer in the given JSON Schema shape. Judgement work: strongest model first.
 pub async fn generate_json(e: &Engine, system: &str, parts: &[Part], schema: &Value) -> Result<(Value, String), AiError> {
+    generate_json_tier(e, Tier::Judgement, system, parts, schema).await
+}
+
+/// The same, for work that names its tier.
+pub async fn generate_json_tier(e: &Engine, tier: Tier, system: &str, parts: &[Part], schema: &Value) -> Result<(Value, String), AiError> {
     let turn = vec![("user".to_string(), parts.iter().collect::<Vec<_>>())];
-    run(e, system, &turn, Want::Json(schema)).await
+    run(e, tier, system, &turn, Want::Json(schema)).await
 }
 
 /// A reply to a conversation, as plain text.
 pub async fn reply(e: &Engine, system: &str, conversation: &[(String, String)]) -> Result<(String, String), AiError> {
+    reply_tier(e, Tier::Routine, system, conversation).await
+}
+
+/// A reply that names its tier.
+pub async fn reply_tier(e: &Engine, tier: Tier, system: &str, conversation: &[(String, String)]) -> Result<(String, String), AiError> {
     let parts: Vec<Part> = conversation.iter().map(|(_, t)| Part::Text(t.clone())).collect();
     let turns: Vec<(String, Vec<&Part>)> = conversation.iter().zip(parts.iter()).map(|((role, _), p)| (role.clone(), vec![p])).collect();
-    let (v, model) = run(e, system, &turns, Want::Text).await?;
+    let (v, model) = run(e, tier, system, &turns, Want::Text).await?;
     Ok((v.as_str().unwrap_or("").to_string(), model))
 }
 

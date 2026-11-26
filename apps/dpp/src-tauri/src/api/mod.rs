@@ -27,9 +27,14 @@ use crate::domain::charging_reviews::{self, AssessmentInput, OutcomeInput, Revie
 use crate::domain::comments::{self, Comment, CreateCommentInput};
 use crate::domain::assist::{self, AssistSettings, AssistSettingsInput, CountryContext};
 use crate::domain::court::{self, CalendarEntry, Filing, FilingInput, Hearing, HearingInput};
-use crate::domain::file_items::{self, FileItem, FileItemInput, FileItemUpdate};
+use crate::domain::file_links::{self, LinkInput, LinkedFile};
+use crate::domain::file_items::{self, FileItem, FileItemInput, FileItemUpdate, PaperStart};
 use crate::domain::tasks::{self, CreateTaskInput, Task, UpdateTaskInput};
+use crate::domain::guide::{self, Offence, OffenceInput};
 use crate::domain::laws::{self, LawSummary, ManualLaw};
+use crate::domain::clocks;
+use crate::domain::proving;
+use crate::domain::registry;
 use crate::domain::custody::{self, CustodyEvent, CustodyEventInput};
 use crate::domain::pipeline::{self, AnswerInput, Answered, BoardCard, ChatInput, ChatReply, Handover, HandoverInput, Proposal};
 use crate::domain::directions::{self, Direction, ResponseInput};
@@ -56,6 +61,7 @@ use crate::domain::referrals::{self, CreateResubmissionInput, Referral};
 use crate::domain::review_notes::{self, CreateReviewNoteInput, ReviewNote};
 use crate::domain::search::{self, SearchResult};
 use crate::domain::statements::{self, CreateStatementInput, Statement};
+use crate::domain::attention;
 use crate::domain::workload::{self, ActivityEvent, MaterialRow, Workload};
 
 pub const DEV_PORT: u16 = 47921;
@@ -186,6 +192,19 @@ async fn get_file(State(s): State<AppState>, Path(id): Path<String>) -> ApiResul
 
 async fn link_person(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<LinkPersonInput>) -> ApiResult<ProsecutionFilePerson> {
     Ok(Json(prosecution_files::link_person(&s.pool, &id, &input.person_id, &input.role).await?))
+}
+
+async fn list_file_links(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<LinkedFile>> {
+    Ok(Json(file_links::list(&s.pool, &id).await?))
+}
+
+async fn add_file_link(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<LinkInput>) -> ApiResult<Vec<LinkedFile>> {
+    Ok(Json(file_links::link(&s.pool, &id, input).await?))
+}
+
+async fn remove_file_link(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    file_links::unlink(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn unlink_person(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
@@ -408,7 +427,13 @@ async fn activity(State(s): State<AppState>, Query(p): Query<LimitParams>) -> Ap
 }
 
 async fn get_workload(State(s): State<AppState>) -> ApiResult<Workload> {
-    Ok(Json(workload::workload(&s.pool).await?))
+    Ok(Json(workload::workload(&s.pool, s.security.actor().as_ref()).await?))
+}
+
+/// What every file needs next and whether that is the signed-in person: the one
+/// answer Today, Inbox, Files, Diary and the status bar all read.
+async fn get_attention(State(s): State<AppState>) -> ApiResult<attention::Attention> {
+    Ok(Json(attention::attention(&s.pool, s.security.actor().as_ref()).await?))
 }
 
 #[derive(Deserialize)]
@@ -973,6 +998,17 @@ async fn confirm_file_items(State(s): State<AppState>, Json(q): Json<FileIdQuery
     Ok(Json(serde_json::json!({ "confirmed": n })))
 }
 
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SplitBody {
+    page_count: i64,
+    starts: Vec<PaperStart>,
+}
+
+async fn split_file_item(State(s): State<AppState>, Path(id): Path<String>, Json(body): Json<SplitBody>) -> ApiResult<Vec<FileItem>> {
+    Ok(Json(file_items::split(&s.pool, &id, body.page_count, body.starts, actor_name(&s).as_deref()).await?))
+}
+
 async fn get_assist_settings(State(s): State<AppState>) -> ApiResult<AssistSettings> {
     Ok(Json(assist::settings(&s.pool).await?))
 }
@@ -1115,6 +1151,52 @@ struct JurisdictionQuery {
 
 async fn list_laws(State(s): State<AppState>, Query(q): Query<JurisdictionQuery>) -> ApiResult<Vec<LawSummary>> {
     Ok(Json(laws::list(&s.pool, &q.jurisdiction).await?))
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GuideForFileQuery {
+    file_id: String,
+    jurisdiction: String,
+}
+
+/// The guide entries that fit what a file is charged with.
+async fn guide_for_file(State(s): State<AppState>, Query(q): Query<GuideForFileQuery>) -> ApiResult<Vec<Offence>> {
+    Ok(Json(guide::for_file(&s.pool, &q.file_id, &q.jurisdiction).await?))
+}
+
+async fn list_guide(State(s): State<AppState>, Query(q): Query<JurisdictionQuery>) -> ApiResult<Vec<Offence>> {
+    Ok(Json(guide::list(&s.pool, &q.jurisdiction).await?))
+}
+
+async fn create_guide_offence(State(s): State<AppState>, Json(input): Json<OffenceInput>) -> ApiResult<Offence> {
+    require_admin(&s)?;
+    Ok(Json(guide::create(&s.pool, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn update_guide_offence(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<OffenceInput>) -> ApiResult<Offence> {
+    require_admin(&s)?;
+    Ok(Json(guide::update(&s.pool, &id, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn archive_guide_offence(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    require_admin(&s)?;
+    guide::archive(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn guide_versions(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Vec<guide::Version>> {
+    Ok(Json(guide::versions(&s.pool, &id).await?))
+}
+
+async fn restore_guide_version(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Offence> {
+    require_admin(&s)?;
+    Ok(Json(guide::restore_version(&s.pool, &id, actor_name(&s).as_deref()).await?))
+}
+
+async fn restore_guide_starter(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Offence> {
+    require_admin(&s)?;
+    Ok(Json(guide::restore_starter(&s.pool, &id, actor_name(&s).as_deref()).await?))
 }
 
 async fn add_law(State(s): State<AppState>, Json(input): Json<ManualLaw>) -> Result<StatusCode, ApiError> {
@@ -1306,12 +1388,15 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/charging-reviews", post(start_review))
         .route("/charging-reviews/{id}/assessments/{criterion}", axum::routing::put(set_assessment))
         .route("/charging-reviews/{id}/outcome", axum::routing::put(set_outcome))
+        .route("/prosecution-files/{id}/links", get(list_file_links).post(add_file_link))
+        .route("/file-links/{id}", delete(remove_file_link))
         .route("/prosecution-file-people/{id}", delete(unlink_person))
         .route("/referrals/resubmission", post(create_resubmission))
         .route("/decisions", post(create_decision).get(list_all_decisions))
         .route("/statements", post(create_statement))
         .route("/evidence-items", post(create_evidence))
         .route("/charges", post(create_charge))
+        .route("/charges/{id}", delete(delete_charge))
         .route("/review-notes", post(create_review_note))
         .route("/comments", post(create_comment).get(list_comments))
         .route("/tasks", get(list_tasks).post(create_task))
@@ -1323,6 +1408,7 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/calendar", get(get_calendar))
         .route("/file-items", get(list_file_items).post(create_file_item))
         .route("/file-items/confirm", post(confirm_file_items))
+        .route("/file-items/{id}/split", post(split_file_item))
         .route("/file-items/{id}", axum::routing::patch(update_file_item).delete(delete_file_item))
         .route("/assist/settings", get(get_assist_settings).put(save_assist_settings))
         .route("/assist/brief", get(latest_brief).post(create_brief))
@@ -1339,6 +1425,26 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/proposals", get(list_proposals).post(create_proposal))
         .route("/proposals/{id}/answer", post(answer_proposal))
         .route("/handovers", get(list_handovers).post(create_handover))
+        .route("/guide/offences", get(list_guide).post(create_guide_offence))
+        .route("/guide/for-file", get(guide_for_file))
+        .route("/guide/offences/{id}", axum::routing::put(update_guide_offence).delete(archive_guide_offence))
+        .route("/guide/offences/{id}/versions", get(guide_versions))
+        .route("/guide/offences/{id}/restore-starter", post(restore_guide_starter))
+        .route("/guide/versions/{id}/restore", post(restore_guide_version))
+        .route("/registry/entries", get(list_register))
+        .route("/registry/years", get(register_years))
+        .route("/registry/holders", get(register_holders))
+        .route("/registry/give-out", post(give_file_out))
+        .route("/registry/next-number", get(next_odpp_number))
+        .route("/prosecution-files/{id}/receive", post(receive_file))
+        .route("/registry/entries/{id}/stamps", post(stamp_register_entry))
+        .route("/clocks", get(list_clocks))
+        .route("/proving", get(list_proving).put(set_proving))
+        .route("/time-limits", get(list_limits))
+        .route("/time-limits/{key}", axum::routing::put(set_time_limit))
+        .route("/hearings/minutes", get(list_minutes))
+        .route("/hearings/{id}/minute", get(get_minute).put(save_minute))
+        .route("/hearings/{id}/minute/send", post(send_minute))
         .route("/laws", get(list_laws).post(add_law))
         .route("/laws/sync", post(sync_laws))
         .route("/laws/{id}", delete(delete_law))
@@ -1349,6 +1455,7 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/attachments/{id}/file", get(attachment_file))
         .route("/search", get(search))
         .route("/workload", get(get_workload))
+        .route("/attention", get(get_attention))
         .route("/capacity", get(get_capacity))
         .route("/activity", get(activity))
         .route("/material", get(material))
@@ -1582,4 +1689,101 @@ async fn set_timezone(State(s): State<AppState>, Json(input): Json<TimezoneInput
         .await
         .map_err(|reason| ApiError(StatusCode::UNPROCESSABLE_ENTITY, "INVALID", reason))?;
     get_timezone(State(s)).await
+}
+
+#[derive(Deserialize)]
+struct RegisterQuery {
+    register: String,
+    year: i64,
+}
+
+async fn list_register(State(s): State<AppState>, Query(q): Query<RegisterQuery>) -> ApiResult<Vec<registry::Entry>> {
+    Ok(Json(registry::list(&s.pool, &q.register, q.year).await?))
+}
+
+async fn register_years(State(s): State<AppState>) -> ApiResult<Vec<i64>> {
+    Ok(Json(registry::years(&s.pool).await?))
+}
+
+async fn register_holders(State(s): State<AppState>) -> ApiResult<Vec<registry::Holder>> {
+    Ok(Json(registry::holders(&s.pool).await?))
+}
+
+async fn next_odpp_number(State(s): State<AppState>) -> ApiResult<Option<String>> {
+    Ok(Json(registry::next_number(&s.pool).await?))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ReceiveBody {
+    odpp_number: Option<String>,
+}
+
+async fn receive_file(State(s): State<AppState>, Path(id): Path<String>, Json(b): Json<ReceiveBody>) -> Result<StatusCode, ApiError> {
+    let actor = s.security.actor();
+    registry::receive(&s.pool, &id, b.odpp_number, actor.as_ref().map(|a| a.id.as_str()), actor.as_ref().map(|a| a.name.as_str())).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn give_file_out(State(s): State<AppState>, Json(input): Json<registry::GiveOut>) -> Result<StatusCode, ApiError> {
+    registry::give_out(&s.pool, input, actor_name(&s).as_deref()).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+struct StampBody {
+    label: String,
+}
+
+async fn stamp_register_entry(State(s): State<AppState>, Path(id): Path<String>, Json(b): Json<StampBody>) -> Result<StatusCode, ApiError> {
+    registry::stamp(&s.pool, &id, &b.label, actor_name(&s).as_deref()).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn list_clocks(State(s): State<AppState>) -> ApiResult<Vec<clocks::Clock>> {
+    Ok(Json(clocks::clocks(&s.pool).await?))
+}
+
+async fn list_limits(State(s): State<AppState>) -> ApiResult<Vec<clocks::Limit>> {
+    Ok(Json(clocks::limits(&s.pool).await?))
+}
+
+#[derive(Deserialize)]
+struct LimitBody {
+    days: i64,
+}
+
+async fn set_time_limit(State(s): State<AppState>, Path(key): Path<String>, Json(b): Json<LimitBody>) -> ApiResult<clocks::Limit> {
+    require_admin(&s)?;
+    Ok(Json(clocks::set_limit(&s.pool, &key, b.days, actor_name(&s).as_deref()).await?))
+}
+
+async fn get_minute(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Option<clocks::Minute>> {
+    Ok(Json(clocks::minute(&s.pool, &id).await?))
+}
+
+async fn list_minutes(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Vec<clocks::Minute>> {
+    Ok(Json(clocks::minutes_for_file(&s.pool, &q.file_id).await?))
+}
+
+async fn send_minute(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Prepared> {
+    let id = interchange::prepare_hearing_minute(&s.pool, &id).await?;
+    Ok(Json(Prepared { id, draft_documents: 0 }))
+}
+
+async fn save_minute(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<clocks::MinuteInput>) -> ApiResult<clocks::Minute> {
+    Ok(Json(clocks::save_minute(&s.pool, &id, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn list_proving(State(s): State<AppState>, Query(q): Query<FileIdQuery>) -> ApiResult<Vec<proving::Check>> {
+    Ok(Json(proving::list(&s.pool, &q.file_id).await?))
+}
+
+async fn set_proving(State(s): State<AppState>, Json(input): Json<proving::CheckInput>) -> ApiResult<Vec<proving::Check>> {
+    Ok(Json(proving::set(&s.pool, input, actor_name(&s).as_deref()).await?))
+}
+
+async fn delete_charge(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode, ApiError> {
+    charges::delete_charge(&s.pool, &id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }

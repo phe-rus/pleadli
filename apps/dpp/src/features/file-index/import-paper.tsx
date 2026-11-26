@@ -1,15 +1,16 @@
 import { addAttachmentFile, addAttachmentFromPath, entityTypes } from '@/features/attachments'
 import { useArrangeScans, useAssistSettings } from '@/features/assist/queries'
 import * as m from '@/paraglide/messages'
-import { Delete02Icon, FileImportIcon, SparklesIcon } from '@hugeicons/core-free-icons'
+import { Delete02Icon, FileImportIcon, Folder01Icon, SparklesIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@pleadli/ui/dialog'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
-import { isTauri } from '@tauri-apps/api/core'
+import { invoke, isTauri } from '@tauri-apps/api/core'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { useEffect, useRef, useState } from 'react'
+import { pageCountOptions } from './page-count'
 import { useCreateFileItem } from './queries'
 import { FillFromPapers } from './fill-from-papers'
 import type { Arranged } from '@/features/assist/data'
@@ -44,6 +45,7 @@ export function ImportPaper({ fileId, open: openProp, onOpenChange, trigger = tr
   const [picked, setPicked] = useState<Picked[]>([])
   const [phase, setPhase] = useState<Phase>({ step: 'choose' })
   const [dragOver, setDragOver] = useState(false)
+  const [folderEmpty, setFolderEmpty] = useState(false)
   // Scans already stored on the file by an attempt that then failed: a retry reads them again, it does not store them twice.
   const [stored, setStored] = useState<string[]>([])
   const input = useRef<HTMLInputElement>(null)
@@ -69,6 +71,15 @@ export function ImportPaper({ fileId, open: openProp, onOpenChange, trigger = tr
     }
   }
 
+  /** A folder or memory stick: every scan in it, in the order of the names. */
+  const chooseFolder = async () => {
+    const folder = await openDialog({ directory: true })
+    if (typeof folder !== 'string') return
+    const paths = await invoke<string[]>('list_scans_in_folder', { folder })
+    setFolderEmpty(paths.length === 0)
+    setPicked((p) => [...p, ...paths.map((path) => ({ path, name: path.split(/[\\/]/).pop() ?? path }))])
+  }
+
   const run = async (useAssist: boolean) => {
     setPhase({ step: 'uploading', done: stored.length })
     const ids: string[] = [...stored]
@@ -87,7 +98,9 @@ export function ImportPaper({ fileId, open: openProp, onOpenChange, trigger = tr
         setPhase({ step: 'done', placed: result.items.length, found: result })
       } else {
         for (const [i, id] of ids.entries()) {
-          await createItem.mutateAsync({ prosecutionFileId: fileId, kind: 'other', title: picked[i].name.replace(/\.[^.]+$/, ''), attachmentId: id, pageFrom: 1 })
+          // Each scan goes in whole, with its real page count so the sheets add up. Marking where each paper starts is the next step.
+          const pages = await queryClient.fetchQuery(pageCountOptions(id))
+          await createItem.mutateAsync({ prosecutionFileId: fileId, kind: 'other', title: picked[i].name.replace(/\.[^.]+$/, ''), attachmentId: id, pageFrom: 1, pageTo: pages })
         }
         setPhase({ step: 'done', placed: ids.length })
       }
@@ -155,6 +168,13 @@ export function ImportPaper({ fileId, open: openProp, onOpenChange, trigger = tr
                   setPicked((p) => [...p, ...files.map((file) => ({ file, name: file.name }))])
                 }}
               />
+              {isTauri() && (
+                <Button variant="secondary" onClick={chooseFolder}>
+                  <HugeiconsIcon icon={Folder01Icon} />
+                  {m["import.folder"]()}
+                </Button>
+              )}
+              {folderEmpty && picked.length === 0 && <p className="text-muted-foreground">{m["import.folder_empty"]()}</p>}
               {picked.length > 0 && (
                 <ul className="flex list-none flex-col gap-1 p-0">
                   {picked.map((p, i) => (
@@ -211,7 +231,7 @@ export function ImportPaper({ fileId, open: openProp, onOpenChange, trigger = tr
           {phase.step === 'done' && (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <strong>{m["import.done"]({ count: phase.placed })}</strong>
-              <p className="text-muted-foreground">{m["import.done_body"]()}</p>
+              <p className="text-muted-foreground">{phase.found ? m["import.done_body"]() : m["import.done_by_hand"]()}</p>
               {phase.found && (phase.found.people.length > 0 || phase.found.charges.length > 0 || phase.found.custody.length > 0) ? (
                 <div className="w-full rounded-2xl bg-secondary/40 p-4">
                   <FillFromPapers

@@ -3,7 +3,7 @@
 
 use serde_json::Value;
 
-pub use pleadli_node_core::ai::{Engine, ModelInfo, Part, PROVIDERS};
+pub use pleadli_node_core::ai::{Engine, ModelInfo, Part, Tier, PROVIDERS};
 use pleadli_node_core::ai::{self as shared, AiError};
 
 use super::error::DomainError;
@@ -22,4 +22,8 @@ pub async fn generate_json(e: &Engine, system: &str, parts: &[Part], schema: &Va
 
 pub async fn reply(e: &Engine, system: &str, conversation: &[(String, String)]) -> Result<(String, String), DomainError> {
     shared::reply(e, system, conversation).await.map_err(invalid)
+}
+
+pub async fn generate_json_tier(e: &Engine, tier: Tier, system: &str, parts: &[Part], schema: &Value) -> Result<(Value, String), DomainError> {
+    shared::generate_json_tier(e, tier, system, parts, schema).await.map_err(invalid)
 }

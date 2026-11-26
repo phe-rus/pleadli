@@ -157,15 +157,22 @@ pub async fn full_context(pool: &SqlitePool, file_id: &str, country: &CountryCon
     let words = offence_words(pool, file_id).await?;
     let law = laws::excerpts(pool, &country.code, &words, 14_000).await?;
     let history = office_history(pool, file_id, &words).await?;
+    let guide = super::guide::context_for_file(pool, file_id, &country.code).await?;
     let system = format!(
-        "{PLATFORM}\nToday is {} (count every time limit up to today, not only between the papers' own dates).\n{}\n{}\n\nLAW TEXT HELD BY THE OFFICE (quote only this; say when the text you need is not here):\n{}\n\nTHIS OFFICE'S PAST HANDLING:\n{}",
+        "{PLATFORM}\nToday is {} (count every time limit up to today, not only between the papers' own dates).\n{}\n{}\n\nTHE OFFICE'S LEGAL GUIDE FOR THIS FILE'S OFFENCES (the elements the prosecutor checks; use them as the test of whether the evidence is enough):\n{}\n\nLAW TEXT HELD BY THE OFFICE (quote only this; say when the text you need is not here):\n{}\n\nTHIS OFFICE'S PAST HANDLING:\n{}",
         chrono::Utc::now().format("%Y-%m-%d"),
         assist::RULES,
         assist::country_lines(country),
+        if guide.is_empty() { "(no guide entry fits this file's offence yet: say so, and do not invent elements)".to_string() } else { guide },
         if law.is_empty() { "(no law text stored yet)".to_string() } else { law },
         if history.is_empty() { "(none yet)".to_string() } else { history },
     );
-    let file = assist::file_text(pool, file_id).await?;
+    let mut file = assist::file_text(pool, file_id).await?;
+    // The same answer the screens show, so Assist never describes a position the
+    // prosecutor is not looking at. It only describes: the decision stays theirs.
+    if let Some(line) = super::attention::describe(pool, file_id).await? {
+        file = format!("WHERE THE FILE STANDS (set by the office's records, not by you): {line}\n\n{file}");
+    }
     Ok((system, file))
 }
 
@@ -188,10 +195,15 @@ fn review_schema() -> Value {
         "evidential": finding(EVIDENTIAL),
         "publicInterestOutcome": { "type": "string", "enum": ["passed", "failed", "unresolved"] },
         "publicInterest": finding(PUBLIC_INTEREST),
+        "elements": { "type": "array", "items": { "type": "object", "properties": {
+            "element": s("One element from the guide, word for word. Empty list if the guide has none for this offence."),
+            "status": { "type": "string", "enum": ["shown", "not_shown", "unclear"] },
+            "source": s("The paper and page that shows it, e.g. 'Akello statement p. 1'. Empty if not shown."),
+            "against": s("Every paper and page that disputes or weakens this element, and what it says, the accused's own statement above all. Empty only if nothing in the file does.") }, "required": ["element", "status", "source", "against"] } },
         "missing": { "type": "array", "items": s("Something the file needs and lacks.") },
         "contradictions": { "type": "array", "items": s("Where the file disagrees with itself.") },
         "procedure": { "type": "array", "items": s("A problem with custody or detention against the country's time limits (count the dates), or with the accused's rights (lawyer, interpreter, caution). Empty if none.") }
-    }, "required": ["summary", "evidentialOutcome", "evidential", "publicInterestOutcome", "publicInterest", "missing", "contradictions", "procedure"] })
+    }, "required": ["summary", "evidentialOutcome", "evidential", "publicInterestOutcome", "publicInterest", "elements", "missing", "contradictions", "procedure"] })
 }
 
 fn decide_schema(kinds: &[String]) -> Value {
@@ -267,7 +279,7 @@ pub async fn propose(pool: &SqlitePool, file_id: &str, stage: Option<&str>, coun
     let e = assist::engine(pool).await?;
     let (system, file) = full_context(pool, file_id, country).await?;
     let (ask, schema) = match stage.as_str() {
-        "review" => ("Review this file against the Evidential Test and, if it is passed, the Public Interest Test. Give a finding for every criterion.".to_string(), review_schema()),
+        "review" => ("Review this file against the Evidential Test and, if it is passed, the Public Interest Test. Give a finding for every criterion. Then go through each element in the office's legal guide for this offence and say whether the papers show it, naming the paper and page. Read the accused's statement and every defence account against each element: if any paper disputes an element (for example the accused says he found the thing, or was elsewhere), record it in against and do not mark the element shown, mark it unclear. Where an element is not shown, put it in missing.".to_string(), review_schema()),
         "decide" => {
             let kinds: Vec<String> = country.decisions.iter().filter_map(|d| d.split(':').next().map(|k| k.trim().to_string())).collect();
             let kinds = if kinds.is_empty() { decisions::DECISION_TYPES.iter().map(|k| k.to_string()).collect() } else { kinds };
@@ -280,14 +292,46 @@ pub async fn propose(pool: &SqlitePool, file_id: &str, stage: Option<&str>, coun
     // The language is repeated last: models otherwise drift back to English.
     let lang = if country.language.is_empty() { "English".to_string() } else { country.language.clone() };
     let ask = format!("{ask}\nCheck every date against the time limits given for this country.\nWrite every text field in {lang}.");
-    match ai::generate_json(&e, &system, &[Part::Text(format!("{ask}\n\n{file}"))], &schema).await {
-        Ok((body, model)) => {
+    let aliases = assist::aliases_for(pool, &e, Some(file_id)).await?;
+    match ai::generate_json(&e, &aliases.hide(&system), &[Part::Text(aliases.hide(&format!("{ask}\n\n{file}")))], &schema).await {
+        Ok((mut body, model)) => {
+            aliases.show_value(&mut body);
+            if stage == "review" {
+                hold_disputed_elements(&mut body);
+            }
             assist::log(pool, Some(file_id), &format!("propose_{stage}"), &model, actor, true, "").await;
             store(pool, file_id, &stage, body, &model, actor).await
         }
         Err(err) => {
             assist::log(pool, Some(file_id), &format!("propose_{stage}"), &e.provider, actor, false, &err.to_string()).await;
             Err(err)
+        }
+    }
+}
+
+/// Whatever the model says, an element that a paper disputes is not "shown":
+/// it becomes "unclear", so a small or hurried model cannot hand the
+/// prosecutor a tick the file itself contradicts.
+fn hold_disputed_elements(body: &mut Value) {
+    let mut open = false;
+    if let Some(list) = body.get_mut("elements").and_then(Value::as_array_mut) {
+        for e in list {
+            let disputed = e.get("against").and_then(Value::as_str).is_some_and(|a| !a.trim().is_empty());
+            if disputed && e.get("status").and_then(Value::as_str) == Some("shown") {
+                e["status"] = Value::String("unclear".into());
+            }
+            open |= e.get("status").and_then(Value::as_str) != Some("shown");
+        }
+    }
+    // The Evidential Test cannot be "passed" while one of its own criteria is
+    // unresolved or against charging, or while an element is open. The Public
+    // Interest Test is left to the prosecutor: a factor that does not arise is
+    // often just not assessed.
+    for (outcome, findings, extra) in [("evidentialOutcome", "evidential", open)] {
+        let unsettled = extra
+            || body.get(findings).and_then(Value::as_array).is_some_and(|list| list.iter().any(|f| matches!(f.get("finding").and_then(Value::as_str), Some("unresolved") | Some("against"))));
+        if unsettled && body.get(outcome).and_then(Value::as_str) == Some("passed") {
+            body[outcome] = Value::String("unresolved".into());
         }
     }
 }
@@ -366,7 +410,7 @@ pub async fn answer(pool: &SqlitePool, vault_root: &std::path::Path, proposal_id
                     .cloned()
                     .unwrap_or_default()
                     .iter()
-                    .map(|d| DirectionInput { kind: d["kind"].as_str().unwrap_or("other").to_string(), instruction: d["instruction"].as_str().unwrap_or("").to_string(), person_id: None })
+                    .map(|d| DirectionInput { kind: d["kind"].as_str().unwrap_or("other").to_string(), instruction: d["instruction"].as_str().unwrap_or("").to_string(), person_id: None, due_at: None })
                     .filter(|d| !d.instruction.trim().is_empty())
                     .collect()
             } else {
@@ -677,8 +721,11 @@ pub async fn chat(pool: &SqlitePool, input: ChatInput, actor: Option<&str>) -> R
     }
     system.push_str("\nAnswer in short plain paragraphs or lists. When something should be done in the app, say which stage and which button.");
     let conversation: Vec<(String, String)> = input.messages.iter().rev().take(20).rev().map(|m| (m.role.clone(), m.content.clone())).collect();
-    match ai::reply(&e, &system, &conversation).await {
+    let aliases = assist::aliases_for(pool, &e, input.file_id.as_deref()).await?;
+    let hidden_conversation: Vec<(String, String)> = conversation.iter().map(|(role, text)| (role.clone(), aliases.hide(text))).collect();
+    match ai::reply(&e, &aliases.hide(&system), &hidden_conversation).await {
         Ok((text, model)) => {
+            let text = aliases.show(&text);
             assist::log(pool, input.file_id.as_deref(), "chat", &model, actor, true, "").await;
             Ok(ChatReply { text, model })
         }
@@ -686,5 +733,41 @@ pub async fn chat(pool: &SqlitePool, input: ChatInput, actor: Option<&str>) -> R
             assist::log(pool, input.file_id.as_deref(), "chat", &e.provider, actor, false, &err.to_string()).await;
             Err(err)
         }
+    }
+}
+
+#[cfg(test)]
+mod guard_tests {
+    use super::*;
+
+    #[test]
+    fn a_disputed_element_is_never_shown() {
+        let mut body = json!({ "elements": [
+            { "element": "Took without a claim of right", "status": "shown", "source": "Akello p. 1", "against": "Okello's statement: he found the phone near the gate" },
+            { "element": "It belonged to someone else", "status": "shown", "source": "Akello p. 1", "against": "" },
+            { "element": "Intent", "status": "not_shown", "source": "", "against": "  " }
+        ] });
+        hold_disputed_elements(&mut body);
+        assert_eq!(body["elements"][0]["status"], "unclear");
+        assert_eq!(body["elements"][1]["status"], "shown");
+        assert_eq!(body["elements"][2]["status"], "not_shown");
+        let mut open = json!({ "evidentialOutcome": "passed", "elements": [{ "status": "unclear", "against": "x" }] });
+        hold_disputed_elements(&mut open);
+        assert_eq!(open["evidentialOutcome"], "unresolved");
+        // A criterion left unresolved holds the test even with every element shown.
+        let mut crit = json!({ "evidentialOutcome": "passed", "publicInterestOutcome": "passed",
+            "evidential": [{ "criterion": "relevance", "finding": "favours" }, { "criterion": "defence", "finding": "unresolved" }],
+            "publicInterest": [{ "criterion": "harm", "finding": "favours" }] });
+        hold_disputed_elements(&mut crit);
+        assert_eq!(crit["evidentialOutcome"], "unresolved");
+        assert_eq!(crit["publicInterestOutcome"], "passed");
+        // The Public Interest Test is not held for an unassessed factor.
+        let mut pi = json!({ "publicInterestOutcome": "passed", "publicInterest": [{ "criterion": "out_of_court", "finding": "unresolved" }] });
+        hold_disputed_elements(&mut pi);
+        assert_eq!(pi["publicInterestOutcome"], "passed");
+        // A body with no elements (an older proposal) is left alone.
+        let mut old = json!({ "summary": "x" });
+        hold_disputed_elements(&mut old);
+        assert_eq!(old, json!({ "summary": "x" }));
     }
 }

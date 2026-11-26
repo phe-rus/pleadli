@@ -8,6 +8,7 @@ import { statementsForFileOptions } from '@/features/statements/queries'
 import { statementRoleLabel } from '@/features/statements/schema'
 import { safeParseRichTextDoc } from '@pleadli/rich-text'
 import { brandOptions, installationOptions } from '@/features/installation'
+import { listGuide } from '@/features/guide/data'
 import { filePeopleOptions, type personFullNameForRole, prosecutionFileOptions } from '@/features/prosecution-files'
 import { securityStatusOptions } from '@/features/security'
 import { activeJurisdiction } from '@/lib/jurisdiction'
@@ -34,6 +35,12 @@ export async function templateContext(queryClient: QueryClient, fileId: string, 
   await queryClient.fetchQuery(brandOptions())
   if (!file) throw new Error('File not found')
   const country = activeJurisdiction()
+  const guide = !country ? [] : await queryClient.fetchQuery({ queryKey: ['guide', country?.code] as const, queryFn: () => listGuide(country!.code) }).catch(() => [])
+  // A charge that carries the guide's section numbers is worded as the guide words it: "Theft contrary to sections 254 and 261 of the Penal Code Act".
+  const statementFor = (offence: string, section: string | null) => {
+    const entry = guide.find((g) => g.state === 'in_use' && g.chargeWording && g.sectionRefs && (section ?? '').trim() === g.sectionRefs.trim() && (offence.toLowerCase().includes(g.title.toLowerCase()) || g.title.toLowerCase().includes(offence.toLowerCase())))
+    return entry?.chargeWording?.trim().replace(/\.$/, '') ?? null
+  }
   // On a court paper a person is written surname first, without a comma: KIBUUKA JOSEPH.
   const paperName = (p: Parameters<typeof personFullNameForRole>[0]) => [p.personLastName, p.personFirstName, p.personOtherNames].filter(Boolean).join(' ')
   const byRole = (role: string) => people.filter((p) => p.role === role).map(paperName)
@@ -47,9 +54,9 @@ export async function templateContext(queryClient: QueryClient, fileId: string, 
     accused: byRole('accused'),
     complainants: byRole('complainant'),
     witnesses: byRole('witness'),
-    charges: charges.map((c) => ({ offence: c.offence, section: c.statutorySection, particulars: plain(c.particulars) || null, accused: accusedName(c.accusedPersonId) ? paperName(accusedName(c.accusedPersonId)!) : null })),
-    decision: decision ? { id: decision.id, kind: decision.decisionType, label: decisionTypeLabel(decision.decisionType), reasons: decision.reasons, decidedAt: decision.decidedAt } : null,
-    directions: directions.filter((d) => !decision || d.decisionId === decision.id).map((d) => ({ kind: d.kind, instruction: d.instruction })),
+    charges: charges.map((c) => ({ offence: c.offence, section: c.statutorySection, statement: statementFor(c.offence, c.statutorySection), particulars: plain(c.particulars) || null, accused: accusedName(c.accusedPersonId) ? paperName(accusedName(c.accusedPersonId)!) : null })),
+    decision: decision ? { id: decision.id, kind: decision.decisionType, label: decisionTypeLabel(decision.decisionType), reasons: decision.reasons ? plain(decision.reasons) || null : null, decidedAt: decision.decidedAt } : null,
+    directions: directions.filter((d) => !decision || d.decisionId === decision.id).map((d) => ({ kind: d.kind, instruction: d.instruction, dueAt: d.dueAt })),
     custody,
     exhibits: items.filter((i) => i.kind === 'exhibit').map((i) => i.title),
     statements: [...statements]

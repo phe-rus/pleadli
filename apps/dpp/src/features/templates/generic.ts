@@ -37,7 +37,7 @@ export const genericTemplates: Template[] = [
     build: (ctx) => [
       refs(ctx),
       { type: 'heading', text: `${ctx.country?.name.en ?? 'The State'} versus ${ctx.accused.join(', ') || DASH}` },
-      ...(ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, particulars: DASH, accused: null }]).flatMap((c, i): Block[] => [
+      ...(ctx.charges.length ? ctx.charges : [{ offence: DASH, section: null, statement: null, particulars: DASH, accused: null }]).flatMap((c, i): Block[] => [
         { type: 'heading', text: `Count ${i + 1}` },
         { type: 'paragraph', text: `${c.offence}${c.section ? `, contrary to ${c.section}` : ''}. ${c.particulars ?? ''}` },
       ]),

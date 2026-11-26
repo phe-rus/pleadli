@@ -43,6 +43,8 @@ pub struct AssistSettings {
     pub key_source: Option<String>,
     pub key_hint: Option<String>,
     pub laws_token_set: bool,
+    /// Names, ID numbers and phone numbers are swapped for stand-ins before text goes to an online model.
+    pub hide_names: bool,
     pub acknowledged_by: Option<String>,
     pub acknowledged_at: Option<i64>,
     /// Ready to use: on, acknowledged, and a key is there.
@@ -61,6 +63,7 @@ pub struct AssistSettingsInput {
     pub api_key: Option<String>,
     /// The Laws.Africa token; same rules as the key.
     pub laws_token: Option<String>,
+    pub hide_names: Option<bool>,
     #[serde(default)]
     pub acknowledge: bool,
 }
@@ -76,11 +79,12 @@ struct Row {
     base_url: Option<String>,
     auto_model: bool,
     laws_token: Option<String>,
+    hide_names: bool,
 }
 
 async fn row(pool: &SqlitePool) -> Result<Row, sqlx::Error> {
     let found: Option<Row> = sqlx::query_as(
-        "SELECT mode, provider, model, api_key, acknowledged_by, acknowledged_at, base_url, auto_model, laws_token FROM assist_settings WHERE id = 'this'",
+        "SELECT mode, provider, model, api_key, acknowledged_by, acknowledged_at, base_url, auto_model, laws_token, hide_names FROM assist_settings WHERE id = 'this'",
     )
     .fetch_optional(pool)
     .await?;
@@ -94,6 +98,7 @@ async fn row(pool: &SqlitePool) -> Result<Row, sqlx::Error> {
         base_url: None,
         auto_model: true,
         laws_token: None,
+        hide_names: true,
     }))
 }
 
@@ -135,6 +140,7 @@ pub async fn settings(pool: &SqlitePool) -> Result<AssistSettings, sqlx::Error> 
         key_source,
         key_hint,
         laws_token_set: r.laws_token.is_some() || std::env::var("LAWS_AFRICA_TOKEN").is_ok_and(|t| !t.is_empty() && cfg!(debug_assertions)),
+        hide_names: r.hide_names,
         acknowledged_by: r.acknowledged_by,
         acknowledged_at: r.acknowledged_at,
         ready,
@@ -176,13 +182,14 @@ pub async fn save_settings(pool: &SqlitePool, input: AssistSettingsInput, actor:
         None => r.laws_token.clone(),
     };
     let auto_model = input.auto_model.unwrap_or(r.auto_model);
+    let hide_names = input.hide_names.unwrap_or(r.hide_names);
     let (by, at) = if input.acknowledge { (Some(actor.to_string()), Some(now())) } else if input.mode == "off" { (None, None) } else { (r.acknowledged_by, r.acknowledged_at) };
     sqlx::query(
-        "INSERT INTO assist_settings (id, mode, provider, model, api_key, acknowledged_by, acknowledged_at, base_url, auto_model, laws_token, updated_at)
-         VALUES ('this', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        "INSERT INTO assist_settings (id, mode, provider, model, api_key, acknowledged_by, acknowledged_at, base_url, auto_model, laws_token, hide_names, updated_at)
+         VALUES ('this', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET mode = excluded.mode, provider = excluded.provider, model = excluded.model, api_key = excluded.api_key,
            acknowledged_by = excluded.acknowledged_by, acknowledged_at = excluded.acknowledged_at, base_url = excluded.base_url,
-           auto_model = excluded.auto_model, laws_token = excluded.laws_token, updated_at = excluded.updated_at",
+           auto_model = excluded.auto_model, laws_token = excluded.laws_token, hide_names = excluded.hide_names, updated_at = excluded.updated_at",
     )
     .bind(&input.mode)
     .bind(&provider)
@@ -193,12 +200,13 @@ pub async fn save_settings(pool: &SqlitePool, input: AssistSettingsInput, actor:
     .bind(&base_url)
     .bind(auto_model)
     .bind(&laws_token)
+    .bind(hide_names)
     .bind(now())
     .execute(pool)
     .await?;
     let _ = super::audit::log(
         pool,
-        super::audit::Entry::new("assist_settings_changed").detail(format!("mode {}, provider {provider}, model {}", input.mode, if auto_model { "automatic" } else { &model })),
+        super::audit::Entry::new("assist_settings_changed").detail(format!("mode {}, provider {provider}, model {}, names {}", input.mode, if auto_model { "automatic" } else { &model }, if hide_names { "hidden" } else { "shown" })),
     )
     .await;
     Ok(settings(pool).await?)
@@ -235,6 +243,30 @@ pub fn load_dev_env() {
 
 /// The provider, key and model settings, or why Assist cannot run.
 /// The provider and key with the model a person chose for one request, if any.
+/// True when this engine is a model the office does not host: anything but a server on this computer. Only then are
+/// names swapped out, since a model on this computer never sends the file anywhere.
+pub fn is_online(e: &Engine) -> bool {
+    // The host is compared whole: "localhost.example.com" is somewhere else, and must not pass for this computer.
+    let local = e.provider == "openai_compatible"
+        && e.base_url.as_deref().is_some_and(|u| {
+            let rest = u.split_once("://").map_or(u, |(_, r)| r);
+            let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+            let host = authority.rsplit_once('@').map_or(authority, |(_, h)| h);
+            let host = if host.starts_with('[') { host.split_once(']').map_or(host, |(h, _)| &h[1..]) } else { host.split(':').next().unwrap_or(host) };
+            matches!(host.to_ascii_lowercase().as_str(), "localhost" | "127.0.0.1" | "::1")
+        });
+    !local
+}
+
+/// The stand-ins for the people on this file when they are to be used: names hidden is on and the model is online.
+pub async fn aliases_for(pool: &SqlitePool, e: &Engine, file_id: Option<&str>) -> Result<super::assist_names::Aliases, DomainError> {
+    let (Some(file_id), true) = (file_id, is_online(e)) else { return Ok(super::assist_names::Aliases::none()) };
+    if !row(pool).await?.hide_names {
+        return Ok(super::assist_names::Aliases::none());
+    }
+    Ok(super::assist_names::Aliases::for_file(pool, file_id).await?)
+}
+
 pub async fn engine_for(pool: &SqlitePool, chosen: Option<&str>) -> Result<Engine, DomainError> {
     let mut e = engine(pool).await?;
     if let Some(model) = chosen.map(str::trim).filter(|m| !m.is_empty()) {
@@ -497,10 +529,14 @@ pub struct Brief {
 pub async fn brief(pool: &SqlitePool, file_id: &str, context: &CountryContext, model: Option<&str>, actor: Option<&str>) -> Result<Brief, DomainError> {
     let e = engine_for(pool, model).await?;
     let text = file_text(pool, file_id).await?;
-    let system = format!("{RULES}\n{}", country_lines(context));
-    let result = ai::generate_json(&e, &system, &[Part::Text(format!("Prepare a brief on this file.\n\n{text}"))], &brief_schema()).await;
+    let guide = super::guide::context_for_file(pool, file_id, &context.code).await?;
+    let guide = if guide.is_empty() { "(no guide entry fits this file's offence yet: say so, and do not invent elements)".to_string() } else { guide };
+    let system = format!("{RULES}\n{}\n\nTHE OFFICE'S LEGAL GUIDE FOR THIS FILE'S OFFENCES (check the file against these elements):\n{guide}", country_lines(context));
+    let aliases = aliases_for(pool, &e, Some(file_id)).await?;
+    let result = ai::generate_json_tier(&e, ai::Tier::Routine, &aliases.hide(&system), &[Part::Text(aliases.hide(&format!("Prepare a brief on this file.\n\n{text}")))], &brief_schema()).await;
     match result {
-        Ok((value, model)) => {
+        Ok((mut value, model)) => {
+            aliases.show_value(&mut value);
             let id = Uuid::new_v4().to_string();
             let at = now();
             sqlx::query("INSERT INTO assist_log (id, prosecution_file_id, purpose, model, requested_by, ok, detail, created_at) VALUES (?, ?, 'brief', ?, ?, 1, ?, ?)")
@@ -633,7 +669,7 @@ pub async fn arrange(
     // Reading scans is the heaviest thing Assist does. If the office's provider
     // cannot finish it (free models are rate-limited), a Gemini key, when
     // there is one, reads them instead.
-    let mut result = ai::generate_json(&e, &system, &parts, &arrange_schema()).await;
+    let mut result = ai::generate_json_tier(&e, ai::Tier::Routine, &system, &parts, &arrange_schema()).await;
     if result.is_err() && e.provider != "gemini" {
         if let Some(key) = env_key("gemini") {
             let gemini = Engine { provider: "gemini".into(), key, base_url: None, fixed_model: None };
@@ -703,4 +739,24 @@ pub async fn recent_log(pool: &SqlitePool, limit: i64) -> Result<Vec<LogEntry>, 
         .bind(limit)
         .fetch_all(pool)
         .await
+}
+
+#[cfg(test)]
+mod online_tests {
+    use super::*;
+
+    fn engine(provider: &str, base_url: Option<&str>) -> Engine {
+        Engine { provider: provider.into(), key: String::new(), base_url: base_url.map(str::to_string), fixed_model: None }
+    }
+
+    #[test]
+    fn only_a_server_on_this_computer_counts_as_offline() {
+        assert!(!is_online(&engine("openai_compatible", Some("http://localhost:11434/v1"))));
+        assert!(!is_online(&engine("openai_compatible", Some("http://127.0.0.1:11434/v1"))));
+        assert!(is_online(&engine("gemini", None)));
+        assert!(is_online(&engine("openai_compatible", Some("https://models.example.com/v1"))), "a server somewhere else is online");
+        assert!(is_online(&engine("openai_compatible", Some("http://localhost.evil.example/v1"))), "a name that only starts with localhost is not this computer");
+        assert!(is_online(&engine("openai_compatible", Some("http://localhost@evil.example/v1"))), "user info before the host does not make it local");
+        assert!(!is_online(&engine("openai_compatible", Some("http://[::1]:11434/v1"))));
+    }
 }

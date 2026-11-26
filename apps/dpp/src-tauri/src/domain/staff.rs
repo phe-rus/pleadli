@@ -324,3 +324,20 @@ pub async fn clear_active_session(pool: &SqlitePool) -> Result<(), sqlx::Error> 
     sqlx::query("DELETE FROM active_session").execute(pool).await?;
     Ok(())
 }
+
+/// Development builds only: sets every PIN on this copy to `000000` and every
+/// password to `password123` (the test-data convention), for a developer who
+/// has forgotten the logins of their own test data. Started by the
+/// `PLEADLI_DEV_RESET_LOGINS` environment variable; it does not exist in a
+/// release build.
+#[cfg(debug_assertions)]
+pub async fn dev_reset_logins(pool: &SqlitePool) -> Result<Vec<String>, DomainError> {
+    let mut names = Vec::new();
+    for (kind, secret, protection) in [("pin", "000000", Protection::Basic), ("password", "password123", Protection::Full)] {
+        let Some((_, hash)) = hash_secret(protection, secret)? else { continue };
+        let mut found: Vec<String> = sqlx::query_scalar("SELECT name FROM staff WHERE secret_kind = ? ORDER BY name").bind(kind).fetch_all(pool).await?;
+        sqlx::query("UPDATE staff SET secret_hash = ?, updated_at = ? WHERE secret_kind = ?").bind(&hash).bind(chrono::Utc::now().timestamp_millis()).bind(kind).execute(pool).await?;
+        names.append(&mut found);
+    }
+    Ok(names)
+}

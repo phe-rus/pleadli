@@ -200,3 +200,91 @@ pub async fn delete(pool: &SqlitePool, id: &str) -> Result<(), DomainError> {
     sqlx::query("DELETE FROM file_items WHERE id = ?").bind(id).execute(pool).await?;
     Ok(())
 }
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PaperStart {
+    pub page_from: i64,
+    pub kind: String,
+    pub title: String,
+}
+
+/// A scan came in as one row. The clerk has marked, by hand, the page where
+/// each paper in it starts: the row becomes one row per paper, each covering
+/// its own pages of the same stored scan. The scan itself is not touched.
+///
+/// `page_count` is how many pages the scan has (the viewer counts them).
+/// Starts must begin at the row's first page, rise strictly, and stay inside
+/// the scan. Every new row sits right after the original in the file's order.
+pub async fn split(pool: &SqlitePool, id: &str, page_count: i64, mut starts: Vec<PaperStart>, actor: Option<&str>) -> Result<Vec<FileItem>, DomainError> {
+    let c = get(pool, id).await?;
+    if c.attachment_id.is_none() {
+        return invalid("Only a scanned paper can be split into papers.");
+    }
+    let base = c.page_from.unwrap_or(1);
+    let end = c.page_to.unwrap_or(page_count);
+    if page_count < 1 || end > page_count {
+        return invalid("The scan has no such pages.");
+    }
+    starts.sort_by_key(|s| s.page_from);
+    if starts.is_empty() || starts[0].page_from != base {
+        return invalid("The first paper has to start on the first page.");
+    }
+    if starts.windows(2).any(|w| w[0].page_from == w[1].page_from) || starts.last().is_some_and(|s| s.page_from > end) {
+        return invalid("Two papers cannot start on the same page, or after the last page.");
+    }
+    for s in &starts {
+        check(&s.kind, &s.title, Some(s.page_from), Some(end))?;
+    }
+
+    let t = now();
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    let mut ids = Vec::new();
+    for (i, s) in starts.iter().enumerate() {
+        let to = starts.get(i + 1).map_or(end, |n| n.page_from - 1);
+        if i == 0 {
+            sqlx::query("UPDATE file_items SET kind = ?, title = ?, page_from = ?, page_to = ?, confirmed_by = COALESCE(confirmed_by, ?), confirmed_at = COALESCE(confirmed_at, ?), updated_at = ? WHERE id = ?")
+                .bind(&s.kind)
+                .bind(s.title.trim())
+                .bind(s.page_from)
+                .bind(to)
+                .bind(actor)
+                .bind(t)
+                .bind(t)
+                .bind(id)
+                .execute(&mut *tx)
+                .await?;
+            ids.push(id.to_string());
+        } else {
+            let new_id = Uuid::new_v4().to_string();
+            sqlx::query(
+                "INSERT INTO file_items (id, prosecution_file_id, kind, title, document_date, attachment_id, page_from, page_to, position, source,
+                                         confirmed_by, confirmed_at, created_by, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, 'person', ?, ?, ?, ?, ?)",
+            )
+            .bind(&new_id)
+            .bind(&c.prosecution_file_id)
+            .bind(&s.kind)
+            .bind(s.title.trim())
+            .bind(&c.attachment_id)
+            .bind(s.page_from)
+            .bind(to)
+            // Between this paper and whatever followed it.
+            .bind(c.position + (i as f64) * 0.0001)
+            .bind(actor)
+            .bind(t)
+            .bind(actor)
+            .bind(t)
+            .bind(t)
+            .execute(&mut *tx)
+            .await?;
+            ids.push(new_id);
+        }
+    }
+    tx.commit().await?;
+    let mut out = Vec::new();
+    for i in ids {
+        out.push(get(pool, &i).await?);
+    }
+    Ok(out)
+}

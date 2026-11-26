@@ -336,6 +336,29 @@ async fn decisions_can_be_about_one_count_and_the_file_status_rolls_up() {
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
 }
 
+
+#[tokio::test]
+async fn a_charge_added_by_mistake_can_go_but_one_a_decision_is_about_cannot() {
+    let app = app().await;
+    let file = new_file(&app).await;
+    let mistaken = add_charge(&app, &file, "Theft").await;
+    let decided = add_charge(&app, &file, "Robbery").await;
+
+    let (status, _) = call(&app, Method::DELETE, &format!("/api/charges/{mistaken}"), None).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (_, left) = call(&app, Method::GET, &format!("/api/prosecution-files/{file}/charges"), None).await;
+    assert_eq!(left.as_array().unwrap().len(), 1);
+
+    let (status, _) = call(&app, Method::POST, "/api/decisions", Some(json!({
+        "prosecutionFileId": file, "decisionType": "take_over", "decidedAt": now(), "chargeIds": [decided]
+    }))).await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _) = call(&app, Method::DELETE, &format!("/api/charges/{decided}"), None).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+
+    let (status, _) = call(&app, Method::DELETE, &format!("/api/charges/{mistaken}"), None).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
 #[tokio::test]
 async fn a_concluded_file_is_reopened_by_a_review_and_the_new_decision_corrects_the_old() {
     let app = app().await;
@@ -842,6 +865,73 @@ mod interchange_flow {
         assert_eq!(opened.header.in_reply_to.as_deref(), Some(package_id.as_str()));
     }
 
+    /// The fields added after the first version, end to end: the station's arrest starts the custody clock when the
+    /// referral is accepted, the office's minute reaches the station with only the witnesses still to serve, and the
+    /// station's service report updates exactly those witnesses and nothing else.
+    #[tokio::test]
+    async fn arrest_minute_and_service_report_travel_between_station_and_office() {
+        let w = connected("Wandegeya Police Station").await;
+        let arrested = now() - 2 * DAY;
+        let mut referral = referral("WANDEGEYA CRB 90/2026");
+        referral.arrested_at = Some(arrested);
+        referral.held_place = Some("Wandegeya Police Station cells".into());
+        let (status, outcome) = import(&w.app, &package(&w, &referral, 1)).await;
+        assert_eq!(status, StatusCode::OK, "{outcome}");
+        let package_id = outcome["packageId"].as_str().unwrap().to_string();
+        let (_, accepted) = call(&w.app, Method::POST, &format!("/api/interchange/incoming/{package_id}/accept"), Some(json!({}))).await;
+        let file = accepted["fileId"].as_str().unwrap().to_string();
+
+        // The arrest is on the file as the station's claim, with the place, and not twice.
+        let (_, events) = call(&w.app, Method::GET, &format!("/api/custody-events?fileId={file}"), None).await;
+        let arrests: Vec<_> = events.as_array().unwrap().iter().filter(|e| e["kind"] == "arrest").collect();
+        assert_eq!(arrests.len(), 1, "{events}");
+        assert_eq!(arrests[0]["at"], arrested);
+        assert!(arrests[0]["note"].as_str().unwrap().contains("Wandegeya Police Station cells"));
+
+        // A minute with two witnesses, one already served.
+        let hearing = add_hearing(&w.app, &file, 1).await;
+        let (_, h) = call(&w.app, Method::GET, &format!("/api/hearings?fileId={file}"), None).await;
+        let heard_at = h.as_array().unwrap().iter().find(|x| x["id"] == hearing.as_str()).unwrap()["startsAt"].as_i64().unwrap();
+        assert_eq!(call(&w.app, Method::POST, &format!("/api/hearings/{hearing}/minute/send"), None).await.0, StatusCode::UNPROCESSABLE_ENTITY, "no minute written yet");
+        put(&w.app, &format!("/api/hearings/{hearing}/minute"), json!({
+            "nextDate": now() + 10 * DAY, "adjournmentCause": "prosecution", "exhibits": ["Phone"],
+            "witnesses": [{ "witness": "PW1 Namutebi", "served": true }, { "witness": "PW2 Kato", "served": false, "reason": "Summons not delivered" }]
+        })).await;
+        let (status, sent) = call(&w.app, Method::POST, &format!("/api/hearings/{hearing}/minute/send"), None).await;
+        assert_eq!(status, StatusCode::OK, "{sent}");
+        let (_, bytes) = call_bytes(&w.app, &format!("/api/interchange/outgoing/{}/file", sent["id"].as_str().unwrap())).await;
+        let opened = envelope::open(&w.station, envelope::peek(&bytes).unwrap(), &w.office).unwrap();
+        assert_eq!(opened.header.kind, KIND_HEARING_MINUTE);
+        let minute: HearingMinutePayload = serde_json::from_value(opened.body.json).unwrap();
+        assert_eq!(minute.police_reference, "WANDEGEYA CRB 90/2026");
+        assert_eq!(minute.witnesses_to_serve.iter().map(|x| x.name.as_str()).collect::<Vec<_>>(), vec!["PW2 Kato"], "only the one still to serve");
+        assert_eq!(minute.exhibits_to_produce, vec!["Phone".to_string()]);
+
+        // The station answers. It served PW2; it also mentions someone never named, which changes nothing.
+        let report = ServiceReportPayload {
+            police_reference: "WANDEGEYA CRB 90/2026".into(),
+            dpp_file_key: file.clone(),
+            heard_at,
+            results: vec![ServiceResult { name: "PW2 Kato".into(), served: true, reason: None, served_at: Some(now()) }, ServiceResult { name: "Someone Else".into(), served: true, ..Default::default() }],
+            reported_at: now(),
+            reported_by: Some("D/Sgt B. Detective".into()),
+        };
+        let seal = |payload: &ServiceReportPayload, seq| envelope::seal(&w.station, &w.office, KIND_SERVICE_REPORT, seq, None, &Body::new(serde_json::to_value(payload).unwrap())).unwrap().0;
+        let (status, body) = import(&w.app, &seal(&report, 2)).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let (_, m) = call(&w.app, Method::GET, &format!("/api/hearings/{hearing}/minute"), None).await;
+        let kato = m["witnesses"].as_array().unwrap().iter().find(|x| x["witness"] == "PW2 Kato").unwrap();
+        assert_eq!(kato["served"], true);
+        assert!(kato["reason"].is_null());
+        assert_eq!(m["witnesses"].as_array().unwrap().len(), 2, "no witness was invented");
+
+        // A report about a file this station never sent is refused.
+        let mut wrong = report.clone();
+        wrong.dpp_file_key = "not-a-file".into();
+        let (status, _) = import(&w.app, &seal(&wrong, 3)).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    }
+
     #[tokio::test]
     async fn a_package_for_another_office_or_from_another_station_is_refused() {
         let w = connected("Wandegeya Police Station").await;
@@ -1068,4 +1158,444 @@ async fn full_protection_checks_the_phone_code() {
     let (_, out) = call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": admin, "secret": "a long enough pass" }))).await;
     assert_eq!(out["status"], "code", "the password alone is not enough");
     assert_eq!(call(&app, Method::GET, "/api/prosecution-files", None).await.0, StatusCode::LOCKED);
+}
+
+/// A clerk scans a whole bundle as one PDF, then marks by hand where each
+/// paper starts. The one row becomes one row per paper over the same scan.
+#[tokio::test]
+async fn marking_where_papers_start_splits_one_scan_into_papers() {
+    let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    let security = std::sync::Arc::new(crate::domain::security::Security::new());
+    security.load(&pool).await.unwrap();
+    let app = router(AppState { pool: pool.clone(), vault_root: std::env::temp_dir(), data_dir: std::env::temp_dir(), security }, None);
+    let (status, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none", json!({ "name": "A. Prosecutor", "role": "administrator" })))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let file = new_file(&app).await;
+    sqlx::query("INSERT INTO attachments (id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes) VALUES ('scan1', 'prosecution_file', ?, 'bundle.pdf', 'x', 'application/pdf', 10)")
+        .bind(&file)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (status, item) = call(&app, Method::POST, "/api/file-items", Some(json!({ "prosecutionFileId": file, "kind": "other", "title": "bundle", "attachmentId": "scan1", "pageFrom": 1 }))).await;
+    assert_eq!(status, StatusCode::OK, "{item}");
+    let id = item["id"].as_str().unwrap();
+    let path = format!("/api/file-items/{id}/split");
+
+    // Rules: begin on page 1, no two on one page, none past the last page.
+    for starts in [json!([{ "pageFrom": 2, "kind": "complaint", "title": "A" }]), json!([{ "pageFrom": 1, "kind": "other", "title": "A" }, { "pageFrom": 1, "kind": "other", "title": "B" }]), json!([{ "pageFrom": 1, "kind": "other", "title": "A" }, { "pageFrom": 9, "kind": "other", "title": "B" }])] {
+        let (status, _) = call(&app, Method::POST, &path, Some(json!({ "pageCount": 8, "starts": starts }))).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    }
+
+    let starts = json!([
+        { "pageFrom": 5, "kind": "witness_statement", "title": "Statement of Namutebi" },
+        { "pageFrom": 1, "kind": "complaint", "title": "Complaint" },
+        { "pageFrom": 3, "kind": "charge_sheet", "title": "Charge sheet" }
+    ]);
+    let (status, out) = call(&app, Method::POST, &path, Some(json!({ "pageCount": 8, "starts": starts }))).await;
+    assert_eq!(status, StatusCode::OK, "{out}");
+    let ranges: Vec<(i64, i64, &str)> = out.as_array().unwrap().iter().map(|i| (i["pageFrom"].as_i64().unwrap(), i["pageTo"].as_i64().unwrap(), i["attachmentId"].as_str().unwrap())).collect();
+    assert_eq!(ranges, [(1, 2, "scan1"), (3, 4, "scan1"), (5, 8, "scan1")]);
+
+    // In the file they sit in the same order as the pages.
+    let (_, listed) = call(&app, Method::GET, &format!("/api/file-items?fileId={file}"), None).await;
+    let titles: Vec<&str> = listed.as_array().unwrap().iter().map(|i| i["title"].as_str().unwrap()).collect();
+    assert_eq!(titles, ["Complaint", "Charge sheet", "Statement of Namutebi"]);
+}
+
+/// The office edits the legal guide in plain words; each edit keeps the text it
+/// replaced, an earlier version comes back, and one action restores the starter.
+#[tokio::test]
+async fn legal_guide_keeps_history_and_restores_starter_text() {
+    let app = app().await;
+    let (status, list) = call(&app, Method::GET, "/api/guide/offences?jurisdiction=ug", None).await;
+    assert_eq!(status, StatusCode::OK, "{list}");
+    let theft = list.as_array().unwrap().iter().find(|o| o["title"] == "Theft").expect("starter theft").clone();
+    assert_eq!(theft["source"], "starter");
+    assert_eq!(theft["chargeWording"], "Theft contrary to sections 254 and 261 of the Penal Code Act.");
+    let id = theft["id"].as_str().unwrap();
+
+    // The starter carries the Act's elements, not an empty shell: Decide's
+    // checklist and the charge form read from these.
+    assert!(theft["proving"].as_array().unwrap().len() >= 5, "{theft}");
+    assert!(theft["proving"][0].as_str().unwrap().contains("s. 254(1)"));
+    assert!(theft["particularsTemplate"].as_str().unwrap().contains("stole"));
+    assert!(!theft["papers"].as_array().unwrap().is_empty() && !theft["gaps"].as_array().unwrap().is_empty());
+    // Housebreaking (dwelling, s. 295) and breaking into a building (s. 297) are two offences.
+    let titles: Vec<&str> = list.as_array().unwrap().iter().filter_map(|o| o["title"].as_str()).collect();
+    assert!(titles.contains(&"Housebreaking") && titles.contains(&"Breaking into a building and committing a felony"), "{titles:?}");
+
+    // Starter entries do not come back twice.
+    let (_, again) = call(&app, Method::GET, "/api/guide/offences?jurisdiction=ug", None).await;
+    assert_eq!(again.as_array().unwrap().len(), list.as_array().unwrap().len());
+
+    let edit = |wording: &str, state: &str| json!({ "title": "Theft", "sectionRefs": "254, 261", "chargeWording": wording, "proving": ["Taking", "  ", "Without consent"], "state": state, "note": "office wording" });
+    let (status, edited) = call(&app, Method::PUT, &format!("/api/guide/offences/{id}"), Some(edit("Theft contrary to ss. 254(1) and 261.", "waiting_for_director"))).await;
+    assert_eq!(status, StatusCode::OK, "{edited}");
+    assert_eq!(edited["source"], "office");
+    assert_eq!(edited["proving"], json!(["Taking", "Without consent"]));
+    assert_eq!(edited["state"], "waiting_for_director");
+    assert_eq!(call(&app, Method::PUT, &format!("/api/guide/offences/{id}"), Some(json!({ "title": " " }))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+
+    let (_, versions) = call(&app, Method::GET, &format!("/api/guide/offences/{id}/versions"), None).await;
+    assert_eq!(versions.as_array().unwrap().len(), 1);
+    assert_eq!(versions[0]["snapshot"]["chargeWording"], "Theft contrary to sections 254 and 261 of the Penal Code Act.");
+
+    // An earlier version comes back, and the restore is itself kept.
+    let vid = versions[0]["id"].as_str().unwrap();
+    let (status, back) = call(&app, Method::POST, &format!("/api/guide/versions/{vid}/restore"), None).await;
+    assert_eq!(status, StatusCode::OK, "{back}");
+    assert_eq!(back["chargeWording"], "Theft contrary to sections 254 and 261 of the Penal Code Act.");
+    let (_, versions) = call(&app, Method::GET, &format!("/api/guide/offences/{id}/versions"), None).await;
+    assert_eq!(versions.as_array().unwrap().len(), 2);
+
+    // One action puts the starter text back; an office-made entry has none.
+    call(&app, Method::PUT, &format!("/api/guide/offences/{id}"), Some(edit("Something else.", "in_use"))).await;
+    let (status, starter) = call(&app, Method::POST, &format!("/api/guide/offences/{id}/restore-starter"), None).await;
+    assert_eq!(status, StatusCode::OK, "{starter}");
+    assert_eq!(starter["source"], "starter");
+    assert_eq!(starter["chargeWording"], "Theft contrary to sections 254 and 261 of the Penal Code Act.");
+    let (_, own) = call(&app, Method::POST, "/api/guide/offences", Some(json!({ "jurisdiction": "ug", "title": "Forgery" }))).await;
+    assert_eq!(call(&app, Method::POST, &format!("/api/guide/offences/{}/restore-starter", own["id"].as_str().unwrap()), None).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+
+    // Removing a starter entry keeps it removed.
+    call(&app, Method::DELETE, &format!("/api/guide/offences/{id}"), None).await;
+    let (_, after) = call(&app, Method::GET, "/api/guide/offences?jurisdiction=ug", None).await;
+    assert!(after.as_array().unwrap().iter().all(|o| o["id"] != id));
+}
+
+/// Only an administrator changes the legal guide; everyone signed in can read it.
+#[tokio::test]
+async fn only_an_administrator_changes_the_legal_guide() {
+    let app = bare_app().await;
+    let mut body = setup_body("basic", json!({ "name": "Admin", "role": "administrator", "secret": "123456" }));
+    body["people"] = json!([{ "name": "Clerk", "role": "clerk", "secret": "654321" }]);
+    assert_eq!(call(&app, Method::POST, "/api/setup/complete", Some(body)).await.0, StatusCode::OK);
+    let (_, list) = call(&app, Method::GET, "/api/guide/offences?jurisdiction=ug", None).await;
+    let id = list[0]["id"].as_str().unwrap().to_string();
+
+    call(&app, Method::POST, "/api/session/sign-out", None).await;
+    let (_, people) = call(&app, Method::GET, "/api/session/people", None).await;
+    let clerk = people.as_array().unwrap().iter().find(|p| p["name"] == "Clerk").unwrap()["id"].as_str().unwrap().to_string();
+    call(&app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": clerk, "secret": "654321" }))).await;
+
+    assert_eq!(call(&app, Method::GET, "/api/guide/offences?jurisdiction=ug", None).await.0, StatusCode::OK);
+    let edit = json!({ "title": "Theft", "chargeWording": "changed" });
+    assert_eq!(call(&app, Method::PUT, &format!("/api/guide/offences/{id}"), Some(edit)).await.0, StatusCode::FORBIDDEN);
+    assert_eq!(call(&app, Method::POST, "/api/guide/offences", Some(json!({ "jurisdiction": "ug", "title": "X" }))).await.0, StatusCode::FORBIDDEN);
+    assert_eq!(call(&app, Method::DELETE, &format!("/api/guide/offences/{id}"), None).await.0, StatusCode::FORBIDDEN);
+    assert_eq!(call(&app, Method::POST, &format!("/api/guide/offences/{id}/restore-starter"), None).await.0, StatusCode::FORBIDDEN);
+    let (_, still) = call(&app, Method::GET, "/api/guide/offences?jurisdiction=ug", None).await;
+    assert_eq!(still.as_array().unwrap().len(), list.as_array().unwrap().len());
+}
+
+/// The registers are made from what the office did: a file received is an
+/// incoming line, a handover an outgoing line, and giving a file out a
+/// movement line that also changes who holds it. Numbers run in order per year.
+#[tokio::test]
+async fn registers_are_numbered_from_events_and_giving_out_changes_the_holder() {
+    let app = app().await;
+    let a = new_file(&app).await;
+    let b = new_file(&app).await;
+    let year: i64 = {
+        let (_, years) = call(&app, Method::GET, "/api/registry/years", None).await;
+        years[0].as_i64().unwrap()
+    };
+
+    let (status, incoming) = call(&app, Method::GET, &format!("/api/registry/entries?register=incoming&year={year}"), None).await;
+    assert_eq!(status, StatusCode::OK, "{incoming}");
+    let nums: Vec<i64> = incoming.as_array().unwrap().iter().map(|e| e["number"].as_i64().unwrap()).collect();
+    assert_eq!(nums, [1, 2]);
+    // Asking again does not write the same files twice.
+    let (_, again) = call(&app, Method::GET, &format!("/api/registry/entries?register=incoming&year={year}"), None).await;
+    assert_eq!(again.as_array().unwrap().len(), 2);
+    assert_eq!(call(&app, Method::GET, "/api/registry/entries?register=nonsense&year=2026", None).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+
+    // A stamp is who and when, as text.
+    let first = incoming[0]["id"].as_str().unwrap();
+    assert_eq!(call(&app, Method::POST, &format!("/api/registry/entries/{first}/stamps"), Some(json!({ "label": "Received" }))).await.0, StatusCode::NO_CONTENT);
+    assert_eq!(call(&app, Method::POST, &format!("/api/registry/entries/{first}/stamps"), Some(json!({ "label": " " }))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    let (_, stamped) = call(&app, Method::GET, &format!("/api/registry/entries?register=incoming&year={year}"), None).await;
+    let first_entry = stamped.as_array().unwrap().iter().find(|e| e["id"] == first).unwrap();
+    assert_eq!(first_entry["stamps"][0]["label"], "Received");
+    assert_eq!(first_entry["stamps"][0]["by"], "A. Prosecutor");
+
+    // Giving a file out: to a person outside, then to someone on the staff.
+    assert_eq!(call(&app, Method::POST, "/api/registry/give-out", Some(json!({ "prosecutionFileId": a }))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(call(&app, Method::POST, "/api/registry/give-out", Some(json!({ "prosecutionFileId": a, "givenTo": "Registrar, High Court" }))).await.0, StatusCode::NO_CONTENT);
+    let (_, staff) = call(&app, Method::GET, "/api/staff", None).await;
+    let me = staff[0]["id"].as_str().unwrap();
+    assert_eq!(call(&app, Method::POST, "/api/registry/give-out", Some(json!({ "prosecutionFileId": b, "staffId": me, "note": "within 3 days" }))).await.0, StatusCode::NO_CONTENT);
+    let (_, moves) = call(&app, Method::GET, &format!("/api/registry/entries?register=movement&year={year}"), None).await;
+    let moves: Vec<(i64, &str)> = moves.as_array().unwrap().iter().map(|e| (e["number"].as_i64().unwrap(), e["givenTo"].as_str().unwrap())).collect();
+    assert_eq!(moves, [(1, "Registrar, High Court"), (2, "A. Prosecutor")]);
+    let (_, holders) = call(&app, Method::GET, "/api/registry/holders", None).await;
+    let held: Vec<(Option<&str>, i64)> = holders.as_array().unwrap().iter().map(|h| (h["name"].as_str(), h["files"].as_i64().unwrap())).collect();
+    assert_eq!(held, [(Some("A. Prosecutor"), 1), (None, 1)]);
+}
+
+async fn add_hearing(app: &Router, file: &str, days: i64) -> String {
+    let (status, h) = call(app, Method::POST, "/api/hearings", Some(json!({
+        "prosecutionFileId": file, "court": "High Court, Kampala", "kind": "hearing", "startsAt": now() + days * DAY
+    }))).await;
+    assert_eq!(status, StatusCode::OK, "{h}");
+    h["id"].as_str().unwrap().to_string()
+}
+
+#[tokio::test]
+async fn a_minute_records_who_was_served_and_replaces_its_witnesses_as_a_set() {
+    let app = app().await;
+    let file = new_file(&app).await;
+    let hearing = add_hearing(&app, &file, 1).await;
+    let path = format!("/api/hearings/{hearing}/minute");
+
+    let (status, _) = call(&app, Method::GET, &path, None).await;
+    assert_eq!(status, StatusCode::OK);
+
+    // A witness who was not served needs a reason; every witness needs a name.
+    let (status, _) = put(&app, &path, json!({ "witnesses": [{ "witness": "PW3", "served": false }] })).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    let (status, _) = put(&app, &path, json!({ "witnesses": [{ "witness": "  ", "served": true }] })).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+
+    let (status, minute) = put(&app, &path, json!({
+        "nextDate": now() + 10 * DAY, "adjournmentCause": " prosecution ", "exhibits": ["Phone", "  ", "Photo"], "note": "Witness absent",
+        "witnesses": [{ "witness": "PW2", "served": true }, { "witness": "PW3", "served": false, "reason": "Summons not delivered" }]
+    })).await;
+    assert_eq!(status, StatusCode::OK, "{minute}");
+    assert_eq!(minute["adjournmentCause"], "prosecution");
+    assert_eq!(minute["exhibits"], json!(["Phone", "Photo"]));
+    assert_eq!(minute["witnesses"].as_array().unwrap().len(), 2);
+    assert_eq!(minute["witnesses"][1]["served"], false);
+
+    // Saving again replaces the witnesses, and a served witness keeps no reason.
+    let (_, minute) = put(&app, &path, json!({ "witnesses": [{ "witness": "PW3", "served": true, "reason": "stale" }] })).await;
+    assert_eq!(minute["witnesses"].as_array().unwrap().len(), 1);
+    assert_eq!(minute["witnesses"][0]["reason"], Value::Null);
+    assert_eq!(minute["adjournmentCause"], Value::Null);
+
+    let (_, all) = call(&app, Method::GET, &format!("/api/hearings/minutes?fileId={file}"), None).await;
+    assert_eq!(all.as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn adjournments_raise_a_review_clock_at_the_office_limit() {
+    let app = app().await;
+    let file = new_file(&app).await;
+    let has_clock = |clocks: &Value| clocks.as_array().unwrap().iter().any(|c| c["fileId"] == file.as_str() && c["kind"] == "adjournment_review");
+
+    for n in 1..=3 {
+        let hearing = add_hearing(&app, &file, n).await;
+        let (_, clocks) = call(&app, Method::GET, "/api/clocks", None).await;
+        assert!(!has_clock(&clocks), "no clock before the limit, after {} adjournments", n - 1);
+        let (status, _) = put(&app, &format!("/api/hearings/{hearing}/minute"), json!({ "adjournmentCause": "prosecution" })).await;
+        assert_eq!(status, StatusCode::OK);
+    }
+    let (_, clocks) = call(&app, Method::GET, "/api/clocks", None).await;
+    let clock = clocks.as_array().unwrap().iter().find(|c| c["fileId"] == file.as_str() && c["kind"] == "adjournment_review").expect("clock at the limit");
+    assert_eq!(clock["count"], 3);
+    assert_eq!(clock["overdue"], true);
+}
+
+#[tokio::test]
+async fn proving_checks_are_kept_per_item_and_updated_in_place() {
+    let app = app().await;
+    let file = new_file(&app).await;
+    let other = new_file(&app).await;
+
+    let (status, checks) = put(&app, "/api/proving", json!({ "fileId": file, "item": " A person took it ", "done": true, "page": " Statement p. 1 " })).await;
+    assert_eq!(status, StatusCode::OK, "{checks}");
+    assert_eq!(checks, json!([{ "item": "A person took it", "done": true, "page": "Statement p. 1" }]));
+
+    put(&app, "/api/proving", json!({ "fileId": file, "item": "The accused did it", "done": false })).await;
+    // The same item again updates it; an empty page is no page.
+    let (_, checks) = put(&app, "/api/proving", json!({ "fileId": file, "item": "A person took it", "done": false, "page": "  " })).await;
+    assert_eq!(checks.as_array().unwrap().len(), 2);
+    assert_eq!(checks[0]["done"], false);
+    assert_eq!(checks[0]["page"], Value::Null);
+
+    // Another file's checklist is separate.
+    let (_, theirs) = call(&app, Method::GET, &format!("/api/proving?fileId={other}"), None).await;
+    assert_eq!(theirs, json!([]));
+}
+
+/// Assist is told the guide's elements for the offence on the file, found from
+/// the charge's wording or its section number, and nothing when none fits.
+#[tokio::test]
+async fn assist_is_told_the_guide_for_the_offence_on_the_file() {
+    let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    let security = std::sync::Arc::new(crate::domain::security::Security::new());
+    security.load(&pool).await.unwrap();
+    let app = router(AppState { pool: pool.clone(), vault_root: std::env::temp_dir(), data_dir: std::env::temp_dir(), security }, None);
+    let (status, body) = call(&app, Method::POST, "/api/setup/complete", Some(setup_body("none", json!({ "name": "A. Prosecutor", "role": "administrator" })))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+
+    let file = new_file(&app).await;
+    assert!(crate::domain::guide::context_for_file(&pool, &file, "ug").await.unwrap().is_empty(), "no charge, no guide");
+
+    add_charge(&app, &file, "Theft").await;
+    let text = crate::domain::guide::context_for_file(&pool, &file, "ug").await.unwrap();
+    assert!(text.contains("s. 254(1)") && text.contains("Often missing") && text.contains("say which paper and page"), "{text}");
+    assert!(!text.contains("Grievous harm"), "only the offence on the file: {text}");
+
+    // A charge worded loosely still finds its entry by the section it names.
+    let other = new_file(&app).await;
+    let (status, _) = call(&app, Method::POST, "/api/charges", Some(json!({ "prosecutionFileId": other, "offence": "Wounding a neighbour", "statutorySection": "Section 219" }))).await;
+    assert_eq!(status, StatusCode::OK);
+    let text = crate::domain::guide::context_for_file(&pool, &other, "ug").await.unwrap();
+    assert!(text.contains("Grievous harm") && text.contains("maim"), "{text}");
+}
+
+/// Receiving a file takes it into the officer's hands: the ODPP number is kept,
+/// the officer holds it, and its incoming line is stamped once. The suggested
+/// next number follows only the office's own numbers of this year.
+#[tokio::test]
+async fn receiving_a_file_numbers_it_from_the_offices_own_series_and_stamps_it_once() {
+    use chrono::Datelike;
+    let year = chrono::Utc::now().year();
+    let app = app().await;
+    let a = new_file(&app).await;
+    let b = new_file(&app).await;
+
+    // No numbers yet, so nothing is invented.
+    let (status, none) = call(&app, Method::GET, "/api/registry/next-number", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(none.is_null(), "{none}");
+
+    let first = format!("ODPP/KLA/0142/{year}");
+    assert_eq!(call(&app, Method::POST, &format!("/api/prosecution-files/{a}/receive"), Some(json!({ "odppNumber": first }))).await.0, StatusCode::NO_CONTENT);
+    let (_, next) = call(&app, Method::GET, "/api/registry/next-number", None).await;
+    assert_eq!(next, json!(format!("ODPP/KLA/0143/{year}")));
+
+    // Another file cannot take a number that is already used.
+    let (status, _) = call(&app, Method::POST, &format!("/api/prosecution-files/{b}/receive"), Some(json!({ "odppNumber": first }))).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(call(&app, Method::POST, &format!("/api/prosecution-files/{b}/receive"), Some(json!({ "odppNumber": next }))).await.0, StatusCode::NO_CONTENT);
+
+    // Receiving twice, with another number, changes nothing: the first stands.
+    assert_eq!(call(&app, Method::POST, &format!("/api/prosecution-files/{a}/receive"), Some(json!({ "odppNumber": format!("ODPP/KLA/0999/{year}") }))).await.0, StatusCode::NO_CONTENT);
+    let (_, file) = call(&app, Method::GET, &format!("/api/prosecution-files/{a}"), None).await;
+    assert_eq!(file["odppRegistrationNumber"], json!(first));
+    assert!(file["assignedTo"].is_string(), "the officer who received it holds it");
+
+    let (_, entries) = call(&app, Method::GET, &format!("/api/registry/entries?register=incoming&year={year}"), None).await;
+    let line = entries.as_array().unwrap().iter().find(|e| e["prosecutionFileId"] == json!(a)).unwrap();
+    let received = line["stamps"].as_array().unwrap().iter().filter(|s| s["label"] == "RECEIVED").count();
+    assert_eq!(received, 1, "{line}");
+
+    // The suggestion moves on with the newest number taken.
+    let (_, next) = call(&app, Method::GET, "/api/registry/next-number", None).await;
+    assert_eq!(next, json!(format!("ODPP/KLA/0144/{year}")));
+    assert_eq!(call(&app, Method::POST, "/api/prosecution-files/nonexistent/receive", Some(json!({}))).await.0, StatusCode::NOT_FOUND);
+}
+
+// ---- What each file needs next: one answer for every screen ----------------
+
+async fn attention(app: &Router) -> Value {
+    let (status, body) = call(app, Method::GET, "/api/attention", None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    body
+}
+
+fn item<'a>(att: &'a Value, file: &str) -> &'a Value {
+    att["items"].as_array().unwrap().iter().find(|i| i["fileId"] == file).expect("file in attention")
+}
+
+/// The status bar and the sidebar read the workload; Today, Inbox and Files read
+/// attention. They must never disagree because both come from one rule set.
+async fn assert_workload_matches(app: &Router) {
+    let att = attention(app).await;
+    let (_, w) = call(app, Method::GET, "/api/workload", None).await;
+    assert_eq!(w["needsYou"], att["summary"], "workload and attention disagree");
+    let s = &att["summary"];
+    let sum: i64 = ["toAllocate", "toRead", "toDecide", "toSend"].iter().map(|k| s[k].as_i64().unwrap()).sum();
+    assert_eq!(s["total"].as_i64().unwrap(), sum, "total is the sum of its parts");
+}
+
+#[tokio::test]
+async fn a_received_file_is_the_offices_to_give_out_then_mine_to_read() {
+    let app = app().await;
+    let file = new_file(&app).await;
+    let att = attention(&app).await;
+    assert_eq!((item(&att, &file)["action"].as_str(), item(&att, &file)["holder"].as_str()), (Some("allocate"), Some("office")));
+    assert_eq!(att["summary"]["toAllocate"], 1);
+    assert_workload_matches(&app).await;
+
+    let (_, staff) = call(&app, Method::GET, "/api/staff", None).await;
+    let me = staff[0]["id"].as_str().unwrap().to_string();
+    let (status, _) = call(&app, Method::POST, "/api/registry/give-out", Some(json!({ "prosecutionFileId": file, "staffId": me }))).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let att = attention(&app).await;
+    let n = item(&att, &file);
+    assert_eq!((n["action"].as_str(), n["heldByMe"].as_bool(), n["needsMe"].as_bool()), (Some("read"), Some(true), Some(true)));
+    assert_eq!((att["summary"]["toRead"].as_i64(), att["summary"]["toAllocate"].as_i64()), (Some(1), Some(0)));
+    assert_workload_matches(&app).await;
+}
+
+#[tokio::test]
+async fn a_decided_file_is_never_still_awaiting_a_decision() {
+    let app = app().await;
+    let file = new_file(&app).await;
+    let (status, _) = decide(&app, &file, "decline", 0).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(status_of(&app, &file).await, "declined");
+    let att = attention(&app).await;
+    // Declined by status, and its answer is still to be prepared and sent.
+    assert_eq!(item(&att, &file)["action"], "prepare");
+    assert_eq!(att["summary"]["toDecide"], 0);
+    assert_eq!(att["summary"]["toSend"], 1);
+    assert_workload_matches(&app).await;
+}
+
+#[tokio::test]
+async fn a_file_returned_for_investigation_waits_on_police_and_is_not_counted_as_mine() {
+    let app = app().await;
+    let file = new_file(&app).await;
+    let (status, _) = decide(&app, &file, "return_for_investigation", 3).await;
+    assert_eq!(status, StatusCode::OK);
+    let att = attention(&app).await;
+    let n = item(&att, &file);
+    assert_eq!((n["action"].as_str(), n["holder"].as_str(), n["needsMe"].as_bool()), (Some("await_police"), Some("police"), Some(false)));
+    assert_eq!(att["summary"]["withPolice"], 1);
+    assert_eq!(att["summary"]["total"], 0);
+    assert_workload_matches(&app).await;
+}
+
+#[tokio::test]
+async fn a_concluded_file_owes_nothing_and_a_reopened_one_is_back_on_my_list() {
+    let app = app().await;
+    let file = new_file(&app).await;
+    let (_, _) = decide(&app, &file, "decline", 5).await;
+    let (status, _) = put(&app, &format!("/api/prosecution-files/{file}/stage"), json!({ "stage": "concluded" })).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let att = attention(&app).await;
+    assert_eq!((item(&att, &file)["action"].as_str(), item(&att, &file)["needsMe"].as_bool()), (Some("closed"), Some(false)));
+    assert_eq!(att["summary"]["total"], 0);
+
+    // Reopening the decision puts the file back in front of the prosecutor.
+    let (_, decisions) = call(&app, Method::GET, &format!("/api/prosecution-files/{file}/decisions"), None).await;
+    let decision = decisions[0]["id"].as_str().unwrap().to_string();
+    let (status, review) = call(&app, Method::POST, "/api/charging-reviews", Some(json!({ "prosecutionFileId": file, "standard": "two_stage", "reopensDecisionId": decision, "reopenReason": "New statement." }))).await;
+    assert_eq!(status, StatusCode::OK, "{review}");
+    let att = attention(&app).await;
+    assert_eq!((item(&att, &file)["action"].as_str(), item(&att, &file)["needsMe"].as_bool()), (Some("decide"), Some(true)));
+    assert_workload_matches(&app).await;
+}
+
+#[tokio::test]
+async fn the_files_list_and_attention_describe_the_same_files() {
+    let app = app().await;
+    let a = new_file(&app).await;
+    let b = new_file(&app).await;
+    decide(&app, &b, "return_for_investigation", 2).await;
+    let att = attention(&app).await;
+    let (_, list) = call(&app, Method::GET, "/api/prosecution-files?view=all", None).await;
+    let mut listed: Vec<&str> = list.as_array().unwrap().iter().map(|f| f["id"].as_str().unwrap()).collect();
+    let mut covered: Vec<&str> = att["items"].as_array().unwrap().iter().map(|i| i["fileId"].as_str().unwrap()).collect();
+    listed.sort();
+    covered.sort();
+    assert_eq!(listed, covered, "every file the list shows has a next step, and no other");
+    assert!(covered.contains(&a.as_str()));
 }

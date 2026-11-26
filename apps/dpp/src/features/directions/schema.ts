@@ -32,11 +32,12 @@ export const directionSchema = z.object({
   responseNote: z.string().nullable(),
   respondedAt: z.number().nullable(),
   createdAt: z.number(),
+  dueAt: z.number().nullable(),
 })
 
 export type Direction = z.infer<typeof directionSchema>
 
-export type DirectionDraft = { kind: DirectionKind; instruction: string; personId: string | null }
+export type DirectionDraft = { kind: DirectionKind; instruction: string; personId: string | null; dueAt: number | null }
 
 export const responses = [
   { id: 'met', get label() { return m["direction.response.met"]() } },

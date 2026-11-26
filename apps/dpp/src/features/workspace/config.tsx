@@ -5,12 +5,10 @@ import { BrandLogo } from '@/features/brand'
 import { StatusBarLanguageSelect } from '@/features/i18n'
 import { useBrand } from '@/features/installation'
 import { PersonForm } from '@/features/people'
-import { boardOptions } from '@/features/pipeline'
-import { fileFolders, fileViews } from '@/features/prosecution-files/schema'
 import { lockNow, useSecurityStatus } from '@/features/security'
 import { workloadOptions } from '@/features/workload'
 import { serviceNames, productName } from '@/lib/jurisdiction'
-import { Folder01Icon, FolderViewIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
+import { FolderViewIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import type { NavModel, NavRow, QuickAddItem, ShellConfig, ShellLabels } from '@pleadli/shell'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CreateFrame, QuickFileForm } from './quick-add'
@@ -67,44 +65,19 @@ const useLabels = (): ShellLabels => ({
 const idOf = (item: NavItem) => `${item.to}${item.search ? `?${new URLSearchParams(item.search)}` : ''}`
 const rowOf = (item: NavItem): NavRow => ({ id: idOf(item), to: idOf(item), label: item.label(), icon: item.icon, match: ({ pathname, search }) => isNavActive(item, pathname, search) })
 
-/** The sidebar as data: what is on today at the top (no heading), then Files
- * (the inbox, and the files in folders by stage), then the office. */
+/** The sidebar as data: Today at the top, then Inbox, Files, Diary and Registry. */
 const useNav = (): NavModel => {
-  const inSection = (id: string) => dppNav.filter((item) => item.section === id).map(rowOf)
   const today = dppNav.find((item) => item.to === '/')!
-  return {
-    today: rowOf(today),
-    sections: [
-      { id: 'main', rows: inSection('main').filter((row) => row.to !== '/') },
-      {
-        id: 'files',
-        label: m["workspace.section.files"](),
-        rows: [
-          ...inSection('inbox'),
-          ...fileFolders.map((id): NavRow => {
-            const view = fileViews.find((v) => v.id === id)!
-            return { id: `folder:${id}`, to: `/files?view=${id}`, label: view.label, icon: Folder01Icon, match: ({ pathname, search }) => pathname === '/files' && (search.view ?? 'all') === id }
-          }),
-        ],
-      },
-      { id: 'office', label: m["workspace.section.office"](), rows: inSection('office') },
-    ],
-  }
+  return { today: rowOf(today), sections: [{ id: 'work', rows: dppNav.filter((item) => item.section === 'work').map(rowOf) }] }
 }
 
-/** Open work is counted; the whole register and what is closed are not, as a
- * Mac counts unread mail and not the archive. */
+/** Open work is counted; what is closed is not, as a Mac counts unread mail and not the archive. */
 const useCounts = () => {
   const { data: workload } = useQuery(workloadOptions())
-  const { data: board = [] } = useQuery(boardOptions())
   const out: Record<string, { value: number }> = {}
   if (!workload) return out
   for (const item of dppNav) {
-    if (item.count) out[idOf(item)] = { value: item.count === 'thresholdDue' ? workload.thresholdReviews.length : workload[item.count] }
-  }
-  for (const id of fileFolders) {
-    if (id === 'all' || id === 'concluded') continue
-    out[`folder:${id}`] = { value: id === 'returned' ? workload.returned : board.filter((card) => card.stage === id).length }
+    if (item.count) out[idOf(item)] = { value: item.count === 'thresholdDue' ? workload.thresholdReviews.length : item.count === 'needsYou' ? workload.needsYou.total : workload[item.count] }
   }
   return out
 }

@@ -7,6 +7,7 @@ import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { useChargesForFile } from '@/features/charges'
 import {
   EditProsecutionFileForm,
+  LinkedFiles,
   LinkPersonForm,
   personFullNameForRole,
   useFilePeople,
@@ -20,8 +21,10 @@ import { RichTextPreview } from '@pleadli/rich-text'
 import { Button } from '@pleadli/ui/button'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { RecordTabsView } from '@pleadli/shell'
+import { RecordHeader, RecordTabsView } from '@pleadli/shell'
 import { ChronologyPanel } from './decision-panels'
+import { useChronology } from '@/features/workload'
+import { useFileItems } from '@/features/file-index/queries'
 import { hearingKindLabel, useHearings } from '@/features/court'
 import { FileTasks } from '@/features/board'
 import { CaseTab } from '@/features/pipeline'
@@ -80,6 +83,8 @@ export function FileWorkspace({ fileId, tab }: { fileId: string; tab: FileTabId 
   const { data: connections } = useConnectionsQuiet()
   const { data: people } = useFilePeople(fileId)
   const { data: hearings = [] } = useHearings(fileId)
+  const { data: items = [] } = useFileItems(fileId)
+  const { data: events } = useChronology(fileId)
 
   if (!file) {
     return (
@@ -107,42 +112,42 @@ export function FileWorkspace({ fileId, tab }: { fileId: string; tab: FileTabId 
   return (
     <div className="flex min-h-0 flex-1 items-start">
     <article className="page min-w-0">
-      <header className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <p className="text-[0.8125rem] text-muted-foreground">
-              {[refs[0].value ?? refs[1].value, file.policeStation, station ? m["file_ws.via_connection"]({ station }) : null].filter(Boolean).join(' · ')}
-            </p>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="tracking-tight">{file.title}</h1>
-              <FileStatusTag status={file.currentStatus} />
-            </div>
-            <p className="text-muted-foreground">
-              {[
-                accused.join(', ') || m["cover.no_accused"](),
-                charges.length ? `${charges[0].offence}${charges.length > 1 ? ` +${charges.length - 1}` : ''}` : m["cover.no_charge"](),
-                nextHearing ? m["cover.next_on"]({ date: formatDate(nextHearing.startsAt), kind: hearingKindLabel(nextHearing.kind) }) : m["cover.no_date"](),
-              ].join(' · ')}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
+      <RecordHeader
+        className="mb-6"
+        crumb={<><Link to="/files" search={{ view: 'all' }} className="hover:underline">{m["file_ws.crumb_files"]()}</Link><span aria-hidden> / </span><span>{refs[0].value ?? refs[1].value ?? file.title}</span></>}
+        title={file.title}
+        tag={<FileStatusTag status={file.currentStatus} stage={file.stage} />}
+        copyLabel={m["file_ws.d_copy"]()}
+        copiedLabel={m["file_ws.d_copied"]()}
+        facts={[
+          [
+            ...refs.filter((r) => r.value).map((r) => ({ label: r.label, value: r.value, copy: r.value })),
+            { label: m["file_ws.d_station"](), value: [file.policeStation, station ? m["file_ws.via_connection"]({ station }) : null].filter(Boolean).join(' · ') || m["common.not_recorded"]() },
+          ],
+          [
+            { label: m["file_ws.d_accused"](), value: accused.join(', ') || m["cover.no_accused"]() },
+            { label: m["file_ws.d_charge"](), value: charges.length ? `${charges[0].offence}${charges.length > 1 ? ` +${charges.length - 1}` : ''}` : m["cover.no_charge"]() },
+            { label: m["file_ws.d_hearing"](), value: nextHearing ? m["cover.next_on"]({ date: formatDate(nextHearing.startsAt), kind: hearingKindLabel(nextHearing.kind) }) : m["cover.no_date"]() },
+          ],
+        ]}
+        actions={
+          <>
             <PanelButton label={m["file_ws.info"]()} title={m["file_ws.info_title"]()} description={m["file_ws.info_description"]()} variant="secondary" icon={false}>
               {() => <FilePanel fileId={fileId} />}
             </PanelButton>
             <PanelButton label={m["file_ws.edit"]()} title={m["file_ws.edit_title"]()} description={m["file_ws.edit_description"]()} variant="ghost" icon={false}>
               {({ close, setDirty }) => <EditProsecutionFileForm file={file} onSuccess={close} onDirtyChange={setDirty} />}
             </PanelButton>
-          </div>
-        </div>
-
-      </header>
+          </>
+        }
+      />
 
       <RecordTabsView
         labels={{
           overview: { label: m["file_tab.case"](), empty: '', action: '' },
-          papers: { label: m["file_tab.index"](), empty: '', action: '' },
-          people: { label: m["file_tab.people"](), empty: '', action: '' },
-          history: { label: m["file_tab.activity"](), empty: '', action: '' },
+          papers: { label: m["file_tab.index"](), empty: '', action: '', count: items.length },
+          people: { label: m["file_tab.people"](), empty: '', action: '', count: people.length },
+          history: { label: m["file_tab.activity"](), empty: '', action: '', count: events.length },
         }}
         value={canonicalTab(tab)}
         onValueChange={(id) => void navigate({ to: '/files/$fileId', params: { fileId }, search: { tab: id as FileTabId }, replace: true })}
@@ -207,6 +212,8 @@ function FilePanel({ fileId }: { fileId: string }) {
           </div>
         )}
       </section>
+
+      <LinkedFiles fileId={fileId} />
 
       <section className="page-section">
         <h2>{m["file_ws.tasks"]()}</h2>

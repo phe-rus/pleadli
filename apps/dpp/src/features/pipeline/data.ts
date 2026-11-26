@@ -5,6 +5,22 @@ import * as m from '@/paraglide/messages'
 export const stages = ['receive', 'review', 'decide', 'prepare', 'handover', 'follow_up', 'concluded'] as const
 export type Stage = (typeof stages)[number]
 
+/** What the prosecutor sees: three steps and then the court. The seven stored
+ * stages stay as they are (no past decision is rewritten); each belongs to
+ * exactly one step. */
+export const steps = [
+  { id: 'peruse', stages: ['receive', 'review'] },
+  { id: 'decide', stages: ['decide'] },
+  { id: 'send', stages: ['prepare', 'handover'] },
+  { id: 'court', stages: ['follow_up', 'concluded'] },
+] as const satisfies readonly { id: string; stages: readonly Stage[] }[]
+export type Step = (typeof steps)[number]
+export const stepOf = (stage: Stage): Step => steps.find((s) => (s.stages as readonly string[]).includes(stage)) ?? steps[0]
+export const stepLabel = (id: string) =>
+  (({ peruse: m["step.peruse"], decide: m["step.decide"], send: m["step.send"], court: m["step.court"] }) as Record<string, () => string>)[id]?.() ?? id
+export const stepAbout = (id: string) =>
+  (({ peruse: m["step.peruse_about"], decide: m["step.decide_about"], send: m["step.send_about"], court: m["step.court_about"] }) as Record<string, () => string>)[id]?.() ?? ''
+
 export const stageLabel = (s: string) =>
   (
     ({

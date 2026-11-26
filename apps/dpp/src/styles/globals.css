@@ -31,3 +31,14 @@
   --sidebar-primary-foreground: oklch(0.987 0.026 102.212);
   --sidebar-ring: oklch(0.58 0.031 107.3);
 }
+
+/* A thin scrollbar is drawn wherever something is wider or taller than its
+   window, so a wide table never scrolls sideways without telling the person it
+   can. Places that must stay clean (the step line, the sidebar) opt out with
+   the no-scrollbar utility. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 35%, transparent) transparent;
+  }
+}

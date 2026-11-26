@@ -10,7 +10,7 @@
 
 use pleadli_interchange::envelope::{self, Body};
 use pleadli_interchange::identity::{unhex32, Identity, IdentityKind, PublicIdentity};
-use pleadli_interchange::messages::{DecisionNoticePayload, DirectionClaim, NoticeDocument, ReceiptPayload, ReferralPayload, KIND_DECISION_NOTICE, KIND_RECEIPT, KIND_REFERRAL};
+use pleadli_interchange::messages::{DecisionNoticePayload, DirectionClaim, HearingMinutePayload, NoticeDocument, ReceiptPayload, ReferralPayload, ServiceReportPayload, WitnessToServe, KIND_DECISION_NOTICE, KIND_HEARING_MINUTE, KIND_RECEIPT, KIND_REFERRAL, KIND_SERVICE_REPORT};
 use pleadli_interchange::pairing::{self, KIND_CONFIRMATION, KIND_RESPONSE};
 use serde::Serialize;
 use sqlx::{FromRow, SqlitePool};
@@ -400,9 +400,92 @@ pub async fn import_package(pool: &SqlitePool, vault_root: &Path, bytes: &[u8]) 
             }
             Ok(ImportOutcome { kind: KIND_REFERRAL.to_string(), connection_id, package_id: Some(opened.header.id), message: format!("A referral from {} is waiting for you to read.", station.name) })
         }
-        KIND_CONFIRMATION | KIND_RECEIPT | KIND_DECISION_NOTICE => Err(refuse(pool, "a message this office sends, not receives", &header, DomainError::Invalid("That is a package this office sends. It is not one it can receive.".to_string())).await),
+        KIND_SERVICE_REPORT => import_service_report(pool, peeked, &header, &office).await,
+        KIND_CONFIRMATION | KIND_RECEIPT | KIND_DECISION_NOTICE | KIND_HEARING_MINUTE => Err(refuse(pool, "a message this office sends, not receives", &header, DomainError::Invalid("That is a package this office sends. It is not one it can receive.".to_string())).await),
         other => Err(refuse(pool, "unknown kind", &header, DomainError::Invalid(format!("This office does not receive packages of kind '{other}'."))).await),
     }
+}
+
+/// The station's answer to a hearing minute: which of the named witnesses it served. Applied to the witness lines of
+/// that hearing, so a second copy of the same report changes nothing. A report for a file, hearing or witness this
+/// office never asked about is refused, not guessed at.
+async fn import_service_report(pool: &SqlitePool, peeked: envelope::Peeked, header: &envelope::Header, office: &Identity) -> Result<ImportOutcome, DomainError> {
+    let connection: Option<(String, String)> = sqlx::query_as("SELECT id, status FROM police_connections WHERE station_id = ? ORDER BY (status = 'trusted') DESC, created_at DESC LIMIT 1").bind(&header.from.id).fetch_optional(pool).await?;
+    let Some((connection_id, status)) = connection else {
+        return Err(refuse(pool, "unknown sender", header, DomainError::Forbidden("This package is from a station this office has not connected to. Nothing was kept.".to_string())).await);
+    };
+    if status != "trusted" {
+        return Err(refuse(pool, "sender not trusted", header, DomainError::Forbidden("This station has not been confirmed as trusted. Nothing was kept.".to_string())).await);
+    }
+    let (station, _) = station_public(pool, &connection_id).await?;
+    let opened = match envelope::open(office, peeked, &station) {
+        Ok(o) => o,
+        Err(envelope::PackageError::BadSignature) => return Err(refuse(pool, "signature does not match the pinned station", header, DomainError::Forbidden("The signature does not match the station this office trusts. Nothing was kept.".to_string())).await),
+        Err(e) => return Err(refuse(pool, "damaged or not for this office", header, DomainError::Invalid(e.to_string())).await),
+    };
+    let report: ServiceReportPayload = serde_json::from_value(opened.body.json).map_err(|_| DomainError::Invalid("The service report inside the package could not be read.".to_string()))?;
+    // Only a file that came from this station can be reported on by it.
+    let file_ok: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM prosecution_files WHERE id = ? AND police_connection_id = ?").bind(&report.dpp_file_key).bind(&connection_id).fetch_one(pool).await?;
+    if file_ok == 0 {
+        return Err(refuse(pool, "service report for a file this station did not send", header, DomainError::Invalid("That report is about a file this office did not receive from this station. Nothing was kept.".to_string())).await);
+    }
+    let hearing: Option<String> = sqlx::query_scalar("SELECT id FROM hearings WHERE prosecution_file_id = ? AND starts_at = ?").bind(&report.dpp_file_key).bind(report.heard_at).fetch_optional(pool).await?;
+    let Some(hearing_id) = hearing else {
+        return Err(refuse(pool, "service report for a hearing this office has not minuted", header, DomainError::Invalid("That report is about a hearing this office has no minute for. Nothing was kept.".to_string())).await);
+    };
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    let mut applied = 0;
+    for r in &report.results {
+        let reason = if r.served { None } else { r.reason.as_deref().map(str::trim).filter(|x| !x.is_empty()).map(str::to_string).or_else(|| Some("No reason given by the station.".to_string())) };
+        let done = sqlx::query("UPDATE witness_service SET served = ?, reason = ?, reported_at = ? WHERE hearing_id = ? AND witness = ?")
+            .bind(i64::from(r.served))
+            .bind(reason)
+            .bind(report.reported_at)
+            .bind(&hearing_id)
+            .bind(r.name.trim())
+            .execute(&mut *tx)
+            .await?;
+        applied += done.rows_affected();
+    }
+    audit::record(&mut tx, Entry::new("service_report_received").subject("hearing", &hearing_id).file(&report.dpp_file_key).detail(format!("{applied} of {} witnesses from {}", report.results.len(), station.name))).await?;
+    tx.commit().await?;
+    Ok(ImportOutcome { kind: KIND_SERVICE_REPORT.to_string(), connection_id, package_id: Some(opened.header.id), message: format!("{} reported on serving {applied} witness(es).", station.name) })
+}
+
+/// A hearing minute for the officer in charge, from the minute saved on that hearing. Marks the minute as sent.
+pub async fn prepare_hearing_minute(pool: &SqlitePool, hearing_id: &str) -> Result<String, DomainError> {
+    let row: Option<(String, i64)> = sqlx::query_as("SELECT prosecution_file_id, starts_at FROM hearings WHERE id = ?").bind(hearing_id).fetch_optional(pool).await?;
+    let Some((file_id, heard_at)) = row else { return Err(DomainError::NotFound("Hearing not found.".to_string())) };
+    let minute = super::clocks::minute(pool, hearing_id).await?.ok_or_else(|| DomainError::Invalid("Write the minute of this hearing first.".to_string()))?;
+    let file = super::prosecution_files::get_prosecution_file(pool, &file_id).await?.ok_or_else(|| DomainError::NotFound("File not found.".to_string()))?;
+    let connection_id: Option<String> = sqlx::query_scalar("SELECT police_connection_id FROM prosecution_files WHERE id = ?").bind(&file_id).fetch_one(pool).await?;
+    let Some(connection_id) = connection_id else {
+        return invalid("This file did not arrive through a connection to a station, so there is no officer to send a minute to.");
+    };
+    let (_, status) = station_public(pool, &connection_id).await?;
+    if status != "trusted" {
+        return invalid("The station that referred this file is no longer trusted, so nothing is sent to it.");
+    }
+    let payload = HearingMinutePayload {
+        police_reference: file.police_reference.clone().unwrap_or_default(),
+        dpp_file_key: file.id.clone(),
+        dpp_reference: file.odpp_registration_number.clone(),
+        court_case_number: file.court_case_number.clone(),
+        heard_at,
+        next_date: minute.next_date,
+        adjournment_cause: minute.adjournment_cause.clone(),
+        // Only the witnesses still to be served: one already served needs nothing from the station.
+        witnesses_to_serve: minute.witnesses.iter().filter(|w| !w.served).map(|w| WitnessToServe { name: w.witness.clone(), role: None }).collect(),
+        exhibits_to_produce: minute.exhibits.clone(),
+        note: minute.note.clone(),
+        sent_by: None,
+    };
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    let id = prepare_outgoing(&mut tx, &connection_id, KIND_HEARING_MINUTE, None, Some(&file_id), None, serde_json::to_value(&payload).unwrap_or_default()).await?;
+    sqlx::query("UPDATE hearing_minutes SET sent_at = ? WHERE hearing_id = ?").bind(now()).bind(hearing_id).execute(&mut *tx).await?;
+    audit::record(&mut tx, Entry::new("minute_prepared").subject("outgoing_package", &id).file(&file_id).detail("hearing minute".to_string())).await?;
+    tx.commit().await?;
+    Ok(id)
 }
 
 /// One referral is taken in at a time. Taking it in is "check it is new, write its files, store its row, and
@@ -631,6 +714,7 @@ pub async fn list_outgoing(pool: &SqlitePool) -> Result<Vec<OutgoingPackage>, Do
             let summary = match kind.as_str() {
                 KIND_RECEIPT => format!("Receipt: {}", p["outcome"].as_str().unwrap_or("")),
                 KIND_DECISION_NOTICE => format!("Decision: {}", p["decisionType"].as_str().unwrap_or("").replace('_', " ")),
+                KIND_HEARING_MINUTE => "Hearing minute".to_string(),
                 _ => format!("Connection {}", p["outcome"].as_str().unwrap_or("")),
             };
             OutgoingPackage { id, connection_id, kind, seq, in_reply_to, prosecution_file_id, decision_id, prepared_at, exported_at, relay_package_id, station_name, file_title, police_reference, summary }
@@ -705,6 +789,12 @@ pub async fn prepare_decision_notice(pool: &SqlitePool, decision_id: &str) -> Re
     } else {
         Vec::new()
     };
+    // The latest date the office gave the station to answer, across the directions of this decision.
+    let return_due_at: Option<i64> = if decision.decision_type == "return_for_investigation" {
+        sqlx::query_scalar("SELECT MAX(due_at) FROM directions WHERE decision_id = ?").bind(&decision.id).fetch_one(pool).await?
+    } else {
+        None
+    };
     let reasons = {
         let blocks = rich_text_blocks(decision.reasons.as_deref());
         let text = blocks
@@ -751,6 +841,7 @@ pub async fn prepare_decision_notice(pool: &SqlitePool, decision_id: &str) -> Re
         directions,
         documents,
         court_case_number: file.court_case_number.clone(),
+        return_due_at,
     };
     let mut tx = pleadli_node_core::db::begin_write(pool).await?;
     let id = prepare_outgoing(&mut tx, &connection_id, KIND_DECISION_NOTICE, None, Some(&file.id), Some(&decision.id), serde_json::to_value(&notice).unwrap_or_default()).await?;

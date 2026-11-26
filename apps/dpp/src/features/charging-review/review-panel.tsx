@@ -1,3 +1,4 @@
+import { ChoiceSelect } from '@/components/choice-select'
 import { formatDate } from '@/lib/dates'
 import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
@@ -196,17 +197,17 @@ function ReopenForm({ fileId, onSuccess }: { fileId: string; onSuccess: () => vo
       <p>{m["review.panel.reopen_explainer"]()}</p>
       <label className="flex flex-col gap-1">
         <strong>{m["review.panel.decision_to_reopen"]()}</strong>
-        <select className="h-8 rounded-md border border-input bg-input/20 px-2" value={decisionId} onChange={(e) => setDecisionId(e.target.value)}>
+        <ChoiceSelect className="h-8 rounded-md border border-input bg-input/20 px-2" value={decisionId} onChange={(e) => setDecisionId(e.target.value)}>
           {decisions.map((d) => (
             <option key={d.id} value={d.id}>{m["review.panel.decision_option"]({ decision: decisionTypeLabel(d.decisionType), date: formatDate(d.decidedAt) })}</option>
           ))}
-        </select>
+        </ChoiceSelect>
       </label>
       <label className="flex flex-col gap-1">
         <strong>{m["review.panel.test_to_apply"]()}</strong>
-        <select className="h-8 rounded-md border border-input bg-input/20 px-2" value={standard} onChange={(e) => setStandard(e.target.value as Standard)}>
+        <ChoiceSelect className="h-8 rounded-md border border-input bg-input/20 px-2" value={standard} onChange={(e) => setStandard(e.target.value as Standard)}>
           {standards.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-        </select>
+        </ChoiceSelect>
       </label>
       <label className="flex flex-col gap-1">
         <strong>{m["review.panel.why_reopened"]()}</strong>

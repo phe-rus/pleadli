@@ -170,6 +170,16 @@ export function AssistPane() {
               </Button>
             )}
           </SettingsRow>
+          {!local && (
+            <SettingsRow label={m["assist.settings.hide_names"]()} hint={m["assist.settings.hide_names_hint"]()}>
+              <Switch
+                checked={s.hideNames}
+                disabled={!isAdmin || save.isPending}
+                aria-label={m["assist.settings.hide_names"]()}
+                onCheckedChange={(checked) => apply({ mode: 'institution_key', hideNames: checked }, m["settings.saved"]())}
+              />
+            </SettingsRow>
+          )}
         </SettingsCard>
       )}
 

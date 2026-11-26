@@ -27,6 +27,10 @@ export type DecisionFormProps = {
   review?: ChargingReview
   /** A decision of this file being corrected (not one that needs a review). */
   corrects?: Decision
+  /** The decision type to start from, when the prosecutor has already chosen one. */
+  defaultType?: string
+  /** Reasons to start from, as an editor document. */
+  defaultReasons?: string
   onSuccess?: (decisions: Decision[]) => void
   onDirtyChange?: (dirty: boolean) => void
 }
@@ -45,7 +49,7 @@ function toDatetimeLocal(ms: number) {
  * about the whole file or about chosen counts, and a correction says what it
  * corrects and why.
  */
-export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, onDirtyChange }: DecisionFormProps) {
+export function DecisionForm({ prosecutionFileId, review, corrects, defaultType, defaultReasons, onSuccess, onDirtyChange }: DecisionFormProps) {
   const createDecision = useCreateDecision()
   const { data: profile } = useProsecutorProfile()
   const { data: charges } = useChargesForFile(prosecutionFileId)
@@ -58,10 +62,10 @@ export function DecisionForm({ prosecutionFileId, review, corrects, onSuccess, o
 
   const form = useAppForm({
     defaultValues: {
-      decisionType: '',
+      decisionType: defaultType ?? '',
       decidedBy: '',
       decidedAt: toDatetimeLocal(Date.now()),
-      reasons: '',
+      reasons: defaultReasons ?? '',
       chargeIds: corrects?.chargeId ? [corrects.chargeId] : ([] as string[]),
       concludeReview: true,
       directions: [] as DirectionDraft[],

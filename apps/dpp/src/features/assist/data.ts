@@ -12,6 +12,7 @@ export const assistSettingsSchema = z.object({
   keySource: z.enum(['settings', 'environment']).nullable(),
   keyHint: z.string().nullable(),
   lawsTokenSet: z.boolean(),
+  hideNames: z.boolean(),
   acknowledgedBy: z.string().nullable(),
   acknowledgedAt: z.number().nullable(),
   ready: z.boolean(),
@@ -94,6 +95,7 @@ export type AssistSettingsChange = {
   baseUrl?: string
   apiKey?: string
   lawsToken?: string
+  hideNames?: boolean
   acknowledge?: boolean
 }
 export const saveAssistSettings = async (change: AssistSettingsChange) => assistSettingsSchema.parse(await api('PUT', '/api/assist/settings', { body: change }))

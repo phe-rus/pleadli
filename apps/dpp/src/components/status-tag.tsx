@@ -1,5 +1,6 @@
 import { fileStatusLabel, fileStatusTone, type StatusTone } from '@/features/prosecution-files/schema'
 import { Badge } from '@pleadli/ui/badge'
+import * as m from '@/paraglide/messages'
 import { cn } from '@pleadli/ui/lib/utils'
 import type { ReactNode } from 'react'
 
@@ -28,6 +29,9 @@ export function Tag({ tone = 'neutral', children, className }: { tone?: Tone; ch
   )
 }
 
-export function FileStatusTag({ status }: { status: string }) {
+/** While the file is still being received or read, "awaiting a decision" would
+ * say more than is true: the prosecutor has not got to deciding yet. */
+export function FileStatusTag({ status, stage }: { status: string; stage?: string }) {
+  if (status === 'under_review' && (stage === 'receive' || stage === 'review')) return <Tag tone="open">{m["file_ws.status_reading"]()}</Tag>
   return <Tag tone={fileStatusTone(status)}>{fileStatusLabel(status)}</Tag>
 }

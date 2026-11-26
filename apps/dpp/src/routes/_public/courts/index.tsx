@@ -1,3 +1,4 @@
+import { ChoiceSelect } from '@/components/choice-select'
 import { withdrawFromCourt, makeFilingSheet, ownFingerprint, answerInvite, fileToCourt, importCourtPackage, listCourtLinks, pickCourtPackage, saveCourtPackage, type CourtLink } from '@/features/court-exchange/data'
 import { listFiles } from '@/features/prosecution-files/data'
 import { Badge } from '@pleadli/ui/badge'
@@ -115,16 +116,16 @@ function RouteComponent() {
           </CardHeader>
           {trusted && (
             <CardContent className="flex flex-wrap items-center gap-2">
-              <select aria-label={m["court_exchange.prosecution_file"]()} value={fileId} onChange={(e) => setFileId(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 sm:w-80">
+              <ChoiceSelect aria-label={m["court_exchange.prosecution_file"]()} value={fileId} onChange={(e) => setFileId(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 sm:w-80">
                 <option value="">{m["court_exchange.choose_file"]()}</option>
                 {files.map((f) => (
                   <option key={f.id} value={f.id}>{f.title}{f.courtCaseNumber ? ` · ${f.courtCaseNumber}` : ''}</option>
                 ))}
-              </select>
-              <select aria-label={m["court_exchange.court_level"]()} value={level} onChange={(e) => setLevel(e.target.value as 'magistrate' | 'high')} className="h-9 rounded-md border border-input bg-background px-2">
+              </ChoiceSelect>
+              <ChoiceSelect aria-label={m["court_exchange.court_level"]()} value={level} onChange={(e) => setLevel(e.target.value as 'magistrate' | 'high')} className="h-9 rounded-md border border-input bg-background px-2">
                 <option value="magistrate">{m["court_exchange.level_magistrate"]()}</option>
                 <option value="high">{m["court_exchange.level_high"]()}</option>
-              </select>
+              </ChoiceSelect>
               <Input aria-label={m["court_exchange.filed_by"]()} placeholder={m["court_exchange.filed_by"]()} value={by} onChange={(e) => setBy(e.target.value)} className="w-48" />
               <Button
                 disabled={!fileId}
@@ -145,16 +146,16 @@ function RouteComponent() {
             <CardDescription>{m["court_exchange.paper_desc"]()}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-2">
-            <select aria-label={m["court_exchange.prosecution_file"]()} value={fileId} onChange={(e) => setFileId(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 sm:w-80">
+            <ChoiceSelect aria-label={m["court_exchange.prosecution_file"]()} value={fileId} onChange={(e) => setFileId(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 sm:w-80">
               <option value="">{m["court_exchange.choose_file"]()}</option>
               {files.map((f) => (
                 <option key={f.id} value={f.id}>{f.title}{f.courtCaseNumber ? ` · ${f.courtCaseNumber}` : ''}</option>
               ))}
-            </select>
-            <select aria-label={m["court_exchange.court_level"]()} value={level} onChange={(e) => setLevel(e.target.value as 'magistrate' | 'high')} className="h-9 rounded-md border border-input bg-background px-2">
+            </ChoiceSelect>
+            <ChoiceSelect aria-label={m["court_exchange.court_level"]()} value={level} onChange={(e) => setLevel(e.target.value as 'magistrate' | 'high')} className="h-9 rounded-md border border-input bg-background px-2">
               <option value="magistrate">{m["court_exchange.level_magistrate"]()}</option>
               <option value="high">{m["court_exchange.level_high"]()}</option>
-            </select>
+            </ChoiceSelect>
             <Input aria-label={m["court_exchange.paper_registry"]()} placeholder={m["court_exchange.paper_registry"]()} value={paperCourt} onChange={(e) => setPaperCourt(e.target.value)} className="w-72" />
             <Button
               variant="outline"
@@ -177,16 +178,16 @@ function RouteComponent() {
               <CardDescription>{m["court_exchange.withdraw_desc"]()}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-2">
-              <select aria-label={m["court_exchange.prosecution_file"]()} value={wdFile} onChange={(e) => setWdFile(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 sm:w-80">
+              <ChoiceSelect aria-label={m["court_exchange.prosecution_file"]()} value={wdFile} onChange={(e) => setWdFile(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 sm:w-80">
                 <option value="">{m["court_exchange.choose_file"]()}</option>
                 {files.filter((f) => f.courtCaseNumber).map((f) => (
                   <option key={f.id} value={f.id}>{f.title} · {f.courtCaseNumber}</option>
                 ))}
-              </select>
-              <select aria-label={m["court_exchange.withdraw_kind"]()} value={wdKind} onChange={(e) => setWdKind(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2">
+              </ChoiceSelect>
+              <ChoiceSelect aria-label={m["court_exchange.withdraw_kind"]()} value={wdKind} onChange={(e) => setWdKind(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2">
                 <option value="nolle_prosequi">{m["court_exchange.withdraw_nolle"]()}</option>
                 <option value="discontinue">{m["court_exchange.withdraw_discontinue"]()}</option>
-              </select>
+              </ChoiceSelect>
               <Input aria-label={m["court_exchange.withdraw_reason"]()} placeholder={m["court_exchange.withdraw_reason"]()} value={wdReason} onChange={(e) => setWdReason(e.target.value)} className="w-72" />
               <Button
                 variant="outline"

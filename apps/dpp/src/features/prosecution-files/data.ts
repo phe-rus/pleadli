@@ -3,6 +3,7 @@ import { api, orNull, seg } from '@/lib/api'
 import {
   createProsecutionFileSchema,
   fileSummarySchema,
+  linkedFileSchema,
   prosecutionFilePersonSchema,
   prosecutionFileSchema,
   updateProsecutionFileSchema,
@@ -64,3 +65,8 @@ export async function unlinkPersonFromFile(id: string) {
 export async function listFilePeople(prosecutionFileId: string) {
   return z.array(prosecutionFilePersonSchema).parse(await api('GET', `/api/prosecution-files/${seg(prosecutionFileId)}/people`))
 }
+
+export const listFileLinks = async (fileId: string) => z.array(linkedFileSchema).parse(await api('GET', `/api/prosecution-files/${seg(fileId)}/links`))
+export const addFileLink = async (fileId: string, linkedFileId: string, relation: string) =>
+  z.array(linkedFileSchema).parse(await api('POST', `/api/prosecution-files/${seg(fileId)}/links`, { body: { linkedFileId, relation } }))
+export const removeFileLink = (linkId: string) => api('DELETE', `/api/file-links/${seg(linkId)}`)

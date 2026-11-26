@@ -1,5 +1,6 @@
 import * as m from '@/paraglide/messages'
 import * as z from 'zod'
+import { summarySchema } from '@/features/attention/schema'
 import { decisionTypeLabel } from '@/features/decisions/schema'
 import { directionKindLabel } from '@/features/directions/schema'
 import { evidenceCategoryLabel } from '@/features/evidence/schema'
@@ -8,6 +9,7 @@ import { statementRoleLabel } from '@/features/statements/schema'
 export const workloadSchema = z.object({
   totalFiles: z.number(),
   awaitingDecision: z.number(),
+  needsYou: summarySchema,
   intake: z.number(),
   inReview: z.number(),
   resubmitted: z.number(),

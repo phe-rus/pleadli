@@ -1,4 +1,4 @@
-import { Clock01Icon, File01Icon, LinkSquare02Icon, QuoteDownIcon } from '@hugeicons/core-free-icons'
+import { Attachment01Icon, Clock01Icon, Comment01Icon, File01Icon, LinkSquare02Icon, QuoteDownIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
@@ -11,7 +11,10 @@ export type PaperDetail = { label: string; value: ReactNode; copy?: string }
 export type PaperLink = { key: string; label: string; sub?: string | null; onOpen: () => void }
 
 type Version = PaperStamp & { body: string; title: string; printedBy: string | null }
-type Tab = 'details' | 'history' | 'related' | 'citations'
+type Tab = string
+
+/** A tab the app adds to the paper's own row (attachments, comments), so there is one row of tabs, not two. */
+export type PaperExtraTab = { id: string; label: string; count?: number; content: ReactNode; icon?: 'attachment' | 'comment' }
 
 function CopyButton({ text }: { text: string }) {
   const { labels } = usePaperApp()
@@ -48,6 +51,7 @@ export function PaperTabs({
   wording,
   changed = false,
   reload = 0,
+  extraTabs = [],
 }: {
   entityType: string
   entityId: string
@@ -61,6 +65,7 @@ export function PaperTabs({
   changed?: boolean
   /** Bump to read the history again (after a print). */
   reload?: number
+  extraTabs?: PaperExtraTab[]
 }) {
   const app = usePaperApp()
   const { labels } = app
@@ -87,6 +92,7 @@ export function PaperTabs({
     { id: 'history', label: labels.tabs.history, icon: Clock01Icon, count: timeline.length },
     { id: 'related', label: labels.tabs.related, icon: LinkSquare02Icon, count: related.length },
     { id: 'citations', label: labels.tabs.citations, icon: QuoteDownIcon, count: cites.length + citedBy.length },
+    ...extraTabs.map((x) => ({ id: x.id, label: x.label, icon: x.icon === 'comment' ? Comment01Icon : Attachment01Icon, count: x.count })),
   ]
   const latest = versions[0]
 
@@ -198,6 +204,8 @@ export function PaperTabs({
             </ol>
           ))}
 
+        {extraTabs.map((x) => tab === x.id && <div key={x.id}>{x.content}</div>)}
+
         {tab === 'related' && (related.length ? linkList(related) : <p className="text-sm text-muted-foreground">{labels.noRelated}</p>)}
 
         {tab === 'citations' &&
@@ -237,9 +245,11 @@ export function PaperPage({
   related = [],
   citedBy = [],
   events = [],
+  extraTabs = [],
   children,
   ...view
 }: Omit<Parameters<typeof PaperView>[0], 'above' | 'onStamped' | 'onWording'> & {
+  extraTabs?: PaperExtraTab[]
   details: PaperDetail[]
   related?: PaperLink[]
   citedBy?: PaperLink[]
@@ -256,7 +266,7 @@ export function PaperPage({
   return (
     <PaperView
       {...view}
-      above={<PaperTabs entityType={view.entityType} entityId={view.entityId} details={details} related={related} citedBy={citedBy} events={events} wording={wording} changed={changed} reload={reload} />}
+      above={<PaperTabs entityType={view.entityType} entityId={view.entityId} details={details} related={related} citedBy={citedBy} events={events} wording={wording} changed={changed} reload={reload} extraTabs={extraTabs} />}
       onStamped={() => setReload((n) => n + 1)}
       onWording={onWording}
     >

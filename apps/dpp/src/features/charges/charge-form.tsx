@@ -1,3 +1,4 @@
+import { ChoiceSelect } from '@/components/choice-select'
 import { PersonPicker } from '@/components/person-picker'
 import { useReportDirty } from '@/hooks/use-report-dirty'
 import { RichTextInput } from '@pleadli/rich-text'
@@ -5,6 +6,8 @@ import { useAppForm } from '@pleadli/forms-tables/forms'
 import { DrawerFooter } from '@pleadli/ui/drawer'
 import { Field, FieldLabel } from '@pleadli/ui/field'
 import { t } from '@pleadli/ui/goey-toaster'
+import { useGuide } from '@/features/guide'
+import { useJurisdiction } from '@/features/installation'
 import { useCreateCharge } from './queries'
 import { createChargeSchema, type Charge } from './schema'
 import * as m from '@/paraglide/messages'
@@ -22,6 +25,8 @@ export type ChargeFormProps = {
  */
 export function ChargeForm({ prosecutionFileId, onSuccess, onDirtyChange }: ChargeFormProps) {
   const createCharge = useCreateCharge()
+  const country = useJurisdiction()
+  const { data: guide = [] } = useGuide(country?.code)
 
   const form = useAppForm({
     defaultValues: {
@@ -66,6 +71,31 @@ export function ChargeForm({ prosecutionFileId, onSuccess, onDirtyChange }: Char
           </Field>
         )}
       </form.AppField>
+
+      {guide.length > 0 && (
+        <Field>
+          <FieldLabel>{m["guide.use_guide"]()}</FieldLabel>
+          <ChoiceSelect
+            defaultValue=""
+            className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            onChange={(e) => {
+              const o = guide.find((g) => g.id === e.target.value)
+              if (!o) return
+              form.setFieldValue('offence', o.title)
+              form.setFieldValue('statutorySection', o.sectionRefs ?? '')
+              form.setFieldValue('particulars', o.particularsTemplate ?? '')
+            }}
+          >
+            <option value="">{m["guide.use_guide_none"]()}</option>
+            {guide.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.title}
+                {g.sectionRefs ? ` (${m["guide.section_short"]({ refs: g.sectionRefs })})` : ''}
+              </option>
+            ))}
+          </ChoiceSelect>
+        </Field>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <form.AppField name="offence">{(f) => <f.input label={m["charge.form.offence"]()} placeholder={m["charge.form.offence_placeholder"]()} />}</form.AppField>

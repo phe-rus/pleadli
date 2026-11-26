@@ -3,7 +3,6 @@ import { Createpanel } from '@/components/create-panel'
 import { EmptyNote } from '@/components/planned'
 import { openAttachment } from '@/features/attachments'
 import { entityTypes } from '@/features/attachments/schema'
-import { AttachmentsField } from '@/features/attachments'
 import { ChargeForm, useChargesForFile } from '@/features/charges'
 import { CommentThread } from '@/features/comments'
 import { DocumentReader, useDocuments } from '@/features/documents'
@@ -17,6 +16,8 @@ import { evidenceCategoryLabel, EvidenceForm, useEvidenceForFile } from '@/featu
 import { groups, KindSelect, kindLabel, TypedEntry } from '@/features/file-index/file-index'
 import type { FileItem } from '@/features/file-index/data'
 import { ImportPaper } from '@/features/file-index/import-paper'
+import { usePageCount } from '@/features/file-index/page-count'
+import { SortPages } from '@/features/file-index/sort-pages'
 import { useConfirmFileItems, useDeleteFileItem, useFileItems, useUpdateFileItem } from '@/features/file-index/queries'
 import { useJurisdiction } from '@/features/installation'
 import { useFilePeople, useProsecutionFile } from '@/features/prosecution-files'
@@ -24,7 +25,7 @@ import type { ProsecutionFile } from '@/features/prosecution-files/schema'
 import { StatementForm, statementRoleLabel, useStatementsForFile } from '@/features/statements'
 import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
-import { Add01Icon, Attachment01Icon, CheckListIcon, Delete02Icon, File02Icon, FileImportIcon, Folder01Icon, LeftToRightListNumberIcon, LegalDocument01Icon, NoteIcon, SparklesIcon, TextIcon } from '@hugeicons/core-free-icons'
+import { Add01Icon, Attachment01Icon, CheckListIcon, Delete02Icon, File02Icon, FileImportIcon, Folder01Icon, Layers01Icon, LeftToRightListNumberIcon, LegalDocument01Icon, NoteIcon, SparklesIcon, TextIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { PaperView } from '@pleadli/paper'
 import { Button } from '@pleadli/ui/button'
@@ -41,7 +42,8 @@ import { Input } from '@pleadli/ui/input'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Textarea } from '@pleadli/ui/textarea'
 import { useState, type ReactNode } from 'react'
-import { AttachedPapers, ChargesPaper, EvidencePaper, hasText, StatementPaper } from './material-papers'
+import { PaperTabs } from '@/features/file-workspace/material-panel'
+import { ChargesPaper, EvidencePaper, hasText, StatementPaper } from './material-papers'
 import { DecisionPaper, FileCoverPaper, FileIndexPaper, MinuteSheetPaper, ReviewPaper } from './office-papers'
 
 type Picked =
@@ -92,11 +94,15 @@ function TypedPaper({ item, file }: { item: FileItem; file: ProsecutionFile }) {
 /** A scanned entry: the scan itself at its page, or the text read from it. */
 function ScannedPaper({ item }: { item: FileItem }) {
   const [showText, setShowText] = useState(false)
+  const [sorting, setSorting] = useState(false)
+  const { data: scanPages = 1 } = usePageCount(item.attachmentId)
+  const manyPapers = !!item.attachmentId && (item.pageTo ?? scanPages) - (item.pageFrom ?? 1) > 0
   const update = useUpdateFileItem(item.prosecutionFileId)
   const remove = useDeleteFileItem(item.prosecutionFileId)
   const unconfirmed = item.source === 'assist' && !item.confirmedAt
   return (
     <div className="flex flex-col gap-3">
+      {sorting && <SortPages item={item} fileId={item.prosecutionFileId} onClose={() => setSorting(false)} onSaved={() => setSorting(false)} />}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <KindSelect value={item.kind} onChange={(kind) => update.mutate({ id: item.id, change: { kind, confirm: true } })} />
@@ -112,6 +118,12 @@ function ScannedPaper({ item }: { item: FileItem }) {
           )}
         </div>
         <div className="flex items-center gap-1">
+          {manyPapers && (
+            <Button size="sm" variant="secondary" onClick={() => setSorting(true)}>
+              <HugeiconsIcon icon={Layers01Icon} data-icon="inline-start" />
+              {m["sort.button"]()}
+            </Button>
+          )}
           {item.attachmentId && (
             <Button size="sm" variant="ghost" onClick={() => openAttachment({ id: item.attachmentId! })}>
               {m["paper.binder.open_outside"]()}
@@ -250,6 +262,8 @@ export function FileBinder({ fileId }: { fileId: string }) {
   const reviewsInOrder = [...reviews].sort((a, b) => a.startedAt - b.startedAt)
   const [picked, setPicked] = useState<Picked | null>(null)
   const [typing, setTyping] = useState(false)
+  const [find, setFind] = useState('')
+  const q = find.trim().toLowerCase()
 
   const all: Picked[] = [
     { kind: 'cover' },
@@ -278,7 +292,8 @@ export function FileBinder({ fileId }: { fileId: string }) {
   const names = (text: string, first: string, last: string) => text.includes(first) && text.includes(last)
   const unconfirmed = items.filter((i) => i.source === 'assist' && !i.confirmedAt).length
 
-  const entry = (p: Picked, label: string, sub?: string | null, icon?: typeof File02Icon, flag?: ReactNode) => (
+  const entry = (p: Picked, label: string, sub?: string | null, icon?: typeof File02Icon, flag?: ReactNode) =>
+    q && !`${label} ${sub ?? ''}`.toLowerCase().includes(q) ? null : (
     <button
       key={`${p.kind}-${'id' in p ? p.id : ''}`}
       type="button"
@@ -294,10 +309,11 @@ export function FileBinder({ fileId }: { fileId: string }) {
       {flag}
     </button>
   )
-  const heading = (text: string, code?: string | null) => (
+  const heading = (text: string, code?: string | null, count?: number) => (
     <h3 className="flex items-center gap-2 px-2 pt-2 text-xs font-medium text-muted-foreground">
       {code && <span className="flex size-5 items-center justify-center rounded bg-secondary text-[0.625rem] font-semibold">{code}</span>}
       {text}
+      {count != null && <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[0.6875rem] tabular-nums">{count}</span>}
     </h3>
   )
 
@@ -328,11 +344,12 @@ export function FileBinder({ fileId }: { fileId: string }) {
               </span>
               <AddMenu fileId={fileId} decision={lastDecision} onMade={(id) => setPicked({ kind: 'doc', id })} onType={() => setTyping(true)} />
             </div>
+            <input value={find} onChange={(e) => setFind(e.target.value)} placeholder={m["peruse.find_in_file"]()} aria-label={m["peruse.find_in_file"]()} className="mx-2 mb-1 h-8 rounded-md border border-input bg-transparent px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40" />
             {heading(m["paper.binder.this_file"]())}
             {entry({ kind: 'cover' }, m["paper.cover.title"](), file.title, Folder01Icon)}
             {entry({ kind: 'index' }, m["paper.index.title"](), m["paper.binder.every_paper"](), LeftToRightListNumberIcon)}
             {notes.length > 0 && entry({ kind: 'minutes' }, m["paper.minutes.title"](), (notes.length === 1 ? m["paper.binder.minutes_one"]() : m["paper.binder.minutes_count"]({ count: notes.length })), NoteIcon)}
-            {(reviewsInOrder.length > 0 || acts.length > 0) && heading(m["paper.binder.decisions"]())}
+            {(reviewsInOrder.length > 0 || acts.length > 0) && heading(m["paper.binder.decisions"](), null, reviewsInOrder.length + acts.length)}
             {reviewsInOrder.map((r) => entry({ kind: 'review', id: r.id }, m["paper.review.title"](), `${standardLabel(r.standard)} · ${formatDate(r.startedAt)}`, CheckListIcon))}
             {acts.map((a) => {
               const d = a.decisions[0]!
@@ -340,7 +357,7 @@ export function FileBinder({ fileId }: { fileId: string }) {
             })}
             {documents.length > 0 && (
               <>
-                {heading(m["paper.binder.prepared"]())}
+                {heading(m["paper.binder.prepared"](), null, documents.length)}
                 {documents.map((d) => entry({ kind: 'doc', id: d.id }, d.title, d.reference ?? m["doc.draft"](), File02Icon))}
               </>
             )}
@@ -348,7 +365,7 @@ export function FileBinder({ fileId }: { fileId: string }) {
               .filter((g) => g.items.length > 0)
               .map((g) => (
                 <div key={g.key} className="flex flex-col gap-0.5">
-                  {heading(g.title, g.code)}
+                  {heading(g.title, g.code, g.items.length)}
                   {g.items.map((i) =>
                     entry(
                       { kind: 'item', id: i.id },
@@ -360,7 +377,7 @@ export function FileBinder({ fileId }: { fileId: string }) {
                   )}
                 </div>
               ))}
-            {(charges.length > 0 || statements.length > 0 || evidence.length > 0) && heading(m["paper.binder.from_police"]())}
+            {(charges.length > 0 || statements.length > 0 || evidence.length > 0) && heading(m["paper.binder.from_police"](), null, charges.length + statements.length + evidence.length)}
             {charges.length > 0 && entry({ kind: 'charges' }, m["paper.charges.title"](), charges.map((c) => c.offence).join(', '), TextIcon)}
             {statements.map((st) => entry({ kind: 'statement', id: st.id }, `${st.personFirstName} ${st.personLastName}`, `${statementRoleLabel(st.statementRole)} · ${formatDate(st.givenAt)}`, TextIcon))}
             {evidence.map((ev) => entry({ kind: 'evidence', id: ev.id }, ev.identificationMark || evidenceCategoryLabel(ev.category), evidenceCategoryLabel(ev.category), TextIcon))}
@@ -460,18 +477,23 @@ export function FileBinder({ fileId }: { fileId: string }) {
                 return (
                   <>
                     <p className="text-sm text-muted-foreground">{m["paper.binder.received"]()}</p>
-                    <StatementPaper
-                      key={st.id}
-                      file={file}
-                      statement={st}
-                      links={{
-                        related: [...statements.filter((x) => x.id !== st.id && x.personId === st.personId).map(statementLink), ...chargesLink, ...allDocs],
-                        citedBy: docLinks((t) => names(t, st.personFirstName, st.personLastName)),
-                      }}
+                    <PaperTabs
+                      attachType={entityTypes.statement}
+                      commentType="statement"
+                      id={st.id}
+                      paper={(extraTabs) => (
+                        <StatementPaper
+                          key={st.id}
+                          file={file}
+                          statement={st}
+                          extraTabs={extraTabs}
+                          links={{
+                            related: [...statements.filter((x) => x.id !== st.id && x.personId === st.personId).map(statementLink), ...chargesLink, ...allDocs],
+                            citedBy: docLinks((t) => names(t, st.personFirstName, st.personLastName)),
+                          }}
+                        />
+                      )}
                     />
-                    <AttachedPapers entityType={entityTypes.statement} entityId={st.id} />
-                    <AttachmentsField entityType={entityTypes.statement} entityId={st.id} label={m["material.scanned"]()} />
-                    <CommentThread entityType="statement" entityId={st.id} />
                   </>
                 )
               })()}
@@ -482,15 +504,20 @@ export function FileBinder({ fileId }: { fileId: string }) {
                 return (
                   <>
                     <p className="text-sm text-muted-foreground">{m["paper.binder.received"]()}</p>
-                    <EvidencePaper
-                      key={ev.id}
-                      file={file}
-                      item={ev}
-                      links={{ related: [...chargesLink, ...allDocs], citedBy: ev.identificationMark ? docLinks((t) => t.includes(ev.identificationMark!)) : [] }}
+                    <PaperTabs
+                      attachType={entityTypes.evidenceItem}
+                      commentType="evidence_item"
+                      id={ev.id}
+                      paper={(extraTabs) => (
+                        <EvidencePaper
+                          key={ev.id}
+                          file={file}
+                          item={ev}
+                          extraTabs={extraTabs}
+                          links={{ related: [...chargesLink, ...allDocs], citedBy: ev.identificationMark ? docLinks((t) => t.includes(ev.identificationMark!)) : [] }}
+                        />
+                      )}
                     />
-                    <AttachedPapers entityType={entityTypes.evidenceItem} entityId={ev.id} />
-                    <AttachmentsField entityType={entityTypes.evidenceItem} entityId={ev.id} label={m["material.photos"]()} />
-                    <CommentThread entityType="evidence_item" entityId={ev.id} />
                   </>
                 )
               })()}

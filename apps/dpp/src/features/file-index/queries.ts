@@ -1,5 +1,5 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { confirmFileItems, createFileItem, deleteFileItem, listFileItems, updateFileItem, type FileItemChange, type NewFileItem } from './data'
+import { confirmFileItems, createFileItem, deleteFileItem, listFileItems, splitFileItem, updateFileItem, type FileItemChange, type NewFileItem, type PaperStart } from './data'
 
 export const fileItemsOptions = (fileId: string) => queryOptions({ queryKey: ['file-items', fileId] as const, queryFn: () => listFileItems(fileId) })
 export const useFileItems = (fileId: string) => useQuery(fileItemsOptions(fileId))
@@ -24,4 +24,8 @@ export function useDeleteFileItem(fileId: string) {
 export function useConfirmFileItems(fileId: string) {
   const refresh = useRefresh(fileId)
   return useMutation({ mutationFn: () => confirmFileItems(fileId), onSuccess: refresh })
+}
+export function useSplitFileItem(fileId: string) {
+  const refresh = useRefresh(fileId)
+  return useMutation({ mutationFn: ({ id, pageCount, starts }: { id: string; pageCount: number; starts: PaperStart[] }) => splitFileItem(id, pageCount, starts), onSuccess: refresh })
 }

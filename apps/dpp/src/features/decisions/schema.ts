@@ -79,7 +79,7 @@ export const createDecisionSchema = z.object({
   reviewId: z.string().nullable(),
   correctsDecisionId: z.string().nullable(),
   concludeReview: z.boolean(),
-  directions: z.array(z.object({ kind: z.string(), instruction: z.string().min(1, { error: () => m["decision.form.direction_instruction_required"]() }), personId: z.string().nullable() })),
+  directions: z.array(z.object({ kind: z.string(), instruction: z.string().min(1, { error: () => m["decision.form.direction_instruction_required"]() }), personId: z.string().nullable(), dueAt: z.number().nullable().optional() })),
 })
 
 export type CreateDecisionInput = z.infer<typeof createDecisionSchema>

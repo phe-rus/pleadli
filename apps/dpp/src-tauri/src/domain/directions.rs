@@ -24,6 +24,7 @@ pub struct Direction {
     pub response_note: Option<String>,
     pub responded_at: Option<i64>,
     pub created_at: i64,
+    pub due_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -33,6 +34,9 @@ pub struct DirectionInput {
     pub instruction: String,
     /// For an additional statement: from whom.
     pub person_id: Option<String>,
+    /// When Police are to have done it (milliseconds); none if not set.
+    #[serde(default)]
+    pub due_at: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -63,8 +67,8 @@ pub async fn insert_for_decision(
 ) -> Result<(), sqlx::Error> {
     for (order, input) in inputs.iter().enumerate() {
         sqlx::query(
-            "INSERT INTO directions (id, prosecution_file_id, decision_id, kind, instruction, person_id, sort_order)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO directions (id, prosecution_file_id, decision_id, kind, instruction, person_id, sort_order, due_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(Uuid::new_v4().to_string())
         .bind(file_id)
@@ -73,6 +77,7 @@ pub async fn insert_for_decision(
         .bind(input.instruction.trim())
         .bind(clean(input.person_id.clone()))
         .bind(order as i64)
+        .bind(input.due_at)
         .execute(&mut *tx)
         .await?;
     }

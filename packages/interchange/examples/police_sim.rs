@@ -68,6 +68,7 @@ fn main() {
                 charges: vec![ChargeClaim { accused_person_key: Some("p1".into()), offence: "Theft of a motor vehicle".into(), statutory_section: Some("s.254 of the Penal Code Act".into()), particulars: Some("On the night of 3 May 2026 at Kira Road the accused stole a Toyota Premio.".into()) }],
                 resubmission_of: args.get(5).cloned(),
                 notes: None,
+                ..Default::default()
             };
             let body = Body::new(serde_json::to_value(&payload).unwrap()).with_file("scan-1", "statement-of-grace-namutebi.pdf", "application/pdf", b"%PDF-1.4 scanned statement of the complainant".to_vec());
             let (bytes, header) = envelope::seal(&station, &office, KIND_REFERRAL, seq + 1, None, &body).unwrap();

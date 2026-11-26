@@ -96,6 +96,14 @@ pub async fn pick_save_path(app: tauri::AppHandle, default_name: String, extensi
         return Err("Not a valid file type.".to_string());
     }
     let name = pleadli_node_core::downloads::clean_file_name(&default_name);
+    // Debug builds only: a test copy that names its own downloads folder skips the system window (a driver cannot
+    // click it) and writes there. Release builds always ask the person.
+    #[cfg(debug_assertions)]
+    if let Some(dir) = std::env::var_os("PLEADLI_DOWNLOADS_DIR") {
+        let path = std::path::PathBuf::from(dir).join(&name);
+        pleadli_node_core::save_grants::approve(&path);
+        return Ok(Some(path.to_string_lossy().to_string()));
+    }
     let picked = tauri::async_runtime::spawn_blocking(move || app.dialog().file().set_file_name(name).add_filter("File", &[extension.as_str()]).blocking_save_file())
         .await
         .map_err(|e| e.to_string())?;
