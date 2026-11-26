@@ -250,8 +250,8 @@
   },
   "direction": {
     "editor": {
-    "due": "Kufikia",
-    "due_aria": "Tarehe ya agizo {number}",
+      "due": "Kufikia",
+      "due_aria": "Tarehe ya agizo {number}",
       "add": "Ongeza maelekezo",
       "description": "Eleza Polisi wanapaswa kufanya nini. Jalada likirudi utaandika kama kila moja limetimizwa.",
       "from_unnamed": "Haijatajwa ni kutoka kwa nani",
@@ -552,9 +552,10 @@
     "file": "Jalada",
     "index": "Jalada",
     "details": "Maelezo",
-    "case": "Kesi",
-    "activity": "Shughuli",
-    "people": "Watu"
+    "case": "Maelezo ya hati",
+    "activity": "Historia",
+    "people": "Watu",
+    "related": "Hati zinazohusiana"
   },
   "file_ws": {
     "crumb_files": "Mafaili",
@@ -829,7 +830,7 @@
       "documents": "Hati",
       "incoming": "Yanayoingia",
       "intake": "Mapokezi",
-      "overview": "Leo",
+      "overview": "Muhtasari",
       "people": "Watu",
       "police_connections": "Miunganisho ya Polisi",
       "police_material": "Nyaraka za Polisi",
@@ -838,10 +839,10 @@
       "returned": "Yaliyorudishwa Polisi",
       "search": "Tafuta",
       "settings": "Mipangilio",
-      "today": "Leo",
+      "today": "Muhtasari",
       "files": "Majalada",
       "board": "Ubao",
-      "calendar": "Shajara",
+      "calendar": "Ratiba ya ofisi",
       "statistics": "Takwimu",
       "cases": "Kesi",
       "tasks": "Kazi",
@@ -851,7 +852,7 @@
       "recent": "Za karibuni",
       "postbox": "Sanduku la posta",
       "courts": "Mahakama",
-      "registry": "Sajili"
+      "registry": "Rejista ya ofisi"
     },
     "section": {
       "files": "Majalada",
@@ -1459,7 +1460,9 @@
       "password_description": "Chagua nenosiri jipya la angalau herufi 12.",
       "pin": "PIN yako",
       "pin_description": "Chagua PIN mpya ya tarakimu 6. Iweke siri."
-    }
+    },
+    "find": "Tafuta mpangilio",
+    "find_none": "Hakuna mpangilio unaolingana."
   },
   "staff": {
     "active": "Anaweza kutumia programu",
@@ -1557,7 +1560,7 @@
     "document": "Hati",
     "file": "Jalada",
     "files": "Majalada",
-    "overview": "Leo"
+    "overview": "Muhtasari"
   },
   "theme": {
     "dark": "Giza",
@@ -1599,7 +1602,7 @@
       "close_shortcut": "Funga (Ctrl W)",
       "next": "Kichupo kinachofuata",
       "next_shortcut": "Kichupo kinachofuata (Ctrl Tab)",
-      "open_tabs": "Vichupo vilivyo wazi",
+      "open_tabs": "Faili zilizo wazi",
       "pin": "Bandika",
       "pin_named": "Bandika {title}",
       "previous": "Kichupo kilichotangulia",
@@ -2369,7 +2372,8 @@
       "evidence": "Kielelezo…",
       "charge": "Shtaka linalopendekezwa…"
     },
-    "write_hint": "Andika kwenye karatasi kwa kalamu ya kidijitali, kidole au kipanya. Inabaki kwenye nakala ya ofisi na kuchapishwa nayo."
+    "write_hint": "Andika kwenye karatasi kwa kalamu ya kidijitali, kidole au kipanya. Inabaki kwenye nakala ya ofisi na kuchapishwa nayo.",
+    "save_copy": "Hifadhi nakala"
   },
   "folder": {
     "receive": "Mapya",
@@ -2962,8 +2966,19 @@
     "in_file": "NDANI YA JALADA",
     "no_papers": "Hakuna karatasi zilizoorodheshwa bado.",
     "open_file": "Fungua jalada",
-    "group": { "today": "Zinakuhitaji leo", "waiting": "Zinasubiri" },
-    "col": { "file": "Jalada", "received": "Linasubiri", "from": "Kutoka", "accused": "Mshtakiwa", "offence": "Kosa", "papers": "Karatasi", "clock": "Hatua" },
+    "group": {
+      "today": "INAKUHITAJI LEO",
+      "waiting": "INASUBIRI"
+    },
+    "col": {
+      "file": "Jalada",
+      "received": "Linasubiri",
+      "from": "Kutoka",
+      "accused": "Mshtakiwa",
+      "offence": "Kosa",
+      "papers": "Karatasi",
+      "clock": "Hatua"
+    },
     "scan": "Skani",
     "needs_title": "{offence} KWA KAWAIDA INAHITAJI NINI",
     "needs_none_title": "KOSA KWA KAWAIDA LINAHITAJI NINI",
@@ -2990,10 +3005,6 @@
     "kind": {
       "police_file": "Jalada la polisi",
       "returned": "Limerudishwa na Polisi"
-    },
-    "group": {
-      "today": "INAKUHITAJI LEO",
-      "waiting": "INASUBIRI"
     }
   },
   "today": {
@@ -3056,6 +3067,62 @@
     "overdue": "Limechelewa",
     "due": "Mwisho {date}",
     "mine": "Yangu",
-    "office": "Ofisi nzima"
+    "office": "Ofisi nzima",
+    "tab_needs_you": "Kuna la kufanya kwenye faili hii",
+    "tab_overdue": "Muda umepita kwenye faili hii",
+    "ob_allocate": "Kabidhi faili",
+    "ob_read": "Soma faili ya polisi",
+    "ob_decide": "Fanya uamuzi",
+    "ob_director_decision": "Inasubiri uamuzi wa Mkurugenzi",
+    "ob_prepare": "Andaa nyaraka",
+    "ob_send": "Tuma jibu",
+    "ob_police_reply": "Jibu la polisi limechelewa",
+    "ob_hearing": "Kesi mahakamani",
+    "ob_time_limit": "Muda uliowekwa",
+    "ob_task": "Kazi",
+    "limit_allocation": "Kabidhi faili",
+    "limit_complaint_reply": "Jibu mlalamikaji",
+    "limit_adjournment_review": "Pitia kuahirishwa mara kwa mara",
+    "also_owed": "Pia yanayosubiri kwenye faili hii",
+    "owed_mine": "Kwako",
+    "owed_other": "Kwa mtu mwingine",
+    "owed_several": "Mambo {count} ya kufanya",
+    "take": "Chukua faili hii",
+    "taken": "Faili sasa ni yako.",
+    "give_failed": "Faili haikuweza kukabidhiwa.",
+    "and_more": "na mengine {count}"
+  },
+  "caps": {
+    "title": "Nani anaweza kufanya nini na faili",
+    "intro": "Kuendesha programu na kushtaki ni kazi tofauti. Kila uwezo hapa chini hupewa nafasi kivyake. Kuwa msimamizi hakutoi uwezo wowote kati ya hivi.",
+    "role_administrator": "Msimamizi",
+    "role_prosecutor": "Mwendesha mashtaka",
+    "role_clerk": "Karani",
+    "role_director": "Mkurugenzi",
+    "role_director_note": "Mkurugenzi daima ana uwezo wote ulio hapa chini, na peke yake hufanya maamuzi yanayomhusu yeye tu.",
+    "register_files": "Kusajili faili",
+    "register_files_hint": "Kuandika faili kwenye rejista inapofika.",
+    "allocate_files": "Kukabidhi faili",
+    "allocate_files_hint": "Kumpa mwendesha mashtaka faili ambayo hakuna anayeishikilia.",
+    "reassign_files": "Kuhamisha faili kati ya watu",
+    "reassign_files_hint": "Kuchukua faili kutoka kwa mtu mmoja na kumpa mwingine.",
+    "self_assign": "Kujichukulia faili",
+    "self_assign_hint": "Kuchukua faili ambayo hakuna anayeishikilia.",
+    "review_files": "Kupitia na kuamua",
+    "review_files_hint": "Kusoma faili, kupitia ushahidi, kuamua na kuandaa nyaraka. Watu hawa pekee wanaweza kupewa faili.",
+    "unconfirmed": "Haijathibitishwa: nani anakabidhi faili ni sera ya ofisi na haijaamuliwa. Hizi ni chaguo za kuanzia. Zibadilishe hapa ofisi itakapoamua.",
+    "solo": "Bila kuingia, kuna mtu mmoja, anayeweza kufanya yote.",
+    "saved": "Imehifadhiwa",
+    "failed": "Mabadiliko hayo hayakuweza kuhifadhiwa",
+    "only_admin": "Msimamizi pekee anaweza kubadilisha hili.",
+    "hearing_notice": "Siku kabla ya kesi za kujiandaa",
+    "hearing_notice_hint": "Kesi iliyo umbali wa siku hizi huonekana kati ya yanayomsubiri mwendesha mashtaka. Ni chaguo la kazi, si kanuni: weka ofisi inachotaka.",
+    "nav": "Nani anafanya nini",
+    "about": "Nani anaweza kusajili, kukabidhi na kupitia faili.",
+    "loading": "Inapakia nani anaweza kufanya nini",
+    "load_failed": "Haikuweza kupakia nani anaweza kufanya nini."
+  },
+  "choice": {
+    "none": "Chagua"
   }
 }

@@ -1,9 +1,9 @@
 import { PinIcon, XIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 import { cn } from '@pleadli/ui/lib/utils'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
-export type TabViewModel = { key: string; title: string; icon: IconSvgElement; pinned: boolean; fixed: boolean }
+export type TabViewModel = { key: string; title: string; icon: IconSvgElement; pinned: boolean; fixed: boolean; accessory?: ReactNode }
 export type TabStripLabels = {
   openTabs: string
   pin: string
@@ -23,6 +23,7 @@ type TabViewProps = {
   active: boolean
   dragging: string | null
   labels: TabStripLabels
+  pinning?: boolean
   onDragging: (key: string | null) => void
   onActivate: (key: string) => void
   onClose: (key: string) => void
@@ -33,7 +34,7 @@ type TabViewProps = {
 /** One open tab. Unpinned tabs show pin and close on hover; a pinned tab keeps
  * its pin showing and cannot be closed until unpinned; the fixed first tab has
  * neither. Dragging a tab onto another reorders them. */
-export function TabView({ tab, active, dragging, labels, onDragging, onActivate, onClose, onTogglePin, onMove }: TabViewProps) {
+export function TabView({ tab, active, dragging, labels, pinning = true, onDragging, onActivate, onClose, onTogglePin, onMove }: TabViewProps) {
   return (
     <div
       role="presentation"
@@ -71,10 +72,11 @@ export function TabView({ tab, active, dragging, labels, onDragging, onActivate,
       >
         <HugeiconsIcon icon={tab.icon} className="size-3.5 shrink-0 opacity-70" />
         <span className="truncate">{tab.title}</span>
+        {tab.accessory}
       </button>
       {!tab.fixed && (
         <>
-          <button
+          {(pinning || tab.pinned) && <button
             type="button"
             aria-label={tab.pinned ? labels.unpinTab(tab.title) : labels.pinTab(tab.title)}
             title={tab.pinned ? labels.unpin : labels.pin}
@@ -82,7 +84,7 @@ export function TabView({ tab, active, dragging, labels, onDragging, onActivate,
             className={cn(iconButton, !tab.pinned && 'opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100')}
           >
             <HugeiconsIcon icon={PinIcon} className={cn('size-3.5', tab.pinned && 'text-foreground')} />
-          </button>
+          </button>}
           {!tab.pinned && (
             <button
               type="button"
@@ -102,7 +104,7 @@ export function TabView({ tab, active, dragging, labels, onDragging, onActivate,
 
 /** The open tabs as a strip. The empty stretch after the last tab is the
  * window's drag handle. */
-export function TabStripView({ tabs, activeKey, labels, onActivate, onClose, onTogglePin, onMove }: Omit<TabViewProps, 'tab' | 'active' | 'dragging' | 'onDragging'> & { tabs: readonly TabViewModel[]; activeKey: string | null }) {
+export function TabStripView({ tabs, activeKey, labels, pinning, onActivate, onClose, onTogglePin, onMove }: Omit<TabViewProps, 'tab' | 'active' | 'dragging' | 'onDragging'> & { tabs: readonly TabViewModel[]; activeKey: string | null }) {
   const [dragging, setDragging] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -120,6 +122,7 @@ export function TabStripView({ tabs, activeKey, labels, onActivate, onClose, onT
             active={activeKey === tab.key}
             dragging={dragging}
             labels={labels}
+            pinning={pinning}
             onDragging={setDragging}
             onActivate={onActivate}
             onClose={onClose}

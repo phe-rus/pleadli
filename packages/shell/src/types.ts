@@ -103,6 +103,8 @@ export type ShellConfig = {
   counts?: () => Record<string, { value: number; urgent?: boolean }>
   /** How many recent items to keep (default 3). Only for an app with a page that lists them. */
   maxRecents?: number
+  /** How many tabs may be open (default 5). */
+  maxTabs?: number
   /** The first tab, always pinned and fixed. */
   home: { key: string; kind: string; to: string; title: () => string }
   identity: {
@@ -113,6 +115,8 @@ export type ShellConfig = {
     /** A hook: a loaded record's own name. */
     useRecordTitle?: (identity: TabIdentity | null) => string | undefined
   }
+  /** What the strip above the page holds. Without it every open tab is drawn, can be pinned, and an area counts as a tab. An app whose sidebar already names its areas lists only the records being worked on, so the two never repeat each other. */
+  strip?: TabStripOptions
   /** A hook. */
   search: () => { enabled: boolean; menu: ComponentType<{ open: boolean; onOpenChange: (open: boolean) => void }> }
   /** A hook. */
@@ -130,4 +134,13 @@ export type ShellConfig = {
   /** Keys the shell does not know. Return true when the app handled the key press. */
   onShortcut?: (event: KeyboardEvent) => boolean
   slots?: ShellSlots
+}
+
+export type TabStripOptions = {
+  /** Which open tabs the strip draws. The rest stay open (and in Recent) but are not drawn. */
+  shows?: (tab: { key: string; kind: string }) => boolean
+  /** Whether a tab can be pinned. Default true. */
+  pinning?: boolean
+  /** A small piece drawn inside a tab, after its title (a hook-using component may show what the record needs). */
+  accessory?: ComponentType<{ tab: { key: string; kind: string; to: string } }>
 }

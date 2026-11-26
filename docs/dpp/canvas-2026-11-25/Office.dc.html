@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DPP Registry</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#ffffff}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:15px;color:#1d1d1f;text-decoration:none}
+.nav svg{width:18px;height:18px;fill:none;stroke:#4a4a4f;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:0 0 18px}
+.nav.on{background:#e4e4e9;font-weight:600}
+.nav .n{margin-left:auto;font-size:12px;color:#636366}
+.tab{font-size:14px;padding:7px 14px;border-radius:999px;color:#4a4a4f;text-decoration:none;white-space:nowrap}
+.tab.on{background:#1d1d1f;color:#ffffff;font-weight:600}
+.card{background:#f5f5f7;border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:6px}
+.lbl{font-size:12px;color:#636366;font-weight:600;letter-spacing:0.03em}
+.btn{display:inline-block;padding:7px 14px;border-radius:9px;background:#0071e3;color:#ffffff;font-size:13px;font-weight:600;text-decoration:none}
+.btn2{display:inline-block;padding:7px 14px;border-radius:9px;background:#e4e4e9;color:#1d1d1f;font-size:13px;font-weight:600;text-decoration:none}
+.reg{width:100%;border-collapse:collapse;font-size:13px}
+.reg th{text-align:left;font-size:11px;color:#636366;font-weight:600;letter-spacing:0.03em;padding:8px 10px;border-bottom:1px solid #d2d2d7;background:#fafafc}
+.reg td{padding:10px;border-bottom:1px solid #eeeef1;vertical-align:top;line-height:1.4}
+.st{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:960px;background:#ffffff">
+  <div style="flex:0 0 240px;box-sizing:border-box;background:#f5f5f7;border-right:1px solid #e8e8ed;padding:22px 14px;display:flex;flex-direction:column;gap:3px">
+    <div style="padding:0 12px 14px;font-size:17px;font-weight:600">Pleadli DPP</div>
+    <div style="margin:0 4px 12px;padding:8px 12px;border-radius:10px;background:#ececf0;font-size:14px;color:#636366;display:flex;justify-content:space-between"><span>Search</span><span>Ctrl K</span></div>
+    <a class="nav" href="Today.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Today<span class="n">5</span></a>
+    <a class="nav" href="Inbox.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg>Inbox<span class="n">8</span></a>
+    <a class="nav" href="Cases.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5h8v2"/></svg>Files<span class="n">64</span></a>
+    <a class="nav" href="Diary.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Diary</a>
+    <a class="nav on" href="Office.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12M9 20v-6h6v6"/></svg>Registry</a>
+    <div style="flex:1 1 auto"></div>
+    <div style="margin:0 4px 10px;padding:12px 14px;border-radius:12px;background:#ffffff;border:1px solid #e0e0e5;font-size:14px;display:flex;flex-direction:column;gap:2px"><b style="font-weight:600">Assist</b><span style="font-size:12px;color:#636366">Off</span></div>
+    <a class="nav" href="Guide.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Settings</a>
+    <div style="padding:8px 12px;font-size:12px;color:#636366;line-height:1.4">Allocating officer<br>Fictional Station, Kampala</div>
+  </div>
+
+  <div style="flex:999 1 600px;min-width:0;box-sizing:border-box;padding:32px 40px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-0.02em">Registry</h1>
+        <div style="font-size:15px;color:#4a4a4f">Receive, stamp, register, give out. The registers the office keeps on paper, kept here and printable.</div>
+      </div>
+      <div style="display:flex;gap:8px"><a class="btn2" href="Office.dc.html">Print today's page</a><a class="btn" href="Inbox.dc.html">Receive a file</a></div>
+    </div>
+
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a class="tab on" href="Office.dc.html">Incoming</a><a class="tab" href="Office.dc.html">Outgoing</a><a class="tab" href="Office.dc.html">Movement</a><a class="tab" href="Office.dc.html">Give out files 3</a><a class="tab" href="Office.dc.html">Director's desk 2</a><a class="tab" href="Office.dc.html">Stations and courts</a>
+    </div>
+
+    <div style="border:1px solid #e0e0e5;border-radius:14px;overflow:hidden">
+      <table class="reg">
+        <thead><tr><th>NO.</th><th>RECEIVED</th><th>FROM</th><th>POLICE REF</th><th>ACCUSED AND OFFENCE</th><th>ODPP NO.</th><th>STAMPS</th><th>GIVEN TO</th></tr></thead>
+        <tbody>
+          <tr><td>0412</td><td>25 Nov 08:12</td><td>Buganda Road CPS<br><span style="color:#636366">postbox</span></td><td>CRB 214/2026</td><td><b style="font-weight:600">Okello John</b><br><span style="color:#4a4a4f">Theft</span></td><td>assigned on opening</td><td><span class="st" style="background:#e8f3ec;color:#14532d">Received · PROCAM</span></td><td>Nakato <span class="st" style="background:#fff1e6;color:#9a3a00">cells</span></td></tr>
+          <tr><td>0411</td><td>24 Nov 15:30</td><td>Kira Road CPS<br><span style="color:#636366">postbox</span></td><td>CRB 322/2026</td><td><b style="font-weight:600">Atim Grace</b><br><span style="color:#4a4a4f">Theft by servant</span></td><td>not yet given out</td><td><span class="st" style="background:#e8f3ec;color:#14532d">Received · PROCAM</span></td><td><a class="btn" href="Office.dc.html">Give to Mukasa</a></td></tr>
+          <tr><td>0410</td><td>23 Nov 10:05</td><td>Nsambya CPS<br><span style="color:#636366">paper, scanned here</span></td><td>CRB 118/2026</td><td><b style="font-weight:600">Kato Samuel</b><br><span style="color:#4a4a4f">Assault, actual bodily harm</span></td><td>not yet given out</td><td><span class="st" style="background:#e8f3ec;color:#14532d">Received · PROCAM</span></td><td><a class="btn2" href="Office.dc.html">Give to Nalwoga</a></td></tr>
+          <tr><td>0409</td><td>20 Nov 09:40</td><td>Kira Road CPS<br><span style="color:#636366">postbox · returned</span></td><td>CRB 301/2026</td><td><b style="font-weight:600">Nabukenya Rose</b><br><span style="color:#4a4a4f">False pretence</span></td><td>0388</td><td><span class="st" style="background:#e4e4e9;color:#3a3a3f">Re-registered</span></td><td>Nakato</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:13px;color:#4a4a4f;line-height:1.5;max-width:880px">A file you receive is stamped and numbered in this register the same day, the way the standards ask. The "received" and "PROCAM" stamps are recorded, not drawn: print the covering sheet and the stamp block appears where a person signs. The outgoing and movement registers work the same way, one line per dispatch or hand-over, signed for by the action officer.</div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:stretch">
+      <div class="card" style="flex:1 1 300px">
+        <div class="lbl">WHO HAS WHAT · counts only, no ranking</div>
+        <div style="font-size:14px;color:#3a3a3f;line-height:1.8">Nakato: 21 files, 4 due this week<br>Mukasa: 14 files, 1 due<br>Nalwoga: 16 files, 2 due<br>Byaruhanga: 13 files, none due</div>
+      </div>
+      <div class="card" style="flex:1 1 300px">
+        <div class="lbl">DIRECTOR'S DESK</div>
+        <div style="font-size:14px;color:#3a3a3f;line-height:1.5">Uganda v. Mbabazi, discontinue: advice sent, waiting.<br>Uganda v. Tumusiime, reduce a capital charge: opinion ready to send.</div>
+        <div style="font-size:12px;color:#636366">Discontinuing and nolle prosequi are the Director's alone and cannot be delegated.</div>
+      </div>
+      <div class="card" style="flex:1 1 300px">
+        <div class="lbl">STATIONS AND COURTS</div>
+        <div style="font-size:14px;color:#3a3a3f;line-height:1.5">Buganda Road, Kira Road: connected.<br>Nsambya: paper only. <a href="Office.dc.html" style="color:#0058b0">Connect</a><br>Chief Magistrate's Court, Kampala: connected.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":960}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

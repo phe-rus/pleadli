@@ -52,6 +52,7 @@ export function PaperTabs({
   changed = false,
   reload = 0,
   extraTabs = [],
+  showEmpty = false,
 }: {
   entityType: string
   entityId: string
@@ -66,6 +67,8 @@ export function PaperTabs({
   /** Bump to read the history again (after a print). */
   reload?: number
   extraTabs?: PaperExtraTab[]
+  /** A prosecution file's own paper shows Related and Citations only when it has some. A legal authority (an Act, a judgment) always shows them, as ULII does. */
+  showEmpty?: boolean
 }) {
   const app = usePaperApp()
   const { labels } = app
@@ -93,7 +96,7 @@ export function PaperTabs({
     { id: 'related', label: labels.tabs.related, icon: LinkSquare02Icon, count: related.length },
     { id: 'citations', label: labels.tabs.citations, icon: QuoteDownIcon, count: cites.length + citedBy.length },
     ...extraTabs.map((x) => ({ id: x.id, label: x.label, icon: x.icon === 'comment' ? Comment01Icon : Attachment01Icon, count: x.count })),
-  ]
+  ].filter((t: { id: string; count?: number }) => showEmpty || (t.id !== 'related' && t.id !== 'citations') || (t.count ?? 0) > 0 || tab === t.id)
   const latest = versions[0]
 
   const linkList = (links: PaperLink[]) => (

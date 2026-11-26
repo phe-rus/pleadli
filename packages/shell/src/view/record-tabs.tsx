@@ -14,7 +14,7 @@ export type RecordTabsProps = {
   /** The one button in a reserved tab's empty state. */
   onEmptyAction?: Partial<Record<ReservedTab, () => void>>
   /** The app's own tabs, after the four reserved ones. */
-  extra?: { id: string; label: string; content: ReactNode }[]
+  extra?: { id: string; label: string; count?: number; content: ReactNode }[]
   /** Controlled selection; leave out to let the frame keep it. */
   value?: string
   onValueChange?: (id: string) => void
@@ -26,7 +26,7 @@ export function RecordTabsView({ labels, content, onEmptyAction, extra = [], val
   const [own, setOwn] = useState<string>('overview')
   const current = value ?? own
   const select = (id: string) => (onValueChange ? onValueChange(id) : setOwn(id))
-  const tabs: { id: string; label: string; count?: number }[] = [...RESERVED_TABS.map((id) => ({ id, label: labels[id].label, count: labels[id].count })), ...extra.map((tab) => ({ id: tab.id, label: tab.label }))]
+  const tabs: { id: string; label: string; count?: number }[] = [...RESERVED_TABS.map((id) => ({ id, label: labels[id].label, count: labels[id].count })), ...extra.map((tab) => ({ id: tab.id, label: tab.label, count: tab.count }))]
 
   const body = () => {
     const added = extra.find((tab) => tab.id === current)

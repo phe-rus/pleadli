@@ -190,10 +190,22 @@ function LeftPillar() {
 function CenterHeader() {
   const { config, tabs, activeKey, rules, leftOpen, setLeftOpen, rightOpen, setRightOpen, togglePinned, moveTab } = useWorkspace()
   const labels = useLabels()
-  const { activate, close, cycle } = useTabActions()
+  const { activate, close } = useTabActions()
   const HeaderEnd = config.slots?.headerEnd
+  const strip = config.strip
+  const Accessory = strip?.accessory
 
-  const models: TabViewModel[] = tabs.map((tab) => ({
+  // The strip draws what the app says it should (default: every tab). The rest stay open and in Recent.
+  const drawn = strip?.shows ? tabs.filter((tab) => strip.shows!(tab)) : tabs
+  const cycle = (delta: 1 | -1) => {
+    if (drawn.length < 2) return
+    const at = drawn.findIndex((tab) => tab.key === activeKey)
+    const target = at === -1 ? (delta === 1 ? drawn[0] : drawn[drawn.length - 1]) : drawn[(at + delta + drawn.length) % drawn.length]
+    if (target) activate(target)
+  }
+
+  const models: TabViewModel[] = drawn.map((tab) => ({
+    accessory: Accessory ? <Accessory tab={tab} /> : undefined,
     key: tab.key,
     title: config.identity.label?.(tab) ?? (isHome(rules, tab) ? config.home.title() : tab.title),
     icon: config.identity.icon(tab),
@@ -215,6 +227,7 @@ function CenterHeader() {
       tabs={
         <TabStripView
           tabs={models}
+          pinning={strip?.pinning ?? true}
           activeKey={activeKey}
           labels={{ ...labels, closeWith: labels.closeWith(shortcut('W')) }}
           onActivate={(key) => {
@@ -233,7 +246,7 @@ function CenterHeader() {
         </>
       }
       labels={{ ...labels, previousTabWith: labels.previousTabWith(shortcut('⇧Tab')), nextTabWith: labels.nextTabWith(shortcut('Tab')) }}
-      canCycle={tabs.length > 1}
+      canCycle={drawn.length > 1}
       onCycle={cycle}
     />
   )

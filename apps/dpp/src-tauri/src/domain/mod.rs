@@ -7,6 +7,7 @@ pub mod audit;
 pub mod capacity;
 pub mod charges;
 pub mod attention;
+pub mod capabilities;
 pub mod clocks;
 pub mod proving;
 pub mod charging_reviews;

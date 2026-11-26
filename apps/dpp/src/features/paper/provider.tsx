@@ -73,6 +73,7 @@ const app: PaperApp = {
       openInWord: m["paper.open_word"](),
       openInLibreOffice: m["paper.open_libre"](),
       openElsewhere: m["paper.open_elsewhere"](),
+      saveCopy: m["paper.save_copy"](),
       printHintWindows: m["paper.print_hint_windows"](),
     }
   },

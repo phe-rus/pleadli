@@ -1,3 +1,4 @@
+import { AccessPane } from '@/features/capabilities'
 import { GuidePane } from '@/features/guide'
 import { AssistPane } from '@/features/assist/assist-settings'
 import { SignatureCard, StampCard } from '@/features/documents/seals'
@@ -7,8 +8,10 @@ import { TimezonePane } from '@/features/timezone'
 import { BackupsPane as DailyBackupsPane, LicencePane as PleadliLicencePane } from '@/features/orchestra'
 import * as m from '@/paraglide/messages'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Building03Icon, CloudUploadIcon, CloudSavingDone01Icon, LegalDocument01Icon, LicenseIcon, Notification03Icon, PaintBoardIcon, Download04Icon, SparklesIcon, SquareLock02Icon, UserGroupIcon, UserIcon } from '@hugeicons/core-free-icons'
+import { Building03Icon, CloudUploadIcon, CloudSavingDone01Icon, LegalDocument01Icon, LicenseIcon, Notification03Icon, PaintBoardIcon, Download04Icon, KeyIcon, SparklesIcon, SquareLock02Icon, UserGroupIcon, UserIcon } from '@hugeicons/core-free-icons'
 import { cn } from '@pleadli/ui/lib/utils'
+import { Input } from '@pleadli/ui/input'
+import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { AppearancePane, UpdatesPane, LicencePane, NotificationsPane, OfficePane, PeoplePane, ProtectionPane, YouPane } from './panes'
@@ -19,7 +22,7 @@ import { AppearancePane, UpdatesPane, LicencePane, NotificationsPane, OfficePane
  * every label comes from the catalog at render time. */
 const groups = [
   { id: 'you', sections: ['you'] },
-  { id: 'office', sections: ['office', 'people', 'protection', 'guide', 'assist'] },
+  { id: 'office', sections: ['office', 'people', 'access', 'protection', 'guide', 'assist'] },
   { id: 'computer', sections: ['appearance', 'notifications', 'backup', 'updates'] },
   { id: 'pleadli', sections: ['pleadli-licence', 'daily-backups'] },
   { id: 'about', sections: ['licence'] },
@@ -46,6 +49,7 @@ const sectionText: Record<SettingsSectionId, { label: () => string; about: () =>
   you: { label: m["settings.nav.you"], about: m["settings.about.you"] },
   office: { label: m["settings.nav.office"], about: m["settings.about.office"] },
   people: { label: m["settings.nav.people"], about: m["settings.about.people"] },
+  access: { label: m["caps.nav"], about: m["caps.about"] },
   protection: { label: m["settings.nav.protection"], about: m["settings.about.protection"] },
   guide: { label: m["guide.nav"], about: m["guide.about"] },
   assist: { label: m["settings.nav.assist"], about: m["settings.about.assist"] },
@@ -63,6 +67,7 @@ const sectionIcon: Record<SettingsSectionId, { icon: typeof UserIcon; tone?: str
   you: { icon: UserIcon, tone: 'blue' },
   office: { icon: Building03Icon, tone: 'teal' },
   people: { icon: UserGroupIcon, tone: 'blue' },
+  access: { icon: KeyIcon, tone: 'orange' },
   protection: { icon: SquareLock02Icon, tone: 'gray' },
   guide: { icon: LegalDocument01Icon, tone: 'teal' },
   assist: { icon: SparklesIcon, tone: 'purple' },
@@ -98,6 +103,7 @@ const panes: Record<SettingsSectionId, () => ReactNode> = {
     </>
   ),
   people: () => <PeoplePane />,
+  access: () => <AccessPane />,
   protection: () => <ProtectionPane />,
   guide: () => <GuidePane />,
   assist: () => <AssistPane />,
@@ -120,6 +126,11 @@ export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
   const group = groups.find((g) => (g.sections as readonly string[]).includes(current))!
   // With no sign-in there is nobody else to manage.
   const hidden = (id: SettingsSectionId) => id === 'people' && status?.level === 'none' && status?.actor?.role !== 'administrator'
+  const [find, setFind] = useState('')
+  const needle = find.trim().toLowerCase()
+  const matches = (id: SettingsSectionId) => !needle || `${sectionText[id].label()} ${sectionText[id].about()}`.toLowerCase().includes(needle)
+  const shown = (id: SettingsSectionId) => !hidden(id) && matches(id)
+  const anyShown = allSections.some(shown)
 
   return (
     <article className="page">
@@ -132,10 +143,12 @@ export function SettingsShell({ sectionId }: { sectionId: SettingsSectionId }) {
 
       <div className="flex flex-col gap-6 md:flex-row md:gap-10">
         <nav aria-label={m["settings.title"]()} className="flex shrink-0 flex-col gap-4 md:w-56">
-          {groups.map((g) => (
+          <Input type="search" value={find} onChange={(e) => setFind(e.target.value)} placeholder={m["settings.find"]()} aria-label={m["settings.find"]()} className="h-8" />
+          {!anyShown && <p className="px-2 text-[0.8125rem] text-muted-foreground">{m["settings.find_none"]()}</p>}
+          {groups.filter((g) => g.sections.some(shown)).map((g) => (
             <div key={g.id} role="group" aria-label={groupText[g.id]()} className="flex flex-col gap-px">
               {g.sections
-                .filter((id) => !hidden(id))
+                .filter(shown)
                 .map((id) => {
                   const active = id === current
                   const { icon } = sectionIcon[id]

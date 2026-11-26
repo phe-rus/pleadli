@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DPP Files</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#ffffff}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:15px;color:#1d1d1f;text-decoration:none}
+.nav svg{width:18px;height:18px;fill:none;stroke:#4a4a4f;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:0 0 18px}
+.nav.on{background:#e4e4e9;font-weight:600}
+.nav .n{margin-left:auto;font-size:12px;color:#636366}
+.tab{font-size:14px;padding:7px 14px;border-radius:999px;color:#4a4a4f;text-decoration:none;white-space:nowrap}
+.tab.on{background:#1d1d1f;color:#ffffff;font-weight:600}
+.th{display:flex;gap:14px;padding:8px 12px;font-size:12px;color:#636366;font-weight:600;letter-spacing:0.03em;border-bottom:1px solid #e8e8ed}
+.tr{display:flex;gap:14px;align-items:center;padding:13px 12px;border-bottom:1px solid #f0f0f3;text-decoration:none;color:#1d1d1f}
+.tr:hover{background:#f7f7fa}
+.c1{flex:2.4 1 0;min-width:0}.c2{flex:1.1 1 0;min-width:0}.c3{flex:1.1 1 0;min-width:0}.c4{flex:1.9 1 0;min-width:0}.c5{flex:1.2 1 0;min-width:0;text-align:right}
+.kind{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;display:inline-block}
+.sub{font-size:13px;color:#4a4a4f}
+.clock{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;white-space:nowrap;display:inline-block}
+.stage{font-size:13px}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:960px;background:#ffffff">
+  <div style="flex:0 0 240px;box-sizing:border-box;background:#f5f5f7;border-right:1px solid #e8e8ed;padding:22px 14px;display:flex;flex-direction:column;gap:3px">
+    <div style="padding:0 12px 14px;font-size:17px;font-weight:600">Pleadli DPP</div>
+    <div style="margin:0 4px 12px;padding:8px 12px;border-radius:10px;background:#ececf0;font-size:14px;color:#636366;display:flex;justify-content:space-between"><span>Search</span><span>Ctrl K</span></div>
+    <a class="nav" href="Today.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Today<span class="n">5</span></a>
+    <a class="nav" href="Inbox.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg>Inbox<span class="n">8</span></a>
+    <a class="nav on" href="Cases.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5h8v2"/></svg>Files<span class="n" style="color:#1d1d1f">64</span></a>
+    <a class="nav" href="Diary.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Diary</a>
+    <a class="nav" href="Office.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12M9 20v-6h6v6"/></svg>Registry</a>
+    <div style="flex:1 1 auto"></div>
+    <div style="margin:0 4px 10px;padding:12px 14px;border-radius:12px;background:#ffffff;border:1px solid #e0e0e5;font-size:14px;display:flex;flex-direction:column;gap:2px"><b style="font-weight:600">Assist</b><span style="font-size:12px;color:#636366">Ask about any case or the law</span></div>
+    <a class="nav" href="Cases.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Settings</a>
+    <div style="padding:8px 12px;font-size:12px;color:#636366;line-height:1.4">Senior State Attorney<br>Fictional Station, Kampala</div>
+  </div>
+
+  <div style="flex:999 1 600px;min-width:0;box-sizing:border-box;padding:34px 40px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-0.02em">Files</h1>
+        <div style="font-size:15px;color:#4a4a4f">64 open files in the office. 21 are yours.</div>
+      </div>
+      <div style="display:flex;gap:6px;background:#ececf0;border-radius:10px;padding:3px"><span style="padding:6px 14px;border-radius:8px;background:#ffffff;font-size:14px;font-weight:600">Mine 21</span><span style="padding:6px 14px;font-size:14px;color:#4a4a4f">Whole office 64</span></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a class="tab on" href="Cases.dc.html">All</a><a class="tab" href="Cases.dc.html">Perusal 6</a><a class="tab" href="Cases.dc.html">In court 11</a><a class="tab" href="Cases.dc.html">Applications 3</a><a class="tab" href="Cases.dc.html">Appeals 2</a><a class="tab" href="Cases.dc.html">Revisions 0</a><a class="tab" href="Cases.dc.html">Complaints 1</a><a class="tab" href="Cases.dc.html">Closed</a>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="flex:1 1 260px;padding:9px 14px;border-radius:10px;background:#f5f5f7;font-size:14px;color:#636366">Find a file: name, number, offence, court, witness</div>
+      <div style="padding:9px 14px;border-radius:10px;background:#f5f5f7;font-size:14px;color:#4a4a4f">Any court</div>
+      <div style="padding:9px 14px;border-radius:10px;background:#f5f5f7;font-size:14px;color:#4a4a4f">Any offence</div>
+      <div style="padding:9px 14px;border-radius:10px;background:#f5f5f7;font-size:14px;color:#4a4a4f">Sorted by what is next</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column">
+      <div class="th"><div class="c1">FILE</div><div class="c2">KIND</div><div class="c3">STAGE</div><div class="c4">NEXT STEP</div><div class="c5">CLOCK</div></div>
+
+      <a class="tr" href="Read.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Uganda v. Okello John</div><div class="sub">Theft · CRB 214/2026</div></div><div class="c2"><span class="kind" style="background:#fbd9e3;color:#8a1f47">Perusal</span></div><div class="c3 stage">Reading</div><div class="c4 sub">Decide: sanction, return or decline</div><div class="c5"><span class="clock" style="background:#fff1e6;color:#9a3a00">Today</span></div></a>
+
+      <a class="tr" href="Court.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Opio v. Uganda</div><div class="sub">Murder · Chief Magistrate, Kampala</div></div><div class="c2"><span class="kind" style="background:#fbefb5;color:#5e4900">Bail</span></div><div class="c3 stage">Hearing set</div><div class="c4 sub">Oppose bail, bring sureties details</div><div class="c5"><span class="clock" style="background:#fff1e6;color:#9a3a00">Tomorrow 10:00</span></div></a>
+
+      <a class="tr" href="Court.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Uganda v. Wasswa</div><div class="sub">Defilement · High Court, Kampala</div></div><div class="c2"><span class="kind" style="background:#fbd9e3;color:#8a1f47">Trial</span></div><div class="c3 stage">In court</div><div class="c4 sub">Summon 2 witnesses, 1 not yet served</div><div class="c5"><span class="clock" style="background:#f0f0f3;color:#4a4a4f">Fri 27 Nov</span></div></a>
+
+      <a class="tr" href="Court.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Uganda v. Mugisha</div><div class="sub">Robbery · committed to the High Court</div></div><div class="c2"><span class="kind" style="background:#fbd9e3;color:#8a1f47">Trial</span></div><div class="c3 stage">Committed</div><div class="c4 sub">Threshold review due, evidence outstanding</div><div class="c5"><span class="clock" style="background:#f0f0f3;color:#4a4a4f">6 days</span></div></a>
+
+      <a class="tr" href="Court.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Uganda v. Kiiza</div><div class="sub">Assault · Buganda Road</div></div><div class="c2"><span class="kind" style="background:#fbd9e3;color:#8a1f47">Trial</span></div><div class="c3 stage">Convicted</div><div class="c4 sub">Prepare sentencing submissions</div><div class="c5"><span class="clock" style="background:#f0f0f3;color:#4a4a4f">Mon 30 Nov</span></div></a>
+
+      <a class="tr" href="Cases.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Uganda v. Ssemwogerere</div><div class="sub">Appeal after acquittal · High Court</div></div><div class="c2"><span class="kind" style="background:#d6efdc;color:#14532d">Appeal</span></div><div class="c3 stage">Record received</div><div class="c4 sub">Read the record, draft the memorandum</div><div class="c5"><span class="clock" style="background:#f0f0f3;color:#4a4a4f">12 days</span></div></a>
+
+      <a class="tr" href="Cases.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Nabukenya Rose</div><div class="sub">False pretence · CRB 301/2026</div></div><div class="c2"><span class="kind" style="background:#fbd9e3;color:#8a1f47">Perusal</span></div><div class="c3 stage">Back from Police</div><div class="c4 sub">Read the new bank records</div><div class="c5"><span class="clock" style="background:#f0f0f3;color:#4a4a4f">Day 2 of 30</span></div></a>
+
+      <a class="tr" href="Cases.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Complaint, Kira Road detainee</div><div class="sub">From a relative · written</div></div><div class="c2"><span class="kind" style="background:#e4e4e9;color:#3a3a3f">Complaint</span></div><div class="c3 stage">Received</div><div class="c4 sub">Call for the police file, then reply</div><div class="c5"><span class="clock" style="background:#f0f0f3;color:#4a4a4f">5 days</span></div></a>
+
+      <a class="tr" href="Cases.dc.html"><div class="c1"><div style="font-size:15px;font-weight:600">Uganda v. Nsubuga</div><div class="sub">Theft · Nsambya</div></div><div class="c2"><span class="kind" style="background:#fbd9e3;color:#8a1f47">Trial</span></div><div class="c3 stage">3 adjournments</div><div class="c4 sub">Review the case: three adjournments caused by the prosecution</div><div class="c5"><span class="clock" style="background:#fff1e6;color:#9a3a00">Review now</span></div></a>
+    </div>
+
+    <div style="font-size:13px;color:#636366;line-height:1.45;max-width:780px">The coloured tag is the registry's own cover colour: pink for perusal and trial, yellow for applications, green for appeals, blue for revisions. A file never leaves this list; it only changes stage. A bail application or an appeal is its own file, linked to the trial.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":960}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "apps/dpp/src/features/court/calendar.tsx"
+        ],
+        "createdAt": "2026-11-25T20:46:29.606Z",
+        "reason": "design canvas Diary board specifies the coloured left edge as the file-kind cover colour; owner required screens to follow the canvas (not user confirmed on this specific rule)"
+      }
+    ]
+  }
+}

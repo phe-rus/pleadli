@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A file: Send</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#ffffff}
+.btn{display:inline-block;padding:11px 20px;border-radius:10px;background:#0071e3;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none}
+.btn2{display:inline-block;padding:11px 20px;border-radius:10px;background:#ececf0;color:#1d1d1f;font-size:15px;font-weight:600;text-decoration:none}
+.step{display:flex;align-items:center;gap:8px;font-size:15px;color:#636366}
+.step b{display:inline-flex;width:24px;height:24px;border-radius:50%;background:#e4e4e9;color:#4a4a4f;align-items:center;justify-content:center;font-size:13px}
+.step.on{color:#1d1d1f;font-weight:600}
+.step.on b{background:#0071e3;color:#ffffff}
+.step.done b{background:#1d7a3a;color:#ffffff}
+.lbl{font-size:12px;color:#636366;font-weight:600;letter-spacing:0.02em}
+.sheet{background:#ffffff;box-sizing:border-box;padding:30px 34px;box-shadow:0 1px 3px rgba(0,0,0,0.14);font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.55;color:#1d1d1f;display:flex;flex-direction:column;gap:10px}
+.dash{border-bottom:1px solid #1d1d1f;height:18px}
+</style>
+</helmet>
+<div style="min-height:900px;display:flex;flex-direction:column;background:#ffffff">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:18px 32px;border-bottom:1px solid #e8e8ed">
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <a href="Inbox.dc.html" style="font-size:14px;color:#0058b0;text-decoration:none">Inbox</a>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:20px;font-weight:600">Uganda v. Okello John</div>
+        <div style="font-size:13px;color:#636366">Theft · CRB 214/2026 · Sanctioned today</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:22px">
+      <a href="Read.dc.html" class="step done" style="text-decoration:none"><b>1</b>Peruse</a>
+      <a href="Decide.dc.html" class="step done" style="text-decoration:none"><b>2</b>Decide</a>
+      <div class="step on"><b>3</b>Send</div>
+    </div>
+    <div style="width:150px"></div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;flex:1 1 auto">
+    <div style="flex:999 1 560px;min-width:0;box-sizing:border-box;background:#e8e8ed;padding:30px 36px;display:flex;flex-direction:column;gap:14px">
+      <div class="lbl">GOES BACK TO BUGANDA ROAD CPS</div>
+      <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start">
+        <div class="sheet" style="flex:1 1 280px;max-width:380px">
+          <div style="text-align:center;font-weight:700;font-size:14px">UGANDA POLICE · POLICE FORM 53</div>
+          <div style="text-align:center;font-size:12px;color:#4a4a4f">CHARGE SHEET · CRB 214/2026 · Buganda Road CPS</div>
+          <div><b>A1.</b> Okello John, male, Ugandan, aged about 31 years, trader, resident of Owino, Kampala</div>
+          <div><b>COUNT 1: STATEMENT OF OFFENCE</b><br>Theft contrary to sections 254 and 261 of the Penal Code Act.</div>
+          <div><b>PARTICULARS OF OFFENCE</b><br>Okello John, on 12 July 2026 at Owino Market in Kampala, stole a Tecno mobile phone, the property of Akello Mary.</div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;gap:10px;align-items:flex-end"><span>Sanctioned:</span><span class="dash" style="flex:1 1 auto"></span></div>
+            <div style="display:flex;gap:10px"><div style="flex:1 1 0;display:flex;gap:8px;align-items:flex-end"><span>Date:</span><span class="dash" style="flex:1 1 auto"></span></div><div style="flex:1 1 0;border:1px dashed #8a8a90;border-radius:50%;height:62px;display:flex;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;font-size:11px;color:#636366;text-align:center;line-height:1.2">stamp<br>space</div></div>
+          </div>
+          <div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;color:#636366">Signature, date and stamp are added when you print, as the guidelines ask. Or sign here on screen.</div>
+        </div>
+
+        <div class="sheet" style="flex:1 1 280px;max-width:380px">
+          <div style="text-align:center;font-weight:700;font-size:14px">OFFICE OF THE DIRECTOR OF PUBLIC PROSECUTIONS</div>
+          <div style="text-align:center;font-size:12px;color:#4a4a4f">MINUTE TO THE OFFICER IN CHARGE, BUGANDA ROAD CPS</div>
+          <div><b>Re:</b> CRB 214/2026, Okello John, theft</div>
+          <div>The file has been perused. It discloses the offence of theft. The charge is sanctioned as drafted. Please produce the accused before the court at the earliest opportunity and make sure the exhibit (one Tecno phone) and both eyewitnesses are available.</div>
+          <div>On filing, record the court case number on the DPP copy and return the registry stamp.</div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:flex-end"><span>State Attorney:</span><span class="dash" style="flex:1 1 auto"></span></div>
+          <div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;color:#636366">Layout follows a real Police Form 53 sample. The minute wording is a draft: the office edits it in the legal guide.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:0 0 340px;box-sizing:border-box;background:#f5f5f7;border-left:1px solid #e8e8ed;padding:30px 26px;display:flex;flex-direction:column;gap:22px">
+      <div style="font-size:18px;font-weight:600">How should it go?</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:#ffffff;border:2px solid #0071e3;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:3px"><div style="font-size:15px;font-weight:600">Postbox to Buganda Road CPS</div><div style="font-size:13px;color:#4a4a4f">Connected. It arrives in the station's Pleadli Police.</div></div>
+        <div style="background:#ffffff;border:1px solid #d2d2d7;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:3px"><div style="font-size:15px;font-weight:600">Print, sign and stamp</div><div style="font-size:13px;color:#4a4a4f">Both papers, A4, for collection by the officer.</div></div>
+        <div style="background:#ffffff;border:1px solid #d2d2d7;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:3px"><div style="font-size:15px;font-weight:600">Save a file</div><div style="font-size:13px;color:#4a4a4f">For email or a memory stick.</div></div>
+      </div>
+      <a class="btn" href="Inbox.dc.html">Send and close the file</a>
+      <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #e0e0e5;padding-top:16px">
+        <div style="font-size:14px;font-weight:600">What happens next, by itself</div>
+        <div style="font-size:13px;color:#4a4a4f;line-height:1.5">The file moves to Files as Sanctioned. When Police file the charge, the court case number and hearing dates reach the calendar. If a hearing is adjourned three times by the prosecution, the file comes back to you for review.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

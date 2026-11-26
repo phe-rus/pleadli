@@ -23,6 +23,7 @@ import * as m from '@/paraglide/messages'
 import { AlertCircleIcon, ArrowRight01Icon, Mail01Icon, PrinterIcon, Download04Icon, SparklesIcon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
+import { Segmented } from '@pleadli/ui/segmented'
 import { t } from '@pleadli/ui/goey-toaster'
 import { Input } from '@pleadli/ui/input'
 import { cn } from '@pleadli/ui/lib/utils'
@@ -33,7 +34,7 @@ import { stageAbout, stageLabel, stages, stepAbout, stepLabel, stepOf, steps, ty
 import { SendBoard } from '@/features/file-workspace/send-board'
 import { DecideBoard } from '@/features/file-workspace/decide-board'
 import { PeruseBrief } from './peruse-brief'
-import { actionLabel, holderLabel, useAttention } from '@/features/attention'
+import { OwedOnFile, useAttention } from '@/features/attention'
 import { MaterialPanel } from '@/features/file-workspace/material-panel'
 import { buildCaseFile, emailCaseFile, printCaseFile, saveCaseFile } from './export-file'
 import { useAnswer, useHandovers, usePropose, useProposals, useRecordHandover, useSetStage } from './queries'
@@ -595,16 +596,7 @@ export function CaseTab({ file }: { file: ProsecutionFile }) {
       {/* A running legal clock outranks everything else on the file. */}
       {custody.length > 0 && <CustodyPanel fileId={file.id} />}
       {/* The one answer to "what is next on this file, and who has it", the same one Today and the Case files list show. */}
-      {next && next.action !== 'closed' && (
-        <p className="mt-2 text-base">
-          <span className="font-semibold">{actionLabel(next)}</span>
-          <span className="text-muted-foreground">
-            {' · '}
-            {next.needsMe ? m['attn.needs_you']() : holderLabel(next)}
-            {next.overdue && next.dueAt ? ` · ${m['today.deadline.overdue']({ date: formatDate(next.dueAt) })}` : ''}
-          </span>
-        </p>
-      )}
+      {next && <OwedOnFile next={next} fileId={file.id} />}
       <StageStepper current={current} viewing={viewing} onView={setViewing} />
 
       <section className="flex flex-col gap-5 rounded-xl bg-card p-5 shadow-xs ring-1 ring-border/70">
@@ -612,24 +604,11 @@ export function CaseTab({ file }: { file: ProsecutionFile }) {
           <div className="flex flex-col gap-1">
             <h2>{stepLabel(stepOf(viewing).id)}</h2>
             <p className="text-muted-foreground">{stepAbout(stepOf(viewing).id)}</p>
-            {stepOf(viewing).stages.length > 1 && (
-              <div role="tablist" className="mt-1 flex w-fit items-center gap-1 border-b border-border/40">
-                {stepOf(viewing).stages.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    role="tab"
-                    aria-selected={s === viewing}
-                    onClick={() => setViewing(s)}
-                    className={cn('relative h-9 cursor-pointer px-3 text-[0.8125rem] outline-none transition-colors', s === viewing ? 'font-medium text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary' : 'text-muted-foreground hover:text-foreground')}
-                  >
-                    {stageLabel(s)}
-                  </button>
-                ))}
-              </div>
-            )}
             {stepOf(viewing).stages.length > 1 && <p className="text-sm text-muted-foreground">{stageAbout(viewing)}</p>}
           </div>
+          {stepOf(viewing).stages.length > 1 && (
+            <Segmented label={stepLabel(stepOf(viewing).id)} value={viewing} onChange={setViewing} items={stepOf(viewing).stages.map((s) => ({ value: s, label: stageLabel(s) }))} />
+          )}
           {stepOf(viewing).id === 'peruse' && stepOf(current).id === 'peruse' && (
             <Button disabled={move.isPending} onClick={() => move.mutate({ fileId: file.id, stage: 'decide' })}>
               {m["peruse.continue_decide"]()}

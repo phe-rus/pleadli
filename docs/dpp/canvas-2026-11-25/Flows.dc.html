@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Who gives what, who gets what</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#f5f5f7}
+.h{display:flex;gap:16px;padding:0 18px 8px;font-size:12px;font-weight:600;color:#636366;letter-spacing:0.03em}
+.r{display:flex;gap:16px;padding:13px 18px;background:#ffffff;border-radius:14px;align-items:flex-start}
+.c1{flex:0 0 26px;font-size:14px;font-weight:600;color:#636366}
+.c2{flex:0 0 210px;font-size:14px;font-weight:600;line-height:1.35}
+.c3{flex:1 1 0;min-width:0;font-size:13px;color:#3a3a3f;line-height:1.45}
+.c4{flex:0 0 190px;font-size:12px;line-height:1.4}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px}
+.ok{background:#e8f3ec;color:#14532d}
+.new{background:#e6eefb;color:#0b3d82}
+.part{background:#fff1e6;color:#9a3a00}
+</style>
+</helmet>
+<div style="width:1280px;height:960px;box-sizing:border-box;padding:38px 52px;display:flex;flex-direction:column;gap:10px;background:#f5f5f7">
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px">
+    <div style="font-size:14px;color:#636366">Police and DPP work hand in hand. Each paper has a sender, a receiver and a reason.</div>
+    <h1 style="margin:0;font-size:32px;line-height:1.1;font-weight:600;letter-spacing:-0.02em">Who gives what, who gets what</h1>
+  </div>
+  <div class="h"><div class="c1">#</div><div class="c2">FROM → TO</div><div class="c3">WHAT TRAVELS, AND WHY THE RECEIVER NEEDS IT</div><div class="c4">IN THE APP TODAY</div></div>
+
+  <div class="r"><div class="c1">1</div><div class="c2">Police → DPP</div><div class="c3"><b style="font-weight:600">The police file:</b> forwarding minute, charge sheet (Police Form 53), statements, accused's statement, exhibit list, medical and expert reports, investigation diary, scans. Needs added: <b style="font-weight:600">when the suspect was arrested and where held</b>, so the DPP can see the 48-hour clock without a phone call.</div><div class="c4"><span class="tag part">Exists</span> <span class="tag new">Add custody time</span></div></div>
+
+  <div class="r"><div class="c1">2</div><div class="c2">DPP → Police</div><div class="c3"><b style="font-weight:600">Receipt:</b> file received, ODPP registration number, or refused and why. The station stops wondering whether it arrived.</div><div class="c4"><span class="tag ok">Exists</span></div></div>
+
+  <div class="r"><div class="c1">3</div><div class="c2">DPP → Police<br><span style="font-weight:400;color:#636366">after perusal</span></div><div class="c3"><b style="font-weight:600">One of three answers.</b> Sanction: the signed, dated, stamped charge sheet. Return for further inquiries: written advice listing what to do, <b style="font-weight:600">a due date</b>, and a draft amended charge sheet if the charge changes. Close the file: reasons.</div><div class="c4"><span class="tag ok">Exists</span> <span class="tag new">Add due date</span></div></div>
+
+  <div class="r"><div class="c1">4</div><div class="c2">Police → DPP<br><span style="font-weight:400;color:#636366">after a return</span></div><div class="c3"><b style="font-weight:600">Resubmission:</b> the new papers, tied to the file that was returned, not a new file.</div><div class="c4"><span class="tag ok">Exists</span></div></div>
+
+  <div class="r"><div class="c1">5</div><div class="c2">DPP → Court</div><div class="c3"><b style="font-weight:600">To open or move a case:</b> charge sheet filed (magistrate), or indictment and summary of the case (committal to the High Court), withdrawal when charges stop.</div><div class="c4"><span class="tag part">Papers exist, filing by hand</span></div></div>
+
+  <div class="r"><div class="c1">6</div><div class="c2">Court → DPP</div><div class="c3"><b style="font-weight:600">Court case number</b> (written back on the ODPP file), hearing notices, adjournments and who caused them, rulings, judgment, sentence, record of proceedings for an appeal, notices of appeal or revision.</div><div class="c4"><span class="tag part">Exists with the Courts app</span></div></div>
+
+  <div class="r"><div class="c1">7</div><div class="c2">DPP → Police<br><span style="font-weight:400;color:#636366">after every hearing</span></div><div class="c3"><b style="font-weight:600">Hearing minute:</b> next date, which witnesses to summon, which exhibits to bring. The standards require this on the police file after each adjournment.</div><div class="c4"><span class="tag new">New</span></div></div>
+
+  <div class="r"><div class="c1">8</div><div class="c2">Police → DPP<br><span style="font-weight:400;color:#636366">before the hearing</span></div><div class="c3"><b style="font-weight:600">Witnesses served or not served, exhibits secured:</b> the DPP must know before walking into court, because a prosecution-caused adjournment counts against the file.</div><div class="c4"><span class="tag new">New</span></div></div>
+
+  <div class="r"><div class="c1">9</div><div class="c2">Public → DPP → Police</div><div class="c3"><b style="font-weight:600">A written complaint</b> is stamped, studied, the police file is called for, and the complainant is answered within a week.</div><div class="c4"><span class="tag new">New</span></div></div>
+
+  <div class="r"><div class="c1">10</div><div class="c2">Court → Prisons<br><span style="font-weight:400;color:#636366">the DPP only learns the result</span></div><div class="c3">Remand and production orders go court to prison. The DPP sees "not produced" when the court records it, because that is an adjournment not caused by the prosecution.</div><div class="c4"><span class="tag ok">Exists via Courts</span></div></div>
+
+  <div style="font-size:12px;color:#636366;line-height:1.45;padding:4px 4px 0">Everything travels as a signed package that works over postbox, e-mail or a memory stick. Police and Prisons never talk to each other directly. The DPP's view of the case is never overwritten by what another office sends: arrivals wait for a person to accept them.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":960}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

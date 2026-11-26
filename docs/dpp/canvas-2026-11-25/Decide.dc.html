@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A file: Decide</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#ffffff}
+.btn{display:inline-block;padding:11px 20px;border-radius:10px;background:#0071e3;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none}
+.step{display:flex;align-items:center;gap:8px;font-size:15px;color:#636366}
+.step b{display:inline-flex;width:24px;height:24px;border-radius:50%;background:#e4e4e9;color:#4a4a4f;align-items:center;justify-content:center;font-size:13px}
+.step.on{color:#1d1d1f;font-weight:600}
+.step.on b{background:#0071e3;color:#ffffff}
+.step.done b{background:#1d7a3a;color:#ffffff}
+.choice{flex:1 1 0;min-width:180px;box-sizing:border-box;border:1.5px solid #d2d2d7;border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;background:#ffffff}
+.choice.on{border:2px solid #0071e3;background:#f2f8ff}
+.lbl{font-size:12px;color:#636366;font-weight:600;letter-spacing:0.02em}
+</style>
+</helmet>
+<div style="min-height:900px;display:flex;flex-direction:column;background:#ffffff">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:18px 32px;border-bottom:1px solid #e8e8ed">
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <a href="Inbox.dc.html" style="font-size:14px;color:#0058b0;text-decoration:none">Inbox</a>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:20px;font-weight:600">Uganda v. Okello John</div>
+        <div style="font-size:13px;color:#636366">Theft · CRB 214/2026 · Buganda Road CPS</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:22px">
+      <a href="Read.dc.html" class="step done" style="text-decoration:none"><b>1</b>Peruse</a>
+      <div class="step on"><b>2</b>Decide</div>
+      <div class="step"><b>3</b>Send</div>
+    </div>
+    <div style="font-size:13px;color:#636366;width:150px;text-align:right">Saved as you go</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:0;flex:1 1 auto">
+    <div style="flex:999 1 560px;min-width:0;box-sizing:border-box;padding:36px 48px;display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="lbl">WHAT IS YOUR DECISION?</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div class="choice on"><div style="font-size:18px;font-weight:600">Sanction</div><div style="font-size:14px;color:#4a4a4f;line-height:1.4">Charge the accused. Police take him to court.</div></div>
+          <div class="choice"><div style="font-size:18px;font-weight:600">Return for further inquiries</div><div style="font-size:14px;color:#4a4a4f;line-height:1.4">Say what Police must do, and by when.</div></div>
+          <div class="choice"><div style="font-size:18px;font-weight:600">Close the file</div><div style="font-size:14px;color:#4a4a4f;line-height:1.4">No prosecution. Give the reason.</div></div>
+        </div>
+        <div style="font-size:14px;color:#4a4a4f">Other: amend a charge, send to the High Court, divert, plea bargain, take over, discontinue. Discontinue and nolle prosequi are for the Director only.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="lbl">CHARGE</div>
+        <div style="border:1px solid #e0e0e5;border-radius:14px;padding:16px 20px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;gap:12px"><div style="font-size:16px;font-weight:600">Count 1: Theft</div><div style="font-size:14px;color:#0058b0">Change</div></div>
+          <div style="font-size:14px;color:#3a3a3f;line-height:1.5">Theft contrary to sections 254 and 261 of the Penal Code Act. Okello John, on 12 July 2026 at Owino Market in Kampala, stole a Tecno mobile phone, the property of Akello Mary.</div>
+          <div style="font-size:13px;color:#636366">Written for you by Assist from the file. Edit any word.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="lbl">YOUR REASONS</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div style="flex:1 1 240px;border:1px solid #e0e0e5;border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:4px">
+            <div style="font-size:14px;font-weight:600">Is there enough evidence?</div>
+            <div style="font-size:14px;color:#3a3a3f;line-height:1.45">Yes. Two eyewitnesses and the recovered phone give a realistic prospect of conviction.</div>
+          </div>
+          <div style="flex:1 1 240px;border:1px solid #e0e0e5;border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:4px">
+            <div style="font-size:14px;font-weight:600">Is it in the public interest?</div>
+            <div style="font-size:14px;color:#3a3a3f;line-height:1.45">Yes. Property offence against a trader, no reason to divert.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><div class="lbl">WHAT THEFT NEEDS PROVING · from your legal guide</div><a href="Guide.dc.html" style="font-size:12px;color:#0058b0;text-decoration:none">Edit the guide</a></div>
+        <div style="border:1px solid #e0e0e5;border-radius:14px;padding:6px 18px;display:flex;flex-direction:column">
+          <div style="display:flex;gap:12px;padding:9px 0;align-items:baseline"><span style="color:#1d7a3a;font-weight:700;width:16px">✓</span><span style="flex:1 1 0;font-size:14px">A person took the phone</span><span style="font-size:12px;color:#636366">Akello statement p. 1, Opio statement p. 1</span></div>
+          <div style="display:flex;gap:12px;padding:9px 0;align-items:baseline;border-top:1px solid #f0f0f3"><span style="color:#1d7a3a;font-weight:700;width:16px">✓</span><span style="flex:1 1 0;font-size:14px">It belonged to someone else</span><span style="font-size:12px;color:#636366">Akello statement p. 1, exhibit list</span></div>
+          <div style="display:flex;gap:12px;padding:9px 0;align-items:baseline;border-top:1px solid #f0f0f3"><span style="color:#1d7a3a;font-weight:700;width:16px">✓</span><span style="flex:1 1 0;font-size:14px">Taken without a claim of right, to keep it</span><span style="font-size:12px;color:#636366">Accused's statement p. 2: ran, did not return it</span></div>
+          <div style="display:flex;gap:12px;padding:9px 0;align-items:baseline;border-top:1px solid #f0f0f3"><span style="color:#1d7a3a;font-weight:700;width:16px">✓</span><span style="flex:1 1 0;font-size:14px">The accused is the person who did it</span><span style="font-size:12px;color:#636366">Two eyewitnesses, phone recovered from him</span></div>
+        </div>
+        <div style="font-size:12px;color:#636366;line-height:1.45">Ticks come from you or from Assist's suggestion, and each one names the page it rests on. A missing tick tells you what to ask Police for.</div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:8px;border-top:1px solid #e8e8ed">
+        <a class="btn" href="Send.dc.html">Sign and prepare the papers</a>
+        <div style="font-size:14px;color:#636366">Signing records your name, the date and your reasons. It cannot be undone, only corrected by a later decision.</div>
+      </div>
+    </div>
+
+    <div style="flex:0 0 330px;box-sizing:border-box;background:#f5f5f7;border-left:1px solid #e8e8ed;padding:30px 24px;display:flex;flex-direction:column;gap:18px">
+      <div style="font-size:16px;font-weight:600">What the office decided before</div>
+      <div style="font-size:14px;color:#3a3a3f;line-height:1.5">Of 41 theft files from Buganda Road CPS this year, 33 were sanctioned, 6 returned for a missing statement, 2 declined.</div>
+      <div style="font-size:14px;color:#3a3a3f;line-height:1.5">Returns were most often for no statement from the person who recovered the item.</div>
+      <div style="font-size:13px;color:#636366;line-height:1.45;border-top:1px solid #e0e0e5;padding-top:14px">Sample numbers for the design. In the product they come from this office's own record, never from other offices.</div>
+      <div style="font-size:16px;font-weight:600;margin-top:6px">Time</div>
+      <div style="font-size:14px;color:#3a3a3f;line-height:1.5">Accused in the cells since Monday. The DPP standards ask for a decision the same day, so no one is held beyond 48 hours.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

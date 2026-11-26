@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CreateFrame, QuickFileForm } from './quick-add'
 import { useRecordTitle } from './record-title'
 import { AssistHeader, AssistSidePanel, HeaderEnd, LicenceBar, StatusBar } from './slots'
+import { TabAccessory } from './tab-accessory'
 import { resolveIdentity, tabIcon, tabTitle } from './tab-identity'
 
 /** DPP words for the shell, from DPP's own translations. */
@@ -121,6 +122,9 @@ export const shellConfig: ShellConfig = {
   counts: useCounts,
   // The Recent page lists what was opened lately, so DPP keeps more than the shell's three.
   maxRecents: 24,
+  // The sidebar names the places; the strip holds only the files being worked on, with nothing to pin.
+  strip: { shows: (tab) => tab.kind === 'file' || tab.kind === 'document', pinning: false, accessory: TabAccessory },
+  maxTabs: 8,
   home: { key: 'overview', kind: 'overview', to: '/', title: () => m["tabs.overview"]() },
   identity: { resolve: resolveIdentity, icon: tabIcon, label: tabTitle, useRecordTitle },
   search: () => ({ enabled: true, menu: CommandMenu }),

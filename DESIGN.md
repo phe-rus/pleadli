@@ -167,7 +167,7 @@ Content markup carries no inline size or weight; type is set once through semant
 
 ## Layout
 
-A 4px base unit. The shell is a full-height attached sidebar (16rem, collapsible with a 320ms ease) beside a centre column, inside a single rounded window frame (12px) inset 6px. Settings is one `max-w-md` column of cards. Side panels share one geometry. Pages use a centred container with 1.5rem gutters, widening to 2rem and a 1440px cap on large screens.
+A 4px base unit. The shell is a full-height attached sidebar (16rem, collapsible with a 320ms ease) beside a centre column, inside a single rounded window frame (12px) inset 6px. Settings is a 14rem nav beside a section column from the md breakpoint (stacked below it). Side panels share one geometry. Pages use a centred container with 1.5rem gutters, widening to 2rem and a 1440px cap on large screens.
 
 Density is driven by variables: `--ui-text`, `--table-text`, `--control-h`, `--control-h-sm`, `--control-h-lg`, `--control-px`. The library default is compact (28px controls, 12px text); the workspace look sets 36px controls and 14px text. An app may override these on its own `:root`.
 
@@ -186,6 +186,8 @@ Hybrid: tonal layering first, soft shadow second. Page Grey to Sheet White carri
 
 ### Named Rules
 **The Attached Sidebar Rule.** The sidebar is full height and attached on its own grey. It never floats; floating glass is reserved for toolbar capsules.
+
+**The Visible Focus Rule.** Every row, tab and footer control in the shell takes a 2px focus-visible ring; nothing interactive is focusable without one.
 
 ## Shapes
 
@@ -215,7 +217,16 @@ Soft but not playful. Sheets use 12px, controls 10px, small chips 8px, panels an
 Sits in a framed Sheet White container (12px, hairline, resting shadow). Header row is 40px on a muted wash with Ink Muted 500 text; rows have 10px vertical padding and 70% hairline dividers. Numerals are tabular.
 
 ### Navigation
-Full-height Page Grey sidebar, items on Sheet White when active with the accent on the indicator. The toolbar groups related controls in one glass capsule.
+Full-height Page Grey sidebar with folding groups (11px, 600, Ink Muted group titles; fold arrow only on hover). Rows are 30px high, 13px text, 8px radius. The row in view is a soft accent tint (accent at 12%) with the icon in the accent and Ink text at weight 500; other rows are sidebar ink with a 5% foreground wash on hover. A trailing count is quiet tabular Ink Muted and turns into a solid red pill with white text only when something is overdue. DPP rows read Overview, Incoming, Case files, Office diary, Office registry. The footer (person, language, settings, sign out) sits under a 1px hairline at 50% and its controls carry the same 2px focus ring at 50% of the ring colour as the rows. The toolbar groups related controls in one glass capsule.
+
+### Record tabs (signature)
+A record's parts sit in a tab row under a 40% hairline: 36px high, 13px text, Ink Muted until selected, then Ink at weight 500 with a 2px accent underline inset 8px each side. A count rides on the tab as a Wash pill (11px, tabular). The DPP file page reads Document detail, The file, People, History, Related documents (counted). Every tab takes the 2px focus ring.
+
+### Settings
+Two columns from the md breakpoint: a 14rem nav of grouped links with a "Find a setting" search field at the top, and the section beside it. The current section is a solid accent pill with accent-foreground text and icon. Who does what is a hairline-ruled grid (60% hairline row dividers, no frame): capability and hint on the left, one checkbox column per role, column heads in 12px Ink Muted.
+
+### Lists with several owners
+Case files rows carry focus rings, and when a file owes more than one thing the row names the first and adds a quiet 12px "and N more" line beneath it.
 
 ### Paper (signature)
 Documents render as serif sheets inside `.paper`, with headings following the paper's face. They print, export and carry a verify link, and the surrounding UI never imitates them.

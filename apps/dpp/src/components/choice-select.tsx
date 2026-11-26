@@ -1,5 +1,6 @@
 import { Children, isValidElement, useState, type ChangeEvent, type ReactElement, type ReactNode } from 'react'
 import { cn } from '@pleadli/ui/lib/utils'
+import * as m from '@/paraglide/messages'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@pleadli/ui/select'
 
 /** A choice from a short list, drawn with the design system's Select instead of
@@ -50,7 +51,8 @@ type Props = {
 export function ChoiceSelect({ value, defaultValue, onChange, children, className, disabled, id, 'aria-label': ariaLabel }: Props) {
   const [own, setOwn] = useState(defaultValue ?? '')
   const current = value ?? own
-  const options = collect(children)
+  // An empty choice has no words of its own; it says so rather than showing the internal marker.
+  const options = collect(children).map((o) => (o.value === '' && textOf(o.label) === '' ? { ...o, label: m['choice.none']() } : o))
   const choose = (next: string | null) => {
     const v = decode(next ?? '')
     if (value === undefined) setOwn(v)

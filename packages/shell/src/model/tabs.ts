@@ -10,11 +10,14 @@ const refreshesTitle = (rules: Rules, tab: WorkspaceTab) => tab.kind === 'area' 
  * one worked on longest ago: never the home tab, never the one being opened.
  * A pinned tab is only replaced when every other tab is pinned too. */
 export function openTab(state: WorkspaceState, tab: WorkspaceTab, rules: Rules, now = Date.now()): WorkspaceState {
+  if (rules.drawn && !rules.drawn(tab) && !isHome(rules, tab)) {
+    return { ...state, recents: [recentOf(tab), ...state.recents.filter((r) => r.key !== tab.key)].slice(0, rules.maxRecents ?? MAX_RECENTS) }
+  }
   const exists = state.tabs.some((t) => t.key === tab.key)
   let tabs = exists
     ? state.tabs.map((t) => (t.key === tab.key ? { ...t, to: tab.to, lastActiveAt: now, ...(refreshesTitle(rules, t) ? { title: tab.title } : {}) } : t))
     : [...state.tabs, { ...tab, lastActiveAt: now }]
-  if (tabs.length > MAX_TABS) {
+  if (tabs.length > (rules.maxTabs ?? MAX_TABS)) {
     const candidates = tabs.filter((t) => !isHome(rules, t) && t.key !== tab.key)
     const oldest = (list: WorkspaceTab[]) => [...list].sort((a, b) => (a.lastActiveAt ?? 0) - (b.lastActiveAt ?? 0))[0]
     const evict = oldest(candidates.filter((t) => !t.pinned)) ?? oldest(candidates)

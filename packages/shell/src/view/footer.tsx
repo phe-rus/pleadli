@@ -28,17 +28,17 @@ export function SidebarFooterView({
           {person.initials}
         </span>
       )}
-      <span className="flex min-w-0 flex-col leading-tight">
+      <span className="flex min-w-0 flex-col gap-0.5 leading-tight">
         <span className="truncate text-[0.8125rem] font-medium text-foreground">{person.name}</span>
         <span className="truncate text-[0.6875rem] text-muted-foreground">{person.sub}</span>
       </span>
     </>
   )
   return (
-    <div className="flex items-center gap-1 px-2 py-2">
+    <div className="flex items-center gap-1 border-t border-border/50 px-2 py-2.5">
       {person ? (
         onOpenPerson ? (
-          <button type="button" onClick={onOpenPerson} className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-foreground/5">
+          <button type="button" onClick={onOpenPerson} className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-lg px-1.5 py-1 text-left outline-none transition-colors hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring/50">
             {body}
           </button>
         ) : (
@@ -47,7 +47,7 @@ export function SidebarFooterView({
       ) : (
         <span className="flex-1" />
       )}
-      <span className="text-xs text-muted-foreground">{languageSelect}</span>
+      <span className="ms-auto shrink-0 text-xs text-muted-foreground">{languageSelect}</span>
       <button type="button" className={iconButton} onClick={onSettings} aria-label={labels.settings} title={labels.settings}>
         <HugeiconsIcon icon={Settings01Icon} className="size-4" />
       </button>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quick review of several files</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#ffffff}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:8px;font-size:15px;color:#1d1d1f}
+.nav.on{background:#e4e4e9;font-weight:600}
+.btn{display:inline-block;padding:9px 16px;border-radius:10px;background:#0071e3;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none}
+.btn2{display:inline-block;padding:9px 16px;border-radius:10px;background:#ececf0;color:#1d1d1f;font-size:14px;font-weight:600;text-decoration:none}
+.card{background:#f5f5f7;border-radius:18px;padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+.tag{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;display:inline-block}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:900px;background:#ffffff">
+  <div style="flex:0 0 232px;box-sizing:border-box;background:#f5f5f7;border-right:1px solid #e8e8ed;padding:24px 14px;display:flex;flex-direction:column;gap:4px">
+    <div style="padding:0 12px 18px;font-size:17px;font-weight:600">Pleadli DPP</div>
+    <a class="nav" href="Today.dc.html" style="text-decoration:none"><span>Today</span><span style="font-size:12px">5</span></a>
+    <a class="nav on" href="Inbox.dc.html" style="text-decoration:none"><span>Inbox</span><span style="font-size:12px">8</span></a>
+    <a class="nav" href="Cases.dc.html" style="text-decoration:none"><span>Files</span><span style="font-size:12px">64</span></a>
+    <a class="nav" href="Diary.dc.html" style="text-decoration:none"><span>Diary</span></a>
+    <a class="nav" href="Office.dc.html" style="text-decoration:none"><span>Registry</span></a>
+    <div style="flex:1 1 auto"></div>
+    <div class="nav"><span>Settings</span></div>
+  </div>
+
+  <div style="flex:999 1 560px;min-width:0;box-sizing:border-box;padding:44px 56px;display:flex;flex-direction:column;gap:26px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:14px"><a href="Inbox.dc.html" style="color:#0058b0;text-decoration:none">Inbox</a> <span style="color:#636366">/ Quick review</span></div>
+      <h1 style="margin:0;font-size:34px;font-weight:600;letter-spacing:-0.02em">Review 3 files</h1>
+      <div style="font-size:16px;color:#4a4a4f;max-width:760px;line-height:1.45">Assist has read every paper in each file and proposes one outcome with the reason. You can accept a proposal as it is, change it, or open the file. Nothing is signed until you accept it, one file at a time.</div>
+    </div>
+
+    <div class="card" style="background:#ffffff;border:1px solid #e0e0e5">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:18px;font-weight:600;flex:1 1 280px">Okello John, theft</div>
+        <span class="tag" style="background:#e8f3ec;color:#14532d">Proposed: Sanction</span>
+        <span class="tag" style="background:#fff1e6;color:#9a3a00">In the cells</span>
+      </div>
+      <div style="font-size:15px;color:#3a3a3f;line-height:1.5">Theft of a phone, contrary to sections 254(1) and 261 of the Penal Code Act. Two eyewitnesses name the accused and agree on time and place. The phone was recovered from him and is on the exhibit list. No gaps found.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <a class="btn" href="Decide.dc.html">Accept and sign</a>
+        <a class="btn2" href="Read.dc.html">Open file</a>
+        <span style="font-size:13px;color:#636366">Assist read 6 papers, 11 pages</span>
+      </div>
+    </div>
+
+    <div class="card" style="background:#ffffff;border:1px solid #e0e0e5">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:18px;font-weight:600;flex:1 1 280px">Nabukenya Rose, obtaining by false pretence</div>
+        <span class="tag" style="background:#e6eefb;color:#0b3d82">Proposed: Return for further inquiries</span>
+      </div>
+      <div style="font-size:15px;color:#3a3a3f;line-height:1.5">The bank statements are photocopies without the bank's certificate, and no statement from a bank officer is on file. Without them the false pretence cannot be shown. Advice to Police is drafted: obtain certified records and a bank officer's statement.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <a class="btn" href="Send.dc.html">Accept and sign</a>
+        <a class="btn2" href="Read.dc.html">Open file</a>
+        <span style="font-size:13px;color:#636366">Assist read 5 papers, 22 pages</span>
+      </div>
+    </div>
+
+    <div class="card" style="background:#ffffff;border:1px solid #e0e0e5">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:18px;font-weight:600;flex:1 1 280px">Kato Samuel, assault causing actual bodily harm</div>
+        <span class="tag" style="background:#e8f3ec;color:#14532d">Proposed: Sanction, charge amended</span>
+      </div>
+      <div style="font-size:15px;color:#3a3a3f;line-height:1.5">The medical form records a bruise and no treatment. That fits common assault better than actual bodily harm, so the charge is lowered to avoid overcharging. Check this one: the complainant's statement is unsigned on page 2.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <a class="btn" href="Decide.dc.html">Accept and sign</a>
+        <a class="btn2" href="Read.dc.html">Open file</a>
+        <span style="font-size:13px;color:#8a4b00;font-weight:600">1 thing to check</span>
+      </div>
+    </div>
+
+    <div style="font-size:14px;color:#636366;line-height:1.5;max-width:760px">Assist suggests; it never decides and never sends anything. Without a connection or an Assist key, the same screen works with plain summaries left empty and you read the files yourself.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

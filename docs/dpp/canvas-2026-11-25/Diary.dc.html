@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DPP Diary</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#ffffff}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:15px;color:#1d1d1f;text-decoration:none}
+.nav svg{width:18px;height:18px;fill:none;stroke:#4a4a4f;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:0 0 18px}
+.nav.on{background:#e4e4e9;font-weight:600}
+.nav .n{margin-left:auto;font-size:12px;color:#636366}
+.day{flex:1 1 150px;min-width:140px;display:flex;flex-direction:column;gap:8px}
+.dh{font-size:13px;font-weight:600;padding-bottom:8px;border-bottom:1px solid #e8e8ed;color:#4a4a4f}
+.dh.today{color:#0058b0}
+.ev{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;text-decoration:none;color:#1d1d1f;border-left:4px solid #c7c7cc;background:#f5f5f7}
+.ev b{font-size:13px;font-weight:600}
+.ev span{font-size:12px;color:#4a4a4f;line-height:1.35}
+.lbl{font-size:12px;color:#636366;font-weight:600;letter-spacing:0.03em}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:960px;background:#ffffff">
+  <div style="flex:0 0 240px;box-sizing:border-box;background:#f5f5f7;border-right:1px solid #e8e8ed;padding:22px 14px;display:flex;flex-direction:column;gap:3px">
+    <div style="padding:0 12px 14px;font-size:17px;font-weight:600">Pleadli DPP</div>
+    <div style="margin:0 4px 12px;padding:8px 12px;border-radius:10px;background:#ececf0;font-size:14px;color:#636366;display:flex;justify-content:space-between"><span>Search</span><span>Ctrl K</span></div>
+    <a class="nav" href="Today.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Today<span class="n">5</span></a>
+    <a class="nav" href="Inbox.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg>Inbox<span class="n">8</span></a>
+    <a class="nav" href="Cases.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5h8v2"/></svg>Files<span class="n">64</span></a>
+    <a class="nav on" href="Diary.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Diary</a>
+    <a class="nav" href="Office.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12M9 20v-6h6v6"/></svg>Registry</a>
+    <div style="flex:1 1 auto"></div>
+    <div style="margin:0 4px 10px;padding:12px 14px;border-radius:12px;background:#ffffff;border:1px solid #e0e0e5;font-size:14px;display:flex;flex-direction:column;gap:2px"><b style="font-weight:600">Assist</b><span style="font-size:12px;color:#636366">Ask about any case or the law</span></div>
+    <a class="nav" href="Diary.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Settings</a>
+    <div style="padding:8px 12px;font-size:12px;color:#636366;line-height:1.4">Senior State Attorney<br>Fictional Station, Kampala</div>
+  </div>
+
+  <div style="flex:999 1 600px;min-width:0;box-sizing:border-box;padding:34px 40px;display:flex;flex-direction:column;gap:22px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-0.02em">Diary</h1>
+        <div style="font-size:15px;color:#4a4a4f">Week of 23 November · 6 court days · 3 deadlines</div>
+      </div>
+      <div style="display:flex;gap:6px;background:#ececf0;border-radius:10px;padding:3px"><span style="padding:6px 14px;border-radius:8px;background:#ffffff;font-size:14px;font-weight:600">Week</span><span style="padding:6px 14px;font-size:14px;color:#4a4a4f">Month</span><span style="padding:6px 14px;font-size:14px;color:#4a4a4f">List</span></div>
+    </div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+      <div class="day"><div class="dh">Mon 23</div><div style="font-size:12px;color:#8a8a90">Nothing</div></div>
+      <div class="day"><div class="dh">Tue 24</div><a class="ev" href="Court.dc.html" style="border-left-color:#f2a3bb"><b>09:30 Uganda v. Kasule</b><span>Buganda Road · plea. Done.</span></a></div>
+      <div class="day"><div class="dh today">Wed 25 · today</div><div style="font-size:12px;color:#8a8a90">No hearing. Decide Okello today.</div></div>
+      <div class="day"><div class="dh">Thu 26</div><a class="ev" href="Court.dc.html" style="border-left-color:#e8c93a;background:#fffbea"><b>10:00 Opio v. Uganda</b><span>Chief Magistrate · bail. Oppose, capital.</span></a></div>
+      <div class="day"><div class="dh">Fri 27</div><a class="ev" href="Court.dc.html" style="border-left-color:#f2a3bb"><b>09:00 Uganda v. Wasswa</b><span>High Court · hearing. 1 witness not served.</span></a><a class="ev" href="Court.dc.html" style="border-left-color:#f2a3bb"><b>14:00 Uganda v. Lubega</b><span>Buganda Road · hearing.</span></a></div>
+    </div>
+
+    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:stretch">
+      <div style="flex:1 1 340px;border:1px solid #e0e0e5;border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+        <div class="lbl">DEADLINES THAT ARE NOT COURT DAYS</div>
+        <a class="ev" href="Cases.dc.html" style="border-left-color:#8ec7a0;background:#f4faf6"><b>In 12 days: memorandum of appeal</b><span>Uganda v. Ssemwogerere · two weeks from the record.</span></a>
+        <a class="ev" href="Cases.dc.html" style="border-left-color:#b8bcc2"><b>In 5 days: reply to complaint</b><span>Kira Road detainee · within one week.</span></a>
+        <a class="ev" href="Cases.dc.html" style="border-left-color:#b8bcc2"><b>In 6 days: threshold review</b><span>Uganda v. Mugisha · first review within 14 days.</span></a>
+      </div>
+      <div style="flex:1 1 280px;border:1px solid #e0e0e5;border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+        <div class="lbl">HOW THE DIARY FILLS ITSELF</div>
+        <div style="font-size:14px;color:#3a3a3f;line-height:1.55">A hearing notice from the court, a date you record after a sitting, a deadline worked out from the record being served: each lands here and on its case. You can also add a date by hand.</div>
+        <div style="font-size:14px;color:#3a3a3f;line-height:1.55">Click a hearing and you are in its case, ready to prepare: witnesses, exhibits, the last minute.</div>
+        <div style="font-size:12px;color:#636366;line-height:1.45">Court colours match the registry covers: pink trial, yellow application, green appeal.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":960}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

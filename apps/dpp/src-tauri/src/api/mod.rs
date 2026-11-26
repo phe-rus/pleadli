@@ -34,6 +34,7 @@ use crate::domain::guide::{self, Offence, OffenceInput};
 use crate::domain::laws::{self, LawSummary, ManualLaw};
 use crate::domain::clocks;
 use crate::domain::proving;
+use crate::domain::capabilities::{self, Capability};
 use crate::domain::registry;
 use crate::domain::custody::{self, CustodyEvent, CustodyEventInput};
 use crate::domain::pipeline::{self, AnswerInput, Answered, BoardCard, ChatInput, ChatReply, Handover, HandoverInput, Proposal};
@@ -175,6 +176,7 @@ async fn get_person(State(s): State<AppState>, Path(id): Path<String>) -> ApiRes
 }
 
 async fn create_file(State(s): State<AppState>, Json(input): Json<CreateProsecutionFileInput>) -> ApiResult<ProsecutionFile> {
+    require_power(&s, Capability::RegisterFiles).await?;
     Ok(Json(prosecution_files::create_prosecution_file(&s.pool, input).await?))
 }
 
@@ -225,6 +227,7 @@ async fn list_referrals(State(s): State<AppState>, Path(id): Path<String>) -> Ap
 }
 
 async fn create_decision(State(s): State<AppState>, Json(input): Json<CreateDecisionInput>) -> ApiResult<Vec<Decision>> {
+    require_power(&s, Capability::ReviewFiles).await?;
     Ok(Json(decisions::create_decision(&s.pool, input).await?))
 }
 
@@ -233,6 +236,7 @@ async fn list_decisions_for_file(State(s): State<AppState>, Path(id): Path<Strin
 }
 
 async fn start_review(State(s): State<AppState>, Json(input): Json<StartReviewInput>) -> ApiResult<ReviewWithAssessments> {
+    require_power(&s, Capability::ReviewFiles).await?;
     Ok(Json(charging_reviews::start_review(&s.pool, input).await?))
 }
 
@@ -761,6 +765,21 @@ fn require_admin(s: &AppState) -> Result<Actor, ApiError> {
     }
 }
 
+/// The person signed in and what they may do. Nobody signed in may do nothing.
+async fn acting(s: &AppState) -> Result<(Actor, capabilities::Set), ApiError> {
+    let Some(actor) = s.security.actor() else {
+        return Err(ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "Sign in first.".to_string()));
+    };
+    let set = capabilities::for_actor(&s.pool, s.security.protection(), &actor).await?;
+    Ok((actor, set))
+}
+
+async fn require_power(s: &AppState, c: Capability) -> Result<Actor, ApiError> {
+    let (actor, set) = acting(s).await?;
+    capabilities::require(&set, c)?;
+    Ok(actor)
+}
+
 fn not_installed(s: &AppState) -> Result<(), ApiError> {
     if s.security.is_installed() {
         return Err(ApiError(StatusCode::FORBIDDEN, "FORBIDDEN", "This installation is already set up.".to_string()));
@@ -1110,6 +1129,7 @@ struct StageInput {
 }
 
 async fn set_file_stage(State(s): State<AppState>, Path(id): Path<String>, Json(input): Json<StageInput>) -> Result<StatusCode, ApiError> {
+    require_power(&s, Capability::ReviewFiles).await?;
     pipeline::set_stage(&s.pool, &id, &input.stage, actor_name(&s).as_deref()).await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -1435,6 +1455,8 @@ pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestr
         .route("/registry/years", get(register_years))
         .route("/registry/holders", get(register_holders))
         .route("/registry/give-out", post(give_file_out))
+        .route("/capabilities", get(list_capabilities).put(set_capability))
+        .route("/capabilities/mine", get(my_capabilities))
         .route("/registry/next-number", get(next_odpp_number))
         .route("/prosecution-files/{id}/receive", post(receive_file))
         .route("/registry/entries/{id}/stamps", post(stamp_register_entry))
@@ -1720,15 +1742,36 @@ struct ReceiveBody {
 }
 
 async fn receive_file(State(s): State<AppState>, Path(id): Path<String>, Json(b): Json<ReceiveBody>) -> Result<StatusCode, ApiError> {
-    let actor = s.security.actor();
-    registry::receive(&s.pool, &id, b.odpp_number, actor.as_ref().map(|a| a.id.as_str()), actor.as_ref().map(|a| a.name.as_str())).await?;
+    // Entering a file in the register is one power; taking it for yourself is another.
+    let (actor, set) = acting(&s).await?;
+    capabilities::require(&set, Capability::RegisterFiles)?;
+    let claim = set.self_assign && set.review_files;
+    registry::receive(&s.pool, &id, b.odpp_number, claim.then_some(actor.id.as_str()), Some(actor.name.as_str())).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
 async fn give_file_out(State(s): State<AppState>, Json(input): Json<registry::GiveOut>) -> Result<StatusCode, ApiError> {
-    registry::give_out(&s.pool, input, actor_name(&s).as_deref()).await?;
+    let (actor, set) = acting(&s).await?;
+    registry::give_out(&s.pool, input, &actor, &set, s.security.protection()).await?;
     Ok(StatusCode::NO_CONTENT)
 }
+
+/// What the person signed in may do, for the screens that show or hide a button.
+async fn my_capabilities(State(s): State<AppState>) -> ApiResult<capabilities::Set> {
+    Ok(Json(acting(&s).await?.1))
+}
+
+async fn list_capabilities(State(s): State<AppState>) -> ApiResult<Vec<capabilities::Grant>> {
+    Ok(Json(capabilities::grants(&s.pool).await?))
+}
+
+async fn set_capability(State(s): State<AppState>, Json(input): Json<capabilities::GrantInput>) -> ApiResult<Vec<capabilities::Grant>> {
+    let admin = require_admin(&s)?;
+    let saved = capabilities::set_grant(&s.pool, input, Some(admin.name.as_str())).await?;
+    let _ = audit::log(&s.pool, audit::Entry::new("capabilities_changed").subject("staff", &admin.id)).await;
+    Ok(Json(saved))
+}
+
 
 #[derive(Deserialize)]
 struct StampBody {

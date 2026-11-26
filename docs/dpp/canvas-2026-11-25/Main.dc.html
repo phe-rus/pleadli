@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Map of files, papers and roles</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#f5f5f7}
+.lbl{font-size:12px;color:#636366;font-weight:600;letter-spacing:0.03em}
+.card{background:#ffffff;border-radius:18px;padding:20px 22px}
+.row{display:flex;gap:14px;align-items:baseline}
+.row b{width:84px;flex:0 0 84px;font-size:15px}
+.row span{font-size:13px;color:#4a4a4f;line-height:1.45}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+.fam{flex:1 1 0;min-width:0;background:#ffffff;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.t{width:100%;border-collapse:collapse;font-size:13px}
+.t td{padding:7px 8px;border-top:1px solid #e8e8ed;vertical-align:top;line-height:1.4;color:#3a3a3f}
+.t td:first-child{font-weight:600;width:112px;color:#1d1d1f}
+</style>
+</helmet>
+<div style="width:1280px;height:800px;box-sizing:border-box;padding:40px 52px;display:flex;flex-direction:column;gap:20px;background:#f5f5f7">
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:14px;color:#636366">Pleadli DPP · version 3 · files, papers, roles, and one vocabulary shared with Police</div>
+    <h1 style="margin:0;font-size:34px;line-height:1.1;font-weight:600;letter-spacing:-0.02em">A matter is not one file. The app follows the real paper.</h1>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div class="lbl">ONE MATTER, SEVERAL FILES, EACH WITH ITS OWN NUMBER AND HOLDER</div>
+    <div style="display:flex;gap:10px;align-items:stretch">
+      <div class="fam"><div style="font-size:14px;font-weight:600">Police file</div><div style="font-size:12px;color:#4a4a4f;line-height:1.4">Station. CRB number. Comes in with a forwarding minute and goes back after perusal.</div><div style="font-size:11px;color:#636366">Arrives in the Inbox</div></div>
+      <div class="fam" style="border:2px solid #0071e3"><div style="font-size:14px;font-weight:600">ODPP file</div><div style="font-size:12px;color:#4a4a4f;line-height:1.4">The prosecutor. ODPP registration number, a coloured cover, entered in the register. This is what the app calls a File.</div><div style="font-size:11px;color:#0058b0;font-weight:600">Files</div></div>
+      <div class="fam"><div style="font-size:14px;font-weight:600">Court file</div><div style="font-size:12px;color:#4a4a4f;line-height:1.4">Court registry. Court case number, written back on the ODPP file when the charge sheet is filed.</div><div style="font-size:11px;color:#636366">Linked to the file</div></div>
+      <div class="fam"><div style="font-size:14px;font-weight:600">Related ODPP files</div><div style="font-size:12px;color:#4a4a4f;line-height:1.4">A bail application, an appeal, a revision: each its own registration and cover, linked to the trial.</div><div style="font-size:11px;color:#636366">Files, "Related" strip</div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span class="pill" style="background:#fbd9e3;color:#8a1f47">Pink: perusal and trial</span><span class="pill" style="background:#fbefb5;color:#5e4900">Yellow: applications</span><span class="pill" style="background:#d6efdc;color:#14532d">Green: appeals</span><span class="pill" style="background:#d9e6fb;color:#0b3d82">Blue: revisions</span>
+      <span style="font-size:12px;color:#4a4a4f">Charges with different facts get separate ODPP numbers, so one police file can become several ODPP files.</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:18px;align-items:stretch;flex:1 1 auto">
+    <div class="card" style="flex:1.15 1 0;min-width:0;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:19px;font-weight:600">The six places, and the words</div><div style="font-size:12px;color:#636366">same words as Pleadli Police</div></div>
+      <div class="row"><b>Today</b><span>What needs you now, and "Continue" for work you left half done.</span></div>
+      <div class="row"><b>Inbox</b><span>Everything that arrives: Police files, files returned by Police, court papers, complaints.</span></div>
+      <div class="row"><b>Files</b><span>The office's own word for its work, used for trial files too. Papers are the scans and typed documents inside a file.</span></div>
+      <div class="row"><b>Diary</b><span>Court days and deadlines. Prosecutors keep a diary and read the court's cause list.</span></div>
+      <div class="row"><b>Registry</b><span>The real name of the part that receives, stamps, registers, gives out files and keeps the registers. Supervisors and registry staff only.</span></div>
+      <div class="row"><b>Settings</b><span>You, the office, the legal guide, Assist, backup, security.</span></div>
+      <div style="font-size:12px;color:#636366;line-height:1.45;border-top:1px solid #e8e8ed;padding-top:9px">Always present: Search (files, people, papers, law sections) and Assist, a side panel that is off unless asked.</div>
+    </div>
+
+    <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:18px">
+      <div class="card">
+        <div style="font-size:19px;font-weight:600;margin-bottom:6px">Who sees what</div>
+        <table class="t"><tbody>
+          <tr><td>Registry clerk</td><td>Inbox, registers. Receives, stamps, registers, dispatches.</td></tr>
+          <tr><td>Allocating officer</td><td>Registry. Gives out files within 3 days, sooner for the cells.</td></tr>
+          <tr><td>State attorney</td><td>Today, Inbox, Files, Diary. Perusal, court, appeals.</td></tr>
+          <tr><td>Director</td><td>Adds the Director-only decisions and approvals.</td></tr>
+        </tbody></table>
+      </div>
+      <div class="card" style="flex:1 1 auto;display:flex;flex-direction:column;gap:7px">
+        <div style="font-size:19px;font-weight:600">Three rules for everything</div>
+        <div style="font-size:13px;color:#4a4a4f;line-height:1.5"><b>Paper first.</b> Scan or type, by hand, every time. Assist is a side panel and never needed.</div>
+        <div style="font-size:13px;color:#4a4a4f;line-height:1.5"><b>One file, every view.</b> Today, Inbox, Diary and Registry only list files; each line opens the same file.</div>
+        <div style="font-size:13px;color:#4a4a4f;line-height:1.5"><b>Rules the office can edit.</b> Offences, time limits and wording sit in a plain "Legal guide" that staff keep up to date themselves.</div>
+      </div>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#636366;line-height:1.45">Based on the DPP's 2014 standards and 2023 charging guidelines, and a practitioner manual's description of police files. Names and numbers are fictional.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

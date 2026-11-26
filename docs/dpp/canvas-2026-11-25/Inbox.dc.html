@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DPP Inbox</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#ffffff}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:15px;color:#1d1d1f;text-decoration:none}
+.nav svg{width:18px;height:18px;fill:none;stroke:#4a4a4f;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:0 0 18px}
+.nav.on{background:#e4e4e9;font-weight:600}
+.nav .n{margin-left:auto;font-size:12px;color:#636366}
+.btn{display:inline-block;padding:10px 18px;border-radius:10px;background:#0071e3;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none}
+.btn2{display:inline-block;padding:10px 18px;border-radius:10px;background:#ececf0;color:#1d1d1f;font-size:15px;font-weight:600;text-decoration:none}
+.tab{font-size:14px;padding:7px 14px;border-radius:999px;color:#4a4a4f;text-decoration:none;white-space:nowrap}
+.tab.on{background:#1d1d1f;color:#ffffff;font-weight:600}
+.item{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;text-decoration:none;color:#1d1d1f}
+.item.sel{background:#eef5ff}
+.bar{width:5px;align-self:stretch;border-radius:3px;flex:0 0 5px}
+.kind{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;display:inline-block}
+.clock{font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.sec{font-size:12px;color:#636366;font-weight:600;letter-spacing:0.03em;padding:18px 16px 6px}
+.lbl{font-size:12px;color:#636366;font-weight:600;letter-spacing:0.03em}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:960px;background:#ffffff">
+  <div style="flex:0 0 240px;box-sizing:border-box;background:#f5f5f7;border-right:1px solid #e8e8ed;padding:22px 14px;display:flex;flex-direction:column;gap:3px">
+    <div style="padding:0 12px 14px;font-size:17px;font-weight:600">Pleadli DPP</div>
+    <div style="margin:0 4px 12px;padding:8px 12px;border-radius:10px;background:#ececf0;font-size:14px;color:#636366;display:flex;justify-content:space-between"><span>Search</span><span>Ctrl K</span></div>
+    <a class="nav" href="Today.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Today<span class="n">5</span></a>
+    <a class="nav on" href="Inbox.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg>Inbox<span class="n" style="color:#1d1d1f">8</span></a>
+    <a class="nav" href="Cases.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5h8v2"/></svg>Files<span class="n">64</span></a>
+    <a class="nav" href="Diary.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Diary</a>
+    <a class="nav" href="Office.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12M9 20v-6h6v6"/></svg>Registry</a>
+    <div style="flex:1 1 auto"></div>
+    <div style="margin:0 4px 10px;padding:12px 14px;border-radius:12px;background:#ffffff;border:1px solid #e0e0e5;font-size:14px;display:flex;flex-direction:column;gap:2px"><b style="font-weight:600">Assist</b><span style="font-size:12px;color:#636366">Ask about any case or the law</span></div>
+    <a class="nav" href="Inbox.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Settings</a>
+    <div style="padding:8px 12px;font-size:12px;color:#636366;line-height:1.4">Senior State Attorney<br>Fictional Station, Kampala</div>
+  </div>
+
+  <div style="flex:999 1 600px;min-width:0;display:flex;flex-wrap:wrap">
+    <div style="flex:1 1 520px;min-width:0;box-sizing:border-box;padding:34px 24px 24px 40px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-0.02em">Inbox</h1>
+          <div style="font-size:15px;color:#4a4a4f">8 items. 2 need you today.</div>
+        </div>
+        <div style="display:flex;gap:8px"><a class="btn2" href="Inbox.dc.html">Import</a><a class="btn" href="Quick.dc.html">Review the files</a></div>
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <a class="tab on" href="Inbox.dc.html">All 8</a><a class="tab" href="Inbox.dc.html">Police files 3</a><a class="tab" href="Inbox.dc.html">Returned by Police 1</a><a class="tab" href="Inbox.dc.html">Court papers 3</a><a class="tab" href="Inbox.dc.html">Complaints 1</a>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="flex:1 1 220px;padding:9px 14px;border-radius:10px;background:#f5f5f7;font-size:14px;color:#636366">Find in the inbox: name, offence, station, reference</div>
+        <div style="padding:9px 14px;border-radius:10px;background:#f5f5f7;font-size:14px;color:#4a4a4f">All stations</div>
+        <div style="padding:9px 14px;border-radius:10px;background:#f5f5f7;font-size:14px;color:#4a4a4f">Most urgent first</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column">
+        <div class="sec" style="padding-top:6px">NEEDS YOU TODAY</div>
+        <a class="item sel" href="Read.dc.html">
+          <div class="bar" style="background:#f2a3bb"></div>
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:16px;font-weight:600">Okello John, theft</span><span class="kind" style="background:#fbd9e3;color:#8a1f47">Police file</span></div>
+            <div style="font-size:13px;color:#4a4a4f">CRB 214/2026 · Buganda Road CPS · 6 papers · postbox 08:12</div>
+          </div>
+          <span class="clock" style="background:#fff1e6;color:#9a3a00">In the cells · decide today</span>
+        </a>
+        <a class="item" href="Inbox.dc.html">
+          <div class="bar" style="background:#9fc0f2"></div>
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:16px;font-weight:600">Opio v. Uganda, bail application</span><span class="kind" style="background:#fbefb5;color:#5e4900">Court paper</span></div>
+            <div style="font-size:13px;color:#4a4a4f">Chief Magistrate's Court, Kampala · served by the registry 09:40 · capital offence, oppose</div>
+          </div>
+          <span class="clock" style="background:#fff1e6;color:#9a3a00">Hearing tomorrow 10:00</span>
+        </a>
+
+        <div class="sec">THIS WEEK</div>
+        <a class="item" href="Inbox.dc.html">
+          <div class="bar" style="background:#f2a3bb"></div>
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:16px;font-weight:600">Nabukenya Rose, false pretence</span><span class="kind" style="background:#e4e4e9;color:#3a3a3f">Returned by Police</span></div>
+            <div style="font-size:13px;color:#4a4a4f">CRB 301/2026 · answers your advice of 4 Nov · certified bank records now attached</div>
+          </div>
+          <span class="clock" style="background:#f0f0f3;color:#4a4a4f">Day 2 of 30</span>
+        </a>
+        <a class="item" href="Inbox.dc.html">
+          <div class="bar" style="background:#b9e0c3"></div>
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:16px;font-weight:600">Uganda v. Ssemwogerere, record of proceedings</span><span class="kind" style="background:#d6efdc;color:#14532d">Appeal</span></div>
+            <div style="font-size:13px;color:#4a4a4f">High Court · record served on the office · read it and decide the grounds</div>
+          </div>
+          <span class="clock" style="background:#f0f0f3;color:#4a4a4f">Memorandum due in 12 days</span>
+        </a>
+        <a class="item" href="Inbox.dc.html">
+          <div class="bar" style="background:#f2a3bb"></div>
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:16px;font-weight:600">Kato Samuel, assault</span><span class="kind" style="background:#fbd9e3;color:#8a1f47">Police file</span></div>
+            <div style="font-size:13px;color:#4a4a4f">CRB 118/2026 · Nsambya CPS · imported from a file · medical form attached</div>
+          </div>
+          <span class="clock" style="background:#f0f0f3;color:#4a4a4f">On police bond</span>
+        </a>
+        <a class="item" href="Inbox.dc.html">
+          <div class="bar" style="background:#f2a3bb"></div>
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:16px;font-weight:600">Atim Grace, theft by servant</span><span class="kind" style="background:#fbd9e3;color:#8a1f47">Police file</span></div>
+            <div style="font-size:13px;color:#4a4a4f">CRB 322/2026 · Kira Road CPS · postbox yesterday</div>
+          </div>
+          <span class="clock" style="background:#f0f0f3;color:#4a4a4f">Day 1 of 30</span>
+        </a>
+        <a class="item" href="Inbox.dc.html">
+          <div class="bar" style="background:#d2d2d7"></div>
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:16px;font-weight:600">Complaint: relative of a person held at Kira Road</span><span class="kind" style="background:#e4e4e9;color:#3a3a3f">Complaint</span></div>
+            <div style="font-size:13px;color:#4a4a4f">Written letter, stamped by the registry · asks for the file to be called for</div>
+          </div>
+          <span class="clock" style="background:#f0f0f3;color:#4a4a4f">Reply due in 5 days</span>
+        </a>
+        <a class="item" href="Inbox.dc.html">
+          <div class="bar" style="background:#fbe08a"></div>
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:16px;font-weight:600">Hearing notice, Uganda v. Mugisha</span><span class="kind" style="background:#fbefb5;color:#5e4900">Court paper</span></div>
+            <div style="font-size:13px;color:#4a4a4f">High Court, Kampala · 3 Dec 09:00 · goes onto the case and the diary when you accept it</div>
+          </div>
+          <span class="clock" style="background:#f0f0f3;color:#4a4a4f">In 8 days</span>
+        </a>
+      </div>
+    </div>
+
+    <div style="flex:0 0 360px;box-sizing:border-box;border-left:1px solid #e8e8ed;background:#fafafc;padding:34px 28px;display:flex;flex-direction:column;gap:16px">
+      <div class="lbl">SELECTED</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:22px;font-weight:600;line-height:1.2">Okello John, theft</div>
+        <div style="font-size:13px;color:#4a4a4f">CRB 214/2026 · Buganda Road CPS · D/Sgt Namutebi</div>
+      </div>
+      <div style="font-size:14px;color:#3a3a3f;line-height:1.5;background:#ffffff;border:1px solid #e8e8ed;border-radius:12px;padding:12px 14px">Phone taken at Owino Market on 12 July. Two eyewitnesses, phone recovered. <b style="font-weight:600">Assist leans: sanction.</b> Nothing missing found.</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="lbl">IN THE FILE</div>
+        <div style="font-size:14px;color:#3a3a3f;line-height:1.7">Charge sheet · 2 witness statements · statement of the accused · arresting officer · exhibit list</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="lbl">ALREADY KNOWN</div>
+        <div style="font-size:14px;color:#3a3a3f;line-height:1.5">No earlier DPP file for this person. The complainant appears in no other case.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <a class="btn" href="Read.dc.html" style="text-align:center">Open case</a>
+        <a class="btn2" href="Quick.dc.html" style="text-align:center">Quick review with Assist</a>
+      </div>
+      <div style="font-size:12px;color:#636366;line-height:1.45">Opening registers the file, gives it its number and puts your name on it, like the received stamp and register on paper.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":960}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

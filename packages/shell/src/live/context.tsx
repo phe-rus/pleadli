@@ -81,7 +81,7 @@ const searchOf = (query: string) => Object.fromEntries(new URLSearchParams(query
  * Saved on this machine under the key the app passes. */
 export const WorkspaceProvider: FC<PropsWithChildren<{ config: ShellConfig; storageKey: string }>> = ({ config, storageKey, children }) => {
   const { pathname, search } = useLocationParts()
-  const rules = useMemo<Rules>(() => ({ maxRecents: config.maxRecents, rightTemporary: config.rightPanelTemporary, home: { key: config.home.key, kind: config.home.kind, to: config.home.to, title: config.home.title(), pinned: true } }), [config])
+  const rules = useMemo<Rules>(() => ({ maxRecents: config.maxRecents, maxTabs: config.maxTabs, drawn: config.strip?.shows, rightTemporary: config.rightPanelTemporary, home: { key: config.home.key, kind: config.home.kind, to: config.home.to, title: config.home.title(), pinned: true } }), [config])
   const [state, setState] = useState<WorkspaceState>(() =>
     parseWorkspace(readSaved(storageKey), rules, {
       resolves: (to, key) => config.identity.resolve({ pathname: to.split('?')[0], search: searchOf(to.split('?')[1] ?? '') })?.key === key,

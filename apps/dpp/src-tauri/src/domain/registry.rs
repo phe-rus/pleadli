@@ -11,7 +11,9 @@ use serde_json::{json, Value};
 use sqlx::{FromRow, SqlitePool};
 use uuid::Uuid;
 
+use super::capabilities::{self, Capability, Set};
 use super::error::{clean, invalid, DomainError};
+use super::staff::{Actor, Protection};
 
 pub const REGISTERS: &[&str] = &["incoming", "outgoing", "movement"];
 
@@ -138,26 +140,46 @@ pub struct GiveOut {
 }
 
 /// Gives a file out: one line in the movement register, and the file's holder
-/// changes when it went to a member of staff.
-pub async fn give_out(pool: &SqlitePool, input: GiveOut, actor: Option<&str>) -> Result<(), DomainError> {
+/// changes when it went to a member of staff. Who may do which is the
+/// capabilities' to say: giving a file nobody holds is allocating (or, to
+/// oneself, taking it); moving one that someone holds is reassigning. Whoever
+/// receives a file must be someone who can review it.
+pub async fn give_out(pool: &SqlitePool, input: GiveOut, by: &Actor, power: &Set, protection: Protection) -> Result<(), DomainError> {
     let staff = clean(input.staff_id);
     let named = clean(input.given_to);
+    let holder: Option<Option<String>> = sqlx::query_scalar("SELECT assigned_to FROM prosecution_files WHERE id = ?").bind(&input.prosecution_file_id).fetch_optional(pool).await?;
+    let Some(holder) = holder else {
+        return Err(DomainError::NotFound("File not found.".into()));
+    };
     let given = match (&staff, named) {
         (Some(id), _) => {
             let name: Option<String> = sqlx::query_scalar("SELECT name FROM staff WHERE id = ? AND active = 1").bind(id).fetch_optional(pool).await?;
-            match name {
-                Some(n) => n,
-                None => return invalid("That person is not on the office's list."),
+            let Some(name) = name else {
+                return invalid("That person is not on the office's list.");
+            };
+            let target = capabilities::for_staff(pool, protection, id).await?.unwrap_or_default();
+            if !target.can_hold() {
+                return invalid(&format!("{name} does not review files, so a file cannot be given to them. Choose a prosecutor."));
             }
+            match (&holder, id == &by.id) {
+                (Some(h), _) if h == id => return invalid(&format!("{name} already holds this file.")),
+                // Taking a file nobody holds. Whoever may give files out may also take one for themselves.
+                (None, true) if !power.self_assign && !power.allocate_files => return capabilities::require(power, Capability::SelfAssign).map(|_| ()),
+                (None, false) => capabilities::require(power, Capability::AllocateFiles)?,
+                // Anything that takes a file from a holder, to oneself or another, is a reassignment.
+                (Some(_), _) => capabilities::require(power, Capability::ReassignFiles)?,
+                (None, true) => {}
+            }
+            name
         }
-        (None, Some(n)) => n,
+        (None, Some(n)) => {
+            // Sending the paper file somewhere outside the office is only a register line.
+            capabilities::require(power, Capability::RegisterFiles)?;
+            n
+        }
         (None, None) => return invalid("Say who the file was given to."),
     };
-    let exists: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM prosecution_files WHERE id = ?").bind(&input.prosecution_file_id).fetch_one(pool).await?;
-    if exists == 0 {
-        return Err(DomainError::NotFound("File not found.".into()));
-    }
-    add(pool, "movement", &input.prosecution_file_id, now(), None, Some(&given), staff.as_deref(), clean(input.note).as_deref(), actor, None).await?;
+    add(pool, "movement", &input.prosecution_file_id, now(), None, Some(&given), staff.as_deref(), clean(input.note).as_deref(), Some(by.name.as_str()), None).await?;
     if let Some(id) = &staff {
         sqlx::query("UPDATE prosecution_files SET assigned_to = ? WHERE id = ?").bind(id).bind(&input.prosecution_file_id).execute(pool).await?;
     }

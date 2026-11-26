@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A file: Peruse</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#ffffff}
+.btn{display:inline-block;padding:10px 18px;border-radius:10px;background:#0071e3;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none}
+.step{display:flex;align-items:center;gap:8px;font-size:15px;color:#636366}
+.step b{display:inline-flex;width:24px;height:24px;border-radius:50%;background:#e4e4e9;color:#4a4a4f;align-items:center;justify-content:center;font-size:13px}
+.step.on{color:#1d1d1f;font-weight:600}
+.step.on b{background:#0071e3;color:#ffffff}
+.paper{display:flex;justify-content:space-between;gap:8px;padding:9px 12px;border-radius:8px;font-size:14px;color:#1d1d1f}
+.paper.on{background:#e4e4e9;font-weight:600}
+.hl{background:#fff3b0}
+</style>
+</helmet>
+<div style="min-height:900px;display:flex;flex-direction:column;background:#ffffff">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:18px 32px;border-bottom:1px solid #e8e8ed">
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <a href="Inbox.dc.html" style="font-size:14px;color:#0058b0;text-decoration:none">Inbox</a>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:20px;font-weight:600">Uganda v. Okello John</div>
+        <div style="font-size:13px;color:#636366">Theft · CRB 214/2026 · Buganda Road CPS · Investigating officer D/Sgt Namutebi</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:22px">
+      <div class="step on"><b>1</b>Peruse</div>
+      <div class="step"><b>2</b>Decide</div>
+      <div class="step"><b>3</b>Send</div>
+    </div>
+    <a class="btn" href="Decide.dc.html">Continue to Decide</a>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;flex:1 1 auto">
+    <div style="flex:0 0 250px;box-sizing:border-box;background:#f5f5f7;border-right:1px solid #e8e8ed;padding:20px 14px;display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:12px;color:#636366;font-weight:600;padding:0 12px 6px">FROM POLICE · 6 PAPERS</div>
+      <div class="paper"><span>Charge sheet</span><span style="color:#636366;font-weight:400">1 p</span></div>
+      <div class="paper on"><span>Statement, Akello M.</span><span style="color:#636366;font-weight:400">2 p</span></div>
+      <div class="paper"><span>Statement, Opio D.</span><span style="color:#636366;font-weight:400">2 p</span></div>
+      <div class="paper"><span>Statement of the accused</span><span style="color:#636366;font-weight:400">2 p</span></div>
+      <div class="paper"><span>Arresting officer</span><span style="color:#636366;font-weight:400">2 p</span></div>
+      <div class="paper"><span>Exhibit list and photo</span><span style="color:#636366;font-weight:400">2 p</span></div>
+      <div style="font-size:12px;color:#636366;font-weight:600;padding:20px 12px 6px">PEOPLE</div>
+      <div class="paper"><span>Okello John</span><span style="color:#636366;font-weight:400">accused</span></div>
+      <div class="paper"><span>Akello Mary</span><span style="color:#636366;font-weight:400">complainant</span></div>
+      <div class="paper"><span>Opio David</span><span style="color:#636366;font-weight:400">witness</span></div>
+      <div style="font-size:13px;color:#636366;line-height:1.45;padding:22px 12px 0">Each paper keeps its page order and the registry's received stamp, as on the police file.</div>
+    </div>
+
+    <div style="flex:999 1 420px;min-width:0;box-sizing:border-box;background:#e8e8ed;padding:28px;display:flex;justify-content:center">
+      <div style="background:#ffffff;width:100%;max-width:560px;box-sizing:border-box;padding:40px 44px;box-shadow:0 1px 3px rgba(0,0,0,0.12);display:flex;flex-direction:column;gap:14px;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.6;color:#1d1d1f;align-self:flex-start">
+        <div style="font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:#636366;display:flex;justify-content:space-between"><span>Statement of Akello Mary, page 1 of 2</span><span>Received: Buganda Road CPS</span></div>
+        <div style="font-weight:700;text-align:center;font-size:16px">STATEMENT OF WITNESS</div>
+        <div>I am Akello Mary, a trader at Owino Market, aged 34 years. On Sunday 12 July 2026 at about 4:30 pm I was at my stall when <span class="hl">a man I know as John Okello took my phone from the table and ran towards the taxi park.</span> I shouted and Opio David, who sells next to me, ran after him.</div>
+        <div>I have known the man for about two years because he sells socks near the gate. <span class="hl">I saw his face clearly because the market was open and it was daylight.</span> The phone is a black Tecno worth about Shs 450,000.</div>
+        <div>Later the same day police brought the phone to me at the station and I identified it by the crack on the lower right corner.</div>
+        <div style="text-align:right;font-family:-apple-system,system-ui,sans-serif;font-size:12px;color:#636366">continues on page 2</div>
+      </div>
+    </div>
+
+    <div style="flex:0 0 330px;box-sizing:border-box;background:#f5f5f7;border-left:1px solid #e8e8ed;padding:22px 22px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:16px;font-weight:600">Assist</div><div style="font-size:12px;color:#636366">Read 6 papers</div></div>
+      <div style="font-size:14px;color:#3a3a3f;line-height:1.5">A man took the complainant's phone at Owino Market on 12 July. She knows him. A neighbour chased him and police recovered the phone.</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12px;color:#636366;font-weight:600">EVIDENCE</div>
+        <div style="font-size:14px;line-height:1.45">Two eyewitnesses agree on time and place. Phone identified by its crack. Accused's statement admits being at the market.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12px;color:#636366;font-weight:600">GAPS</div>
+        <div style="font-size:14px;line-height:1.45">None found. The arresting officer's statement covers the recovery of the phone.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12px;color:#636366;font-weight:600">POSSIBLE OFFENCE</div>
+        <div style="font-size:14px;line-height:1.45">Theft, Penal Code Act ss. 254(1), 261.</div>
+      </div>
+      <div style="font-size:12px;color:#636366;line-height:1.45;border-top:1px solid #e0e0e5;padding-top:14px">Highlights in the paper show where each point comes from. Assist can be wrong: read the papers, then decide.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

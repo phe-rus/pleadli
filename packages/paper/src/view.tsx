@@ -1,9 +1,10 @@
-import { File01Icon, PrinterIcon } from '@hugeicons/core-free-icons'
+import { ArrowDown01Icon, File01Icon, PrinterIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@pleadli/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@pleadli/ui/dropdown-menu'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { usePaperApp, type OfficeApps, type PaperStamp } from './context'
+import { englishLabels, usePaperApp, type OfficeApps, type PaperStamp } from './context'
 import { nextPaint, printSheet, safeFileName, sheetWording } from './output'
 import { DOCX_MIME, docxFile, pdfFile } from './files'
 import { PaperSheet } from './sheet'
@@ -162,22 +163,27 @@ export function PaperView({
         )}
         <div className="flex flex-wrap items-center gap-2">
           {last && unchanged && app.formatDate && <span className="text-xs text-muted-foreground">{labels.lastPrinted(app.formatDate(last.printedAt))}</span>}
-          {app.openFile && office && (
-            // Always offered: Word where Office is installed, else LibreOffice,
-            // else whatever program this computer opens Word files with.
-            <Button size="sm" variant="ghost" disabled={busy} onClick={openInOffice}>
-              <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
-              {office.word ? labels.openInWord : office.libreOffice ? labels.openInLibreOffice : labels.openElsewhere}
-            </Button>
-          )}
-          <Button size="sm" variant="ghost" disabled={busy} onClick={word}>
-            <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
-            {labels.word}
-          </Button>
-          <Button size="sm" variant="ghost" disabled={busy} onClick={pdf}>
-            <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
-            {labels.pdf}
-          </Button>
+          {/* One primary action (print), and the other ways to take a copy in one menu. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button size="sm" variant="ghost" disabled={busy}>
+                  <HugeiconsIcon icon={File01Icon} data-icon="inline-start" />
+                  {labels.saveCopy ?? englishLabels.saveCopy}
+                  <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-56">
+              {app.openFile && office && (
+                // Always offered: Word where Office is installed, else LibreOffice,
+                // else whatever program this computer opens Word files with.
+                <DropdownMenuItem onClick={openInOffice}>{office.word ? labels.openInWord : office.libreOffice ? labels.openInLibreOffice : labels.openElsewhere}</DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={word}>{labels.word}</DropdownMenuItem>
+              <DropdownMenuItem onClick={pdf}>{labels.pdf}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button size="sm" disabled={busy} onClick={print} title={office?.os === 'windows' ? labels.printHintWindows : labels.printHint}>
             <HugeiconsIcon icon={PrinterIcon} data-icon="inline-start" />
             {busy ? labels.saving : labels.print}

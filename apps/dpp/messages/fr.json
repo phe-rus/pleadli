@@ -250,8 +250,8 @@
   },
   "direction": {
     "editor": {
-    "due": "Avant le",
-    "due_aria": "Date d'échéance de l'instruction {number}",
+      "due": "Avant le",
+      "due_aria": "Date d'échéance de l'instruction {number}",
       "add": "Ajouter une instruction",
       "description": "Indiquez ce que la police doit faire. Au retour du dossier, vous noterez si chaque instruction a été exécutée.",
       "from_unnamed": "Personne non précisée",
@@ -552,9 +552,10 @@
     "file": "Dossier",
     "index": "Le dossier",
     "details": "Détails",
-    "case": "Affaire",
+    "case": "Détail du document",
     "activity": "Historique",
-    "people": "Personnes"
+    "people": "Personnes",
+    "related": "Documents liés"
   },
   "file_ws": {
     "crumb_files": "Dossiers",
@@ -829,7 +830,7 @@
       "documents": "Documents",
       "incoming": "Arrivées de la police",
       "intake": "Nouveaux dossiers",
-      "overview": "Aujourd'hui",
+      "overview": "Aperçu",
       "people": "Personnes",
       "police_connections": "Connexions avec la police",
       "police_material": "Éléments de la police",
@@ -838,10 +839,10 @@
       "returned": "Renvoyés à la police",
       "search": "Rechercher",
       "settings": "Réglages",
-      "today": "Aujourd'hui",
+      "today": "Aperçu",
       "files": "Dossiers",
       "board": "Tableau",
-      "calendar": "Agenda",
+      "calendar": "Agenda du bureau",
       "statistics": "Statistiques",
       "cases": "Affaires",
       "tasks": "Tâches",
@@ -851,7 +852,7 @@
       "recent": "Récents",
       "postbox": "Boîte postale",
       "courts": "Tribunaux",
-      "registry": "Registre"
+      "registry": "Registre du bureau"
     },
     "section": {
       "files": "Dossiers",
@@ -1459,7 +1460,9 @@
       "password_description": "Choisissez un nouveau mot de passe d'au moins 12 caractères.",
       "pin": "Votre code PIN",
       "pin_description": "Choisissez un nouveau code PIN à 6 chiffres. Gardez-le pour vous."
-    }
+    },
+    "find": "Chercher un réglage",
+    "find_none": "Aucun réglage ne correspond."
   },
   "staff": {
     "active": "Peut utiliser l'application",
@@ -1557,7 +1560,7 @@
     "document": "Document",
     "file": "Dossier",
     "files": "Dossiers",
-    "overview": "Aujourd'hui"
+    "overview": "Aperçu"
   },
   "theme": {
     "dark": "Sombre",
@@ -1599,7 +1602,7 @@
       "close_shortcut": "Fermer (Ctrl W)",
       "next": "Onglet suivant",
       "next_shortcut": "Onglet suivant (Ctrl Tab)",
-      "open_tabs": "Onglets ouverts",
+      "open_tabs": "Dossiers ouverts",
       "pin": "Épingler",
       "pin_named": "Épingler {title}",
       "previous": "Onglet précédent",
@@ -2369,7 +2372,8 @@
       "evidence": "Pièce à conviction…",
       "charge": "Chef d’accusation proposé…"
     },
-    "write_hint": "Écrivez sur la pièce avec un stylet, le doigt ou la souris. L’écriture reste sur la copie du bureau et s’imprime avec elle."
+    "write_hint": "Écrivez sur la pièce avec un stylet, le doigt ou la souris. L’écriture reste sur la copie du bureau et s’imprime avec elle.",
+    "save_copy": "Enregistrer une copie"
   },
   "folder": {
     "receive": "Nouveaux",
@@ -2962,8 +2966,19 @@
     "in_file": "DANS LE DOSSIER",
     "no_papers": "Aucune pièce listée pour l'instant.",
     "open_file": "Ouvrir le dossier",
-    "group": { "today": "À traiter aujourd'hui", "waiting": "En attente" },
-    "col": { "file": "Dossier", "received": "Attente", "from": "De", "accused": "Accusé", "offence": "Infraction", "papers": "Pièces", "clock": "Suite" },
+    "group": {
+      "today": "VOUS ATTEND AUJOURD'HUI",
+      "waiting": "EN ATTENTE"
+    },
+    "col": {
+      "file": "Dossier",
+      "received": "Attente",
+      "from": "De",
+      "accused": "Accusé",
+      "offence": "Infraction",
+      "papers": "Pièces",
+      "clock": "Suite"
+    },
     "scan": "Numérisation",
     "needs_title": "CE QUE {offence} EXIGE D'ORDINAIRE",
     "needs_none_title": "CE QUE L'INFRACTION EXIGE D'ORDINAIRE",
@@ -2990,10 +3005,6 @@
     "kind": {
       "police_file": "Dossier de police",
       "returned": "Renvoyé par la police"
-    },
-    "group": {
-      "today": "VOUS ATTEND AUJOURD'HUI",
-      "waiting": "EN ATTENTE"
     }
   },
   "today": {
@@ -3056,6 +3067,62 @@
     "overdue": "En retard",
     "due": "Échéance {date}",
     "mine": "Mes dossiers",
-    "office": "Tout le bureau"
+    "office": "Tout le bureau",
+    "tab_needs_you": "Quelque chose à faire sur ce dossier",
+    "tab_overdue": "Un délai est dépassé sur ce dossier",
+    "ob_allocate": "Attribuer le dossier",
+    "ob_read": "Lire le dossier de police",
+    "ob_decide": "Prendre la décision",
+    "ob_director_decision": "En attente de la décision du Directeur",
+    "ob_prepare": "Rédiger les pièces",
+    "ob_send": "Envoyer la réponse",
+    "ob_police_reply": "Réponse de la police en retard",
+    "ob_hearing": "Audience",
+    "ob_time_limit": "Délai",
+    "ob_task": "Tâche",
+    "limit_allocation": "Attribuer le dossier",
+    "limit_complaint_reply": "Répondre au plaignant",
+    "limit_adjournment_review": "Revoir les renvois répétés",
+    "also_owed": "Aussi à faire sur ce dossier",
+    "owed_mine": "Pour vous",
+    "owed_other": "Pour quelqu'un d'autre",
+    "owed_several": "{count} choses à faire",
+    "take": "Prendre ce dossier",
+    "taken": "Le dossier est à vous.",
+    "give_failed": "Le dossier n'a pas pu être attribué.",
+    "and_more": "et {count} autre(s)"
+  },
+  "caps": {
+    "title": "Qui peut faire quoi avec les dossiers",
+    "intro": "Administrer l'application et poursuivre sont deux métiers. Chaque pouvoir ci-dessous est donné à un rôle séparément. Être administrateur n'en donne aucun.",
+    "role_administrator": "Administrateur",
+    "role_prosecutor": "Procureur",
+    "role_clerk": "Greffier",
+    "role_director": "Le Directeur",
+    "role_director_note": "Le Directeur détient toujours tous les pouvoirs ci-dessous et prend seul les décisions réservées au Directeur.",
+    "register_files": "Enregistrer les dossiers",
+    "register_files_hint": "Inscrire un dossier dans les registres à son arrivée.",
+    "allocate_files": "Attribuer les dossiers",
+    "allocate_files_hint": "Confier à un procureur un dossier que personne ne détient.",
+    "reassign_files": "Déplacer les dossiers entre personnes",
+    "reassign_files_hint": "Retirer un dossier à une personne pour le confier à une autre.",
+    "self_assign": "Prendre un dossier pour soi",
+    "self_assign_hint": "Prendre un dossier que personne ne détient.",
+    "review_files": "Examiner et décider",
+    "review_files_hint": "Lire les dossiers, examiner les preuves, décider et préparer les pièces. Seules ces personnes peuvent recevoir un dossier.",
+    "unconfirmed": "Non confirmé : qui attribue les dossiers relève de la politique du bureau, qui n'est pas arrêtée. Ce sont des choix de départ. Modifiez-les ici quand le bureau aura décidé.",
+    "solo": "Sans connexion, il n'y a qu'une personne, qui peut tout faire.",
+    "saved": "Enregistré",
+    "failed": "Ce changement n'a pas pu être enregistré",
+    "only_admin": "Seul un administrateur peut modifier ceci.",
+    "hearing_notice": "Jours avant une audience pour se préparer",
+    "hearing_notice_hint": "Une audience à ce nombre de jours apparaît parmi ce qui attend le procureur. Un choix de travail, pas une règle : réglez ce que veut le bureau.",
+    "nav": "Qui fait quoi",
+    "about": "Qui peut enregistrer, attribuer et examiner les dossiers.",
+    "loading": "Chargement des droits",
+    "load_failed": "Les droits n'ont pas pu être chargés."
+  },
+  "choice": {
+    "none": "Choisir"
   }
 }

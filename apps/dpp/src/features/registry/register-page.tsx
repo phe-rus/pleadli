@@ -1,6 +1,7 @@
 import { ChoiceSelect } from '@/components/choice-select'
 import { filesOptions } from '@/features/prosecution-files/queries'
 import { fileReference } from '@/features/prosecution-files/schema'
+import { grantsOptions, useCapabilities } from '@/features/capabilities'
 import { staffOptions } from '@/features/installation/queries'
 import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
@@ -19,6 +20,9 @@ const selectClass = 'h-9 rounded-lg border border-input bg-transparent px-2 text
 function GiveOut() {
   const { data: files = [] } = useQuery(filesOptions('all'))
   const { data: staff = [] } = useQuery(staffOptions())
+  const { data: grants = [] } = useQuery(grantsOptions())
+  // Only people who review files can be given one.
+  const holders = staff.filter((s) => s.active && (s.isDpp || grants.some((g) => g.role === s.role && g.capability === 'review_files' && g.granted)))
   const give = useGiveOut()
   const [file, setFile] = useState('')
   const [who, setWho] = useState('')
@@ -51,7 +55,7 @@ function GiveOut() {
           <span className="text-xs text-muted-foreground">{m["registers.to_staff"]()}</span>
           <ChoiceSelect className={selectClass} value={who} onChange={(e) => setWho(e.target.value)}>
             <option value="" />
-            {staff.filter((s) => s.active).map((s) => (
+            {holders.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
@@ -114,6 +118,7 @@ function StampCell({ entry }: { entry: RegisterEntry }) {
  * printable as they stand. Below the book, who holds what and the places the
  * registry also reaches (stations, courts, postbox, people, workload). */
 export function RegisterPage({ register }: { register: RegisterId }) {
+  const caps = useCapabilities()
   const { data: years = [] } = useYears()
   const [picked, setPicked] = useState<number | null>(null)
   const year = picked ?? years[0] ?? new Date().getFullYear()
@@ -164,7 +169,7 @@ export function RegisterPage({ register }: { register: RegisterId }) {
         </Link>
       </nav>
 
-      {register === 'movement' && <GiveOut />}
+      {register === 'movement' && (caps.allocateFiles || caps.reassignFiles || caps.selfAssign || caps.registerFiles) && <GiveOut />}
 
       <div className="overflow-x-auto">
       <table className="w-full min-w-[72rem] border-collapse text-left text-sm">

@@ -250,8 +250,8 @@
   },
   "direction": {
     "editor": {
-    "due": "By",
-    "due_aria": "Date direction {number} is due",
+      "due": "By",
+      "due_aria": "Date direction {number} is due",
       "add": "Add a direction",
       "description": "Say what Police are to do. When the file comes back you record whether each was met.",
       "from_unnamed": "From whom is not named",
@@ -552,9 +552,10 @@
     "file": "File",
     "index": "The file",
     "details": "Details",
-    "case": "Case",
-    "activity": "Activity",
-    "people": "People"
+    "case": "Document detail",
+    "activity": "History",
+    "people": "People",
+    "related": "Related documents"
   },
   "file_ws": {
     "crumb_files": "Case files",
@@ -829,7 +830,7 @@
       "documents": "Documents",
       "incoming": "Incoming",
       "intake": "Intake",
-      "overview": "Today",
+      "overview": "Overview",
       "people": "People",
       "police_connections": "Police connections",
       "police_material": "Police material",
@@ -838,10 +839,10 @@
       "returned": "Returned to Police",
       "search": "Search",
       "settings": "Settings",
-      "today": "Today",
+      "today": "Overview",
       "files": "Case files",
       "board": "Board",
-      "calendar": "Diary",
+      "calendar": "Office diary",
       "statistics": "Statistics",
       "cases": "Cases",
       "tasks": "Tasks",
@@ -851,7 +852,7 @@
       "recent": "Recent",
       "postbox": "Postbox",
       "courts": "Courts",
-      "registry": "Registry"
+      "registry": "Office registry"
     },
     "section": {
       "files": "Files",
@@ -1459,7 +1460,9 @@
       "password_description": "Choose a new password of at least 12 characters.",
       "pin": "Your PIN",
       "pin_description": "Choose a new 6-digit PIN. Keep it to yourself."
-    }
+    },
+    "find": "Find a setting",
+    "find_none": "No setting matches that."
   },
   "staff": {
     "active": "Can use the app",
@@ -1557,7 +1560,7 @@
     "document": "Document",
     "file": "File",
     "files": "Files",
-    "overview": "Today"
+    "overview": "Overview"
   },
   "theme": {
     "dark": "Dark",
@@ -1599,7 +1602,7 @@
       "close_shortcut": "Close (Ctrl W)",
       "next": "Next tab",
       "next_shortcut": "Next tab (Ctrl Tab)",
-      "open_tabs": "Open tabs",
+      "open_tabs": "Open files",
       "pin": "Pin",
       "pin_named": "Pin {title}",
       "previous": "Previous tab",
@@ -2369,7 +2372,8 @@
       "evidence": "Exhibit…",
       "charge": "Proposed charge…"
     },
-    "write_hint": "Write on the paper with a pen, a finger or the mouse. It is kept with this office's copy and printed with it."
+    "write_hint": "Write on the paper with a pen, a finger or the mouse. It is kept with this office's copy and printed with it.",
+    "save_copy": "Save a copy"
   },
   "folder": {
     "receive": "New",
@@ -2962,8 +2966,19 @@
     "in_file": "IN THE FILE",
     "no_papers": "No papers listed yet.",
     "open_file": "Open file",
-    "group": { "today": "Needs you today", "waiting": "Waiting" },
-    "col": { "file": "File", "received": "Waiting", "from": "From", "accused": "Accused", "offence": "Offence", "papers": "Papers", "clock": "Next" },
+    "group": {
+      "today": "NEEDS YOU TODAY",
+      "waiting": "WAITING"
+    },
+    "col": {
+      "file": "File",
+      "received": "Waiting",
+      "from": "From",
+      "accused": "Accused",
+      "offence": "Offence",
+      "papers": "Papers",
+      "clock": "Next"
+    },
     "scan": "Scan",
     "needs_title": "WHAT {offence} USUALLY NEEDS",
     "needs_none_title": "WHAT THE OFFENCE USUALLY NEEDS",
@@ -2990,10 +3005,6 @@
     "kind": {
       "police_file": "Police file",
       "returned": "Returned by Police"
-    },
-    "group": {
-      "today": "NEEDS YOU TODAY",
-      "waiting": "WAITING"
     }
   },
   "today": {
@@ -3056,6 +3067,62 @@
     "overdue": "Overdue",
     "due": "Due {date}",
     "mine": "Mine",
-    "office": "Whole office"
+    "office": "Whole office",
+    "tab_needs_you": "Something to do on this file",
+    "tab_overdue": "A time limit has passed on this file",
+    "ob_allocate": "Give the file out",
+    "ob_read": "Read the police file",
+    "ob_decide": "Take the decision",
+    "ob_director_decision": "Waiting for the Director to decide",
+    "ob_prepare": "Draft the papers",
+    "ob_send": "Send the answer",
+    "ob_police_reply": "Police reply is overdue",
+    "ob_hearing": "Hearing",
+    "ob_time_limit": "Time limit",
+    "ob_task": "Task",
+    "limit_allocation": "Give the file out",
+    "limit_complaint_reply": "Answer the complainant",
+    "limit_adjournment_review": "Review the repeated adjournments",
+    "also_owed": "Also owed on this file",
+    "owed_mine": "For you",
+    "owed_other": "For someone else",
+    "owed_several": "{count} things to do",
+    "take": "Take this file",
+    "taken": "The file is yours now.",
+    "give_failed": "The file could not be given out.",
+    "and_more": "and {count} more"
+  },
+  "caps": {
+    "title": "Who can do what with files",
+    "intro": "Running the application and prosecuting are different jobs. Each power below is given to a role on its own. Being an administrator does not give any of them.",
+    "role_administrator": "Administrator",
+    "role_prosecutor": "Prosecutor",
+    "role_clerk": "Clerk",
+    "role_director": "The Director",
+    "role_director_note": "The Director always holds every power below, and alone takes the decisions only the Director may take.",
+    "register_files": "Register files",
+    "register_files_hint": "Enter a file in the registers when it arrives.",
+    "allocate_files": "Give files out",
+    "allocate_files_hint": "Give a file nobody holds yet to a prosecutor.",
+    "reassign_files": "Move files between people",
+    "reassign_files_hint": "Take a file from one person and give it to another.",
+    "self_assign": "Take a file for oneself",
+    "self_assign_hint": "Take a file nobody holds yet.",
+    "review_files": "Review and decide",
+    "review_files_hint": "Read files, review the evidence, decide and prepare the papers. Only these people can be given a file.",
+    "unconfirmed": "Not confirmed: who gives files out is the office's own policy and has not been settled. These are starting choices. Change them here when the office decides.",
+    "solo": "With sign-in off there is one person, so that person can do everything.",
+    "saved": "Saved",
+    "failed": "Could not save that change",
+    "only_admin": "Only an administrator can change this.",
+    "hearing_notice": "Days before a hearing to prepare",
+    "hearing_notice_hint": "A hearing this many days away appears among what needs the prosecutor. A working choice, not a rule: set what the office wants.",
+    "nav": "Who does what",
+    "about": "Who may register, give out and review files.",
+    "loading": "Loading who can do what",
+    "load_failed": "Who can do what could not be loaded."
+  },
+  "choice": {
+    "none": "Choose"
   }
 }

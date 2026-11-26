@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { formatDate } from '@/lib/dates'
 import { referenceLabel } from '@/lib/jurisdiction'
 import { Tag } from '@/components/status-tag'
@@ -8,6 +9,7 @@ import { useChargesForFile } from '@/features/charges'
 import {
   EditProsecutionFileForm,
   LinkedFiles,
+  listFileLinks,
   LinkPersonForm,
   personFullNameForRole,
   useFilePeople,
@@ -40,6 +42,7 @@ export const fileTabs = [
   { id: 'papers', get label() { return m["file_tab.index"]() } },
   { id: 'people', get label() { return m["file_tab.people"]() } },
   { id: 'history', get label() { return m["file_tab.activity"]() } },
+  { id: 'related', get label() { return m["file_tab.related"]() } },
 ] as const
 
 const legacyTabs = {
@@ -85,6 +88,7 @@ export function FileWorkspace({ fileId, tab }: { fileId: string; tab: FileTabId 
   const { data: hearings = [] } = useHearings(fileId)
   const { data: items = [] } = useFileItems(fileId)
   const { data: events } = useChronology(fileId)
+  const { data: related = [] } = useQuery({ queryKey: ['prosecution-files', 'links', fileId], queryFn: () => listFileLinks(fileId) })
 
   if (!file) {
     return (
@@ -143,6 +147,7 @@ export function FileWorkspace({ fileId, tab }: { fileId: string; tab: FileTabId 
       />
 
       <RecordTabsView
+        extra={[{ id: 'related', label: m["file_tab.related"](), count: related.length, content: <div className="p-4"><LinkedFiles fileId={fileId} /></div> }]}
         labels={{
           overview: { label: m["file_tab.case"](), empty: '', action: '' },
           papers: { label: m["file_tab.index"](), empty: '', action: '', count: items.length },
@@ -212,8 +217,6 @@ function FilePanel({ fileId }: { fileId: string }) {
           </div>
         )}
       </section>
-
-      <LinkedFiles fileId={fileId} />
 
       <section className="page-section">
         <h2>{m["file_ws.tasks"]()}</h2>

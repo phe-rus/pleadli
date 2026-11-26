@@ -44,6 +44,8 @@ export type PaperLabels = {
   openInWord: string
   openInLibreOffice: string
   openElsewhere: string
+  /** The one menu that holds Open in Word, Save as Word and Save as PDF. */
+  saveCopy?: string
   printHintWindows: string
 }
 
@@ -76,6 +78,7 @@ export const englishLabels: PaperLabels = {
   openInWord: 'Open in Word',
   openInLibreOffice: 'Open in LibreOffice',
   openElsewhere: 'Open in another program',
+  saveCopy: 'Save a copy',
   printHintWindows: 'To keep a PDF, choose "Microsoft Print to PDF" as the printer.',
 }
 

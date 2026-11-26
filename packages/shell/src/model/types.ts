@@ -45,6 +45,10 @@ export type Rules = {
   maxRecents?: number
   /** A side panel that is not locked starts closed and folds away when the person moves to another place. */
   rightTemporary?: boolean
+  /** Tabs the app does not draw are not kept as tabs, so they never use up the open limit; they still go to Recent. */
+  drawn?: (tab: { key: string; kind: string }) => boolean
+  /** How many tabs may be open (default 5). */
+  maxTabs?: number
   /** The first tab, always pinned and fixed (Today). */
   home: WorkspaceTab
 }

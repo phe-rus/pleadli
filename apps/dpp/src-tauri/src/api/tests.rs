@@ -23,11 +23,15 @@ async fn app() -> Router {
 
 /// A fresh installation that has not been through setup.
 async fn bare_app() -> Router {
+    bare_app_with_pool().await.0
+}
+
+async fn bare_app_with_pool() -> (Router, sqlx::SqlitePool) {
     let pool = SqlitePoolOptions::new().max_connections(1).connect("sqlite::memory:").await.unwrap();
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
     let security = std::sync::Arc::new(crate::domain::security::Security::new());
     security.load(&pool).await.unwrap();
-    router(AppState { pool, vault_root: std::env::temp_dir(), data_dir: std::env::temp_dir(), security }, None)
+    (router(AppState { pool: pool.clone(), vault_root: std::env::temp_dir(), data_dir: std::env::temp_dir(), security }, None), pool)
 }
 
 fn setup_body(protection: &str, administrator: Value) -> Value {
@@ -1598,4 +1602,245 @@ async fn the_files_list_and_attention_describe_the_same_files() {
     covered.sort();
     assert_eq!(listed, covered, "every file the list shows has a next step, and no other");
     assert!(covered.contains(&a.as_str()));
+}
+
+// ---- A shared office: sign-in, powers kept apart, files visible to the right people ----
+
+struct Office {
+    app: Router,
+    pool: sqlx::SqlitePool,
+    ids: std::collections::HashMap<&'static str, String>,
+}
+
+const PINS: [(&str, &str); 5] = [("Ada", "111111"), ("Dora", "222222"), ("Amy", "333333"), ("Ben", "444444"), ("Cat", "555555")];
+
+/// An office with an administrator (Ada), the Director (Dora), two prosecutors
+/// (Amy, Ben) and a clerk (Cat), each with their own PIN. Ada is signed in.
+async fn office() -> Office {
+    let (app, pool) = bare_app_with_pool().await;
+    let mut body = setup_body("basic", json!({ "name": "Ada", "role": "administrator", "secret": "111111" }));
+    body["people"] = json!([
+        { "name": "Dora", "role": "prosecutor", "isDpp": true, "secret": "222222" },
+        { "name": "Amy", "role": "prosecutor", "secret": "333333" },
+        { "name": "Ben", "role": "prosecutor", "secret": "444444" },
+        { "name": "Cat", "role": "clerk", "secret": "555555" },
+    ]);
+    let (status, out) = call(&app, Method::POST, "/api/setup/complete", Some(body)).await;
+    assert_eq!(status, StatusCode::OK, "{out}");
+    let (_, staff) = call(&app, Method::GET, "/api/staff", None).await;
+    let mut ids = std::collections::HashMap::new();
+    for (name, _) in PINS {
+        let id = staff.as_array().unwrap().iter().find(|p| p["name"] == name).unwrap()["id"].as_str().unwrap().to_string();
+        ids.insert(name, id);
+    }
+    Office { app, pool, ids }
+}
+
+impl Office {
+    async fn sign_in(&self, name: &str) {
+        call(&self.app, Method::POST, "/api/session/sign-out", None).await;
+        let pin = PINS.iter().find(|(n, _)| *n == name).unwrap().1;
+        let (status, out) = call(&self.app, Method::POST, "/api/session/sign-in", Some(json!({ "staffId": self.ids[name], "secret": pin }))).await;
+        assert_eq!(status, StatusCode::OK, "{name}: {out}");
+    }
+
+    async fn give(&self, file: &str, to: &str) -> StatusCode {
+        call(&self.app, Method::POST, "/api/registry/give-out", Some(json!({ "prosecutionFileId": file, "staffId": self.ids[to] }))).await.0
+    }
+
+    async fn next(&self, file: &str) -> Value {
+        item(&attention(&self.app).await, file).clone()
+    }
+
+    async fn summary(&self) -> Value {
+        attention(&self.app).await["summary"].clone()
+    }
+}
+
+#[tokio::test]
+async fn an_administrator_who_only_administers_cannot_register_review_or_hold_files() {
+    let o = office().await;
+    o.sign_in("Cat").await;
+    let file = new_file(&o.app).await;
+
+    o.sign_in("Ada").await;
+    // Running the installation is hers: she can read the people and change the powers.
+    assert_eq!(call(&o.app, Method::GET, "/api/staff", None).await.0, StatusCode::OK);
+    // Prosecuting is not: registering, reviewing, deciding, moving a file's stage.
+    assert_eq!(call(&o.app, Method::POST, "/api/prosecution-files", Some(json!({ "title": "X", "receivedAt": now() }))).await.0, StatusCode::FORBIDDEN);
+    assert_eq!(call(&o.app, Method::POST, "/api/charging-reviews", Some(json!({ "prosecutionFileId": file, "standard": "two_stage" }))).await.0, StatusCode::FORBIDDEN);
+    assert_eq!(call(&o.app, Method::POST, "/api/decisions", Some(json!({ "prosecutionFileId": file, "decisionType": "decline", "decidedAt": now(), "reasons": "x" }))).await.0, StatusCode::FORBIDDEN);
+    assert_eq!(put(&o.app, &format!("/api/prosecution-files/{file}/stage"), json!({ "stage": "decide" })).await.0, StatusCode::FORBIDDEN);
+    let (_, mine) = call(&o.app, Method::GET, "/api/capabilities/mine", None).await;
+    assert_eq!((mine["administer"].as_bool(), mine["reviewFiles"].as_bool(), mine["allocateFiles"].as_bool(), mine["approveDirectorDecisions"].as_bool()), (Some(true), Some(false), Some(false), Some(false)));
+    // She cannot be given a file either, because she cannot work it.
+    o.sign_in("Cat").await;
+    assert_eq!(o.give(&file, "Ada").await, StatusCode::UNPROCESSABLE_ENTITY);
+    // And the file sits on nobody's list as hers.
+    o.sign_in("Ada").await;
+    assert_eq!(o.next(&file).await["needsMe"], false);
+    assert_eq!(o.summary().await["total"], 0);
+}
+
+#[tokio::test]
+async fn registering_allocating_reassigning_and_self_assigning_are_separate_powers() {
+    let o = office().await;
+
+    // Cat, the clerk, registers and gives out, but does not review, take or move files.
+    o.sign_in("Cat").await;
+    let a = new_file(&o.app).await;
+    let b = new_file(&o.app).await;
+    assert_eq!(o.next(&a).await["action"], "allocate");
+    assert_eq!(o.summary().await["toAllocate"], 2);
+    assert_eq!(o.give(&a, "Amy").await, StatusCode::NO_CONTENT);
+    assert_eq!(o.give(&b, "Cat").await, StatusCode::UNPROCESSABLE_ENTITY, "a clerk cannot hold a file: she cannot review it");
+    assert_eq!(o.give(&a, "Ben").await, StatusCode::FORBIDDEN, "giving out is not moving a file someone already holds");
+    assert_eq!(call(&o.app, Method::POST, "/api/charging-reviews", Some(json!({ "prosecutionFileId": a, "standard": "two_stage" }))).await.0, StatusCode::FORBIDDEN);
+
+    // Amy, a prosecutor, takes a file for herself, but neither gives out nor moves files.
+    o.sign_in("Amy").await;
+    assert_eq!(o.next(&b).await["canTake"], true);
+    assert_eq!(o.give(&b, "Ben").await, StatusCode::FORBIDDEN, "a prosecutor does not give files out");
+    assert_eq!(o.give(&b, "Amy").await, StatusCode::NO_CONTENT, "but she may take one nobody holds");
+    let c = {
+        o.sign_in("Cat").await;
+        new_file(&o.app).await
+    };
+    o.sign_in("Amy").await;
+    assert_eq!(o.give(&a, "Ben").await, StatusCode::FORBIDDEN, "nor hand on a file she holds");
+
+    // Ben cannot pull Amy's file to himself.
+    o.sign_in("Ben").await;
+    assert_eq!(o.give(&a, "Ben").await, StatusCode::FORBIDDEN, "taking a colleague's file is reassigning");
+    assert_eq!(o.give(&c, "Ben").await, StatusCode::NO_CONTENT);
+
+    // Only the Director moves a file from one holder to another.
+    o.sign_in("Dora").await;
+    assert_eq!(o.give(&a, "Ben").await, StatusCode::NO_CONTENT);
+    assert_eq!(o.give(&a, "Ben").await, StatusCode::UNPROCESSABLE_ENTITY, "already holds it");
+    o.sign_in("Ben").await;
+    assert_eq!(o.next(&a).await["heldByMe"], true);
+}
+
+#[tokio::test]
+async fn each_person_sees_only_their_own_workload_in_the_counts_but_the_same_files() {
+    let o = office().await;
+    o.sign_in("Cat").await;
+    let a = new_file(&o.app).await;
+    let b = new_file(&o.app).await;
+    let c = new_file(&o.app).await;
+    o.give(&a, "Amy").await;
+    o.give(&b, "Ben").await;
+
+    let counts = |s: Value| (s["total"].as_i64().unwrap(), s["toRead"].as_i64().unwrap(), s["toAllocate"].as_i64().unwrap(), s["withColleagues"].as_i64().unwrap());
+    // Cat: the one nobody holds is hers to give out; the two given out are the prosecutors'.
+    assert_eq!(counts(o.summary().await), (1, 0, 1, 2));
+    o.sign_in("Amy").await;
+    assert_eq!(counts(o.summary().await), (1, 1, 0, 1), "Amy: her own to read; Ben's is a colleague's; the unallocated one is not hers to give out");
+    assert_eq!(o.next(&a).await["needsMe"], true);
+    assert_eq!(o.next(&b).await["needsMe"], false);
+    assert_eq!(o.next(&b).await["holderName"], "Ben");
+    o.sign_in("Ben").await;
+    assert_eq!(counts(o.summary().await), (1, 1, 0, 1));
+    o.sign_in("Ada").await;
+    assert_eq!(counts(o.summary().await), (0, 0, 0, 2), "the administrator has no files and nothing to do on anyone's");
+
+    // The workload the status bar reads is always the same answer as attention, for whoever is signed in.
+    for who in ["Cat", "Amy", "Ben", "Dora", "Ada"] {
+        o.sign_in(who).await;
+        assert_workload_matches(&o.app).await;
+    }
+    // Everyone sees the same list of files; only what needs them differs.
+    o.sign_in("Ada").await;
+    assert_eq!(view_ids(&o.app, "all").await.len(), 3);
+    o.sign_in("Amy").await;
+    assert_eq!(view_ids(&o.app, "all").await.len(), 3);
+    let _ = c;
+}
+
+#[tokio::test]
+async fn the_director_alone_holds_director_decisions_and_the_file_waits_on_the_director_for_everyone_else() {
+    let o = office().await;
+    o.sign_in("Cat").await;
+    let file = new_file(&o.app).await;
+    o.give(&file, "Amy").await;
+    o.sign_in("Amy").await;
+    put(&o.app, &format!("/api/prosecution-files/{file}/stage"), json!({ "stage": "decide" })).await;
+    // Amy proposes discontinuance; it becomes the Director's.
+    sqlx_proposal(&o, &file).await;
+    let n = o.next(&file).await;
+    assert_eq!((n["holder"].as_str(), n["needsMe"].as_bool(), n["primary"]["kind"].as_str()), (Some("director"), Some(false), Some("director_decision")));
+    o.sign_in("Dora").await;
+    let n = o.next(&file).await;
+    assert_eq!((n["holder"].as_str(), n["needsMe"].as_bool(), n["heldByMe"].as_bool()), (Some("director"), Some(true), Some(true)));
+    o.sign_in("Ada").await;
+    assert_eq!(o.next(&file).await["needsMe"], false, "an administrator is not the Director");
+}
+
+/// A pending Director-only proposal on the file, as Assist would leave it.
+async fn sqlx_proposal(o: &Office, file: &str) {
+    sqlx::query(r#"INSERT INTO proposals (id, prosecution_file_id, stage, body, model, status, created_at) VALUES ('p1', ?, 'decide', '{"decision":"discontinue"}', 'test', 'proposed', 0)"#).bind(file).execute(&o.pool).await.unwrap();
+}
+
+#[tokio::test]
+async fn one_file_can_owe_a_hearing_a_paper_and_a_colleagues_task_at_once() {
+    let o = office().await;
+    o.sign_in("Cat").await;
+    let file = new_file(&o.app).await;
+    o.give(&file, "Amy").await;
+    o.sign_in("Amy").await;
+    put(&o.app, &format!("/api/prosecution-files/{file}/stage"), json!({ "stage": "prepare" })).await;
+    let (s, _) = call(&o.app, Method::POST, "/api/hearings", Some(json!({ "prosecutionFileId": file, "court": "Buganda Road", "kind": "mention", "startsAt": now() + DAY }))).await;
+    assert_eq!(s, StatusCode::OK);
+    let (s, _) = call(&o.app, Method::POST, "/api/tasks", Some(json!({ "prosecutionFileId": file, "title": "Send Ben the exhibit list", "assignedTo": o.ids["Ben"], "dueAt": now() + DAY }))).await;
+    assert_eq!(s, StatusCode::OK);
+
+    let n = o.next(&file).await;
+    assert_eq!(n["state"], "preparing");
+    let mine: Vec<&str> = n["obligations"].as_array().unwrap().iter().filter(|x| x["mine"] == true).map(|x| x["kind"].as_str().unwrap()).collect();
+    assert!(mine.contains(&"prepare") && mine.contains(&"hearing") && !mine.contains(&"task"), "{mine:?}");
+    assert_eq!(o.summary().await["withSeveral"], 1);
+    assert_eq!(o.summary().await["total"], 1, "one file, not three");
+
+    // Ben holds nothing here, yet he has something to do on it, and only that.
+    o.sign_in("Ben").await;
+    let n = o.next(&file).await;
+    let mine: Vec<&str> = n["obligations"].as_array().unwrap().iter().filter(|x| x["mine"] == true).map(|x| x["kind"].as_str().unwrap()).collect();
+    assert_eq!(mine, vec!["task"]);
+    assert_eq!((n["heldByMe"].as_bool(), n["needsMe"].as_bool()), (Some(false), Some(true)));
+    assert_eq!(o.summary().await["toFollowUp"], 1);
+}
+
+#[tokio::test]
+async fn an_administrator_changes_who_may_do_what_and_nobody_else_can() {
+    let o = office().await;
+    o.sign_in("Cat").await;
+    let file = new_file(&o.app).await;
+
+    o.sign_in("Amy").await;
+    assert_eq!(o.give(&file, "Ben").await, StatusCode::FORBIDDEN);
+    assert_eq!(call(&o.app, Method::PUT, "/api/capabilities", Some(json!({ "role": "prosecutor", "capability": "allocate_files", "granted": true }))).await.0, StatusCode::FORBIDDEN, "not hers to change");
+
+    o.sign_in("Ada").await;
+    let (s, grants) = call(&o.app, Method::PUT, "/api/capabilities", Some(json!({ "role": "prosecutor", "capability": "allocate_files", "granted": true }))).await;
+    assert_eq!(s, StatusCode::OK, "{grants}");
+    assert_eq!(call(&o.app, Method::PUT, "/api/capabilities", Some(json!({ "role": "prosecutor", "capability": "fly", "granted": true }))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+
+    // The clerk's power is withdrawn the same way; and nobody is left unable to review.
+    o.sign_in("Amy").await;
+    assert_eq!(o.give(&file, "Ben").await, StatusCode::NO_CONTENT, "now a prosecutor may give files out");
+    o.sign_in("Ada").await;
+    assert_eq!(call(&o.app, Method::PUT, "/api/capabilities", Some(json!({ "role": "prosecutor", "capability": "review_files", "granted": false }))).await.0, StatusCode::OK, "the Director still reviews");
+    // Ada's grant cannot make her a prosecutor against the sign-in level's rule that the administrator has none by default.
+    let (_, mine) = call(&o.app, Method::GET, "/api/capabilities/mine", None).await;
+    assert_eq!(mine["reviewFiles"], false);
+}
+
+#[tokio::test]
+async fn a_solo_installation_with_no_sign_in_keeps_one_person_able_to_do_everything() {
+    let app = app().await;
+    let (_, mine) = call(&app, Method::GET, "/api/capabilities/mine", None).await;
+    for k in ["administer", "reviewFiles", "allocateFiles", "reassignFiles", "selfAssign", "registerFiles", "approveDirectorDecisions"] {
+        assert_eq!(mine[k], true, "{k}");
+    }
 }

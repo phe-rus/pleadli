@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Assist: modes and wording</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:#1d1d1f;background:#f5f5f7}
+.lbl{font-size:12px;color:#636366;font-weight:600;letter-spacing:0.03em}
+.card{background:#ffffff;border-radius:18px;padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+.mode{flex:1 1 0;min-width:150px;border:1.5px solid #d2d2d7;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;background:#ffffff}
+.mode.on{border:2px solid #0071e3;background:#f2f8ff}
+.sg{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#ececf0;color:#4a4a4f;white-space:nowrap}
+.sg.ok{background:#e8f3ec;color:#14532d}
+.row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid #f0f0f3}
+.row:first-of-type{border-top:none}
+.btn{display:inline-block;padding:9px 16px;border-radius:10px;background:#0071e3;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none}
+</style>
+</helmet>
+<div style="min-height:960px;box-sizing:border-box;padding:32px 44px;display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:14px;color:#636366">Settings · Assist, and what it shows beside a file</div>
+    <h1 style="margin:0;font-size:30px;font-weight:600;letter-spacing:-0.02em">Assist helps. The file and the prosecutor stay in charge.</h1>
+  </div>
+
+  <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:stretch">
+    <div class="card" style="flex:1 1 440px;min-width:0">
+      <div style="font-size:18px;font-weight:600">How this office uses Assist</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="mode"><div style="font-size:15px;font-weight:600">Off</div><div style="font-size:13px;color:#4a4a4f;line-height:1.4">Nothing leaves the computer. Every screen works. This is how the app starts.</div></div>
+        <div class="mode"><div style="font-size:15px;font-weight:600">On this computer</div><div style="font-size:13px;color:#4a4a4f;line-height:1.4">A small model the office runs itself. No internet needed. Slower, simpler suggestions.</div></div>
+        <div class="mode on"><div style="font-size:15px;font-weight:600">Online service</div><div style="font-size:13px;color:#4a4a4f;line-height:1.4">Faster and better. Needs internet and a key the office holds. Starts with free services.</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;border-top:1px solid #e8e8ed;padding-top:6px">
+        <div class="row"><div style="flex:1 1 0"><div style="font-size:14px;font-weight:600">Service</div><div style="font-size:12px;color:#636366">Google Gemini, OpenRouter, Groq, Mistral, or another the office names</div></div><span style="font-size:14px">Google Gemini</span></div>
+        <div class="row"><div style="flex:1 1 0"><div style="font-size:14px;font-weight:600">The office's key</div><div style="font-size:12px;color:#636366">Kept sealed on this computer. Never sent anywhere else.</div></div><span style="font-size:14px;color:#636366">…a91f · Test it</span></div>
+        <div class="row"><div style="flex:1 1 0"><div style="font-size:14px;font-weight:600">Hide names before sending</div><div style="font-size:12px;color:#636366">People become "Accused 1", "Witness 2" while Assist reads. Names return in your screen.</div></div><span class="sg ok">On</span></div>
+        <div class="row"><div style="flex:1 1 0"><div style="font-size:14px;font-weight:600">If the connection fails</div><div style="font-size:12px;color:#636366">The suggestion boxes are simply not shown. Nothing else changes.</div></div><span style="font-size:13px;color:#636366">Automatic</span></div>
+      </div>
+      <div style="background:#fff7f0;border-radius:12px;padding:12px 14px;font-size:13px;color:#7a2e00;line-height:1.5"><b style="font-weight:600">Free services may keep what they are sent.</b> Until the office has a private service, use "Hide names", or only practice files.</div>
+    </div>
+
+    <div class="card" style="flex:1 1 440px;min-width:0">
+      <div style="font-size:18px;font-weight:600">What Assist may and may not do</div>
+      <div class="row"><span class="sg ok" style="flex:0 0 auto">May</span><div style="font-size:13px;color:#3a3a3f;line-height:1.5">Suggest where scanned papers start and what kind they are. Summarise. Match papers to what the offence needs. Point out gaps and statements that disagree. Draft advice to Police and the wording of a charge from the legal guide.</div></div>
+      <div class="row"><span class="sg" style="flex:0 0 auto;background:#fde7e7;color:#7a1a1a">May not</span><div style="font-size:13px;color:#3a3a3f;line-height:1.5">Decide, sign, send, change a decision, quote a law that is not in the legal guide, or read handwriting and present it as fact.</div></div>
+      <div class="row"><span class="sg" style="flex:0 0 auto">Always</span><div style="font-size:13px;color:#3a3a3f;line-height:1.5">Shows the page it relied on. Shows its words in grey, marked "Assist suggested", until a named person confirms them. Records that it was used, in the file's history.</div></div>
+      <div class="row"><span class="sg" style="flex:0 0 auto">Told</span><div style="font-size:13px;color:#3a3a3f;line-height:1.5">The country, the legal guide's text for the offence, the decision set and who may take each, the time limits, this file's papers, and how this office has handled similar files. Nothing else about the law.</div></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="lbl">WHAT IT LOOKS LIKE BESIDE A FILE · a side panel, closed unless you open it</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:stretch">
+      <div class="card" style="flex:1 1 380px;min-width:0;background:#ffffff;border:1px solid #e0e0e5">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:15px;font-weight:600">Assist · Uganda v. Okello John</b><span style="font-size:12px;color:#636366">Gemini · names hidden</span></div>
+        <div style="font-size:13px;color:#3a3a3f;line-height:1.5"><span class="sg">Suggested</span> Both eyewitnesses place the accused at the stall at about 4:30 pm. The accused's statement admits he was at the market. <b style="font-weight:600">Nothing in the statements disagrees</b> (Akello p. 1, Opio p. 1, accused p. 2).</div>
+        <div style="font-size:13px;color:#3a3a3f;line-height:1.5"><span class="sg">Suggested</span> Nothing missing for theft. The arresting officer's statement covers the recovery of the phone.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:2px"><span class="sg ok">Confirm</span><span class="sg">Change</span><span class="sg">Ignore</span></div>
+      </div>
+      <div class="card" style="flex:1 1 380px;min-width:0;background:#ffffff;border:1px solid #e0e0e5">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:15px;font-weight:600">Words for this offence</b><span style="font-size:12px;color:#636366">from your legal guide, Theft</span></div>
+        <div style="font-size:13px;color:#3a3a3f;line-height:1.5">When you write the reasons or the advice, these are offered as you type:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="sg" style="font-size:12px">"took without a claim of right"</span><span class="sg" style="font-size:12px">"the property of Akello Mary"</span><span class="sg" style="font-size:12px">"recovered from the accused"</span><span class="sg" style="font-size:12px">"realistic prospect of conviction"</span><span class="sg" style="font-size:12px">"please record a statement from"</span></div>
+        <div style="font-size:12px;color:#636366;line-height:1.45">The office adds to this list in the legal guide. Different offences offer different words: assault offers "medical form", "injury", "provocation"; a defilement file offers "age", "birth record", "child witness". Assist uses the same list, so its drafts sound like this office.</div>
+      </div>
+      <div class="card" style="flex:1 1 280px;min-width:0;background:#ffffff;border:1px solid #e0e0e5">
+        <div style="font-size:15px;font-weight:600">How this office handled similar files</div>
+        <div style="font-size:13px;color:#3a3a3f;line-height:1.5">Of 41 theft files from Buganda Road CPS this year: 33 sanctioned, 6 returned for a missing statement, 2 closed.</div>
+        <div style="font-size:12px;color:#636366;line-height:1.45">From this office's own record only. It helps predict what is usual. It never decides.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":960}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import { EmptyNote } from '@/components/planned'
 import { useClocks, type OfficeClock } from '@/features/clocks'
 import { useCalendar } from '@/features/court/queries'
 import { fileReference, filesOptions, isFileView, ProsecutionFileForm, useFiles, type FileSummary, type FileViewId } from '@/features/prosecution-files'
-import { actionLabel, holderLabel, stepWord, useAttention } from '@/features/attention'
+import { actionLabel, holderLabel, obligationLabel, stepWord, useAttention } from '@/features/attention'
 import { FileStatusTag } from '@/components/status-tag'
 import { formatDate } from '@/lib/dates'
 import * as m from '@/paraglide/messages'
@@ -57,6 +57,9 @@ function clockFor(f: FileSummary, clocks: OfficeClock[], hearing: number | undef
   return null
 }
 
+/** Obligations that are the stage's own step; anything else (a hearing, a limit, a task) leads the Next step column when it is the person's. */
+const stageKinds = ['allocate', 'read', 'decide', 'director_decision', 'prepare', 'send']
+
 function RouteComponent() {
   const { view, open } = Route.useSearch()
   const navigate = useNavigate()
@@ -105,7 +108,7 @@ function RouteComponent() {
         <div className="page-actions">
           <div role="radiogroup" aria-label={m["files.scope.label"]()} className="flex rounded-[10px] bg-secondary p-[3px]">
             {([['mine', m["files.scope.mine"]({ count: mineCount })], ['office', m["files.scope.office"]({ count: openCount })]] as const).map(([id, label]) => (
-              <button key={id} type="button" role="radio" aria-checked={(id === 'mine') === mine} onClick={() => setScope(id)} className={cn('cursor-pointer rounded-lg px-3.5 py-1.5 text-sm', (id === 'mine') === mine ? 'bg-background font-semibold shadow-xs' : 'text-muted-foreground')}>
+              <button key={id} type="button" role="radio" aria-checked={(id === 'mine') === mine} onClick={() => setScope(id)} className={cn('cursor-pointer rounded-lg px-3.5 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50', (id === 'mine') === mine ? 'bg-background font-semibold shadow-xs' : 'text-muted-foreground')}>
                 {label}
               </button>
             ))}
@@ -126,7 +129,7 @@ function RouteComponent() {
 
       <nav aria-label={m["nav.item.files"]()} className="flex flex-wrap gap-1.5">
         {tabs.map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} aria-current={tab === t ? 'page' : undefined} className={cn('cursor-pointer whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm', tab === t ? 'bg-foreground font-semibold text-background' : 'text-muted-foreground hover:bg-secondary')}>
+          <button key={t} type="button" onClick={() => setTab(t)} aria-current={tab === t ? 'page' : undefined} className={cn('cursor-pointer whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50', tab === t ? 'bg-foreground font-semibold text-background' : 'text-muted-foreground hover:bg-secondary')}>
             {tabLabel(t)}
             {t !== 'closed' && t !== 'all' ? ` ${counts[t]}` : ''}
           </button>
@@ -145,7 +148,7 @@ function RouteComponent() {
         <EmptyNote icon={<HugeiconsIcon icon={Folder01Icon} />}>{m["page.files.empty"]()}</EmptyNote>
       ) : (
         <div className="overflow-x-auto">
-        <div role="table" aria-label={m["nav.item.files"]()} className="flex min-w-[56rem] flex-col">
+        <div role="table" aria-label={m["nav.item.files"]()} className="flex min-w-[44rem] flex-col">
           <div role="row" className="flex gap-3.5 border-b border-border px-3 py-2 text-xs font-semibold tracking-wide text-muted-foreground">
             <div className="flex-[2.4_1_0]">{m["files.col.file"]()}</div>
             <div className="flex-[1.1_1_0]">{m["files.col.kind"]()}</div>
@@ -157,9 +160,9 @@ function RouteComponent() {
             const clock = clockFor(f, clocks, nextHearing.get(f.id))
             const next = forFile(f.id)
             return (
-              <Link key={f.id} to="/files/$fileId" params={{ fileId: f.id }} role="row" className="flex items-center gap-3.5 border-b border-border/60 px-3 py-3 text-foreground no-underline hover:bg-secondary/50">
+              <Link key={f.id} to="/files/$fileId" params={{ fileId: f.id }} role="row" className="flex items-center gap-3.5 border-b border-border/60 px-3 py-3 text-foreground no-underline outline-none hover:bg-secondary/50 focus-visible:bg-secondary/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50">
                 <div className="min-w-0 flex-[2.4_1_0]">
-                  <div className="truncate text-[15px] font-semibold">{f.title}</div>
+                  <div className="truncate text-[15px] font-semibold" title={f.title}>{f.title}</div>
                   <div className="truncate text-[13px] text-muted-foreground">{[f.accused, fileReference(f)].filter(Boolean).join(' · ')}</div>
                 </div>
                 <div className="min-w-0 flex-[1.1_1_0]">
@@ -170,7 +173,8 @@ function RouteComponent() {
                   {!['under_review', 'resubmitted'].includes(f.currentStatus) && <FileStatusTag status={f.currentStatus} stage={f.stage} />}
                 </div>
                 <div className="min-w-0 flex-[1.9_1_0] text-[13px] text-muted-foreground">
-                  {next ? actionLabel(next) : ''}
+                  {next ? (next.primary?.mine && !stageKinds.includes(next.primary.kind) ? obligationLabel(next.primary) : actionLabel(next)) : ''}
+                  {next && next.obligations.filter((o) => o.mine).length > 1 && <span className="block text-xs">{m['attn.and_more']({ count: next.obligations.filter((o) => o.mine).length - 1 })}</span>}
                   {next && !next.needsMe && next.action !== 'closed' && <span className="block text-xs">{holderLabel(next)}</span>}
                 </div>
                 <div className="min-w-0 flex-[1.2_1_0] text-right">{clock && <ClockChip urgent={clock.urgent}>{clock.label}</ClockChip>}</div>

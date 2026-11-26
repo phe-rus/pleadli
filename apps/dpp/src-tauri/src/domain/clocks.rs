@@ -15,7 +15,7 @@ fn now() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
 
-pub const LIMIT_KEYS: &[&str] = &["allocation", "complaint_reply", "adjournments_before_review"];
+pub const LIMIT_KEYS: &[&str] = &["allocation", "complaint_reply", "adjournments_before_review", "hearing_notice"];
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -51,6 +51,7 @@ async fn days_of(pool: &SqlitePool, key: &str) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar("SELECT days FROM time_limits WHERE key = ?").bind(key).fetch_optional(pool).await.map(|d| d.unwrap_or(match key {
         "allocation" => 3,
         "complaint_reply" => 7,
+        "hearing_notice" => 2,
         _ => 3,
     }))
 }
