@@ -346,7 +346,7 @@ pub async fn record_event(pool: &SqlitePool, facility_id: &str, kind: Kind, resu
         if result != Taken::Refused && kind != Kind::Connection {
             sqlx::query("UPDATE facilities SET last_synced_at = ?1, last_contact_at = ?1 WHERE id = ?2").bind(now).bind(facility_id).execute(pool).await?;
         }
-        sqlx::query("DELETE FROM exchange_events WHERE facility_id = ?1 AND id NOT IN (SELECT id FROM exchange_events WHERE facility_id = ?1 ORDER BY at DESC LIMIT ?2)")
+        sqlx::query("DELETE FROM exchange_events WHERE facility_id = ?1 AND id NOT IN (SELECT id FROM exchange_events WHERE facility_id = ?1 ORDER BY at DESC, rowid DESC LIMIT ?2)")
             .bind(facility_id)
             .bind(KEEP_EVENTS_PER_FACILITY)
             .execute(pool)
@@ -503,7 +503,7 @@ pub async fn list_events(pool: &SqlitePool, facility_id: Option<&str>, limit: i6
     sqlx::query_as(
         "SELECT e.id, e.facility_id, f.name AS facility_name, e.at, e.kind, e.result, e.detail, e.via
          FROM exchange_events e JOIN facilities f ON f.id = e.facility_id
-         WHERE (?1 IS NULL OR e.facility_id = ?1) ORDER BY e.at DESC LIMIT ?2",
+         WHERE (?1 IS NULL OR e.facility_id = ?1) ORDER BY e.at DESC, e.rowid DESC LIMIT ?2",
     )
     .bind(facility_id)
     .bind(limit.clamp(1, 500))
