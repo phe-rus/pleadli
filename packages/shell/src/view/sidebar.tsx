@@ -5,11 +5,14 @@ import type { ReactNode } from 'react'
 
 /** One place in the sidebar. The one in view is a soft tinted pill; a count
  * sits quietly at the end, and turns red only when something is overdue. */
-export function SidebarRow({ icon, label, active, onOpen, count, urgent = false }: { icon: IconSvgElement; label: string; active: boolean; onOpen: () => void; count?: number; urgent?: boolean }) {
+export function SidebarRow({ icon, label, active, onOpen, onWarm, count, urgent = false }: { icon: IconSvgElement; label: string; active: boolean; onOpen: () => void; /** Called when the pointer arrives or presses, so the page can start loading before the click lands. */ onWarm?: () => void; count?: number; urgent?: boolean }) {
   return (
     <button
       type="button"
       onClick={onOpen}
+      onPointerEnter={onWarm}
+      onPointerDown={onWarm}
+      onFocus={onWarm}
       aria-current={active ? 'page' : undefined}
       className={cn(
         'flex h-7.5 w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-left text-[0.8125rem] outline-none transition-colors duration-(--shell-motion-hover) focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none',

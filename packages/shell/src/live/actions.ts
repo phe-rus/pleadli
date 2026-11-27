@@ -1,9 +1,26 @@
-import { useNavigate } from '@tanstack/react-router'
-import { useCallback } from 'react'
+import { useNavigate, useRouter } from '@tanstack/react-router'
+import { useCallback, useRef } from 'react'
 import { jumpTarget, isHome, type WorkspaceTab } from '../model'
 import { useWorkspace } from './context'
 
 /** Navigates to a saved location (a path, optionally with a query). */
+/** Starts loading a page's data and code without opening it, at most once every few seconds per page.
+ * A sidebar row is a button, not a link, so the router's own hover preloading never sees it. */
+export function useWarm() {
+  const router = useRouter()
+  const last = useRef(new Map<string, number>())
+  return useCallback(
+    (to: string) => {
+      const now = Date.now()
+      if (now - (last.current.get(to) ?? 0) < 4000) return
+      last.current.set(to, now)
+      const [path, query = ''] = to.split('?')
+      void router.preloadRoute({ to: path as never, search: Object.fromEntries(new URLSearchParams(query)) as never }).catch(() => undefined)
+    },
+    [router],
+  )
+}
+
 export function useGo() {
   const navigate = useNavigate()
   return useCallback(

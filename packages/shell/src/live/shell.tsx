@@ -11,7 +11,7 @@ import { PillarView, SidebarRow, SidebarSection } from '../view/sidebar'
 import { RightPanelToggle, SidebarToggle } from '../view/sidebar-toggle'
 import { StatusBarView } from '../view/status-bar'
 import { TabStripView, type TabViewModel } from '../view/tab-strip'
-import { useGo, useTabActions } from './actions'
+import { useGo, useTabActions, useWarm } from './actions'
 import { Controls } from './controls'
 import { useLabels, useLocationParts, useWorkspace, WorkspaceProvider } from './context'
 import { useDisableDevtools } from './devtools'
@@ -56,6 +56,7 @@ function Navigator() {
   const { config, sections, toggleSection } = useWorkspace()
   const location = useLocationParts()
   const go = useGo()
+  const warm = useWarm()
   const nav = config.nav()
   const counts = config.counts?.() ?? {}
   const labels = useLabels()
@@ -67,6 +68,7 @@ function Navigator() {
       label={item.label}
       active={item.match ? item.match(location) : defaultMatch(item, location.pathname)}
       onOpen={() => go(item.to)}
+      onWarm={() => warm(item.to)}
       count={counts[item.id]?.value}
       urgent={counts[item.id]?.urgent}
     />
