@@ -698,6 +698,7 @@
     },
     "kind": {
       "decision_notice": "Taarifa ya uamuzi",
+      "hearing_minute": "Muhtasari wa kusikilizwa",
       "pairing_confirmation": "Muunganisho",
       "receipt": "Risiti"
     },
@@ -1972,7 +1973,11 @@
     "outcome_placeholder": "Kilichotokea (kuahirishwa, kujibu shtaka, uamuzi...)",
     "receipt": "Stakabadhi",
     "receipt_placeholder": "Muhuri au namba ya stakabadhi",
-    "remove": "Ondoa"
+    "remove": "Ondoa",
+    "minute_send": "Tuma muhtasari kituoni",
+    "minute_send_again": "Tuma tena",
+    "minute_sent": "Imetumwa {date}",
+    "minute_prepared": "Muhtasari uko tayari. Unasubiri kwenye Postbox kwenda kituoni."
   },
   "cover": {
     "accused": "Mshtakiwa",

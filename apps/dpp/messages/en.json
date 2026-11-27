@@ -698,6 +698,7 @@
     },
     "kind": {
       "decision_notice": "Decision notice",
+      "hearing_minute": "Hearing minute",
       "pairing_confirmation": "Connection",
       "receipt": "Receipt"
     },
@@ -1972,7 +1973,11 @@
     "outcome_placeholder": "What happened (adjourned to, plea taken, ruling...)",
     "receipt": "Receipt",
     "receipt_placeholder": "Stamp or receipt number",
-    "remove": "Remove"
+    "remove": "Remove",
+    "minute_send": "Send minute to the station",
+    "minute_send_again": "Send again",
+    "minute_sent": "Sent {date}",
+    "minute_prepared": "Minute ready. It is waiting in the Postbox to go to the station."
   },
   "cover": {
     "accused": "Accused",

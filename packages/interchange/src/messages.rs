@@ -165,7 +165,7 @@ pub struct WitnessToServe {
 
 /// The office's minute of a hearing, sent to the officer in charge of the case.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct HearingMinutePayload {
     pub police_reference: String,
     pub dpp_file_key: String,

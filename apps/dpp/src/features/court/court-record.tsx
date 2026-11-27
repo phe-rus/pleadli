@@ -10,7 +10,7 @@ import { Textarea } from '@pleadli/ui/textarea'
 import { t } from '@pleadli/ui/goey-toaster'
 import { useClocks } from '@/features/clocks'
 import { LinkedFiles } from '@/features/prosecution-files/linked-files'
-import { adjournmentCauses, useMinutes, useSaveMinute, type AdjournmentCause, type Minute, type Witness } from './minutes'
+import { adjournmentCauses, useMinutes, useSaveMinute, useSendMinute, type AdjournmentCause, type Minute, type Witness } from './minutes'
 import { cn } from '@pleadli/ui/lib/utils'
 import { useEffect, useId, useState } from 'react'
 import { CountedTabs } from '@pleadli/shell'
@@ -164,6 +164,7 @@ const day = (ms: number) => new Date(ms).toISOString().slice(0, 10)
  * commonest reason a hearing is lost. */
 function Witnesses({ fileId, hearing, minute }: { fileId: string; hearing: Hearing; minute?: Minute }) {
   const save = useSaveMinute(fileId)
+  const send = useSendMinute(fileId)
   const [rows, setRows] = useState<Witness[]>(minute?.witnesses ?? [])
   const [name, setName] = useState('')
   useEffect(() => setRows(minute?.witnesses ?? []), [minute])
@@ -223,6 +224,19 @@ function Witnesses({ fileId, hearing, minute }: { fileId: string; hearing: Heari
             }
           >
             {m["court.witness_save"]()}
+          </Button>
+        </div>
+      )}
+      {!dirty && minute && (
+        <div className="flex items-center justify-end gap-3">
+          {minute.sentAt ? <span className="text-sm text-muted-foreground">{m["court.minute_sent"]({ date: formatDate(minute.sentAt) })}</span> : null}
+          <Button
+            size="sm"
+            variant={minute.sentAt ? "secondary" : "default"}
+            disabled={send.isPending}
+            onClick={() => send.mutate(hearing.id, { onSuccess: () => t.success(m["court.minute_prepared"]()), onError: (e) => t.error(m["court.minute_send"](), { description: e.message }) })}
+          >
+            {minute.sentAt ? m["court.minute_send_again"]() : m["court.minute_send"]()}
           </Button>
         </div>
       )}

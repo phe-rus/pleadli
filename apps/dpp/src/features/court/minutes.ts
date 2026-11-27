@@ -35,3 +35,14 @@ export function useSaveMinute(fileId: string) {
     onSuccess: () => Promise.all([qc.invalidateQueries({ queryKey: minutesKey(fileId) }), qc.invalidateQueries({ queryKey: ['clocks'] })]),
   })
 }
+
+export const sendMinute = async (hearingId: string) => api('POST', `/api/hearings/${seg(hearingId)}/minute/send`)
+
+/** Prepares the minute for the station that holds the police file. It then waits in the Postbox. */
+export function useSendMinute(fileId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (hearingId: string) => sendMinute(hearingId),
+    onSuccess: () => Promise.all([qc.invalidateQueries({ queryKey: minutesKey(fileId) }), qc.invalidateQueries({ queryKey: ['interchange', 'outgoing'] })]),
+  })
+}

@@ -447,7 +447,7 @@ async fn import_service_report(pool: &SqlitePool, peeked: envelope::Peeked, head
             .await?;
         applied += done.rows_affected();
     }
-    audit::record(&mut tx, Entry::new("service_report_received").subject("hearing", &hearing_id).file(&report.dpp_file_key).detail(format!("{applied} of {} witnesses from {}", report.results.len(), station.name))).await?;
+    audit::record(&mut tx, Entry::new("service_report_received").subject("hearing", &hearing_id).file(&report.dpp_file_key).detail(format!("{applied} of {} witnesses from {}: {}", report.results.len(), station.name, report.results.iter().map(|r| if r.served { format!("{} served", r.name) } else { format!("{} not served ({})", r.name, r.reason.as_deref().unwrap_or("no reason given")) }).collect::<Vec<_>>().join("; ")))).await?;
     tx.commit().await?;
     Ok(ImportOutcome { kind: KIND_SERVICE_REPORT.to_string(), connection_id, package_id: Some(opened.header.id), message: format!("{} reported on serving {applied} witness(es).", station.name) })
 }

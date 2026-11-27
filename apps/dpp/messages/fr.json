@@ -698,6 +698,7 @@
     },
     "kind": {
       "decision_notice": "Avis de décision",
+      "hearing_minute": "Procès-verbal d audience",
       "pairing_confirmation": "Connexion",
       "receipt": "Accusé de réception"
     },
@@ -1972,7 +1973,11 @@
     "outcome_placeholder": "Résultat (renvoi, plaidoyer, décision...)",
     "receipt": "Récépissé",
     "receipt_placeholder": "Cachet ou numéro de récépissé",
-    "remove": "Retirer"
+    "remove": "Retirer",
+    "minute_send": "Envoyer le procès-verbal au poste",
+    "minute_send_again": "Envoyer de nouveau",
+    "minute_sent": "Envoyé le {date}",
+    "minute_prepared": "Procès-verbal prêt. Il attend dans la boîte d envoi pour partir vers le poste."
   },
   "cover": {
     "accused": "Prévenu",

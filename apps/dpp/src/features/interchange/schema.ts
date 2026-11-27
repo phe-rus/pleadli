@@ -124,6 +124,7 @@ export const outgoingKindLabels: Record<string, string> = {
   get receipt() { return m["interchange.kind.receipt"]() },
   get decision_notice() { return m["interchange.kind.decision_notice"]() },
   get pairing_confirmation() { return m["interchange.kind.pairing_confirmation"]() },
+  get hearing_minute() { return m["interchange.kind.hearing_minute"]() },
 }
 
 export const acceptedSchema = z.object({ fileId: z.string(), attached: z.number(), attachmentsFailed: z.number() })
