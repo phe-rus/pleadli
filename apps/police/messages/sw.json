@@ -2635,5 +2635,25 @@
     "serve_heading": "Mashahidi wa kupelekewa wito",
     "served": "Amepelekewa",
     "why_not": "Kwa nini hakupelekewa"
+  },
+  "signature": {
+    "title": "Sahihi yangu",
+    "about": "Imehifadhiwa kwa usalama kwenye kompyuta hii. Nyaraka unazotia sahihi zitaitumia, hutasaini mara mbili.",
+    "add": "Ongeza sahihi",
+    "change": "Badilisha",
+    "remove": "Ondoa",
+    "none": "Bado hakuna sahihi.",
+    "saved": "Sahihi imehifadhiwa",
+    "failed": "Sahihi haikuhifadhiwa",
+    "pad_hint": "Saini hapa kwa kidole, kalamu au kipanya.",
+    "pad_clear": "Futa",
+    "pad_done": "Tumia sahihi hii",
+    "draw": "Chora",
+    "type": "Andika",
+    "image": "Picha",
+    "type_hint": "Andika jina lako kusaini",
+    "choose": "Chagua picha",
+    "image_hint": "Chagua picha au skani ya sahihi yako kwenye karatasi nyeupe.",
+    "take": "Chukua sahihi"
   }
 }

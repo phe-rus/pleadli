@@ -5,12 +5,19 @@ import { ChargeSheetPrintable } from '@/features/legal-forms/charge-sheet-printa
 import { StatementForm, statementPersonName, type Statement } from '@/features/statements'
 import { format } from '@/lib/date'
 import { PaperField, SignatureLine } from '@pleadli/paper'
+import { SignHere, useMakerSignature, useSaveMakerSignature, useSignature } from '@/features/signature'
+import { useMe } from '@/features/session/queries'
 import { RichTextPreview } from '@pleadli/rich-text'
 import { RecordPaper } from './record-paper'
 
 /** A statement as it is signed: who made it, when, the words, and both signatures. */
 export function StatementPaper({ statement }: { statement: Statement }) {
   const maker = statementPersonName(statement)
+  const { data: me } = useMe()
+  const { data: makerSignature } = useMakerSignature(statement.id)
+  const saveMaker = useSaveMakerSignature(statement.id)
+  // The recording officer's own signature shows on their line when they are the one looking, never on another officer's say-so.
+  const { data: officerSignature } = useSignature(me?.officerId && me.officerId === statement.officerId ? me.officerId : undefined)
   return (
     <RecordPaper
       entityType="statement"
@@ -33,8 +40,11 @@ export function StatementPaper({ statement }: { statement: Statement }) {
       </section>
       <RichTextPreview value={statement.content} className="[&_p]:mb-3" />
       <section className="mt-12 flex flex-wrap justify-between gap-8">
-        <SignatureLine name={maker} caption={m["paper.police.maker"]()} />
-        <SignatureLine name={statement.officerName} caption={m["paper.police.recorded_by"]()} />
+        <div className="flex flex-col">
+          <SignatureLine name={maker} caption={m["paper.police.maker"]()} image={makerSignature} />
+          <SignHere name={maker} label={makerSignature ? m["signature.change"]() : m["signature.take"]()} onSigned={(png) => saveMaker.mutateAsync(png)} />
+        </div>
+        <SignatureLine name={statement.officerName} caption={m["paper.police.recorded_by"]()} image={officerSignature} />
       </section>
     </RecordPaper>
   )

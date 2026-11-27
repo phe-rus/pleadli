@@ -40,6 +40,7 @@ import { ListenerCard } from '@/features/command'
 import { DevModeSwitch, SignInSettings, useInstallation, useMe } from '@/features/session'
 import { restartTour } from '@/features/overview'
 import { RulesPane } from '@/features/rules'
+import { SignatureCard } from '@/features/signature'
 import { IntegrityCard } from '@/features/audit'
 import { TimezoneCard } from '@/features/timezone'
 import { getVersion } from '@tauri-apps/api/app'
@@ -447,7 +448,12 @@ function RouteComponent() {
 
   const panes: Record<Section, () => ReactNode> = {
     station: () => <StationPane />,
-    'sign-in': () => <SignInSettings />,
+    'sign-in': () => (
+      <>
+        <SignatureCard />
+        <SignInSettings />
+      </>
+    ),
     command: () => (command ? <ListenerCard /> : <ConnectionSettings />),
     remote: () => <NetworkTab />,
     records: () => <RecordsPane />,

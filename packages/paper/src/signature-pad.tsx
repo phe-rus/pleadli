@@ -244,7 +244,8 @@ export function SignaturePad({
             onPointerMove={(e) => {
               if (!drawing.current) return
               // Coalesced events keep a fast stroke smooth on pens and touch screens.
-              const events = e.nativeEvent.getCoalescedEvents?.() ?? [e.nativeEvent]
+              const coalesced = e.nativeEvent.getCoalescedEvents?.() ?? []
+              const events = coalesced.length > 0 ? coalesced : [e.nativeEvent]
               const r = e.currentTarget.getBoundingClientRect()
               for (const ev of events) {
                 const pressure = ev.pointerType === 'pen' && ev.pressure > 0 ? ev.pressure : 0.5

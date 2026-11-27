@@ -2635,5 +2635,25 @@
     "serve_heading": "Témoins à notifier",
     "served": "Notifié",
     "why_not": "Pourquoi non notifié"
+  },
+  "signature": {
+    "title": "Ma signature",
+    "about": "Conservée chiffrée sur cet ordinateur. Les pièces que vous signez l'utilisent, vous ne signez jamais deux fois.",
+    "add": "Ajouter une signature",
+    "change": "Changer",
+    "remove": "Retirer",
+    "none": "Pas encore de signature.",
+    "saved": "Signature enregistrée",
+    "failed": "La signature n'a pas été enregistrée",
+    "pad_hint": "Signez ici au doigt, au stylet ou à la souris.",
+    "pad_clear": "Effacer",
+    "pad_done": "Utiliser cette signature",
+    "draw": "Dessiner",
+    "type": "Écrire",
+    "image": "Image",
+    "type_hint": "Tapez votre nom pour signer",
+    "choose": "Choisir une image",
+    "image_hint": "Choisissez une photo ou un scan de votre signature sur papier blanc.",
+    "take": "Prendre la signature"
   }
 }

@@ -201,6 +201,8 @@ async fn folder_of(pool: &SqlitePool, entity_type: &str, entity_id: &str) -> Res
             }
             dir
         }
+        // An officer's own signature, kept sealed beside the rest of the vault and shown in no file listing.
+        "officer_signature" => vault_root.join("signatures"),
         "incident" => vault_root.join("incidents"),
         "station_diary_entry" => vault_root.join("station-diary"),
         "duty_assignment" => vault_root.join("duty"),
@@ -463,7 +465,7 @@ pub async fn list_all(pool: &SqlitePool, query: &str) -> Result<Vec<Attachment>,
     if trimmed.is_empty() {
         return sqlx::query_as::<_, Attachment>(
             "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
-             FROM attachments WHERE entity_type NOT IN ('library', 'library_trash') ORDER BY created_at DESC LIMIT 200",
+             FROM attachments WHERE entity_type NOT IN ('library', 'library_trash', 'officer_signature') ORDER BY created_at DESC LIMIT 200",
         )
         .fetch_all(pool)
         .await;
@@ -472,7 +474,7 @@ pub async fn list_all(pool: &SqlitePool, query: &str) -> Result<Vec<Attachment>,
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, Attachment>(
         "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
-         FROM attachments WHERE file_name LIKE ? AND entity_type NOT IN ('library', 'library_trash') ORDER BY created_at DESC LIMIT 200",
+         FROM attachments WHERE file_name LIKE ? AND entity_type NOT IN ('library', 'library_trash', 'officer_signature') ORDER BY created_at DESC LIMIT 200",
     )
     .bind(like)
     .fetch_all(pool)
@@ -490,7 +492,7 @@ pub async fn search_attachments(pool: &SqlitePool, query: &str) -> Result<Vec<At
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, Attachment>(
         "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
-         FROM attachments WHERE file_name LIKE ? AND entity_type NOT IN ('library', 'library_trash') ORDER BY created_at DESC LIMIT 50",
+         FROM attachments WHERE file_name LIKE ? AND entity_type NOT IN ('library', 'library_trash', 'officer_signature') ORDER BY created_at DESC LIMIT 50",
     )
     .bind(like)
     .fetch_all(pool)
@@ -548,7 +550,7 @@ pub async fn list_vault_directory(pool: &SqlitePool, relative_path: &str, hidden
     let mut files = Vec::new();
     let mut folder_cache: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
     for attachment in all_attachments(pool).await? {
-        if attachment.entity_type == crate::domain::library::ENTITY {
+        if attachment.entity_type == crate::domain::library::ENTITY || attachment.entity_type == "officer_signature" {
             continue;
         }
         if !crate::domain::cases::may_see_entity(pool, &attachment.entity_type, &attachment.entity_id, hidden).await? {

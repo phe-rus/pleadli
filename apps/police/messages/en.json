@@ -2635,5 +2635,25 @@
     "serve_heading": "Witnesses to serve",
     "served": "Served",
     "why_not": "Why not served"
+  },
+  "signature": {
+    "title": "My signature",
+    "about": "Kept sealed on this computer. Papers you sign use it, so you never sign twice.",
+    "add": "Add signature",
+    "change": "Change",
+    "remove": "Remove",
+    "none": "No signature yet.",
+    "saved": "Signature saved",
+    "failed": "The signature was not saved",
+    "pad_hint": "Sign here with a finger, pen or mouse.",
+    "pad_clear": "Clear",
+    "pad_done": "Use this signature",
+    "draw": "Draw",
+    "type": "Type",
+    "image": "Picture",
+    "type_hint": "Type your name to sign",
+    "choose": "Choose a picture",
+    "image_hint": "Pick a photo or scan of your signature on white paper.",
+    "take": "Take signature"
   }
 }
