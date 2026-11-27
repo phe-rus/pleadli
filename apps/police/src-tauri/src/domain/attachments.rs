@@ -427,6 +427,7 @@ pub async fn resolve_entity_route(pool: &SqlitePool, entity_type: &str, entity_i
         "exhibit" => format!("/evidence?open={entity_id}"),
         "charge_sheet" => format!("/legal-forms?open={entity_id}"),
         "referral" => format!("/referrals?view=all&open={entity_id}"),
+        "medical_exam" => format!("/medical?open={entity_id}"),
         "vehicle" => format!("/vehicles?open={entity_id}"),
         "station_diary_day" => "/sd-log".to_string(),
         "officer" => format!("/station/officers?open={entity_id}"),

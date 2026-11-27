@@ -8,10 +8,11 @@ use super::bonds::Bond;
 use super::charge_sheets::ChargeSheet;
 use super::custody::CustodyRecord;
 use super::exhibits::Exhibit;
+use super::medical::MedicalExam;
 use super::referrals::Referral;
 use super::registers;
 use super::statements::Statement;
-use super::{attachments, bonds, charge_sheets, custody, exhibits, markdown, referrals, statements};
+use super::{attachments, bonds, charge_sheets, custody, exhibits, markdown, medical, referrals, statements};
 
 /// The role list (complainant, suspect, witness, victim, accused) is exactly
 /// what docs/police/PRODUCT.md specifies for how a Case relates to People —
@@ -309,6 +310,7 @@ pub struct CaseWorkspace {
     pub exhibits: Vec<Exhibit>,
     pub charge_sheets: Vec<ChargeSheet>,
     pub referrals: Vec<Referral>,
+    pub medical_exams: Vec<MedicalExam>,
     pub attachments: Vec<Attachment>,
 }
 
@@ -324,6 +326,7 @@ pub async fn get_case_workspace(pool: &SqlitePool, id: &str) -> Result<Option<Ca
     let exhibits = exhibits::list_for_case(pool, id).await?;
     let charge_sheets = charge_sheets::list_for_case(pool, id).await?;
     let referrals = referrals::list_for_case(pool, id).await?;
+    let medical_exams = medical::list_for_case(pool, id).await?;
     let attachments = attachments::list_attachments(pool, "case", id).await?;
 
     Ok(Some(CaseWorkspace {
@@ -335,6 +338,7 @@ pub async fn get_case_workspace(pool: &SqlitePool, id: &str) -> Result<Option<Ca
         exhibits,
         charge_sheets,
         referrals,
+        medical_exams,
         attachments,
     }))
 }

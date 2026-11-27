@@ -7,6 +7,8 @@ import { StatementForm } from '@/features/statements/statement-form'
 import { statementPersonName, type Statement } from '@/features/statements/schema'
 import { format } from '@/lib/date'
 import * as m from '@/paraglide/messages'
+import { MedicalPaper, medicalKindLabel, medicalPersonName, medicalStatusLabel, type MedicalExam } from '@/features/medical'
+import { ReferralPaper, destination, referralStatusLabel, type Referral } from '@/features/referrals'
 import { usePoliceForce } from '@/features/rules/force'
 import { PaperField, PaperPage, SignatureLine, type PaperLink } from '@pleadli/paper'
 import { RichTextPreview } from '@pleadli/rich-text'
@@ -14,7 +16,7 @@ import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 
-type Picked = { kind: 'statement' | 'exhibit' | 'charge'; id: string }
+type Picked = { kind: 'statement' | 'exhibit' | 'charge' | 'referral' | 'medical'; id: string }
 
 /** The case's own heading on every paper: the case reference and what it is about. */
 function CaseHead({ reference, summary }: { reference: string; summary: string }) {
@@ -30,12 +32,12 @@ function CaseHead({ reference, summary }: { reference: string; summary: string }
 
 /**
  * The case as a binder of the papers the station makes: statements, exhibit
- * entries and charge sheets, each shown as its page with its tabs (detail,
+ * entries, charge sheets, referrals and medical examinations, each shown as its page with its tabs (detail,
  * history, related, citations), ready to print, save as Word and check by
  * code. A statement is edited here: this is where it was made.
  */
-export function CaseBinder({ reference, summary, statements, exhibits, chargeSheets }: { reference: string; summary: string; statements: Statement[]; exhibits: Exhibit[]; chargeSheets: ChargeSheet[] }) {
-  const all: Picked[] = [...chargeSheets.map((c) => ({ kind: 'charge' as const, id: c.id })), ...statements.map((s) => ({ kind: 'statement' as const, id: s.id })), ...exhibits.map((e) => ({ kind: 'exhibit' as const, id: e.id }))]
+export function CaseBinder({ reference, summary, statements, exhibits, chargeSheets, referrals, medicalExams }: { reference: string; summary: string; statements: Statement[]; exhibits: Exhibit[]; chargeSheets: ChargeSheet[]; referrals: Referral[]; medicalExams: MedicalExam[] }) {
+  const all: Picked[] = [...chargeSheets.map((c) => ({ kind: 'charge' as const, id: c.id })), ...statements.map((s) => ({ kind: 'statement' as const, id: s.id })), ...exhibits.map((e) => ({ kind: 'exhibit' as const, id: e.id })), ...medicalExams.map((e) => ({ kind: 'medical' as const, id: e.id })), ...referrals.map((r) => ({ kind: 'referral' as const, id: r.id }))]
   const [picked, setPicked] = useState<Picked | null>(null)
   const current = picked && all.some((p) => p.kind === picked.kind && p.id === picked.id) ? picked : (all[0] ?? null)
   const head = <CaseHead reference={reference} summary={summary} />
@@ -63,6 +65,8 @@ export function CaseBinder({ reference, summary, statements, exhibits, chargeShe
   const statement = current.kind === 'statement' ? statements.find((s) => s.id === current.id) : undefined
   const exhibit = current.kind === 'exhibit' ? exhibits.find((e) => e.id === current.id) : undefined
   const charge = current.kind === 'charge' ? chargeSheets.find((c) => c.id === current.id) : undefined
+  const referral = current.kind === 'referral' ? referrals.find((r) => r.id === current.id) : undefined
+  const exam = current.kind === 'medical' ? medicalExams.find((e) => e.id === current.id) : undefined
 
   return (
     <section className="flex flex-col gap-3">
@@ -75,6 +79,10 @@ export function CaseBinder({ reference, summary, statements, exhibits, chargeShe
           {statements.map((s) => entry({ kind: 'statement', id: s.id }, statementPersonName(s), format(s.givenAt, 'PP')))}
           {exhibits.length > 0 && heading(m["paper.binder.exhibits"]())}
           {exhibits.map((e) => entry({ kind: 'exhibit', id: e.id }, e.identificationMark || e.description, exhibitStatusLabel(e.status)))}
+          {medicalExams.length > 0 && heading(m["paper.binder.medical"]())}
+          {medicalExams.map((e) => entry({ kind: 'medical', id: e.id }, `${medicalKindLabel(e.kind)}: ${medicalPersonName(e)}`, `${medicalStatusLabel(e.status)} · ${format(e.examinedAt ?? e.requestedAt, 'PP')}`))}
+          {referrals.length > 0 && heading(m["paper.binder.referrals"]())}
+          {referrals.map((r) => entry({ kind: 'referral', id: r.id }, destination(r), `${referralStatusLabel(r.status)} · ${format(r.referredAt, 'PP')}`))}
         </nav>
 
         <div className="flex min-w-0 flex-col gap-4">
@@ -147,6 +155,9 @@ export function CaseBinder({ reference, summary, statements, exhibits, chargeShe
               <AttachmentsField entityType={entityTypes.exhibit} entityId={exhibit.id} label={m["common.files"]()} />
             </>
           )}
+
+          {exam && <MedicalPaper key={exam.id} exam={exam} />}
+          {referral && <ReferralPaper key={referral.id} referral={referral} />}
 
           {charge && (
             <>

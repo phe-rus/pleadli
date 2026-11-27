@@ -1,13 +1,10 @@
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
-import { useEnclosures } from '@/features/paper/use-enclosures'
 import { RecordList } from '@/features/paper/record-list'
-import { RecordPaper } from '@/features/paper/record-paper'
-import { ReferralForm, referralDestinationTypeLabel, referralsOptions, referralStatusLabel, useReferrals, type Referral } from '@/features/referrals'
+import { destination, ReferralForm, ReferralPaper, referralsOptions, referralStatusLabel, useReferrals } from '@/features/referrals'
 import { format } from '@/lib/date'
 import { Share08Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { PaperField, SignatureLine } from '@pleadli/paper'
 import { Segmented } from '@pleadli/ui/segmented'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 
@@ -23,51 +20,6 @@ export const Route = createFileRoute('/_public/referrals/')({
   },
   component: RouteComponent,
 })
-
-const destination = (r: Referral) => r.destinationName || referralDestinationTypeLabel(r.destinationType)
-
-/** The covering letter a case file leaves the station with. */
-function ReferralPaper({ referral }: { referral: Referral }) {
-  const { lines: enclosed } = useEnclosures(referral.caseId)
-  return (
-    <RecordPaper
-      entityType="referral"
-      entityId={referral.id}
-      reference={referral.caseReference}
-      title={m["referrals_page.paper_title"]()}
-      details={[
-        { label: m["nav.cases"](), value: referral.caseReference, copy: referral.caseReference },
-        { label: m["referrals_page.to"](), value: destination(referral) },
-        { label: m["referrals.referred_at"](), value: format(referral.referredAt, 'PPp') },
-        { label: m["col.status"](), value: referralStatusLabel(referral.status) },
-      ]}
-      events={[{ at: referral.referredAt, label: m["referrals_page.sent"](), by: referral.officerName }]}
-      edit={(done) => <ReferralForm key={referral.id} referral={referral} onSuccess={done} />}
-    >
-      <section className="mb-5 flex flex-col gap-0.5">
-        <PaperField label={m["referrals_page.to"]()}>{`${destination(referral)} (${referralDestinationTypeLabel(referral.destinationType)})`}</PaperField>
-        <PaperField label={m["nav.cases"]()}>{referral.caseReference}</PaperField>
-        <PaperField label={m["referrals.referred_at"]()}>{format(referral.referredAt, 'PPPP')}</PaperField>
-        <PaperField label={m["col.status"]()}>{referralStatusLabel(referral.status)}</PaperField>
-      </section>
-      <p>{(referral.destinationType === 'dpp' ? m["referrals_page.covering"] : m["referrals_page.covering_plain"])({ reference: referral.caseReference, destination: destination(referral) })}</p>
-      {referral.notes && <p className="whitespace-pre-wrap">{referral.notes}</p>}
-      {enclosed.length > 0 && (
-        <section className="mt-4">
-          <h2 className="mb-1 text-xs font-semibold tracking-wide uppercase text-muted-foreground">{m['charge_sheet.enclosed_heading']()}</h2>
-          <ul className="list-disc pl-5">
-            {enclosed.map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-      <section className="mt-12 flex justify-end">
-        <SignatureLine name={referral.officerName} caption={m["referrals.referring_officer"]()} />
-      </section>
-    </RecordPaper>
-  )
-}
 
 /** Case files sent out of the station: what still waits for a reply, and every referral before. */
 function RouteComponent() {

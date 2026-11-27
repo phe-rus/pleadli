@@ -123,6 +123,10 @@ pub async fn get_exam(pool: &SqlitePool, id: &str) -> Result<Option<MedicalExam>
     sqlx::query_as::<_, MedicalExam>(concat!(select!(), " WHERE e.id = ?")).bind(id).fetch_optional(pool).await
 }
 
+pub async fn list_for_case(pool: &SqlitePool, case_id: &str) -> Result<Vec<MedicalExam>, sqlx::Error> {
+    sqlx::query_as::<_, MedicalExam>(concat!(select!(), " WHERE e.case_id = ? ORDER BY e.requested_at DESC")).bind(case_id).fetch_all(pool).await
+}
+
 pub async fn list_exams(pool: &SqlitePool, query: &str) -> Result<Vec<MedicalExam>, sqlx::Error> {
     let like = format!("%{}%", query.trim());
     sqlx::query_as::<_, MedicalExam>(concat!(

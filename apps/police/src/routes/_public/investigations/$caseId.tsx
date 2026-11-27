@@ -2,7 +2,7 @@ import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { Createpanel } from '@/components/create-panel'
 import { ExhibitForm } from '@/features/evidence'
-import { MedicalForm, medicalKindLabel, medicalOptions, medicalStatusLabel, useMedicalExams } from '@/features/medical'
+import { MedicalForm } from '@/features/medical'
 import { ChargeSheetForm } from '@/features/legal-forms'
 import { ReferralForm } from '@/features/referrals'
 import { StatementForm } from '@/features/statements'
@@ -22,7 +22,7 @@ import {
 } from '@/features/cases'
 import { bondPersonName, bondStatusLabel } from '@/features/bonds/schema'
 import { custodyCompliance, custodyPersonName, custodyStatusLabel } from '@/features/custody/schema'
-import { referralDestinationTypeLabel, referralStatusLabel } from '@/features/referrals/schema'
+import { referralDestinationTypeLabel } from '@/features/referrals/schema'
 import { statementPersonName } from '@/features/statements/schema'
 import { ArrowLeft01Icon, Edit02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -39,11 +39,7 @@ import { useState } from 'react'
 
 export const Route = createFileRoute('/_public/investigations/$caseId')({
   loader: async ({ context, params }) => {
-    const [workspace] = await Promise.all([
-      context.queryClient.query({ ...caseWorkspaceOptions(params.caseId), staleTime: 'static' }),
-      // The Papers tab lists the case's medical exams; load them with the case so it does not wait.
-      context.queryClient.query({ ...medicalOptions(''), staleTime: 'static' }),
-    ])
+    const workspace = await context.queryClient.query({ ...caseWorkspaceOptions(params.caseId), staleTime: 'static' })
     if (!workspace) throw notFound()
   },
   // A restricted case this officer may not open is a refusal with a reason, not a page that failed.
@@ -150,11 +146,9 @@ function RouteComponent() {
   const [tab, setTab] = useState('overview')
   const { data: workspace } = useCaseWorkspace(caseId)
   const exportDocument = useExportCaseDocument(caseId)
-  const { data: allExams } = useMedicalExams('')
-  const exams = allExams.filter((e) => e.caseId === caseId)
 
   if (!workspace) return null
-  const { case: kase, people, statements, custodyRecords, bonds, exhibits, chargeSheets, referrals } = workspace
+  const { case: kase, people, statements, custodyRecords, bonds, exhibits, chargeSheets, referrals, medicalExams } = workspace
 
   const handleExport = async (format: 'pdf' | 'docx') => {
     try {
@@ -314,34 +308,8 @@ function RouteComponent() {
           papers: (
             <div className="flex flex-col gap-8 p-4">
       <AddPapers caseId={caseId} />
-      <CaseBinder reference={kase.reference} summary={kase.summary} statements={statements} exhibits={exhibits} chargeSheets={chargeSheets} />
+      <CaseBinder reference={kase.reference} summary={kase.summary} statements={statements} exhibits={exhibits} chargeSheets={chargeSheets} referrals={referrals} medicalExams={medicalExams} />
 
-      <div className="flex flex-col gap-8 md:max-w-xl">
-        <Section title={m["common.referrals"]()} count={referrals.length}>
-          {referrals.map((r) => (
-            <Row
-              key={r.id}
-              to="/referrals"
-              search={{ open: r.id }}
-              title={r.destinationName || referralDestinationTypeLabel(r.destinationType)}
-              subtitle={referralStatusLabel(r.status)}
-              meta={<span className="text-xs text-muted-foreground">{format(r.referredAt, 'PP')}</span>}
-            />
-          ))}
-        </Section>
-        <Section title={m["nav.medical"]()} count={exams.length}>
-          {exams.map((e) => (
-            <Row
-              key={e.id}
-              to="/medical"
-              search={{ open: e.id }}
-              title={medicalKindLabel(e.kind)}
-              subtitle={medicalStatusLabel(e.status)}
-              meta={<span className="text-xs text-muted-foreground">{format(e.examinedAt ?? e.requestedAt, 'PP')}</span>}
-            />
-          ))}
-        </Section>
-      </div>
 
       <section className="md:max-w-md">
         <AttachmentsField entityType={entityTypes.case} entityId={kase.id} label={m["common.files"]()} />

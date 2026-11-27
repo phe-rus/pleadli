@@ -6,6 +6,7 @@ import { bondSchema } from '@/features/bonds/schema'
 import { custodyRecordSchema } from '@/features/custody/schema'
 import { exhibitSchema } from '@/features/evidence/schema'
 import { chargeSheetSchema } from '@/features/legal-forms/schema'
+import { medicalExamSchema } from '@/features/medical/schema'
 import { referralSchema } from '@/features/referrals/schema'
 import { statementSchema } from '@/features/statements/schema'
 import * as z from 'zod'
@@ -99,6 +100,7 @@ export const caseWorkspaceSchema = z.object({
   exhibits: z.array(exhibitSchema),
   chargeSheets: z.array(chargeSheetSchema),
   referrals: z.array(referralSchema),
+  medicalExams: z.array(medicalExamSchema),
   attachments: z.array(attachmentSchema),
 })
 

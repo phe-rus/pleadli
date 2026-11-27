@@ -168,7 +168,7 @@ export function OfficersPage() {
       <header className="page-header">
         <div>
           <h1>{stationTitle}</h1>
-          <p>{left > 0 ? m["officers_page.count_left"]({ here: here.length, left }) : m["officers_page.count"]({ here: here.length })}</p>
+          <p>{left > 0 ? (here.length === 1 ? m["officers_page.count_left_one"]({ left }) : m["officers_page.count_left"]({ here: here.length, left })) : here.length === 1 ? m["officers_page.count_one"]() : m["officers_page.count"]({ here: here.length })}</p>
         </div>
         <div className="page-actions">
           {left > 0 && (

@@ -659,6 +659,7 @@
     "enclosed_heading": "Statements and exhibits",
     "enclosed_statement": "Statement of {name}, {date}",
     "enclosed_exhibit": "Exhibit {mark}: {description}",
+    "enclosed_charge": "Charge sheet: {offence}",
     "force_ke": "Kenya Police Service",
     "force_cd": "Police Nationale Congolaise"
   },
@@ -821,7 +822,8 @@
     "destination_label": "Destination",
     "no_charge_warning": "This case has no charge sheet yet, so the prosecutor will receive it with no proposed charge. Record the charge first, or refer it anyway and the prosecutor adds it.",
     "enclosed_title": "Goes with this referral",
-    "enclosed_none": "No statements or exhibits are recorded for this case yet.",
+    "enclosed_heading": "Charge sheet, statements and exhibits",
+    "enclosed_none": "No charge sheet, statements or exhibits are recorded for this case yet.",
     "enclosed_add": "Add the list to the notes",
     "enclosed_text": "Enclosed: {list}."
   },
@@ -1771,8 +1773,10 @@
     "no": "No.",
     "signature": "Signature",
     "no_rank": "Rank not given",
-    "count": "{here} at the station",
-    "count_left": "{here} at the station, {left} left",
+    "count_one": "1 officer at the station",
+    "count": "{here} officers at the station",
+    "count_left_one": "1 officer at the station, {left} left",
+    "count_left": "{here} officers at the station, {left} left",
     "print_roll": "Print the nominal roll",
     "on_duty_until": "On duty until {time}"
   },
@@ -1880,7 +1884,9 @@
       "statements": "Statements",
       "exhibits": "Exhibits",
       "charge_sheets": "Charge sheets",
-      "empty": "No papers in this case yet. Record a statement, an exhibit or a charge.",
+      "referrals": "Referrals",
+      "medical": "Medical examinations",
+      "empty": "No papers in this case yet. Record a statement, an exhibit, a charge, an examination or a referral.",
       "open_full": "Open on its own page"
     },
     "police": {
@@ -2381,7 +2387,9 @@
     "update_failed": "Could not update the examination",
     "empty": "No medical examination has been recorded yet.",
     "summary": "{total} records, {waiting} waiting for the examination",
-    "kind_label": "Kind"
+    "kind_label": "Kind",
+    "search": "Search examinations",
+    "no_findings_yet": "The doctor's findings are not recorded yet."
   },
   "exchange": {
     "title": "DPP exchange",

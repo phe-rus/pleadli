@@ -659,6 +659,7 @@
     "enclosed_heading": "Taarifa na vielelezo",
     "enclosed_statement": "Taarifa ya {name}, {date}",
     "enclosed_exhibit": "Kielelezo {mark}: {description}",
+    "enclosed_charge": "Hati ya mashtaka: {offence}",
     "force_ke": "Huduma ya Polisi ya Kenya",
     "force_cd": "Police Nationale Congolaise"
   },
@@ -821,7 +822,8 @@
     "destination_label": "Mahali pa kupeleka",
     "no_charge_warning": "Kesi hii bado haina hati ya mashtaka, kwa hiyo mwendesha mashtaka ataipokea bila shtaka lililopendekezwa. Rekodi shtaka kwanza, au iwasilishe hivyo na mwendesha mashtaka ataliongeza.",
     "enclosed_title": "Vinavyoambatana na rufaa hii",
-    "enclosed_none": "Hakuna taarifa wala vielelezo vilivyorekodiwa kwa kesi hii bado.",
+    "enclosed_heading": "Hati ya mashtaka, taarifa na vielelezo",
+    "enclosed_none": "Hakuna hati ya mashtaka, taarifa wala vielelezo vilivyorekodiwa kwa kesi hii bado.",
     "enclosed_add": "Ongeza orodha kwenye maelezo",
     "enclosed_text": "Vimeambatanishwa: {list}."
   },
@@ -1771,8 +1773,10 @@
     "no": "Na.",
     "signature": "Sahihi",
     "no_rank": "Cheo hakijatajwa",
-    "count": "{here} wako kituoni",
-    "count_left": "{here} wako kituoni, {left} wameondoka",
+    "count_one": "Afisa 1 yuko kituoni",
+    "count": "Maafisa {here} wako kituoni",
+    "count_left_one": "Afisa 1 yuko kituoni, {left} wameondoka",
+    "count_left": "Maafisa {here} wako kituoni, {left} wameondoka",
     "print_roll": "Chapisha orodha ya maafisa",
     "on_duty_until": "Zamuni hadi {time}"
   },
@@ -1880,6 +1884,8 @@
       "statements": "Maelezo",
       "exhibits": "Vielelezo",
       "charge_sheets": "Hati za mashtaka",
+      "referrals": "Rufaa",
+      "medical": "Uchunguzi wa kitabibu",
       "empty": "Bado hakuna karatasi katika kesi hii. Rekodi maelezo, kielelezo au shtaka.",
       "open_full": "Fungua kwenye ukurasa wake"
     },
@@ -2381,7 +2387,9 @@
     "update_failed": "Imeshindwa kusasisha uchunguzi",
     "empty": "Bado hakuna uchunguzi wa kitabibu ulioandikwa.",
     "summary": "Rekodi {total}, {waiting} zinasubiri uchunguzi",
-    "kind_label": "Aina"
+    "kind_label": "Aina",
+    "search": "Tafuta uchunguzi",
+    "no_findings_yet": "Matokeo ya daktari bado hayajarekodiwa."
   },
   "exchange": {
     "title": "Mawasiliano na DPP",

@@ -1,21 +1,24 @@
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
-import { EmptyNote } from '@/components/planned'
-import { MedicalForm, medicalKindLabel, medicalOptions, medicalStatusLabel, useMedicalExams } from '@/features/medical'
-import { personFullName } from '@/features/people'
+import { RecordList } from '@/features/paper/record-list'
+import { MedicalForm, MedicalPaper, medicalKindLabel, medicalOptions, medicalPersonName, medicalStatusLabel, useMedicalExams } from '@/features/medical'
 import { format } from '@/lib/date'
-import { createFileRoute } from '@tanstack/react-router'
-import { Group, GroupRow } from '@pleadli/ui/grouped'
+import { HealthIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_public/medical/')({
+  validateSearch: (search: Record<string, unknown>): { open?: string } => (typeof search.open === 'string' ? { open: search.open } : {}),
   loader: async ({ context }) => {
     await context.queryClient.query({ ...medicalOptions(''), staleTime: 'static' })
   },
   component: RouteComponent,
 })
 
-/** Police medical forms (PF3) and post-mortems: who was examined, where, when, and what was found. */
+/** Police medical forms (PF3) and post-mortems: who was examined, where, when, and what was found. Each opens as its paper. */
 function RouteComponent() {
+  const { open } = Route.useSearch()
+  const navigate = useNavigate()
   const { data: exams } = useMedicalExams('')
   const waiting = exams.filter((e) => e.status === 'requested').length
 
@@ -33,25 +36,27 @@ function RouteComponent() {
         </div>
       </header>
 
-      {exams.length === 0 ? (
-        <EmptyNote>{m["medical.empty"]()}</EmptyNote>
-      ) : (
-        <Group>
-          {exams.map((e) => (
-            <GroupRow
-              key={e.id}
-              label={<span className="font-medium">{`${medicalKindLabel(e.kind)}: ${personFullName({ firstName: e.personFirstName, lastName: e.personLastName, otherNames: e.personOtherNames })}`}</span>}
-              detail={[e.caseReference, e.facility, e.examinerName, e.findings].filter(Boolean).join(' · ')}
-              value={
-                <span className="flex flex-col items-end text-xs leading-tight">
-                  <span>{format(e.examinedAt ?? e.requestedAt, 'd MMM yyyy')}</span>
-                  <span className={e.status === 'requested' ? 'text-amber-700 dark:text-amber-300' : ''}>{medicalStatusLabel(e.status)}</span>
-                </span>
-              }
-            />
-          ))}
-        </Group>
-      )}
+      <RecordList
+        items={exams}
+        date={(e) => e.examinedAt ?? e.requestedAt}
+        label={(e) => `${medicalKindLabel(e.kind)}: ${medicalPersonName(e)}`}
+        detail={(e) => [e.caseReference, e.facility, e.examinerName, medicalStatusLabel(e.status), format(e.examinedAt ?? e.requestedAt, 'd MMM yyyy')].filter(Boolean).join(' · ')}
+        value={(e) =>
+          e.caseId ? (
+            <Link to="/investigations/$caseId" params={{ caseId: e.caseId }} onClick={(event) => event.stopPropagation()} className="text-[0.8125rem]">
+              {m["referrals_page.open_case"]()}
+            </Link>
+          ) : null
+        }
+        searchText={(e) => [medicalPersonName(e), e.caseReference ?? '', e.facility ?? '', e.examinerName ?? '', e.findings ?? ''].join(' ')}
+        paper={(e) => <MedicalPaper exam={e} />}
+        windowTitle={(e) => medicalKindLabel(e.kind)}
+        empty={m["medical.empty"]()}
+        emptyIcon={<HugeiconsIcon icon={HealthIcon} />}
+        searchPlaceholder={m["medical.search"]()}
+        opened={open ?? null}
+        onOpened={(id) => void navigate({ to: '/medical', search: id ? { open: id } : {}, replace: true })}
+      />
     </article>
   )
 }

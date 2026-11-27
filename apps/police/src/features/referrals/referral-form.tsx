@@ -186,9 +186,9 @@ export function ReferralForm({ referral, caseId, onSuccess, onDirtyChange }: Ref
   )
 }
 
-/** What goes with the referral: the case's statements and exhibits, which the officer can put into the notes. */
+/** What goes with the referral: the case's charge sheet, statements and exhibits, which the officer can put into the notes. */
 function Enclosures({ caseId, onAdd }: { caseId: string; onAdd: (text: string) => void }) {
-  const { lines } = useEnclosures(caseId)
+  const { lines } = useEnclosures(caseId, { withCharges: true })
   if (!caseId) return null
   return (
     <div className="flex flex-col gap-2 rounded-md bg-muted px-3 py-2 text-sm">

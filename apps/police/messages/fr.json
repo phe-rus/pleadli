@@ -659,6 +659,7 @@
     "enclosed_heading": "Déclarations et pièces à conviction",
     "enclosed_statement": "Déclaration de {name}, {date}",
     "enclosed_exhibit": "Pièce {mark} : {description}",
+    "enclosed_charge": "Acte d'accusation : {offence}",
     "force_ke": "Kenya Police Service",
     "force_cd": "Police Nationale Congolaise"
   },
@@ -821,7 +822,8 @@
     "destination_label": "Destination",
     "no_charge_warning": "Cette affaire n'a pas encore de procès-verbal d'inculpation : le procureur la recevra sans proposition d'inculpation. Enregistrez d'abord l'inculpation, ou transmettez-la quand même et le procureur l'ajoutera.",
     "enclosed_title": "Joint à ce renvoi",
-    "enclosed_none": "Aucune déclaration ni pièce n'est enregistrée pour cette affaire.",
+    "enclosed_heading": "Acte d'accusation, déclarations et pièces à conviction",
+    "enclosed_none": "Aucun acte d'accusation, déclaration ni pièce n'est enregistré pour cette affaire.",
     "enclosed_add": "Ajouter la liste aux notes",
     "enclosed_text": "Ci-joint : {list}."
   },
@@ -1771,8 +1773,10 @@
     "no": "N°",
     "signature": "Signature",
     "no_rank": "Grade non indiqué",
-    "count": "{here} au poste",
-    "count_left": "{here} au poste, {left} partis",
+    "count_one": "1 agent au poste",
+    "count": "{here} agents au poste",
+    "count_left_one": "1 agent au poste, {left} partis",
+    "count_left": "{here} agents au poste, {left} partis",
     "print_roll": "Imprimer l'état nominatif",
     "on_duty_until": "En service jusqu'à {time}"
   },
@@ -1880,6 +1884,8 @@
       "statements": "Déclarations",
       "exhibits": "Pièces à conviction",
       "charge_sheets": "Procès-verbaux d'inculpation",
+      "referrals": "Renvois",
+      "medical": "Examens médicaux",
       "empty": "Aucune pièce dans cette affaire pour l'instant. Enregistrez une déclaration, une pièce à conviction ou une inculpation.",
       "open_full": "Ouvrir sur sa propre page"
     },
@@ -2381,7 +2387,9 @@
     "update_failed": "Impossible de mettre à jour l'examen",
     "empty": "Aucun examen médical n'a encore été enregistré.",
     "summary": "{total} enregistrements, {waiting} en attente de l'examen",
-    "kind_label": "Type"
+    "kind_label": "Type",
+    "search": "Rechercher un examen",
+    "no_findings_yet": "Les constatations du médecin ne sont pas encore enregistrées."
   },
   "exchange": {
     "title": "Échange avec le parquet",
