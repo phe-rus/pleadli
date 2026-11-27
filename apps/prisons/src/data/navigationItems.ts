@@ -91,27 +91,21 @@ export const prisonsNav: readonly SidebarNavItem[] = [
   {
     icon: GavelIcon,
     get label() { return m.nav_court() },
-    to: '/legal',
-    facilityOnly: true,
-    requires: ['prisoner.read'],
     get section() { return m.nav_work() },
+    children: [
+      { icon: GavelIcon, get label() { return m.nav_court() }, to: "/legal", facilityOnly: true, requires: ["prisoner.read"] },
+      { icon: Mail01Icon, get label() { return m.nav_court_orders() }, to: "/court-orders", requires: ["court.manage"] },
+    ],
   },
   {
     icon: PrisonerIcon,
     get label() { return m.nav_population() },
-    to: '/prisoners',
-    facilityOnly: true,
-    requires: ['prisoner.read'],
-    get section() { return m.nav_people() },
-  },
-  {
-    icon: HandshakeIcon,
-    get label() { return m.nav_care_and_contact() },
     facilityOnly: true,
     get section() { return m.nav_people() },
     children: [
-      { icon: HandshakeIcon, get label() { return m.nav_visits() }, to: '/visits', requires: ['prisoner.read'] },
-      { icon: Message01Icon, get label() { return m.nav_requests() }, to: '/requests', requires: ['prisoner.read'] },
+      { icon: PrisonerIcon, get label() { return m.nav_population() }, to: "/prisoners", requires: ["prisoner.read"] },
+      { icon: HandshakeIcon, get label() { return m.nav_visits() }, to: "/visits", requires: ["prisoner.read"] },
+      { icon: Message01Icon, get label() { return m.nav_requests() }, to: "/requests", requires: ["prisoner.read"] },
     ],
   },
   {
@@ -132,13 +126,6 @@ export const prisonsNav: readonly SidebarNavItem[] = [
     // call then failed with a 403 (hq.estate.read) instead of a redirect.
     requires: ['hq.estate.read'],
     get section() { return m.nav_administration() },
-  },
-  {
-    icon: Mail01Icon,
-    get label() { return m.nav_court_orders() },
-    to: '/court-orders',
-    requires: ['court.manage'],
-    get section() { return m.nav_institution() },
   },
   {
     icon: Mail01Icon,
@@ -179,6 +166,7 @@ export function visibleNav(isHeadOffice: boolean, permissions: readonly string[]
     '/inbox': m.nav_the_network(),
     '/facilities': m.nav_administration(),
     '/reports': m.nav_institutional_work(),
+    '/legal': m.nav_institutional_work(),
     '/officers': m.nav_administration(),
     '/settings': m.nav_administration(),
   }
@@ -187,7 +175,7 @@ export function visibleNav(isHeadOffice: boolean, permissions: readonly string[]
     .map((item) => ({
       ...item,
       section: isHeadOffice ? (sectionOverride[item.to ?? item.children?.[0]?.to ?? ''] ?? item.section) : item.section,
-      ...(item.children ? { children: item.children.filter(allowed) } : {}),
+      ...(item.children ? { children: item.children.filter((c) => allowed(c) && (isHeadOffice ? !c.facilityOnly : !c.hqOnly)) } : {}),
     }))
     .filter((item) => allowed(item) && (!item.children || item.children.length > 0))
 }
