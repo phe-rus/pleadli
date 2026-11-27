@@ -67,7 +67,7 @@ export async function checkNow(byHand = false) {
     if (!update) return set({ phase: 'current', version: null, checkedAt: Date.now() })
     set({ phase: 'available', version: update.version, checkedAt: Date.now() })
     if (autoUpdate()) await download()
-    else if (!byHand) t.info(m["update.available"]({ version: update.version }), { action: { label: m["update.get"](), onClick: () => void download() } })
+    else if (!byHand) t.info(m["update.available"]({ version: update.version }), { id: "update-available", action: { label: m["update.get"](), onClick: () => void download() } })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     // Releases are built for some systems only (Windows today): a feed with no
