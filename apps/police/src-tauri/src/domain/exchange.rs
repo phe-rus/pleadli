@@ -7,7 +7,7 @@
 
 use pleadli_interchange::envelope::{self, Body};
 use pleadli_interchange::identity::{hex, unhex32, Identity, IdentityKind, PublicIdentity};
-use pleadli_interchange::messages::{ChargeClaim, ExhibitClaim, PersonClaim, ReferralPayload, StatementClaim, KIND_DECISION_NOTICE, KIND_RECEIPT, KIND_REFERRAL};
+use pleadli_interchange::messages::{ChargeClaim, ExhibitClaim, HearingMinutePayload, PersonClaim, ReferralPayload, ServiceReportPayload, ServiceResult, StatementClaim, KIND_DECISION_NOTICE, KIND_HEARING_MINUTE, KIND_RECEIPT, KIND_REFERRAL, KIND_SERVICE_REPORT};
 use pleadli_interchange::pairing::{self, KIND_CONFIRMATION};
 use serde::Serialize;
 use sqlx::{FromRow, SqlitePool};
@@ -21,6 +21,9 @@ fn bad(message: impl Into<String>) -> DomainError {
     DomainError::Invalid(message.into())
 }
 const DAMAGED: &str = "This station's identity is damaged.";
+/// An authentic minute the station could not match to exactly one of its cases. Kept as received; changes nothing until
+/// an officer matches it.
+pub const NEEDS_REVIEW: &str = "needs_review";
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -210,7 +213,7 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
             .await?;
         return Ok(Imported { kind: KIND_CONFIRMATION.into(), message });
     }
-    if header.kind != KIND_RECEIPT && header.kind != KIND_DECISION_NOTICE {
+    if header.kind != KIND_RECEIPT && header.kind != KIND_DECISION_NOTICE && header.kind != KIND_HEARING_MINUTE {
         return Err(bad(format!("This station does not receive packages of kind '{}'.", header.kind)));
     }
     if status != "trusted" {
@@ -225,8 +228,23 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         envelope::PackageError::BadSignature => bad("The signature does not match the office this station trusts. Nothing was kept."),
         other => bad(other.to_string()),
     })?;
+    // A signed minute from the trusted office is real correspondence whether or not this station can tell which of its
+    // cases it is about: the case may have gone to the office on paper, before this application, or under an edited
+    // reference. It is matched to a case only when exactly one case carries that reference. Otherwise it is kept as it
+    // arrived and held for an officer to match; nothing is changed on any case until then. A package that is not a
+    // readable minute is a damaged package and is refused.
+    let mut matched_case: Option<String> = None;
+    let mut held_for_review = false;
+    if opened.header.kind == KIND_HEARING_MINUTE {
+        let minute: HearingMinutePayload = serde_json::from_value(opened.body.json.clone()).map_err(|_| bad("The hearing minute inside the package could not be read. Nothing was kept."))?;
+        let found: Vec<String> = sqlx::query_scalar("SELECT id FROM cases WHERE reference = ?").bind(minute.police_reference.trim()).fetch_all(pool).await?;
+        match found.as_slice() {
+            [only] => matched_case = Some(only.clone()),
+            _ => held_for_review = true,
+        }
+    }
     let mut tx = pleadli_node_core::db::begin_write(pool).await?;
-    sqlx::query("INSERT INTO exchange_incoming (id, connection_id, kind, seq, in_reply_to, sent_at, received_at, package_sha256, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO exchange_incoming (id, connection_id, kind, seq, in_reply_to, sent_at, received_at, package_sha256, payload, status, case_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&opened.header.id)
         .bind(&connection_id)
         .bind(&opened.header.kind)
@@ -236,6 +254,8 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         .bind(now())
         .bind(envelope::sha256_hex(bytes))
         .bind(serde_json::to_string(&opened.body.json).unwrap_or_default())
+        .bind(if held_for_review { NEEDS_REVIEW } else { "received" })
+        .bind(&matched_case)
         .execute(&mut *tx)
         .await?;
     sqlx::query("UPDATE dpp_connections SET last_seq_in = MAX(last_seq_in, ?) WHERE id = ?").bind(opened.header.seq as i64).bind(&connection_id).execute(&mut *tx).await?;
@@ -272,8 +292,13 @@ pub async fn import_package(pool: &SqlitePool, bytes: &[u8]) -> Result<Imported,
         }
     }
     tx.commit().await?;
-    let what = if opened.header.kind == KIND_RECEIPT { "A receipt" } else { "A decision notice" };
-    Ok(Imported { kind: opened.header.kind, message: format!("{what} from {} is waiting for you to read.", office.name) })
+    let what = match opened.header.kind.as_str() {
+        KIND_RECEIPT => "A receipt",
+        KIND_HEARING_MINUTE => "A hearing minute",
+        _ => "A decision notice",
+    };
+    let message = if held_for_review { format!("{what} from {} was kept, but it does not match one case. Match it to its case before anything is done with it.", office.name) } else { format!("{what} from {} is waiting for you to read.", office.name) };
+    Ok(Imported { kind: opened.header.kind, message })
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
@@ -285,11 +310,37 @@ pub struct Incoming {
     pub sent_at: i64,
     pub received_at: i64,
     pub payload: String,
+    /// `received`, or `needs_review` for a minute not yet matched to a case.
+    pub status: String,
+    pub case_id: Option<String>,
     pub office_name: String,
 }
 
 pub async fn list_incoming(pool: &SqlitePool) -> Result<Vec<Incoming>, DomainError> {
-    Ok(sqlx::query_as("SELECT i.id, i.kind, i.in_reply_to, i.sent_at, i.received_at, i.payload, c.office_name FROM exchange_incoming i JOIN dpp_connections c ON c.id = i.connection_id ORDER BY i.received_at DESC").fetch_all(pool).await?)
+    Ok(sqlx::query_as("SELECT i.id, i.kind, i.in_reply_to, i.sent_at, i.received_at, i.payload, i.status, i.case_id, c.office_name FROM exchange_incoming i JOIN dpp_connections c ON c.id = i.connection_id ORDER BY i.received_at DESC").fetch_all(pool).await?)
+}
+
+/// An officer matches a held minute to the case it belongs to. Nothing was changed by the minute while it waited, and
+/// the match is written to the audit trail with who made it and from what reference to what case. A minute that is
+/// already matched is not matched again: that would quietly move correspondence from one case to another.
+pub async fn match_incoming_to_case(pool: &SqlitePool, incoming_id: &str, case_id: &str, officer: &str) -> Result<(), DomainError> {
+    let row: Option<(String, String, String)> = sqlx::query_as("SELECT kind, status, payload FROM exchange_incoming WHERE id = ?").bind(incoming_id).fetch_optional(pool).await?;
+    let (kind, status, payload) = row.ok_or_else(|| DomainError::NotFound("No such message was received.".into()))?;
+    if kind != KIND_HEARING_MINUTE {
+        return Err(bad("Only a hearing minute needs to be matched to a case."));
+    }
+    if status != NEEDS_REVIEW {
+        return Err(bad("This minute is already matched to a case."));
+    }
+    let case: Option<(String,)> = sqlx::query_as("SELECT reference FROM cases WHERE id = ?").bind(case_id).fetch_optional(pool).await?;
+    let (case_reference,) = case.ok_or_else(|| DomainError::NotFound("No such case.".into()))?;
+    let said = serde_json::from_str::<HearingMinutePayload>(&payload).map(|m| m.police_reference).unwrap_or_default();
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    sqlx::query("UPDATE exchange_incoming SET case_id = ?, status = 'received' WHERE id = ? AND status = ?").bind(case_id).bind(incoming_id).bind(NEEDS_REVIEW).execute(&mut *tx).await?;
+    pleadli_node_core::audit::record(&mut tx, Some(officer), pleadli_node_core::audit::Entry::new("hearing_minute_matched").subject("exchange_incoming", incoming_id).scope(case_id).detail(format!("The minute named '{said}'; matched to {case_reference}")))
+        .await?;
+    tx.commit().await?;
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
@@ -404,7 +455,15 @@ async fn referral_payload(pool: &SqlitePool, vault_root: &std::path::Path, refer
 
     check_ready_to_refer(pool, &case_id).await?;
 
-    Ok((ReferralPayload { police_reference: reference, station_name, referred_at, referring_officer: officer, summary, people, statements, exhibits, charges, resubmission_of, notes }, files))
+    // The custody clock at the office starts from the arrest, so the station says when it was and where the accused is
+    // held. The earliest arrest still in custody on this case is the one that matters; nothing is sent when the case has none.
+    let custody: Option<(i64, Option<String>)> = sqlx::query_as("SELECT arrested_at, location FROM custody_records WHERE case_id = ? AND status = 'in_custody' ORDER BY arrested_at ASC LIMIT 1")
+        .bind(&case_id)
+        .fetch_optional(pool)
+        .await?;
+    let (arrested_at, held_place) = custody.map_or((None, None), |(at, place)| (Some(at), place));
+
+    Ok((ReferralPayload { police_reference: reference, station_name, referred_at, referring_officer: officer, summary, people, statements, exhibits, charges, resubmission_of, notes, arrested_at, held_place }, files))
 }
 
 /// Seals a referral to the one trusted office, for saving as a file or for the
@@ -436,6 +495,75 @@ pub async fn export_referral(pool: &SqlitePool, vault_root: &std::path::Path, re
     tx.commit().await?;
     let safe: String = payload.police_reference.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '-' }).collect();
     Ok((bytes, format!("referral-{}-{}.pxpkg", safe.trim_matches('-').to_lowercase(), seq)))
+}
+
+/// The station's answer to a hearing minute: which of the witnesses the office named it served. Only names that were on
+/// the minute are accepted, so a typo cannot report on someone the office never asked about. Goes back to the office
+/// that sent the minute, as a reply to it.
+pub async fn export_service_report(pool: &SqlitePool, minute_package_id: &str, results: Vec<ServiceResult>, reported_by: Option<String>, route: &str) -> Result<(Vec<u8>, String), DomainError> {
+    let station = require_identity(pool).await?;
+    let row: Option<(String, String, String)> = sqlx::query_as("SELECT connection_id, payload, status FROM exchange_incoming WHERE id = ? AND kind = ?").bind(minute_package_id).bind(KIND_HEARING_MINUTE).fetch_optional(pool).await?;
+    let (connection_id, payload, minute_status) = row.ok_or_else(|| DomainError::NotFound("No such hearing minute was received.".into()))?;
+    if minute_status == NEEDS_REVIEW {
+        return Err(bad("This minute has not been matched to a case yet. Match it to its case first."));
+    }
+    let minute: HearingMinutePayload = serde_json::from_str(&payload).map_err(|_| bad("The stored minute could not be read."))?;
+    if results.is_empty() {
+        return Err(bad("Say what happened to at least one witness."));
+    }
+    if let Some(unknown) = results.iter().find(|r| !minute.witnesses_to_serve.iter().any(|w| w.name == r.name)) {
+        return Err(bad(format!("{} was not named on the minute.", unknown.name)));
+    }
+    if results.iter().any(|r| !r.served && r.reason.as_deref().map_or(true, |x| x.trim().is_empty())) {
+        return Err(bad("Say why a witness was not served."));
+    }
+    let mut names = std::collections::HashSet::new();
+    if let Some(twice) = results.iter().find(|r| !names.insert(r.name.as_str())) {
+        return Err(bad(format!("{} is in the report twice.", twice.name)));
+    }
+    let (office, status) = office_public(pool, &connection_id).await?;
+    if status != "trusted" {
+        return Err(bad("That office is no longer confirmed as trusted, so nothing more is sent to it."));
+    }
+    let safe: String = minute.police_reference.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '-' }).collect();
+    // The report is about this minute only. A witness may be reported again on the same minute (a further attempt, or a
+    // correction of an earlier report); every report stays on the record. Only the exact same results sent again are
+    // treated as a retransmission: the earlier record is sealed again, and no second record is made.
+    let key = |rs: &[ServiceResult]| {
+        let mut k: Vec<(String, bool, String, Option<i64>)> = rs.iter().map(|r| (r.name.trim().to_string(), r.served, r.reason.as_deref().map(str::trim).unwrap_or("").to_string(), r.served_at)).collect();
+        k.sort();
+        k
+    };
+    let earlier: Vec<(i64, String)> = sqlx::query_as("SELECT seq, payload FROM exchange_outgoing WHERE kind = ? AND in_reply_to = ? ORDER BY seq").bind(KIND_SERVICE_REPORT).bind(minute_package_id).fetch_all(pool).await?;
+    for (seq, stored) in &earlier {
+        if let Ok(prev) = serde_json::from_str::<ServiceReportPayload>(stored) {
+            if key(&prev.results) == key(&results) {
+                let json = serde_json::to_value(&prev).map_err(|_| bad("Could not build the report."))?;
+                let (bytes, _) = envelope::seal(&station, &office, KIND_SERVICE_REPORT, *seq as u64, Some(minute_package_id), &Body::new(json)).map_err(|e| bad(e.to_string()))?;
+                return Ok((bytes, format!("service-report-{}-{}.pxpkg", safe.trim_matches('-').to_lowercase(), seq)));
+            }
+        }
+    }
+    let report = ServiceReportPayload { police_reference: minute.police_reference.clone(), dpp_file_key: minute.dpp_file_key.clone(), heard_at: minute.heard_at, results, reported_at: now(), reported_by };
+    let json = serde_json::to_value(&report).map_err(|_| bad("Could not build the report."))?;
+    let mut tx = pleadli_node_core::db::begin_write(pool).await?;
+    let seq: i64 = sqlx::query_scalar("SELECT next_seq_out FROM dpp_connections WHERE id = ?").bind(&connection_id).fetch_one(&mut *tx).await?;
+    sqlx::query("UPDATE dpp_connections SET next_seq_out = next_seq_out + 1 WHERE id = ?").bind(&connection_id).execute(&mut *tx).await?;
+    let (bytes, header) = envelope::seal(&station, &office, KIND_SERVICE_REPORT, seq as u64, Some(minute_package_id), &Body::new(json.clone())).map_err(|e| bad(e.to_string()))?;
+    sqlx::query("INSERT INTO exchange_outgoing (id, connection_id, kind, seq, in_reply_to, referral_id, payload, prepared_at, exported_at, route) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)")
+        .bind(&header.id)
+        .bind(&connection_id)
+        .bind(KIND_SERVICE_REPORT)
+        .bind(seq)
+        .bind(minute_package_id)
+        .bind(serde_json::to_string(&json).unwrap_or_default())
+        .bind(now())
+        .bind(now())
+        .bind(route)
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await?;
+    Ok((bytes, format!("service-report-{}-{}.pxpkg", safe.trim_matches('-').to_lowercase(), seq)))
 }
 
 #[cfg(test)]
@@ -509,6 +637,7 @@ mod tests {
         sqlx::query("INSERT INTO case_people (id, case_id, person_id, role) VALUES ('cp1', 'c1', 'p1', 'accused')").execute(&pool).await.unwrap();
         sqlx::query("INSERT INTO charge_sheets (id, case_id, accused_person_id, offence, statutory_section, particulars, charged_at, officer_name, station_name) VALUES ('cs1', 'c1', 'p1', 'Theft', 'Penal Code Act, section 254', 'Stole goods.', 1, 'IO', 'Exchange Test Police Station')").execute(&pool).await.unwrap();
         sqlx::query("INSERT INTO referrals (id, case_id, destination_type, destination_name, referred_at, status, officer_name) VALUES ('r1', 'c1', 'dpp', 'DPP', 2, 'sent', 'IO')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO custody_records (id, person_id, case_id, arrested_at, location, status) VALUES ('cr1', 'p1', 'c1', 1700000000000, 'Exchange Test Police Station cells', 'in_custody')").execute(&pool).await.unwrap();
         assert!(export_referral(&pool, std::path::Path::new(""), "r1", "file").await.is_err());
 
         let confirmation = pairing::make_confirmation(&office, &response.station, &invite.invite_id, "trusted", None).unwrap();
@@ -525,6 +654,8 @@ mod tests {
         assert_eq!(payload.people.len(), 1);
         assert_eq!(payload.people[0].role, "accused");
         assert_eq!(payload.charges[0].offence, "Theft");
+        assert_eq!(payload.arrested_at, Some(1_700_000_000_000), "the arrest goes with the referral so the office's clock can start");
+        assert_eq!(payload.held_place.as_deref(), Some("Exchange Test Police Station cells"), "held_place is the place, as text");
         let other = Identity::generate(IdentityKind::DppOffice, "Another Office", None);
         assert!(envelope::open(&other, envelope::peek(&bytes).unwrap(), &response.station).is_err(), "sealed to one office only");
 
@@ -553,10 +684,199 @@ mod tests {
         let still: String = sqlx::query_scalar("SELECT status FROM referrals WHERE id = 'r1'").fetch_one(&pool).await.unwrap();
         assert_eq!(still, "returned", "a late receipt does not undo it");
 
+        // The office's minute of a hearing is held, and the station answers it for the witnesses it was asked to serve.
+        let minute = pleadli_interchange::messages::HearingMinutePayload {
+            police_reference: "EXCH CRB 1/2026".into(),
+            dpp_file_key: "file-1".into(),
+            heard_at: 5_000,
+            witnesses_to_serve: vec![pleadli_interchange::messages::WitnessToServe { name: "PW2 Kato".into(), role: None }],
+            ..Default::default()
+        };
+        let (minute_bytes, minute_header) = envelope::seal(&office, &response.station, KIND_HEARING_MINUTE, 4, None, &Body::new(serde_json::to_value(&minute).unwrap())).unwrap();
+        assert_eq!(import_package(&pool, &minute_bytes).await.unwrap().kind, KIND_HEARING_MINUTE);
+        let served = |name: &str, served: bool, reason: Option<&str>| ServiceResult { name: name.into(), served, reason: reason.map(str::to_string), served_at: None };
+        assert!(export_service_report(&pool, &minute_header.id, vec![served("Someone Else", true, None)], None, "file").await.is_err(), "only a named witness can be reported on");
+        assert!(export_service_report(&pool, &minute_header.id, vec![served("PW2 Kato", false, None)], None, "file").await.is_err(), "not serving needs a reason");
+        let (report_bytes, _) = export_service_report(&pool, &minute_header.id, vec![served("PW2 Kato", true, None)], Some("D/Sgt B".into()), "file").await.unwrap();
+        let reported = envelope::open(&office, envelope::peek(&report_bytes).unwrap(), &response.station).unwrap();
+        assert_eq!(reported.header.kind, KIND_SERVICE_REPORT);
+        assert_eq!(reported.header.in_reply_to.as_deref(), Some(minute_header.id.as_str()));
+        let report: ServiceReportPayload = serde_json::from_value(reported.body.json).unwrap();
+        assert_eq!((report.dpp_file_key.as_str(), report.heard_at, report.results.len()), ("file-1", 5_000, 1));
+
         // A stranger's package is refused.
         let stranger = Identity::generate(IdentityKind::DppOffice, "Stranger", None);
         let (forged, _) = envelope::seal(&stranger, &response.station, KIND_RECEIPT, 1, None, &Body::new(serde_json::json!({}))).unwrap();
         assert!(import_package(&pool, &forged).await.is_err());
+        pool.close().await;
+    }
+
+    /// A connected station and office, with one case referred and accepted, ready for the office to send minutes.
+    async fn referred_case(pool: &SqlitePool, reference: &str, with_custody: bool) -> (Identity, PublicIdentity, String) {
+        create_identity(pool, "Minute Test Police Station", Some("Kampala")).await.unwrap();
+        let office = Identity::generate(IdentityKind::DppOffice, "Minute Test DPP Office", Some("Kampala"));
+        let (invite_file, invite) = pairing::make_invite(&office, "Minute Test Police Station", i64::MAX).unwrap();
+        let (_, response_file) = accept_invite(pool, &invite_file, Some("OC Test")).await.unwrap();
+        let response = pairing::read_response(&response_file).unwrap();
+        import_package(pool, &pairing::make_confirmation(&office, &response.station, &invite.invite_id, "trusted", None).unwrap()).await.unwrap();
+        sqlx::query("INSERT INTO cases (id, reference, summary, status) VALUES ('c1', ?, 'Robbery', 'open')").bind(reference).execute(pool).await.unwrap();
+        sqlx::query("INSERT INTO people (id, first_name, last_name) VALUES ('p1', 'Moses', 'Ssekandi')").execute(pool).await.unwrap();
+        sqlx::query("INSERT INTO case_people (id, case_id, person_id, role) VALUES ('cp1', 'c1', 'p1', 'accused')").execute(pool).await.unwrap();
+        sqlx::query("INSERT INTO charge_sheets (id, case_id, accused_person_id, offence, statutory_section, particulars, charged_at, officer_name, station_name) VALUES ('cs1', 'c1', 'p1', 'Robbery', 'Penal Code Act, section 285', 'Robbed.', 1, 'IO', 'Minute Test Police Station')").execute(pool).await.unwrap();
+        sqlx::query("INSERT INTO referrals (id, case_id, destination_type, destination_name, referred_at, status, officer_name) VALUES ('r1', 'c1', 'dpp', 'DPP', 2, 'sent', 'IO')").execute(pool).await.unwrap();
+        if with_custody {
+            sqlx::query("INSERT INTO custody_records (id, person_id, case_id, arrested_at, location, status) VALUES ('cr1', 'p1', 'c1', 1700000000000, 'Cells', 'in_custody')").execute(pool).await.unwrap();
+        }
+        export_referral(pool, std::path::Path::new(""), "r1", "file").await.unwrap();
+        (office.clone(), response.station, invite.invite_id.clone())
+    }
+
+    fn seal_minute(office: &Identity, station: &PublicIdentity, reference: &str, heard_at: i64, witnesses: &[&str], seq: u64) -> (Vec<u8>, String) {
+        let minute = HearingMinutePayload {
+            police_reference: reference.into(),
+            dpp_file_key: "file-1".into(),
+            heard_at,
+            witnesses_to_serve: witnesses.iter().map(|n| pleadli_interchange::messages::WitnessToServe { name: (*n).into(), role: None }).collect(),
+            ..Default::default()
+        };
+        let (bytes, header) = envelope::seal(office, station, KIND_HEARING_MINUTE, seq, None, &Body::new(serde_json::to_value(&minute).unwrap())).unwrap();
+        (bytes, header.id)
+    }
+
+    fn result(name: &str, served: bool, reason: Option<&str>) -> ServiceResult {
+        ServiceResult { name: name.into(), served, reason: reason.map(str::to_string), served_at: None }
+    }
+
+    /// The minute side of the exchange: what the station will and will not keep, and what stays on the record.
+    #[tokio::test]
+    async fn an_authentic_minute_is_always_kept_and_held_for_matching_when_its_case_is_unclear() {
+        let pool = test_pool().await;
+        let (office, station, _) = referred_case(&pool, "MIN CRB 5/2026", true).await;
+
+        // An authentic minute for a reference this station has no case for (paper referral, an older record, an edited
+        // reference) is kept as received and held. It matches nothing, and no report can be built on it yet.
+        let (stray, stray_id) = seal_minute(&office, &station, "OTHER CRB 9/2026", 9_000, &["PW1 Nabirye"], 1);
+        let held = import_package(&pool, &stray).await.unwrap();
+        assert!(held.message.contains("does not match one case"), "{}", held.message);
+        let kept = list_incoming(&pool).await.unwrap();
+        assert_eq!((kept.len(), kept[0].status.as_str(), kept[0].case_id.clone()), (1, NEEDS_REVIEW, None));
+        assert!(kept[0].payload.contains("PW1 Nabirye"), "the minute is kept as it arrived");
+        let result_for = |n: &str| ServiceResult { name: n.into(), served: true, reason: None, served_at: None };
+        assert!(export_service_report(&pool, &stray_id, vec![result_for("PW1 Nabirye")], None, "file").await.is_err(), "nothing is sent on an unmatched minute");
+        assert!(import_package(&pool, &stray).await.is_err(), "the same held minute is not kept twice");
+
+        // An officer matches it to the case it belongs to. It is recorded who did it, and it cannot be moved again.
+        assert!(match_incoming_to_case(&pool, &stray_id, "no-such-case", "Sgt B").await.is_err());
+        match_incoming_to_case(&pool, &stray_id, "c1", "Sgt B").await.unwrap();
+        let matched = list_incoming(&pool).await.unwrap();
+        assert_eq!((matched[0].status.as_str(), matched[0].case_id.as_deref()), ("received", Some("c1")));
+        assert!(match_incoming_to_case(&pool, &stray_id, "c1", "Sgt B").await.is_err(), "a matched minute is not matched again");
+        let trail: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM audit_log WHERE action = 'hearing_minute_matched' AND scope_id = 'c1' AND detail LIKE '%OTHER CRB 9/2026%'").fetch_one(&pool).await.unwrap();
+        assert_eq!(trail, 1, "the match is on the audit trail");
+        assert!(export_service_report(&pool, &stray_id, vec![result_for("PW1 Nabirye")], None, "file").await.is_ok(), "once matched, a report can be made");
+        sqlx::query("DELETE FROM exchange_outgoing WHERE in_reply_to = ?").bind(&stray_id).execute(&pool).await.unwrap();
+        sqlx::query("DELETE FROM exchange_incoming WHERE id = ?").bind(&stray_id).execute(&pool).await.unwrap();
+
+        // A minute from an office that is not the trusted one is refused.
+        let impostor = Identity::generate(IdentityKind::DppOffice, "Impostor Office", None);
+        let (forged, _) = seal_minute(&impostor, &station, "MIN CRB 5/2026", 9_000, &["PW1 Nabirye"], 1);
+        assert!(import_package(&pool, &forged).await.is_err());
+        assert!(list_incoming(&pool).await.unwrap().is_empty());
+
+        // The real minute is kept once; the same file again is a replay and changes nothing.
+        let (bytes, _) = seal_minute(&office, &station, "MIN CRB 5/2026", 9_000, &["PW1 Nabirye", "PW2 Kato"], 1);
+        let kept = import_package(&pool, &bytes).await.unwrap();
+        assert_eq!(kept.kind, KIND_HEARING_MINUTE);
+        assert!(kept.message.contains("hearing minute"), "{}", kept.message);
+        assert!(import_package(&pool, &bytes).await.is_err(), "the same minute is not kept twice");
+        assert_eq!(list_incoming(&pool).await.unwrap().len(), 1);
+
+        // A package that says it is a minute but is not one is refused before it is kept.
+        let (junk, _) = envelope::seal(&office, &station, KIND_HEARING_MINUTE, 2, None, &Body::new(serde_json::json!({ "heardAt": "yesterday" }))).unwrap();
+        assert!(import_package(&pool, &junk).await.is_err());
+        assert_eq!(list_incoming(&pool).await.unwrap().len(), 1);
+        pool.close().await;
+    }
+
+    /// The arrest travels with the referral only when the case has one, and a released person is not reported as held.
+    #[tokio::test]
+    async fn the_referral_says_when_and_where_the_accused_was_held_only_when_they_are() {
+        let pool = test_pool().await;
+        let (office, station, referral_id) = referred_case(&pool, "CUS CRB 1/2026", false).await;
+        let (bytes, _) = export_referral(&pool, std::path::Path::new(""), "r1", "file").await.unwrap();
+        let none: ReferralPayload = serde_json::from_value(envelope::open(&office, envelope::peek(&bytes).unwrap(), &station).unwrap().body.json).unwrap();
+        assert_eq!((none.arrested_at, none.held_place), (None, None), "no custody record, no arrest is claimed");
+        assert!(!referral_id.is_empty());
+
+        // Two arrests: the earlier one still in custody counts. A released one does not.
+        sqlx::query("INSERT INTO custody_records (id, person_id, case_id, arrested_at, location, status) VALUES ('old', 'p1', 'c1', 1000, 'Old cells', 'released')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO custody_records (id, person_id, case_id, arrested_at, location, status) VALUES ('b', 'p1', 'c1', 5000, 'Second cells', 'in_custody')").execute(&pool).await.unwrap();
+        sqlx::query("INSERT INTO custody_records (id, person_id, case_id, arrested_at, location, status) VALUES ('a', 'p1', 'c1', 3000, 'First cells', 'in_custody')").execute(&pool).await.unwrap();
+        let (bytes, _) = export_referral(&pool, std::path::Path::new(""), "r1", "file").await.unwrap();
+        let held: ReferralPayload = serde_json::from_value(envelope::open(&office, envelope::peek(&bytes).unwrap(), &station).unwrap().body.json).unwrap();
+        assert_eq!((held.arrested_at, held.held_place.as_deref()), (Some(3000), Some("First cells")));
+        pool.close().await;
+    }
+
+    /// Reporting on service: served and unserved together, reasons required, duplicates and repeats refused, follow-up
+    /// reports for the witnesses not yet served, and the whole history kept.
+    #[tokio::test]
+    async fn service_reports_cover_served_and_unserved_witnesses_and_keep_their_history() {
+        let pool = test_pool().await;
+        let (office, station, invite_id) = referred_case(&pool, "SVC CRB 7/2026", true).await;
+        let (bytes, minute_id) = seal_minute(&office, &station, "SVC CRB 7/2026", 12_000, &["PW1 Nabirye", "PW2 Kato", "PW3 Okello"], 1);
+        import_package(&pool, &bytes).await.unwrap();
+
+        // No such minute, and nothing to say.
+        assert!(matches!(export_service_report(&pool, "no-such-minute", vec![result("PW1 Nabirye", true, None)], None, "file").await, Err(DomainError::NotFound(_))));
+        assert!(export_service_report(&pool, &minute_id, vec![], None, "file").await.is_err());
+        // A blank reason is not a reason; a witness cannot be in the report twice; strangers are refused.
+        assert!(export_service_report(&pool, &minute_id, vec![result("PW2 Kato", false, Some("   "))], None, "file").await.is_err());
+        let twice = export_service_report(&pool, &minute_id, vec![result("PW1 Nabirye", true, None), result("PW1 Nabirye", false, Some("moved"))], None, "file").await.unwrap_err().to_string();
+        assert!(twice.contains("twice"), "{twice}");
+        assert!(export_service_report(&pool, &minute_id, vec![result("PW1 Nabirye", true, None), result("PW9 Nobody", true, None)], None, "file").await.is_err(), "one stranger refuses the whole report");
+        let nothing_sent: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM exchange_outgoing WHERE kind = ?").bind(KIND_SERVICE_REPORT).fetch_one(&pool).await.unwrap();
+        assert_eq!(nothing_sent, 0, "a refused report leaves no record of having been sent");
+
+        // One report with a witness served and one not. The third is left for later: no claim is made about them.
+        let (first, _) = export_service_report(&pool, &minute_id, vec![result("PW1 Nabirye", true, None), result("PW2 Kato", false, Some("Moved to Gulu, not found at the address"))], Some("D/Sgt B".into()), "file").await.unwrap();
+        let first: ServiceReportPayload = serde_json::from_value(envelope::open(&office, envelope::peek(&first).unwrap(), &station).unwrap().body.json).unwrap();
+        assert_eq!(first.results.len(), 2);
+        assert_eq!((first.results[0].served, first.results[1].served), (true, false));
+        assert_eq!(first.results[1].reason.as_deref(), Some("Moved to Gulu, not found at the address"));
+        assert_eq!((first.heard_at, first.dpp_file_key.as_str(), first.reported_by.as_deref()), (12_000, "file-1", Some("D/Sgt B")));
+
+        // The same results sent again are a retransmission: the earlier record is sealed again, no second record is made.
+        let count = || async { sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM exchange_outgoing WHERE kind = 'service_report'").fetch_one(&pool).await.unwrap() };
+        assert_eq!(count().await, 1);
+        let (resent, _) = export_service_report(&pool, &minute_id, vec![result("PW2 Kato", false, Some("Moved to Gulu, not found at the address")), result("PW1 Nabirye", true, None)], Some("D/Sgt C".into()), "file").await.unwrap();
+        let resent: ServiceReportPayload = serde_json::from_value(envelope::open(&office, envelope::peek(&resent).unwrap(), &station).unwrap().body.json).unwrap();
+        assert_eq!((resent.reported_by.as_deref(), resent.reported_at), (first.reported_by.as_deref(), first.reported_at), "it is the original report, not a new one");
+        assert_eq!(count().await, 1, "a retransmission makes no second record");
+
+        // A witness already reported as served can be reported again on the same minute (a correction); the one not
+        // found can be reported served once found; the earlier reports stay.
+        export_service_report(&pool, &minute_id, vec![result("PW1 Nabirye", false, Some("Corrected: the summons was for another person"))], None, "file").await.unwrap();
+        let (second, _) = export_service_report(&pool, &minute_id, vec![result("PW2 Kato", true, None), result("PW3 Okello", true, None)], None, "file").await.unwrap();
+        assert!(!second.is_empty());
+        assert_eq!(count().await, 3, "every distinct report is kept");
+
+        // The history is whole: the minute as received, and the reports as sent, in order, each answering the minute.
+        let incoming = list_incoming(&pool).await.unwrap();
+        assert_eq!(incoming.len(), 1);
+        assert_eq!(incoming[0].id, minute_id);
+        let sent: Vec<(String, Option<String>, i64)> = sqlx::query_as("SELECT kind, in_reply_to, seq FROM exchange_outgoing WHERE kind = ? ORDER BY seq").bind(KIND_SERVICE_REPORT).fetch_all(&pool).await.unwrap();
+        assert_eq!(sent.len(), 3);
+        assert!(sent.iter().all(|(_, to, _)| to.as_deref() == Some(minute_id.as_str())));
+        assert!(sent[0].2 < sent[1].2, "sequence numbers only go up");
+
+        // When the office ends the connection nothing more goes to it, and what was already recorded stays.
+        let notice = pairing::make_confirmation(&office, &station, &invite_id, "revoked", Some("Closed.")).unwrap();
+        import_package(&pool, &notice).await.unwrap();
+        let blocked = export_service_report(&pool, &minute_id, vec![result("PW9 Nobody", true, None)], None, "file").await;
+        assert!(blocked.is_err());
+        let still: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM exchange_outgoing WHERE kind = ?").bind(KIND_SERVICE_REPORT).fetch_one(&pool).await.unwrap();
+        assert_eq!(still, 3, "the record of what was sent is kept after the connection ends");
         pool.close().await;
     }
 }

@@ -1,5 +1,6 @@
 pub mod activity;
 pub mod attachments;
+pub mod attention;
 pub mod audit;
 pub mod auth;
 pub mod totp;

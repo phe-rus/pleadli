@@ -730,7 +730,8 @@ mod tests {
         assert_eq!(read_attachment(pool, &vault_root, &on_case.id).await.unwrap().unwrap().1, b"case file contents");
 
         let statement_id = Uuid::new_v4().to_string();
-        let person_id: String = sqlx::query_scalar("SELECT id FROM people LIMIT 1").fetch_one(pool).await.unwrap();
+        let person_id = Uuid::new_v4().to_string();
+        sqlx::query("INSERT INTO people (id, first_name, last_name) VALUES (?, 'A', 'B')").bind(&person_id).execute(pool).await.unwrap();
         sqlx::query("INSERT INTO statements (id, content, person_id, case_id, given_at) VALUES (?, 'x', ?, ?, 0)")
             .bind(&statement_id)
             .bind(&person_id)

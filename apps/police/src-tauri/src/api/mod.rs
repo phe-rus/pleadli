@@ -909,6 +909,13 @@ async fn update_case_handler(
     Ok(Json(cases::apply_access(updated, &hidden)))
 }
 
+/// What the station has to do next, from the one reading in `domain::attention`. Restricted cases the officer may
+/// not open still count in their folder and say nothing else.
+async fn attention_handler(State(state): State<AppState>, Extension(actor): Extension<Actor>) -> Result<Json<crate::domain::attention::Attention>, ApiError> {
+    let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
+    crate::domain::attention::compute(&state.pool, &hidden).await.map(Json).map_err(internal_error)
+}
+
 async fn list_cases_handler(
     State(state): State<AppState>,
     Extension(actor): Extension<Actor>,
@@ -1633,7 +1640,9 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/exchange/import", post(exchange::import_package))
         .route("/exchange/incoming", get(exchange::list_incoming))
         .route("/exchange/outgoing", get(exchange::list_outgoing))
+        .route("/exchange/incoming/{id}/case", post(exchange::match_incoming))
         .route("/exchange/referrals/{id}/export", post(exchange::export_referral))
+        .route("/exchange/minutes/{id}/service-report", post(exchange::export_service_report))
         .route("/hq/stations", get(hq::list_stations).post(hq::register_station))
         .route("/hq/stations/{id}/activation-code", post(hq::issue_code))
         .route("/hq/stations/{id}/revoke", post(hq::revoke))
@@ -1670,6 +1679,7 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/station-assets/{id}", put(update_station_asset_handler))
         .route("/vehicles", post(create_vehicle_handler).get(list_vehicles_handler))
         .route("/vehicles/{id}", put(update_vehicle_handler))
+        .route("/attention", get(attention_handler))
         .route("/cases", post(create_case_handler).get(list_cases_handler))
         .route("/cases/{id}", put(update_case_handler))
         .route("/cases/{id}/people", get(list_case_people_handler))

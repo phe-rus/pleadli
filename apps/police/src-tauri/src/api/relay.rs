@@ -74,6 +74,12 @@ async fn send_referral(State(state): State<AppState>, Extension(actor): Extensio
     Ok(Json(json!({ "packageId": package_id })))
 }
 
+async fn send_service_report(Extension(r): Shared, Path(minute_id): Path<String>, Json(input): Json<super::exchange::ServiceReportInput>) -> Result<Json<Value>, ApiError> {
+    let package_id = r.send_service_report(&minute_id, input.results, input.reported_by).await.map_err(domain_error)?;
+    let _ = r.sync().await;
+    Ok(Json(json!({ "packageId": package_id })))
+}
+
 #[derive(Deserialize)]
 struct RetryInput {
     id: Option<String>,
@@ -101,6 +107,7 @@ pub fn routes(state: AppState, relay: Arc<Relay>) -> Router {
         .route("/api/relay/invitations/{id}/decline", post(decline))
         .route("/api/relay/inbox/{id}/reopen", post(reopen))
         .route("/api/relay/referrals/{id}/send", post(send_referral))
+        .route("/api/relay/minutes/{id}/service-report", post(send_service_report))
         .layer(Extension(relay))
         .with_state(state)
 }

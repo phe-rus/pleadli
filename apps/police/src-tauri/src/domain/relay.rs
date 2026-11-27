@@ -18,7 +18,7 @@ use std::sync::{Arc, Mutex};
 
 use pleadli_interchange::envelope;
 use pleadli_interchange::pairing::{self, KIND_CONFIRMATION, KIND_INVITE, KIND_RESPONSE};
-use pleadli_interchange::messages::{KIND_DECISION_NOTICE, KIND_RECEIPT, KIND_REFERRAL};
+use pleadli_interchange::messages::{KIND_DECISION_NOTICE, KIND_HEARING_MINUTE, KIND_RECEIPT, KIND_REFERRAL};
 use pleadli_node_core::audit::{self as chain, Entry};
 use pleadli_node_core::orchestra::{Orchestra, RelayAccess};
 use pleadli_node_core::postbox::{Arrived, Postbox, PostboxError};
@@ -285,7 +285,7 @@ impl Relay {
 
     async fn open(&self, item: &Arrived) -> Result<(), DomainError> {
         match item.kind.as_str() {
-            KIND_CONFIRMATION | KIND_RECEIPT | KIND_DECISION_NOTICE => {
+            KIND_CONFIRMATION | KIND_RECEIPT | KIND_DECISION_NOTICE | KIND_HEARING_MINUTE => {
                 let peeked = envelope::peek(&item.bytes).map_err(|e| DomainError::Invalid(e.to_string()))?;
                 let bound: Option<Option<String>> = sqlx::query_scalar("SELECT office_address FROM dpp_connections WHERE office_id = ? ORDER BY (status = 'trusted') DESC, created_at DESC LIMIT 1").bind(&peeked.header.from.id).fetch_optional(&self.pool).await?;
                 if let Some(Some(address)) = bound {
@@ -342,6 +342,24 @@ impl Relay {
             return Err(DomainError::Invalid("This referral is too large for the postbox (over 24 MB). Send fewer or smaller files, or send it by hand.".into()));
         }
         if let Err(e) = self.postbox.queue(&package_id, &to, KIND_REFERRAL, &bytes).await {
+            sqlx::query("UPDATE exchange_outgoing SET exported_at = NULL, route = NULL WHERE id = ?").bind(&package_id).execute(&self.pool).await?;
+            return Err(DomainError::Invalid(e.to_string()));
+        }
+        Ok(package_id)
+    }
+
+    /// Sends the station's service report for a hearing minute through the postbox, as a reply to that minute.
+    pub async fn send_service_report(&self, minute_package_id: &str, results: Vec<pleadli_interchange::messages::ServiceResult>, reported_by: Option<String>) -> Result<String, DomainError> {
+        if self.orchestra.relay_access().await.is_none() {
+            return Err(DomainError::Invalid(NO_LICENCE.into()));
+        }
+        let address: Option<Option<String>> = sqlx::query_scalar("SELECT c.office_address FROM exchange_incoming i JOIN dpp_connections c ON c.id = i.connection_id WHERE i.id = ?").bind(minute_package_id).fetch_optional(&self.pool).await?;
+        let Some(Some(to)) = address else {
+            return Err(DomainError::Invalid("The office that sent this minute has not been reached through the postbox. Send the report by hand.".into()));
+        };
+        let (bytes, _) = exchange::export_service_report(&self.pool, minute_package_id, results, reported_by, "postbox").await?;
+        let package_id = envelope::peek(&bytes).map(|p| p.header.id.clone()).map_err(|e| DomainError::Invalid(e.to_string()))?;
+        if let Err(e) = self.postbox.queue(&package_id, &to, pleadli_interchange::messages::KIND_SERVICE_REPORT, &bytes).await {
             sqlx::query("UPDATE exchange_outgoing SET exported_at = NULL, route = NULL WHERE id = ?").bind(&package_id).execute(&self.pool).await?;
             return Err(DomainError::Invalid(e.to_string()));
         }

@@ -21,7 +21,6 @@ use super::sessions::Actor;
 use super::time::now_ms;
 
 const HEARTBEAT_MS: i64 = 5 * 60_000;
-const NEAR_LIMIT_HOURS: f64 = 6.0;
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -157,29 +156,16 @@ async fn poll_pending(pool: &SqlitePool) -> Result<(), DomainError> {
     Ok(())
 }
 
-/// Hours until a person in custody reaches the limit that binds them: 48 hours
-/// from the arrest, the 7 day transfer window for a cross-jurisdiction case not
-/// yet transferred, or 48 hours from the transfer. The same rule the custody
-/// board shows, worked out from the timestamps and stored nowhere.
-fn hours_remaining(arrested_at: i64, cross_jurisdiction: bool, transferred_at: Option<i64>, now: i64) -> f64 {
-    const HOUR: i64 = 3_600_000;
-    let deadline = match (cross_jurisdiction, transferred_at) {
-        (false, _) => arrested_at + 48 * HOUR,
-        (true, None) => arrested_at + 7 * 24 * HOUR,
-        (true, Some(at)) => at + 48 * HOUR,
-    };
-    (deadline - now) as f64 / HOUR as f64
-}
-
 /// What this station tells its command: counts and a roster, nothing else.
 pub async fn build_report(pool: &SqlitePool) -> Result<Value, sqlx::Error> {
     let now = now_ms();
     let custody: Vec<(i64, bool, Option<i64>)> = sqlx::query_as("SELECT arrested_at, cross_jurisdiction_transfer, transferred_at FROM custody_records WHERE status = 'in_custody'")
         .fetch_all(pool)
         .await?;
-    let remaining: Vec<f64> = custody.iter().map(|(arrested, cross, transferred)| hours_remaining(*arrested, *cross, *transferred, now)).collect();
+    let limits = super::attention::custody_limits(pool).await;
+    let remaining: Vec<f64> = custody.iter().map(|(arrested, cross, transferred)| super::attention::hours_remaining(super::attention::custody_deadline(limits, *arrested, *cross, *transferred).0, now)).collect();
     let past = remaining.iter().filter(|h| **h < 0.0).count();
-    let near = remaining.iter().filter(|h| **h >= 0.0 && **h <= NEAR_LIMIT_HOURS).count();
+    let near = remaining.iter().filter(|h| **h >= 0.0 && **h <= super::attention::DUE_SOON_HOURS).count();
 
     let open_cases: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM cases WHERE status = 'open'").fetch_one(pool).await?;
     let referrals: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM referrals WHERE status = 'pending'").fetch_one(pool).await?;

@@ -94,6 +94,19 @@ pub struct Sealed {
     name: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceReportInput {
+    pub results: Vec<pleadli_interchange::messages::ServiceResult>,
+    pub reported_by: Option<String>,
+}
+
+/// Seals the station's report on serving the witnesses a hearing minute named, for the office that sent the minute.
+pub async fn export_service_report(State(state): State<AppState>, Path(minute_id): Path<String>, Json(input): Json<ServiceReportInput>) -> Result<Json<Sealed>, ApiError> {
+    let (bytes, name) = exchange::export_service_report(&state.pool, &minute_id, input.results, input.reported_by, "file").await.map_err(domain_error)?;
+    Ok(Json(Sealed { file: B64.encode(bytes), name }))
+}
+
 /// Seals a referral for the office. A referral of a case this officer may not
 /// open is refused.
 pub async fn export_referral(State(state): State<AppState>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(input): Json<RouteInput>) -> Result<Json<Sealed>, ApiError> {
@@ -107,4 +120,20 @@ pub async fn export_referral(State(state): State<AppState>, Extension(actor): Ex
     let route = if input.route == "postbox" { "postbox" } else { "file" };
     let (bytes, name) = exchange::export_referral(&state.pool, &state.vault_root, &id, route).await.map_err(domain_error)?;
     Ok(Json(Sealed { file: B64.encode(bytes), name }))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MatchInput {
+    case_id: String,
+}
+
+/// Matches a held hearing minute to its case. Any officer who may open that case can do it; a restricted case stays closed.
+pub async fn match_incoming(State(state): State<AppState>, Extension(actor): Extension<Actor>, Path(id): Path<String>, Json(input): Json<MatchInput>) -> Result<StatusCode, ApiError> {
+    if !crate::domain::cases::can_open(&state.pool, &input.case_id, &actor).await.map_err(|e| domain_error(e.into()))? {
+        return Err((StatusCode::FORBIDDEN, "You may not open that case.".to_string()));
+    }
+    let who = [actor.rank.clone(), Some(actor.name.clone())].into_iter().flatten().collect::<Vec<_>>().join(" ");
+    exchange::match_incoming_to_case(&state.pool, &id, &input.case_id, &who).await.map_err(domain_error)?;
+    Ok(StatusCode::NO_CONTENT)
 }

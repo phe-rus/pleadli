@@ -226,8 +226,6 @@ pub async fn list_all(pool: &SqlitePool) -> Result<Vec<CustodyRecord>, sqlx::Err
     .await
 }
 
-const HOUR_MS: i64 = 60 * 60 * 1000;
-const APPROACHING_HOURS: f64 = 2.0;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -237,22 +235,6 @@ pub struct CustodyAlert {
     pub hours_remaining: f64,
     pub is_overdue: bool,
     pub basis: &'static str,
-}
-
-/// The same 48h/7d compliance math as `features/custody/schema.ts`'s
-/// `custodyCompliance`, ported here (not called from there) because the
-/// remote-access surface is served by this Rust process directly, not
-/// the React app, and must never trust the client with more than the
-/// already-reduced alert shape below.
-fn compliance_hours_remaining(record: &CustodyRecord, now_ms: i64) -> (f64, &'static str) {
-    let (deadline, basis) = if !record.cross_jurisdiction_transfer {
-        (record.arrested_at + 48 * HOUR_MS, "arrest+48h")
-    } else if record.transferred_at.is_none() {
-        (record.arrested_at + 7 * 24 * HOUR_MS, "transfer-window+7d")
-    } else {
-        (record.transferred_at.unwrap() + 48 * HOUR_MS, "post-transfer+48h (inferred)")
-    };
-    ((deadline - now_ms) as f64 / HOUR_MS as f64, basis)
 }
 
 /// In-custody records approaching or past their compliance deadline:
@@ -278,12 +260,14 @@ pub async fn list_alerts(pool: &SqlitePool) -> Result<Vec<CustodyAlert>, sqlx::E
     .await?;
 
     let now_ms = chrono::Utc::now().timestamp_millis();
+    let limits = super::attention::custody_limits(pool).await;
     Ok(records
         .into_iter()
         .filter_map(|record| {
-            let (hours_remaining, basis) = compliance_hours_remaining(&record, now_ms);
+            let (deadline, basis) = super::attention::custody_deadline(limits, record.arrested_at, record.cross_jurisdiction_transfer, record.transferred_at);
+            let hours_remaining = super::attention::hours_remaining(deadline, now_ms);
             let is_overdue = hours_remaining < 0.0;
-            if !is_overdue && hours_remaining > APPROACHING_HOURS {
+            if !is_overdue && hours_remaining > super::attention::DUE_SOON_HOURS {
                 return None;
             }
             Some(CustodyAlert {
