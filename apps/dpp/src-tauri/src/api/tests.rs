@@ -815,7 +815,9 @@ mod interchange_flow {
     #[tokio::test]
     async fn a_trusted_station_sends_a_referral_that_waits_until_a_person_accepts_it() {
         let w = connected("Wandegeya Police Station").await;
-        let bytes = package(&w, &referral("WANDEGEYA CRB 88/2026"), 1);
+        let mut sent = referral("WANDEGEYA CRB 88/2026");
+        sent.medical_exams = vec![MedicalClaim { key: "m1".into(), kind: "pf3".into(), person_name: "Grace Namutebi".into(), facility: Some("Mulago Hospital".into()), examiner_name: Some("Dr. A. Lakot".into()), findings: Some("Cut on the forearm, grievous harm.".into()), ..Default::default() }];
+        let bytes = package(&w, &sent, 1);
 
         let (status, outcome) = import(&w.app, &bytes).await;
         assert_eq!(status, StatusCode::OK, "{outcome}");
@@ -851,6 +853,11 @@ mod interchange_flow {
         assert_eq!(statements[0]["content"], "I saw the accused drive off in the car.");
         let (_, charges) = call(&w.app, Method::GET, &format!("/api/prosecution-files/{file}/charges"), None).await;
         assert_eq!(charges[0]["offence"], "Theft of a motor vehicle");
+        // The medical form arrives as expert evidence, with the doctor's findings.
+        let (_, items) = call(&w.app, Method::GET, &format!("/api/prosecution-files/{file}/evidence-items"), None).await;
+        let expert = items.as_array().unwrap().iter().find(|i| i["category"] == "expert").expect("the PF3 is on the file");
+        let text = expert["description"].as_str().unwrap();
+        assert!(text.contains("Police medical form (PF3): Grace Namutebi") && text.contains("Mulago Hospital") && text.contains("grievous harm"), "{text}");
         let (_, attachments) = call(&w.app, Method::GET, &format!("/api/attachments?entityType=statement&entityId={}", statements[0]["id"].as_str().unwrap()), None).await;
         assert_eq!(attachments[0]["fileName"], "statement.pdf");
         // It cannot be accepted twice.

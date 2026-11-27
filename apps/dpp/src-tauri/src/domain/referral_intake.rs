@@ -303,6 +303,28 @@ pub async fn accept_referral(pool: &SqlitePool, vault_root: &Path, package_id: &
             attach.push((f.clone(), "evidence_item", id.clone()));
         }
     }
+    // A medical examination is expert evidence (the ODPP's own category). The doctor's findings are the station's claim.
+    for exam in &payload.medical_exams {
+        let what = if exam.kind == "post_mortem" { "Post-mortem" } else { "Police medical form (PF3)" };
+        let mut text = format!("{what}: {}", exam.person_name.trim());
+        if let Some(facility) = exam.facility.as_deref().map(str::trim).filter(|f| !f.is_empty()) {
+            text.push_str(&format!(", {facility}"));
+        }
+        if let Some(examiner) = exam.examiner_name.as_deref().map(str::trim).filter(|f| !f.is_empty()) {
+            text.push_str(&format!(". Examined by {examiner}"));
+        }
+        match exam.findings.as_deref().map(str::trim).filter(|f| !f.is_empty()) {
+            Some(findings) => text.push_str(&format!(". Findings: {findings}")),
+            None => text.push_str(". Findings not yet recorded"),
+        }
+        sqlx::query("INSERT INTO evidence_items (id, prosecution_file_id, category, description, identification_mark, recovered_from_location, source_note) VALUES (?, ?, 'expert', ?, NULL, NULL, ?)")
+            .bind(Uuid::new_v4().to_string())
+            .bind(&file_id)
+            .bind(text)
+            .bind(note(&None))
+            .execute(&mut *tx)
+            .await?;
+    }
     for charge in &payload.charges {
         sqlx::query("INSERT INTO charges (id, prosecution_file_id, accused_person_id, offence, statutory_section, particulars) VALUES (?, ?, ?, ?, ?, ?)")
             .bind(Uuid::new_v4().to_string())

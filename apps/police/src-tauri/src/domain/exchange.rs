@@ -7,7 +7,7 @@
 
 use pleadli_interchange::envelope::{self, Body};
 use pleadli_interchange::identity::{hex, unhex32, Identity, IdentityKind, PublicIdentity};
-use pleadli_interchange::messages::{ChargeClaim, ExhibitClaim, HearingMinutePayload, PersonClaim, ReferralPayload, ServiceReportPayload, ServiceResult, StatementClaim, KIND_DECISION_NOTICE, KIND_HEARING_MINUTE, KIND_RECEIPT, KIND_REFERRAL, KIND_SERVICE_REPORT};
+use pleadli_interchange::messages::{ChargeClaim, ExhibitClaim, MedicalClaim, HearingMinutePayload, PersonClaim, ReferralPayload, ServiceReportPayload, ServiceResult, StatementClaim, KIND_DECISION_NOTICE, KIND_HEARING_MINUTE, KIND_RECEIPT, KIND_REFERRAL, KIND_SERVICE_REPORT};
 use pleadli_interchange::pairing::{self, KIND_CONFIRMATION};
 use serde::Serialize;
 use sqlx::{FromRow, SqlitePool};
@@ -463,7 +463,18 @@ async fn referral_payload(pool: &SqlitePool, vault_root: &std::path::Path, refer
         .await?;
     let (arrested_at, held_place) = custody.map_or((None, None), |(at, place)| (Some(at), place));
 
-    Ok((ReferralPayload { police_reference: reference, station_name, referred_at, referring_officer: officer, summary, people, statements, exhibits, charges, resubmission_of, notes, arrested_at, held_place }, files))
+    // The medical forms on the case: a PF3 is the proof of the harm in an assault, so the prosecutor reads it with the file.
+    let exams: Vec<(String, String, String, String, Option<String>, Option<String>, Option<i64>, Option<String>)> = sqlx::query_as(
+        "SELECT e.id, e.kind, p.first_name, p.last_name, e.facility, e.examiner_name, e.examined_at, e.findings FROM medical_exams e JOIN people p ON p.id = e.person_id WHERE e.case_id = ? ORDER BY e.requested_at",
+    )
+    .bind(&case_id)
+    .fetch_all(pool)
+    .await?;
+    let medical_exams: Vec<MedicalClaim> = exams
+        .into_iter()
+        .map(|(key, kind, first, last, facility, examiner_name, examined_at, findings)| MedicalClaim { key, kind, person_name: format!("{first} {last}"), facility, examiner_name, examined_at, findings, file_ids: vec![] })
+        .collect();
+    Ok((ReferralPayload { police_reference: reference, station_name, referred_at, referring_officer: officer, summary, people, statements, exhibits, charges, medical_exams, resubmission_of, notes, arrested_at, held_place }, files))
 }
 
 /// Seals a referral to the one trusted office, for saving as a file or for the

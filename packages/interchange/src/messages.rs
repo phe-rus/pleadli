@@ -55,6 +55,23 @@ pub struct ExhibitClaim {
     pub file_ids: Vec<String>,
 }
 
+/// A medical examination on the case: a police medical form (PF3) or a post-mortem. The person is named in text, not
+/// keyed, so an examination of someone not listed on the case still travels. Added after the first version: an older
+/// reader ignores it.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct MedicalClaim {
+    pub key: String,
+    /// `pf3` or `post_mortem`.
+    pub kind: String,
+    pub person_name: String,
+    pub facility: Option<String>,
+    pub examiner_name: Option<String>,
+    pub examined_at: Option<i64>,
+    pub findings: Option<String>,
+    pub file_ids: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ChargeClaim {
@@ -79,6 +96,8 @@ pub struct ReferralPayload {
     pub statements: Vec<StatementClaim>,
     pub exhibits: Vec<ExhibitClaim>,
     pub charges: Vec<ChargeClaim>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub medical_exams: Vec<MedicalClaim>,
     /// Set when this answers a return for further investigation: the file the
     /// DPP office gave in its receipt. A resubmission is never a new file.
     pub resubmission_of: Option<String>,
