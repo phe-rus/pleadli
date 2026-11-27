@@ -8,6 +8,7 @@
 pub mod exchange;
 pub mod relay;
 pub mod hq;
+pub mod library;
 pub mod orchestra;
 pub mod session;
 pub mod speech;
@@ -1727,6 +1728,17 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/attachments/all", get(list_all_attachments_handler))
         .route("/attachments/route", get(get_attachment_route_handler))
         .route("/vault", get(list_vault_directory_handler))
+        .route("/library", get(library::list))
+        .route("/library/search", get(library::search))
+        .route("/library/folders", post(library::create_folder))
+        .route("/library/rename", post(library::rename))
+        .route("/library/move", post(library::move_to))
+        .route("/library/delete", post(library::delete))
+        .route("/library/bin", get(library::bin))
+        .route("/library/restore", post(library::restore))
+        .route("/library/purge", post(library::purge))
+        .route("/library/bin/empty", post(library::empty_bin))
+        .route("/library/files", post(library::add_file).layer(axum::extract::DefaultBodyLimit::max(256 * 1024 * 1024)))
         .route("/vault/file", get(read_vault_file_handler))
         .route("/attachments/{id}", delete(delete_attachment_handler))
         .route("/attachments/{id}/file", get(get_attachment_file_handler))

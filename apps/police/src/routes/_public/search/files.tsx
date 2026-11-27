@@ -3,6 +3,7 @@ import { FileView, FileViewer, previewKind } from '@/components/file-viewer'
 import { EmptyNote } from '@/components/planned'
 import { allAttachmentsOptions, getAttachmentDataUrl, getAttachmentRoute, openAttachment, useAttachmentDataUrl, type Attachment } from '@/features/attachments'
 import { VaultBrowser } from '@/features/files/vault-browser'
+import { BIN, LibraryBrowser, RecycleBin } from '@/features/library'
 import { api } from '@/lib/api'
 import { format } from '@/lib/date'
 import { parseSearchRoute } from '@/lib/parse-search-route'
@@ -17,11 +18,12 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { isTauri } from '@tauri-apps/api/core'
 import { useMemo, useState } from 'react'
 
-type View = 'papers' | 'files' | 'vault'
+type View = 'library' | 'papers' | 'files' | 'vault'
 
 export const Route = createFileRoute('/_public/search/files')({
-  validateSearch: (search: Record<string, unknown>): { view?: View; path?: string } => ({
-    ...(search.view === 'files' || search.view === 'vault' ? { view: search.view } : {}),
+  validateSearch: (search: Record<string, unknown>): { view?: View; path?: string; folder?: string } => ({
+    ...(search.view === 'papers' || search.view === 'files' || search.view === 'vault' ? { view: search.view } : {}),
+    ...(typeof search.folder === 'string' && search.folder ? { folder: search.folder } : {}),
     ...(typeof search.path === 'string' && search.path ? { path: search.path } : {}),
   }),
   component: RouteComponent,
@@ -96,7 +98,7 @@ function FileThumb({ file, onOpen }: { file: Attachment; onOpen: () => void }) {
  * viewer. The folder on disk is there for whoever needs it, behind "···".
  */
 function RouteComponent() {
-  const { view = 'papers', path = '' } = Route.useSearch()
+  const { view = 'library', path = '', folder = 'root' } = Route.useSearch()
   const navigate = useNavigate()
   const { data: papers = [] } = useQuery(libraryOptions())
   const { data: files = [] } = useQuery(allAttachmentsOptions(''))
@@ -119,7 +121,8 @@ function RouteComponent() {
       t.error(m["files.open_failed"]())
     }
   }
-  const setView = (next: View) => void navigate({ to: '/search/files', search: next === 'papers' ? {} : { view: next }, replace: true })
+  const goToFolder = (id: string) => void navigate({ to: '/search/files', search: id === 'root' ? {} : { folder: id } })
+  const setView = (next: View) => void navigate({ to: '/search/files', search: next === 'library' ? {} : { view: next }, replace: true })
 
   return (
     <article className="page">
@@ -131,9 +134,10 @@ function RouteComponent() {
         <div className="page-actions">
           <Segmented
             label={m["custody_page.view"]()}
-            value={view === 'vault' ? 'papers' : view}
+            value={view === 'vault' ? 'library' : view}
             onChange={setView}
             items={[
+              { value: 'library', label: m["library.title"]() },
               { value: 'papers', label: m["files.papers"]() },
               { value: 'files', label: m["files.files"]() },
             ]}
@@ -153,7 +157,15 @@ function RouteComponent() {
         </div>
       </header>
 
-      {view === 'vault' ? (
+      {view === 'library' ? (
+        folder === BIN ? (
+          <RecycleBin onNavigate={goToFolder} />
+        ) : folder.startsWith('v:') ? (
+          <VaultBrowser path={folder.slice(2)} rootLabel={m["library.title"]()} to={(p) => ({ folder: p ? `v:${p}` : undefined })} />
+        ) : (
+          <LibraryBrowser folderId={folder} onNavigate={goToFolder} />
+        )
+      ) : view === 'vault' ? (
         <VaultBrowser path={path} />
       ) : (
         <>

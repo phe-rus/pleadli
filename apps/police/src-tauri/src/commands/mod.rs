@@ -3,6 +3,7 @@ pub mod attachments;
 pub mod cloudflare;
 pub mod documents;
 pub mod import;
+pub mod library;
 pub mod network;
 pub mod officers;
 pub mod people;

@@ -17,7 +17,7 @@
     "cn": "^0.2.6",
     "date-fns": "^4.4.0",
     "framer-motion": "^13.2.0",
-    "goey-toast": "^0.5.0",
+    "goey-toast": "^0.6.0",
     "react-day-picker": "^10.0.1",
     "recharts": "3.8.0",
     "shadcn": "^4.21.0",

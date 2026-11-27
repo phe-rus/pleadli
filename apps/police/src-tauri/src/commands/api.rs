@@ -86,6 +86,11 @@ pub struct ApiResponse {
 
 /// Paths whose success starts a session (the response carries the token).
 fn starts_session(path: &str) -> bool {
+    // Development builds only: the sign-in screen's "Continue as development officer" button.
+    #[cfg(debug_assertions)]
+    if path == "/api/auth/dev-sign-in" {
+        return true;
+    }
     matches!(path, "/api/auth/sign-in" | "/api/auth/first-password" | "/api/system/onboarding/station" | "/api/system/onboarding/command" | "/api/system/onboarding/shared" | "/api/auth/shared-sign-in")
 }
 

@@ -13,6 +13,7 @@ pub mod command_link;
 pub mod custody;
 pub mod documents;
 pub mod duty;
+pub mod library;
 pub mod error;
 pub mod exchange;
 pub mod exhibits;

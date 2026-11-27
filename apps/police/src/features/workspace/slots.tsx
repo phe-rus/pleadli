@@ -1,6 +1,6 @@
 import * as m from '@/paraglide/messages'
 import { ActivityToasts } from '@/features/activity'
-import { CustodyAttentionDialog } from '@/features/custody'
+import { CustodyAttentionToasts } from '@/features/custody'
 import { BackupDispatchIndicator } from '@/features/officers'
 import { LicenceBar } from '@/features/orchestra'
 import { DevModeSwitch, useInstallation, useMe } from '@/features/session'
@@ -19,7 +19,7 @@ export function HeaderEnd() {
       {station && (
         <>
           <BackupDispatchIndicator />
-          <CustodyAttentionDialog />
+          <CustodyAttentionToasts />
           <ActivityToasts />
         </>
       )}

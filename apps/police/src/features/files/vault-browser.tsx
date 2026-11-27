@@ -2,7 +2,7 @@ import * as m from '@/paraglide/messages'
 import { FileView, FileViewer, previewKind } from '@/components/file-viewer'
 import { EmptyNote } from '@/components/planned'
 import { getAttachmentRoute } from '@/features/attachments/data'
-import { formatFileSize, openVaultEntry, pathSegments, readVaultFile, useVaultDirectory, type VaultEntry } from './index'
+import { formatFileSize, openVaultEntry, pathSegments, readVaultFile, useVaultDirectory, vaultDirectoryOptions, type VaultEntry } from './index'
 import { peopleSearchOptions } from '@/features/people'
 import { format } from '@/lib/date'
 import { t } from '@pleadli/ui/goey-toaster'
@@ -28,7 +28,7 @@ import { useMemo, useState } from 'react'
 /** The folders the station's records file themselves into, in the order an
  * officer looks for them, under the names an officer uses. A folder the app
  * does not know keeps its own name, made readable. */
-const folderNames = (): Record<string, string> => ({
+export const folderNames = (): Record<string, string> => ({
   cases: m["nav.cases"](),
   people: m["nav.people"](),
   incidents: m["nav.incidents"](),
@@ -54,9 +54,9 @@ const folderNames = (): Record<string, string> => ({
   officers: m["nav.officers"](),
   index: m["files.indexes"](),
 })
-const ORDER = ['cases', 'people', 'incidents', 'custody', 'bonds', 'station-diary', 'statements', 'documents', 'evidence', 'forms', 'referrals', 'duty', 'vehicle', 'stores', 'station_profile']
+export const ORDER = ['cases', 'people', 'incidents', 'custody', 'bonds', 'station-diary', 'statements', 'documents', 'evidence', 'forms', 'referrals', 'duty', 'vehicle', 'stores', 'station_profile']
 
-const readable = (name: string) => name.replace(/[_-]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
+export const readable = (name: string) => name.replace(/[_-]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
 
 function fileIcon(entry: VaultEntry) {
   const kind = previewKind(entry.name, entry.mimeType)
@@ -69,7 +69,9 @@ function fileIcon(entry: VaultEntry) {
 /** The station folder on disk, by case, person and
  * register, the way a records office keeps it. Every file opens here, in the
  * app; another program is only ever a choice. */
-export function VaultBrowser({ path }: { path: string }) {
+export function VaultBrowser({ path, to, rootLabel }: { path: string; to?: (path: string) => Record<string, unknown>; rootLabel?: string }) {
+  /** Where a folder of this tree is linked: the Station folder view, or wherever the caller keeps it. */
+  const target = (p: string) => to?.(p) ?? { view: 'vault', path: p }
   const navigate = useNavigate()
   const { data: entries = [] } = useVaultDirectory(path)
   const { data: people = [] } = useQuery(peopleSearchOptions(''))
@@ -79,6 +81,10 @@ export function VaultBrowser({ path }: { path: string }) {
 
   /** A folder's name: a person's folder is the person, a case's folder its reference. */
   const folderLabel = (segment: string, parent: string) => {
+    const known = entries.find((e) => e.name === segment)?.label ?? caseFolders.find((e) => e.name === segment)?.label
+    if (known) return known
+    // A case's folder is named by its reference, as written.
+    if (parent === 'cases') return segment
     if (parent === 'people') {
       const person = people.find((p) => p.id === segment)
       if (person) return [person.firstName, person.otherNames, person.lastName].filter(Boolean).join(' ')
@@ -92,6 +98,10 @@ export function VaultBrowser({ path }: { path: string }) {
   }
 
   const crumbs = pathSegments(path)
+  // Inside a case's folder, the case itself is one click away.
+  const isCase = crumbs.length === 2 && crumbs[0].label === 'cases'
+  const { data: caseFolders = [] } = useQuery({ ...vaultDirectoryOptions('cases'), enabled: isCase })
+  const caseEntry = isCase ? caseFolders.find((e) => e.relativePath === path) : undefined
   const parentOf = (index: number) => (index === 0 ? '' : crumbs[index - 1].label)
   const here = crumbs.length ? folderLabel(crumbs[crumbs.length - 1].label, parentOf(crumbs.length - 1)) : m["nav.documents"]()
 
@@ -106,7 +116,7 @@ export function VaultBrowser({ path }: { path: string }) {
         .filter((e) => e.isDir)
         .map((e) => ({ entry: e, label: folderLabel(e.name, parent) }))
         .filter((f) => matches(f.label))
-        .sort((a, b) => rank(a.entry.name) - rank(b.entry.name) || a.label.localeCompare(b.label)),
+        .sort((a, b) => rank(a.entry.name) - rank(b.entry.name) || a.label.localeCompare(b.label, undefined, { numeric: true })),
       files: visible
         .filter((e) => !e.isDir)
         .map((e) => ({ entry: e, label: fileLabel(e) }))
@@ -148,22 +158,27 @@ export function VaultBrowser({ path }: { path: string }) {
         <div>
           {crumbs.length > 0 && (
             <nav aria-label={m["files.where"]()} className="flex flex-wrap items-center gap-1 text-[0.8125rem] text-muted-foreground">
-              <Link to="/search/files" search={{ view: 'vault', path: '' }} className="text-muted-foreground no-underline hover:text-foreground">
-                {m["files.station_folder"]()}
+              <Link to="/search/files" search={target('') as never} className="text-muted-foreground no-underline hover:text-foreground">
+                {rootLabel ?? m["files.station_folder"]()}
               </Link>
               {crumbs.slice(0, -1).map((crumb, index) => (
                 <span key={crumb.path} className="flex items-center gap-1">
                   <span aria-hidden>›</span>
-                  <Link to="/search/files" search={{ view: 'vault', path: crumb.path }} className="text-muted-foreground no-underline hover:text-foreground">
+                  <Link to="/search/files" search={target(crumb.path) as never} className="text-muted-foreground no-underline hover:text-foreground">
                     {folderLabel(crumb.label, parentOf(index))}
                   </Link>
                 </span>
               ))}
             </nav>
           )}
-          <h2>{crumbs.length === 0 ? m["files.station_folder"]() : here}</h2>
-          <p>{crumbs.length === 0 ? m["files.station_folder_about"]() : total === 1 ? m["files.items_one"]() : m["files.items"]({ count: total })}</p>
+          <h2>{crumbs.length === 0 ? (rootLabel ?? m["files.station_folder"]()) : here}</h2>
+          <p>{crumbs.length === 0 ? m["files.station_folder_about"]() : caseEntry?.title ? caseEntry.title : total === 1 ? m["files.items_one"]() : m["files.items"]({ count: total })}</p>
         </div>
+        {caseEntry?.entityId && (
+          <Button size="sm" className="self-start" onClick={() => void openRecord(caseEntry)}>
+            {m["files.open_case"]()}
+          </Button>
+        )}
       </header>
 
       {entries.length > 0 && (
@@ -190,12 +205,13 @@ export function VaultBrowser({ path }: { path: string }) {
                 <Link
                   key={entry.relativePath}
                   to="/search/files"
-                  search={{ view: 'vault', path: entry.relativePath }}
+                  search={target(entry.relativePath) as never}
                   className="flex min-w-0 items-center gap-3 rounded-xl bg-card px-3.5 py-3 text-foreground no-underline shadow-xs ring-1 ring-border/70 transition-colors hover:bg-foreground/[0.03]"
                 >
                   <HugeiconsIcon icon={Folder01Icon} className="size-7 shrink-0 text-primary/80" />
                   <span className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium">{label}</span>
+                    <span className="line-clamp-2 font-medium break-words">{label}</span>
+                    {entry.title && <span className="truncate text-[0.8125rem] text-muted-foreground">{entry.title}</span>}
                     {entry.itemCount != null && (
                       <span className="text-[0.8125rem] text-muted-foreground">{entry.itemCount === 1 ? m["files.items_one"]() : m["files.items"]({ count: entry.itemCount })}</span>
                     )}

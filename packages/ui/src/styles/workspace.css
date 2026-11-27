@@ -275,3 +275,19 @@
 @media (prefers-reduced-motion: reduce) {
   .shell-sidebar, .shell-sidebar > * { transition: none; }
 }
+
+/* Toasts wear the app's own tokens, so they follow the light/dark theme with
+ * the rest of the window instead of goey-toast's built-in light palette. */
+.gooey-wrapper {
+  --gooey-fill: var(--popover);
+  --gooey-border: var(--border);
+  --gooey-border-width: 1px;
+  --gooey-title-default: var(--popover-foreground);
+  --gooey-description: var(--muted-foreground);
+  --gooey-timestamp: var(--muted-foreground);
+  --gooey-close-fg: var(--muted-foreground);
+  --gooey-progress-track: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --gooey-title-success: oklch(0.62 0.15 150);
+  --gooey-title-warning: oklch(0.7 0.15 75);
+  --gooey-title-error: var(--destructive);
+}

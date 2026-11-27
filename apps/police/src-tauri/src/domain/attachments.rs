@@ -194,6 +194,13 @@ async fn folder_of(pool: &SqlitePool, entity_type: &str, entity_id: &str) -> Res
                 None => vault_root.join("evidence"),
             }
         }
+        "library" => {
+            let mut dir = vault_root.join("library");
+            for crumb in crate::domain::library::crumbs(pool, entity_id).await.map_err(AttachmentError::Vault)? {
+                dir = dir.join(sanitize_folder_name(&crumb.name));
+            }
+            dir
+        }
         "incident" => vault_root.join("incidents"),
         "station_diary_entry" => vault_root.join("station-diary"),
         "duty_assignment" => vault_root.join("duty"),
@@ -456,7 +463,7 @@ pub async fn list_all(pool: &SqlitePool, query: &str) -> Result<Vec<Attachment>,
     if trimmed.is_empty() {
         return sqlx::query_as::<_, Attachment>(
             "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
-             FROM attachments ORDER BY created_at DESC LIMIT 200",
+             FROM attachments WHERE entity_type NOT IN ('library', 'library_trash') ORDER BY created_at DESC LIMIT 200",
         )
         .fetch_all(pool)
         .await;
@@ -465,7 +472,7 @@ pub async fn list_all(pool: &SqlitePool, query: &str) -> Result<Vec<Attachment>,
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, Attachment>(
         "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
-         FROM attachments WHERE file_name LIKE ? ORDER BY created_at DESC LIMIT 200",
+         FROM attachments WHERE file_name LIKE ? AND entity_type NOT IN ('library', 'library_trash') ORDER BY created_at DESC LIMIT 200",
     )
     .bind(like)
     .fetch_all(pool)
@@ -483,7 +490,7 @@ pub async fn search_attachments(pool: &SqlitePool, query: &str) -> Result<Vec<At
     let like = format!("%{trimmed}%");
     sqlx::query_as::<_, Attachment>(
         "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle
-         FROM attachments WHERE file_name LIKE ? ORDER BY created_at DESC LIMIT 50",
+         FROM attachments WHERE file_name LIKE ? AND entity_type NOT IN ('library', 'library_trash') ORDER BY created_at DESC LIMIT 50",
     )
     .bind(like)
     .fetch_all(pool)
@@ -514,12 +521,15 @@ pub struct VaultEntry {
     pub title: Option<String>,
     /// For a folder, how many things are directly inside it.
     pub item_count: Option<i64>,
+    /// What to call it on screen when the folder's own name is only a safe file name (a case's reference as written).
+    pub label: Option<String>,
 }
 
-/// Every attachment, for a listing or an export (the search lists stop at 200).
+/// Every attachment, for a listing or an export (the search lists stop at 200). What is in the library's
+/// recycle bin is deleted as far as anyone is concerned, so it is never listed or exported.
 pub async fn all_attachments(pool: &SqlitePool) -> Result<Vec<Attachment>, sqlx::Error> {
     sqlx::query_as::<_, Attachment>(
-        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle FROM attachments ORDER BY created_at",
+        "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle FROM attachments WHERE entity_type != 'library_trash' ORDER BY created_at",
     )
     .fetch_all(pool)
     .await
@@ -538,6 +548,9 @@ pub async fn list_vault_directory(pool: &SqlitePool, relative_path: &str, hidden
     let mut files = Vec::new();
     let mut folder_cache: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
     for attachment in all_attachments(pool).await? {
+        if attachment.entity_type == crate::domain::library::ENTITY {
+            continue;
+        }
         if !crate::domain::cases::may_see_entity(pool, &attachment.entity_type, &attachment.entity_id, hidden).await? {
             continue;
         }
@@ -572,6 +585,7 @@ pub async fn list_vault_directory(pool: &SqlitePool, relative_path: &str, hidden
             mime_type: None,
             title: None,
             item_count: Some(count as i64),
+            label: None,
         })
         .collect();
     for attachment in files {
@@ -587,7 +601,50 @@ pub async fn list_vault_directory(pool: &SqlitePool, relative_path: &str, hidden
             mime_type: Some(attachment.mime_type),
             title: None,
             item_count: None,
+            label: None,
         });
+    }
+    // Every case has its folder whether or not a file has been attached to it yet, so the library
+    // shows the station's cases from the first day. A case's folder carries the case itself
+    // (entity) and its summary, so the window can open the case from it.
+    if wanted.is_empty() || wanted.as_slice() == ["cases"] {
+        let cases: Vec<(String, String, String)> = sqlx::query_as("SELECT id, reference, summary FROM cases ORDER BY created_at DESC").fetch_all(pool).await?;
+        let visible: Vec<(String, String, String)> = cases.into_iter().filter(|(id, _, _)| !hidden.contains(id)).collect();
+        let folder = |name: String, path: String, entity: Option<(String, String, String)>, count: i64| VaultEntry {
+            relative_path: path,
+            name,
+            is_dir: true,
+            size_bytes: None,
+            modified_at: None,
+            attachment_id: None,
+            entity_type: entity.as_ref().map(|_| "case".to_string()),
+            entity_id: entity.as_ref().map(|e| e.0.clone()),
+            mime_type: None,
+            title: entity.as_ref().map(|e| e.1.clone()),
+            label: entity.map(|e| e.2),
+            item_count: Some(count),
+        };
+        if wanted.is_empty() {
+            if !visible.is_empty() {
+                match entries.iter_mut().find(|e| e.is_dir && e.name == "cases") {
+                    Some(e) => e.item_count = Some(visible.len() as i64),
+                    None => entries.push(folder("cases".into(), "cases".into(), None, visible.len() as i64)),
+                }
+            }
+        } else {
+            for (id, reference, summary) in visible {
+                let name = sanitize_folder_name(&reference);
+                match entries.iter_mut().find(|e| e.is_dir && e.name == name) {
+                    Some(e) => {
+                        e.entity_type = Some("case".into());
+                        e.entity_id = Some(id);
+                        e.title = Some(summary);
+                        e.label = Some(reference.clone());
+                    }
+                    None => entries.push(folder(name.clone(), format!("cases/{name}"), Some((id, summary, reference.clone())), 0)),
+                }
+            }
+        }
     }
     entries.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then(a.name.to_lowercase().cmp(&b.name.to_lowercase())));
     Ok(entries)

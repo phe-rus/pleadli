@@ -104,6 +104,20 @@ pub fn run() {
                 commands::attachments::clear_opened(data);
             }
 
+            // The library's recycle bin keeps things 30 days; this removes what is older, at start and every six hours,
+            // so it never depends on someone opening the bin.
+            {
+                let (pool, vault) = (db.pool.clone(), db.vault_root.clone());
+                tauri::async_runtime::spawn(async move {
+                    loop {
+                        if let Err(e) = domain::library::purge_expired(&pool, &vault).await {
+                            log::warn!("library recycle bin cleanup failed: {e}");
+                        }
+                        tokio::time::sleep(std::time::Duration::from_secs(6 * 60 * 60)).await;
+                    }
+                });
+            }
+
             let orchestra = domain::orchestra::start(db.pool.clone(), data_dir.clone(), db.vault_root.clone());
             tauri::async_runtime::spawn(orchestra.clone().run());
             app.manage(orchestra.clone());
@@ -219,6 +233,18 @@ pub fn run() {
             commands::attachments::open_vault_path,
             commands::attachments::read_vault_file,
             commands::attachments::reveal_vault_path,
+            commands::library::library_list,
+            commands::library::library_search,
+            commands::library::library_create_folder,
+            commands::library::library_rename,
+            commands::library::library_move,
+            commands::library::library_delete,
+            commands::library::library_bin,
+            commands::library::library_restore,
+            commands::library::library_purge,
+            commands::library::library_empty_bin,
+            commands::library::library_import,
+            commands::library::library_export,
             commands::network::get_remote_access_status,
             commands::network::set_remote_access_enabled,
             commands::network::get_local_network_info,

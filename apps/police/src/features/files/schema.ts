@@ -12,6 +12,7 @@ export const vaultEntrySchema = z.object({
   mimeType: z.string().nullable(),
   title: z.string().nullable().optional(),
   itemCount: z.number().nullable().optional(),
+  label: z.string().nullable().optional(),
 })
 
 export type VaultEntry = z.infer<typeof vaultEntrySchema>
