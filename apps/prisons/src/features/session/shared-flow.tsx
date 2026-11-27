@@ -5,7 +5,7 @@ import { conventionsSchema, identitySchema, initialDraft, type Draft } from '@/f
 import { ConventionsStep } from '@/features/onboarding/setup-steps'
 import { setupFacility, setupHeadOffice } from '@/features/onboarding/data'
 import { TextField } from '@/components/form-fields'
-import { ApiError } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 import { m } from '@/paraglide/messages'
 import { DesktopControls } from '@pleadli/shell'
 import { applyAccent, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type ExtraStep, type Locale, type SetupRole, type Brand } from '@pleadli/setup'
@@ -86,6 +86,18 @@ const facilityStep: ExtraStep = {
 export function SharedSetup({ welcomeAction, onDone, onStarted }: { welcomeAction?: ReactNode; onDone: (headOffice: boolean) => void; onStarted: () => void }) {
   const locale = useLocale() as Locale
   const headOffice = useRef(false)
+  // A facility already in this computer's records folder is offered before a new setup.
+  const found = useQuery({ queryKey: ['records-found'], queryFn: async () => (await api('GET', '/api/records/found')) as { institution: string; records: number; lastSaved: number } | null })
+  if (found.isPending) return null
+  const restore = found.data
+    ? {
+        ...found.data,
+        onRestore: async (phrase?: string) => {
+          await api('POST', '/api/records/restore', { body: { phrase } })
+          window.location.reload()
+        },
+      }
+    : null
   return (
     <SetupFlow
       institution="prisons"
@@ -100,6 +112,7 @@ export function SharedSetup({ welcomeAction, onDone, onStarted }: { welcomeActio
       identifierLabel={m.officers_badge_number()}
       extraSteps={[facilityStep]}
       welcomeAction={welcomeAction}
+      restore={restore}
       requestSecondFactor={requestSecondFactor}
       onComplete={async (payload) => {
         onStarted()

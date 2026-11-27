@@ -7,7 +7,7 @@ import { productName, setActiveJurisdiction } from '@/lib/jurisdiction'
 import { changeLocale, useLocale } from '@/features/i18n'
 import { completeSetup, getSetupStatus, requestSecondFactor, signIn, signInPeopleOptions, useBrand } from '@/features/installation'
 import { LockScreen, RecoveryScreen, securityStatusOptions, useSecurityStatus } from '@/features/security'
-import { ApiError, onLocked } from '@/lib/api'
+import { api, ApiError, onLocked } from '@/lib/api'
 import * as m from '@/paraglide/messages'
 import { applyAccent, prosecutionNames, BootScreen, SETUP_MESSAGES, SetupFlow, SignInScreen, type Locale, type SetupRole, type Brand } from '@pleadli/setup'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -38,9 +38,21 @@ function forgetRecords(queryClient: ReturnType<typeof useQueryClient>) {
 
 function Setup({ locale, onFinished }: { locale: Locale; onFinished: () => void }) {
   const { data: status } = useQuery({ queryKey: ['installation', 'setup'], queryFn: getSetupStatus, retry: false })
-  if (!status) return <BootScreen logo={DEFAULT_LOGO} productName={product()} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
+  // An institution already in this computer's records folder is offered before a new setup.
+  const found = useQuery({ queryKey: ['installation', 'found'], queryFn: async () => (await api('GET', '/setup/found')) as { institution: string; records: number; lastSaved: number } | null, retry: false })
+  if (!status || found.isPending) return <BootScreen logo={DEFAULT_LOGO} productName={product()} brand={panelBrand()} label={SETUP_MESSAGES[locale].loading} />
+  const restore = found.data
+    ? {
+        ...found.data,
+        onRestore: async (phrase?: string) => {
+          await api('POST', '/setup/restore', { body: { phrase } })
+          window.location.reload()
+        },
+      }
+    : null
   return (
     <SetupFlow
+      restore={restore}
       institution="dpp"
       productName={product()} brand={panelBrand()}
       defaultLogo={DEFAULT_LOGO}

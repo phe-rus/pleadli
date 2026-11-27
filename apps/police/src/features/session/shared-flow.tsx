@@ -1,6 +1,6 @@
 import { DEFAULT_LOGO, setBrandLogo } from '@/features/brand'
 import { changeLocale, useLocale } from '@/features/i18n'
-import { ApiError } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 import * as m from '@/paraglide/messages'
 import { PoliceBadgeIcon } from '@hugeicons/core-free-icons'
 import { DesktopControls } from '@pleadli/shell'
@@ -42,6 +42,18 @@ const controls = () => <DesktopControls labels={{ group: m['window.controls'](),
  * code; badge numbers identify officers. */
 export function SharedSetup({ onDone }: { onDone: () => void }) {
   const locale = useLocale() as Locale
+  // An institution already in this computer's records folder is offered before a new setup.
+  const found = useQuery({ queryKey: ['records-found'], queryFn: async () => (await api('/records/found')) as { institution: string; records: number; lastSaved: number } | null })
+  if (found.isPending) return null
+  const restore = found.data
+    ? {
+        ...found.data,
+        onRestore: async (phrase?: string) => {
+          await api('/records/restore', { method: 'POST', body: JSON.stringify({ phrase }) })
+          window.location.reload()
+        },
+      }
+    : null
   return (
     <SetupFlow
       institution="police"
@@ -68,7 +80,8 @@ export function SharedSetup({ onDone }: { onDone: () => void }) {
       onFinished={onDone}
       windowControls={controls()}
       describeError={say}
-      skipWelcome
+      skipWelcome={!restore}
+      restore={restore}
       brand={brand()}
     />
   )

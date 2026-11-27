@@ -8,6 +8,7 @@
   "permissions": [
     "core:default",
     "dialog:default",
+    "opener:allow-reveal-item-in-dir",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
     "notification:default",

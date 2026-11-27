@@ -1,6 +1,12 @@
 import * as m from '@/paraglide/messages'
 import { format } from '@/lib/date'
 import { Badge } from '@pleadli/ui/badge'
+import { exportReferral, savePackage } from '@/features/exchange/data'
+import { useReferrals } from '@/features/referrals'
+import { t } from '@pleadli/ui/goey-toaster'
+import { Button } from '@pleadli/ui/button'
+import { useState } from 'react'
+import { ApiError } from '@/lib/api'
 import { useAttention } from './queries'
 import type { CaseStanding, Obligation } from './data'
 
@@ -29,6 +35,32 @@ const obligationLine = (o: Obligation): string => {
   }
 }
 
+/** How the file leaves the station: as a sealed file saved to carry by hand, or sent through the postbox. */
+function SendFile({ caseId }: { caseId: string }) {
+  const { data: referrals } = useReferrals('')
+  const [busy, setBusy] = useState(false)
+  const referral = (referrals ?? []).filter((r) => r.caseId === caseId && r.destinationType === 'dpp').sort((a, b) => b.referredAt - a.referredAt)[0]
+  if (!referral) return null
+  const go = async (route: 'file' | 'postbox') => {
+    setBusy(true)
+    try {
+      const sealed = await exportReferral(referral.id, route)
+      if (route === 'file') await savePackage(sealed)
+      else t.success(m['attention.stand.sent_postbox']())
+    } catch (error) {
+      t.error(m['attention.stand.send_failed'](), { description: error instanceof ApiError ? error.message : m['common.try_again']() })
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="flex flex-wrap gap-2 pt-1">
+      <Button size="sm" variant="secondary" disabled={busy} onClick={() => go('file')}>{m['attention.stand.save_file']()}</Button>
+      <Button size="sm" variant="secondary" disabled={busy} onClick={() => go('postbox')}>{m['attention.stand.send_postbox']()}</Button>
+    </div>
+  )
+}
+
 /** Where a case stands with the DPP and what the station still has to do on it. Read from the one attention answer;
  * nothing here decides what a status means. Says nothing for a case that is simply under investigation with nothing owed. */
 export function CaseStandingCard({ caseId }: { caseId: string }) {
@@ -48,6 +80,7 @@ export function CaseStandingCard({ caseId }: { caseId: string }) {
           {s.referredBy ? ` · ${s.referredBy}` : ''}
         </p>
       )}
+      {s.stage === 'with_dpp' && s.withDpp !== 'accepted' && <SendFile caseId={caseId} />}
       {s.obligations.length > 0 && (
         <ul className="flex flex-col gap-1">
           {s.obligations.map((o, i) => (

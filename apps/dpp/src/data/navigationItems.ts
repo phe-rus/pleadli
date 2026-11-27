@@ -19,6 +19,7 @@ import {
   Calendar03Icon,
   Clock01Icon,
   Building03Icon,
+  LibraryIcon,
 } from '@hugeicons/core-free-icons'
 import { fileViews } from '@/features/prosecution-files/schema'
 import * as m from '@/paraglide/messages'
@@ -59,6 +60,7 @@ export const dppNav: readonly NavItem[] = [
   { label: m["nav.item.files"], icon: Folder01Icon, to: '/files', count: 'needsYou', section: 'work' },
   { label: m["nav.item.calendar"], icon: Calendar03Icon, to: '/calendar', section: 'work' },
   { label: m["nav.item.registry"], icon: Building03Icon, to: '/registry', section: 'work' },
+  { label: m["nav.item.library"], icon: LibraryIcon, to: '/library', section: 'work' },
 
   // Each folder of files, reached from the tabs on Files and by search.
   ...fileViews.map((v) => ({ label: () => v.label, icon: Folder01Icon, to: '/files', search: { view: v.id } })),

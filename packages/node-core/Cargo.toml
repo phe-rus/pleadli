@@ -31,6 +31,7 @@ hub = ["postbox", "orchestra", "dep:pleadli-interchange"]
 diagnostics = ["dep:serde_json"]
 # Installable extensions: package integrity, signatures, capabilities, isolation (no network, no native code).
 extensions = ["dep:serde_json", "dep:ed25519-dalek"]
+records = ["backup", "dep:tokio", "tokio/sync", "tokio/macros"]
 orchestra = ["storage", "dep:ed25519-dalek", "dep:machine-uid", "tokio/sync"]
 
 [dependencies]

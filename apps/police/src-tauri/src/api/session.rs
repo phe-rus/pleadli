@@ -48,7 +48,7 @@ fn is_public(method: &Method, path: &str) -> bool {
     }
     matches!(
         (method.as_str(), path),
-        ("GET", "/api/system/state") | ("POST", "/api/system/onboarding/station") | ("POST", "/api/system/onboarding/command") | ("POST", "/api/auth/sign-in") | ("POST", "/api/auth/first-password") | ("POST", "/api/system/onboarding/shared") | ("POST", "/api/system/second-factor") | ("GET", "/api/auth/people") | ("POST", "/api/auth/shared-sign-in")
+        ("GET", "/api/system/state") | ("GET", "/api/records/found") | ("POST", "/api/records/restore") | ("POST", "/api/system/onboarding/station") | ("POST", "/api/system/onboarding/command") | ("POST", "/api/auth/sign-in") | ("POST", "/api/auth/first-password") | ("POST", "/api/system/onboarding/shared") | ("POST", "/api/system/second-factor") | ("GET", "/api/auth/people") | ("POST", "/api/auth/shared-sign-in")
     )
 }
 

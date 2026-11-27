@@ -9,6 +9,7 @@ pub mod exchange;
 pub mod relay;
 pub mod hq;
 pub mod library;
+pub mod records;
 pub mod orchestra;
 pub mod session;
 pub mod speech;
@@ -1757,6 +1758,12 @@ fn routes(pool: SqlitePool, vault_root: PathBuf) -> Router {
         .route("/attachments/all", get(list_all_attachments_handler))
         .route("/attachments/route", get(get_attachment_route_handler))
         .route("/vault", get(list_vault_directory_handler))
+        .route("/records", get(records::overview))
+        .route("/records/paper", get(records::paper))
+        .route("/records/sync", post(records::sync_now))
+        .route("/records/recover", post(records::recover))
+        .route("/records/found", get(records::found))
+        .route("/records/restore", post(records::restore))
         .route("/library", get(library::list))
         .route("/library/search", get(library::search))
         .route("/library/folders", post(library::create_folder))
@@ -1824,6 +1831,10 @@ async fn record_audit(State(state): State<AppState>, request: axum::extract::Req
     let path = request.extensions().get::<axum::extract::OriginalUri>().map(|u| u.path().to_string()).unwrap_or_else(|| request.uri().path().to_string());
     let actor = request.extensions().get::<Actor>().cloned();
     let response = next.run(request).await;
+    // Anything saved is written to the records folder now, not on the next cycle.
+    if method != "GET" && response.status().is_success() {
+        pleadli_node_core::records_db::request_save();
+    }
     let Some(event) = crate::domain::audit::classify(&method, &path, response.status().as_u16()) else {
         return response;
     };

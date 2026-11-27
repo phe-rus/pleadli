@@ -676,7 +676,7 @@
       "subtitle": "Vituo vipi vya polisi vinaweza kutuma majalada kwa ofisi hii. Kituo hutuma hapa tu ikiwa ofisi hii ilikialika na mtu hapa amethibitisha ni nani.",
       "trust": "Inalingana: amini kituo hiki",
       "trusted_detail": "Alama {fingerprint}. Imethibitishwa {date}{by}. Namba ya juu zaidi ya kifurushi kilichopokelewa: {seq}.",
-      "trusted_toast": "Kituo kinaaminiwa. Kitumie uthibitisho.",
+      "trusted_toast": "Kituo kimeunganishwa. Hifadhi uthibitisho na ukipelekee kituo.",
       "waiting": "{count} zinasubiri",
       "waiting_answer": "Inasubiri {station} kujibu. Wazi hadi {date}."
     },
@@ -853,7 +853,8 @@
       "recent": "Za karibuni",
       "postbox": "Sanduku la posta",
       "courts": "Mahakama",
-      "registry": "Rejista ya ofisi"
+      "registry": "Rejista ya ofisi",
+      "library": "Maktaba"
     },
     "section": {
       "files": "Majalada",
@@ -3129,5 +3130,33 @@
   },
   "choice": {
     "none": "Chagua"
+  },
+  "records": {
+    "search": "Tafuta kumbukumbu",
+    "empty": "Hakuna kitu hapa bado. Kazi yako itaonekana hapa unapoihifadhi.",
+    "no_match": "Hakuna kumbukumbu inayolingana.",
+    "show_folder": "Onyesha folda",
+    "save_now": "Hifadhi sasa",
+    "saved": "Folda ya kumbukumbu imesasishwa.",
+    "recover": "Rejesha",
+    "recover_title": "Rejesha kutoka folda ya kumbukumbu",
+    "recover_body": "Hujenga upya kazi yako kutoka kwenye folda zilizopo hapa. Hakuna kilichopo tayari kwenye programu kinachobadilishwa. Kwenye kompyuta mpya, andika maneno ya urejeshaji ya taasisi yako.",
+    "recover_phrase": "Maneno ya urejeshaji (ikiwa yataombwa)",
+    "recover_run": "Rejesha",
+    "recovered": "Kumbukumbu {records} zimepatikana. Zimerejeshwa vipengele {rows} na faili {files}.",
+    "recovered_skipped": "Kumbukumbu {records} zimepatikana. Zimerejeshwa vipengele {rows} na faili {files}. {skipped} hazikuweza kufunguliwa.",
+    "locked": "Kumbukumbu hizi zilitengenezwa kwenye kompyuta nyingine. Chagua Rejesha na uandike maneno ya urejeshaji ya taasisi yako ili kuzifungua.",
+    "changed_outside": "{n} zimebadilishwa nje ya Pleadli",
+    "conflicts": "Folda {n} zilizonakiliwa zinahitaji kukaguliwa",
+    "close": "Funga",
+    "no_paper": "Kumbukumbu hii bado haina karatasi inayosomeka.",
+    "failed": "Hilo halikufanya kazi.",
+    "open": "Fungua jalada",
+    "kind_files": "Majalada",
+    "kind_people": "Watu",
+    "kind_station": "Ofisi",
+    "title": "Maktaba",
+    "restore_found": "{institution} imepatikana kwenye folda hii: rekodi {records}. Irejeshe kwenye kompyuta hii.",
+    "more": "Zaidi"
   }
 }

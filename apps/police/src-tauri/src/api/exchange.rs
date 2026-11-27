@@ -28,7 +28,7 @@ fn decode(file: &str) -> Result<Vec<u8>, ApiError> {
 }
 
 pub async fn get_identity(State(state): State<AppState>) -> Result<Json<Option<StationIdentity>>, ApiError> {
-    exchange::get_identity(&state.pool).await.map(Json).map_err(domain_error)
+    exchange::ensure_identity(&state.pool).await.map(Json).map_err(domain_error)
 }
 
 #[derive(Deserialize)]

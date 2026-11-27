@@ -676,7 +676,7 @@
       "subtitle": "Which police stations may send files to this office. A station sends here only if this office invited it and a person here has confirmed who it is.",
       "trust": "It matches: trust this station",
       "trusted_detail": "Fingerprint {fingerprint}. Confirmed {date}{by}. Highest package number received: {seq}.",
-      "trusted_toast": "Station trusted. Send it the confirmation.",
+      "trusted_toast": "Station connected. Save the confirmation and give it to the station.",
       "waiting": "{count} waiting",
       "waiting_answer": "Waiting for {station} to answer. Open until {date}."
     },
@@ -853,7 +853,8 @@
       "recent": "Recent",
       "postbox": "Postbox",
       "courts": "Courts",
-      "registry": "Office registry"
+      "registry": "Office registry",
+      "library": "Library"
     },
     "section": {
       "files": "Files",
@@ -3129,5 +3130,33 @@
   },
   "choice": {
     "none": "Choose"
+  },
+  "records": {
+    "search": "Search records",
+    "empty": "Nothing here yet. Your work appears here as you save it.",
+    "no_match": "No record matches.",
+    "show_folder": "Show folder",
+    "save_now": "Save now",
+    "saved": "The records folder is up to date.",
+    "recover": "Recover",
+    "recover_title": "Recover from the records folder",
+    "recover_body": "Rebuilds your work from the folders here. Nothing already in the app is replaced. On a new computer, type your institution's recovery phrase.",
+    "recover_phrase": "Recovery phrase (only if asked)",
+    "recover_run": "Recover",
+    "recovered": "Found {records} records. Restored {rows} entries and {files} files.",
+    "recovered_skipped": "Found {records} records. Restored {rows} entries and {files} files. {skipped} could not be opened.",
+    "locked": "These records were made on another computer. Choose Recover and type your institution's recovery phrase to open them.",
+    "changed_outside": "{n} changed outside Pleadli",
+    "conflicts": "{n} copied folders need a look",
+    "close": "Close",
+    "no_paper": "This record has no readable paper yet.",
+    "failed": "That did not work.",
+    "open": "Open file",
+    "kind_files": "Files",
+    "kind_people": "People",
+    "kind_station": "Office",
+    "title": "Library",
+    "restore_found": "{institution} was found in this folder: {records} records. Restore it on this computer.",
+    "more": "More"
   }
 }

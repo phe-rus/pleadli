@@ -114,6 +114,15 @@ pub fn run() {
                     // Pleadli Orchestra: the trial and licence, papers to /verify, daily backups.
                     let orchestra = domain::orchestra::start(node.pool.clone(), node.data_dir.clone(), node.vault_root.clone());
                     tauri::async_runtime::spawn(orchestra.clone().run());
+                    // The facility's records folder: each prisoner's record as a folder in Documents, kept
+                    // up to date from the database, and the way back if the database is ever lost.
+                    domain::records_dir::install(domain::records_dir::Context {
+                        root: domain::records_dir::home(app.path().document_dir().ok(), &node.data_dir),
+                        data_dir: node.data_dir.clone(),
+                        vault_root: node.vault_root.clone(),
+                        orchestra: Some(orchestra.clone()),
+                    });
+                    domain::records_dir::start_mirror(node.pool.clone());
                     let _ = node.orchestra.set(orchestra);
                 domain::relay::start(&node);
 

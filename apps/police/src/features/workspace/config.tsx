@@ -1,6 +1,6 @@
 import * as m from '@/paraglide/messages'
 import { custodyLimits } from '@/features/custody/schema'
-import { caseFolders, isNavActive, navFor, sectionsFor, type NavItem } from '@/data/navigationItems'
+import { isNavActive, navFor, sectionsFor, type NavItem } from '@/data/navigationItems'
 import { BrandLogo } from '@/features/brand'
 import { CommandMenu } from '@/components/command-menu'
 import { StatusBarLanguageSelect } from '@/features/i18n'
@@ -10,9 +10,11 @@ import { PersonForm } from '@/features/people'
 import { StationDiaryEntryForm } from '@/features/station-diary'
 import { signOut, useInstallation, useMe } from '@/features/session'
 import { stationProfileOptions } from '@/features/station-admin/queries'
-import { BinocularsIcon, CellsIcon, Folder01Icon, Notebook01Icon, SirenIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
+import { BinocularsIcon, CellsIcon, Notebook01Icon, SirenIcon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import type { NavModel, NavRow, QuickAddItem, ShellConfig, ShellLabels } from '@pleadli/shell'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouterState } from '@tanstack/react-router'
+import { useCases } from '@/features/cases'
 import { CreateFrame, QuickCaseForm } from './quick-add'
 import { useRecordTitle } from './record-title'
 import { HeaderEnd, LicenceBar, StatusBar } from './slots'
@@ -72,6 +74,11 @@ const rowOf = (item: NavItem): NavRow => ({ id: item.to, to: item.to, label: ite
 const useNav = (): NavModel => {
   const mode = useInstallation().data?.mode
   const items = navFor(mode)
+  // The case being worked follows you: it sits under Cases by its reference while it is open.
+  const pathname = useRouterState({ select: (r) => r.location.pathname })
+  const openId = /^\/investigations\/([^/]+)/.exec(pathname)?.[1]
+  const { data: cases } = useCases('')
+  const open = openId ? cases?.find((c) => c.id === openId) : undefined
   const inSection = (id: string) => items.filter((item) => item.section === id).map(rowOf)
   const today = items.find((item) => item.to === '/' && item.section === 'main')!
   return {
@@ -83,14 +90,12 @@ const useNav = (): NavModel => {
           ? {
               id: section.id,
               label: section.label,
-              rows: caseFolders.map((folder) => ({
-                id: `folder:${folder.id}`,
-                to: `/investigations?view=${folder.id}`,
-                label: folder.label,
-                icon: Folder01Icon,
-                match: ({ pathname, search }: { pathname: string; search: Record<string, unknown> }) =>
-                  pathname === '/investigations' && (typeof search.view === 'string' ? search.view : 'investigating') === folder.id,
-              })),
+              // One place for every case: where each stands is shown on the case, and filtered on the page.
+              rows: [
+                { id: 'cases', to: '/investigations', label: m["nav.cases"](), icon: BinocularsIcon, match: ({ pathname }: { pathname: string }) => pathname === '/investigations' },
+                ...(open ? [{ id: `case:${open.id}`, to: `/investigations/${open.id}`, label: `${m["nav.investigation"]()} ${open.reference.split(" ").slice(-2).join(" ")}`, icon: BinocularsIcon, match: ({ pathname }: { pathname: string }) => pathname.startsWith(`/investigations/${open.id}`) }] : []),
+                ...inSection('cases'),
+              ],
             }
           : { id: section.id, label: section.label, rows: inSection(section.id) },
       ),
@@ -105,8 +110,7 @@ const useCounts = () => {
   const items = navFor(useInstallation().data?.mode)
   if (!counts) return {}
   const out: Record<string, { value: number; urgent?: boolean }> = {
-    'folder:investigating': { value: counts.investigating },
-    'folder:dpp': { value: counts.withDpp },
+    cases: { value: counts.investigating + counts.withDpp },
   }
   for (const item of items) {
     if (item.count === 'inCells') out[item.to] = counts.custodyDue > 0 ? { value: counts.custodyDue, urgent: true } : { value: counts.inCells }
@@ -169,7 +173,7 @@ export const shellConfig: ShellConfig = {
   brand: useBrand,
   nav: useNav,
   counts: useCounts,
-  home: { key: 'overview', kind: 'overview', to: '/', title: () => m["nav.today"]() },
+  home: { key: 'overview', kind: 'overview', to: '/', title: () => m["nav.overview"]() },
   identity: { resolve: resolveIdentity, icon: tabIcon, label: tabLabel, useRecordTitle },
   search: useSearch,
   quickAdd: useQuickAdd,

@@ -676,7 +676,7 @@
       "subtitle": "Les postes de police autorisés à transmettre des dossiers à ce bureau. Un poste ne transmet ici que si ce bureau l'a invité et qu'une personne d'ici a confirmé son identité.",
       "trust": "Il correspond : approuver ce poste",
       "trusted_detail": "Code {fingerprint}. Confirmé le {date}{by}. Dernier envoi reçu : n° {seq}.",
-      "trusted_toast": "Poste approuvé. Envoyez-lui la confirmation.",
+      "trusted_toast": "Station connectée. Enregistrez la confirmation et remettez-la à la station.",
       "waiting": "{count} en attente",
       "waiting_answer": "En attente de la réponse de {station}. Valable jusqu'au {date}."
     },
@@ -853,7 +853,8 @@
       "recent": "Récents",
       "postbox": "Boîte postale",
       "courts": "Tribunaux",
-      "registry": "Registre du bureau"
+      "registry": "Registre du bureau",
+      "library": "Bibliothèque"
     },
     "section": {
       "files": "Dossiers",
@@ -3129,5 +3130,33 @@
   },
   "choice": {
     "none": "Choisir"
+  },
+  "records": {
+    "search": "Rechercher un dossier",
+    "empty": "Rien ici pour l'instant. Votre travail apparaît ici dès qu'il est enregistré.",
+    "no_match": "Aucun dossier ne correspond.",
+    "show_folder": "Afficher le dossier",
+    "save_now": "Enregistrer maintenant",
+    "saved": "Le dossier des archives est à jour.",
+    "recover": "Récupérer",
+    "recover_title": "Récupérer depuis le dossier des archives",
+    "recover_body": "Reconstruit votre travail à partir des dossiers d'ici. Rien de ce qui est déjà dans l'application n'est remplacé. Sur un nouvel ordinateur, saisissez la phrase de récupération de votre institution.",
+    "recover_phrase": "Phrase de récupération (si demandée)",
+    "recover_run": "Récupérer",
+    "recovered": "{records} dossiers trouvés. {rows} éléments et {files} fichiers restaurés.",
+    "recovered_skipped": "{records} dossiers trouvés. {rows} éléments et {files} fichiers restaurés. {skipped} n'ont pas pu être ouverts.",
+    "locked": "Ces archives ont été créées sur un autre ordinateur. Choisissez Récupérer et saisissez la phrase de récupération de votre institution pour les ouvrir.",
+    "changed_outside": "{n} modifié(s) en dehors de Pleadli",
+    "conflicts": "{n} dossiers copiés à vérifier",
+    "close": "Fermer",
+    "no_paper": "Ce dossier n'a pas encore de document lisible.",
+    "failed": "Cela n'a pas fonctionné.",
+    "open": "Ouvrir le dossier",
+    "kind_files": "Dossiers",
+    "kind_people": "Personnes",
+    "kind_station": "Bureau",
+    "title": "Bibliothèque",
+    "restore_found": "{institution} a été trouvé dans ce dossier : {records} dossiers. Restaurez-le sur cet ordinateur.",
+    "more": "Plus"
   }
 }

@@ -193,7 +193,9 @@
     "statistics": "Takwimu",
     "postbox": "Sanduku la posta",
     "medical": "Rekodi za kitabibu",
-    "exchange": "Mawasiliano na DPP"
+    "exchange": "Mawasiliano na DPP",
+    "library": "Maktaba",
+    "investigation": "Uchunguzi"
   },
   "nav_sections": {
     "front_desk": "Mapokezi",
@@ -308,7 +310,8 @@
       "investigating": "Zinachunguzwa",
       "dpp": "Kwa DPP",
       "closed": "Zilizofungwa",
-      "all": "Kesi zote"
+      "all": "Kesi zote",
+      "all_short": "Zote"
     },
     "count_one": "Kesi 1",
     "count": "Kesi {count}",
@@ -731,7 +734,11 @@
       "ob_not_accepted": "Soma sababu aliyotoa DPP, sahihisha jalada na ulitume tena, au funga kesi.",
       "ob_declined": "Soma sababu za DPP, kisha funga kesi au ifungue upya na ushahidi mpya.",
       "witnesses": "Mashahidi {count} wa kupelekewa wito kwa kusikilizwa kunakofuata: {names}. {due}",
-      "exhibits": "Mahakama imeomba vielelezo hivi: {names}."
+      "exhibits": "Mahakama imeomba vielelezo hivi: {names}.",
+      "save_file": "Hifadhi faili ya kubeba",
+      "send_postbox": "Tuma kupitia Postbox",
+      "sent_postbox": "Imetumwa kupitia postbox",
+      "send_failed": "Faili haikuweza kutumwa"
     }
   },
   "overview": {
@@ -1601,8 +1608,8 @@
     "moved_to_bin": "\"{name}\" imehamishiwa pipa la taka",
     "moved_to_bin_many": "Vitu {count} vimehamishiwa pipa la taka",
     "undo": "Tendua",
-    "title": "Maktaba",
-    "search": "Tafuta kwenye maktaba",
+    "title": "Nyaraka",
+    "search": "Tafuta kwenye folda na faili",
     "found": "{count} zimepatikana",
     "new_folder": "Folda mpya",
     "add_files": "Ongeza faili",
@@ -1680,9 +1687,9 @@
     "no_match": "Hakuna kinacholingana na “{query}”.",
     "more": "Zaidi",
     "view": "Tazama",
-    "subtitle": "Nyaraka {papers} · Faili {files}",
-    "papers": "Nyaraka",
-    "files": "Faili",
+    "subtitle": "Hati ambazo kituo kimetayarisha, kuchapisha na kutuma, na kila faili iliyoambatishwa kwenye rekodi zake.",
+    "papers": "Vilivyochapishwa",
+    "files": "Faili zote",
     "station_folder": "Folda ya kituo",
     "station_folder_about": "Kumbukumbu za kituo kama faili kwenye kompyuta hii.",
     "search_papers": "Tafuta nyaraka kwa jina, namba au msimbo",
@@ -2519,6 +2526,28 @@
       "accepted": "Imekubaliwa",
       "rejected": "Imekataliwa",
       "received": "Imepokelewa"
+    },
+    "plain": {
+      "intro": "Kesi hutumwa kwa ofisi ya DPP kutoka ukurasa wa kesi. Hapa ndipo ofisi inaunganishwa na majibu yake yanapofika.",
+      "name_first": "Ipe kituo jina kwanza, kwenye Kituo, Wasifu.",
+      "office_title": "Ofisi ya DPP",
+      "connected_hint": "Tuma kesi kutoka ukurasa wake. Majibu ya ofisi yanafika hapa chini.",
+      "not_connected": "Kituo hiki bado hakijaunganishwa na ofisi ya DPP. Ofisi hukutumia mwaliko. Ufungue hapa.",
+      "open_invitation": "Fungua mwaliko",
+      "open_file": "Fungua faili kutoka ofisini",
+      "invited_by": "{office} imealika kituo hiki.",
+      "office_code": "Msimbo wa ofisi: {code}",
+      "accept": "Kubali",
+      "waiting": "Inasubiri {office} kuthibitisha kituo hiki.",
+      "check_codes": "Piga simu ofisini mhakikishe mnaona misimbo ileile. Kituo: {station}. Ofisi: {office}.",
+      "sent_title": "Imetumwa kwa DPP",
+      "from_title": "Kutoka kwa DPP",
+      "details": "Maelezo ya kituo",
+      "err_licence": "leseni lazima iwe halali kwa Postbox",
+      "reply_saved": "Jibu limehifadhiwa. Liwasilishe kwa {office}.",
+      "give_reply": "Peleka jibu lililohifadhiwa ofisini, kisha mpigie simu kuhakiki misimbo.",
+      "wrong_invitation": "Faili hiyo ni mwaliko. Tumia \"Fungua mwaliko\".",
+      "wrong_reply": "Faili hiyo ni jibu la kituo, si la kituo hiki."
     }
   },
   "timezone": {
@@ -2655,5 +2684,33 @@
     "choose": "Chagua picha",
     "image_hint": "Chagua picha au skani ya sahihi yako kwenye karatasi nyeupe.",
     "take": "Chukua sahihi"
+  },
+  "records": {
+    "search": "Tafuta kumbukumbu",
+    "empty": "Hakuna kitu hapa bado. Kazi yako itaonekana hapa unapoihifadhi.",
+    "no_match": "Hakuna kumbukumbu inayolingana.",
+    "show_folder": "Onyesha folda",
+    "save_now": "Hifadhi sasa",
+    "saved": "Folda ya kumbukumbu imesasishwa.",
+    "recover": "Rejesha",
+    "recover_title": "Rejesha kutoka folda ya kumbukumbu",
+    "recover_body": "Hujenga upya kazi yako kutoka kwenye folda zilizopo hapa. Hakuna kilichopo tayari kwenye programu kinachobadilishwa. Kwenye kompyuta mpya, andika maneno ya urejeshaji ya taasisi yako.",
+    "recover_phrase": "Maneno ya urejeshaji (ikiwa yataombwa)",
+    "recover_run": "Rejesha",
+    "recovered": "Kumbukumbu {records} zimepatikana. Zimerejeshwa vipengele {rows} na faili {files}.",
+    "recovered_skipped": "Kumbukumbu {records} zimepatikana. Zimerejeshwa vipengele {rows} na faili {files}. {skipped} hazikuweza kufunguliwa.",
+    "locked": "Kumbukumbu hizi zilitengenezwa kwenye kompyuta nyingine. Chagua Rejesha na uandike maneno ya urejeshaji ya taasisi yako ili kuzifungua.",
+    "changed_outside": "{n} zimebadilishwa nje ya Pleadli",
+    "conflicts": "Folda {n} zilizonakiliwa zinahitaji kukaguliwa",
+    "close": "Funga",
+    "no_paper": "Kumbukumbu hii bado haina karatasi inayosomeka.",
+    "failed": "Hilo halikufanya kazi.",
+    "open": "Fungua kesi",
+    "kind_cases": "Kesi",
+    "kind_people": "Watu",
+    "kind_station": "Kituo",
+    "title": "Maktaba",
+    "restore_found": "{institution} imepatikana kwenye folda hii: rekodi {records}. Irejeshe kwenye kompyuta hii.",
+    "more": "Zaidi"
   }
 }

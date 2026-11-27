@@ -25,6 +25,10 @@ pub mod office;
 #[cfg(feature = "orchestra")]
 pub mod orchestra;
 pub mod paper;
+#[cfg(feature = "records")]
+pub mod records;
+#[cfg(feature = "records")]
+pub mod records_db;
 pub mod site;
 pub mod timezone;
 #[cfg(feature = "hub")]

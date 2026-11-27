@@ -193,7 +193,9 @@
     "statistics": "Statistics",
     "postbox": "Postbox",
     "medical": "Medical records",
-    "exchange": "DPP exchange"
+    "exchange": "DPP exchange",
+    "library": "Library",
+    "investigation": "Investigation"
   },
   "nav_sections": {
     "front_desk": "Front desk",
@@ -308,7 +310,8 @@
       "investigating": "Under investigation",
       "dpp": "With the DPP",
       "closed": "Closed",
-      "all": "All cases"
+      "all": "All cases",
+      "all_short": "All"
     },
     "count_one": "1 case",
     "count": "{count} cases",
@@ -731,7 +734,11 @@
       "ob_not_accepted": "Read the reason the DPP gave, correct the file and send it again, or close the case.",
       "ob_declined": "Read the reasons the DPP gave, then close the case or reopen it with new evidence.",
       "witnesses": "{count} witnesses to serve for the next hearing: {names}. {due}",
-      "exhibits": "The court asked for these exhibits: {names}."
+      "exhibits": "The court asked for these exhibits: {names}.",
+      "save_file": "Save a file to carry",
+      "send_postbox": "Send through Postbox",
+      "sent_postbox": "Sent through the postbox",
+      "send_failed": "The file could not be sent"
     }
   },
   "overview": {
@@ -1351,7 +1358,7 @@
     "tl_exhibit": "Exhibit recovered: {description}",
     "tl_charged": "Charged: {offence}",
     "tl_referred": "Referred to {destination}",
-    "back": "Back to Investigations",
+    "back": "Back to Cases",
     "copy_reference": "Copy case reference",
     "edit_case": "Edit case",
     "timeline": "Timeline",
@@ -1601,8 +1608,8 @@
     "moved_to_bin": "\"{name}\" moved to the recycle bin",
     "moved_to_bin_many": "{count} items moved to the recycle bin",
     "undo": "Undo",
-    "title": "Library",
-    "search": "Search the library",
+    "title": "Documents",
+    "search": "Search folders and files",
     "found": "{count} found",
     "new_folder": "New folder",
     "add_files": "Add files",
@@ -1680,9 +1687,9 @@
     "no_match": "Nothing here matches “{query}”.",
     "more": "More",
     "view": "View",
-    "subtitle": "{papers} papers · {files} files",
-    "papers": "Papers",
-    "files": "Files",
+    "subtitle": "The papers the station has prepared, printed and sent, and every file attached to its records.",
+    "papers": "Printed",
+    "files": "All files",
     "station_folder": "Station folder",
     "station_folder_about": "The station's records as files on this computer, kept in step with the database.",
     "search_papers": "Search papers by title, reference or code",
@@ -2519,6 +2526,28 @@
       "accepted": "Accepted",
       "rejected": "Rejected",
       "received": "Received"
+    },
+    "plain": {
+      "intro": "Cases go to the DPP office from the case page. This is where the office is connected and where its replies arrive.",
+      "name_first": "Name the station first, in Station, Profile.",
+      "office_title": "DPP office",
+      "connected_hint": "Send a case from its page. The office's replies arrive below.",
+      "not_connected": "This station is not connected to a DPP office yet. The office sends you an invitation. Open it here.",
+      "open_invitation": "Open an invitation",
+      "open_file": "Open a file from the office",
+      "invited_by": "{office} has invited this station.",
+      "office_code": "Office code: {code}",
+      "accept": "Accept",
+      "waiting": "Waiting for {office} to confirm this station.",
+      "check_codes": "Phone the office and check you both see the same codes. Station: {station}. Office: {office}.",
+      "sent_title": "Sent to the DPP",
+      "from_title": "From the DPP",
+      "details": "Station details",
+      "err_licence": "the licence has to be current for Postbox",
+      "reply_saved": "Reply saved. Give it to {office}.",
+      "give_reply": "Give the saved reply to the office, then phone them to check the codes.",
+      "wrong_invitation": "That file is an invitation. Use \"Open an invitation\" instead.",
+      "wrong_reply": "That file is a reply from a station, not for this station."
     }
   },
   "timezone": {
@@ -2655,5 +2684,33 @@
     "choose": "Choose a picture",
     "image_hint": "Pick a photo or scan of your signature on white paper.",
     "take": "Take signature"
+  },
+  "records": {
+    "search": "Search records",
+    "empty": "Nothing here yet. Your work appears here as you save it.",
+    "no_match": "No record matches.",
+    "show_folder": "Show folder",
+    "save_now": "Save now",
+    "saved": "The records folder is up to date.",
+    "recover": "Recover",
+    "recover_title": "Recover from the records folder",
+    "recover_body": "Rebuilds your work from the folders here. Nothing already in the app is replaced. On a new computer, type your institution's recovery phrase.",
+    "recover_phrase": "Recovery phrase (only if asked)",
+    "recover_run": "Recover",
+    "recovered": "Found {records} records. Restored {rows} entries and {files} files.",
+    "recovered_skipped": "Found {records} records. Restored {rows} entries and {files} files. {skipped} could not be opened.",
+    "locked": "These records were made on another computer. Choose Recover and type your institution's recovery phrase to open them.",
+    "changed_outside": "{n} changed outside Pleadli",
+    "conflicts": "{n} copied folders need a look",
+    "close": "Close",
+    "no_paper": "This record has no readable paper yet.",
+    "failed": "That did not work.",
+    "open": "Open case",
+    "kind_cases": "Cases",
+    "kind_people": "People",
+    "kind_station": "Station",
+    "title": "Library",
+    "restore_found": "{institution} was found in this folder: {records} records. Restore it on this computer.",
+    "more": "More"
   }
 }

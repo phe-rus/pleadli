@@ -39,14 +39,17 @@ export async function addAttachmentFromPath(entityType: string, entityId: string
   return attachmentSchema.parse(attachment)
 }
 
+/** A file the person picked in the page. Sent through the app's own API, with the sign-in, the same
+ * way in the window and in the browser. */
 export async function addAttachmentFile(entityType: string, entityId: string, file: File) {
-  const formData = new FormData()
-  formData.append('entityType', entityType)
-  formData.append('entityId', entityId)
-  formData.append('file', file)
-  const response = await fetch(`${DEV_SERVER_URL}/attachments`, { method: 'POST', body: formData })
-  if (!response.ok) throw new Error(await response.text())
-  return attachmentSchema.parse(await response.json())
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  const attachment = await api('/attachments/bytes', {
+    method: 'POST',
+    body: JSON.stringify({ entityType, entityId, fileName: file.name, dataBase64: btoa(binary) }),
+  })
+  return attachmentSchema.parse(attachment)
 }
 
 export async function deleteAttachment(id: string) {

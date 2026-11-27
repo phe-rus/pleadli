@@ -72,8 +72,7 @@ export async function prepareNotice(decisionId: string) {
  * if the prosecutor cancelled. */
 export async function importPackage(file?: File): Promise<ImportOutcome | null> {
   if (isTauri()) {
-    const { open } = await import('@tauri-apps/plugin-dialog')
-    const path = await open({ multiple: false, filters: [{ name: m["interchange.package_filter"](), extensions: ['pxpkg'] }] })
+    const path = await invoke<string | null>('pick_package_path')
     if (typeof path !== 'string') return null
     return importOutcomeSchema.parse(await invoke('import_interchange_file', { path }))
   }

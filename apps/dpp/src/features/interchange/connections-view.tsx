@@ -14,7 +14,7 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { sendInviteByPostbox } from '@/features/relay/data'
-import { createIdentity, createInvite, declineConnection, revokeConnection, saveFile, trustConnection } from './data'
+import { createIdentity, createInvite, declineConnection, listOutgoing, revokeConnection, saveFile, trustConnection } from './data'
 import { ImportButton } from './import-button'
 import { useConnections, useIdentity } from './queries'
 import { connectionStates, type Connection } from './schema'
@@ -111,7 +111,8 @@ function StationPanel({ connection: c, onClose }: { connection: Connection; onCl
   const [reason, setReason] = useState('')
   const [address, setAddress] = useState('')
   const byPostbox = useMutation({ mutationFn: () => sendInviteByPostbox(c.id, address), onSuccess: () => t.success(m["relay.invite_queued"]()), onError: (e) => t.error(m["relay.invite_failed"](), { description: say(e) }) })
-  const trust = useMutation({ mutationFn: () => trustConnection(c.id, typed), onSuccess: () => t.success(m["interchange.conn.trusted_toast"]()), onError: (e) => t.error(m["interchange.review.not_trusted"](), { description: say(e) }) })
+  // Trusting a station makes the confirmation it needs; it is offered for saving at once, so nobody has to find it in the registry.
+  const trust = useMutation({ mutationFn: () => trustConnection(c.id, typed), onSuccess: async () => { t.success(m["interchange.conn.trusted_toast"]()); const made = (await listOutgoing()).find((o) => o.connectionId === c.id && o.kind === 'pairing_confirmation' && !o.exportedAt); if (made) await saveFile('outgoing', made.id) }, onError: (e) => t.error(m["interchange.review.not_trusted"](), { description: say(e) }) })
   const decline = useMutation({ mutationFn: () => declineConnection(c.id, reason), onSuccess: onClose, onError: (e) => t.error(m["interchange.conn.decline_failed"](), { description: say(e) }) })
   const revoke = useMutation({ mutationFn: () => revokeConnection(c.id, reason), onSuccess: () => { t.success(m["interchange.conn.ended"]()); onClose() }, onError: (e) => t.error(m["interchange.conn.end_failed"](), { description: say(e) }) })
 

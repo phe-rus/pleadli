@@ -1345,6 +1345,12 @@ async fn verify_paper(State(s): State<AppState>, Query(q): Query<PrintVerifyQuer
 
 pub fn router(state: AppState, orchestra: Option<Arc<pleadli_node_core::orchestra::Orchestra>>) -> Router {
     let mut api = Router::new()
+        .route("/records", get(records::overview))
+        .route("/records/paper", get(records::paper))
+        .route("/records/sync", post(records::sync_now))
+        .route("/records/recover", post(records::recover))
+        .route("/setup/found", get(records::found))
+        .route("/setup/restore", post(records::restore))
         .route("/people", post(create_person).get(search_people))
         .route("/people/{id}", get(get_person).put(update_person))
         .route("/prosecution-files", post(create_file).get(list_files))
@@ -1544,7 +1550,13 @@ async fn gate(State(s): State<AppState>, request: axum::extract::Request, next: 
         return ApiError(StatusCode::LOCKED, "LOCKED", "Sign in to continue.".to_string()).into_response();
     }
     s.security.touch();
-    next.run(request).await
+    let saves = request.method() != axum::http::Method::GET;
+    let response = next.run(request).await;
+    // Anything saved is written to the records folder now, not on the next cycle.
+    if saves && response.status().is_success() {
+        pleadli_node_core::records_db::request_save();
+    }
+    response
 }
 
 /// What runs when the data could not be opened (the key is missing, or the
@@ -1598,6 +1610,7 @@ pub async fn serve_dev(router: Router) {
 }
 
 pub mod orchestra;
+pub mod records;
 pub mod relay;
 
 #[cfg(test)]

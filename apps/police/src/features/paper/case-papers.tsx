@@ -1,3 +1,4 @@
+import { entityTypes, useAttachmentDataUrl, useAttachments, type EntityType } from '@/features/attachments'
 import * as m from '@/paraglide/messages'
 import { exhibitPersonName, exhibitStatusLabel, ExhibitForm, type Exhibit } from '@/features/evidence'
 import { ChargeSheetForm, chargeSheetAccusedName, type ChargeSheet } from '@/features/legal-forms'
@@ -50,6 +51,30 @@ export function StatementPaper({ statement }: { statement: Statement }) {
   )
 }
 
+/** The photographs attached to a record, shown on its paper as they print. */
+export function Photographs({ entityType, entityId }: { entityType: EntityType; entityId: string }) {
+  const { data } = useAttachments(entityType, entityId)
+  const photos = (data ?? []).filter((a) => a.mimeType.startsWith('image/'))
+  if (!photos.length) return null
+  return (
+    <section className="mt-6 grid grid-cols-2 gap-3">
+      {photos.map((p) => (
+        <Photo key={p.id} id={p.id} name={p.fileName} />
+      ))}
+    </section>
+  )
+}
+
+function Photo({ id, name }: { id: string; name: string }) {
+  const { data: src } = useAttachmentDataUrl(id)
+  return src ? (
+    <figure className="m-0">
+      <img src={src} alt={name} className="w-full border border-black/20 object-contain" />
+      <figcaption className="mt-1 text-[0.7rem]">{name}</figcaption>
+    </figure>
+  ) : null
+}
+
 /** An exhibit's entry in the exhibit register: what it is, its mark, where it came from and where it is kept. */
 export function ExhibitPaper({ exhibit }: { exhibit: Exhibit }) {
   const from = exhibitPersonName(exhibit)
@@ -80,6 +105,7 @@ export function ExhibitPaper({ exhibit }: { exhibit: Exhibit }) {
         <PaperField label={m["paper.police.status"]()}>{exhibitStatusLabel(exhibit.status)}</PaperField>
       </section>
       {exhibit.notes && <p className="mt-4 whitespace-pre-wrap">{exhibit.notes}</p>}
+      <Photographs entityType={entityTypes.exhibit} entityId={exhibit.id} />
       <section className="mt-12 flex justify-end">
         <SignatureLine name={exhibit.receivingOfficerName} caption={m["paper.police.recorded_by"]()} />
       </section>

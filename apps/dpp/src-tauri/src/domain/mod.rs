@@ -33,6 +33,7 @@ pub mod guide_starter;
 pub mod laws;
 pub mod registry;
 pub mod orchestra;
+pub mod records_dir;
 pub mod people;
 pub mod pipeline;
 pub mod file_links;

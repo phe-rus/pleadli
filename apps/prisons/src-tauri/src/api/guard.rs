@@ -158,7 +158,13 @@ async fn guard(State(g): State<Guard>, mut req: Request, next: Next) -> Response
         }
         Err(err) => return err.into_response(),
     }
-    next.run(req).await
+    let saves = req.method() != axum::http::Method::GET;
+    let response = next.run(req).await;
+    // Anything saved is written to the records folder now, not on the next cycle.
+    if saves && response.status().is_success() {
+        pleadli_node_core::records_db::request_save();
+    }
+    response
 }
 
 async fn authorise(g: &Guard, ingress: Ingress, headers: &HeaderMap) -> Result<(Option<Actor>, Option<String>), ApiError> {

@@ -57,7 +57,7 @@ qrcode = "0.14"
 # AI Assist calls its provider over HTTPS from here, so the key never reaches the webview.
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 pleadli-interchange = { path = "../../../packages/interchange" }
-pleadli-node-core = { path = "../../../packages/node-core", features = ["ai", "hub"] }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["ai", "hub", "records"] }
 
 [dev-dependencies]
 # A fixed key for tests that run domain code without a startup.

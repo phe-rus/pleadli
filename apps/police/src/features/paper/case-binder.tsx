@@ -1,3 +1,4 @@
+import { Photographs } from './case-papers'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { exhibitStatusLabel } from '@/features/evidence/schema'
 import type { Exhibit } from '@/features/evidence/schema'
@@ -148,6 +149,7 @@ export function CaseBinder({ reference, summary, statements, exhibits, chargeShe
                   {exhibit.storageLocation && <PaperField label={m["paper.police.stored_at"]()}>{exhibit.storageLocation}</PaperField>}
                   <PaperField label={m["paper.police.status"]()}>{exhibitStatusLabel(exhibit.status)}</PaperField>
                 </section>
+                <Photographs entityType={entityTypes.exhibit} entityId={exhibit.id} />
                 <section className="mt-12 flex justify-end">
                   <SignatureLine name={exhibit.receivingOfficerName} caption={m["paper.police.recorded_by"]()} />
                 </section>

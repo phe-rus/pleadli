@@ -430,6 +430,14 @@ impl Orchestra {
         Ok(())
     }
 
+    /// The institution's recovery public key, once an administrator has set a recovery phrase and
+    /// this computer has heard of it. The records directory wraps its key for it, so the phrase
+    /// opens the institution's records on any computer. Works offline from the last contact.
+    pub async fn institution_key(&self) -> Option<x25519_dalek::PublicKey> {
+        let config: BackupConfig = self.get_json("backup_config").await?;
+        backup::decode_key(&config.backup_key?.public_key).ok()
+    }
+
     async fn get_json<T: for<'de> Deserialize<'de>>(&self, key: &str) -> Option<T> {
         self.get(key).await.ok().flatten().and_then(|v| serde_json::from_str(&v).ok())
     }

@@ -14,6 +14,7 @@ pub mod custody;
 pub mod documents;
 pub mod duty;
 pub mod library;
+pub mod records_dir;
 pub mod error;
 pub mod exchange;
 pub mod exhibits;

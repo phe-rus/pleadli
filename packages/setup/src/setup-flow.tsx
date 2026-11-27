@@ -1,5 +1,6 @@
 import { Button } from '@pleadli/ui/button'
 import { BrandPanel, type Brand } from './brand-panel'
+import { RestoreCard, type RestoreOffer } from './restore'
 import { cn } from '@pleadli/ui/lib/utils'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -72,6 +73,8 @@ export type SetupFlowProps = {
   identifierLabel?: string
   /** Under the welcome: another way in than a new setup (Lawyers: join the firm's office computer). */
   welcomeAction?: ReactNode
+  /** An institution already in this computer's records folder: offered first, before a new setup. */
+  restore?: RestoreOffer | null
   /** What the app says on the branded panel beside every step. */
   brand?: Brand
   /** Start straight on the questions, with no welcome screen. */
@@ -238,7 +241,7 @@ export function SetupFlow(props: SetupFlowProps) {
     if (extraStep) return extraStep.render(ctx)
     switch (step) {
       case 'welcome':
-        return <WelcomeStep t={t} institution={props.institution} productName={props.productName} logo={state.logo ?? props.defaultLogo} action={props.welcomeAction} />
+        return <WelcomeStep t={t} institution={props.institution} productName={props.productName} logo={state.logo ?? props.defaultLogo} restoreFirst={!!props.restore} action={props.restore || props.welcomeAction ? <>{props.restore && <RestoreCard offer={props.restore} locale={props.locale} />}{props.welcomeAction}</> : undefined} />
       case 'licence':
         return <LicenceStep t={t} locale={props.locale} accepted={state.licenceAccepted} onAccept={(v) => update({ licenceAccepted: v })} />
       case 'where':

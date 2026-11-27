@@ -64,6 +64,9 @@ pub async fn create_statement(pool: &SqlitePool, vault_root: &Path, input: Creat
     .await?;
 
     super::officers::link_record(pool, "statements", &id, &input.officer_id, false).await?;
+    if let Some(case_id) = &input.case_id {
+        super::cases::ensure_case_person(pool, case_id, &input.person_id, "witness").await?;
+    }
     let record = get_statement(pool, &id).await?.ok_or(sqlx::Error::RowNotFound)?;
     write_statement_markdown(pool, vault_root, &record).await;
     Ok(record)

@@ -87,8 +87,22 @@ pub async fn open_paper_file(state: State<'_, Db>, name: String, data: String) -
     tauri_plugin_opener::open_path(&path, None::<&str>).map_err(|e| e.to_string())
 }
 
-/// Opens the system Save window and approves the one path the person picks, for a following save command, so the
-/// web layer can never name a place to write that the person did not choose. `None` when the window is cancelled.
+/// Asks the prosecutor for a package file in the system open window. `None` when the window is cancelled.
+#[tauri::command]
+pub async fn pick_package_path(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    // Debug builds only: a test copy that names the file to open skips the system window (a driver cannot click
+    // it). Release builds always ask the person.
+    #[cfg(debug_assertions)]
+    if let Some(path) = std::env::var_os("PLEADLI_OPEN_FILE").filter(|p| !p.is_empty()) {
+        return Ok(Some(path.to_string_lossy().to_string()));
+    }
+    let picked = tauri::async_runtime::spawn_blocking(move || app.dialog().file().add_filter("Pleadli package", &["pxpkg"]).blocking_pick_file()).await.map_err(|e| e.to_string())?;
+    let Some(file) = picked else { return Ok(None) };
+    Ok(Some(file.into_path().map_err(|e| e.to_string())?.to_string_lossy().to_string()))
+}
+
+/// Opens the system Save window and approves the one path the person picks, for a following export command.
 #[tauri::command]
 pub async fn pick_save_path(app: tauri::AppHandle, default_name: String, extension: String) -> Result<Option<String>, String> {
     use tauri_plugin_dialog::DialogExt;

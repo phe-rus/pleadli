@@ -8,6 +8,9 @@ import { format } from '@/lib/date'
 import { BinocularsIcon, Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Group, GroupRow } from '@pleadli/ui/grouped'
+import { Segmented } from '@pleadli/ui/segmented'
+import { Badge } from '@pleadli/ui/badge'
+import { caseFolderOf } from '@/features/cases/folders'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 
@@ -37,15 +40,16 @@ const empty: Record<CaseFolder, () => string> = {
   all: () => m["cases.folder_empty.all"](),
 }
 
+const stateLabel = (f: CaseFolder) => caseFolders.find((x) => x.id === f)?.label ?? ''
+
 /** The station's cases, one folder at a time, newest first. A case opens its
  * investigation; opening a new one is the single action here. */
 function RouteComponent() {
-  const { view = 'investigating' } = Route.useSearch()
+  const { view = 'all' } = Route.useSearch()
   const navigate = useNavigate()
   const { data: cases } = useCases('')
   const { data: attention } = useAttention()
   const [query, setQuery] = useState('')
-  const folder = caseFolders.find((f) => f.id === view)!
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -61,12 +65,16 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{folder.label}</h1>
-          <p>
-            {total === 1 ? m["cases.count_one"]() : m["cases.count"]({ count: total })} · {about[view]()}
-          </p>
+          <h1>{m["nav.cases"]()}</h1>
+          <p>{total === 1 ? m["cases.count_one"]() : m["cases.count"]({ count: total })} · {about[view]()}</p>
         </div>
         <div className="page-actions">
+          <Segmented
+            label={m["custody_page.view"]()}
+            value={view}
+            onChange={(next) => void navigate({ to: '/investigations', search: next === 'all' ? {} : { view: next }, replace: true })}
+            items={[...caseFolders].reverse().map((f) => ({ value: f.id, label: f.id === 'all' ? m["cases.folder.all_short"]() : f.label }))}
+          />
           <PanelButton label={m["cases.submit"]()} title={m["cases.submit"]()} description={m["intake_page.add_desc"]()} variant="default">
             {({ close, setDirty }) => (
               <CaseForm
@@ -106,6 +114,7 @@ function RouteComponent() {
                   label={
                     <span className="flex items-center gap-2 font-medium">
                       {c.reference}
+                      <Badge variant={caseFolderOf(c.id, attention) === 'closed' ? 'outline' : 'secondary'}>{stateLabel(caseFolderOf(c.id, attention))}</Badge>
                       {c.restricted && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">{m["cases.restricted_tag"]()}</span>}
                     </span>
                   }

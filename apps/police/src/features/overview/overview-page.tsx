@@ -71,7 +71,7 @@ export function OverviewPage() {
       <header className="page-header">
         <div>
           <p className="text-[0.8125rem] font-medium text-muted-foreground">{format(now, 'EEEE d MMMM')}</p>
-          <h1>{m["nav.today"]()}</h1>
+          <h1>{m["nav.overview"]()}</h1>
         </div>
         <div className="page-actions">
           <PanelButton label={m["overview.new_sd"]()} title={m["overview.new_sd_title"]()} description={m["overview.new_sd_desc"]()} variant="default">

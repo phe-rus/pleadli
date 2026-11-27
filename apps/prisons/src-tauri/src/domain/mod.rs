@@ -28,6 +28,7 @@ pub mod facilities;
 pub mod health_events;
 pub mod nodeconfig;
 pub mod orchestra;
+pub mod records_dir;
 pub mod tunnel_connector;
 pub mod numbering;
 pub mod obligations;

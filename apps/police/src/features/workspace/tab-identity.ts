@@ -35,7 +35,7 @@ export function identityForLocation(pathname: string, search: { view?: string } 
 function titleFor(identity: TabIdentity): string {
   switch (identity.kind) {
     case 'overview':
-      return m["nav.today"]()
+      return m["nav.overview"]()
     case 'case':
       return m["workspace.tab_case"]()
     case 'person':
@@ -59,7 +59,7 @@ export function resolveIdentity({ pathname, search }: Location): ShellIdentity |
  * the language it was opened in; a record keeps its own saved name (a case
  * reference, a person's name). */
 export function tabLabel(tab: { kind: string; to: string; title: string }): string {
-  if (tab.kind === 'overview') return m["nav.today"]()
+  if (tab.kind === 'overview') return m["nav.overview"]()
   if (tab.kind === 'area') { const area = areaMeta(tab.to.split('?')[0]); return area?.title ?? area?.label ?? tab.title }
   return tab.title
 }

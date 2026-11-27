@@ -4,6 +4,7 @@ import {
   DashboardBrowsingIcon,
   GavelIcon,
   HandshakeIcon,
+  LibraryIcon,
   Mail01Icon,
   Message01Icon,
   NetworkIcon,
@@ -126,6 +127,13 @@ export const prisonsNav: readonly SidebarNavItem[] = [
     // call then failed with a 403 (hq.estate.read) instead of a redirect.
     requires: ['hq.estate.read'],
     get section() { return m.nav_administration() },
+  },
+  {
+    icon: LibraryIcon,
+    get label() { return m.nav_library() },
+    to: '/library',
+    requires: ['prisoner.read'],
+    get section() { return m.nav_institution() },
   },
   {
     icon: Mail01Icon,

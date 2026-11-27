@@ -121,6 +121,16 @@ pub fn run() {
             let orchestra = domain::orchestra::start(db.pool.clone(), data_dir.clone(), db.vault_root.clone());
             tauri::async_runtime::spawn(orchestra.clone().run());
             app.manage(orchestra.clone());
+
+            // The station's records folder: its work as folders in Documents, kept up to date from
+            // the database while the app runs, and the way back if the database is ever lost.
+            domain::records_dir::install(domain::records_dir::Context {
+                root: domain::records_dir::home(app.path().document_dir().ok(), &data_dir, dev_dir.is_some()),
+                data_dir: data_dir.clone(),
+                vault_root: db.vault_root.clone(),
+                orchestra: Some(orchestra.clone()),
+            });
+            domain::records_dir::start_mirror(db.pool.clone());
             let router = api::router(db.pool.clone(), db.vault_root.clone(), Some(orchestra));
             #[cfg(debug_assertions)]
             tauri::async_runtime::spawn(api::serve_dev(router.clone()));
@@ -263,6 +273,7 @@ pub fn run() {
             commands::documents::downloads_path,
             commands::documents::pick_save_path,
             commands::documents::read_paper_file,
+            commands::documents::pick_package_path,
             commands::documents::office_apps,
             commands::documents::open_paper_file,
             commands::import::import_fields,

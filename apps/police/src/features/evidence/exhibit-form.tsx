@@ -1,6 +1,6 @@
 import * as m from '@/paraglide/messages'
 import { PersonPicker } from '@/components/person-picker'
-import { AttachmentsField, entityTypes } from '@/features/attachments'
+import { AttachmentsField, entityTypes, uploadStaged, type StagedFile } from '@/features/attachments'
 import { casesOptions, type Case } from '@/features/cases'
 import { useMe } from '@/features/session'
 import { incidentsOptions, type Incident } from '@/features/incidents'
@@ -92,6 +92,8 @@ export function ExhibitForm({ exhibit, caseId, onSuccess, onDirtyChange }: Exhib
   const { data: cases } = useSuspenseQuery(casesOptions(''))
   const { data: incidents } = useSuspenseQuery(incidentsOptions(''))
   const { data: me } = useMe()
+  // Photographs chosen before the exhibit is saved; they are attached to it once it has been.
+  const [staged, setStaged] = useState<StagedFile[]>([])
 
   const form = useAppForm({
     defaultValues: {
@@ -125,6 +127,8 @@ export function ExhibitForm({ exhibit, caseId, onSuccess, onDirtyChange }: Exhib
         const result = exhibit
           ? await updateExhibit.mutateAsync({ id: exhibit.id, input })
           : await createExhibit.mutateAsync(input)
+        if (!exhibit && staged.length) await uploadStaged(entityTypes.exhibit, result.id, staged)
+        setStaged([])
         t.success(exhibit ? m["evidence.updated"]() : m["evidence.logged"]())
         if (!exhibit) formApi.reset()
         onSuccess?.(result)
@@ -293,7 +297,7 @@ export function ExhibitForm({ exhibit, caseId, onSuccess, onDirtyChange }: Exhib
 
         {exhibit && <ExhibitMovements exhibitId={exhibit.id} />}
 
-        <AttachmentsField entityType={entityTypes.exhibit} entityId={exhibit?.id} />
+        <AttachmentsField entityType={entityTypes.exhibit} entityId={exhibit?.id} staged={staged} onStage={setStaged} />
       </FieldGroup>
 
       <DrawerFooter>

@@ -63,7 +63,7 @@ docx-rs = "0.4.22"
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
 csv = "1.4.0"
 calamine = { version = "0.36.1", features = ["dates"] }
-pleadli-node-core = { path = "../../../packages/node-core", features = ["orchestra", "speech", "postbox"] }
+pleadli-node-core = { path = "../../../packages/node-core", features = ["orchestra", "speech", "postbox", "records"] }
 pleadli-interchange = { path = "../../../packages/interchange" }
 
 [dev-dependencies]

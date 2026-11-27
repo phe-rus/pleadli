@@ -7,15 +7,29 @@ import { t } from '@pleadli/ui/goey-toaster'
 import { cn } from '@pleadli/ui/lib/utils'
 import { isTauri } from '@tauri-apps/api/core'
 import { useRef } from 'react'
-import { openAttachment } from './data'
+import { addAttachmentFile, addAttachmentFromPath, openAttachment } from './data'
 import { useAttachmentDataUrl } from './queries'
 import { useAddAttachment, useAttachments, useDeleteAttachment } from './queries'
 import { formatFileSize, type EntityType } from './schema'
+
+/** A file chosen before its record exists. The form uploads it once the record has an id. */
+export type StagedFile = { name: string; path?: string; file?: File }
 
 export type AttachmentsFieldProps = {
   entityType: EntityType
   entityId: string | null | undefined
   label?: string
+  /** Files chosen before the record is saved (give both, or neither). */
+  staged?: StagedFile[]
+  onStage?: (files: StagedFile[]) => void
+}
+
+/** Uploads files that were chosen before their record existed. */
+export async function uploadStaged(entityType: EntityType, entityId: string, files: StagedFile[]) {
+  for (const f of files) {
+    if (f.path) await addAttachmentFromPath(entityType, entityId, f.path)
+    else if (f.file) await addAttachmentFile(entityType, entityId, f.file)
+  }
 }
 
 /** A recorded statement or other audio plays here, unsealed in memory only, not opened in another program. */
@@ -24,12 +38,57 @@ function AudioPlayer({ id }: { id: string }) {
   return src ? <audio controls src={src} className="h-8 w-full" /> : null
 }
 
-export function AttachmentsField({ entityType, entityId, label = m["attachments.label"]() }: AttachmentsFieldProps) {
+export function AttachmentsField({ entityType, entityId, label = m["attachments.label"](), staged, onStage }: AttachmentsFieldProps) {
   const id = entityId ?? ''
   const { data: attachments } = useAttachments(entityType, id)
   const addAttachment = useAddAttachment(entityType, id)
   const deleteAttachment = useDeleteAttachment(entityType, id)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  if (!entityId && onStage) {
+    const files = staged ?? []
+    const stagePath = async () => {
+      if (isTauri()) {
+        const { open } = await import('@tauri-apps/plugin-dialog')
+        const path = await open({ multiple: false })
+        if (typeof path === 'string') onStage([...files, { name: path.split(/[\\/]/).pop() ?? path, path }])
+        return
+      }
+      fileInputRef.current?.click()
+    }
+    return (
+      <Field>
+        <div className="flex items-center justify-between">
+          <FieldLabel>{label}</FieldLabel>
+          <Button type="button" size="sm" variant="secondary" onClick={stagePath}>
+            <HugeiconsIcon icon={Upload01Icon} />
+            {m["attachments.add_file"]()}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ''
+              if (file) onStage([...files, { name: file.name, file }])
+            }}
+          />
+        </div>
+        {files.map((f, i) => (
+          <div key={i} className="flex items-center justify-between gap-2 rounded-sm border border-input/40 px-2 py-1.5">
+            <span className="flex min-w-0 items-center gap-2 text-xs">
+              <HugeiconsIcon icon={Attachment01Icon} className="size-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">{f.name}</span>
+            </span>
+            <Button type="button" size="icon-xs" variant="ghost" aria-label={m["attachments.remove"]()} onClick={() => onStage(files.filter((_, j) => j !== i))}>
+              <HugeiconsIcon icon={Delete02Icon} />
+            </Button>
+          </div>
+        ))}
+      </Field>
+    )
+  }
 
   if (!entityId) {
     return (

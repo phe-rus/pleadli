@@ -1,3 +1,4 @@
+import { ApiError } from '@/lib/api'
 import * as m from '@/paraglide/messages'
 import { useMe } from '@/features/session'
 import { OfficerPicker } from '@/features/officers'
@@ -68,9 +69,10 @@ export function ReferralForm({ referral, caseId, onSuccess, onDirtyChange }: Ref
         t.success(referral ? m["referrals.updated"]() : m["referrals.recorded"]())
         if (!referral) formApi.reset()
         onSuccess?.(result)
-      } catch {
+      } catch (error) {
+        // A refusal says why (someone is not on the case, no connection yet): show that, not only "try again".
         t.error(referral ? m["referrals.update_failed"]() : m["referrals.record_failed"](), {
-          description: m["common.try_again"](),
+          description: error instanceof ApiError ? error.message : m["common.try_again"](),
         })
       }
     },

@@ -1,6 +1,5 @@
 import { api } from '@/lib/api'
 import { invoke, isTauri } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-dialog'
 
 export type StationIdentity = { stationId: string; stationName: string; jurisdiction: string | null; fingerprint: string }
 export type Connection = { id: string; officeName: string; officeJurisdiction: string | null; fingerprint: string; status: string; reason: string | null; respondedAt: number; trustedAt: number | null }
@@ -26,8 +25,8 @@ const toBase64 = (bytes: Uint8Array) => {
 /** Asks for a package file and returns it as base64, or null if cancelled. */
 export async function pickPackage(): Promise<string | null> {
   if (isTauri()) {
-    const path = await open({ multiple: false, filters: [{ name: 'Pleadli package', extensions: ['pxpkg'] }] })
-    if (!path || Array.isArray(path)) return null
+    const path = (await invoke('pick_package_path')) as string | null
+    if (!path) return null
     return (await invoke('read_paper_file', { path })) as string
   }
   return new Promise((resolve) => {

@@ -144,6 +144,21 @@ pub async fn read_paper_file(_who: super::api::SignedIn, path: String) -> Result
     Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
 }
 
+/// Asks the officer for a package file in the system's open window. Returns `None` when cancelled.
+#[tauri::command]
+pub async fn pick_package_path(_who: super::api::SignedIn, app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    // Debug builds only: a test copy that names the file to open skips the system window (a driver cannot click
+    // it). Release builds always ask the person.
+    #[cfg(debug_assertions)]
+    if let Some(path) = std::env::var_os("PLEADLI_OPEN_FILE").filter(|p| !p.is_empty()) {
+        return Ok(Some(path.to_string_lossy().to_string()));
+    }
+    let picked = tauri::async_runtime::spawn_blocking(move || app.dialog().file().add_filter("Pleadli package", &["pxpkg"]).blocking_pick_file()).await.map_err(|e| e.to_string())?;
+    let Some(file) = picked else { return Ok(None) };
+    Ok(Some(file.into_path().map_err(|e| e.to_string())?.to_string_lossy().to_string()))
+}
+
 /// Which office programs this computer has (Word, Excel, LibreOffice).
 #[tauri::command]
 pub async fn office_apps() -> pleadli_node_core::office::OfficeApps {

@@ -1,33 +1,34 @@
 import { StationTabs } from '@/features/station-desk'
 import * as m from '@/paraglide/messages'
-import { acceptInvite, createIdentity, exportReferral, getIdentity, importPackage, listConnections, listIncoming, pickPackage, savePackage, type Connection, type Incoming, type StationIdentity } from '@/features/exchange/data'
-import { answerInvitation, checkRelay, declineInvitation, getRelay, reopenReceived, retryRelay, sendByPostbox, type RelayStatus, type Stage } from '@/features/relay/data'
-import { api } from '@/lib/api'
+import { acceptInvite, getIdentity, importPackage, listConnections, listIncoming, pickPackage, savePackage, type Connection, type Incoming, type StationIdentity } from '@/features/exchange/data'
+import { answerInvitation, declineInvitation, getRelay, reopenReceived, retryRelay, type RelayStatus, type Stage } from '@/features/relay/data'
 import { format } from '@/lib/date'
 import { Badge } from '@pleadli/ui/badge'
 import { Button, buttonVariants } from '@pleadli/ui/button'
-import { Input } from '@pleadli/ui/input'
 import { SettingsCard } from '@/components/settings-card'
 import { MinutesCard } from '@/features/exchange/minutes-card'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useMe } from '@/features/session'
 import { useCallback, useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/_public/exchange/')({ component: RouteComponent })
 
-type Referral = { id: string; caseReference: string; destinationName: string | null; referredAt: number }
 
-const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
+/** What went wrong, in words an officer can act on. A file of the wrong kind says which button it belongs to. */
+const message = (e: unknown) => {
+  const text = e instanceof Error ? e.message : String(e)
+  if (text.includes("'pairing_invite'")) return m['exchange.plain.wrong_invitation']()
+  if (text.includes("'pairing_answer'")) return m['exchange.plain.wrong_reply']()
+  return text
+}
 
 function RouteComponent() {
   const [identity, setIdentity] = useState<StationIdentity | null | undefined>(undefined)
   const [connections, setConnections] = useState<Connection[]>([])
   const [incoming, setIncoming] = useState<Incoming[]>([])
-  const [referrals, setReferrals] = useState<Referral[]>([])
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null)
-  const [name, setName] = useState('')
-  const [area, setArea] = useState('')
-  const [inCharge, setInCharge] = useState('')
   const [relay, setRelay] = useState<RelayStatus | null>(null)
+  const inCharge = useMe().data?.name ?? ''
 
   const load = useCallback(async () => {
     const id = await getIdentity()
@@ -35,7 +36,6 @@ function RouteComponent() {
     if (id) {
       setConnections(await listConnections())
       setIncoming(await listIncoming())
-      setReferrals(await api('/referrals?query='))
       setRelay(await getRelay().catch(() => null))
     }
   }, [])
@@ -53,10 +53,10 @@ function RouteComponent() {
     }
   }
 
-  const trusted = connections.some((c) => c.status === 'trusted')
-  // With nothing trusted, say so when the newest connection is one the office ended, rather than "no office has confirmed".
+  const trusted = connections.filter((c) => c.status === 'trusted')
+  const waiting = connections.filter((c) => c.status === 'answered')
   const newest = [...connections].sort((a, b) => b.respondedAt - a.respondedAt)[0]
-  const ended = !trusted && newest?.status === 'revoked' ? newest : undefined
+  const ended = trusted.length === 0 && newest?.status === 'revoked' ? newest : undefined
   const stageLabel: Record<Stage, string> = {
     queued: m['relay.stage_queued'](),
     sent: m['relay.stage_sent'](),
@@ -71,13 +71,23 @@ function RouteComponent() {
   const invitations = (relay?.received ?? []).filter((r) => r.status === 'new' && r.invitation)
   const turnedAway = (relay?.received ?? []).filter((r) => r.status === 'refused')
   const replies = incoming.filter((i) => i.kind !== 'hearing_minute')
+  const sent = relay?.sent ?? []
+
+  const openInvitation = () =>
+    run(async () => {
+      const file = await pickPackage()
+      if (!file) return
+      const answered = await acceptInvite(file, inCharge)
+      await savePackage(answered)
+      return m['exchange.plain.reply_saved']({ office: answered.connection.officeName })
+    })
 
   return (
     <article className="page">
       <header className="page-header">
         <div>
           <h1>{m["nav_sections.station"]()}</h1>
-          <p className="text-muted-foreground">{m['exchange.intro']()}</p>
+          <p className="text-muted-foreground">{m['exchange.plain.intro']()}</p>
         </div>
         <Link to="/postbox" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m['nav.postbox']()}</Link>
       </header>
@@ -87,33 +97,16 @@ function RouteComponent() {
       <div className="flex w-full max-w-3xl flex-col gap-6">
         {notice && <p role="status" className={notice.error ? 'text-destructive' : undefined}>{notice.text}</p>}
 
-        {identity === null && (
-          <SettingsCard
-            title={m['exchange.identity_title']()}
-            description={m['exchange.identity_hint']()}
-            action={<Button disabled={!name.trim()} onClick={() => run(async () => void (await createIdentity(name, area)))}>{m['exchange.identity_create']()}</Button>}
-          >
-            <div className="flex flex-wrap gap-2">
-              <Input aria-label={m['exchange.station_name']()} placeholder={m['exchange.station_name']()} value={name} onChange={(e) => setName(e.target.value)} className="w-full sm:w-72" />
-              <Input aria-label={m['exchange.area']()} placeholder={m['exchange.area']()} value={area} onChange={(e) => setArea(e.target.value)} className="w-full sm:w-56" />
-            </div>
-          </SettingsCard>
-        )}
+        {identity === null && <p className="text-muted-foreground">{m['exchange.plain.name_first']()}</p>}
 
         {identity && (
           <>
-            <SettingsCard title={m['exchange.identity_title']()}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span>{identity.stationName}</span>
-                <span className="text-muted-foreground">{m['exchange.fingerprint']()} <span className="font-mono">{identity.fingerprint}</span></span>
-              </div>
-            </SettingsCard>
-
             <SettingsCard
-              title={m['exchange.offices_title']()}
-              description={m['exchange.offices_hint']()}
+              title={m['exchange.plain.office_title']()}
+              description={trusted.length > 0 ? m['exchange.plain.connected_hint']() : waiting.length > 0 ? m['exchange.plain.give_reply']() : ended ? m['exchange.send_ended']({ office: ended.officeName }) : m['exchange.plain.not_connected']()}
               action={
                 <>
+                  {trusted.length === 0 && <Button onClick={openInvitation}>{m['exchange.plain.open_invitation']()}</Button>}
                   <Button
                     variant="secondary"
                     onClick={() =>
@@ -124,134 +117,68 @@ function RouteComponent() {
                       })
                     }
                   >
-                    {m['exchange.import']()}
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      run(async () => {
-                        const file = await pickPackage()
-                        if (!file) return
-                        const answered = await acceptInvite(file, inCharge)
-                        await savePackage(answered)
-                        return m['exchange.answer_saved']({ office: answered.connection.officeName, code: answered.connection.fingerprint })
-                      })
-                    }
-                  >
-                    {m['exchange.answer_invite']()}
+                    {m['exchange.plain.open_file']()}
                   </Button>
                 </>
               }
             >
-              <div>
-                <Input aria-label={m['exchange.in_charge']()} placeholder={m['exchange.in_charge']()} value={inCharge} onChange={(e) => setInCharge(e.target.value)} className="w-full sm:w-72" />
-              </div>
-              {connections.length === 0 ? (
-                <p className="text-muted-foreground">{m['exchange.no_offices']()}</p>
-              ) : (
-                connections.map((c) => (
-                  <div key={c.id} className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="flex flex-col">
-                      <span className="flex items-center gap-2">
-                        {c.officeName}
-                        <Badge variant={c.status === 'trusted' ? 'default' : 'secondary'}>{statusLabel(c.status)}</Badge>
-                      </span>
-                      {c.status === 'revoked' && c.reason && <span className="text-muted-foreground">{m['exchange.ended_reason']({ reason: c.reason })}</span>}
-                    </span>
-                    <span className="font-mono text-muted-foreground">{c.fingerprint}</span>
-                  </div>
-                ))
-              )}
-            </SettingsCard>
-
-            <SettingsCard title={m['exchange.send_title']()} description={trusted ? m['exchange.send_hint']() : ended ? m['exchange.send_ended']({ office: ended.officeName }) : m['exchange.send_blocked']()}>
-              {referrals.length === 0 ? (
-                <p className="text-muted-foreground">{m['exchange.no_referrals']()}</p>
-              ) : (
-                referrals.map((r) => (
-                  <div key={r.id} className="flex flex-wrap items-center justify-between gap-3">
-                    <span>
-                      {r.caseReference} <span className="text-muted-foreground">· {format(r.referredAt, 'PP')}</span>
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={!trusted}
-                      onClick={() =>
-                        run(async () => {
-                          const sealed = await exportReferral(r.id, 'file')
-                          if (await savePackage(sealed)) return m['exchange.sent_file']({ name: sealed.name })
-                        })
-                      }
-                    >
-                      {m['exchange.save_file']()}
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={!trusted || !relay?.ready}
-                      onClick={() =>
-                        run(async () => {
-                          await sendByPostbox(r.id)
-                          return m['relay.queued']()
-                        })
-                      }
-                    >
-                      {m['relay.send_postbox']()}
-                    </Button>
-                  </div>
-                ))
-              )}
-            </SettingsCard>
-
-            <SettingsCard
-              title={m['relay.title']()}
-              description={relay?.ready ? m['relay.hint']({ address: relay.address ?? '' }) : m['relay.needs_licence']()}
-              action={
-                <Button variant="secondary" disabled={!relay?.ready} onClick={() => run(async () => void setRelay(await checkRelay()))}>
-                  {m['relay.check_now']()}
-                </Button>
-              }
-            >
-              {relay?.last.error && <p className="text-destructive">{m['relay.last_failed']({ error: relay.last.error })}</p>}
               {invitations.map((r) => (
                 <div key={r.id} className="flex flex-wrap items-center justify-between gap-2">
                   <span className="flex flex-col">
-                    <span>{m['relay.invitation_from']({ office: r.invitation!.officeName })}</span>
-                    <span className="text-muted-foreground">{m['exchange.fingerprint']()} <span className="font-mono">{r.invitation!.fingerprint}</span></span>
+                    <span>{m['exchange.plain.invited_by']({ office: r.invitation!.officeName })}</span>
+                    <span className="text-muted-foreground">{m['exchange.plain.office_code']({ code: r.invitation!.fingerprint })}</span>
                   </span>
                   <span className="flex gap-2">
-                    <Button size="sm" onClick={() => run(async () => void setRelay(await answerInvitation(r.id, inCharge)))}>{m['relay.answer']()}</Button>
+                    <Button size="sm" onClick={() => run(async () => void setRelay(await answerInvitation(r.id, inCharge)))}>{m['exchange.plain.accept']()}</Button>
                     <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await declineInvitation(r.id, '')))}>{m['relay.decline']()}</Button>
                   </span>
                 </div>
               ))}
-              {(relay?.sent ?? []).map((x) => (
-                <div key={x.id} className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="flex flex-col">
-                    <span>{x.policeReference ?? x.kind} {x.office ? <span className="text-muted-foreground">· {x.office}</span> : null}</span>
-                    {x.error && <span className="text-destructive">{x.error}</span>}
-                    {x.reason && <span className="text-muted-foreground">{x.reason}</span>}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Badge variant={x.stage === 'accepted' ? 'default' : x.stage === 'attention' || x.stage === 'rejected' || x.stage === 'refused' ? 'destructive' : 'secondary'}>{stageLabel[x.stage]}</Badge>
-                    {(x.stage === 'attention' || x.stage === 'queued') && <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await retryRelay(x.id)))}>{m['relay.retry']()}</Button>}
-                  </span>
+              {trusted.map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span>{c.officeName}</span>
+                  <Badge>{m['exchange.status_trusted']()}</Badge>
                 </div>
               ))}
-              {turnedAway.map((r) => (
-                <div key={r.id} className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="flex flex-col">
-                    <span>{m['relay.turned_away']({ kind: r.kind, from: r.from })}</span>
-                    <span className="text-destructive">{r.reason}</span>
-                  </span>
-                  <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await reopenReceived(r.id)))}>{m['relay.retry']()}</Button>
+              {waiting.map((c) => (
+                <div key={c.id} className="flex flex-col gap-0.5">
+                  <span>{m['exchange.plain.waiting']({ office: c.officeName })}</span>
+                  <span className="text-muted-foreground">{m['exchange.plain.check_codes']({ station: identity.fingerprint, office: c.fingerprint })}</span>
                 </div>
               ))}
-              {relay?.ready && relay.sent.length === 0 && invitations.length === 0 && turnedAway.length === 0 && <p className="text-muted-foreground">{m['relay.nothing']()}</p>}
             </SettingsCard>
+
+            {(sent.length > 0 || turnedAway.length > 0 || relay?.last.error) && (
+              <SettingsCard title={m['exchange.plain.sent_title']()}>
+                {relay?.last.error && <p className="text-destructive">{m['relay.last_failed']({ error: plainError(relay.last.error) })}</p>}
+                {sent.map((x) => (
+                  <div key={x.id} className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex flex-col">
+                      <span>{x.policeReference ?? x.kind} {x.office ? <span className="text-muted-foreground">· {x.office}</span> : null}</span>
+                      {x.error && <span className="text-destructive">{x.error}</span>}
+                      {x.reason && <span className="text-muted-foreground">{x.reason}</span>}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <Badge variant={x.stage === 'accepted' ? 'default' : x.stage === 'attention' || x.stage === 'rejected' || x.stage === 'refused' ? 'destructive' : 'secondary'}>{stageLabel[x.stage]}</Badge>
+                      {(x.stage === 'attention' || x.stage === 'queued') && <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await retryRelay(x.id)))}>{m['relay.retry']()}</Button>}
+                    </span>
+                  </div>
+                ))}
+                {turnedAway.map((r) => (
+                  <div key={r.id} className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex flex-col">
+                      <span>{m['relay.turned_away']({ kind: r.kind, from: r.from })}</span>
+                      <span className="text-destructive">{r.reason}</span>
+                    </span>
+                    <Button size="sm" variant="secondary" onClick={() => run(async () => void setRelay(await reopenReceived(r.id)))}>{m['relay.retry']()}</Button>
+                  </div>
+                ))}
+              </SettingsCard>
+            )}
 
             <MinutesCard minutes={incoming.filter((i) => i.kind === 'hearing_minute')} canPostbox={!!relay?.ready} run={run} />
 
-            <SettingsCard title={m['exchange.incoming_title']()}>
+            <SettingsCard title={m['exchange.plain.from_title']()}>
               {replies.length === 0 ? (
                 <p className="text-muted-foreground">{m['exchange.no_incoming']()}</p>
               ) : (
@@ -266,6 +193,11 @@ function RouteComponent() {
                 })
               )}
             </SettingsCard>
+
+            <details className="text-muted-foreground">
+              <summary className="cursor-pointer">{m['exchange.plain.details']()}</summary>
+              <p className="pt-2">{identity.stationName} · {m['exchange.fingerprint']()} <span className="font-mono">{identity.fingerprint}</span></p>
+            </details>
           </>
         )}
       </div>
@@ -273,14 +205,10 @@ function RouteComponent() {
   )
 }
 
-function statusLabel(status: string) {
-  const labels: Record<string, () => string> = {
-    answered: m['exchange.status_answered'],
-    trusted: m['exchange.status_trusted'],
-    declined: m['exchange.status_declined'],
-    revoked: m['exchange.status_revoked'],
-  }
-  return labels[status]?.() ?? status
+/** A code the relay reports, in words an officer can act on. Anything unknown is shown as it came. */
+function plainError(error: string): string {
+  if (error === 'licence_needed') return m['exchange.plain.err_licence']()
+  return error
 }
 
 function safe(payload: string): Record<string, string | undefined> {

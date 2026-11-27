@@ -18,7 +18,7 @@ type T = { t: SetupMessages }
 
 // ---------------------------------------------------------------- welcome
 
-export function WelcomeStep({ t, institution, productName, logo, action }: T & { institution: Institution; productName: string; logo: string; action?: ReactNode }) {
+export function WelcomeStep({ t, institution, productName, logo, action, restoreFirst }: T & { institution: Institution; productName: string; logo: string; action?: ReactNode; restoreFirst?: boolean }) {
   const intro = t.intro[institution]
   const rows = [
     { icon: Briefcase01Icon, title: t.what_title, body: intro.what },
@@ -30,10 +30,11 @@ export function WelcomeStep({ t, institution, productName, logo, action }: T & {
       <img src={logo} alt="" className="size-24 object-contain" draggable={false} />
       <div className="flex flex-col gap-2">
         <h1>{t.welcome_title(productName)}</h1>
-        <p className="text-muted-foreground">{t.welcome_lead}</p>
+        {!restoreFirst && <p className="text-muted-foreground">{t.welcome_lead}</p>}
       </div>
+      {restoreFirst && action}
       {/* What the app is, as Apple's welcome screens say it: an icon, a bold line, a quiet line. No boxes. */}
-      <ul className="not-typeset flex w-full list-none flex-col gap-6 p-0 text-left">
+      {!restoreFirst && <ul className="not-typeset flex w-full list-none flex-col gap-6 p-0 text-left">
         {rows.map((row) => (
           <li key={row.title} className="flex items-start gap-4">
             <HugeiconsIcon icon={row.icon} className="mt-0.5 size-7 shrink-0 text-primary" />
@@ -43,8 +44,8 @@ export function WelcomeStep({ t, institution, productName, logo, action }: T & {
             </div>
           </li>
         ))}
-      </ul>
-      {action}
+      </ul>}
+      {!restoreFirst && action}
     </div>
   )
 }

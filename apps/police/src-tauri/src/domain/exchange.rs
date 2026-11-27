@@ -57,8 +57,22 @@ async fn load_identity(pool: &SqlitePool) -> Result<Option<Identity>, DomainErro
     Identity::restore(public, signing, encryption).map(Some).ok_or_else(|| bad(DAMAGED))
 }
 
+/// The station already named itself at setup, so the exchange identity is made from that name and area the first
+/// time it is needed, not asked for again. Only a station that never named itself has to.
+pub async fn ensure_identity(pool: &SqlitePool) -> Result<Option<StationIdentity>, DomainError> {
+    if let Some(identity) = get_identity(pool).await? {
+        return Ok(Some(identity));
+    }
+    let profile: Option<(Option<String>, Option<String>)> = sqlx::query_as("SELECT name, jurisdiction FROM station_profile WHERE id = 'default'").fetch_optional(pool).await?;
+    match profile {
+        Some((Some(name), area)) if !name.trim().is_empty() => create_identity(pool, &name, area.as_deref()).await.map(Some),
+        _ => Ok(None),
+    }
+}
+
 async fn require_identity(pool: &SqlitePool) -> Result<Identity, DomainError> {
-    load_identity(pool).await?.ok_or_else(|| bad("Set up this station's identity first."))
+    ensure_identity(pool).await?;
+    load_identity(pool).await?.ok_or_else(|| bad("Name the station first (Station, then Profile), so the DPP office knows who the file is from."))
 }
 
 fn view(identity: &Identity) -> StationIdentity {
@@ -373,16 +387,17 @@ fn claim_role(role: &str) -> &'static str {
 
 /// What the referral says, read from the station's own case records.
 /// Everyone who gave a statement, or is charged, has to be on the case, or the DPP refuses the whole referral.
-/// Said here, to the officer, before a referral exists, rather than after it has gone.
+/// Seen to here, before a referral exists, rather than after it has gone.
 pub async fn check_ready_to_refer(pool: &SqlitePool, case_id: &str) -> Result<(), DomainError> {
     let on_case: Vec<String> = sqlx::query_scalar("SELECT person_id FROM case_people WHERE case_id = ?").bind(case_id).fetch_all(pool).await?;
     let speakers: Vec<(String, String, String)> = sqlx::query_as("SELECT DISTINCT s.person_id, p.first_name, p.last_name FROM statements s JOIN people p ON p.id = s.person_id WHERE s.case_id = ?").bind(case_id).fetch_all(pool).await?;
-    if let Some((_, first, last)) = speakers.iter().find(|(id, _, _)| !on_case.contains(id)) {
-        return Err(bad(format!("{first} {last} gave a statement on this case but is not listed on it. Add them to the case, for example as a witness, and refer again.")));
+    // Anyone who gave a statement on the case, or is charged, is on it: listed here if the officer has not done so.
+    for (id, _, _) in speakers.iter().filter(|(id, _, _)| !on_case.contains(id)) {
+        super::cases::ensure_case_person(pool, case_id, id, "witness").await?;
     }
     let accused: Vec<String> = sqlx::query_scalar("SELECT accused_person_id FROM charge_sheets WHERE case_id = ? AND accused_person_id IS NOT NULL").bind(case_id).fetch_all(pool).await?;
-    if accused.iter().any(|id| !on_case.contains(id)) {
-        return Err(bad("A charge names someone who is not listed on the case. Add them to the case and refer again."));
+    for id in accused.iter().filter(|id| !on_case.contains(*id)) {
+        super::cases::ensure_case_person(pool, case_id, id, "accused").await?;
     }
     Ok(())
 }

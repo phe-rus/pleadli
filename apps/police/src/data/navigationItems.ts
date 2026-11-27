@@ -11,6 +11,7 @@ import {
   CellsIcon,
   DashboardBrowsingIcon,
   Folder01Icon,
+  LibraryIcon,
   Home01Icon,
   File02Icon,
   FingerPrintCheckIcon,
@@ -61,7 +62,7 @@ export const navSections: readonly { id: NavSection; label?: string }[] = [
 export const commandSections: readonly { id: NavSection; label: string }[] = [{ id: 'command', get label() { return m["nav_sections.command"]() } }]
 
 export const commandNav: readonly NavItem[] = [
-  { get label() { return m["nav.today"]() }, icon: Home01Icon, to: '/', exact: true, section: 'main' },
+  { get label() { return m["nav.overview"]() }, icon: Home01Icon, to: '/', exact: true, section: 'main' },
   { get label() { return m["nav.stations"]() }, icon: Building06Icon, to: '/stations', count: 'stationsAttention', section: 'command' },
   { get label() { return m["nav.officers"]() }, icon: ShieldKeyIcon, to: '/station/officers', section: 'command' },
   { get label() { return m["nav.command_profile"]() }, icon: Building06Icon, to: '/station/profile' },
@@ -77,7 +78,7 @@ export const commandNav: readonly NavItem[] = [
  * (opened from the case) and places reached from a page (Settings holds the
  * station profile and the logs); they exist so an open one has a titled tab. */
 export const policeNav: readonly NavItem[] = [
-  { get label() { return m["nav.today"]() }, icon: Home01Icon, to: '/', exact: true, section: 'main' },
+  { get label() { return m["nav.overview"]() }, icon: Home01Icon, to: '/', exact: true, section: 'main' },
   { get label() { return m["nav.front_desk"]() }, icon: Notebook01Icon, to: '/sd-log', also: ['/incidents'], section: 'main' },
   // Incidents are the front desk's second tab: a place (titled tab, icon), not a sidebar row.
   { get label() { return m["nav.front_desk"]() }, icon: SirenIcon, to: '/incidents' },
@@ -86,6 +87,7 @@ export const policeNav: readonly NavItem[] = [
   { get label() { return m["nav.people"]() }, icon: Car01Icon, to: '/vehicles' },
   { get label() { return m["nav_sections.cells"]() }, icon: CellsIcon, to: '/search/custody', also: ['/search/bonds'], count: 'inCells', section: 'main' },
   { get label() { return m["nav.documents"]() }, icon: Folder01Icon, to: '/search/files', section: 'main' },
+  { get label() { return m["nav.library"]() }, icon: LibraryIcon, to: '/library', section: 'main' },
 
   // Police bonds are the second tab of Cells: a place (titled tab, icon), not a sidebar row.
   { get label() { return m["nav.bonds_and_sureties"]() }, icon: AlarmClock, to: '/search/bonds' },
@@ -93,10 +95,11 @@ export const policeNav: readonly NavItem[] = [
   // Cases are drawn as folders by the sidebar itself (see caseFolders).
   { get label() { return m["nav.cases"]() }, icon: BinocularsIcon, to: '/investigations' },
 
-  { get label() { return m["nav.statements"]() }, icon: Mic01Icon, to: '/statements' },
-  { get label() { return m["nav.exhibits"]() }, icon: FingerPrintCheckIcon, to: '/evidence' },
-  { get label() { return m["nav.charge_sheets"]() }, icon: File02Icon, to: '/legal-forms' },
-  { get label() { return m["nav.referrals"]() }, icon: Share08Icon, to: '/referrals' },
+  // The records a case gathers, each a register across all cases.
+  { get label() { return m["nav.statements"]() }, icon: Mic01Icon, to: '/statements', section: 'cases' },
+  { get label() { return m["nav.exhibits"]() }, icon: FingerPrintCheckIcon, to: '/evidence', section: 'cases' },
+  { get label() { return m["nav.charge_sheets"]() }, icon: File02Icon, to: '/legal-forms', section: 'cases' },
+  { get label() { return m["nav.referrals"]() }, icon: Share08Icon, to: '/referrals', section: 'cases' },
   { get label() { return m["nav.medical"]() }, icon: StethoscopeIcon, to: '/medical' },
 
   // The station is one place with six tabs (see features/station-desk). Its other

@@ -154,7 +154,7 @@
     "controls": "Contrôles de la fenêtre"
   },
   "nav": {
-    "overview": "Vue d'ensemble",
+    "overview": "Vue d’ensemble",
     "search": "Recherche",
     "case_files": "Dossiers d'affaires",
     "front_desk": "Accueil",
@@ -193,7 +193,9 @@
     "statistics": "Statistiques",
     "postbox": "Boîte aux lettres",
     "medical": "Dossiers médicaux",
-    "exchange": "Échange avec le parquet"
+    "exchange": "Échange avec le parquet",
+    "library": "Bibliothèque",
+    "investigation": "Enquête"
   },
   "nav_sections": {
     "front_desk": "Accueil",
@@ -308,7 +310,8 @@
       "investigating": "En cours d'enquête",
       "dpp": "Au parquet",
       "closed": "Closes",
-      "all": "Toutes les affaires"
+      "all": "Toutes les affaires",
+      "all_short": "Tous"
     },
     "count_one": "1 affaire",
     "count": "{count} affaires",
@@ -731,7 +734,11 @@
       "ob_not_accepted": "Lisez le motif donné par le procureur, corrigez le dossier et renvoyez-le, ou clôturez l affaire.",
       "ob_declined": "Lisez les motifs du procureur, puis clôturez l affaire ou rouvrez-la avec de nouvelles preuves.",
       "witnesses": "{count} témoins à notifier pour la prochaine audience : {names}. {due}",
-      "exhibits": "Le tribunal demande ces pièces : {names}."
+      "exhibits": "Le tribunal demande ces pièces : {names}.",
+      "save_file": "Enregistrer un fichier à emporter",
+      "send_postbox": "Envoyer par la boîte postale",
+      "sent_postbox": "Envoyé par la boîte postale",
+      "send_failed": "Le dossier n’a pas pu être envoyé"
     }
   },
   "overview": {
@@ -1351,7 +1358,7 @@
     "tl_exhibit": "Pièce à conviction récupérée : {description}",
     "tl_charged": "Inculpation : {offence}",
     "tl_referred": "Transmise à {destination}",
-    "back": "Retour aux Enquêtes",
+    "back": "Retour aux affaires",
     "copy_reference": "Copier la référence de l'affaire",
     "edit_case": "Modifier l'affaire",
     "timeline": "Chronologie",
@@ -1601,8 +1608,8 @@
     "moved_to_bin": "\"{name}\" déplacé dans la corbeille",
     "moved_to_bin_many": "{count} éléments déplacés dans la corbeille",
     "undo": "Annuler",
-    "title": "Bibliothèque",
-    "search": "Rechercher dans la bibliothèque",
+    "title": "Documents",
+    "search": "Chercher dans les dossiers et fichiers",
     "found": "{count} trouvés",
     "new_folder": "Nouveau dossier",
     "add_files": "Ajouter des fichiers",
@@ -1680,9 +1687,9 @@
     "no_match": "Rien ici ne correspond à « {query} ».",
     "more": "Plus",
     "view": "Afficher",
-    "subtitle": "{papers} documents · {files} fichiers",
-    "papers": "Documents",
-    "files": "Fichiers",
+    "subtitle": "Les pièces que la station a préparées, imprimées et envoyées, et chaque fichier joint à ses dossiers.",
+    "papers": "Imprimés",
+    "files": "Tous les fichiers",
     "station_folder": "Dossier du poste",
     "station_folder_about": "Les enregistrements du poste sous forme de fichiers sur cet ordinateur, tenus à jour avec la base de données.",
     "search_papers": "Rechercher des documents par titre, référence ou code",
@@ -2519,6 +2526,28 @@
       "accepted": "Accepté",
       "rejected": "Refusé",
       "received": "Reçu"
+    },
+    "plain": {
+      "intro": "Les dossiers partent vers le bureau du DPP depuis la page du dossier. C’est ici que le bureau est connecté et que ses réponses arrivent.",
+      "name_first": "Nommez d’abord la station, dans Station, Profil.",
+      "office_title": "Bureau du DPP",
+      "connected_hint": "Envoyez un dossier depuis sa page. Les réponses du bureau arrivent ci-dessous.",
+      "not_connected": "Cette station n’est pas encore connectée à un bureau du DPP. Le bureau vous envoie une invitation. Ouvrez-la ici.",
+      "open_invitation": "Ouvrir une invitation",
+      "open_file": "Ouvrir un fichier du bureau",
+      "invited_by": "{office} a invité cette station.",
+      "office_code": "Code du bureau : {code}",
+      "accept": "Accepter",
+      "waiting": "En attente de la confirmation de {office}.",
+      "check_codes": "Téléphonez au bureau et vérifiez que vous voyez les mêmes codes. Station : {station}. Bureau : {office}.",
+      "sent_title": "Envoyé au DPP",
+      "from_title": "Du DPP",
+      "details": "Détails de la station",
+      "err_licence": "la licence doit être à jour pour la boîte postale",
+      "reply_saved": "Réponse enregistrée. Remettez-la à {office}.",
+      "give_reply": "Remettez la réponse enregistrée au bureau, puis téléphonez-lui pour vérifier les codes.",
+      "wrong_invitation": "Ce fichier est une invitation. Utilisez « Ouvrir une invitation ».",
+      "wrong_reply": "Ce fichier est une réponse d’une station, pas pour cette station."
     }
   },
   "timezone": {
@@ -2655,5 +2684,33 @@
     "choose": "Choisir une image",
     "image_hint": "Choisissez une photo ou un scan de votre signature sur papier blanc.",
     "take": "Prendre la signature"
+  },
+  "records": {
+    "search": "Rechercher un dossier",
+    "empty": "Rien ici pour l'instant. Votre travail apparaît ici dès qu'il est enregistré.",
+    "no_match": "Aucun dossier ne correspond.",
+    "show_folder": "Afficher le dossier",
+    "save_now": "Enregistrer maintenant",
+    "saved": "Le dossier des archives est à jour.",
+    "recover": "Récupérer",
+    "recover_title": "Récupérer depuis le dossier des archives",
+    "recover_body": "Reconstruit votre travail à partir des dossiers d'ici. Rien de ce qui est déjà dans l'application n'est remplacé. Sur un nouvel ordinateur, saisissez la phrase de récupération de votre institution.",
+    "recover_phrase": "Phrase de récupération (si demandée)",
+    "recover_run": "Récupérer",
+    "recovered": "{records} dossiers trouvés. {rows} éléments et {files} fichiers restaurés.",
+    "recovered_skipped": "{records} dossiers trouvés. {rows} éléments et {files} fichiers restaurés. {skipped} n'ont pas pu être ouverts.",
+    "locked": "Ces archives ont été créées sur un autre ordinateur. Choisissez Récupérer et saisissez la phrase de récupération de votre institution pour les ouvrir.",
+    "changed_outside": "{n} modifié(s) en dehors de Pleadli",
+    "conflicts": "{n} dossiers copiés à vérifier",
+    "close": "Fermer",
+    "no_paper": "Ce dossier n'a pas encore de document lisible.",
+    "failed": "Cela n'a pas fonctionné.",
+    "open": "Ouvrir l'affaire",
+    "kind_cases": "Affaires",
+    "kind_people": "Personnes",
+    "kind_station": "Poste",
+    "title": "Bibliothèque",
+    "restore_found": "{institution} a été trouvé dans ce dossier : {records} dossiers. Restaurez-le sur cet ordinateur.",
+    "more": "Plus"
   }
 }
