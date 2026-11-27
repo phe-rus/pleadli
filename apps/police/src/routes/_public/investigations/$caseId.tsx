@@ -1,9 +1,16 @@
 import * as m from '@/paraglide/messages'
+import { PanelButton } from '@/components/add-panel'
 import { Createpanel } from '@/components/create-panel'
+import { ExhibitForm } from '@/features/evidence'
+import { MedicalForm, medicalKindLabel, medicalOptions, medicalStatusLabel, useMedicalExams } from '@/features/medical'
+import { ChargeSheetForm } from '@/features/legal-forms'
+import { ReferralForm } from '@/features/referrals'
+import { StatementForm } from '@/features/statements'
 import { CopyButton } from '@/components/copy-button'
 import { RecordExportActions } from '@/components/record-export-actions'
 import { AttachmentsField, entityTypes } from '@/features/attachments'
 import { CaseBinder } from '@/features/paper/case-binder'
+import { CaseStandingCard } from '@/features/attention'
 import {
   caseRoleLabel,
   caseStatusLabel,
@@ -32,10 +39,11 @@ import { useState } from 'react'
 
 export const Route = createFileRoute('/_public/investigations/$caseId')({
   loader: async ({ context, params }) => {
-    const workspace = await context.queryClient.query({
-      ...caseWorkspaceOptions(params.caseId),
-      staleTime: 'static',
-    })
+    const [workspace] = await Promise.all([
+      context.queryClient.query({ ...caseWorkspaceOptions(params.caseId), staleTime: 'static' }),
+      // The Papers tab lists the case's medical exams; load them with the case so it does not wait.
+      context.queryClient.query({ ...medicalOptions(''), staleTime: 'static' }),
+    ])
     if (!workspace) throw notFound()
   },
   // A restricted case this officer may not open is a refusal with a reason, not a page that failed.
@@ -104,6 +112,36 @@ function Row({
 
 type TimelineEvent = { at: number; label: string }
 
+/** The papers a case gathers, each started from inside the case so it is
+ * already attached to it. Booking someone in stays a link: custody is a
+ * place of its own (Cells), not a paper of the case. */
+function AddPapers({ caseId, withArrest }: { caseId: string; withArrest?: boolean }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <PanelButton label={m["investigation.next_statement"]()} title={m["statements_page.new"]()} description={m["statements_page.add_desc"]()}>
+        {({ close, setDirty }) => <StatementForm caseId={caseId} onSuccess={close} onDirtyChange={setDirty} />}
+      </PanelButton>
+      <PanelButton label={m["investigation.next_exhibit"]()} title={m["exhibits_page.new"]()} description={m["evidence_page.add_desc"]()}>
+        {({ close, setDirty }) => <ExhibitForm caseId={caseId} onSuccess={close} onDirtyChange={setDirty} />}
+      </PanelButton>
+      <PanelButton label={m["investigation.next_medical"]()} title={m["medical.record"]()} description={m["medical.add_desc"]()}>
+        {({ close, setDirty }) => <MedicalForm caseId={caseId} onSuccess={close} onDirtyChange={setDirty} />}
+      </PanelButton>
+      <PanelButton label={m["legal_page.new"]()} title={m["legal_page.new"]()} description={m["legal_page.add_desc"]()}>
+        {({ close, setDirty }) => <ChargeSheetForm caseId={caseId} onSuccess={close} onDirtyChange={setDirty} />}
+      </PanelButton>
+      <PanelButton label={m["investigation.next_refer"]()} title={m["referrals.submit"]()} description={m["referrals_page.add_desc"]()}>
+        {({ close, setDirty }) => <ReferralForm caseId={caseId} onSuccess={close} onDirtyChange={setDirty} />}
+      </PanelButton>
+      {withArrest && (
+        <Link to="/search/custody" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+          {m["investigation.next_arrest"]()}
+        </Link>
+      )}
+    </div>
+  )
+}
+
 function RouteComponent() {
   const { caseId } = Route.useParams()
   const navigate = useNavigate()
@@ -112,6 +150,8 @@ function RouteComponent() {
   const [tab, setTab] = useState('overview')
   const { data: workspace } = useCaseWorkspace(caseId)
   const exportDocument = useExportCaseDocument(caseId)
+  const { data: allExams } = useMedicalExams('')
+  const exams = allExams.filter((e) => e.caseId === caseId)
 
   if (!workspace) return null
   const { case: kase, people, statements, custodyRecords, bonds, exhibits, chargeSheets, referrals } = workspace
@@ -178,6 +218,8 @@ function RouteComponent() {
         </div>
       </section>
 
+      <CaseStandingCard caseId={caseId} />
+
       <RecordTabsView
         labels={{
           overview: { label: m["investigation.tab_overview"](), empty: '', action: '' },
@@ -194,13 +236,7 @@ function RouteComponent() {
                 <aside className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-4 md:col-span-2">
                   <h2 className="text-sm font-medium">{m["investigation.next_title"]()}</h2>
                   <p className="text-xs text-muted-foreground">{m["investigation.next_hint"]()}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Link to="/statements" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_statement"]()}</Link>
-                    <Link to="/evidence" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_exhibit"]()}</Link>
-                    <Link to="/search/custody" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_arrest"]()}</Link>
-                    <Link to="/medical" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_medical"]()}</Link>
-                    <Link to="/referrals" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m["investigation.next_refer"]()}</Link>
-                  </div>
+                  <AddPapers caseId={caseId} withArrest />
                 </aside>
               )}
         <Section title={m["common.custody"]()} count={custodyRecords.length}>
@@ -243,18 +279,7 @@ function RouteComponent() {
         </Section>
 
 
-        <Section title={m["common.referrals"]()} count={referrals.length}>
-          {referrals.map((r) => (
-            <Row
-              key={r.id}
-              to="/referrals"
-              search={{ open: r.id }}
-              title={r.destinationName || referralDestinationTypeLabel(r.destinationType)}
-              subtitle={referralStatusLabel(r.status)}
-              meta={<span className="text-xs text-muted-foreground">{format(r.referredAt, 'PP')}</span>}
-            />
-          ))}
-        </Section>
+
             </div>
           ),
           people: (
@@ -288,7 +313,35 @@ function RouteComponent() {
           ),
           papers: (
             <div className="flex flex-col gap-8 p-4">
+      <AddPapers caseId={caseId} />
       <CaseBinder reference={kase.reference} summary={kase.summary} statements={statements} exhibits={exhibits} chargeSheets={chargeSheets} />
+
+      <div className="flex flex-col gap-8 md:max-w-xl">
+        <Section title={m["common.referrals"]()} count={referrals.length}>
+          {referrals.map((r) => (
+            <Row
+              key={r.id}
+              to="/referrals"
+              search={{ open: r.id }}
+              title={r.destinationName || referralDestinationTypeLabel(r.destinationType)}
+              subtitle={referralStatusLabel(r.status)}
+              meta={<span className="text-xs text-muted-foreground">{format(r.referredAt, 'PP')}</span>}
+            />
+          ))}
+        </Section>
+        <Section title={m["nav.medical"]()} count={exams.length}>
+          {exams.map((e) => (
+            <Row
+              key={e.id}
+              to="/medical"
+              search={{ open: e.id }}
+              title={medicalKindLabel(e.kind)}
+              subtitle={medicalStatusLabel(e.status)}
+              meta={<span className="text-xs text-muted-foreground">{format(e.examinedAt ?? e.requestedAt, 'PP')}</span>}
+            />
+          ))}
+        </Section>
+      </div>
 
       <section className="md:max-w-md">
         <AttachmentsField entityType={entityTypes.case} entityId={kase.id} label={m["common.files"]()} />

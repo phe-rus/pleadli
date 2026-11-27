@@ -22,6 +22,8 @@ export type ReferralFormProps = {
   referral?: Referral
   onSuccess?: (referral: Referral) => void
   onDirtyChange?: (dirty: boolean) => void
+  /** Opened from inside a case: the paper starts attached to it. */
+  caseId?: string
 }
 
 function toDatetimeLocal(ms: number) {
@@ -30,7 +32,7 @@ function toDatetimeLocal(ms: number) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFormProps) {
+export function ReferralForm({ referral, caseId, onSuccess, onDirtyChange }: ReferralFormProps) {
   const createReferral = useCreateReferral()
   const updateReferral = useUpdateReferral()
   const { data: cases } = useSuspenseQuery(casesOptions(''))
@@ -38,7 +40,7 @@ export function ReferralForm({ referral, onSuccess, onDirtyChange }: ReferralFor
   const { data: me } = useMe()
   const form = useAppForm({
     defaultValues: {
-      caseId: referral?.caseId ?? '',
+      caseId: referral?.caseId ?? caseId ?? '',
       destinationType: referral?.destinationType ?? 'dpp',
       destinationName: referral?.destinationName ?? '',
       referredAt: referral ? toDatetimeLocal(referral.referredAt) : toDatetimeLocal(Date.now()),

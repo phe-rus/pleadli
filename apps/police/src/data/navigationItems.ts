@@ -31,7 +31,7 @@ import {
 export type NavIcon = typeof DashboardBrowsingIcon
 
 /** Which figure from the station's records an item carries beside its name. */
-export type NavCount = 'inCells' | 'custodyDue' | 'openCases' | 'referralsPending' | 'stationsAttention'
+export type NavCount = 'inCells' | 'custodyDue' | 'needingAction' | 'referralsPending' | 'stationsAttention'
 
 export type NavItem = {
   label: string
@@ -42,15 +42,18 @@ export type NavItem = {
   /** Sidebar group. An item with none is a place that exists (it opens as a
    * tab, it has a title) but is reached from another page, not the sidebar. */
   section?: NavSection
+  /** What its workspace tab is called when that should differ from the sidebar name. */
+  title?: string
+  /** Other places that belong to this item: it stays lit while one is open. */
+  also?: readonly string[]
 }
 
-export type NavSection = 'main' | 'cells' | 'cases' | 'papers' | 'station' | 'command'
+export type NavSection = 'main' | 'cases' | 'papers' | 'station' | 'command'
 
-export const navSections: readonly { id: NavSection; label: string }[] = [
-  { id: 'cells', get label() { return m["nav_sections.cells"]() } },
+export const navSections: readonly { id: NavSection; label?: string }[] = [
   { id: 'cases', get label() { return m["nav_sections.cases"]() } },
-  { id: 'papers', get label() { return m["nav_sections.case_papers"]() } },
-  { id: 'station', get label() { return m["nav_sections.station"]() } },
+  // The station is one row at the foot, so it needs no heading of its own.
+  { id: 'station' },
 ]
 
 /** What a Command shows. It holds no case, person or custody records, so none
@@ -65,38 +68,53 @@ export const commandNav: readonly NavItem[] = [
   { get label() { return m["nav.settings"]() }, icon: Settings01Icon, to: '/settings', exact: true },
 ] as const
 
-/** The sidebar, in the order a station works: the day and the front desk
- * first, then who is in the cells, the cases (as folders, the way Mail has
- * mailboxes), the papers a case gathers, and the station itself. Every name
- * here is also the title of the page it opens. Places with no section are
- * reached from a page (Settings holds the station profile and the logs). */
+/** The sidebar, in the order a station works: the day, the front desk,
+ * people, the cells and documents first, then the cases (as folders, the way
+ * Mail has mailboxes), then the station itself. Six places, not twenty: a place
+ * with several routes (front desk, people, cells, station) is one row with a
+ * tab bar (see components/place-tabs.tsx), so every old link still lands.
+ * Items with no section are those other routes, the papers a case gathers
+ * (opened from the case) and places reached from a page (Settings holds the
+ * station profile and the logs); they exist so an open one has a titled tab. */
 export const policeNav: readonly NavItem[] = [
   { get label() { return m["nav.today"]() }, icon: Home01Icon, to: '/', exact: true, section: 'main' },
-  { get label() { return m["nav.station_diary"]() }, icon: Notebook01Icon, to: '/sd-log', section: 'main' },
-  { get label() { return m["nav.incidents"]() }, icon: SirenIcon, to: '/incidents', section: 'main' },
-  { get label() { return m["nav.people"]() }, icon: UserGroupIcon, to: '/search/people', section: 'main' },
-  { get label() { return m["nav.vehicles"]() }, icon: Car01Icon, to: '/vehicles', section: 'main' },
+  { get label() { return m["nav.front_desk"]() }, icon: Notebook01Icon, to: '/sd-log', also: ['/incidents'], section: 'main' },
+  // Incidents are the front desk's second tab: a place (titled tab, icon), not a sidebar row.
+  { get label() { return m["nav.front_desk"]() }, icon: SirenIcon, to: '/incidents' },
+  { get label() { return m["nav.people"]() }, icon: UserGroupIcon, to: '/search/people', also: ['/vehicles'], section: 'main' },
+  // Vehicles are the second tab of People: a place (titled tab, icon), not a sidebar row.
+  { get label() { return m["nav.people"]() }, icon: Car01Icon, to: '/vehicles' },
+  { get label() { return m["nav_sections.cells"]() }, icon: CellsIcon, to: '/search/custody', also: ['/search/bonds'], count: 'inCells', section: 'main' },
   { get label() { return m["nav.documents"]() }, icon: Folder01Icon, to: '/search/files', section: 'main' },
 
-  { get label() { return m["nav.in_custody"]() }, icon: CellsIcon, to: '/search/custody', count: 'inCells', section: 'cells' },
-  { get label() { return m["nav.bonds_and_sureties"]() }, icon: AlarmClock, to: '/search/bonds', section: 'cells' },
+  // Police bonds are the second tab of Cells: a place (titled tab, icon), not a sidebar row.
+  { get label() { return m["nav.bonds_and_sureties"]() }, icon: AlarmClock, to: '/search/bonds' },
 
   // Cases are drawn as folders by the sidebar itself (see caseFolders).
   { get label() { return m["nav.cases"]() }, icon: BinocularsIcon, to: '/investigations' },
 
-  { get label() { return m["nav.statements"]() }, icon: Mic01Icon, to: '/statements', section: 'papers' },
-  { get label() { return m["nav.exhibits"]() }, icon: FingerPrintCheckIcon, to: '/evidence', section: 'papers' },
-  { get label() { return m["nav.charge_sheets"]() }, icon: File02Icon, to: '/legal-forms', section: 'papers' },
-  { get label() { return m["nav.referrals"]() }, icon: Share08Icon, to: '/referrals', section: 'papers' },
-  { get label() { return m["nav.medical"]() }, icon: StethoscopeIcon, to: '/medical', section: 'papers' },
+  { get label() { return m["nav.statements"]() }, icon: Mic01Icon, to: '/statements' },
+  { get label() { return m["nav.exhibits"]() }, icon: FingerPrintCheckIcon, to: '/evidence' },
+  { get label() { return m["nav.charge_sheets"]() }, icon: File02Icon, to: '/legal-forms' },
+  { get label() { return m["nav.referrals"]() }, icon: Share08Icon, to: '/referrals' },
+  { get label() { return m["nav.medical"]() }, icon: StethoscopeIcon, to: '/medical' },
 
-  { get label() { return m["nav.officers"]() }, icon: ShieldKeyIcon, to: '/station/officers', section: 'station' },
-  { get label() { return m["nav.duty_roster"]() }, icon: UserIcon, to: '/roster', section: 'station' },
-  { get label() { return m["nav.armory"]() }, icon: GunIcon, to: '/stores/armory', section: 'station' },
-  { get label() { return m["nav.impounded_assets"]() }, icon: ArchiveIcon, to: '/stores/impounded', section: 'station' },
-  { get label() { return m["nav.statistics"]() }, icon: BarChartIcon, to: '/reports', section: 'station' },
-  { get label() { return m["nav.postbox"]() }, icon: Mail01Icon, to: '/postbox', section: 'station' },
-  { get label() { return m["nav.exchange"]() }, icon: Mail01Icon, to: '/exchange', section: 'station' },
+  // The station is one place with six tabs (see features/station-desk). Its other
+  // routes keep a hidden entry each, so an open one has a titled tab and an icon.
+  {
+    get label() { return m["nav_sections.station"]() },
+    get title() { return m["nav.officers"]() },
+    icon: Building06Icon,
+    to: '/station/officers',
+    also: ['/roster', '/stores', '/reports', '/exchange', '/postbox'],
+    section: 'station',
+  },
+  { get label() { return m["nav.duty_roster"]() }, icon: UserIcon, to: '/roster' },
+  { get label() { return m["nav.armory"]() }, icon: GunIcon, to: '/stores/armory' },
+  { get label() { return m["nav.impounded_assets"]() }, icon: ArchiveIcon, to: '/stores/impounded' },
+  { get label() { return m["nav.statistics"]() }, icon: BarChartIcon, to: '/reports' },
+  { get label() { return m["nav.postbox"]() }, icon: Mail01Icon, to: '/postbox' },
+  { get label() { return m["nav.exchange"]() }, icon: Mail01Icon, to: '/exchange' },
 
   { get label() { return m["nav.search"]() }, icon: Search01Icon, to: '/search', exact: true },
   { get label() { return m["nav.station_profile"]() }, icon: Building06Icon, to: '/station/profile' },
@@ -131,5 +149,5 @@ export const sectionsFor = (mode: 'station' | 'command' | null | undefined) => (
 /** Whether an item is the one in view. */
 export function isNavActive(item: NavItem, pathname: string) {
   if (item.exact) return pathname === item.to
-  return pathname === item.to || pathname.startsWith(`${item.to}/`)
+  return [item.to, ...(item.also ?? [])].some((to) => pathname === to || pathname.startsWith(`${to}/`))
 }

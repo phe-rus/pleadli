@@ -9,7 +9,7 @@ import {
 import type { CreateExhibitInput, CreateExhibitMovementInput } from './schema'
 import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
 
-const evidenceList = { listKey: ['exhibits', 'list'], invalidate: [['exhibits']], sortBy: 'recoveredAt' } satisfies ListConfig
+const evidenceList = { listKey: ['exhibits', 'list'], invalidate: [['exhibits'], ['cases']], sortBy: 'recoveredAt' } satisfies ListConfig
 
 export const exhibitsOptions = (query: string) =>
   queryOptions({

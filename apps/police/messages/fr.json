@@ -156,6 +156,7 @@
     "overview": "Vue d'ensemble",
     "search": "Recherche",
     "case_files": "Dossiers d'affaires",
+    "front_desk": "Accueil",
     "station_diary": "Main courante",
     "incidents": "Incidents",
     "case_intake": "Prise d'affaire",
@@ -706,7 +707,27 @@
     "near_summary": "{time} restant. Arrêté {when}. Le délai est {deadline}.",
     "referral_one": "1 transmission n'a pas encore de suite",
     "referral_n": "{count} transmissions n'ont pas encore de suite",
-    "referral_summary": "Enregistrez ce qui est revenu, ou relancez le bureau auquel elle a été envoyée."
+    "referral_summary": "Enregistrez ce qui est revenu, ou relancez le bureau auquel elle a été envoyée.",
+    "stand": {
+      "title": "Où en est cette affaire",
+      "investigating": "En cours d enquête",
+      "awaiting": "Chez le procureur, en attente de réponse",
+      "accepted": "Acceptée par le procureur et au bureau",
+      "returned": "Renvoyée par le procureur pour complément",
+      "not_accepted": "Le procureur n a pas accepté le dossier",
+      "declined": "Le procureur a refusé de poursuivre",
+      "sanctioned": "Autorisée par le procureur",
+      "closed": "Clôturée",
+      "to_do": "{count} à faire",
+      "sent": "Envoyée à {office} le {date}",
+      "the_office": "le bureau",
+      "due": "Échéance {date}.",
+      "directions": "Exécuter les directives du procureur ({count}). {due}",
+      "ob_not_accepted": "Lisez le motif donné par le procureur, corrigez le dossier et renvoyez-le, ou clôturez l affaire.",
+      "ob_declined": "Lisez les motifs du procureur, puis clôturez l affaire ou rouvrez-la avec de nouvelles preuves.",
+      "witnesses": "{count} témoins à notifier pour la prochaine audience : {names}. {due}",
+      "exhibits": "Le tribunal demande ces pièces : {names}."
+    }
   },
   "overview": {
     "person_one": "1 personne · ouverte {when}",
@@ -1336,7 +1357,7 @@
     "list_lead": "Choisissez une affaire pour ouvrir sa vue de travail : personnes, déclarations, garde à vue, cautions et fichiers, réunis au même endroit.",
     "people_count": "{count} personnes",
     "next_title": "Prochaines étapes",
-    "next_hint": "Rien n'a encore été enregistré dans cette affaire. Commencez par l'une de ces actions, puis choisissez cette affaire dans le formulaire.",
+    "next_hint": "Rien n'a encore été enregistré dans cette affaire. Commencez par l'une de ces actions : elle est ajoutée à cette affaire.",
     "next_statement": "Recueillir une déclaration",
     "next_exhibit": "Enregistrer une pièce à conviction",
     "next_arrest": "Placer quelqu'un en garde à vue",
@@ -2515,5 +2536,17 @@
     "address_copy": "Copier",
     "address_copied": "Copié",
     "address_unknown": "Pas encore connue. Connectez-vous à Pleadli pour la voir."
+  },
+  "minutes": {
+    "title": "Procès-verbaux d audience",
+    "hint": "Ce que le bureau a noté au tribunal. Rattachez chaque procès-verbal à son dossier, puis dites au bureau quels témoins ont été notifiés.",
+    "needs_case": "À rattacher à un dossier",
+    "match": "Rattacher à ce dossier",
+    "matched": "Procès-verbal rattaché à son dossier.",
+    "next_date": "Prochaine date {date}",
+    "exhibits": "Pièces à produire : {list}",
+    "serve_heading": "Témoins à notifier",
+    "served": "Notifié",
+    "why_not": "Pourquoi non notifié"
   }
 }

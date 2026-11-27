@@ -1,6 +1,7 @@
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
-import { IncidentForm } from '@/features/incidents'
+import { FrontDeskTabs } from '@/features/front-desk'
+import { IncidentForm, incidentsOptions } from '@/features/incidents'
 import { EmptyNote } from '@/components/planned'
 import { PaperWindow, RecordPaper } from '@/features/paper/record-paper'
 import { diaryCitation } from '@/features/registers'
@@ -26,10 +27,18 @@ import { useMemo, useState } from 'react'
 export const Route = createFileRoute('/_public/sd-log/')({
   validateSearch: (search: Record<string, unknown>): { open?: string } => (typeof search.open === 'string' ? { open: search.open } : {}),
   loader: async ({ context }) => {
-    await context.queryClient.query({ ...stationDiaryOptions(''), staleTime: 'static' })
+    await Promise.all([context.queryClient.query({ ...stationDiaryOptions(''), staleTime: 'static' }), context.queryClient.query({ ...incidentsOptions(''), staleTime: 'static' })])
   },
   component: RouteComponent,
 })
+
+/** The first line of an entry as a headline: whole words, with an ellipsis when it was cut. */
+function headline(text: string, max = 120) {
+  const line = text.split('\n')[0]?.trim() ?? ''
+  if (line.length <= max) return line
+  const cut = line.slice(0, max)
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 1)).trimEnd()}…`
+}
 
 const dayKey = (ms: number) => format(ms, 'yyyy-MM-dd')
 
@@ -72,7 +81,7 @@ function EntryPaper({ entry }: { entry: StationDiaryEntry }) {
         <PanelButton label={m["sd_page.open_incident"]()} title={m["sd_page.open_incident"]()} description={m["sd_page.open_incident_desc"]()}>
           {({ close, setDirty }) => (
             <IncidentForm
-              start={{ stationDiaryEntryId: entry.id, summary: richTextToPlainText(entry.content).split('\n')[0]?.slice(0, 120) ?? '', description: entry.content, personId: entry.personId, occurredAt: entry.createdAt }}
+              start={{ stationDiaryEntryId: entry.id, summary: headline(richTextToPlainText(entry.content)), description: entry.content, personId: entry.personId, occurredAt: entry.createdAt }}
               onSuccess={close}
               onDirtyChange={setDirty}
             />
@@ -162,7 +171,7 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["nav.station_diary"]()}</h1>
+          <h1>{m["nav.front_desk"]()}</h1>
           <p>{entries.length === 1 ? m["sd_page.count_one"]() : m["sd_page.count"]({ count: entries.length })}</p>
         </div>
         <div className="page-actions">
@@ -171,6 +180,8 @@ function RouteComponent() {
           </PanelButton>
         </div>
       </header>
+
+      <FrontDeskTabs active="diary" />
 
       {entries.length === 0 ? (
         <EmptyNote icon={<HugeiconsIcon icon={Notebook01Icon} />}>{m["sd_page.empty"]()}</EmptyNote>

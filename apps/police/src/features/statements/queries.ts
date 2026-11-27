@@ -3,7 +3,7 @@ import { createStatement, listStatements, updateStatement } from './data'
 import type { CreateStatementInput } from './schema'
 import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
 
-const statementsList = { listKey: ['statements', 'list'], invalidate: [['statements', 'list']], sortBy: 'givenAt' } satisfies ListConfig
+const statementsList = { listKey: ['statements', 'list'], invalidate: [['statements', 'list'], ['cases']], sortBy: 'givenAt' } satisfies ListConfig
 
 export const statementsOptions = (query: string) =>
   queryOptions({

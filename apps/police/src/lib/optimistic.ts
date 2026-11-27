@@ -51,6 +51,8 @@ function slotIn<T extends Item>(items: T[], created: T, config: ListConfig): T[]
 
 function refreshAll(queryClient: QueryClient, config: ListConfig) {
   for (const queryKey of config.invalidate ?? [config.listKey]) void queryClient.invalidateQueries({ queryKey })
+  // What the station has to do next is read from all of these records, so it is read again whenever any of them changes.
+  void queryClient.invalidateQueries({ queryKey: ['attention'] })
 }
 
 /** A new record goes into the list the instant the save returns it. */

@@ -43,7 +43,8 @@ function titleFor(identity: TabIdentity): string {
     case 'chargesheet':
       return m["workspace.tab_chargesheet"]()
     case 'area':
-      return areaMeta(identity.key.slice('area:'.length))?.label ?? identity.to
+      const area = areaMeta(identity.key.slice('area:'.length))
+      return area?.title ?? area?.label ?? identity.to
   }
 }
 
@@ -59,7 +60,7 @@ export function resolveIdentity({ pathname, search }: Location): ShellIdentity |
  * reference, a person's name). */
 export function tabLabel(tab: { kind: string; to: string; title: string }): string {
   if (tab.kind === 'overview') return m["nav.today"]()
-  if (tab.kind === 'area') return areaMeta(tab.to.split('?')[0])?.label ?? tab.title
+  if (tab.kind === 'area') { const area = areaMeta(tab.to.split('?')[0]); return area?.title ?? area?.label ?? tab.title }
   return tab.title
 }
 

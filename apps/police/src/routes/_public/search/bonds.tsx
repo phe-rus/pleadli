@@ -1,5 +1,7 @@
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
+import { CellsTabs } from '@/features/cells-desk'
+import { custodyRecordsOptions } from '@/features/custody'
 import { BondForm, bondPersonName, bondsOptions, bondStatusLabel, useBonds, type Bond } from '@/features/bonds'
 import { RecordList } from '@/features/paper/record-list'
 import { RecordPaper } from '@/features/paper/record-paper'
@@ -19,7 +21,7 @@ export const Route = createFileRoute('/_public/search/bonds')({
     ...(search.view === 'all' ? { view: 'all' as const } : {}),
   }),
   loader: async ({ context }) => {
-    await context.queryClient.query({ ...bondsOptions(''), staleTime: 'static' })
+    await Promise.all([context.queryClient.query({ ...bondsOptions(''), staleTime: 'static' }), context.queryClient.query({ ...custodyRecordsOptions(''), staleTime: 'static' })])
   },
   component: RouteComponent,
 })
@@ -80,7 +82,7 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["nav.bonds_and_sureties"]()}</h1>
+          <h1>{m["nav_sections.cells"]()}</h1>
           <p>{active === 1 ? m["bonds_page.active_one"]() : m["bonds_page.active_n"]({ count: active })}</p>
         </div>
         <div className="page-actions">
@@ -98,6 +100,8 @@ function RouteComponent() {
           </PanelButton>
         </div>
       </header>
+
+      <CellsTabs active="bonds" />
 
       <RecordList
         items={shown}

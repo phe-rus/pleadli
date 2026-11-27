@@ -1,3 +1,4 @@
+import { StationTabs } from '@/features/station-desk'
 import * as m from '@/paraglide/messages'
 import { EmptyNote } from '@/components/planned'
 import { bondStatusLabel } from '@/features/bonds/schema'
@@ -142,7 +143,7 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["nav.statistics"]()}</h1>
+          <h1>{m["nav_sections.station"]()}</h1>
           <p>{m["reports.subtitle"]()}</p>
         </div>
         <div className="page-actions">
@@ -158,6 +159,8 @@ function RouteComponent() {
           />
         </div>
       </header>
+
+      <StationTabs active="statistics" />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {figures.map((f) => (

@@ -22,7 +22,7 @@ function toLocal(ms: number | null) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function MedicalForm({ exam, onSuccess, onDirtyChange }: { exam?: MedicalExam; onSuccess?: (exam: MedicalExam) => void; onDirtyChange?: (dirty: boolean) => void }) {
+export function MedicalForm({ exam, caseId, onSuccess, onDirtyChange }: { exam?: MedicalExam; caseId?: string; onSuccess?: (exam: MedicalExam) => void; onDirtyChange?: (dirty: boolean) => void }) {
   const create = useCreateMedicalExam()
   const update = useUpdateMedicalExam()
   const { data: cases } = useSuspenseQuery(casesOptions(''))
@@ -33,7 +33,7 @@ export function MedicalForm({ exam, onSuccess, onDirtyChange }: { exam?: Medical
     defaultValues: {
       kind: exam?.kind ?? 'pf3',
       personId: exam?.personId ?? '',
-      caseId: exam?.caseId ?? NO_CASE,
+      caseId: exam?.caseId ?? caseId ?? NO_CASE,
       facility: exam?.facility ?? '',
       examinerName: exam?.examinerName ?? '',
       requestedAt: toLocal(exam?.requestedAt ?? Date.now()),

@@ -24,6 +24,8 @@ export type StatementFormProps = {
   statement?: Statement
   onSuccess?: (statement: Statement) => void
   onDirtyChange?: (dirty: boolean) => void
+  /** Opened from inside a case: the paper starts attached to it. */
+  caseId?: string
 }
 
 function toDatetimeLocal(ms: number) {
@@ -32,7 +34,7 @@ function toDatetimeLocal(ms: number) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function StatementForm({ statement, onSuccess, onDirtyChange }: StatementFormProps) {
+export function StatementForm({ statement, caseId, onSuccess, onDirtyChange }: StatementFormProps) {
   const createStatement = useCreateStatement()
   const updateStatement = useUpdateStatement()
   const { data: cases } = useSuspenseQuery(casesOptions(''))
@@ -44,7 +46,7 @@ export function StatementForm({ statement, onSuccess, onDirtyChange }: Statement
     defaultValues: {
       content: statement?.content ?? '',
       personId: statement?.personId ?? '',
-      caseId: statement?.caseId ?? (null as string | null),
+      caseId: statement?.caseId ?? caseId ?? (null as string | null),
       // A new record is taken, drawn up or granted by whoever is signed in; an edit keeps who was recorded.
       officerId: statement ? statement.officerId : (me?.officerId ?? (null as string | null)),
       officerName: statement?.officerName ?? '',

@@ -2,6 +2,8 @@ import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { RecordList } from '@/features/paper/record-list'
 import { RecordPaper } from '@/features/paper/record-paper'
+import { PeopleTabs } from '@/features/people-desk'
+import { peopleSearchOptions } from '@/features/people'
 import { useVehicles, VehicleForm, vehicleOwnerName, vehiclesOptions, type Vehicle } from '@/features/vehicles'
 import { format } from '@/lib/date'
 import { Car01Icon } from '@hugeicons/core-free-icons'
@@ -12,7 +14,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 export const Route = createFileRoute('/_public/vehicles/')({
   validateSearch: (search: Record<string, unknown>): { open?: string } => (typeof search.open === 'string' ? { open: search.open } : {}),
   loader: async ({ context }) => {
-    await context.queryClient.query({ ...vehiclesOptions(''), staleTime: 'static' })
+    await Promise.all([context.queryClient.query({ ...vehiclesOptions(''), staleTime: 'static' }), context.queryClient.query({ ...peopleSearchOptions(''), staleTime: 'static' })])
   },
   component: RouteComponent,
 })
@@ -58,7 +60,7 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["nav.vehicles"]()}</h1>
+          <h1>{m["nav.people"]()}</h1>
           <p>{vehicles.length === 1 ? m["vehicles_page.count_one"]() : m["vehicles_page.count"]({ count: vehicles.length })}</p>
         </div>
         <div className="page-actions">
@@ -67,6 +69,8 @@ function RouteComponent() {
           </PanelButton>
         </div>
       </header>
+
+      <PeopleTabs active="vehicles" />
 
       <RecordList
         items={vehicles}

@@ -3,7 +3,7 @@ import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
 import { caseFolders, isCaseFolder, type CaseFolder } from '@/data/navigationItems'
 import { CaseForm, casesOptions, inCaseFolder, useCases } from '@/features/cases'
-import { referralsOptions, useReferrals } from '@/features/referrals'
+import { attentionOptions, useAttention } from '@/features/attention'
 import { format } from '@/lib/date'
 import { BinocularsIcon, Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_public/investigations/')({
   loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.query({ ...casesOptions(''), staleTime: 'static' }),
-      context.queryClient.query({ ...referralsOptions(''), staleTime: 'static' }),
+      context.queryClient.query({ ...attentionOptions(), staleTime: 'static' }),
     ])
   },
   component: RouteComponent,
@@ -43,19 +43,19 @@ function RouteComponent() {
   const { view = 'investigating' } = Route.useSearch()
   const navigate = useNavigate()
   const { data: cases } = useCases('')
-  const { data: referrals } = useReferrals('')
+  const { data: attention } = useAttention()
   const [query, setQuery] = useState('')
   const folder = caseFolders.find((f) => f.id === view)!
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase()
     return cases
-      .filter((c) => inCaseFolder(view, c, referrals))
+      .filter((c) => inCaseFolder(view, c.id, attention))
       .filter((c) => !needle || [c.reference, c.summary, c.incidentSummary ?? ''].some((text) => text.toLowerCase().includes(needle)))
       .sort((a, b) => b.createdAt - a.createdAt)
-  }, [cases, referrals, view, query])
+  }, [cases, attention, view, query])
 
-  const total = cases.filter((c) => inCaseFolder(view, c, referrals)).length
+  const total = cases.filter((c) => inCaseFolder(view, c.id, attention)).length
 
   return (
     <article className="page">

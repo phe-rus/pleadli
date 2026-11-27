@@ -3,7 +3,7 @@ import { createReferral, listReferrals, updateReferral } from './data'
 import type { CreateReferralInput } from './schema'
 import { optimisticCreate, optimisticUpdate, type ListConfig } from '@/lib/optimistic'
 
-const referralsList = { listKey: ['referrals', 'list'], invalidate: [['referrals']], sortBy: 'referredAt' } satisfies ListConfig
+const referralsList = { listKey: ['referrals', 'list'], invalidate: [['referrals'], ['cases']], sortBy: 'referredAt' } satisfies ListConfig
 
 export const referralsOptions = (query: string) =>
   queryOptions({

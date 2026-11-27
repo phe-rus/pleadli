@@ -76,6 +76,8 @@ export type ExhibitFormProps = {
   exhibit?: Exhibit
   onSuccess?: (exhibit: Exhibit) => void
   onDirtyChange?: (dirty: boolean) => void
+  /** Opened from inside a case: the paper starts attached to it. */
+  caseId?: string
 }
 
 function toDatetimeLocal(ms: number) {
@@ -84,7 +86,7 @@ function toDatetimeLocal(ms: number) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormProps) {
+export function ExhibitForm({ exhibit, caseId, onSuccess, onDirtyChange }: ExhibitFormProps) {
   const createExhibit = useCreateExhibit()
   const updateExhibit = useUpdateExhibit()
   const { data: cases } = useSuspenseQuery(casesOptions(''))
@@ -93,7 +95,7 @@ export function ExhibitForm({ exhibit, onSuccess, onDirtyChange }: ExhibitFormPr
 
   const form = useAppForm({
     defaultValues: {
-      caseId: exhibit?.caseId ?? (null as string | null),
+      caseId: exhibit?.caseId ?? caseId ?? (null as string | null),
       incidentId: exhibit?.incidentId ?? (null as string | null),
       personId: exhibit?.personId ?? (null as string | null),
       description: exhibit?.description ?? '',

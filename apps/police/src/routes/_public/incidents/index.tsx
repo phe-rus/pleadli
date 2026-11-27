@@ -3,7 +3,9 @@ import { PanelButton } from '@/components/add-panel'
 import { RecordList } from '@/features/paper/record-list'
 import { RecordPaper } from '@/features/paper/record-paper'
 import { CaseForm } from '@/features/cases'
+import { FrontDeskTabs } from '@/features/front-desk'
 import { IncidentForm, incidentPersonName, incidentsOptions, useIncidents, type Incident } from '@/features/incidents'
+import { stationDiaryOptions } from '@/features/station-diary'
 import { format } from '@/lib/date'
 import { SirenIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -14,13 +16,14 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 export const Route = createFileRoute('/_public/incidents/')({
   validateSearch: (search: Record<string, unknown>): { open?: string } => (typeof search.open === 'string' ? { open: search.open } : {}),
   loader: async ({ context }) => {
-    await context.queryClient.query({ ...incidentsOptions(''), staleTime: 'static' })
+    await Promise.all([context.queryClient.query({ ...incidentsOptions(''), staleTime: 'static' }), context.queryClient.query({ ...stationDiaryOptions(''), staleTime: 'static' })])
   },
   component: RouteComponent,
 })
 
 /** An incident as the station reports it: what, when, where, who reported it, and the account. */
 function IncidentPaper({ incident }: { incident: Incident }) {
+  const navigate = useNavigate()
   const person = incidentPersonName(incident)
   return (
     <RecordPaper
@@ -52,7 +55,11 @@ function IncidentPaper({ incident }: { incident: Incident }) {
           {({ close, setDirty }) => (
             <CaseForm
               start={{ incidentId: incident.id, summary: incident.summary, ...(incident.personId && person ? { person: { personId: incident.personId, personName: person } } : {}) }}
-              onSuccess={close}
+              onSuccess={(created) => {
+                close()
+                // The officer opened the case to work it: take them to it.
+                void navigate({ to: '/investigations/$caseId', params: { caseId: created.id } })
+              }}
               onDirtyChange={setDirty}
             />
           )}
@@ -75,7 +82,7 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["nav.incidents"]()}</h1>
+          <h1>{m["nav.front_desk"]()}</h1>
           <p>{incidents.length === 1 ? m["incidents_page.count_one"]() : m["incidents_page.count"]({ count: incidents.length })}</p>
         </div>
         <div className="page-actions">
@@ -84,6 +91,8 @@ function RouteComponent() {
           </PanelButton>
         </div>
       </header>
+
+      <FrontDeskTabs active="incidents" />
 
       <RecordList
         items={incidents}

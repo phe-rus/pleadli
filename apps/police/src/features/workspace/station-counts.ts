@@ -1,70 +1,58 @@
-import { casesOptions } from '@/features/cases/queries'
-import { caseFolderOf } from '@/features/cases/folders'
+import { useAttention } from '@/features/attention'
 import { bondsOptions } from '@/features/bonds/queries'
 import { dutyAssignmentsOptions } from '@/features/duty/queries'
 import { backupAlertsOptions } from '@/features/officers/queries'
-import { custodyRecordsOptions } from '@/features/custody/queries'
-import { custodyCompliance } from '@/features/custody/schema'
-import { referralsOptions } from '@/features/referrals/queries'
 import { useInstallation } from '@/features/session'
 import { useRules } from '@/features/rules/queries'
 import { useQuery } from '@tanstack/react-query'
-
-/** How many hours before a custody deadline the sidebar starts to call it due.
- * The limit itself (48 hours, or the 7 day transfer window) comes from the
- * record's timestamps and is never stored. */
-const DUE_WITHIN_HOURS = 6
 
 export type StationCounts = {
   /** Command only: stations that are waiting on a decision or have gone quiet. */
   stationsAttention: number
   inCells: number
+  /** In the cells and close to the limit (see `dueSoonHours` in the attention answer). */
   custodyDue: number
-  openCases: number
-  referralsPending: number
-  /** Cases by folder: what the station is investigating, and what waits on the DPP. */
+  /** In the cells and already past the limit. */
+  custodyOverdue: number
+  /** Cases by folder: what the station is investigating, and what is with the DPP. */
   investigating: number
   withDpp: number
+  /** Cases the DPP has not yet answered. */
+  referralsPending: number
+  /** Cases with something the station has to do (directions, witnesses to serve). */
+  needingAction: number
   /** People out on an active police bond. */
   onBond: number
   /** Officers whose shift covers this moment. */
   onDuty: number
   /** Backup calls still open. */
   backupLive: number
-  /** In the cells and already past the limit. */
-  custodyOverdue: number
 }
 
-/** The figures the sidebar and status bar carry, read from the records the
- * station already holds. Nothing is fetched twice: these are the same queries
- * the pages use. */
+/** The figures the sidebar and status bar carry. Case and custody figures are the application's one reading of the
+ * station (`useAttention`); this only adds the three that belong to other places (bonds, duty, backup). */
 export function useStationCounts(): StationCounts | undefined {
-  // A Command holds none of these records, and does not ask for them.
   const { data: installation } = useInstallation()
   const enabled = installation?.mode === 'station'
-  // The limits custody is counted against come from the legal rules, so they are loaded with the station's figures.
   useRules()
-  const { data: custody } = useQuery({ ...custodyRecordsOptions(''), enabled })
-  const { data: cases } = useQuery({ ...casesOptions(''), enabled })
-  const { data: referrals } = useQuery({ ...referralsOptions(''), enabled })
+  const { data: attention } = useAttention()
   const { data: bonds } = useQuery({ ...bondsOptions(''), enabled })
   const { data: duty } = useQuery({ ...dutyAssignmentsOptions(''), enabled })
   const { data: backup } = useQuery({ ...backupAlertsOptions(), enabled })
-  if (!custody || !cases || !referrals) return undefined
+  if (!attention) return undefined
   const now = Date.now()
-
-  const inCustody = custody.filter((record) => record.status === 'in_custody')
+  const c = attention.counts
   return {
     stationsAttention: 0,
-    inCells: inCustody.length,
-    custodyDue: inCustody.filter((record) => custodyCompliance(record).hoursRemaining <= DUE_WITHIN_HOURS).length,
-    openCases: cases.filter((c) => c.status === 'open').length,
-    referralsPending: referrals.filter((r) => r.status === 'pending').length,
-    investigating: cases.filter((c) => caseFolderOf(c, referrals) === 'investigating').length,
-    withDpp: cases.filter((c) => caseFolderOf(c, referrals) === 'dpp').length,
+    inCells: c.inCells,
+    custodyDue: c.custodyDue,
+    custodyOverdue: c.custodyPast,
+    investigating: c.investigating,
+    withDpp: c.withDpp,
+    referralsPending: c.awaitingReply,
+    needingAction: c.casesNeedingAction,
     onBond: (bonds ?? []).filter((b) => b.status === 'active').length,
     onDuty: (duty ?? []).filter((d) => d.shiftStart <= now && now <= d.shiftEnd).length,
     backupLive: (backup ?? []).filter((a) => a.endedAt == null).length,
-    custodyOverdue: inCustody.filter((record) => custodyCompliance(record).isOverdue).length,
   }
 }

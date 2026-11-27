@@ -2,6 +2,8 @@ import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
 import { PersonAvatar } from '@/components/person-avatar'
+import { PeopleTabs } from '@/features/people-desk'
+import { vehiclesOptions } from '@/features/vehicles'
 import { peopleSearchOptions, personFullName, PersonForm, usePeopleSearch, type Person } from '@/features/people'
 import { Search01Icon, UserGroupIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -11,7 +13,7 @@ import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_public/search/people/')({
   loader: async ({ context }) => {
-    await context.queryClient.query({ ...peopleSearchOptions(''), staleTime: 'static' })
+    await Promise.all([context.queryClient.query({ ...peopleSearchOptions(''), staleTime: 'static' }), context.queryClient.query({ ...vehiclesOptions(''), staleTime: 'static' })])
   },
   component: RouteComponent,
 })
@@ -56,6 +58,8 @@ function RouteComponent() {
           </PanelButton>
         </div>
       </header>
+
+      <PeopleTabs active="people" />
 
       {people.length === 0 ? (
         <EmptyNote icon={<HugeiconsIcon icon={UserGroupIcon} />}>{m["people_page.empty"]()}</EmptyNote>

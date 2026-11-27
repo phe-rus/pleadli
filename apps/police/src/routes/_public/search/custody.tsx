@@ -13,6 +13,8 @@ import {
   type CustodyRecord,
 } from '@/features/custody'
 import { RecordList } from '@/features/paper/record-list'
+import { bondsOptions } from '@/features/bonds'
+import { CellsTabs } from '@/features/cells-desk'
 import { personProfileOptions, PersonIdentity } from '@/features/people'
 import { PersonAvatar } from '@/components/person-avatar'
 import { useQuery } from '@tanstack/react-query'
@@ -34,7 +36,7 @@ export const Route = createFileRoute('/_public/search/custody')({
     ...(search.view === 'all' ? { view: 'all' as const } : {}),
   }),
   loader: async ({ context }) => {
-    await context.queryClient.query({ ...custodyRecordsOptions(''), staleTime: 'static' })
+    await Promise.all([context.queryClient.query({ ...custodyRecordsOptions(''), staleTime: 'static' }), context.queryClient.query({ ...bondsOptions(''), staleTime: 'static' })])
   },
   component: RouteComponent,
 })
@@ -132,7 +134,7 @@ function RouteComponent() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["nav.in_custody"]()}</h1>
+          <h1>{m["nav_sections.cells"]()}</h1>
           <p>
             {inCells.length === 1 ? m["custody_page.in_cells_one"]() : m["custody_page.in_cells_n"]({ count: inCells.length })}
             {due > 0 ? ` · ${m["custody_page.due"]({ count: due })}` : ''}
@@ -153,6 +155,8 @@ function RouteComponent() {
           </PanelButton>
         </div>
       </header>
+
+      <CellsTabs active="custody" />
 
       {view === 'cells' ? (
         inCells.length === 0 ? (

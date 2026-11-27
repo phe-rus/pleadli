@@ -156,6 +156,7 @@
     "overview": "Muhtasari",
     "search": "Tafuta",
     "case_files": "Majalada ya kesi",
+    "front_desk": "Mapokezi",
     "station_diary": "Kitabu cha matukio",
     "incidents": "Matukio",
     "case_intake": "Upokeaji wa kesi",
@@ -706,7 +707,27 @@
     "near_summary": "{time} zimebaki. Alikamatwa {when}. Kikomo ni {deadline}.",
     "referral_one": "Rufaa 1 bado haina matokeo",
     "referral_n": "Rufaa {count} bado hazina matokeo",
-    "referral_summary": "Rekodi kilichorudishwa, au fuatilia na ofisi ilipotumwa."
+    "referral_summary": "Rekodi kilichorudishwa, au fuatilia na ofisi ilipotumwa.",
+    "stand": {
+      "title": "Kesi hii iko wapi",
+      "investigating": "Inachunguzwa",
+      "awaiting": "Iko kwa DPP, inasubiri jibu",
+      "accepted": "Imekubaliwa na DPP, iko ofisini",
+      "returned": "Imerudishwa na DPP kwa kazi zaidi",
+      "not_accepted": "DPP hakukubali jalada",
+      "declined": "DPP alikataa kushtaki",
+      "sanctioned": "Imeidhinishwa na DPP",
+      "closed": "Imefungwa",
+      "to_do": "{count} za kufanya",
+      "sent": "Imetumwa kwa {office} tarehe {date}",
+      "the_office": "ofisi",
+      "due": "Mwisho {date}.",
+      "directions": "Tekeleza maelekezo ya DPP ({count}). {due}",
+      "ob_not_accepted": "Soma sababu aliyotoa DPP, sahihisha jalada na ulitume tena, au funga kesi.",
+      "ob_declined": "Soma sababu za DPP, kisha funga kesi au ifungue upya na ushahidi mpya.",
+      "witnesses": "Mashahidi {count} wa kupelekewa wito kwa kusikilizwa kunakofuata: {names}. {due}",
+      "exhibits": "Mahakama imeomba vielelezo hivi: {names}."
+    }
   },
   "overview": {
     "person_one": "mtu 1 · ilifunguliwa {when}",
@@ -1336,7 +1357,7 @@
     "list_lead": "Chagua kesi ili kufungua mwonekano wake wa kazi: watu, maelezo, mahabusu, dhamana na faili, vyote mahali pamoja.",
     "people_count": "watu {count}",
     "next_title": "Hatua zinazofuata",
-    "next_hint": "Bado hakuna kilichoandikwa kwenye kesi hii. Anza na mojawapo, kisha chagua kesi hii kwenye fomu.",
+    "next_hint": "Bado hakuna kilichoandikwa kwenye kesi hii. Anza na mojawapo: kinaongezwa kwenye kesi hii.",
     "next_statement": "Chukua maelezo",
     "next_exhibit": "Andika kielelezo",
     "next_arrest": "Weka mtu rumande",
@@ -2515,5 +2536,17 @@
     "address_copy": "Nakili",
     "address_copied": "Imenakiliwa",
     "address_unknown": "Haijulikani bado. Unganisha na Pleadli ili kuiona."
+  },
+  "minutes": {
+    "title": "Muhtasari wa kusikilizwa",
+    "hint": "Kilichorekodiwa na ofisi mahakamani. Unganisha kila muhtasari na kesi yake, kisha uambie ofisi mashahidi gani ulifikishiwa wito.",
+    "needs_case": "Unganisha na kesi",
+    "match": "Unganisha na kesi hii",
+    "matched": "Muhtasari umeunganishwa na kesi yake.",
+    "next_date": "Tarehe ijayo {date}",
+    "exhibits": "Vielelezo vya kuwasilishwa: {list}",
+    "serve_heading": "Mashahidi wa kupelekewa wito",
+    "served": "Amepelekewa",
+    "why_not": "Kwa nini hakupelekewa"
   }
 }

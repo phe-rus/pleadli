@@ -4,7 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 
 export type StationIdentity = { stationId: string; stationName: string; jurisdiction: string | null; fingerprint: string }
 export type Connection = { id: string; officeName: string; officeJurisdiction: string | null; fingerprint: string; status: string; reason: string | null; respondedAt: number; trustedAt: number | null }
-export type Incoming = { id: string; kind: string; inReplyTo: string | null; sentAt: number; receivedAt: number; payload: string; officeName: string }
+export type Incoming = { id: string; kind: string; inReplyTo: string | null; sentAt: number; receivedAt: number; payload: string; status: string; caseId: string | null; officeName: string }
 export type Sealed = { file: string; name: string }
 
 const post = (path: string, body: unknown) => api(path, { method: 'POST', body: JSON.stringify(body) })
@@ -63,3 +63,20 @@ export async function savePackage(sealed: Sealed): Promise<boolean> {
 
 export type Outgoing = { id: string; kind: string; seq: number; preparedAt: number; exportedAt: number | null; route: string | null; officeName: string; policeReference: string | null }
 export const listOutgoing = (): Promise<Outgoing[]> => api('/exchange/outgoing')
+
+export type ServiceResult = { name: string; served: boolean; reason: string | null; servedAt: number | null }
+export type HearingMinute = {
+  policeReference: string
+  dppReference?: string | null
+  courtCaseNumber?: string | null
+  heardAt: number
+  nextDate?: number | null
+  adjournmentCause?: string | null
+  witnessesToServe: { name: string; role?: string | null }[]
+  exhibitsToProduce: string[]
+  note?: string | null
+}
+
+export const matchMinute = (incomingId: string, caseId: string): Promise<void> => post(`/exchange/incoming/${encodeURIComponent(incomingId)}/case`, { caseId }).then(() => undefined)
+export const saveServiceReport = (minuteId: string, results: ServiceResult[]): Promise<Sealed> => post(`/exchange/minutes/${encodeURIComponent(minuteId)}/service-report`, { results, reportedBy: null })
+export const sendServiceReport = (minuteId: string, results: ServiceResult[]): Promise<{ packageId: string }> => post(`/relay/minutes/${encodeURIComponent(minuteId)}/service-report`, { results, reportedBy: null })

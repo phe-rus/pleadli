@@ -1,13 +1,15 @@
+import { StationTabs } from '@/features/station-desk'
 import * as m from '@/paraglide/messages'
 import { acceptInvite, createIdentity, exportReferral, getIdentity, importPackage, listConnections, listIncoming, pickPackage, savePackage, type Connection, type Incoming, type StationIdentity } from '@/features/exchange/data'
 import { answerInvitation, checkRelay, declineInvitation, getRelay, reopenReceived, retryRelay, sendByPostbox, type RelayStatus, type Stage } from '@/features/relay/data'
 import { api } from '@/lib/api'
 import { format } from '@/lib/date'
 import { Badge } from '@pleadli/ui/badge'
-import { Button } from '@pleadli/ui/button'
+import { Button, buttonVariants } from '@pleadli/ui/button'
 import { Input } from '@pleadli/ui/input'
 import { SettingsCard } from '@/components/settings-card'
-import { createFileRoute } from '@tanstack/react-router'
+import { MinutesCard } from '@/features/exchange/minutes-card'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useCallback, useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/_public/exchange/')({ component: RouteComponent })
@@ -68,15 +70,19 @@ function RouteComponent() {
   }
   const invitations = (relay?.received ?? []).filter((r) => r.status === 'new' && r.invitation)
   const turnedAway = (relay?.received ?? []).filter((r) => r.status === 'refused')
+  const replies = incoming.filter((i) => i.kind !== 'hearing_minute')
 
   return (
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m['exchange.title']()}</h1>
+          <h1>{m["nav_sections.station"]()}</h1>
           <p className="text-muted-foreground">{m['exchange.intro']()}</p>
         </div>
+        <Link to="/postbox" className={buttonVariants({ variant: 'secondary', size: 'sm' })}>{m['nav.postbox']()}</Link>
       </header>
+
+      <StationTabs active="exchange" />
 
       <div className="flex w-full max-w-3xl flex-col gap-6">
         {notice && <p role="status" className={notice.error ? 'text-destructive' : undefined}>{notice.text}</p>}
@@ -243,11 +249,13 @@ function RouteComponent() {
               {relay?.ready && relay.sent.length === 0 && invitations.length === 0 && turnedAway.length === 0 && <p className="text-muted-foreground">{m['relay.nothing']()}</p>}
             </SettingsCard>
 
+            <MinutesCard minutes={incoming.filter((i) => i.kind === 'hearing_minute')} canPostbox={!!relay?.ready} run={run} />
+
             <SettingsCard title={m['exchange.incoming_title']()}>
-              {incoming.length === 0 ? (
+              {replies.length === 0 ? (
                 <p className="text-muted-foreground">{m['exchange.no_incoming']()}</p>
               ) : (
-                incoming.map((i) => {
+                replies.map((i) => {
                   const body = safe(i.payload)
                   return (
                     <div key={i.id} className="flex flex-col gap-0.5">

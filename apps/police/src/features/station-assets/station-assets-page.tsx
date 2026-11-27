@@ -1,3 +1,4 @@
+import { StationTabs } from '@/features/station-desk'
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { RecordList } from '@/features/paper/record-list'
@@ -65,13 +66,12 @@ export function StationAssetsPage({ category }: { category: Category }) {
   const shown = view === 'here' ? assets.filter((a) => a.status === 'in_store') : view === 'out' ? assets.filter((a) => a.status !== 'in_store') : assets
   const inStore = assets.filter((a) => a.status === 'in_store').length
   const to = category === 'armory' ? '/stores/armory' : '/stores/impounded'
-  const title = category === 'armory' ? m["nav.armory"]() : m["nav.impounded_assets"]()
 
   return (
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{title}</h1>
+          <h1>{m["nav_sections.station"]()}</h1>
           <p>{m["stores.in_store_count"]({ count: inStore, total: assets.length })}</p>
         </div>
         <div className="page-actions">
@@ -90,6 +90,8 @@ export function StationAssetsPage({ category }: { category: Category }) {
           </PanelButton>
         </div>
       </header>
+
+      <StationTabs active={category === 'armory' ? 'armory' : 'impounded'} />
 
       <RecordList
         items={shown}

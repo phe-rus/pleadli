@@ -20,6 +20,8 @@ import { createChargeSheetSchema, type ChargeSheet } from './schema'
 export type ChargeSheetFormProps = {
   chargeSheet?: ChargeSheet
   onSuccess?: (chargeSheet: ChargeSheet) => void
+  /** Opened from inside a case: the charge sheet starts attached to it. */
+  caseId?: string
   onDirtyChange?: (dirty: boolean) => void
 }
 
@@ -29,7 +31,7 @@ function toDatetimeLocal(ms: number) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: ChargeSheetFormProps) {
+export function ChargeSheetForm({ chargeSheet, caseId, onSuccess, onDirtyChange }: ChargeSheetFormProps) {
   const createChargeSheet = useCreateChargeSheet()
   const updateChargeSheet = useUpdateChargeSheet()
   const { data: cases } = useSuspenseQuery(casesOptions(''))
@@ -38,7 +40,7 @@ export function ChargeSheetForm({ chargeSheet, onSuccess, onDirtyChange }: Charg
   const { data: me } = useMe()
   const form = useAppForm({
     defaultValues: {
-      caseId: chargeSheet?.caseId ?? '',
+      caseId: chargeSheet?.caseId ?? caseId ?? '',
       accusedPersonId: chargeSheet?.accusedPersonId ?? (null as string | null),
       offence: chargeSheet?.offence ?? '',
       statutorySection: chargeSheet?.statutorySection ?? '',

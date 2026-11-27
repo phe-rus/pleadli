@@ -1,8 +1,9 @@
+import { StationTabs, useStationTitle } from '@/features/station-desk'
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { EmptyNote } from '@/components/planned'
 import { PersonAvatar } from '@/components/person-avatar'
-import { useDutyAssignments } from '@/features/duty/queries'
+import { useRosterIfStation } from '@/features/duty/queries'
 import { PaperWindow, RecordPaper } from '@/features/paper/record-paper'
 import { format } from '@/lib/date'
 import { MoreHorizontalIcon, PoliceBadgeIcon, Search01Icon } from '@hugeicons/core-free-icons'
@@ -29,7 +30,7 @@ function byRoll(a: Officer, b: Officer) {
 /** One officer as the station's record of them: rank, number, post, what
  * they may do in this app, and their duty this week. */
 function OfficerPaper({ officer }: { officer: Officer }) {
-  const { data: assignments } = useDutyAssignments('')
+  const assignments = useRosterIfStation()
   const from = Date.now() - 86_400_000
   const duty = assignments
     .filter((a) => a.officerId === officer.id && a.shiftEnd > from && a.shiftStart < from + 8 * 86_400_000)
@@ -131,11 +132,12 @@ function NominalRollPaper({ officers }: { officers: Officer[] }) {
  * opens as their record; the roll prints from "···".
  */
 export function OfficersPage() {
+  const stationTitle = useStationTitle(m["common.officers"]())
   const search = useSearch({ strict: false }) as { open?: string }
   const navigate = useNavigate()
   const setOpen = (id: string | null) => void navigate({ to: '/station/officers', search: id ? { open: id } : {}, replace: true } as never)
   const { data: officers } = useOfficers()
-  const { data: assignments } = useDutyAssignments('')
+  const assignments = useRosterIfStation()
   const [view, setView] = useState<View>('here')
   const [query, setQuery] = useState('')
   const [printRoll, setPrintRoll] = useState(false)
@@ -165,7 +167,7 @@ export function OfficersPage() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["common.officers"]()}</h1>
+          <h1>{stationTitle}</h1>
           <p>{left > 0 ? m["officers_page.count_left"]({ here: here.length, left }) : m["officers_page.count"]({ here: here.length })}</p>
         </div>
         <div className="page-actions">
@@ -199,6 +201,8 @@ export function OfficersPage() {
           </DropdownMenu>
         </div>
       </header>
+
+      <StationTabs active="officers" />
 
       {officers.length === 0 ? (
         <EmptyNote icon={<HugeiconsIcon icon={PoliceBadgeIcon} />}>{m["officers_page.empty"]()}</EmptyNote>

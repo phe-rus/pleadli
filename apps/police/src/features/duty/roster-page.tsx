@@ -1,3 +1,4 @@
+import { StationTabs } from '@/features/station-desk'
 import * as m from '@/paraglide/messages'
 import { PanelButton } from '@/components/add-panel'
 import { Createpanel } from '@/components/create-panel'
@@ -230,7 +231,7 @@ export function RosterPage() {
     <article className="page">
       <header className="page-header">
         <div>
-          <h1>{m["nav.duty_roster"]()}</h1>
+          <h1>{m["nav_sections.station"]()}</h1>
           <p>{onDuty.length === 0 ? m["roster_page.no_one_now"]() : m["roster_page.on_duty_count"]({ count: onDuty.length })}</p>
         </div>
         <div className="page-actions">
@@ -262,6 +263,8 @@ export function RosterPage() {
           </DropdownMenu>
         </div>
       </header>
+
+      <StationTabs active="roster" />
 
       {view === 'now' &&
         (onDuty.length === 0 && comingOn.length === 0 && !lastHandover ? (
