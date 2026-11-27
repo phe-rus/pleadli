@@ -30,7 +30,7 @@ export function TransferDossier({ transferId, issued }: { transferId: string; is
     <PrintFrame
       kind="transfer_dossier"
       issued={issued}
-      attestations={[{ label: outgoing ? m.documents_officer_in_charge_sending() : m.documents_officer_in_charge_receiving() }, { label: m.documents_escort_officer(), name: transfer.escort }, { label: outgoing ? m.documents_receiving_officer() : m.documents_sending_officer() }]}
+      attestations={[{ label: outgoing ? m.documents_officer_in_charge_sending() : m.documents_officer_in_charge_receiving(), own: true }, { label: m.documents_escort_officer(), name: transfer.escort }, { label: outgoing ? m.documents_receiving_officer() : m.documents_sending_officer() }]}
     >
       <DocSection title={m.documents_the_movement()}>
         <DocFacts

@@ -24,7 +24,7 @@ export function ReceptionRecord({ prisonerId, issued }: { prisonerId: string; is
     <PrintFrame
       kind="reception_record"
       issued={issued}
-      attestations={[{ label: m.documents_admitting_officer() }, { label: m.documents_person_admitted_acknowledges_the_details(), name: prisonerFullName(prisoner) }, { label: m.documents_officer_in_charge() }]}
+      attestations={[{ label: m.documents_admitting_officer(), own: true }, { label: m.documents_person_admitted_acknowledges_the_details(), name: prisonerFullName(prisoner) }, { label: m.documents_officer_in_charge() }]}
     >
       <DocSection title={m.documents_the_person()}>
         <DocFacts

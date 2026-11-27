@@ -73,7 +73,17 @@ pub const ENTITY_TYPES: &[&str] = &[
     "programme_participation",
     "request",
     "instrument",
+    SIGNATURE,
 ];
+
+/// The kind of file an officer's own signature is.
+pub const SIGNATURE: &str = "officer_signature";
+
+/// An officer's signature is theirs alone: used (read, replaced, voided) only by that officer, whatever their
+/// role, so no colleague can fetch the image to forge a document. Every other kind of file is unaffected.
+pub fn may_use_signature(actor: &Actor, entity_type: &str, entity_id: &str) -> bool {
+    entity_type != SIGNATURE || actor.officer_id.as_deref() == Some(entity_id)
+}
 
 pub const MAX_ATTACHMENT_BYTES: usize = 25 * 1024 * 1024;
 
@@ -224,4 +234,27 @@ pub async fn void_attachment(
         .await?;
     audit::record(conn, actor, AuditEntry::new("document.void", "attachment", Some(id)).before(&before).reason(reason)).await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod signature_tests {
+    use super::*;
+
+    fn officer(id: &str) -> Actor {
+        let mut a = Actor::system("test");
+        a.officer_id = Some(id.to_string());
+        a
+    }
+
+    #[test]
+    fn only_the_owner_may_use_a_signature() {
+        assert!(may_use_signature(&officer("a"), SIGNATURE, "a"));
+        assert!(!may_use_signature(&officer("b"), SIGNATURE, "a"), "a colleague is refused");
+        assert!(!may_use_signature(&Actor::system("job"), SIGNATURE, "a"), "so is a system job");
+    }
+
+    #[test]
+    fn other_files_are_not_affected() {
+        assert!(may_use_signature(&officer("b"), "prisoner", "a"));
+    }
 }

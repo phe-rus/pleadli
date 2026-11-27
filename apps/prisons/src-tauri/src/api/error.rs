@@ -43,6 +43,10 @@ impl ApiError {
         Self::new(StatusCode::FORBIDDEN, "LOCAL_ONLY", "This step can only be done on the machine that runs the node.")
     }
 
+    pub fn signature_private() -> Self {
+        Self::new(StatusCode::FORBIDDEN, "SIGNATURE_PRIVATE", "A signature can only be used by the officer it belongs to.")
+    }
+
     pub fn not_found(what: &str) -> Self {
         Self::new(StatusCode::NOT_FOUND, "NOT_FOUND", &format!("{what} was not found."))
     }

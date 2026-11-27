@@ -27,7 +27,7 @@ export function DischargeCertificate({ prisonerId, issued }: { prisonerId: strin
     <PrintFrame
       kind="discharge_certificate"
       issued={issued}
-      attestations={[{ label: m.documents_discharging_officer() }, { label: m.documents_person_discharged_acknowledges_release(), name: prisonerFullName(prisoner) }, { label: m.documents_officer_in_charge(), name: release.authorisedBy }]}
+      attestations={[{ label: m.documents_discharging_officer(), own: true }, { label: m.documents_person_discharged_acknowledges_release(), name: prisonerFullName(prisoner) }, { label: m.documents_officer_in_charge(), name: release.authorisedBy }]}
     >
       <DocSection title={m.documents_the_person()}>
         <DocFacts rows={[[m.documents_name(), prisonerFullName(prisoner)], [m.documents_prisoner_number(), prisoner.prisonerNumber], [m.documents_national_id(), prisoner.nationalId], [m.documents_offence(), prisoner.offence]]} />

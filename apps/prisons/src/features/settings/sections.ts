@@ -5,7 +5,7 @@ import { m } from '@/paraglide/messages'
  * is Head Office's to make. */
 export type Owner = 'facility' | 'organisation' | 'device' | 'head-office-set' | 'head-office-default'
 
-export type SectionId = 'jurisdiction' | 'facility' | 'organisation' | 'numbering' | 'language' | 'appearance' | 'sign-in' | 'head-office' | 'network' | 'backup' | 'device' | 'pleadli-licence' | 'daily-backups' | 'notifications'
+export type SectionId = 'jurisdiction' | 'facility' | 'organisation' | 'numbering' | 'language' | 'appearance' | 'sign-in' | 'head-office' | 'network' | 'backup' | 'device' | 'pleadli-licence' | 'daily-backups' | 'notifications' | 'signature'
 
 export type SectionDef = {
   id: SectionId
@@ -28,6 +28,7 @@ export const sections: readonly SectionDef[] = [
   { id: 'numbering', label: () => m.settings_nav_numbering(), about: () => m.settings_about_numbering(), owner: 'facility', for: 'both', requires: ['prisoner.read', 'node.manage', 'hq.estate.read'], group: 'institution' },
   { id: 'language', label: () => m.settings_nav_language(), about: () => m.settings_about_language(), owner: 'facility', for: 'both', requires: [], group: 'institution' },
   { id: 'appearance', label: () => m.settings_nav_appearance(), about: () => m.settings_about_appearance(), owner: 'device', for: 'both', requires: [], group: 'computer' },
+  { id: 'signature', label: () => m.signature_title(), about: () => m.signature_about(), owner: 'device', for: 'both', requires: [], group: 'computer' },
   { id: 'sign-in', label: () => m.settings_nav_sign_in(), about: () => m.settings_about_sign_in(), owner: 'facility', for: 'both', requires: ['node.manage'], group: 'institution' },
   { id: 'head-office', label: () => m.settings_nav_head_office(), about: () => m.settings_about_head_office(), owner: 'facility', for: 'facility', requires: [], group: 'institution' },
   { id: 'network', label: () => m.settings_nav_network(), about: () => m.settings_about_network(), owner: 'organisation', for: 'head-office', requires: [], group: 'institution' },

@@ -1,3 +1,4 @@
+import { SignatureCard } from '@/features/signature'
 import { JurisdictionPane } from '@/features/jurisdiction/jurisdiction-pane'
 import { NetworkTab } from '@/features/facilities/network-tabs'
 import { NumberingSettings } from '@/features/numbering'
@@ -7,7 +8,7 @@ import { useHqConfig, usePermissions } from '@/features/session'
 import { TimezonePane } from '@/features/timezone'
 import { m } from '@/paraglide/messages'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Building03Icon, CloudSavingDone01Icon, CloudUploadIcon, ComputerIcon, GridTableIcon, LanguageSkillIcon, LicenseIcon, Notification03Icon, PaintBoardIcon, SquareLock02Icon, NetworkIcon } from '@hugeicons/core-free-icons'
+import { Building03Icon, CloudSavingDone01Icon, CloudUploadIcon, ComputerIcon, GridTableIcon, LanguageSkillIcon, LicenseIcon, Notification03Icon, PaintBoardIcon, PencilEdit01Icon, SquareLock02Icon, NetworkIcon } from '@hugeicons/core-free-icons'
 import { NotificationsPane } from './panes'
 import { cn } from '@pleadli/ui/lib/utils'
 import { Link } from '@tanstack/react-router'
@@ -32,6 +33,7 @@ const panes: Record<SectionId, () => ReactNode> = {
   numbering: () => <NumberingSettings />,
   language: () => <LanguagePane />,
   appearance: () => <AppearancePane />,
+  signature: () => <SignatureCard />,
   'sign-in': () => <SecurityPane />,
   'head-office': () => <NetworkTab />,
   network: () => <NetworkTab />,
@@ -50,6 +52,7 @@ const sectionIcon: Record<SectionId, typeof Building03Icon> = {
   numbering: GridTableIcon,
   language: LanguageSkillIcon,
   appearance: PaintBoardIcon,
+  signature: PencilEdit01Icon,
   'sign-in': SquareLock02Icon,
   'head-office': NetworkIcon,
   network: NetworkIcon,

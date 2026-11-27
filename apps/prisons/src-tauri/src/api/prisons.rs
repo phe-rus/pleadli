@@ -701,6 +701,9 @@ struct AddDocumentBody {
 }
 
 async fn add_document(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Json(body): Json<AddDocumentBody>) -> Api<Attachment> {
+    if !attachments::may_use_signature(&actor, &body.entity_type, &body.entity_id) {
+        return Err(ApiError::signature_private());
+    }
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(body.content_base64.as_bytes())
         .map_err(|_| ApiError::bad_request("The file could not be read."))?;
@@ -722,11 +725,19 @@ struct DocumentQuery {
     entity_id: String,
 }
 
-async fn list_documents(State(node): State<NodeRef>, Query(q): Query<DocumentQuery>) -> Api<Vec<Attachment>> {
+async fn list_documents(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Query(q): Query<DocumentQuery>) -> Api<Vec<Attachment>> {
+    if !attachments::may_use_signature(&actor, &q.entity_type, &q.entity_id) {
+        return Err(ApiError::signature_private());
+    }
     Ok(Json(attachments::list_attachments(&node.pool, &q.entity_type, &q.entity_id).await?))
 }
 
-async fn document_data_url(State(node): State<NodeRef>, Path(id): Path<String>) -> Api<Option<String>> {
+async fn document_data_url(State(node): State<NodeRef>, Extension(actor): Extension<Actor>, Path(id): Path<String>) -> Api<Option<String>> {
+    if let Some(a) = attachments::get_attachment(&node.pool, &id).await? {
+        if !attachments::may_use_signature(&actor, &a.entity_type, &a.entity_id) {
+            return Err(ApiError::signature_private());
+        }
+    }
     Ok(Json(attachments::get_attachment_data_url(&node.pool, &node.vault_root, &id).await?))
 }
 
@@ -741,6 +752,11 @@ async fn void_document(
     Path(id): Path<String>,
     Json(body): Json<VoidBody>,
 ) -> Result<StatusCode, ApiError> {
+    if let Some(a) = attachments::get_attachment(&node.pool, &id).await? {
+        if !attachments::may_use_signature(&actor, &a.entity_type, &a.entity_id) {
+            return Err(ApiError::signature_private());
+        }
+    }
     write(&node, |c| Box::pin(async move { Ok(attachments::void_attachment(c, &actor, &id, &body.reason).await?) })).await?;
     Ok(StatusCode::NO_CONTENT)
 }

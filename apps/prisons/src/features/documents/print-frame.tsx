@@ -1,3 +1,5 @@
+import { useSession } from '@/features/session'
+import { useSignature } from '@/features/signature'
 import { facilityProfileOptions } from '@/features/facility'
 import { useQuery } from '@tanstack/react-query'
 import { format } from '@/lib/date'
@@ -5,7 +7,8 @@ import type { ReactNode } from 'react'
 import { documentKindLabel, type DocumentKind, type IssuedDocument } from './schema'
 import { m } from '@/paraglide/messages'
 
-export type Attestation = { label: string; name?: string | null }
+/** `own`: the line of the officer issuing the document, which shows that officer's signature when they are the one printing it. */
+export type Attestation = { label: string; name?: string | null; own?: boolean }
 
 /** A titled part of a document. */
 export function DocSection({ title, children }: { title: string; children: ReactNode }) {
@@ -56,6 +59,8 @@ export function PrintFrame({
   children: ReactNode
 }) {
   const { data: facility } = useQuery({ ...facilityProfileOptions(), retry: false })
+  const { data: session } = useSession()
+  const { data: signature } = useSignature(session?.officer.id)
   const place = [facility?.location, facility?.region, facility?.country].filter(Boolean).join(', ')
   const date = issued ? new Date(issued.issuedAt) : new Date()
 
@@ -97,7 +102,8 @@ export function PrintFrame({
 
       <section className="mt-4 grid grid-cols-1 gap-x-10 gap-y-8 break-inside-avoid sm:grid-cols-2" aria-label={m.documents_signatures()}>
         {attestations.map((item) => (
-          <div key={item.label} className="flex flex-col gap-1 pt-8">
+          <div key={item.label} className="relative flex flex-col gap-1 pt-8">
+            {item.own && signature && <img src={signature} alt="" className="absolute bottom-full left-0 mb-[-2.25rem] max-h-12 max-w-44 object-contain" />}
             <div className="border-t border-black" />
             <p>
               {item.label}
