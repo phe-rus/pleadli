@@ -718,6 +718,10 @@ pub async fn delete_attachment(pool: &SqlitePool, vault_root: &Path, id: &str) -
 pub async fn place_for_export(pool: &SqlitePool, vault_root: &Path, staging: &Path) -> Result<(), AttachmentError> {
     let mut used: BTreeSet<PathBuf> = BTreeSet::new();
     for attachment in all_attachments(pool).await? {
+        // A signature is never opened into a readable export: it stays sealed, in the sealed backups only.
+        if attachment.entity_type == SIGNATURE {
+            continue;
+        }
         let Ok(plain) = vault::read(vault_root, &attachment.stored_path, &attachment.id) else {
             log::warn!("export: attachment {} could not be opened from the vault and was left out", attachment.id);
             continue;
