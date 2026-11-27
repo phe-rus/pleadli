@@ -397,6 +397,19 @@ pub async fn bulk_attach_from_paths(
     BulkAttachResult { attached, failed }
 }
 
+/// The kind of file an officer's own signature is.
+pub const SIGNATURE: &str = "officer_signature";
+
+/// Why a signature was refused.
+pub const SIGNATURE_REFUSAL: &str = "A signature can only be used by the officer it belongs to.";
+
+/// An officer's signature is theirs alone: read, replaced or removed only by that officer, whatever their role
+/// (an administrator included), so a colleague's signature image can never be fetched to forge a paper.
+/// Every other kind of file is unaffected. Checked here so the web routes and the desktop commands cannot disagree.
+pub fn may_use_signature(actor: &crate::domain::sessions::Actor, entity_type: &str, entity_id: &str) -> bool {
+    entity_type != SIGNATURE || actor.officer_id == entity_id
+}
+
 pub async fn get_attachment(pool: &SqlitePool, id: &str) -> Result<Option<Attachment>, sqlx::Error> {
     sqlx::query_as::<_, Attachment>(
         "SELECT id, entity_type, entity_id, file_name, stored_path, mime_type, size_bytes, created_at, photo_angle FROM attachments WHERE id = ?",
@@ -912,5 +925,28 @@ mod tests {
 
         db.pool.close().await;
         let _ = std::fs::remove_dir_all(dir);
+    }
+}
+
+#[cfg(test)]
+mod signature_tests {
+    use super::*;
+    use crate::domain::sessions::Actor;
+
+    fn officer(id: &str, role: &str) -> Actor {
+        Actor { officer_id: id.to_string(), name: "n".into(), rank: None, badge_number: None, role: role.to_string() }
+    }
+
+    #[test]
+    fn only_the_owner_may_use_a_signature() {
+        assert!(may_use_signature(&officer("a", "officer"), SIGNATURE, "a"));
+        assert!(!may_use_signature(&officer("b", "officer"), SIGNATURE, "a"), "a colleague is refused");
+        assert!(!may_use_signature(&officer("b", "admin"), SIGNATURE, "a"), "an administrator is refused too");
+    }
+
+    #[test]
+    fn other_files_are_not_affected() {
+        assert!(may_use_signature(&officer("b", "officer"), "statement", "a"));
+        assert!(may_use_signature(&officer("b", "officer"), "case", "x"));
     }
 }

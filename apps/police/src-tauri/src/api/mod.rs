@@ -1252,6 +1252,9 @@ async fn list_attachments_handler(
     Extension(actor): Extension<Actor>,
     Query(params): Query<EntityQuery>,
 ) -> Result<Json<Vec<Attachment>>, ApiError> {
+    if !attachments::may_use_signature(&actor, &params.entity_type, &params.entity_id) {
+        return Err((StatusCode::FORBIDDEN, attachments::SIGNATURE_REFUSAL.to_string()));
+    }
     let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
     if !cases::may_see_entity(&state.pool, &params.entity_type, &params.entity_id, &hidden).await.map_err(internal_error)? {
         return Err(restricted_refusal());
@@ -1312,6 +1315,11 @@ async fn read_vault_file_handler(
     Extension(actor): Extension<Actor>,
     Query(params): Query<VaultDirectoryQuery>,
 ) -> Result<Json<String>, ApiError> {
+    if let Some(a) = attachments::attachment_at(&state.pool, &params.relative_path).await.map_err(internal_error)? {
+        if !attachments::may_use_signature(&actor, &a.entity_type, &a.entity_id) {
+            return Err((StatusCode::FORBIDDEN, attachments::SIGNATURE_REFUSAL.to_string()));
+        }
+    }
     let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
     if !cases::may_read_vault_path(&state.pool, &params.relative_path, &hidden).await.map_err(internal_error)? {
         return Err(restricted_refusal());
@@ -1324,6 +1332,7 @@ async fn read_vault_file_handler(
 
 async fn create_attachment_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     mut multipart: Multipart,
 ) -> Result<Json<Attachment>, ApiError> {
     let mut entity_type = String::new();
@@ -1351,6 +1360,9 @@ async fn create_attachment_handler(
         }
     }
 
+    if !attachments::may_use_signature(&actor, &entity_type, &entity_id) {
+        return Err((StatusCode::FORBIDDEN, attachments::SIGNATURE_REFUSAL.to_string()));
+    }
     attachments::add_attachment_bytes(&state.pool, &state.vault_root, &entity_type, &entity_id, &file_name, &bytes)
         .await
         .map(Json)
@@ -1369,8 +1381,11 @@ struct AttachBytesInput {
 
 /// Keeps a file the window made itself (a recorded statement) with its record. Sent as JSON so it
 /// works the same in a release build as in the browser, where there is no file path to give.
-async fn create_attachment_from_bytes_handler(State(state): State<AppState>, Json(input): Json<AttachBytesInput>) -> Result<Json<Attachment>, ApiError> {
+async fn create_attachment_from_bytes_handler(State(state): State<AppState>, Extension(actor): Extension<Actor>, Json(input): Json<AttachBytesInput>) -> Result<Json<Attachment>, ApiError> {
     use base64::Engine;
+    if !attachments::may_use_signature(&actor, &input.entity_type, &input.entity_id) {
+        return Err((StatusCode::FORBIDDEN, attachments::SIGNATURE_REFUSAL.to_string()));
+    }
     let raw = input.data_base64.split_once(',').map(|(_, b)| b).unwrap_or(&input.data_base64);
     let bytes = base64::engine::general_purpose::STANDARD.decode(raw).map_err(|_| (StatusCode::BAD_REQUEST, "That file could not be read.".to_string()))?;
     attachments::add_attachment_bytes(&state.pool, &state.vault_root, &input.entity_type, &input.entity_id, &input.file_name, &bytes)
@@ -1381,6 +1396,7 @@ async fn create_attachment_from_bytes_handler(State(state): State<AppState>, Jso
 
 async fn bulk_attach_files_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     mut multipart: Multipart,
 ) -> Result<Json<attachments::BulkAttachResult>, ApiError> {
     let mut entity_type = String::new();
@@ -1408,6 +1424,10 @@ async fn bulk_attach_files_handler(
         }
     }
 
+    if !attachments::may_use_signature(&actor, &entity_type, &entity_id) {
+        return Err((StatusCode::FORBIDDEN, attachments::SIGNATURE_REFUSAL.to_string()));
+    }
+
     Ok(Json(
         attachments::bulk_attach_bytes(&state.pool, &state.vault_root, &entity_type, &entity_id, files).await,
     ))
@@ -1415,8 +1435,14 @@ async fn bulk_attach_files_handler(
 
 async fn delete_attachment_handler(
     State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
+    if let Some(a) = attachments::get_attachment(&state.pool, &id).await.map_err(internal_error)? {
+        if !attachments::may_use_signature(&actor, &a.entity_type, &a.entity_id) {
+            return Err((StatusCode::FORBIDDEN, attachments::SIGNATURE_REFUSAL.to_string()));
+        }
+    }
     attachments::delete_attachment(&state.pool, &state.vault_root, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1432,6 +1458,9 @@ async fn get_attachment_file_handler(
         .await
         .map_err(internal_error)?
         .ok_or((StatusCode::NOT_FOUND, "attachment not found".to_string()))?;
+    if !attachments::may_use_signature(&actor, &attachment.entity_type, &attachment.entity_id) {
+        return Err((StatusCode::FORBIDDEN, attachments::SIGNATURE_REFUSAL.to_string()));
+    }
     let hidden = cases::hidden_case_ids(&state.pool, &actor).await.map_err(internal_error)?;
     if !cases::may_see_entity(&state.pool, &attachment.entity_type, &attachment.entity_id, &hidden).await.map_err(internal_error)? {
         return Err(restricted_refusal());
